@@ -150,14 +150,100 @@ OptShare <- t(Covari%*%mun/as.numeric((t(rep(1, p))%*%Covari%*%mun)))
 colnames(OptShare) <- tickers
 OptShare
 
-########################## Linear regression example ########################## 
+########################## Linear regression example ##########################
+rm(list = ls())
+set.seed(010101)
 # Electricity demand
 DataUt <- read.csv("DataApplications/Utilities.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
 
+DataUtEst <- DataUt %>% 
+  filter(Electricity	 != 0)
+
+attach(DataUtEst)
+# Dependent variable: Monthly consumption (kWh) in log
+Y <- log(Electricity) 
+
+# Regressors quantity including intercept
+X <- cbind(LnPriceElect, IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem, Children, 
+          Lnincome, 1)
+# LnPriceElect: Price per kWh (USD) in log
+# IndSocio1, IndSocio2, IndSocio3: Indicators socio-economic condition (1) is the lowest and (3) the highest
+# Altitude: Indicator of household location (1 is more than 1000 meters above sea level)
+# Nrooms: Number of rooms in house
+# HouseholdMem: Number of household members
+# Children: Indicator por presence of children in household (1)
+# Lnincome: Monthly income (USD) in log
+k <- dim(X)[2]
+N <- dim(X)[1]
+
+# Hyperparameters
+d0 <- 0.001/2
+a0 <- 0.001/2
+b0 <- rep(0, k)
+c0 <- 1000
+B0 <- c0*diag(k)
+
+# Posterior parameters
+bhat <- solve(t(X)%*%X)%*%t(X)%*%Y
+Bn <- as.matrix(Matrix::forceSymmetric(solve(solve(B0) + t(X)%*%X))) # Force this matrix to be symmetric
+bn <- Bn%*%(solve(B0)%*%b0 + t(X)%*%X%*%bhat)
+dn <- as.numeric(d0 + t(Y)%*%Y+t(b0)%*%solve(B0)%*%b0-t(bn)%*%solve(Bn)%*%bn)
+an <- a0 + N
+Hn <- Bn*dn/an
 
 
-X <- cbind(1, est4, est5, altitude1, edu1, edu2, edu3, edu4, male, edadjefe, ncuartos, npersonashogar, tienehijos, lnincome, 
-           lnpfullacu, lnpfullener,	lnpfullgas) #regressors quantity including intercept
-Y1 <- log(xobsacu)
-Y2 <- log(xobsener)
-Y3 <- log(xobsgas)
+# Posterior draws
+S <- 10000
+sig2 <- MCMCpack::rinvgamma(S,an/2,dn/2)
+summary(coda::mcmc(sig2))
+Betas <- LaplacesDemon::rmvt(S, bn, Hn, an)
+summary(coda::mcmc(Betas))
+
+# Log marginal function (multiply by -1 due to minimization)
+LogMarLikLM <- function(X, c0){
+  k <- dim(X)[2]
+  N <- dim(X)[1]
+  
+  # Hyperparameters
+  B0 <- c0*diag(k)
+  b0 <- rep(0, k)
+  
+  # Posterior parameters
+  bhat <- solve(t(X)%*%X)%*%t(X)%*%Y
+  Bn <- as.matrix(Matrix::forceSymmetric(solve(solve(B0) + t(X)%*%X))) # Force this matrix to be symmetric
+  bn <- Bn%*%(solve(B0)%*%b0 + t(X)%*%X%*%bhat)
+  dn <- as.numeric(d0 + t(Y)%*%Y+t(b0)%*%solve(B0)%*%b0-t(bn)%*%solve(Bn)%*%bn)
+  an <- a0 + N
+  # Log marginal likelihood
+  logpy <- (N/2)*log(1/pi)+(a0/2)*log(d0)-(an/2)*log(dn) + 0.5*log(det(Bn)/det(B0)) + lgamma(an/2)-lgamma(a0/2)
+  
+  return(-logpy)
+}
+
+cs <- c(10^0, 10^3, 10^6, 10^10, 10^12, 10^15, 10^20)
+# Observe -1 to recover the right sign
+LogML <- sapply(cs, function(c) {-LogMarLikLM(c0=c, X = X)}) 
+
+# Regressor without price
+Xnew <- cbind(IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem, Children, 
+              Lnincome, 1)
+# Observe -1 to recover the right sign
+LogMLnew <- sapply(cs, function(c) {-LogMarLikLM(c0=c, X = Xnew)})
+
+# Bayes factor
+BF <- exp(LogML - LogMLnew)
+BF
+
+# Empirical Bayes: Obtain c0 maximizing the log marginal likelihood
+c0 <- c0 
+EB <- optim(c0, fn = LogMarLikLM, method = "Brent", lower = 0.0001, upper = 10^6, X = X)
+EB$par
+EB$value
+
+EBnew <- optim(c0, fn = LogMarLikLM, method = "Brent", lower = 0.0001, upper = 10^6, X = Xnew)
+EBnew$par
+EBnew$value
+
+# Change of order to take into account the -1 in the LogMarLikLM function
+BFEM <- exp(EBnew$value - EB$value) 
+BFEM

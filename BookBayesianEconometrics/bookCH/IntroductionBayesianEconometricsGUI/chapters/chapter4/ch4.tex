@@ -338,24 +338,18 @@ We use two strategies to get the hyperparameters. First, we estimate the hyperpa
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 	\textit{R code. Multinomial-Dirichlet model: Liverpool vs Manchester city}
 \begin{VF}
-\begin{lstlisting}[basicstyle=\footnotesize, language=R]
-# Multinomial-Dirichlet example: 
-# Liverpool vs Manchester city
-Data<-read.csv("DataApplications/DataOddsLIVvsMAN.csv",
- sep = ",", header = TRUE)
+\begin{lstlisting}[language=R]
+# Multinomial-Dirichlet example: Liverpool vs Manchester city
+Data<-read.csv("DataApplications/DataOddsLIVvsMAN.csv", sep = ",", header = TRUE)
 # Change path
 attach(Data)
 library(dplyr)
 Probs <- Data %>%
-mutate(pns1 = 1/home, pns2 = 1/draw, pns3 = 1/away)%>%
-mutate(SumInvOdds = pns1 + pns2 + pns3) %>% 
-mutate(p1 = pns1/SumInvOdds, p2 = pns2/SumInvOdds, 
-p3 = pns3/SumInvOdds) %>% 
-select(p1, p2, p3)
-# Get probabilities using simple standardization.
-# There are more technical approaches to do this. 
-# See for instance Shin (1993) and Strumbelj (2014). 
-
+	mutate(pns1 = 1/home, pns2 = 1/draw, pns3 = 1/away)%>% 
+	mutate(SumInvOdds = pns1 + pns2 + pns3) %>% 
+	mutate(p1 = pns1/SumInvOdds, p2 = pns2/SumInvOdds, p3 = pns3/SumInvOdds) %>% 
+	select(p1, p2, p3)
+# We get probabilities using simple standardization. There are more technical approaches to do this. See for instance Shin (1993) and Strumbelj (2014). 
 DirMLE <- sirt::dirichlet.mle(Probs)
 # Use maximum likelihood to estimate parameters of the
 # Dirichlet distribution
@@ -377,16 +371,6 @@ MarLik <- function(a0){
 	Res <- lgamma(sum(a0))-lgamma(sum(a0)+n)+Res1
 	return(-Res)
 }
-\end{lstlisting}
-\end{VF}
-\end{tcolorbox}
-
-
-\begin{tcolorbox}[enhanced,width=4.67in,center upper,
-	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Multinomial-Dirichlet model: Liverpool vs Manchester city}
-\begin{VF}
-\begin{lstlisting}[basicstyle=\footnotesize, language=R]
 EmpBay <- optim(alpha0odds, MarLik, method = "BFGS")
 alpha0EB <- EmpBay$par
 alpha0EB
@@ -397,7 +381,6 @@ p1       p2       p3
 BF <- exp(-MarLik(alpha0EB))/exp(-MarLik(alpha0odds))
 BF
 2.085819
-	
 # Posterior distribution based on empirical Bayes
 alphan <- alpha0EB + y 
 # Posterior parameters 
@@ -405,15 +388,21 @@ S <- 100000
 # Simulation draws from the Dirichlet distribution 
 thetas <- MCMCpack::rdirichlet(S, alphan)
 colnames(thetas) <- c("Liverpool","Draw","Manchester")
+\end{lstlisting}
+\end{VF}
+\end{tcolorbox}
 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Multinomial-Dirichlet model: Liverpool vs Manchester city}
+\begin{VF}
+\begin{lstlisting}[language=R]
 # Predictive distribution based on simulations
 y0 <- c(2, 0, 3) 
-# Liverpool two wins and Manchester city three
-# wins in next five matches
-Pred <- apply(thetas, 1, function(p) 
-{rmultinom(1, size = sum(y0), prob = p)})
-ProYo <- sum(sapply(1:S,function(s){
-	sum(Pred[,s]==y0)==3}))/S
+# Liverpool two wins and Manchester city three wins in next five matches
+Pred <- apply(thetas, 1, function(p) {rmultinom(1, size = sum(y0), prob = p)})
+ProYo <- sum(sapply(1:S,function(s){sum(Pred[,s]==y0)==3}))/S
 ProY0
 0.0832
 # Probability of y0
@@ -421,11 +410,8 @@ ProY0
 # Predictive distribution using analytical expression
 PredY0 <- function(y0){
 	n <- sum(y0)
-	Res1 <- sum(sapply(1:length(y), 
-	function(l){lgamma(alphan[l]+y0[l])
-	 -lgamma(alphan[l])-lfactorial(y0[l])}))
-	Res <- lfactorial(n) + lgamma(sum(alphan)) - 
-	lgamma(sum(alphan)+n) + Res1
+	Res1 <- sum(sapply(1:length(y), function(l){lgamma(alphan[l]+y0[l]) - lgamma(alphan[l])-lfactorial(y0[l])}))
+	Res <- lfactorial(n) + lgamma(sum(alphan)) - lgamma(sum(alphan)+n) + Res1
 	return(exp(Res))
 }
 PredY0(y0)         
@@ -623,7 +609,7 @@ We apply this framework to ten tech stocks of the US market between January firs
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 	\textit{R code. Optimal tangency portfolio: Tech shares}
 \begin{VF}
-\begin{lstlisting}[basicstyle=\footnotesize, language=R]
+\begin{lstlisting}[language=R]
 library(quantmod)
 library(xts)
 library(ggplot2)
@@ -638,34 +624,28 @@ sdate <- as.Date("2021-01-01")
 edate <- as.Date("2022-09-30")
 Date <- seq(sdate, edate, by = "day")
 
-tickers <- c("AAPL", "NFLX", "AMZN", "GOOG", "INTC",
-"META", "MSFT", "TSLA", "NVDA", "PYPL")
+tickers <- c("AAPL", "NFLX", "AMZN", "GOOG", "INTC","META", "MSFT", "TSLA", "NVDA", "PYPL")
 p <- length(tickers)
 
 # AAPL: Apple, NFLX: Netflix, AMZN: Amazon, 
 # MSFT: Microsoft, GOOG: Google, META: Meta,
 # TSLA: Tesla, NVDA: NVIDIA Corporation
 # INTC: Intel, PYPL: PayPal 
-ss_stock <- getSymbols(tickers, from=sdate, to=edate, 
-auto.assign = T)
+ss_stock <- getSymbols(tickers, from=sdate, to=edate, auto.assign = T)
 ss_stock <- purrr::map(tickers,function(x) Ad(get(x)))
-ss_stock <- as.data.frame(purrr::reduce(ss_stock, 
-merge))
+ss_stock <- as.data.frame(purrr::reduce(ss_stock, merge))
 colnames(ss_stock) <- tickers
 # This is to get stock prices
-ss_rtn <- as.data.frame(apply(ss_stock, 2, 
-function(x) {diff(log(x), 1)}))
+ss_rtn <- as.data.frame(apply(ss_stock, 2, function(x) {diff(log(x), 1)}))
 # Daily returns
 
-t10yr <- getSymbols(Symbols = "DGS10", src = "FRED", 
-from=sdate, to=edate, auto.assign = F)
+t10yr <- getSymbols(Symbols = "DGS10", src = "FRED", from=sdate, to=edate, auto.assign = F)
 # To get 10-Year US Treasury yield data from the 
 Federal Reserve Electronic Database (FRED)
 t10yrd <- (1 + t10yr/100)^(1/365)-1 
 # Daily returns
 t10yrd <- t10yrd[row.names(ss_rtn)]
-Exc_rtn <- as.matrix(ss_rtn) - kronecker(t(rep(1, p)),
- as.matrix(t10yrd))
+Exc_rtn <- as.matrix(ss_rtn) - kronecker(t(rep(1, p)), as.matrix(t10yrd))
 # Excesses of return
 df <- as.data.frame(Exc_rtn)
 df$Date <- as.Date(rownames(df))
@@ -673,6 +653,15 @@ df$Date <- as.Date(rownames(df))
 df$Month <- months(df$Date)
 #  Get years
 df$Year <- format(df$Date, format="%y")
+#  Aggregate on months and year and get mean
+Data <- sapply(1:p, function(i) {
+	aggregate(df[, i] ~ Month + Year, df, mean)})
+DataExcRtn <- matrix(0, length(Data[, 1]$Month), p)
+for(i in 1:p){
+	DataExcRtn[, i] <- as.numeric(Data[, i]$`df[, i]`)
+}
+colnames(DataExcRtn) <- tickers
+head(DataExcRtn)
 \end{lstlisting}
 \end{VF}
 \end{tcolorbox}
@@ -681,17 +670,7 @@ df$Year <- format(df$Date, format="%y")
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 	\textit{R code. Optimal tangency portfolio: Tech shares}
 \begin{VF}
-\begin{lstlisting}[basicstyle=\footnotesize, language=R]
-#  Aggregate on months and year and get mean
-Data <- sapply(1:p, function(i) {
-aggregate(df[, i] ~ Month + Year, df, mean)})
- DataExcRtn <- matrix(0, length(Data[, 1]$Month), p)
- for(i in 1:p){
- DataExcRtn[, i] <- as.numeric(Data[, i]$`df[, i]`)
-}
-colnames(DataExcRtn) <- tickers
-head(DataExcRtn)
-
+\begin{lstlisting}[language=R]
 # Hyperparameters #
 N <- dim(DataExcRtn)[1]
 mu0 <- rep(0, p)
@@ -704,22 +683,17 @@ alphan <- N + alpha0
 vn <- alphan + 1 - p
 muhat <- colMeans(DataExcRtn)
 mun <- N/(N + beta0) * muhat + beta0/(N + beta0) * mu0
-S <- t(DataExcRtn - rep(1, N)%*%t(muhat))
-%*%(DataExcRtn - rep(1, N) %*%t(muhat)) 
-Psin <- Psi0 + S + N*beta0/(N + beta0)*(muhat - mu0)%*%
-t(muhat - mu0)
+S <- t(DataExcRtn - rep(1, N)%*%t(muhat))%*%(DataExcRtn - rep(1, N) %*%t(muhat)) 
+Psin <- Psi0 + S + N*beta0/(N + beta0)*(muhat - mu0)%*%t(muhat - mu0)
 betan <- N + beta0
 Sigman <- Psin/((alphan + 1 - p)*betan)
 Covarn <- (Sigman * (1 + betan)) * vn / (vn - 2)
 Covari <- solve(Covarn)
-OptShare <- t(Covari%*%mun/as.numeric((t(rep(1, p))%*%
-Covari%*%mun)))
+OptShare <- t(Covari%*%mun/as.numeric((t(rep(1, p))%*%Covari%*%mun)))
 colnames(OptShare) <- tickers
 OptShare
-  AAPL  NFLX  AMZN   GOOG INTC  META
--0.019 0.248 0.102 -0.034 0.173 0.23
-MSFT    TSLA  NVDA  PYPL
--0.022 -0.016 0.035 0.301
+  AAPL  NFLX  AMZN   GOOG INTC  META MSFT    TSLA  NVDA  PYPL
+-0.019 0.248 0.102 -0.034 0.173 0.23 -0.022 -0.016 0.035 0.301
 \end{lstlisting}
 \end{VF}
 \end{tcolorbox}
@@ -894,8 +868,186 @@ Then,
 
 The posterior predictive is a multivariate t distribution, ${\bf{Y}}_0|{\bf{y}}\sim t\left({\bf{X}}_0\beta_n,\frac{\delta_n({\bf{I}}_{N_0}+{\bf{X}}_0{\bf{B}}_n{\bf{X}}_0^{\top})}{\alpha_n},\alpha_n\right)$ centered at ${\bf{X}}_0\beta_n$.
 
-\textbf{Example: Demand of electricity} 
+\textbf{Example: Demand of electricity}
 
+We study in this example the determinants of monthly demand of electricity by Colombian households. There is information of 2103 households, particularly, average price (USD/kWh), indicators of socioeconomic conditions of the neighborhood where the household is located (IndSocio1 is the lowest and IndSocio3 is the highest), an indicator if the household is located in a municipality that is above 1000 meters above the sea level, the number of rooms in the house, the number of members of the households, presence of children in the household (1 is yes), and monthly income (USD). The specification is
+
+\begin{align*}
+	\log(\text{Electricity}_i) & = \beta_1\text{price}_i + \beta_2\text{IndSocio1}_i + \beta_3\text{IndSocio2}_i + \beta_4\text{Altitude}_i \\
+	& + \beta_5\text{Nrooms}_i + \beta_6\text{HouseholdMem}_i + \beta_7\text{Children}_i\\
+	& + \beta_8\log(\text{Income}_i) + \beta_9 + \mu.
+\end{align*}
+
+We use a non-informative vague prior setting such that $\alpha_0=\delta_0=0.001$, $\beta_0=\mathbf{0}$ and $\mathbf{B}_0=c_0\mathbf{I}_k$, where $c_0=1000$ and $k$ is the number of regressors. 
+
+The results from the R code (see below) is that the posterior mean of the own-price of electricity demand is -1.09, and the 95\% symmetric credible interval is (-1.47, -0.71). Households in neighborhoods of low socioeconomic conditions and located in municipalities 1000 meters above the sea level consume less electricity, 32.7\% and 19.7\% on average, respectively. An additional room implies a 8.7\% increase in electricity consumption, and another household member increases consumption in 5.9\% on average. The income elasticity mean estimate is 0.074, which means that 10\% increase of income increases 0.74\% electricity demand.
+
+We want to check the results of the Bayes factor comparing the previous specification with other without considering the electricity price, and check what happens as $c_0$ increases.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Demand of electricity}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls())
+set.seed(010101)
+# Electricity demand
+DataUt <- read.csv("DataApplications/Utilities.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+
+DataUtEst <- DataUt %>% 
+	filter(Electricity != 0)
+
+attach(DataUtEst)
+# Dependent variable: Monthly consumption (kWh) in log
+Y <- log(Electricity) 
+
+# Regressors quantity including intercept
+X <- cbind(LnPriceElect, IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem, Children, Lnincome, 1)
+# LnPriceElect: Price per kWh (USD) in log
+# IndSocio1, IndSocio2, IndSocio3: Indicators socio-economic condition (1) is the lowest and (3) the highest
+# Altitude: Indicator of household location (1 is more than 1000 meters above sea level)
+# Nrooms: Number of rooms in house
+# HouseholdMem: Number of household members
+# Children: Indicator por presence of children in household (1)
+# Lnincome: Monthly income (USD) in log
+k <- dim(X)[2]
+N <- dim(X)[1]
+
+# Hyperparameters
+d0 <- 0.001/2
+a0 <- 0.001/2
+b0 <- rep(0, k)
+B0 <- 1000*diag(k)
+
+# Posterior parameters
+bhat <- solve(t(X)%*%X)%*%t(X)%*%Y
+Bn <- as.matrix(Matrix::forceSymmetric(solve(solve(B0) + t(X)%*%X))) # Force this matrix to be symmetric
+bn <- Bn%*%(solve(B0)%*%b0 + t(X)%*%X%*%bhat)
+dn <- as.numeric(d0 + t(Y)%*%Y+t(b0)%*%solve(B0)%*%b0-t(bn)%*%solve(Bn)%*%bn)
+an <- a0 + N
+Hn <- Bn*dn/an
+
+# Posterior draws
+S <- 10000
+sig2 <- MCMCpack::rinvgamma(S,an/2,dn/2)
+summary(coda::mcmc(sig2))
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Demand of electricity}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+Iterations = 1:10000
+Thinning interval = 1 
+Number of chains = 1 
+Sample size per chain = 10000 
+
+1. Empirical mean and standard deviation for each 
+variable, plus standard error of the mean:
+
+Mean             SD       Naive SE  Time-series SE 
+2.361e-01      7.617e-03  7.617e-05 7.617e-05 
+		
+2. Quantiles for each variable:
+
+2.5%    25%    50%    75%  97.5% 
+0.2217 0.2309 0.2360 0.2412 0.2513 
+
+Betas <- LaplacesDemon::rmvt(S, bn, Hn, an)
+summary(coda::mcmc(Betas))
+Iterations = 1:10000
+Thinning interval = 1 
+Number of chains = 1 
+Sample size per chain = 10000 
+
+1. Empirical mean and standard deviation for each 
+variable, plus standard error of the mean:
+
+              Mean      SD    Naive SE  Time-series SE
+LnPriceElect -1.09043 0.19459 0.0019459 0.0019459
+IndSocio1    -0.32783 0.05294 0.0005294 0.0005294
+IndSocio2    -0.05737 0.04557 0.0004557 0.0004557
+Altitude     -0.19780 0.02386 0.0002386 0.0002429
+Nrooms        0.08731 0.01094 0.0001094 0.0001119
+HouseholdMem  0.05987 0.01334 0.0001334 0.0001334
+Children      0.05696 0.03043 0.0003043 0.0003043
+Lnincome      0.07447 0.01223 0.0001223 0.0001223
+              2.52296 0.35077 0.0035077 0.0035077
+
+2. Quantiles for each variable:
+
+                  2.5%      25%      50%      75%    97.5%
+LnPriceElect -1.472069 -1.22432 -1.08961 -0.95703 -0.71429
+IndSocio1    -0.435957 -0.36228 -0.32731 -0.29133 -0.22588
+IndSocio2    -0.147252 -0.08744 -0.05757 -0.02650  0.03254
+Altitude     -0.244759 -0.21372 -0.19783 -0.18164 -0.15094
+Nrooms        0.066432  0.07985  0.08709  0.09480  0.10864
+HouseholdMem  0.033623  0.05089  0.05975  0.06889  0.08596
+Children     -0.002259  0.03637  0.05698  0.07736  0.11681
+Lnincome      0.050536  0.06614  0.07449  0.08283  0.09852
+			        1.835507  2.28703  2.52165  2.76364  3.21199
+		        \end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Demand of electricity}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+# Log marginal function (multiply by -1 due to minimization)
+LogMarLikLM <- function(X, c0){
+	k <- dim(X)[2]
+	N <- dim(X)[1]	
+	# Hyperparameters
+	B0 <- c0*diag(k)
+	b0 <- rep(0, k)
+	# Posterior parameters
+	bhat <- solve(t(X)%*%X)%*%t(X)%*%Y
+	# Force this matrix to be symmetric
+	Bn <- as.matrix(Matrix::forceSymmetric(solve(solve(B0) + t(X)%*%X))) 
+	bn <- Bn%*%(solve(B0)%*%b0 + t(X)%*%X%*%bhat)
+	dn <- as.numeric(d0 + t(Y)%*%Y+t(b0)%*%solve(B0)%*%b0-t(bn)%*%solve(Bn)%*%bn)
+	an <- a0 + N
+	# Log marginal likelihood
+	logpy <- (N/2)*log(1/pi)+(a0/2)*log(d0)-(an/2)*log(dn) + 0.5*log(det(Bn)/det(B0)) + lgamma(an/2)-lgamma(a0/2)
+	return(-logpy)
+}
+cs <- c(10^0, 10^3, 10^6, 10^10, 10^12, 10^15, 10^20)
+# Observe -1 to recover the right sign
+LogML <- sapply(cs, function(c) {-LogMarLikLM(c0=c, X = X)}) 
+# Regressor without price
+Xnew <- cbind(IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem, Children, Lnincome, 1)
+# Observe -1 to recover the right sign
+LogMLnew <- sapply(cs, function(c) {-LogMarLikLM(c0=c,X = Xnew)})
+# Bayes factor
+BF <- exp(LogML - LogMLnew)
+BF
+8.687567e+16 1.006679e+05 3.108415e+03 3.108340e+01 3.108343e+00 9.829443e-02 3.108343e-04
+# Empirical Bayes: Obtain c0 maximizing the log 
+marginal likelihood
+c0 <- c0 
+EB <- optim(c0, fn = LogMarLikLM, method = "Brent", lower = 0.0001, upper = 10^6, X = X)
+EB$par
+3.254822
+EB$value
+1404.108
+EBnew <- optim(c0, fn = LogMarLikLM, method = "Brent", lower = 0.0001, upper = 10^6, X = Xnew)
+EBnew$par
+10.00597
+EBnew$value
+1422.199
+# Change of order to take into account the -1 in the LogMarLikLM function
+BFEM <- exp(EBnew$value - EB$value) 
+BFEM
+71897938
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+ 
 \section{Multivariate linear regression: The conjugate normal-normal/inverse Wishart model}\label{sec44}
 
 Let's study the multivariate regression setting where there are $N$-dimensional vectors ${\bf{y}}_m$, $m=1,2,\dots,M$ such that ${\bf{y}}_m={\bf{X}}\beta_m+\mu_m$, ${\bf{X}}$ is the set of common regressors, and $\mu_m$ is the $N$-dimensional vector of stochastic errors for each equation such that ${\bf{U}}=[\mu_1 \ \mu_2 \ \dots \ \mu_M]\sim MN_{N,M}({\bf{0}}, {\bf{I}}_N, {\bf\Sigma})$, that is, a matrix variate normal distribution where $\bf\Sigma$ is the covariance matrix of each $i$-th row of ${\bf{U}}$, $i=1,2,\dots,N$, and we are assuming independence between the rows. Then, $vec({\bf U})\sim N_{N\times M}({\bf 0}, \bf{\Sigma}\otimes {\bf{I}}_N)$.\footnote{$vec$ denotes the vectorization operation, and $\otimes$ denotes the kronecker product.}
