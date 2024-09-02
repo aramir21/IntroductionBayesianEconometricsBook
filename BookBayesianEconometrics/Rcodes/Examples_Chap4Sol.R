@@ -83,3 +83,51 @@ muPost_tq
 PmuPost_tcutoff <- mean(muPost_t > cutoff)
 PmuPost_tcutoff
 
+########################## Empirical Bayes: Linear regression ########################## 
+rm(list = ls())
+set.seed(010101)
+# Electricity demand
+DataUt <- read.csv("DataApplications/Utilities.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+DataUtEst <- DataUt %>% 
+  filter(Electricity != 0)
+attach(DataUtEst)
+# Dependent variable: Monthly consumption (kWh) in log
+Y <- log(Electricity)
+N <- length(Y)
+# Regressors quantity including intercept
+X <- cbind(LnPriceElect, IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem, Children, Lnincome, 1)
+# Regressor without price
+Xnew <- cbind(IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem, Children, Lnincome, 1)
+# Log marginal function (multiply by -1 due to minimization)
+LogMarLikLM <- function(X, c0){
+  k <- dim(X)[2]
+  N <- dim(X)[1]	
+  # Hyperparameters
+  B0 <- c0*diag(k)
+  b0 <- rep(0, k)
+  # Posterior parameters
+  bhat <- solve(t(X)%*%X)%*%t(X)%*%Y
+  # Force this matrix to be symmetric
+  Bn <- as.matrix(Matrix::forceSymmetric(solve(solve(B0) + t(X)%*%X))) 
+  bn <- Bn%*%(solve(B0)%*%b0 + t(X)%*%X%*%bhat)
+  dn <- as.numeric(d0 + t(Y)%*%Y+t(b0)%*%solve(B0)%*%b0-t(bn)%*%solve(Bn)%*%bn)
+  an <- a0 + N
+  # Log marginal likelihood
+  logpy <- (N/2)*log(1/pi)+(a0/2)*log(d0)-(an/2)*log(dn) + 0.5*log(det(Bn)/det(B0)) + lgamma(an/2)-lgamma(a0/2)
+  return(-logpy)
+}
+# Hyperparameters
+d0 <- 0.001/2
+a0 <- 0.001/2
+# Empirical Bayes: Obtain c0 maximizing the log marginal likelihood
+c0 <- 1000 
+EB <- optim(c0, fn = LogMarLikLM, method = "Brent", lower = 0.0001, upper = 10^6, X = X)
+EB$par
+EB$value
+EBnew <- optim(c0, fn = LogMarLikLM, method = "Brent", lower = 0.0001, upper = 10^6, X = Xnew)
+EBnew$par
+EBnew$value
+# Change of order to take into account the -1 in the LogMarLikLM function
+BFEM <- exp(EBnew$value - EB$value) 
+BFEM
+

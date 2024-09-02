@@ -615,18 +615,14 @@ library(xts)
 library(ggplot2)
 library(gridExtra) 
 # grid.arrange
-
 graphics.off()
 rm(list=ls())
-
 # Data Range
 sdate <- as.Date("2021-01-01")
 edate <- as.Date("2022-09-30")
 Date <- seq(sdate, edate, by = "day")
-
 tickers <- c("AAPL", "NFLX", "AMZN", "GOOG", "INTC","META", "MSFT", "TSLA", "NVDA", "PYPL")
 p <- length(tickers)
-
 # AAPL: Apple, NFLX: Netflix, AMZN: Amazon, 
 # MSFT: Microsoft, GOOG: Google, META: Meta,
 # TSLA: Tesla, NVDA: NVIDIA Corporation
@@ -638,7 +634,6 @@ colnames(ss_stock) <- tickers
 # This is to get stock prices
 ss_rtn <- as.data.frame(apply(ss_stock, 2, function(x) {diff(log(x), 1)}))
 # Daily returns
-
 t10yr <- getSymbols(Symbols = "DGS10", src = "FRED", from=sdate, to=edate, auto.assign = F)
 # To get 10-Year US Treasury yield data from the 
 Federal Reserve Electronic Database (FRED)
@@ -677,7 +672,6 @@ mu0 <- rep(0, p)
 beta0 <- 1
 Psi0 <- 100 * diag(p)
 alpha0 <- p + 2
-
 # Posterior parameters #
 alphan <- N + alpha0
 vn <- alphan + 1 - p
@@ -699,9 +693,6 @@ OptShare
 \end{tcolorbox}
 
 We find that the optimal tangency portfolio is composed by 24.8\%, 10.2\%, 17.3\%, 23\%, 3.5\% and 30.1\% weights of Netflix, Amazon, Intel, Meta, NVIDIA and PayPal, and -1.9\%, -3.4\%, -2.2\% and -1.6\% weights of Apple, Google, Microsoft and Tesla. A negative weight means being short in financial jargon, that is, borrowing a stock to sell it.
-
-
-
 \end{enumerate}
 
 
@@ -873,7 +864,7 @@ The posterior predictive is a multivariate t distribution, ${\bf{Y}}_0|{\bf{y}}\
 We study in this example the determinants of monthly demand of electricity by Colombian households. There is information of 2103 households, particularly, average price (USD/kWh), indicators of socioeconomic conditions of the neighborhood where the household is located (IndSocio1 is the lowest and IndSocio3 is the highest), an indicator if the household is located in a municipality that is above 1000 meters above the sea level, the number of rooms in the house, the number of members of the households, presence of children in the household (1 is yes), and monthly income (USD). The specification is
 
 \begin{align*}
-	\log(\text{Electricity}_i) & = \beta_1\text{price}_i + \beta_2\text{IndSocio1}_i + \beta_3\text{IndSocio2}_i + \beta_4\text{Altitude}_i \\
+	\log(\text{Electricity}_i) & = \beta_1\log(\text{price}_i) + \beta_2\text{IndSocio1}_i + \beta_3\text{IndSocio2}_i + \beta_4\text{Altitude}_i \\
 	& + \beta_5\text{Nrooms}_i + \beta_6\text{HouseholdMem}_i + \beta_7\text{Children}_i\\
 	& + \beta_8\log(\text{Income}_i) + \beta_9 + \mu.
 \end{align*}
@@ -882,25 +873,31 @@ We use a non-informative vague prior setting such that $\alpha_0=\delta_0=0.001$
 
 The results from the R code (see below) is that the posterior mean of the own-price of electricity demand is -1.09, and the 95\% symmetric credible interval is (-1.47, -0.71). Households in neighborhoods of low socioeconomic conditions and located in municipalities 1000 meters above the sea level consume less electricity, 32.7\% and 19.7\% on average, respectively. An additional room implies a 8.7\% increase in electricity consumption, and another household member increases consumption in 5.9\% on average. The income elasticity mean estimate is 0.074, which means that 10\% increase of income increases 0.74\% electricity demand.
 
-We want to check the results of the Bayes factor comparing the previous specification with other without considering the electricity price, and check what happens as $c_0$ increases.
+We want to check the results of the Bayes factor comparing the previous specification (model 1) with other specification without considering the price of electricity (model 2), that is,
+\begin{align*}
+	\log(\text{Electricity}_i) & = \beta_1\text{IndSocio1}_i + \beta_2\text{IndSocio2}_i + \beta_3\text{Altitude}_i + \beta_4\text{Nrooms}_i\\
+	& + \beta_5\text{HouseholdMem}_i + \beta_6\text{Children}_i + \beta_7\log(\text{Income}_i)\\
+	& + \beta_8 + \mu.
+\end{align*}
+
+In particular, we check what happens as $c_0$ increases from $10^{0}$ to $10^{20}$. We see that when $c_0=1$, $BF_{12}=8.68\times 10^{+16}$, which means very strong evidence in favor of the model including the price of electricity. However, as $c_0$ increases, the Bayes factor decreases, which means evidence supporting the model 2, for instance, $BF_{12}=3.11\times 10^{-4}$ when $c_0=10^{20}$. This is an example of the problem of using non-informative priors to calculate the Bayes factor; there is very strong evidence to support the parsimonious model when $c_0\rightarrow \infty$.
+
+We can get the posterior predictive distribution of the monthly electricity demand of a household located in the lowest socioeconomic condition in a municipality located below 1000 meters above the sea level, 2 rooms, 3 members with children, a monthly income equal to USD 500, and an electricity price equal to USD/kWh 0.15. Figure \ref{fig41} shows the histogram of the predictive posterior distribution, the highest posterior density credible interval at 95\% is between kWh 44.4 and kWh 373.9, and the posterior mean is kWh 189.6.      
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Demand of electricity}
+	\textit{R code. Demand of electricity, posterior predictive distribution}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
 rm(list = ls())
 set.seed(010101)
 # Electricity demand
 DataUt <- read.csv("DataApplications/Utilities.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
-
 DataUtEst <- DataUt %>% 
 	filter(Electricity != 0)
-
 attach(DataUtEst)
 # Dependent variable: Monthly consumption (kWh) in log
 Y <- log(Electricity) 
-
 # Regressors quantity including intercept
 X <- cbind(LnPriceElect, IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem, Children, Lnincome, 1)
 # LnPriceElect: Price per kWh (USD) in log
@@ -912,13 +909,11 @@ X <- cbind(LnPriceElect, IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem, C
 # Lnincome: Monthly income (USD) in log
 k <- dim(X)[2]
 N <- dim(X)[1]
-
 # Hyperparameters
 d0 <- 0.001/2
 a0 <- 0.001/2
 b0 <- rep(0, k)
 B0 <- 1000*diag(k)
-
 # Posterior parameters
 bhat <- solve(t(X)%*%X)%*%t(X)%*%Y
 Bn <- as.matrix(Matrix::forceSymmetric(solve(solve(B0) + t(X)%*%X))) # Force this matrix to be symmetric
@@ -926,9 +921,8 @@ bn <- Bn%*%(solve(B0)%*%b0 + t(X)%*%X%*%bhat)
 dn <- as.numeric(d0 + t(Y)%*%Y+t(b0)%*%solve(B0)%*%b0-t(bn)%*%solve(Bn)%*%bn)
 an <- a0 + N
 Hn <- Bn*dn/an
-
 # Posterior draws
-S <- 10000
+S <- 10000 # Number of draws from posterior distributions
 sig2 <- MCMCpack::rinvgamma(S,an/2,dn/2)
 summary(coda::mcmc(sig2))
 \end{lstlisting}
@@ -937,7 +931,7 @@ summary(coda::mcmc(sig2))
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Demand of electricity}
+	\textit{R code. Demand of electricity, posterior distribution}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
 Iterations = 1:10000
@@ -995,7 +989,7 @@ Lnincome      0.050536  0.06614  0.07449  0.08283  0.09852
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Demand of electricity}
+	\textit{R code. Demand of electricity, Bayes factor}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
 # Log marginal function (multiply by -1 due to minimization)
@@ -1047,6 +1041,39 @@ BFEM
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Demand of electricity, predictive distribution}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+# Predictive distribution
+Xpred <- c(log(0.15), 1, 0, 0, 2, 3, 1, log(500), 1)
+Mean <- Xpred%*%bn
+Hn <- dn*(1+t(Xpred)%*%Bn%*%Xpred)/an
+ExpKwH <- exp(LaplacesDemon::rmvt(S, Mean, Hn, an))
+summary(ExpKwH)
+Min.   :  24.06  
+1st Qu.: 121.70  
+Median : 169.37  
+Mean   : 189.60  
+3rd Qu.: 234.19  
+Max.   :1243.68 
+HDI <- HDInterval::hdi(ExpKwH, credMass = 0.95) # Highest posterior density credible interval
+HDI
+lower  44.40203
+upper 373.86494
+hist(ExpKwH, main = "Histogram: Monthly demand of electricity", xlab = "Monthly kWh", col = "blue", breaks = 50)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter4/figures/PredDemElect.png}
+	%%\centerline{\epsfig{/Chapters/chapter1/figures/cat.eps,width=.8\textheight,height=.4\textwidth}}
+	\caption[List of figure caption goes here]{Histogram using the posterior predictive distribution of electricity demand}\label{fig41}
+\end{figure}
+
  
 \section{Multivariate linear regression: The conjugate normal-normal/inverse Wishart model}\label{sec44}
 
@@ -1140,7 +1167,7 @@ The marginal posterior for ${\bf{B}}$ is given by
  	&\propto|{\bf{I}}_K+{\bf{V}}_n^{-1}({\bf{B}}-{\bf{B}}_n){\bf{\Psi}}_n^{-1}({\bf{B}}-{\bf{B}}_n)^{\top}|^{-(\alpha_n+1-M+K+M-1)/2}.
 \end{align*}
 
-The second line uses the inverse Wishart distribution, the third line the Sylverter's theorem, and the last line is the kernel of a matrix t distribution, that is, ${\bf{B}}|{\bf{Y}},{\bf{X}}\sim T_{K,M}({\bf{B}}_n,{\bf{V}}_n,{\bf{\Psi}}_n)$ with $\alpha_n+1-M$ degrees of freedom. 
+The second line uses the inverse Wishart distribution, the third line the Sylverter's theorem, and the last line is the kernel of a matrix t distribution, that is, ${\bf{B}}|{\bf{Y}},{\bf{X}}\sim T_{K\times M}({\bf{B}}_n,{\bf{V}}_n,{\bf{\Psi}}_n)$ with $\alpha_n+1-M$ degrees of freedom. 
 
 Observe that $vec({\bf{B}})$ has mean $vec({\bf{B}}_n)$ and variance $({\bf{V}}_n\otimes{\bf{\Psi}}_n)/(\alpha_n-M-1)$ based on its marginal distribution. On the other hand, the variance based on the conditional distribution is ${\bf{V}}_n\otimes{\bf{\Sigma}}$, where the mean of ${\bf{\Sigma}}$ is ${\bf{\Psi}}_n/(\alpha_n-M-1)$.   
 
@@ -1228,7 +1255,21 @@ You have a random sample of math scores of size $N=50$ from a normal distributio
 	\item What is the posterior probability that $\mu > 103$?  
 \end{itemize} 
 
-%\item In the optimal tangency portfolio example, what are the equations for $\mu_{T+\kappa}=\mu_n$ and ${\bf\Sigma}_{T+\kappa}$? Use these equations to find the optimal weights six periods ahead using the tech stocks.  
+%\item In the optimal tangency portfolio example, what are the equations for $\mu_{T+\kappa}=\mu_n$ and ${\bf\Sigma}_{T+\kappa}$? Use these equations to find the optimal weights six periods ahead using the tech stocks. 
+
+\item \textbf{Demand of electricity example continues}
+
+Set $c_0$ such that maximizes the marginal likelihood in the specifications with and without electricity price in the example of demand of electricity (empirical Bayes). Then, calculate the Bayes factor, and conclude if there is evidence supporting the inclusion of the price of electricity in the demand equation.
+
+\item \textbf{Utility demand}
+
+Use the file \textit{Utilities.csv} to estimate a multivariate linear regression model where $\mathbf{Y}_i=\left[\log(\text{electricity}_i) \ \log(\text{water}_i) \ \log(\text{gas}_i)\right]$ as function of $\log(\text{electricity price}_i)$, $\log(\text{water price}_i)$, $\log(\text{gas price}_i)$, $\text{IndSocio1}_i$, $\text{IndSocio2}_i$, $\text{Altitude}_i$, $\text{Nrooms}_i$, $\text{HouseholdMem}_i$, $\text{Children}_i$, and $\log(\text{Income}_i)$. Set a non-informative framework, $\mathbf{B}_0=\left[0\right]_{11\times 3}$, $\mathbf{V}_0=1000 \mathbf{I}_{3}$, $\mathbf{\Psi}_0=1000 \mathbf{I}_{11}$ and $\alpha_0=11$, where we have $K=11$ (regressors plus intercept) and $M=3$ (equations) in this exercise.
+
+\begin{enumerate}
+	\item Find the posterior distribution of $\mathbf{B}$ and $\mathbf{\Sigma}$.
+	\item Find the Bayes factor comparing ...
+	\item Find the predictive distribution for the monthly demand of electricity, water and gas of a household located in the lowest socioeconomic condition in a municipality located below 1000 meters above the sea level, 2 rooms, 3 members with children, a monthly income equal to USD 500, an electricity price equal to USD/kWh 0.15, ... . 
+\end{enumerate}   
 	
 
 \end{enumerate}

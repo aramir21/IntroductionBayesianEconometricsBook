@@ -115,13 +115,13 @@ colnames(DataExcRtn) <- tickers
 head(DataExcRtn)
 # draw graph
 plot1 <- ggplot(df, aes(x = Date, y = AAPL)) +
-  geom_line(color = "blue", size=1.2) + 
+  geom_line(color = "blue", linewidth=1.2) + 
   ggtitle("Apple excess of return") + xlab("Date") + ylab("Excess return") + 
   theme(plot.title = element_text(hjust = 0.5)) + 
   scale_x_date(date_labels = "%y-%m", date_breaks = "2 months")
 
 plot2 <- ggplot(df, aes(x = Date, y = NFLX)) +
-  geom_line(color = "blue", size=1.2) + 
+  geom_line(color = "blue", linewidth=1.2) + 
   ggtitle("Netflix excess of return") + xlab("Date") + ylab("Excess return") + 
   theme(plot.title = element_text(hjust = 0.5)) + 
   scale_x_date(date_labels = "%y-%m", date_breaks = "2 months")
@@ -193,7 +193,7 @@ Hn <- Bn*dn/an
 
 
 # Posterior draws
-S <- 10000
+S <- 10000 # Number of draws from posterior distributions
 sig2 <- MCMCpack::rinvgamma(S,an/2,dn/2)
 summary(coda::mcmc(sig2))
 Betas <- LaplacesDemon::rmvt(S, bn, Hn, an)
@@ -234,16 +234,12 @@ LogMLnew <- sapply(cs, function(c) {-LogMarLikLM(c0=c, X = Xnew)})
 BF <- exp(LogML - LogMLnew)
 BF
 
-# Empirical Bayes: Obtain c0 maximizing the log marginal likelihood
-c0 <- c0 
-EB <- optim(c0, fn = LogMarLikLM, method = "Brent", lower = 0.0001, upper = 10^6, X = X)
-EB$par
-EB$value
-
-EBnew <- optim(c0, fn = LogMarLikLM, method = "Brent", lower = 0.0001, upper = 10^6, X = Xnew)
-EBnew$par
-EBnew$value
-
-# Change of order to take into account the -1 in the LogMarLikLM function
-BFEM <- exp(EBnew$value - EB$value) 
-BFEM
+# Predictive distribution
+Xpred <- c(log(0.15), 1, 0, 0, 2, 3, 1, log(500), 1)
+Mean <- Xpred%*%bn
+Hn <- dn*(1+t(Xpred)%*%Bn%*%Xpred)/an
+ExpKwH <- exp(LaplacesDemon::rmvt(S, Mean, Hn, an))
+summary(ExpKwH)
+HDI <- HDInterval::hdi(ExpKwH, credMass = 0.95) # Highest posterior density credible interval
+HDI
+hist(ExpKwH, main = "Histogram: Monthly demand of electricity", xlab = "Monthly kWh", col = "blue", breaks = 50)

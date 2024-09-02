@@ -8,8 +8,6 @@ PPD <- 0.98 # True positive (Sensitivity)
 PDP <- PD * PPD / (PD * PPD + (1 - PD) * (1 - PPD)) # Probability of disease given positive
 paste("Probability of disease given a positive test is", sep = " ", round(PDP, 2))
 
-
-
 ##########################  Jesus Crist ########################## 
 
 PR <- 2/(108.5 * 10^9) # Probability of resurrection
@@ -84,7 +82,7 @@ paste("Prior mean and prior variance using vague information are", PriMeanV, "an
 Pp <- ProbBo(y, a0 = 0.001, b0 = 1 / 0.001) # This setting is defining vague prior information.
 paste("The probability of visiting the Doctor at least once next year using a vague prior is", Pp, sep = " ")
 
-# Using Emprirical Bayes
+# Using Empirical Bayes
 LogMgLik <- function(theta, y){
   N <- length(y) #sample size
   a0 <- theta[1] # prior shape hyperparameter

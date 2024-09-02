@@ -329,7 +329,7 @@ given that $({\bf{Y}}-{\bf{X}}\hat{{\bf{B}}})^{\top}({\bf{X}}\hat{{\bf{B}}}-{\bf
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 	\textit{R code. Multinomial-Dirichlet model: Polling 2016 USA presidential race}
 \begin{VF}
-\begin{lstlisting}[basicstyle=\footnotesize, language=R]
+\begin{lstlisting}[language=R]
 set.seed(010101)
 # Multinomial-Dirichlet example: 
 # Polling 2016 USA presidential race
@@ -337,7 +337,6 @@ y <- c(411, 373, 149)
 # Clinton, Trump, Other
 # Public Policy Polling September 27-28, 
 # 2016 five-way race
-
 alpha0 <- rep(1, 3)
 # Hyperparameters: non-informative distribution
 alphan <- alpha0 + y 
@@ -353,19 +352,15 @@ head(thetas)
 [4,] 0.4533499 0.4005530 0.1460972
 [5,] 0.4381799 0.3968502 0.1649699
 [6,] 0.4436852 0.3971321 0.1591827
-
 dif <- thetas[,1] - thetas[,2]
 # Difference of shares Hillary vs Trump
 data <- data.frame(dif)
 names(data) <- c("Difference")
 library(ggplot2)
 p <- ggplot(data) +  
-geom_histogram(aes(x = Difference), binwidth = 0.01) +
-geom_vline(xintercept=0.0, lwd=1, colour="red") + 
-ggtitle(``Percentage difference Clinton vs Trump 
-2016 presidential race``) +
-xlab(``Percentage Difference``) + ylab("")
-
+	geom_histogram(aes(x = Difference), binwidth = 0.01) +
+	geom_vline(xintercept=0.0, lwd=1, colour="red") + 
+	ggtitle("Percentage difference Clinton vs Trump 2016 presidential race") + xlab("Percentage Difference") + ylab("")
 difmcmc <- coda::mcmc(dif)
 # Declaring a MCMC object
 summary(difmcmc)
@@ -380,6 +375,13 @@ variable, plus standard error of the mean:
 
 Mean             SD       Naive SE Time-series SE 
 4.062e-02      2.996e-02      9.474e-05      9.474e-05 
+2. Quantiles for each variable:
+
+2.5%      25%      50%      75%    97.5% 
+-0.01817  0.02033  0.04058  0.06089  0.09923 
+CW <- mean(difmcmc>0)
+CW
+0.91339
 \end{lstlisting}
 \end{VF}
 \end{tcolorbox} 
@@ -397,32 +399,17 @@ There is a 95\% probability that the percentage difference between Hillary and T
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 	\textit{R code. Multinomial-Dirichlet model: Polling 2016 USA presidential race}
 \begin{VF}
-\begin{lstlisting}[basicstyle=\footnotesize, language=R]
-2. Quantiles for each variable:
-
-2.5%      25%      50%      75%    97.5% 
--0.01817  0.02033  0.04058  0.06089  0.09923 
-CW <- mean(difmcmc>0)
-CW
-0.91339
-
+\begin{lstlisting}[language=R]
 # Predictive distribution by simulation
 y0 <- c(44, 40, 16)
-
-Pred <- apply(thetas, 1, function(p) {
-	rmultinom(1, size = sum(y0), prob = p)})
-sum(sapply(1:S, function(s) {
-	sum(Pred[,s] == y0) == 3}))/S
+Pred <- apply(thetas, 1, function(p) {rmultinom(1, size = sum(y0), prob = p)})
+sum(sapply(1:S, function(s) {sum(Pred[,s] == y0) == 3}))/S
 0.00825
-
 # Predictive distribution by analytical expression
 PredY0 <- function(y0){
 	n <- sum(y0)
-	Res1 <- sum(sapply(1:length(y), function(l){
-		lgamma(alphan[l]+y0[l]) - 
-		lgamma(alphan[l])-lfactorial(y0[l])}))
-	Res <- lfactorial(n)+lgamma(sum(alphan))
-	-lgamma(sum(alphan)+n) + Res1
+	Res1 <- sum(sapply(1:length(y), function(l){lgamma(alphan[l]+y0[l]) - lgamma(alphan[l])-lfactorial(y0[l])}))
+	Res <- lfactorial(n)+lgamma(sum(alphan))-lgamma(sum(alphan)+n) + Res1
 	return(exp(Res))
 }
 PredY0(y0)
@@ -448,7 +435,7 @@ You have a random sample of math scores of size $N=50$ from a normal distributio
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 	\textit{R code. Math test example continues}
 \begin{VF}
-\begin{lstlisting}[basicstyle=\footnotesize, language=R]
+\begin{lstlisting}[language=R]
 set.seed(010101)
 N <- 50
 # Sample size
@@ -456,26 +443,20 @@ muhat <- 102
 # Sample mean
 sig2hat <- 10
 # Sample variance
-
 # Hyperparameters
 mu0 <- 100
 beta0 <- 1
 delta0 <- 0.001
 alpha0 <- 0.001
-
 S <- 100000
 # Posterior draws
 alphan <- alpha0 + N
-deltan <- sig2hat*(N - 1) + delta0 + 
-beta0*N/(beta0 + N)*(muhat - mu0)^2
-sig2Post <- invgamma::rinvgamma(S, shape = alphan, 
-rate = deltan)
+deltan <- sig2hat*(N - 1) + delta0 + beta0*N/(beta0 + N)*(muhat - mu0)^2
+sig2Post <- invgamma::rinvgamma(S, shape = alphan, rate = deltan)
 summary(sig2Post)
 betan <- beta0 + N
 mun <- (beta0*mu0 + N*muhat)/betan
-muPost <- sapply(sig2Post, function(s2){rnorm(1, mun, 
-	sd = (s2/betan)^0.5)})
-
+muPost <- sapply(sig2Post, function(s2){rnorm(1, mun, sd = (s2/betan)^0.5)})
 muPostq <- quantile(muPost, c(0.025, 0.5, 0.975))
 muPostq
    2.5%      50%    97.5% 
@@ -485,16 +466,11 @@ PmuPostcutoff <- mean(muPost > cutoff)
 PmuPostcutoff
 0.00994
 # Using Student's t
-muPost_t <- ((deltan/(alphan*betan))^0.5)*rt(S, alphan)
- + mun
-c1 <- rgb(173,216,230,max = 255, alpha = 50, 
-names = "lt.blue")
-c2 <- rgb(255,192,203, max = 255, alpha = 50, 
-names = "lt.pink")
-hist(muPost, main = "Histogram: Posterior mean", 
-xlab = "Posterior mean", col = c2)
-hist(muPost_t, main = "Histogram: Posterior mean", 
-xlab = "Posterior mean", add = T, col = c1)
+muPost_t <- ((deltan/(alphan*betan))^0.5)*rt(S, alphan) + mun
+c1 <- rgb(173,216,230,max = 255, alpha = 50, names = "lt.blue")
+c2 <- rgb(255,192,203, max = 255, alpha = 50, names = "lt.pink")
+hist(muPost, main = "Histogram: Posterior mean", xlab = "Posterior mean", col = c2)
+hist(muPost_t, main = "Histogram: Posterior mean", xlab = "Posterior mean", add = T, col = c1)
 muPost_tq <- quantile(muPost_t, c(0.025, 0.5, 0.975))
 muPost_tq
 2.5%      50%    97.5% 
@@ -517,14 +493,66 @@ We perform our calculations using the posterior conditional distribution, and th
 
 We have that the 95\% credible interval is (101.08, 102.84), and the probability of having a value greater than 103 is 1.09\%. 
 
-
- 
-
 %\item In the optimal tangency portfolio example, what are the equations for $\mu_{T+\kappa}=\mu_{n}$ and ${\bf\Sigma}_{T+\kappa}$? Use these equations to find the optimal weights six periods ahead using the tech stocks. 
 
-%{\textbf{Answer}}  
+%{\textbf{Answer}} 
 
+\item \textbf{Demand of electricity example continues}
+Set $c_0$ such that maximizes the marginal likelihood in the specifications with and without electricity price in the example of demand of electricity (empirical Bayes). Then, calculate the Bayes factor, and conclude if there is evidence supporting the inclusion of the price of electricity in the demand equation. 
 
+{\textbf{Answer}} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Demand of electricity}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls())
+set.seed(010101)
+# Electricity demand
+DataUt <- read.csv("DataApplications/Utilities.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+DataUtEst <- DataUt %>% 
+filter(Electricity != 0)
+attach(DataUtEst)
+# Dependent variable: Monthly consumption (kWh) in log
+Y <- log(Electricity)
+N <- length(Y)
+# Regressors quantity including intercept
+X <- cbind(LnPriceElect, IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem, Children, Lnincome, 1)
+# Regressor without price
+Xnew <- cbind(IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem, Children, Lnincome, 1)
+# Log marginal function (multiply by -1 due to minimization)
+LogMarLikLM <- function(X, c0){
+	k <- dim(X)[2]
+	N <- dim(X)[1]	
+	# Hyperparameters
+	B0 <- c0*diag(k)
+	b0 <- rep(0, k)
+	# Posterior parameters
+	bhat <- solve(t(X)%*%X)%*%t(X)%*%Y
+	# Force this matrix to be symmetric
+	Bn <- as.matrix(Matrix::forceSymmetric(solve(solve(B0) + t(X)%*%X))) 
+	bn <- Bn%*%(solve(B0)%*%b0 + t(X)%*%X%*%bhat)
+	dn <- as.numeric(d0 + t(Y)%*%Y+t(b0)%*%solve(B0)%*%b0-t(bn)%*%solve(Bn)%*%bn)
+	an <- a0 + N
+	# Log marginal likelihood
+	logpy <- (N/2)*log(1/pi)+(a0/2)*log(d0)-(an/2)*log(dn) + 0.5*log(det(Bn)/det(B0)) + lgamma(an/2)-lgamma(a0/2)
+	return(-logpy)
+}
+# Hyperparameters
+d0 <- 0.001/2
+a0 <- 0.001/2
+# Empirical Bayes: Obtain c0 maximizing the log marginal likelihood
+c0 <- 1000 
+EB <- optim(c0, fn = LogMarLikLM, method = "Brent", lower = 0.0001, upper = 10^6, X = X)
+EBnew <- optim(c0, fn = LogMarLikLM, method = "Brent", lower = 0.0001, upper = 10^6, X = Xnew)
+# Change of order to take into account the -1 in the LogMarLikLM function
+BFEM <- exp(EBnew$value - EB$value) 
+BFEM
+71897938
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
 \end{enumerate}
 
 
