@@ -83,7 +83,7 @@ muPost_tq
 PmuPost_tcutoff <- mean(muPost_t > cutoff)
 PmuPost_tcutoff
 
-########################## Empirical Bayes: Linear regression ########################## 
+########################## Empirical Bayes: Linear regression (electricity demand) ########################## 
 rm(list = ls())
 set.seed(010101)
 # Electricity demand
@@ -130,4 +130,131 @@ EBnew$value
 # Change of order to take into account the -1 in the LogMarLikLM function
 BFEM <- exp(EBnew$value - EB$value) 
 BFEM
+
+########################## Utilities demand: Multivariate regression ########################## 
+rm(list = ls())
+set.seed(010101)
+library(dplyr)
+# Electricity demand
+DataUt <- read.csv("DataApplications/Utilities.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+DataUtEst <- DataUt %>%  
+  filter(Electricity != 0 & Water !=0 & Gas != 0)
+attach(DataUtEst)
+Y <- cbind(log(Electricity), log(Water), log(Gas))
+X <- cbind(LnPriceElect, LnPriceWater, LnPriceGas, IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem, Children, Lnincome, 1)
+M <- dim(Y)[2]
+K <- dim(X)[2]
+N <- dim(Y)[1]
+# Hyperparameters
+B0 <- matrix(0, K, M)
+c0 <- 1000
+V0 <- c0*diag(K)
+Psi0 <- c0*diag(M)
+a0 <- M
+# Posterior parameters
+Bhat <- solve(t(X)%*%X)%*%t(X)%*%Y 
+S <- t(Y - X%*%Bhat)%*%(Y - X%*%Bhat)
+Vn <- solve(solve(V0) + t(X)%*%X) 
+Bn <- Vn%*%(solve(V0)%*%B0 + t(X)%*%X%*%Bhat)
+Psin <- Psi0 + S + t(B0)%*%solve(V0)%*%B0 + t(Bhat)%*%t(X)%*%X%*%Bhat - t(Bn)%*%solve(Vn)%*%Bn
+an <- a0 + N
+#Posterior draws
+s <- 10000 #Number of posterior draws
+SIGs <- replicate(s, LaplacesDemon::rinvwishart(an, Psin))
+BsCond <- sapply(1:s, function(s) {MixMatrix::rmatrixnorm(n = 1, mean=Bn, U = Vn,V = SIGs[,,s])})
+summary(coda::mcmc(t(BsCond)))
+Bs <- sapply(1:s, function(s) {MixMatrix::rmatrixt(n = 1, mean=Bn, U = Vn,V = Psin, df = an + 1 - M)})
+summary(coda::mcmc(t(Bs)))
+SIGMs <- t(sapply(1:s, function(l) {gdata::lowerTriangle(SIGs[,,l], diag=TRUE, byrow=FALSE)}))
+summary(coda::mcmc(SIGMs))
+hdiBs <- HDInterval::hdi(t(BsCond), credMass = 0.95) # Highest posterior density credible interval
+hdiBs
+hdiSIG <- HDInterval::hdi(SIGMs, credMass = 0.95) # Highest posterior density credible interval
+hdiSIG
+# Log marginal function (multiply by -1 due to minimization)
+LogMarLikLM <- function(X, c0){
+  c10 <- c0[1]; c20 <- c0[2]
+  k <- dim(X)[2]
+  N <- dim(X)[1]
+  # Hyperparameters
+  V0 <- c10*diag(K)
+  Psi0 <- c20*diag(M)
+  # Posterior parameters
+  Bhat <- solve(t(X)%*%X)%*%t(X)%*%Y 
+  S <- t(Y - X%*%Bhat)%*%(Y - X%*%Bhat)
+  Vn <- solve(solve(V0) + t(X)%*%X) 
+  Bn <- Vn%*%(solve(V0)%*%B0 + t(X)%*%X%*%Bhat)
+  Psin <- Psi0 + S + t(B0)%*%solve(V0)%*%B0 + t(Bhat)%*%t(X)%*%X%*%Bhat - t(Bn)%*%solve(Vn)%*%Bn
+  # Log marginal likelihood
+  logpy <- (N*M/2)*log(1/pi)+(a0/2)*log(det(Psi0)) - (an/2)*log(det(Psin)) + (M/2)*(log(det(Vn)) - log(det(V0))) + lgamma(an/2)-lgamma(a0/2)
+  return(-logpy)
+}
+c0 <- rep(1000, 2)
+LogML <- LogMarLikLM(X=X, c0 = c0)
+# Using income in dollars as regressor
+Xnew <- cbind(LnPriceElect, LnPriceWater, LnPriceGas, IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem, Children, exp(Lnincome), 1)
+LogMLnew <- LogMarLikLM(X=Xnew, c0 = c0)
+# Bayes factor
+BF12 <- exp(LogMLnew - LogML)
+BF12
+# Using income in thousand dollars as regressor
+XnewT <- cbind(LnPriceElect, LnPriceWater, LnPriceGas, IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem, Children, exp(Lnincome)/1000, 1)
+LogMLnewT <- LogMarLikLM(X=XnewT, c0 = c0)
+# Bayes factor
+BF13 <- exp(LogMLnewT - LogML)
+BF13
+# Empirical Bayes: Obtain c0 maximizing the log marginal likelihood
+EB <- optim(c0, fn = LogMarLikLM, method = "BFGS", X = X)
+EB$par
+EB$value
+EBnew <- optim(c0, fn = LogMarLikLM, method = "BFGS", X = Xnew)
+EBnew$par
+EBnew$value
+# Bayes factor
+BF12EB <- exp(EBnew$value - EB$value)
+BF12EB
+# Empirical Bayes: Obtain c0 maximizing the log marginal likelihood
+EBnewT <- optim(c0, fn = LogMarLikLM, method = "BFGS", X = XnewT)
+EBnewT$par
+EBnewT$value
+# Bayes factor
+BF13EB <- exp(EBnewT$value - EB$value)
+BF13EB
+# Predictive distribution
+Xpred <- c(log(0.15), log(0.70), log(0.75), 1, 0, 0, 2, 3, 1, log(500), 1)
+Mean <- Xpred%*%Bn
+Hn <- 1+t(Xpred)%*%Vn%*%Xpred
+UtilDemand <- exp(replicate(s, MixMatrix::rmatrixt(n = 1, mean=Mean, U = Hn, V = Psin, df = an + 1 - M)))
+ElePred <- UtilDemand[1,1,]
+WatPred <- UtilDemand[1,2,]
+GasPred <- UtilDemand[1,3,]
+
+data <- data.frame(cbind(ElePred, WatPred, GasPred)) #Data frame
+annotations1 <- data.frame(
+  x = round(quantile(data$ElePred, c(0.025, 0.5, 0.975)),1),
+  y = c(600, 1000, 600),
+  label = c("2.5%:", "50%:", "97.5%:")
+)
+
+annotations2 <- data.frame(
+  x = round(quantile(data$WatPred, c(0.025, 0.5, 0.975)),1),
+  y = c(600, 1000, 600),
+  label = c("2.5%:", "50%:", "97.5%:")
+)
+
+annotations3 <- data.frame(
+  x = round(quantile(data$GasPred, c(0.025, 0.5, 0.975)),1),
+  y = c(600, 1000, 600),
+  label = c("2.5%:", "50%:", "97.5%:")
+)
+
+require(ggplot2) # Cool figures
+require(ggpubr) # Multiple figures in one page
+require(latex2exp) # LaTeX equations in figures
+fig1 <- ggplot(data = data, aes(ElePred)) + geom_histogram(bins = 40, color = "#000000", fill = "#0099F8") + 	xlab("kWh") + ylab("Frequency") +	ggtitle("Electricity") + xlim(0, 1050) + geom_text(data = annotations1, aes(x = x, y = y, label = paste(label, x)), size = 3, fontface = "bold")
+fig2 <- ggplot(data = data, aes(WatPred)) + geom_histogram(bins = 40, color = "#000000", fill = "#0099F8") + 	xlab(TeX("$M^3$")) + ylab("Frequency") +	ggtitle("Water") + xlim(0, 100) + geom_text(data = annotations2, aes(x = x, y = y, label = paste(label, x)), size = 3, fontface = "bold")
+fig3 <- ggplot(data = data, aes(GasPred)) + geom_histogram(bins = 40, color = "#000000", fill = "#0099F8") + 	xlab(TeX("$M^3$")) + ylab("Frequency") +	ggtitle("Gas") + xlim(0, 80) + geom_text(data = annotations3, aes(x = x, y = y, label = paste(label, x)), size = 3, fontface = "bold") 
+# FIG <- ggarrange(fig1, fig2, fig3, ncol = 1, nrow = 3)
+# FIG
+# annotate_figure(FIG, top = text_grob("Utilities: Predictive distribution", color = "black", face = "bold", size = 14))
 

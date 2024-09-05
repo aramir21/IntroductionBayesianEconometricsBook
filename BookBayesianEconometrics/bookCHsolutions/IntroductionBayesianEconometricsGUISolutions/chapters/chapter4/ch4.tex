@@ -315,6 +315,14 @@ Using that $({\bf{A}}+{\bf{B}})^{-1}={\bf{A}}^{-1}-{\bf{A}}^{-1}{\bf{B}}({\bf{A}
 
 given that $({\bf{Y}}-{\bf{X}}\hat{{\bf{B}}})^{\top}({\bf{X}}\hat{{\bf{B}}}-{\bf{X}}{\bf{B}})=\hat{\bf{U}}^{\top}{\bf{X}}(\hat{{\bf{B}}}-{\bf{B}})$, using that $\hat{{\bf{B}}}=({\bf{X}}^{\top}{\bf{X}})^{-1}{\bf{X}}^{\top}{\bf{Y}}$ which implies ${\bf{X}}^{\top}{\bf{X}}\hat{{\bf{B}}}={\bf{X}}^{\top}{\bf{Y}}={\bf{X}}^{\top}{\bf{X}}\hat{\bf{B}}+{\bf{X}}^{\top}\hat{\bf{U}}$, then ${\bf{X}}^{\top}\hat{\bf{U}}={\bf{0}}$.
 
+	\item \textbf{What is the probability that the Sun will rise tomorrow?}
+
+This is the most famous Richard Price's example developed in the Appendix of the Bayes' theorem paper \cite{bayes1763lii}. Here, we implicitly use \textit{Laplace's Rule of Succession} to solve this question. In particular, if we were a priori uncertain about the probability the Sun will rise on a specified day, we can assume a prior uniform distribution over (0,1), that is, a beta (1,1) distribution. Then, what is the probability that the Sun will rise tomorrow?
+
+\textbf{Answer}
+
+This exercise is an application of the Bernoulli-beta model. Thus, the likelihood is given by a binomial distribution where the probability of success is $\theta$, $p(\mathbf{y}|\theta)\propto\theta^{\sum_{i=1}^N y_i}(1-\theta)^{N-\sum_{i=1}^N y_i}$. In addition, the prior distribution is beta, that is, $\pi(\theta)\propto \theta^{\alpha_0-1}(1-\theta)^{\beta_0-1}$, where $\alpha_0=\beta_0=1$. Then, the predictive distribution that the sun will rise tomorrow is  $p(Y_0=1|\mathbf{y})=\frac{1+S}{2+N}$, where $S=\sum_{i=1}^N y_i$ is the number of successes (the Sun rise). $\frac{1+S}{2+N}$ is known as the \textit{Laplace's Rule of Succession} that was introduced by Laplace in the 18$^{th}$ century in the course of treating the sunrise problem.  
+
 	\item Using information from Public Policy Polling in September 27th-28th for the 2016 presidential five-way race in USA, there are 411, 373 and 149 sampled people supporting Hillary Clinton, Donald Trump and other, respectively. 
 
 \begin{itemize}
@@ -498,6 +506,7 @@ We have that the 95\% credible interval is (101.08, 102.84), and the probability
 %{\textbf{Answer}} 
 
 \item \textbf{Demand of electricity example continues}
+
 Set $c_0$ such that maximizes the marginal likelihood in the specifications with and without electricity price in the example of demand of electricity (empirical Bayes). Then, calculate the Bayes factor, and conclude if there is evidence supporting the inclusion of the price of electricity in the demand equation. 
 
 {\textbf{Answer}} 
@@ -553,6 +562,173 @@ BFEM
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
+
+The Bayes factor based on the empirical Bayes of the model with electricity price versus the model without electricity price is equal to 71897938, this gives very strong evidence to include the price in the specification.
+ 
+\item \textbf{Utility demand}
+
+Use the file \textit{Utilities.csv} to estimate a multivariate linear regression model where $\mathbf{Y}_i=\left[\log(\text{electricity}_i) \ \log(\text{water}_i) \ \log(\text{gas}_i)\right]$ as function of $\log(\text{electricity price}_i)$, $\log(\text{water price}_i)$, $\log(\text{gas price}_i)$, $\text{IndSocio1}_i$, $\text{IndSocio2}_i$, $\text{Altitude}_i$, $\text{Nrooms}_i$, $\text{HouseholdMem}_i$, $\text{Children}_i$, and $\log(\text{Income}_i)$. Set a non-informative prior framework, $\mathbf{B}_0=\left[0\right]_{11\times 3}$, $\mathbf{V}_0=1000 \mathbf{I}_{11}$, $\mathbf{\Psi}_0=1000 \mathbf{I}_{3}$ and $\alpha_0=3$, where we have $K=11$ (regressors plus intercept) and $M=3$ (equations) in this exercise.
+
+\begin{enumerate}
+	\item Find the posterior mean estimates and the highest posterior density intervals at 95\% of $\mathbf{B}$ and $\mathbf{\Sigma}$. Use the marginal distribution and the conditional distribution to obtain the posterior estimates of  $\mathbf{B}$, and compare the results.
+	\item Find the Bayes factor comparing the baseline model in this exercise with the same specification but using the income in dollars. Now, calculate the Bayes factor using the income in thousand dollars. Is there any difference?
+	\item Find the predictive distribution for the monthly demand of electricity, water and gas in the baseline specification of a household located in the lowest socioeconomic condition in a municipality located below 1000 meters above the sea level, 2 rooms, 3 members with children, a monthly income equal to USD 500, an electricity price equal to USD/kWh 0.15, a water price equal to USD/M$^3$ 0.70, and a gas price equal to USD/M$^3$ 0.75. 
+\end{enumerate}   
+
+{\textbf{Answer}} 
+
+We see that the posterior estimates of the location parameters based on the marginal distribution and the conditional distribution are very similar (conditional on $\mathbf{\Sigma}$). This is important as many times there is no analytical solutions in well-known forms of marginal posterior distributions, and consequently, we should get draws of the posterior distributions based on conditional distributions of block of parameters (See Chapter \ref{chap5}).
+
+We find that the Bayes factor of the baseline model ($\log(\text{Income})$) versus the two alternative models using income in dollars and thousand dollars are 108925764 and 0.1089261. The former gives strong evidence in favor of the baseline model, whereas the latter gives positive evidence for the model using the income in thousand dollars. This result despite that the location coefficients are the same in the two alternative specifications, except for the change in scale of the coefficients associated with income. This example shows that Bayes factors are sensitive to units of measure, and consequently, it is relevant to think carefully about the priors when performing hypothesis testing using a Bayesian framework. Observe that a nice feature in Bayesian inference is that we followed the same conceptual framework (Bayes factor) in the previous exercise and this exercise. In one hand, the previous exercise is an example of nested models, that is, one model is a restricted version of a more general model. On the other hand, this exercise is an example of non-nested models. This is not the case in the Frequentist approach. The statistical framework is not the same when testing nested and non-nested models.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Utilities demand: Multivariate regression, posterior inference}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls())
+set.seed(010101)
+library(dplyr)
+# Electricity demand
+DataUt <- read.csv("DataApplications/Utilities.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+DataUtEst <- DataUt %>%  
+filter(Electricity != 0 & Water !=0 & Gas != 0)
+attach(DataUtEst)
+Y <- cbind(log(Electricity), log(Water), log(Gas))
+X <- cbind(LnPriceElect, LnPriceWater, LnPriceGas, IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem, Children, Lnincome, 1)
+M <- dim(Y)[2]
+K <- dim(X)[2]
+N <- dim(Y)[1]
+# Hyperparameters
+B0 <- matrix(0, K, M)
+c0 <- 1000
+V0 <- c0*diag(K)
+Psi0 <- c0*diag(M)
+a0 <- M
+# Posterior parameters
+Bhat <- solve(t(X)%*%X)%*%t(X)%*%Y 
+S <- t(Y - X%*%Bhat)%*%(Y - X%*%Bhat)
+Vn <- solve(solve(V0) + t(X)%*%X) 
+Bn <- Vn%*%(solve(V0)%*%B0 + t(X)%*%X%*%Bhat)
+Psin <- Psi0 + S + t(B0)%*%solve(V0)%*%B0 + t(Bhat)%*%t(X)%*%X%*%Bhat - t(Bn)%*%solve(Vn)%*%Bn
+an <- a0 + N
+#Posterior draws
+s <- 10000 #Number of posterior draws
+SIGs <- replicate(s, LaplacesDemon::rinvwishart(an, Psin))
+BsCond <- sapply(1:s, function(s) {MixMatrix::rmatrixnorm(n = 1, mean=Bn, U = Vn,V = SIGs[,,s])})
+summary(coda::mcmc(t(BsCond)))
+Bs <- sapply(1:s, function(s) {MixMatrix::rmatrixt(n = 1, mean=Bn, U = Vn,V = Psin, df = an + 1 - M)})
+summary(coda::mcmc(t(Bs)))
+SIGMs <- t(sapply(1:s, function(l) {gdata::lowerTriangle(SIGs[,,l], diag=TRUE, byrow=FALSE)}))
+summary(coda::mcmc(SIGMs))
+hdiBs <- HDInterval::hdi(t(BsCond), credMass = 0.95) # Highest posterior density credible interval
+hdiBs
+hdiSIG <- HDInterval::hdi(SIGMs, credMass = 0.95) # Highest posterior density credible interval
+hdiSIG
+		\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Utilities demand: Multivariate regression, Bayes factors}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+# Log marginal function (multiply by -1 due to minimization)
+LogMarLikLM <- function(X, c0){
+	c10 <- c0[1]; c20 <- c0[2]
+	k <- dim(X)[2]
+	N <- dim(X)[1]
+	# Hyperparameters
+	V0 <- c10*diag(K)
+	Psi0 <- c20*diag(M)
+	# Posterior parameters
+	Bhat <- solve(t(X)%*%X)%*%t(X)%*%Y 
+	S <- t(Y - X%*%Bhat)%*%(Y - X%*%Bhat)
+	Vn <- solve(solve(V0) + t(X)%*%X) 
+	Bn <- Vn%*%(solve(V0)%*%B0 + t(X)%*%X%*%Bhat)
+	Psin <- Psi0 + S + t(B0)%*%solve(V0)%*%B0 + t(Bhat)%*%t(X)%*%X%*%Bhat - t(Bn)%*%solve(Vn)%*%Bn
+	# Log marginal likelihood
+	logpy <- (N*M/2)*log(1/pi)+(a0/2)*log(det(Psi0)) - (an/2)*log(det(Psin)) + (M/2)*(log(det(Vn)) - log(det(V0))) + lgamma(an/2)-lgamma(a0/2)
+	return(-logpy)
+}
+c0 <- rep(1000, 2)
+LogML <- LogMarLikLM(X=X, c0 = c0)
+# Using income in dollars as regressor
+Xnew <- cbind(LnPriceElect, LnPriceWater, LnPriceGas, IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem, Children, exp(Lnincome), 1)
+LogMLnew <- LogMarLikLM(X=Xnew, c0 = c0)
+# Bayes factor
+BF12 <- exp(LogMLnew - LogML)
+BF12
+# Using income in thousand dollars as regressor
+XnewT <- cbind(LnPriceElect, LnPriceWater, LnPriceGas, IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem, Children, exp(Lnincome)/1000, 1)
+LogMLnewT <- LogMarLikLM(X=XnewT, c0 = c0)
+# Bayes factor
+BF13 <- exp(LogMLnewT - LogML)
+BF13
+		\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Utilities demand: Multivariate regression, predictive distribution}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+# Predictive distribution
+Xpred <- c(log(0.15), log(0.70), log(0.75), 1, 0, 0, 2, 3, 1, log(500), 1)
+Mean <- Xpred%*%Bn
+Hn <- 1+t(Xpred)%*%Vn%*%Xpred
+UtilDemand <- exp(replicate(s, MixMatrix::rmatrixt(n = 1, mean=Mean, U = Hn, V = Psin, df = an + 1 - M)))
+ElePred <- UtilDemand[1,1,]
+WatPred <- UtilDemand[1,2,]
+GasPred <- UtilDemand[1,3,]
+data <- data.frame(cbind(ElePred, WatPred, GasPred)) #Data frame
+annotations1 <- data.frame(
+x = round(quantile(data$ElePred, c(0.025, 0.5, 0.975)),1),
+y = c(600, 1000, 600),
+label = c("2.5%:", "50%:", "97.5%:")
+)
+annotations2 <- data.frame(
+x = round(quantile(data$WatPred, c(0.025, 0.5, 0.975)),1),
+y = c(600, 1000, 600),
+label = c("2.5%:", "50%:", "97.5%:")
+)
+annotations3 <- data.frame(
+x = round(quantile(data$GasPred, c(0.025, 0.5, 0.975)),1),
+y = c(600, 1000, 600),
+label = c("2.5%:", "50%:", "97.5%:")
+)
+require(ggplot2) # Cool figures
+require(ggpubr) # Multiple figures in one page
+require(latex2exp) # LaTeX equations in figures
+fig1 <- ggplot(data = data, aes(ElePred)) + geom_histogram(bins = 40, color = "#000000", fill = "#0099F8") + 	xlab("kWh") + ylab("Frequency") +	ggtitle("Electricity") + xlim(0, 1050) + geom_text(data = annotations1, aes(x = x, y = y, label = paste(label, x)), size = 3, fontface = "bold")
+fig2 <- ggplot(data = data, aes(WatPred)) + geom_histogram(bins = 40, color = "#000000", fill = "#0099F8") + 	xlab(TeX("$M^3$")) + ylab("Frequency") +	ggtitle("Water") + xlim(0, 100) + geom_text(data = annotations2, aes(x = x, y = y, label = paste(label, x)), size = 3, fontface = "bold")
+fig3 <- ggplot(data = data, aes(GasPred)) + geom_histogram(bins = 40, color = "#000000", fill = "#0099F8") + 	xlab(TeX("$M^3$")) + ylab("Frequency") +	ggtitle("Gas") + xlim(0, 80) + geom_text(data = annotations3, aes(x = x, y = y, label = paste(label, x)), size = 3, fontface = "bold")
+		\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+
+Figures \ref{fig13}, \ref{fig14} and \ref{fig15} show the marginal predictive distributions of electricity, water and gas for the reference household. The median predictive values are kWh 168.8, M$^3$ 12.3 and M$^3$ 10.1, respectively. In addition, the 95\% credible intervals are (27.7, 1028.9), (1.5, 98.7) and (1.5, 67.5) for electricity, water and gas.  
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter4/figures/ElectMulti.png}
+	%%\centerline{\epsfig{/Chapters/chapter1/figures/cat.eps,width=.8\textheight,height=.4\textwidth}}
+	\caption[List of figure caption goes here]{Histogram using the posterior predictive distribution of electricity demand}\label{fig13}
+\end{figure}
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter4/figures/WaterMulti.png}
+	%%\centerline{\epsfig{/Chapters/chapter1/figures/cat.eps,width=.8\textheight,height=.4\textwidth}}
+	\caption[List of figure caption goes here]{Histogram using the posterior predictive distribution of water demand}\label{fig14}
+\end{figure}  
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter4/figures/GasMulti.png}
+	%%\centerline{\epsfig{/Chapters/chapter1/figures/cat.eps,width=.8\textheight,height=.4\textwidth}}
+	\caption[List of figure caption goes here]{Histogram using the posterior predictive distribution of gas demand}\label{fig15}
+\end{figure}    
 \end{enumerate}
 
 
