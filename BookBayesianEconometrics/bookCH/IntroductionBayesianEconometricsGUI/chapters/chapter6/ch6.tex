@@ -1,1 +1,207 @@
 \chapter{Univariate models}\label{chap6}
+
+We describe how to perform Bayesian inference in some of the most common univariate models: normal-inverse gamma, logit, probit, multinomial probit and logit, ordered probit, negative binomial, tobit, quantile regression, and Bayesian bootstrap in linear models. We show the posterior distributions of the parameters, some applications, and how to perform inference using three levels: programming directly the posterior distributions, getting posterior draws using packages from \textbf{R} software, and using our graphical users interface (GUI). We also have mathematical and computational exercises.
+
+\section{The Gaussian linear model}\label{sec61}
+
+The Gaussian linear model specifies ${\bf{y}}={\bf{X}}\beta+\bf{\mu}$ such that $\mu\sim N(\bf{0},\sigma^2\bf{I}_N)$ is an stochastic error, ${\bf{X}}$ is a $N \times K$ matrix of regressors, $\beta$ is a $K$-dimensional vector of location coefficients, $\sigma^2$ is the variance of the model (scale parameter), ${\bf{y}}$ is a $N$-dimensional vector of a dependent variable, and $N$ is the sample size. We describe this model using the conjugate family in Section \ref{sec33}, that is, $\pi(\beta,\sigma^2)=\pi(\beta|\sigma^2)\times\pi(\sigma^2)$, and this allowed to get the posterior marginal distribution for $\beta$ and $\sigma^2$.
+
+We assume independent prior in this section, that is, $\pi(\beta,\sigma^2)=\pi(\beta)\times\pi(\sigma^2)$, where $\beta \sim N(\beta_0, {\bf{B}}_0)$ and $\sigma^2 \sim IG(\alpha_0/2, \delta_0/2)$, $\alpha_0/2$ and $\delta_0/2$ are the shape and rate parameters. This setting allows getting the posterior conditional distributions, that is, $\pi(\beta|\sigma^2,{\bf{y}}, {\bf{X}})$ and $\pi(\sigma^2|\beta,{\bf{y}}, {\bf{X}})$, which in turn allows to use the Gibbs sampler algorithm to perform posterior inference of $\beta$ and $\sigma^2$.
+
+The likelihood function in this model is
+\begin{align*}
+	p({\bf{y}}| \beta, \sigma^2, {\bf{X}}) = (2\pi\sigma^2)^{-\frac{N}{2}} \exp \left\{-\frac{1}{2\sigma^2} ({\bf{y}} - \bf{X\beta})^{\top}({\bf{y}} - \bf{X\beta}) \right\}.
+\end{align*}
+
+Then, the conditional posterior distributions are
+
+\begin{align*}
+	\beta|\sigma^2, {\bf{y}}, {\bf{X}} \sim N(\beta_n, \sigma^2{\bf{B}}_n),
+\end{align*}
+and
+\begin{align*}
+	\sigma^2|\beta, {\bf{y}}, {\bf{X}} \sim IG(\alpha_n/2, \delta_n/2),
+\end{align*}
+
+ where ${\bf{B}}_n = ({\bf{B}}_0^{-1} + \sigma^{-2} {\bf{X}}^{\top}{\bf{X}})^{-1}$, $\beta_n= {\bf{B}}_n({\bf{B}}_0^{-1}\beta_0 + \sigma^{-2} {\bf{X}}^{\top}{\bf{y}})$, $\alpha_n = \alpha_0 + N$ and $\delta_n = \delta_0 + ({\bf{y}}-{\bf{X}}\beta)^{\top}({\bf{y}}-{\bf{X}}\beta)$ (see Exercise 1 in this chapter).\footnote{This model can be extended to consider heteroskedasticity such that $y_i\sim N({\bf{x}}_i^{\top}\beta, \sigma^2/\tau_i)$, where $\tau_i\sim G(v/2,v/2)$. See exercise 2 for details.}\\
+
+\textbf{Example: The market value of soccer players in Europe}
+
+Let's analyze the determinants of the market value of soccer players in Europe. In particular, we use the dataset \textit{1ValueFootballPlayers.csv} which is in folder \textbf{DataApp} in our github repository \textbf{https://github.com/besmarter/BSTApp}. This dataset was used by \cite{Serna2018} to finding the determinants of high performance soccer players in the five most important national leagues in Europe.
+
+The specification of the model is
+\begin{align*}
+	\log(\text{Value}_i)&=\beta_1+\beta_2\text{Perf}_i+\beta_3\text{Age}_i+\beta_4\text{Age}^2_i+\beta_5\text{NatTeam}_i\\
+	&+\beta_6\text{Goals}_i+\beta_7\text{Exp}_i+\beta_{8}\text{Exp}^2_i+\mu_i,
+\end{align*}
+
+where \textit{Value} is the market value in Euros (2017), \textit{Perf} is a measure of performance, \textit{Age} is the players' age in years, \textit{NatTem} is an indicator variable that takes the value of 1 if the player has been on the national team, \textit{Goals} is the number of goals scored by the player during his career, and \textit{Exp} is his experience in years.  
+
+We assume that the dependent variable distributes normal, then we use a normal-inverse gamma model using vague conjugate priors where ${\bf{B}}_0=1000{\bf{I}}_{8}$, $\beta_0={\bf{0}}_{8}$, $\alpha_0=0.001$ and $\delta_0=0.001$. We perform a Gibbs sampler with 5,000 MCMC iterations plus a burn-in equal to 5,000, and a thinning parameter equal to 1.
+
+We can see in the results of the algorithms that we get similar results using the three approaches: GUI, package and our function. For instance, the value of a top soccer player in Europe increases 134\% ($\exp(0.85)-1)$) on average when he has played in the national team, the credible interval at 95\% is (86\%, 197\%).  
+
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. The value of soccer players, using \textbf{R} packages}
+	\begin{VF}
+		\begin{lstlisting}[language=R]		
+rm(list = ls())
+set.seed(010101)
+########################## Linear regression: Value of soccer players ##########################
+Data <- read.csv("DataApplications/1ValueFootballPlayers.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+attach(Data)
+y <- log(Value) 
+# Value: Market value in Euros (2017) of soccer players
+# Regressors quantity including intercept
+X <- cbind(1, Perf, Age, Age2, NatTeam, Goals, Exp, Exp2)
+# Perf: Performance. Perf2: Performance squared. Age: Age; Age: Age squared. 
+# NatTeam: Indicator of national team. Goals: Scored goals. Goals2: Scored goals squared
+# Exp: Years of experience. Exp2: Years of experience squared. Assists: Number of assists
+k <- dim(X)[2]
+N <- dim(X)[1]
+# Hyperparameters
+d0 <- 0.001/2
+a0 <- 0.001/2
+b0 <- rep(0, k)
+c0 <- 1000
+B0 <- c0*diag(k)
+B0i <- solve(B0)
+# MCMC parameters
+mcmc <- 5000
+burnin <- 5000
+tot <- mcmc + burnin
+thin <- 1
+# Posterior distributions using packages: MCMCpack sets the model in terms of the precision matrix
+posterior  <- MCMCpack::MCMCregress(y~X-1, b0=b0, B0 = B0i, c0 = a0, d0 = d0, burnin = burnin, mcmc = mcmc, thin = thin)
+summary(coda::mcmc(posterior))
+Iterations = 1:5000
+Thinning interval = 1 
+Number of chains = 1 
+Sample size per chain = 5000 
+1. Empirical mean and standard deviation for each variable,
+plus standard error of the mean:
+Mean       SD  Naive SE Time-series SE
+X         3.695499 2.228060 3.151e-02      3.151e-02
+XPerf     0.035445 0.004299 6.079e-05      6.079e-05
+XAge      0.778410 0.181362 2.565e-03      2.565e-03
+XAge2    -0.016617 0.003380 4.781e-05      4.781e-05
+XNatTeam  0.850362 0.116861 1.653e-03      1.689e-03
+XGoals    0.009097 0.001603 2.266e-05      2.266e-05
+XExp      0.206208 0.062713 8.869e-04      8.428e-04
+XExp2    -0.006992 0.002718 3.844e-05      3.719e-05
+sigma2    0.969590 0.076091 1.076e-03      1.076e-03
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R. code. The value of soccer players, programming our Gibbs sampler}
+	\begin{VF}
+		\begin{lstlisting}[language=R]		
+# Posterior distributions programming the Gibbs sampling
+# Auxiliary parameters
+XtX <- t(X)%*%X
+bhat <- solve(XtX)%*%t(X)%*%y
+an <- a0 + N
+# Gibbs sampling functions
+PostSig2 <- function(Beta){
+	dn <- d0 + t(y - X%*%Beta)%*%(y - X%*%Beta)
+	sig2 <- invgamma::rinvgamma(1, shape = an/2, rate = dn/2)
+	return(sig2)
+}
+PostBeta <- function(sig2){
+	Bn <- solve(B0i + sig2^(-1)*XtX)
+	bn <- Bn%*%(B0i%*%b0 + sig2^(-1)*XtX%*%bhat)
+	Beta <- MASS::mvrnorm(1, bn, Bn)
+	return(Beta)
+}
+PostBetas <- matrix(0, mcmc+burnin, k)
+PostSigma2 <- rep(0, mcmc+burnin)
+Beta <- rep(0, k)
+for(s in 1:tot){
+	sig2 <- PostSig2(Beta = Beta)
+	PostSigma2[s] <- sig2
+	Beta <- PostBeta(sig2 = sig2)
+	PostBetas[s,] <- Beta
+}
+keep <- seq((burnin+1), tot, thin)
+PosteriorBetas <- PostBetas[keep,]
+colnames(PosteriorBetas) <- c("Intercept", "Perf", "Age", "Age2", "NatTeam", "Goals", "Exp", "Exp2")
+summary(coda::mcmc(PosteriorBetas))
+Iterations = 1:5000
+Thinning interval = 1 
+Number of chains = 1 
+Sample size per chain = 5000 
+1. Empirical mean and standard deviation for each variable,
+plus standard error of the mean:
+Mean       SD  Naive SE Time-series SE
+Intercept  3.663230 2.194363 3.103e-02      3.103e-02
+Perf       0.035361 0.004315 6.102e-05      6.102e-05
+Age        0.780374 0.178530 2.525e-03      2.525e-03
+Age2      -0.016641 0.003332 4.713e-05      4.713e-05
+NatTeam    0.850094 0.119093 1.684e-03      1.684e-03
+Goals      0.009164 0.001605 2.270e-05      2.270e-05
+Exp        0.205965 0.062985 8.907e-04      8.596e-04
+Exp2      -0.007006 0.002731 3.862e-05      3.701e-05
+PosteriorSigma2 <- PostSigma2[keep]
+summary(coda::mcmc(PosteriorSigma2))
+Iterations = 1:5000
+Thinning interval = 1 
+Number of chains = 1 
+Sample size per chain = 5000 
+1. Empirical mean and standard deviation for each variable,
+plus standard error of the mean:
+Mean             SD       Naive SE Time-series SE 
+0.973309       0.077316       0.001093       0.001116 
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\section{The logit model}\label{sec62}
+
+In the logit model the dependent variable is binary, $Y_i=\left\{1,0\right\}$, then it follows a Bernoulli distribution, $Y_i\stackrel{ind} {\thicksim}B(\pi_i)$, that is, $p(Y_i=1)=\pi_i$, such that $\pi_i=\frac{\exp\left\{{\bf{x}}_i^{\top}\beta\right\}}{1+\exp\left\{{\bf{x}}_i^{\top}\beta\right\}}$.
+
+The likelihood function of the logit model is
+\begin{align*}
+	p({\bf{y}}|\beta,{\bf{X}})&=\prod_{i=1}^N \pi_i^{y_i}(1-\pi_i)^{1-y_i}\\
+	&=\prod_{i=1}^N\left(\frac{\exp\left\{{\bf{x}}_i^{\top}\beta\right\}}{1+\exp\left\{{\bf{x}}_i^{\top}\beta\right\}}\right)^{y_i}\left(\frac{1}{1+\exp\left\{{\bf{x}}_i^{\top}\beta\right\}}\right)^{1-y_i}.
+\end{align*}
+
+We can specify a Normal distribution as prior, $\beta\sim N({\bf{\beta}}_0,{\bf{B}}_0)$. Then, the posterior distribution is
+
+\begin{align*}
+	\pi(\beta|{\bf{y}},{\bf{X}})&\propto\prod_{i=1}^N\left(\frac{\exp\left\{{\bf{x}}_i^{\top}\beta\right\}}{1+\exp\left\{{\bf{x}}_i^{\top}\beta\right\}}\right)^{y_i}\left(\frac{1}{1+\exp\left\{{\bf{x}}_i^{\top}\beta\right\}}\right)^{1-y_i}\\
+	&\times\exp\left\{-\frac{1}{2}(\beta-\beta_0)^{\top}\bf{B}_0^{-1}(\beta-\beta_0)\right\}.
+\end{align*}
+
+The logit model does not have a standard posterior distribution. Then, a random walk Metropolis--Hastings algorithm can be used to obtain draws from the posterior distribution. A potential proposal is a multivariate Normal centered at the current value, with covariance matrix $\tau^2({\bf{B}}_0^{-1}+\widehat{{\bf{\Sigma}}}^{-1})^{-1}$, where $\tau>0$ is a tuning parameter and $\widehat{\bf{\Sigma}}$ is the sample covariance matrix from the maximum likelihood estimation \cite{Martin2011}.\footnote{Tuning parameters should be set in a way such that one obtains reasonable diagnostic criteria and acceptation rates.}
+
+Observe that $\log(p({\bf{y}}|\beta,{\bf{X}}))=\sum_{i=1}^Ny_i{\bf{x}}_i^{\top}\beta-\log(1+\exp({\bf{x}}_i^{\top}\beta))$. We can use this expression when calculating the acceptance parameter in the computational implementation of the Metropolis-Hastings algorithm. In particular, the acceptance parameter is \begin{equation*}
+	\alpha=\min\left\{1, \exp(\log(p({\bf{y}}|\beta^{c},{\bf{X}}))+\log(\pi(\beta^c))-(\log(p({\bf{y}}|\beta^{(s-1)},{\bf{X}}))+\log(\pi(\beta^{(s-1)}))))\right\},
+\end{equation*}
+where $\beta^c$ and $\beta^{(s-1)}$ are the draws from the proposal distribution and the previous iteration of the Markov chain, respectively.\footnote{Formulating the acceptance rate using $\log$ helps to mitigate computational problems.}\\
+
+\textbf{Example: Simulation exercise}
+
+Let's do a simulation exercise to check the performance of the algorithm. Set $\beta=\begin{bmatrix}0.5 & 0.8 & -1.2\end{bmatrix}^{\top}$, ${\bf{x}}_{ik}\sim N(0,1)$, $k=2,3$ and $i=1,2,\dots,10000$.
+
+
+
+\section{Summary}\label{sec611}
+We present ...
+
+\section{Exercises}\label{sec612}
+
+\begin{enumerate}
+	\item Get the posterior conditional distributions of the Gaussian linear model assuming independent priors $\pi(\beta,\sigma^2)=\pi(\beta)\times\pi(\sigma^2)$, where $\beta \sim N(\beta_0, {\bf{B}}_0)$ and $\sigma^2 \sim IG(\alpha_0/2, \delta_0/2)$.
+	
+	\item Show that the posterior conditional distributions of the Gaussian linear model with heteroskedasticity assuming independent priors $\pi(\beta,\sigma^2,\tau)=\pi(\beta)\times\pi(\sigma^2)\times\prod_{i=1}^N\pi(\tau_i)$, where $\beta \sim N(\beta_0, {\bf{B}}_0)$, $\sigma^2 \sim IG(\alpha_0/2, \delta_0/2)$ and $\tau_i\sim G(v/2,v/2)$ are $\beta|\sigma^2,\tau,{\bf{y}},{\bf{X}}\sim N(\beta_n,{\bf{B}}_n)$, $\sigma^2|\beta,\tau,{\bf{y}},{\bf{X}}\sim IG(\alpha_n,\delta_n)$ and $\tau_i|\beta,\sigma^2,{\bf{y}},{\bf{X}}\sim G(v_{1n},v_{2in})$, where $\tau=[\tau_1,\dots,\tau_n]^{\top}$, ${\bf{B}}_n=({\bf{B}}_0^{-1}+\sigma^{-2}{\bf{X}}^{\top}\Psi{\bf{X}})^{-1}$, $\beta_n={\bf{B}}_n({\bf{B}}_0^{-1}\beta_0+\sigma^{-2}{\bf{X}}^{\top}\Psi{\bf{y}})$, $\alpha_n=\alpha_0+N$, $\delta_n=\delta_0+({\bf{y}}-{\bf{X}}\beta)^{\top}\Psi({\bf{y}}-{\bf{X}}\beta)$, $v_{1n}=v+1$, $v_{2in}=v+\sigma^{-2}(y_i-{\bf{x}}_i^{\top}\beta)^2$, and $\Psi=\text{diagonal}\left\{\tau_i\right\}$.
+	
+	\item \textbf{The market value of soccer players in Europe continues}
+	
+	Use the setting of the previous exercise to perform inference using a Gibbs sampling algorithm of the the market value of soccer players in Europe setting $v=5$ and same other hyperparameters as the homoscedastic case. Is there any meaningful difference for the coefficient associated with the national team compared to the application in the homoscedastic case?
+	
+\end{enumerate}

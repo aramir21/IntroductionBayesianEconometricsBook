@@ -1,0 +1,198 @@
+\chapter{Solutions of chapter 6\\
+Univariate models}\label{chap6}
+
+\section{Solutions of Exercises}\label{sec61}
+\begin{enumerate}[leftmargin=*]
+
+	\item Get the posterior conditional distributions of the Gaussian linear model assuming independent priors $\pi(\beta,\sigma^2)=\pi(\beta)\times\pi(\sigma^2)$, where $\beta \sim N(\beta_0, {\bf{B}}_0)$ and $\sigma^2 \sim IG(\alpha_0/2, \delta_0/2)$.
+	
+\textbf{Answer}
+	
+The joint posterior distribution of the parameters is
+\begin{align*}
+	\pi(\beta, \sigma^2|\bf{y}, \bf{X}) & \propto p({\bf{y}}|\beta, \sigma^2, \bf{X}) \pi(\beta) \pi(\sigma^2) \\
+	&\propto (\sigma^2)^{-\frac{N}{2}}\exp\left\{-\frac{1}{2\sigma^2}(\bf{y}-\bf{X}\beta)^{\top}(\bf{y}-\bf{X}\beta)\right\}\\
+	&\times \exp\left\{-\frac{1}{2}(\beta - \beta _0)^{\top}\bf{B}_0^{-1}(\beta - \beta _0)\right\}\\
+	&\times\frac{(\delta_0/2)^{(\alpha_0/2)}}{\Gamma(\alpha_0/2)}\frac{1}{(\sigma^2)^{(\alpha_0/2+1)}}\exp\left\{-\frac{\delta_0}{2\sigma^2}\right\}\\
+	&\propto\exp\left\{-\frac{1}{2}(\beta - \beta _0)^{\top}\bf{B}_0^{-1}(\beta - \beta _0)\right\}\\
+	&\times\frac{1}{(\sigma^2)^{(\alpha_0+N)/2+1}} \exp\left\{-\frac{\delta_0+(\bf{y}-\bf{X}\beta)^{\top}(\bf{y}-\bf{X}\beta)}{2\sigma^2}\right\}\\
+	&=\exp\left\{-\frac{1}{2}(\beta - \beta _0)^{\top}\bf{B}_0^{-1}(\beta - \beta _0)\right\}\times\underbrace{\frac{1}{(\sigma^2)^{(\frac{\alpha_n}{2}+1)}} \exp\left\{-\frac{\delta_n}{2\sigma^2}\right\}}_1.
+\end{align*}
+
+Observe that (1) is the kernel of an inverse-gamma density function. Thus, $\sigma^2|\beta,{\bf{y}},{\bf{X}} \sim IG(\alpha_n/2,\delta_n/2)$, where $\alpha_n=\alpha_0+N$ and $\delta_n=\delta_0+(\bf{y}-\bf{X}\beta)^{\top}(\bf{y}-\bf{X}\beta)$.
+
+Let's see the posterior distribution of $\beta$, 
+\begin{align*}
+	\pi(\beta, \sigma^2|{\bf{y}}, {\bf{X}}) & \propto p({\bf{y}}|\beta, \sigma^2, {\bf{X}}) \pi(\beta) \pi(\sigma^2) \\
+	&\propto (\sigma^2)^{-\frac{N}{2}}\exp\left\{-\frac{1}{2\sigma^2}({\bf{y}}-{\bf{X}}\beta)^{\top}({\bf{y}}-{\bf{X}}\beta)\right\}\\
+	&\times \exp\left\{-\frac{1}{2}(\beta - \beta _0)^{\top}{\bf{B}}_0^{-1}(\beta - \beta _0)\right\}\\
+	&\times\frac{(\delta_0/2)^{(\alpha_0/2)}}{\Gamma(\alpha_0/2)}\frac{1}{(\sigma^2)^{(\alpha_0/2+1)}}\exp\left\{-\frac{\delta_0}{2\sigma^2}\right\}\\
+	&=(\sigma^2)^{-\frac{N}{2}}\exp\left\{-\frac{\sigma^{-2}}{2}[{\bf{y}}^{\top}{\bf{y}}-{\bf{y}}^{\top}X\beta-\beta^{\top}{\bf{X}}^{\top}{\bf{y}}+\beta^{\top}{\bf{X}}^{\top}{\bf{X}}\beta]\right\}\\
+	& \times \exp\left\{-\frac{1}{2}[\beta^{\top}{\bf{B}}_0^{-1}\beta-\beta^{\top}{\bf{B}}_0^{-1}\beta_0-\beta_0^{\top}{\bf{B}}_0^{-1}\beta+\beta_0^{\top}{\bf{B}}_0^{-1}\beta_0]\right\}\\
+	&\times \frac{(\delta_0/2)^{(\alpha_0/2)}}{\Gamma(\alpha_0/2)}\frac{1}{(\sigma^2)^{(\alpha_0/2+1)}}\exp\left\{-\frac{\delta_0}{2\sigma^2}\right\}\\
+	&\propto \exp\left\{-\frac{1}{2}[\beta^{\top}({\bf{B}}_0^{-1}+\sigma^{-2}{\bf{X}}^{\top}{\bf{X}})\beta-2\beta^{\top}({\bf{B}}_0^{-1}\beta_0+\sigma^{-2}{\bf{X}}^{\top}{\bf{X}}\hat{\beta})]\right\}\\
+	&\times\frac{1}{(\sigma^2)^{(\alpha_0+N)/2+1}}\exp\left\{-\frac{\delta_0+{\bf{y}}^{\top}{\bf{y}}}{2\sigma^2}\right\},
+\end{align*}
+
+where $\hat{\beta}=({\bf{X}}^{\top}{\bf{X}})^{-1}{\bf{X}}^{\top}{\bf{y}}$.
+
+Adding and subtracting $\beta_n^{\top}{\bf{B}}_n^{-1}\beta_n$ where
+\begin{align*}
+	{\bf{B}}_n & = ({\bf{B}}_0^{-1}+\sigma^{-2}{\bf{X}}^{\top}{\bf{X}})^{-1}\\
+	\beta_n&={\bf{B}}_n({\bf{B}}_0^{-1}\beta_0+\sigma^{-2}{\bf{X}}^{\top}{\bf{X}}\hat{\beta})={\bf{B}}_n({\bf{B}}_0^{-1}\beta_0+\sigma^{-2}{\bf{X}}^{\top}{\bf{y}}),
+\end{align*}
+
+and completing the square
+\begin{align*}
+	\pi(\beta, \sigma^2|{\bf{y}}, {\bf{X}}) & \propto \exp\left\{-\frac{1}{2}[\beta^{\top}({\bf{B}}_0^{-1}+\sigma^{-2} {\bf{X}}^{\top}{\bf{X}})\beta-2\beta^{\top}{\bf{B}}_n^{-1}{\bf{B}}_n({\bf{B}}_0^{-1}\beta_0+\sigma^{-2}{\bf{X}}^{\top}{\bf{X}}\hat{\beta})\right.\\
+	&\left.+\beta^{\top}_n{\bf{B}}_n^{-1}\beta_n-\beta_n^{\top}{\bf{B}}_n^{-1}\beta_n]\right\}\times\frac{1}{(\sigma^2)^{(\alpha_0+N)/2+1}}\exp\left\{-\frac{\delta_0+{\bf{y}}^{\top}{\bf{y}}}{2\sigma^2}\right\}\\
+	&=\exp\left\{-\frac{1}{2}[\beta^{\top}{\bf{B}}_n^{-1}\beta-2\beta^{\top}{\bf{B}}_n^{-1}\beta_n+\beta_n^{\top}{\bf{B}}_n^{-1}\beta_n]\right\}\\
+	& \times\frac{1}{(\sigma^2)^{(\alpha_0+N)/2+1}}\exp\left\{-\frac{\delta_0+{\bf{y}}^{\top}{\bf{y}}-\sigma^2\beta_n^{\top}{\bf{B}}_n^{-1}\beta_n}{2\sigma^2}\right\}\\
+	&=\underbrace{\exp\left\{-\frac{1}{2}(\beta-\beta_n)^{\top}{\bf{B}}_n^{-1}(\beta-\beta_n)\right\}}_1\\
+	&\times(\sigma^2)^{-(\frac{\alpha_n}{2}+1)}\exp\left\{-\frac{\delta^{\ast}}{2\sigma^2}\right\},
+\end{align*}
+
+where $\delta^{\ast}=\delta_0+{\bf{y}}^{\top}{\bf{y}}+\sigma^2\beta^{\top}_n{\bf{B}}_n^{-1}\beta_n$ does not dependent on $\beta$.
+
+We can see that (1) is the kernel of a multivariate normal distribution with mean equal to $\beta_n$ and covariance matrix ${\bf{B}}_n$, that is, $\beta|\sigma^2,{\bf{y}},{\bf{X}}\sim N(\beta_n,{\bf{B}}_n)$. 
+
+We see that the posterior distributions are from the same family as the prior distributions.
+
+\item Show that the posterior conditional distributions of the Gaussian linear model with heteroskedasticity assuming independent priors $\pi(\beta,\sigma^2,\tau)=\pi(\beta)\times\pi(\sigma^2)\times\prod_{i=1}^N\pi(\tau_i)$, where $\beta \sim N(\beta_0, {\bf{B}}_0)$, $\sigma^2 \sim IG(\alpha_0/2, \delta_0/2)$ and $\tau_i\sim G(v/2,v/2)$ are $\beta|\sigma^2,\tau,{\bf{y}},{\bf{X}}\sim N(\beta_n,{\bf{B}}_n)$, $\sigma^2|\beta,\tau,{\bf{y}},{\bf{X}}\sim IG(\alpha_n,\delta_n)$ and $\tau_i|\beta,\sigma^2,{\bf{y}},{\bf{X}}\sim G(v_{1n},v_{2in})$, where $\tau=[\tau_1,\dots,\tau_n]^{\top}$, ${\bf{B}}_n=({\bf{B}}_0^{-1}+\sigma^{-2}{{\bf{X}}}^{\top}\Psi{{\bf{X}}})^{-1}$, $\beta_n={\bf{B}}_n({\bf{B}}_0^{-1}\beta_0+\sigma^{-2}{\bf{X}}^{\top}\Psi{\bf{y}})$, $\alpha_n=\alpha_0+N$, $\delta_n=\delta_0+({\bf{y}}-{\bf{X}}\beta)^{\top}\Psi({\bf{y}}-{\bf{X}}\beta)$, $v_{1n}=v+1$, $v_{2in}=v+\sigma^{-2}(y_i-{\bf{x}}_i^{\top}\beta)^2$, and $\Psi=\text{diagonal}\left\{\tau_i\right\}$.
+
+\textbf{Answer}
+
+The joint posterior distribution of the parameters is
+\begin{align*}
+	\pi(\beta, \sigma^2, \tau|\bf{y}, {\bf{X}}) & \propto p({\bf{y}}|\beta, \sigma^2, \tau, {\bf{X}}) \pi(\beta) \pi(\sigma^2) \prod_{i=1}^N \pi(\tau_i) \\
+	&\propto \left(\prod_{i=1}^N \tau_i^{1/2}\right)(\sigma^2)^{-\frac{N}{2}}\exp\left\{-\frac{1}{2\sigma^2}({\bf{y}}-{\bf{X}}\beta)^{\top}\Psi({\bf{y}}-{\bf{X}}\beta)\right\}\\
+	&\times \exp\left\{-\frac{1}{2}(\beta - \beta _0)^{\top}\bf{B}_0^{-1}(\beta - \beta _0)\right\}\\
+	&\times\frac{1}{(\sigma^2)^{(\alpha_0/2+1)}}\exp\left\{-\frac{\delta_0}{2\sigma^2}\right\}\prod_{i=1}^N \tau_i^{v/2-1}\exp\left\{-v\tau_i/2\right\}.
+\end{align*}
+
+Thus, the conditional posterior distribution of $\sigma^2|\beta, \tau, \bf{y}, {\bf{X}}$ is given by
+
+\begin{align*}
+	\pi(\sigma^2|\beta, \tau, \bf{y}, {\bf{X}}) & \propto (\sigma^2)^{-\frac{N+\alpha_0}{2}}\exp\left\{-\frac{1}{2\sigma^2}({\bf{y}}-{\bf{X}}\beta)^{\top}\Psi({\bf{y}}-{\bf{X}}\beta)+\delta_0\right\}.
+\end{align*}
+
+This is the kernel of an inverse-gamma distribution with shape parameter $\alpha_n$ and rate parameter $\delta_n$.
+
+The conditional posterior distribution of $\tau_i|\beta, \sigma^2, \bf{y}, {\bf{X}}$ is
+\begin{align*}
+	\pi(\tau_i|\beta, \sigma^2,\bf{y}, {\bf{X}}) & \propto
+	\tau_i^{(v+1)/2-1}\exp\left\{-\frac{\tau_i}{2}[\sigma^{-2}({\bf{y}}_i-{\bf{x}}_i^{\top}\beta)^2+v]\right\}.
+\end{align*}
+
+The conditional posterior distribution of $\beta|\sigma^2, \tau, \bf{y}, {\bf{X}}$ is given by
+
+\begin{align*}
+	\pi(\beta| \sigma^2, \tau, \bf{y}, {\bf{X}}) & \propto \exp\left\{-\frac{1}{2}[\sigma^{-2}({\bf{y}}-{\bf{X}}\beta)^{\top}\Psi({\bf{y}}-{\bf{X}}\beta)+(\beta - \beta _0)^{\top}\bf{B}_0^{-1}(\beta - \beta _0)]\right\}.
+\end{align*} 
+
+Following same steps as in the previous exercise we get $\beta|\sigma^2,\tau,{\bf{y}},{\bf{X}}\sim N(\beta_n,{\bf{B}}_n)$.
+
+\item \textbf{The market value of soccer players in Europe continues}
+
+Use the setting of the previous exercise to perform inference using a Gibbs sampling algorithm of the the market value of soccer players in Europe setting $v=5$ and same other hyperparameters as the homoscedastic case. Is there any meaningful difference for the coefficient associated with the national team compared to the application in the homoscedastic case?
+
+\textbf{Answer}
+
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R. code. The value of soccer players, programming our Gibbs sampler (heteroskedastic case)}
+	\begin{VF}
+		\begin{lstlisting}[language=R]		
+rm(list = ls())
+set.seed(010101)
+########################## Linear regression: Value of soccer players ##########################
+Data <- read.csv("DataApplications/1ValueFootballPlayers.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+attach(Data)
+y <- log(Value) 
+# Value: Market value in Euros (2017) of soccer players
+# Regressors quantity including intercept
+X <- cbind(1, Perf, Age, Age2, NatTeam, Goals, Exp, Exp2)
+# Perf: Performance. Perf2: Performance squared. Age: Age; Age: Age squared. 
+# NatTeam: Indicator of national team. Goals: Scored goals. Goals2: Scored goals squared
+# Exp: Years of experience. Exp2: Years of experience squared. Assists: Number of assists
+k <- dim(X)[2]
+N <- dim(X)[1]
+# Hyperparameters
+d0 <- 0.001/2
+a0 <- 0.001/2
+b0 <- rep(0, k)
+c0 <- 1000
+B0 <- c0*diag(k)
+B0i <- solve(B0)
+v <- 5
+# MCMC parameters
+mcmc <- 5000
+burnin <- 5000
+tot <- mcmc + burnin
+thin <- 1
+# Posterior distributions programming the Gibbs sampling
+# Auxiliary parameters
+an <- a0 + N
+v1n <- v + 1
+# Gibbs sampling functions
+PostSig2 <- function(Beta, tau){
+	dn <- d0 + t(y - X%*%Beta)%*%diag(tau)%*%(y - X%*%Beta)
+	sig2 <- invgamma::rinvgamma(1, shape = an/2, rate = dn/2)
+	return(sig2)
+}
+PostBeta <- function(sig2, tau){
+	Bn <- solve(B0i + sig2^(-1)*t(X)%*%diag(tau)%*%X)
+	bn <- Bn%*%(B0i%*%b0 + sig2^(-1)*t(X)%*%diag(tau)%*%y)
+	Beta <- MASS::mvrnorm(1, bn, Bn)
+	return(Beta)
+}
+PostTau <- function(sig2, Beta, i){
+	v2n <- v + sig2^(-1)*(y[i]-X[i,]%*%Beta)^2
+	taui <- rgamma(1, v1n, v2n)
+	return(taui)
+}			
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R. code. The value of soccer players, programming our Gibbs sampler (heteroskedastic case)}
+	\begin{VF}
+		\begin{lstlisting}[language=R]		
+PostBetas <- matrix(0, mcmc+burnin, k)
+PostSigma2 <- rep(0, mcmc+burnin)
+Beta <- rep(0, k)
+tau <- rep(1, N)
+for(s in 1:tot){
+	sig2 <- PostSig2(Beta = Beta, tau = tau)
+	PostSigma2[s] <- sig2
+	Beta <- PostBeta(sig2 = sig2, tau = tau)
+	PostBetas[s,] <- Beta
+	tau <- sapply(1:N, function(i){PostTau(sig2 = sig2, Beta = Beta, i)})
+}
+keep <- seq((burnin+1), tot, thin)
+PosteriorBetas <- PostBetas[keep,]
+colnames(PosteriorBetas) <- c("Intercept", "Perf", "Age", "Age2", "NatTeam", "Goals", "Exp", "Exp2")
+summary(coda::mcmc(PosteriorBetas))
+PosteriorSigma2 <- PostSigma2[keep]
+summary(coda::mcmc(PosteriorSigma2))
+summary(coda::mcmc(exp(PosteriorBetas[,5])-1))
+Iterations = 1:5000
+Thinning interval = 1 
+Number of chains = 1 
+Sample size per chain = 5000 
+1. Empirical mean and standard deviation for each variable,
+plus standard error of the mean:
+Mean             SD       Naive SE Time-series SE 
+1.246823       0.235881       0.003336       0.004010 
+2. Quantiles for each variable:
+2.5%   25%   50%   75% 97.5% 
+0.815 1.086 1.238 1.395 1.744 					
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+We see in this application that the value of a top soccer player in Europe increases 124\% ($\exp(0.80)-1)$) on average when he has played in the national team, the credible interval at 95\% is (81\%, 174\%). These values are not very different from the application assuming homoscedasticity in the book.      
+	
+\end{enumerate}
