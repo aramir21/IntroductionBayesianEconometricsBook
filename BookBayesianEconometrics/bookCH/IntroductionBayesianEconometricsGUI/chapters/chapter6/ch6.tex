@@ -1,6 +1,20 @@
 \chapter{Univariate models}\label{chap6}
 
-We describe how to perform Bayesian inference in some of the most common univariate models: normal-inverse gamma, logit, probit, multinomial probit and logit, ordered probit, negative binomial, tobit, quantile regression, and Bayesian bootstrap in linear models. We show the posterior distributions of the parameters and some applications. In addition, we demonstrate how to perform inference in various models using three levels of programming skills: our graphical user interface (GUI), packages from \textbf{R}, and direct programming of the posterior distributions. The first requires no programming skills, the second requires an intermediate level, and the third demands more advanced skills. We also include mathematical and computational exercises
+We describe how to perform Bayesian inference in some of the most common univariate models: normal-inverse gamma, logit, probit, multinomial probit and logit, ordered probit, negative binomial, tobit, quantile regression, and Bayesian bootstrap in linear models. We show the posterior distributions of the parameters and some applications. In addition, we show how to perform inference in various models using three levels of programming skills: our graphical user interface (GUI), packages from \textbf{R}, and programming the posterior distributions. The first requires no programming skills, the second requires an intermediate level, and the third demands more advanced skills. We also include mathematical and computational exercises.
+
+We can run our GUI typing
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. How to display our graphical user interface}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+	shiny::runGitHub("besmarter/BSTApp", launch.browser = T)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+in the \textbf{R} package console or any \textbf{R} code editor.
 
 \section{The Gaussian linear model}\label{sec61}
 
@@ -39,11 +53,28 @@ where \textit{Value} is the market value in Euros (2017), \textit{Perf} is a mea
 
 We assume that the dependent variable distributes normal, then we use a normal-inverse gamma model using vague conjugate priors where ${\bf{B}}_0=1000{\bf{I}}_{8}$, $\bm{\beta}_0={\bf{0}}_{8}$, $\alpha_0=0.001$ and $\delta_0=0.001$. We perform a Gibbs sampler with 5,000 MCMC iterations plus a burn-in equal to 5,000, and a thinning parameter equal to 1.
 
-We can see in the results of the algorithms that we get similar results using the three approaches: GUI, package and our function. For instance, the value of a top soccer player in Europe increases 134\% ($\exp(0.85)-1)$) on average when he has played in the national team, the credible interval at 95\% is (86\%, 197\%).  
+Once our GUI is displayed (see beginning of this chapter), we should follow Algorithm \ref{alg:Gaussian} to run linear Gaussian models in our GUI (see Chapter \ref{chapGUI} for details):
+\begin{algorithm}[h!]
+	\caption{Linear Gaussian model}\label{alg:Gaussian}
+	\begin{algorithmic}[1]  		 			
+		\State Select \textit{Univariate Models} on the top panel
+		\State Select \textit{Normal} model using the left radio button
+		\State Upload the dataset selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend. You should see a preview of the dataset
+		\State Select MCMC iterations, burn-in and thinning parameters using the \textit{Range sliders}
+		\State Select dependent and independent variables using the \textit{Formula builder} table
+		\State Click the \textit{Build formula} button to generate the formula in \textbf{R} syntax. You can modify the formula in the \textbf{Main equation} box using valid arguments of the \textit{formula} command structure in \textbf{R}
+		\State Set the hyperparameters: mean vector, covariance matrix, shape and scale parameters. This step is not necessary as by default our GUI uses non-informative priors
+		\State Click the \textit{Go!} button
+		\State Analyze results
+		\State Download posterior chains and diagnostic plots using the \textit{Download Posterior Chains} and \textit{Download Posterior Graphs} buttons
+	\end{algorithmic} 
+\end{algorithm}
+
+We can see in the next \textbf{R} codes how to perform the linear Gaussian model using the command \textit{MCMCregress} of the \textit{MCMCpack} package, and programming the Gibbs sampler ourselves. We should get similar results using the three approaches: GUI, package and our function. In fact, our GUI relies on the \textit{MCMCregress} command. For instance, the value of a top soccer player in Europe increases 134\% ($\exp(0.85)-1)$) on average when he has played in the national team, the credible interval at 95\% is (86\%, 197\%).  
 
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
-	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]\label{code1}
 	\textit{R code. The value of soccer players, using \textbf{R} packages}
 	\begin{VF}
 		\begin{lstlisting}[language=R]		
@@ -82,7 +113,7 @@ Number of chains = 1
 Sample size per chain = 5000 
 1. Empirical mean and standard deviation for each variable,
 plus standard error of the mean:
-Mean       SD  Naive SE Time-series SE
+					Mean       SD  Naive SE Time-series SE
 X         3.695499 2.228060 3.151e-02      3.151e-02
 XPerf     0.035445 0.004299 6.079e-05      6.079e-05
 XAge      0.778410 0.181362 2.565e-03      2.565e-03
@@ -137,7 +168,7 @@ Number of chains = 1
 Sample size per chain = 5000 
 1. Empirical mean and standard deviation for each variable,
 plus standard error of the mean:
-Mean       SD  Naive SE Time-series SE
+					Mean       SD  Naive SE Time-series SE
 Intercept  3.663230 2.194363 3.103e-02      3.103e-02
 Perf       0.035361 0.004315 6.102e-05      6.102e-05
 Age        0.780374 0.178530 2.525e-03      2.525e-03
@@ -188,7 +219,29 @@ where $\bm{\beta}^c$ and $\bm{\beta}^{(s-1)}$ are the draws from the proposal di
 
 Let's do a simulation exercise to check the performance of the algorithm. Set $\bm{\beta}=\begin{bmatrix}0.5 & 0.8 & -1.2\end{bmatrix}^{\top}$, $x_{ik}\sim N(0,1)$, $k=2,3$ and $i=1,2,\dots,10000$.
 
-We set as hyperparameters $\bm{\beta}_0=[0 \ 0 \ 0]^{\top}$ and ${\bf{B}}_0=1000{\bf{I}}_3$. The tune parameter for the Metropolis-Hastings algorithm is equal to 1. We obtain an acceptance rate of 0.46, and the diagnostics suggest that the posterior chains behave well. We also see that the posterior results using \textit{MCMClogit} from \textit{MCMCpack} and our Metropolis-Hastings algorithm are very similar. In general, the 95\% credible intervals encompass the population values, and the mean and median are very close to these values.  
+We set as hyperparameters $\bm{\beta}_0=[0 \ 0 \ 0]^{\top}$ and ${\bf{B}}_0=1000{\bf{I}}_3$. The tune parameter for the Metropolis-Hastings algorithm is equal to 1.
+
+Once our GUI is displayed (see beginning of this chapter), we should follow Algorithm \ref{alg:Logit} to run logit models in our GUI (see Chapter \ref{chapGUI} for details):
+\begin{algorithm}[h!]
+	\caption{Logit model}\label{alg:Logit}
+	\begin{algorithmic}[1]  		 			
+		\State Select \textit{Univariate Models} on the top panel
+		\State Select \textit{Logit} model using the left radio button
+		\State Upload the dataset selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend. You should see a preview of the dataset
+		\State Select MCMC iterations, burn-in and thinning parameters using the \textit{Range sliders}
+		\State Select dependent and independent variables using the \textit{Formula builder} table
+		\State Click the \textit{Build formula} button to generate the formula in \textbf{R} syntax. You can modify the formula in the \textbf{Main equation} box using valid arguments of the \textit{formula} command structure in \textbf{R}
+		\State Set the hyperparameters: mean vector and covariance matrix. This step is not necessary as by default our GUI uses non-informative priors
+		\State Select the tuning parameter for the Metropolis-Hastings algorithm
+		\State Click the \textit{Go!} button
+		\State Analyze results
+		\State Download posterior chains and diagnostic plots using the \textit{Download Posterior Chains} and \textit{Download Posterior Graphs} buttons
+	\end{algorithmic} 
+\end{algorithm}
+
+We can see in the next \textbf{R} codes how to perform the logit model using the command \textit{MCMClogit} of the \textit{MCMCpack} package, and programming the Metropolis-Hastings algorithm ourselves. 
+
+We should get similar results using the three approaches: GUI, package and our function. Our GUI relies on the \textit{MCMClogit} command. In particular, we obtain an acceptance rate of 0.46, and the diagnostics suggest that the posterior chains behave well. In general, the 95\% credible intervals encompass the population values, and the mean and median are very close to these values.  
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -226,7 +279,7 @@ Number of chains = 1
 Sample size per chain = 1000 
 1. Empirical mean and standard deviation for each variable,
 plus standard error of the mean:
-Mean      SD  Naive SE Time-series SE
+			Mean      SD  Naive SE Time-series SE
 X    0.4896 0.02550 0.0008064       0.001246
 Xx2  0.8330 0.02730 0.0008632       0.001406
 Xx3 -1.2104 0.03049 0.0009643       0.001536
@@ -386,7 +439,7 @@ The specification of the model is
 
 where \textit{SHI} is a binary variable equal to 1 if the individual is in a subsidized health care program and 0 otherwise, \textit{Female} is an indicator of gender, \textit{Age} in years, \textit{Est2} and \textit{Est3} are indicators of socioeconomic status, the reference is \textit{Est1}, which is the lowest, and self perception of health status where \textit{bad} is the reference.
 
-Let's set $\bm{\beta}_0={\bf{0}}_{10}$, ${\bf{B}}_0={\bf{I}}_{10}$, iterations, burn-in and thinning parameters equal to 10000, 1000 and 1, respectively. We use the package \textit{bayesm} to perform this exercise. We asked to program a Gibbs sampler algorithm in the exercises.
+Let's set $\bm{\beta}_0={\bf{0}}_{10}$, ${\bf{B}}_0={\bf{I}}_{10}$, iterations, burn-in and thinning parameters equal to 10000, 1000 and 1, respectively. We can use the Algorithm \ref{alg:Gaussian} to run the probit model in our GUI. We should select \textit{Probit} model in stage 2. Our GUI relies in the command \textit{rbprobitGibbs} from the package \textit{bayesm} to perform inference in the Probit model. The following \textbf{R} code shows how to run this example using the command \textit{rbprobitGibbs}. We asked to program a Gibbs sampler algorithm to perform inference in the probit model in the exercises.
 
 We find evidence that gender and self-perceived health status affect the probability of hospitalization. Women have a higher probability of being hospitalized than men, and a better perception of health status decreases this probability.
 
@@ -496,6 +549,52 @@ The identified parameters are obtained by normalizing with respect to one of the
 Let's do the famous example of \textit{choice of fishing mode} from \cite{cameron05}.
 
 
+Once our GUI is displayed (see beginning of this chapter), we should follow Algorithm \ref{alg:MultinomialProbit} to run multinomial probit models in our GUI (see Chapter \ref{chapGUI} for details):
+
+\begin{algorithm}[h!]
+	\caption{Multinomial probit models}\label{alg:MultinomialProbit}
+	\begin{algorithmic}[1]  		 			
+		\State Select \textit{Univariate Models} on the top panel
+		\State Select \textit{Multinomial Probit} model using the left radio button
+		\State Upload the dataset selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend. You should see a preview of the dataset
+		\State Select MCMC iterations, burn-in and thinning parameters using the \textit{Range sliders}
+		\State Select dependent and independent variables using the \textit{Formula builder} table
+		\State Select the \textbf{Base Alternative}
+		\State Select the \textbf{Number of choice categorical alternatives}
+		\State Select the \textbf{Number of alternative specific variables}
+		\State Select the \textbf{Number of Non-alternative specific variables} 
+		\State Click the \textit{Build formula} button to generate the formula in \textbf{R} syntax.
+		\State Set the hyperparameters: mean vector, covariance matrix, scale matrix and degrees of freedom. This step is not necessary as by default our GUI uses non-informative priors
+		\State Click the \textit{Go!} button
+		\State Analyze results
+		\State Download posterior chains and diagnostic plots using the \textit{Download Posterior Chains} and \textit{Download Posterior Graphs} buttons
+	\end{algorithmic} 
+\end{algorithm}
+
+\section{The multinomial logit model}\label{sec65}
+
+Once our GUI is displayed (see beginning of this chapter), we should follow Algorithm \ref{alg:MultinomialLogit} to run multinomial probit models in our GUI (see Chapter \ref{chapGUI} for details):
+
+\begin{algorithm}[h!]
+	\caption{Multinomial probit models}\label{alg:MultinomialLogit}
+	\begin{algorithmic}[1]  		 			
+		\State Select \textit{Univariate Models} on the top panel
+		\State Select \textit{Multinomial Logit} model using the left radio button
+		\State Upload the dataset selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend. You should see a preview of the dataset
+		\State Select MCMC iterations, burn-in and thinning parameters using the \textit{Range sliders}
+		\State Select dependent and independent variables using the \textit{Formula builder} table
+		\State Select the \textbf{Base Alternative}
+		\State Select the \textbf{Number of choice categorical alternatives}
+		\State Select the \textbf{Number of alternative specific variables}
+		\State Select the \textbf{Number of Non-alternative specific variables} 
+		\State Click the \textit{Build formula} button to generate the formula in \textbf{R} syntax.
+		\State Set the hyperparameters: mean vector and covariance matrix. This step is not necessary as by default our GUI uses non-informative priors
+		\State Select the tuning parameter for the Metropolis-Hastings algorithm, that is, the \textbf{Degrees of freedom: Multivariate Student's t distribution} 
+		\State Click the \textit{Go!} button
+		\State Analyze results
+		\State Download posterior chains and diagnostic plots using the \textit{Download Posterior Chains} and \textit{Download Posterior Graphs} buttons
+	\end{algorithmic} 
+\end{algorithm}
 
 
 \section{Summary}\label{sec611}
