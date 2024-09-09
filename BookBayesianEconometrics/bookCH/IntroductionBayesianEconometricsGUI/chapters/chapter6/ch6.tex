@@ -317,7 +317,7 @@ MHfunc <- function(y, X, b0 = rep(0, dim(X)[2] + 1), B0 = 1000*diag(dim(X)[2] + 
 		likepast <- sum((Xm%*%BETA) * Y - apply((Xm%*%BETA), 1, function(x) log(1 + exp(x)))) # Log likelihood for the actual draw
 		priorcand <- (-1/2)*crossprod((BETAc - b0), solve(B0))%*%(BETAc - b0) # Log prior for candidate
 		priorpast <- (-1/2)*crossprod((BETA - b0), solve(B0))%*%(BETA - b0) # Log prior for actual draw
-		alpha <- min(1, exp(likecand + priorcand - likepast - priorpast)) #Probability of selecting candidate
+		alpha <- min(1, exp((likecand - priorcand) - (likepast - priorpast))) #Probability of selecting candidate
 		u <- runif(1) # Decision rule for selecting candidate
 		if(u < alpha){
 			BETA <- BETAc # Changing reference for candidate if selected
@@ -546,8 +546,21 @@ The identified parameters are obtained by normalizing with respect to one of the
 
 \textbf{Example: Choice of fishing mode}
 
-Let's do the famous example of \textit{choice of fishing mode} from \cite{cameron05}.
+We used in this application the dataset \textit{3Fishing.csv} from \cite[p.~491]{cameron05}. The dependent variable is mutually exclusive alternatives regarding fishing modes (mode), where beach is equal to 1, pier is equal to 2, private boat is equal to 3, and chartered boat (baseline alternative) is equal to 4. In this model, we have
+{\small{
+\begin{align*}
+	\bm{X}_i & = \begin{Bmatrix}
+		1 & 0 & 0 & 0 & \text{Income}_i & 0 & 0 & 0 & \text{Price}_{i,1} & \text{Catch rate}_{i,1}\\ 
+		0 & 1 & 0 & 0 & 0 & \text{Income}_i & 0 & 0 & \text{Price}_{i,2} & \text{Catch rate}_{i,2}\\
+		0 & 0 & 1 & 0 & 0 & 0 & \text{Income}_i & 0 & \text{Price}_{i,3} & \text{Catch rate}_{i,3}\\
+		0 & 0 & 0 & 1 & 0 & 0 & 0 & \text{Income}_i & \text{Price}_{i,4} & \text{Catch rate}_{i,4}\\
+	\end{Bmatrix}.
+\end{align*}
+}}
 
+In this example chartered boat is the base category, the number of choice categories is four, there are two alternative-specific regressors (price and catch rate), and one non alternative-specific regressor (income). This setting involves the estimation of eight location parameters ($\bm\beta$): three intercepts, three for income, one for price, and one for catch rate. This is the order of the posterior chains in our GUI. Note that the location coefficients are set equal to 0 for the baseline category. For multinomial models, we strongly recommend using the last category as the baseline.
+
+We also get posterior estimates for a $3\times 3$ covariance matrix (four alternatives minus one), where the element (1,1) is equal to 1 due to identification restrictions, and elements 2 and 4 are the same, as well as 3 and 7, and 6 and 8, due to symmetry.\footnote{This is the order in the pdf, eps and csv files that can be downloaded from our GUI.} Observe that this identification restriction implies \textit{NaN} values in \cite{Geweke1992} and \cite{Heidelberger1983} tests for element (1,1) of the covariance matrix, and just eight dependence factors associated with the remaining elements of the covariance matrix. 
 
 Once our GUI is displayed (see beginning of this chapter), we should follow Algorithm \ref{alg:MultinomialProbit} to run multinomial probit models in our GUI (see Chapter \ref{chapGUI} for details):
 
@@ -559,7 +572,7 @@ Once our GUI is displayed (see beginning of this chapter), we should follow Algo
 		\State Upload the dataset selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend. You should see a preview of the dataset
 		\State Select MCMC iterations, burn-in and thinning parameters using the \textit{Range sliders}
 		\State Select dependent and independent variables using the \textit{Formula builder} table
-		\State Select the \textbf{Base Alternative}
+		\State Select the number of the \textbf{Base Alternative}
 		\State Select the \textbf{Number of choice categorical alternatives}
 		\State Select the \textbf{Number of alternative specific variables}
 		\State Select the \textbf{Number of Non-alternative specific variables} 
@@ -571,7 +584,40 @@ Once our GUI is displayed (see beginning of this chapter), we should follow Algo
 	\end{algorithmic} 
 \end{algorithm}
 
+
+We ran 100,000 MCMC iterations plus 10,000 as burn-in with a thinning parameter equal to 5, where all priors use default values for the hyperparameters. We found that the 95\% credible intervals of the coefficient associated with income for beach and private boat alternatives are equal to  (8.58e-06, 8.88e-05) and (3.36e-05, 1.45e-04). This suggests that the probability of choosing these alternatives increases compared to a chartered boat when income increases.
+In addition, an increase in the price or a decrease in the catch rate for specific fishing alternatives imply lower probabilities of choosing them as the 95\% credible intervals are (-9.91e-03, -3.83e-03) and (1.40e-01, 4.62e-01), respectively. However, the chain diagnostics suggest there are convergence issues with the posterior draws (see exercise 5). 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R. code. Choice of fishing mode, results}
+	\begin{VF}
+		\begin{lstlisting}[language=R]	
+Iterations = 10005:110000
+Thinning interval = 5 
+Number of chains = 1 
+Sample size per chain = 20000 
+Quantiles for each variable:
+				2.5%        25%        50%        75%      97.5%
+cte_1   -5.83e-01 -4.08e-01 -3.22e-01 -2.37e-01 -7.93e-02
+cte_2   -1.93e-01 -4.14e-02  2.16e-02  7.93e-02  1.93e-01
+cte_3   -8.15e-01 -5.43e-01 -4.29e-01 -3.33e-01 -1.70e-01
+NAS_1_1  8.58e-06  3.61e-05  4.95e-05  6.27e-05  8.88e-05
+NAS_1_2 -3.24e-05 -7.04e-06  5.52e-06  1.93e-05  5.17e-05
+NAS_1_3  3.36e-05  6.38e-05  8.08e-05  9.99e-05  1.45e-04
+AS_1    -9.91e-03 -7.90e-03 -6.86e-03 -5.93e-03 -3.83e-03
+AS_2     1.40e-01  2.25e-01  2.72e-01  3.28e-01  4.62e-01		\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+
 \section{The multinomial logit model}\label{sec65}
+
+The multinomial logit model is used to model mutually exclusive discrete outcomes or qualitative response variables. However, this model assumes the independence of irrelevant alternatives (IIA), meaning that the choice between two alternatives does not depend on a third alternative. We consider the multinomial mixed logit model (not to be confused with the random parameters logit model), which accounts for both alternative-varying regressors (conditional) and alternative-invariant regressors (multinomial) simultaneously.\footnote{The multinomial mixed logit model can be implemented as a conditional logit model.}
+
+In this setting there are $L$ mutually exclusive alternatives, and the dependent variable $y_{il}$ is equal to $l$ if the $l$th alternative is chosen by individual $i$, and 0 otherwise, $l=\left\{1,2,\dots,L\right\}$. The likelihood function is $p(\bm{\beta}|\bm{y},\bm{X})=\prod_{i=1}^{N}\prod_{l=1}^{L}p_{il}^{y_{il}}$, where the probability that individual $i$ chooses the alternative $l$ is given by $p_{il}:=p(y_i=l|\bm{\beta},\bm{X})=\frac{\exp\left\{\bm{x}_{il}^{\top}\}\bm{\beta}\right\}}{\sum_{j=1}^{L}\exp\left\{\bm{x}_{ij}^{\top}\bm{\beta}\right\}}$, $\bm{X}$ is an $NL\times k$ matrix, $k=k_1+k_2$ is the total number of regressors, $k_1$ and $k_2$ are the number of alternative-varying and alternative-invariant regressors, respectively. In addition, we assume $\bm{\beta}\sim N(\bm{\beta}_0,\bm{B}_0)$ as prior distribution. Thus, the posterior distribution is $\pi(\bm{\beta}|\bm{y},\bm{X})\propto p(\bm{\beta}|\bm{y},\bm{X})\times \pi(\bm{\beta})$.
+
+As the multinomial logit model does not have a standard posterior distribution, \cite{rossi2012bayesian} propose a ``tailored'' independent Metropolis--Hastings algorithm where the proposal distribution is a multivariate Student's $t$ distribution with $v$ degrees of freedom (tuning parameter), mean equal to the maximum likelihood estimator, and scale equal to the inverse of the Hessian matrix.
 
 Once our GUI is displayed (see beginning of this chapter), we should follow Algorithm \ref{alg:MultinomialLogit} to run multinomial probit models in our GUI (see Chapter \ref{chapGUI} for details):
 
@@ -597,6 +643,13 @@ Once our GUI is displayed (see beginning of this chapter), we should follow Algo
 \end{algorithm}
 
 
+We also estimated this specification using the multinomial logit model.
+We got the warning message ``Error: missing value where TRUE/FALSE needed'' in many tries.
+However, we can download the posterior chains and graphs, and observed that the mixing properties of the posterior draws are very bad, that is, we rejected the null hypothesis that the posterior draws come from stationary distributions.
+In general, we found that the mixing properties of these models (multinomial probit and logit) were bad in this application.
+It should also be taken into account that when warning messages are displayed in our GUI, there is a high chance that there are convergence issues of the posterior chains.
+So, the results are not trustworthy.\\ 
+
 \section{Summary}\label{sec611}
 We present ...
 
@@ -613,6 +666,10 @@ We present ...
 	
 	\item \textbf{Example: Determinants of hospitalization continues}
 	
-	Program a Gibbs sampling algorithm in the application of determinants of hospitalization. 
+	Program a Gibbs sampling algorithm in the application of determinants of hospitalization.
 	
+	\item \textbf{Choice of the fishing mode continues} 
+	
+	Run the Algorithm \ref{alg:MultinomialProbit} of the book to show the results of the Geweke \cite{Geweke1992}, Raftery \cite{Raftery1992} and Heidelberger \cite{Heidelberger1983} tests using our GUI.
+
 \end{enumerate}

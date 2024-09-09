@@ -111,7 +111,7 @@ MHfunc <- function(y, X, b0 = rep(0, dim(X)[2] + 1), B0 = 1000*diag(dim(X)[2] + 
     likepast <- sum((Xm%*%BETA) * Y - apply((Xm%*%BETA), 1, function(x) log(1 + exp(x)))) # Log likelihood for the actual draw
     priorcand <- (-1/2)*crossprod((BETAc - b0), solve(B0))%*%(BETAc - b0) # Log prior for candidate
     priorpast <- (-1/2)*crossprod((BETA - b0), solve(B0))%*%(BETA - b0) # Log prior for actual draw
-    alpha <- min(1, exp(likecand + priorcand - likepast - priorpast)) #Probability of selecting candidate
+    alpha <- min(1, exp((likecand - priorcand) - (likepast - priorpast))) #Probability of selecting candidate
     u <- runif(1) # Decision rule for selecting candidate
     if(u < alpha){
       BETA <- BETAc # Changing reference for candidate if selected
@@ -141,7 +141,7 @@ coda::geweke.diag(PostPar)
 coda::raftery.diag(PostPar,q=0.5,r=0.05,s = 0.95)
 coda::heidel.diag(PostPar)
 
-########################## Probit: Hospitalizationn ##########################
+########################## Probit: Hospitalization ##########################
 rm(list = ls())
 set.seed(010101)
 mydata <- read.csv("DataApplications/2HealthMed.csv", header = T, sep = ",")
@@ -162,3 +162,94 @@ colnames(PostPar) <- c("Cte", "SHI", "Female", "Age", "Age2", "Est2",
                        "Est3", "Fair", "Good", "Excellent") # Names
 summary(PostPar) # Posterior summary
 
+########################## Multinomial Logit: Simulation ##########################
+remove(list = ls())
+set.seed(12345)
+# Simulation of data
+N<-2000  # Sample Size
+B<-c(0.5,0.8,-3)
+B1<-c(-2.5,-3.5,0)
+B2<-c(1,1,0)
+# Alternative specific attributes of choice 1, for instance, price, quality and duration of choice 1
+X1<-matrix(cbind(rnorm(N,0,1),rnorm(N,0,1),rnorm(N,0,1)),N,length(B)) 
+# Alternative specific attributes of choice 2, for instance, price, quality and duration of choice 2
+X2<-matrix(cbind(rnorm(N,0,1),rnorm(N,0,1),rnorm(N,0,1)),N,length(B))
+# Alternative specific attributes of choice 3, for instance, price, quality and duration of choice 3
+X3<-matrix(cbind(rnorm(N,0,1),rnorm(N,0,1),rnorm(N,0,1)),N,length(B))
+X4<-matrix(rnorm(N,1,1),N,1)
+V1<-B2[1]+X1%*%B+B1[1]*X4
+V2<-B2[2]+X2%*%B+B1[2]*X4
+V3<-B2[3]+X3%*%B+B1[3]*X4
+suma<-exp(V1)+exp(V2)+exp(V3)
+p1<-exp(V1)/suma
+p2<-exp(V2)/suma
+p3<-exp(V3)/suma
+p<-cbind(p1,p2,p3)
+y<- apply(p,1, function(x)sample(1:3, 1, prob = x, replace = TRUE))
+table(y)
+y1<-y==1
+y2<-y==2
+y3<-y==3
+# Log likelihood
+log.L<- function(Beta){
+  V1<-Beta[1]+Beta[3]*X4+X1%*%Beta[5:7]
+  V2<-Beta[2]+Beta[4]*X4+X2%*%Beta[5:7]
+  V3<- X3%*%Beta[5:7]
+  suma<-exp(V1)+exp(V2)+exp(V3)
+  p11<-exp(V1)/suma
+  p22<-exp(V2)/suma
+  p33<-exp(V3)/suma
+  suma2<-NULL
+  for(i in 1:N){
+    suma1<-y1[i]*log(p11[i])+y2[i]*log(p22[i])+y3[i]*log(p33[i])
+    suma2<-c(suma2,suma1)}
+  logL<-sum(suma2)
+  return(-logL)
+}
+# Parameters: Proposal
+k <- 7
+res.optim<-optim(rep(0, k), log.L, method="BFGS", hessian=TRUE)
+MeanT <- res.optim$par
+ScaleT <- as.matrix(Matrix::forceSymmetric(solve(res.optim$hessian))) # Force this matrix to be symmetric
+# Hyperparameters: Priors
+B0 <- 1000*diag(k)
+b0 <- rep(0, k)
+
+MHfunction <- function(iter, tuning){
+  Beta <- rep(0, k)
+  Acept <- NULL
+  BetasPost <- matrix(NA, iter, k)
+  pb <- winProgressBar(title = "progress bar", min = 0, max = iter, width = 300)
+  for(s in 1:iter){
+    LogPostBeta <- -log.L(Beta) + mvtnorm::dmvnorm(Beta, mean = b0, sigma = B0, log = TRUE)
+    BetaC <- c(LaplacesDemon::rmvt(n=1, mu = MeanT, S = ScaleT, df = tuning))
+    LogPostBetaC <- -log.L(BetaC) + mvtnorm::dmvnorm(BetaC, mean = b0, sigma = B0, log = TRUE)
+    alpha <- min(exp((LogPostBetaC-mvtnorm::dmvt(BetaC, delta = MeanT, sigma = ScaleT, df = tuning, log = TRUE))-(LogPostBeta-mvtnorm::dmvt(Beta, delta = MeanT, sigma = ScaleT, df = tuning, log = TRUE))) ,1)
+    u <- runif(1)
+    if(u <= alpha){
+      Acepti <- 1
+      Beta <- BetaC
+    }else{
+      Acepti <- 0
+      Beta <- Beta
+    }
+    BetasPost[s, ] <- Beta
+    Acept <- c(Acept, Acepti)
+    setWinProgressBar(pb, s, title=paste( round(s/iter*100, 0),"% done"))
+  }
+  close(pb)
+  AcepRate <- mean(Acept)
+  Results <- list(AcepRate = AcepRate, BetasPost = BetasPost)
+  return(Results)
+}
+# MCMC parameters
+mcmc <- 10000
+burnin <- 1000
+thin <- 5
+iter <- mcmc + burnin
+keep <- seq(burnin, iter, thin)
+tuning <- 6 # Degrees of freedom of multivariate Student's t
+# Run M-H
+ResultsPost <- MHfunction(iter = iter, tuning = tuning)
+ResultsPost$AcepRate
+summary(coda::mcmc(ResultsPost$BetasPost[keep[-1], ]))
