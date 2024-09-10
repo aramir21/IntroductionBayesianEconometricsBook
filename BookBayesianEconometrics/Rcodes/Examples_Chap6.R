@@ -166,7 +166,7 @@ summary(PostPar) # Posterior summary
 remove(list = ls())
 set.seed(12345)
 # Simulation of data
-N<-2000  # Sample Size
+N<-1000  # Sample Size
 B<-c(0.5,0.8,-3)
 B1<-c(-2.5,-3.5,0)
 B2<-c(1,1,0)
@@ -253,3 +253,151 @@ tuning <- 6 # Degrees of freedom of multivariate Student's t
 ResultsPost <- MHfunction(iter = iter, tuning = tuning)
 ResultsPost$AcepRate
 summary(coda::mcmc(ResultsPost$BetasPost[keep[-1], ]))
+
+########################## Ordered probit: Preventive doctor visits ##########################
+rm(list = ls())
+set.seed(010101)
+Data <- read.csv("DataApplications/2HealthMed.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+attach(Data)
+y <- MedVisPrevOr 
+# MedVisPrevOr: Oredered variable for preventive visits to doctors in one year: 1 (none), 2 (once), ... 6 (five or more)
+X <- cbind(SHI, Female, Age, Age2, Est2, Est3, Fair, Good, Excellent, PriEd, HighEd, VocEd, UnivEd)
+# Subsideized health care program: SHI
+# Sex: Female
+# Age: Linear and squared
+# Socioeconomic condition: Est2 and Est3, the lowest (Est1) is the baseline category
+# Health perception: Fair, Good, Excellent 
+# Education levels: PriEd, HighEd, VocEd, UnivEd
+k <- dim(X)[2]
+L <- length(table(y))
+# Hyperparameters
+b0 <- rep(0, k)
+c0 <- 1000
+B0 <- c0*diag(k)
+gamma0 <- rep(0, L-2)
+Gamma0 <- diag(L-2)
+# MCMC parameters
+mcmc <- 60000+1
+thin <- 5
+tuningPar <- 1/(L-2)^0.5
+DataApp <- list(y = y, X = X, k = L)
+Prior <- list(betabar = b0, A = solve(B0), dstarbar = gamma0, Ad = Gamma0)
+mcmcpar <- list(R = mcmc, keep = 5, s = tuningPar)
+PostBeta <- bayesm::rordprobitGibbs(Data = DataApp, Prior = Prior, Mcmc = mcmcpar)
+BetasPost <- coda::mcmc(PostBeta[["betadraw"]])
+colnames(BetasPost) <- c("SHI", "Female", "Age", "Age2", "Est2", "Est3", "Fair", "Good", "Excellent", "PriEd", "HighEd", "VocEd", "UnivEd")
+summary(BetasPost)
+# Convergence diagnostics
+coda::geweke.diag(BetasPost)
+coda::raftery.diag(BetasPost,q=0.5,r=0.05,s = 0.95)
+coda::heidel.diag(BetasPost)
+# Cut offs
+Cutoffs <- PostBeta[["cutdraw"]]
+summary(Cutoffs)
+coda::geweke.diag(Cutoffs)
+coda::heidel.diag(Cutoffs)
+coda::raftery.diag(Cutoffs[,-1],q=0.5,r=0.05,s = 0.95)
+
+########################## Negative binomial: Simulation ##########################
+rm(list = ls())
+set.seed(010101)
+N <- 2000 # Sample size
+x1 <- runif(N); x2 <- rnorm(N)
+X <- cbind(1, x1, x2)
+k <- dim(X)[2]
+B <- rep(1, k)
+alpha <- 1.2
+gamma <- exp(alpha)
+lambda <- exp(X%*%B)
+y <- rnbinom(N, mu = lambda, size = gamma)
+table(y)
+# log likelihood
+logLik <- function(par){
+  alpha <- par[1]; beta <- par[2:(k+1)]
+  gamma <- exp(alpha)
+  lambda <- exp(X%*%beta)
+  logLikNB <- sum(sapply(1:N, function(i){dnbinom(y[i], size = gamma, mu = lambda[i], log = TRUE)}))
+  return(-logLikNB)
+}
+# Parameters: Proposal
+par0 <- rep(0.5, k+1)
+res.optim <- optim(par0, logLik, method="BFGS", hessian=TRUE)
+res.optim$par
+res.optim$convergence
+Covar <- solve(res.optim$hessian) 
+CovarBetas <- Covar[2:(k+1),2:(k+1)]
+VarAlpha <- Covar[1:1]
+# Hyperparameters: Priors
+B0 <- 1000*diag(k); b0 <- rep(0, k)
+alpha0 <- 0.5; delta0 <- 0.1
+
+MHfunction <- function(iter, sbeta, salpha){
+  Beta <- rep(0, k)
+  Acept1 <- NULL
+  Acept2 <- NULL
+  BetasPost <- matrix(NA, iter, k)
+  alpha <- 1
+  alphaPost <- rep(NA, iter)
+  par <- c(alpha, Beta)
+  pb <- winProgressBar(title = "progress bar", min = 0, max = iter, width = 300)
+  for(s in 1:iter){
+    LogPostBeta <- -logLik(par) + dgamma(alpha, shape = alpha0, scale = delta0, log = TRUE) + mvtnorm::dmvnorm(Beta, mean = b0, sigma = B0, log = TRUE)
+    BetaC <- c(MASS::mvrnorm(1, mu = Beta, Sigma = sbeta^2*CovarBetas))
+    parC <- c(alpha, BetaC)
+    LogPostBetaC <- -logLik(parC) + dgamma(alpha, shape = alpha0, scale = delta0, log = TRUE) +  mvtnorm::dmvnorm(BetaC, mean = b0, sigma = B0, log = TRUE)
+    alpha1 <- min(exp((LogPostBetaC - mvtnorm::dmvnorm(BetaC, mean = Beta, sigma = sbeta^2*CovarBetas, log = TRUE))-(LogPostBeta - mvtnorm::dmvnorm(Beta, mean = Beta, sigma = sbeta^2*CovarBetas, log = TRUE))),1)
+    u1 <- runif(1)
+    if(u1 <= alpha1){
+      Acept1i <- 1
+      Beta <- BetaC
+    }else{
+      Acept1i <- 0
+      Beta <- Beta
+    }
+    par <- c(alpha, Beta)
+    LogPostBeta <- -logLik(par) + dgamma(alpha, shape = alpha0, scale = delta0, log = TRUE) + mvtnorm::dmvnorm(Beta, mean = b0, sigma = B0, log = TRUE)
+    alphaC <- rnorm(1, mean = alpha, sd = salpha*VarAlpha^0.5)
+    parC <- c(alphaC, Beta)
+    LogPostBetaC <- -logLik(parC) + dgamma(alphaC, shape = alpha0, scale = delta0, log = TRUE) +  mvtnorm::dmvnorm(Beta, mean = b0, sigma = B0, log = TRUE)
+    alpha2 <- min(exp((LogPostBetaC - dnorm(alphaC, mean = alpha, sd = salpha*VarAlpha^0.5, log = TRUE))-(LogPostBeta - dnorm(alpha, mean = alpha, sd = salpha*VarAlpha^0.5, log = TRUE))),1)
+    u2 <- runif(1)
+    if(u2 <= alpha2){
+      Acept2i <- 1
+      alpha <- alphaC
+    }else{
+      Acept2i <- 0
+      alpha <- alpha
+    }
+    
+    BetasPost[s, ] <- Beta
+    alphaPost[s] <- alpha
+    Acept1 <- c(Acept1, Acept1i)
+    Acept2 <- c(Acept2, Acept2i)
+    setWinProgressBar(pb, s, title=paste( round(s/iter*100, 0),"% done"))
+  }
+  close(pb)
+  AcepRateBeta <- mean(Acept1); AcepRateAlpha <- mean(Acept2)
+  Results <- list(AcepRateBeta = AcepRateBeta, AcepRateAlpha = AcepRateAlpha, BetasPost = BetasPost, alphaPost = alphaPost)
+  return(Results)
+}
+# MCMC parameters
+mcmc <- 10000
+burnin <- 1000
+thin <- 5
+iter <- mcmc + burnin
+keep <- seq(burnin, iter, thin)
+sbeta <- 2.93/sqrt(k); salpha <- 2.93
+# Run M-H
+ResultsPost <- MHfunction(iter = iter, sbeta = sbeta, salpha = salpha)
+ResultsPost$AcepRateBeta
+ResultsPost$AcepRateAlpha
+summary(coda::mcmc(ResultsPost$BetasPost[keep[-1], ]))
+summary(coda::mcmc(ResultsPost$alphaPost[keep[-1]]))
+
+DataNB <- list(y = y, X = X)
+mcmcNB <- list(R = mcmc, keep = thin, s_beta = sbeta, s_alpha = salpha)
+PriorNB <- list(betabar = b0, A = solve(B0), a = alpha0, b = delta0)
+ResultBayesm <- bayesm::rnegbinRw(Data = DataNB, Mcmc = mcmcNB, Prior = PriorNB)
+summary(ResultBayesm$alphadraw)
+summary(ResultBayesm$betadraw)
+

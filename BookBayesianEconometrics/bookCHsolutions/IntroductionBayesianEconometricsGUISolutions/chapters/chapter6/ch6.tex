@@ -311,7 +311,110 @@ AS_1    passed    -0.00708 0.000306
 AS_2    passed     0.27982 0.009994 
 \end{lstlisting}
 	\end{VF}
+\end{tcolorbox}
+
+	\item \textbf{Simulation exercise of the multinomial logit model continues}
+
+Perform inference in the simulation of the multinomial logit model using the command \textit{rmnlIndepMetrop} from the \textit{bayesm} package of \textbf{R} and using our GUI.
+
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R. code. Simulation of the multinomial logit model}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+remove(list = ls())
+set.seed(12345)
+# Simulation of data
+N<-1000  # Sample Size
+B<-c(0.5,0.8,-3)
+B1<-c(-2.5,-3.5,0)
+B2<-c(1,1,0)
+# Alternative specific attributes of choice 1, for instance, price, quality and duration of choice 1
+X1<-matrix(cbind(rnorm(N,0,1),rnorm(N,0,1),rnorm(N,0,1)),N,length(B)) 
+# Alternative specific attributes of choice 2, for instance, price, quality and duration of choice 2
+X2<-matrix(cbind(rnorm(N,0,1),rnorm(N,0,1),rnorm(N,0,1)),N,length(B))
+# Alternative specific attributes of choice 3, for instance, price, quality and duration of choice 3
+X3<-matrix(cbind(rnorm(N,0,1),rnorm(N,0,1),rnorm(N,0,1)),N,length(B))
+X4<-matrix(rnorm(N,1,1),N,1)
+V1<-B2[1]+X1%*%B+B1[1]*X4
+V2<-B2[2]+X2%*%B+B1[2]*X4
+V3<-B2[3]+X3%*%B+B1[3]*X4
+suma<-exp(V1)+exp(V2)+exp(V3)
+p1<-exp(V1)/suma
+p2<-exp(V2)/suma
+p3<-exp(V3)/suma
+p<-cbind(p1,p2,p3)
+y<- apply(p,1, function(x)sample(1:3, 1, prob = x, replace = TRUE))
+table(y)
+L <- length(table(y))
+dat <-data.frame(mode,X1[,1],X2[,1],X3[,1],X1[,2],X2[,2],X3[,2],X1[,3],X2[,3],X3[,3],X4)
+colnames(dat) <- c("mode","V1.1","V1.2","V1.3","V2.1","V2.2","V2.3","V3.1","V3.2","V3.3","V4")
+attach(dat)
+LongData <- mlogit::mlogit.data(dat, shape = "wide", varying=2:10, choice = "mode")
+Xa <- cbind(LongData$V1, LongData$V2, LongData$V3)
+Xa <- cbind(X1[,1],X2[,1],X3[,1],X1[,2],X2[,2],X3[,2],X1[,3],X2[,3],X3[,3])
+na <- 3
+Xd <- X4
+X <- bayesm::createX(p = L, na = na, nd = 1, Xa = Xa, Xd = Xd, base = L)
+DataMlogit <- list(y=y, X = X, p = L)
+# MCMC parameters
+mcmc <- 11000+1
+thin <- 5
+df <- 6
+mcmcpar <- list(R = mcmc, keep = 5, nu = df)
+PostBeta <- bayesm::rmnlIndepMetrop(Data = DataMlogit, Mcmc = mcmcpar)
+summary(PostBeta[["betadraw"]])
+\end{lstlisting}
+	\end{VF}
 \end{tcolorbox} 
+
+	\item \textbf{Determinants of preventive health care visits continues}
+
+Program from scratch a Metropolis-within-Gibbs sampling algorithm for the application of determinants of preventive health care visits continues. 
+
+	
+\item \textbf{Simulation of the negative binomial model continues}
+
+Perform inference in the simulation of the negative binomial model using the \textit{bayesm} package in \textbf{R} software.
+
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R. code. Simulation of the negative binomial model}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls())
+set.seed(010101)
+N <- 2000 # Sample size
+x1 <- runif(N); x2 <- rnorm(N)
+X <- cbind(1, x1, x2)
+k <- dim(X)[2]
+B <- rep(1, k)
+alpha <- 1.2
+gamma <- exp(alpha)
+lambda <- exp(X%*%B)
+y <- rnbinom(N, mu = lambda, size = gamma)
+table(y)
+# MCMC parameters
+mcmc <- 10000
+burnin <- 1000
+thin <- 5
+iter <- mcmc + burnin
+keep <- seq(burnin, iter, thin)
+sbeta <- 2.93/sqrt(k); salpha <- 2.93
+# Hyperparameters: Priors
+B0 <- 1000*diag(k); b0 <- rep(0, k)
+alpha0 <- 0.5; delta0 <- 0.1
+DataNB <- list(y = y, X = X)
+mcmcNB <- list(R = mcmc, keep = thin, s_beta = sbeta, s_alpha = salpha)
+PriorNB <- list(betabar = b0, A = solve(B0), a = alpha0, b = delta0)
+ResultBayesm <- bayesm::rnegbinRw(Data = DataNB, Mcmc = mcmcNB, Prior = PriorNB)
+summary(ResultBayesm$alphadraw)
+summary(ResultBayesm$betadraw)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}  
        
 	
 \end{enumerate}
