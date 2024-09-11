@@ -923,7 +923,7 @@ We can run the negative binomial models in our GUI following the steps in the Al
 		\State Upload the dataset selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend. You should see a preview of the dataset
 		\State Select MCMC iterations, burn-in and thinning parameters using the \textit{Range sliders}
 		\State Select dependent and independent variables using the \textit{Formula builder} table
-		\State Click the \textit{Build formula} button to generate the formula in \textbf{R} syntax.
+		\State Click the \textit{Build formula} button to generate the formula in \textbf{R} syntax. You can modify the formula in the \textbf{Main equation} box using valid arguments of the \textit{formula} command structure in \textbf{R}
 		\State Set the hyperparameters: mean vector, covariance matrix, shape and scale parameters. This step is not necessary as by default our GUI uses non-informative priors
 		\State Select the tuning parameters for the Metropolis-Hastings algorithms 
 		\State Click the \textit{Go!} button
@@ -1098,12 +1098,285 @@ The posterior distributions are
 	\sigma^2|\bm{\beta}, \bm{y}, \bm{X} \sim IG(\alpha_n/2, \delta_n/2),
 \end{equation*}
 
-where $\bm{B}_n = (\bm{B}_0^{-1} + \sigma^{-2}\bm{X}^{\top}\bm{X})^{-1}$, $\bm{\beta}_n= \bm{B}_n(\bm{B}_0^{-1}\bm{\beta}_0 + \sigma^{-2}\bm{X}^{\top}\bm{y})$, $\alpha_n = \alpha_0 + N$ and $\delta_n = \delta_0 + (\bm{y}^*-\bm{X}\bm{\beta})^{\top}(\bm{y}^*-\bm{X}\bm{\beta})$.\\
+where $\bm{B}_n = (\bm{B}_0^{-1} + \sigma^{-2}\bm{X}^{\top}\bm{X})^{-1}$, $\bm{\beta}_n= \bm{B}_n(\bm{B}_0^{-1}\bm{\beta}_0 + \sigma^{-2}\bm{X}^{\top}\bm{y}^*)$, $\alpha_n = \alpha_0 + N$ and $\delta_n = \delta_0 + (\bm{y}^*-\bm{X}\bm{\beta})^{\top}(\bm{y}^*-\bm{X}\bm{\beta})$.\\
+
+\textbf{Example: The market value of soccer players in Europe continues}
+
+We continue the example of the market value of soccer players from Section \ref{sec61}. We specify the same equation, but assume the sample is censored from below, and have just information of soccer players whose market value is higher than one million euros. The dependent variable is \textit{log(ValueCens)}, and the left censoring point is 13.82.
+
+The Algorithm \ref{alg:Tobit} shows how to estimate Tobit models in our GUI. Our GUI uses the command \textit{MCMCtobit} from the package \textit{MCMCpack}. 
+
+\begin{algorithm}[h!]
+	\caption{Tobit models}\label{alg:Tobit}
+	\begin{algorithmic}[1]  		 			
+		\State Select \textit{Univariate Models} on the top panel
+		\State Select \textit{Tobit} model using the left radio button
+		\State Upload the dataset selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend. You should see a preview of the dataset
+		\State Select MCMC iterations, burn-in and thinning parameters using the \textit{Range sliders}
+		\State Select dependent and independent variables using the \textit{Formula builder} table
+		\State Click the \textit{Build formula} button to generate the formula in \textbf{R} syntax. You can modify the formula in the \textbf{Main equation} box using valid arguments of the \textit{formula} command structure in \textbf{R}
+		\State Set the left and right censoring points. To censor above only, specify \textit{-Inf} in the left censoring box, and to censor below only, specify \textit{Inf} in the right censoring box
+		\State Set the hyperparameters: mean vector, covariance matrix, shape and scale parameters. This step is not necessary as by default our GUI uses non-informative priors
+		\State Click the \textit{Go!} button
+		\State Analyze results
+		\State Download posterior chains and diagnostic plots using the \textit{Download Posterior Chains} and \textit{Download Posterior Graphs} buttons
+	\end{algorithmic} 
+\end{algorithm}
+
+We run this application using the same hyperparameters that we set in the example of Section \ref{sec61}. All results seem similar to those in the example of linear models. In addition, the posterior chains seem to achieve good diagnostics.
+ 
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R. code. The value of soccer player with left censoring}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+Data <- read.csv("DataApplications/1ValueFootballPlayers.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+attach(Data)
+y <- log(ValueCens) 
+X <- cbind(1, Perf, Age, Age2, NatTeam, Goals, Exp, Exp2)
+k <- dim(X)[2]
+N <- dim(X)[1]
+# Hyperparameters
+d0 <- 0.001/2; a0 <- 0.001/2
+b0 <- rep(0, k); c0 <- 1000; B0 <- c0*diag(k)
+B0i <- solve(B0)
+# MCMC parameters
+mcmc <- 50000
+burnin <- 10000
+tot <- mcmc + burnin
+thin <- 1
+# Posterior distributions using packages: MCMCpack sets the model in terms of the precision matrix
+posterior  <- MCMCpack::MCMCtobit(y~X-1, b0=b0, B0 = B0i, c0 = a0, d0 = d0, burnin = burnin, mcmc = mcmc, thin = thin, below = 13.82, above = Inf)
+summary(coda::mcmc(posterior))
+Iterations = 1:50000
+Thinning interval = 1 
+Number of chains = 1 
+Sample size per chain = 50000 
+1. Empirical mean and standard deviation for each variable,
+plus standard error of the mean:
+				Mean       SD  Naive SE Time-series SE
+X         1.045830 2.641038 1.181e-02      1.673e-02
+XPerf     0.033990 0.004515 2.019e-05      2.247e-05
+XAge      1.025099 0.213368 9.542e-04      1.335e-03
+XAge2    -0.021871 0.004004 1.791e-05      2.542e-05
+XNatTeam  0.847495 0.125924 5.631e-04      6.393e-04
+XGoals    0.010088 0.001649 7.377e-06      7.691e-06
+XExp      0.174383 0.069948 3.128e-04      3.846e-04
+XExp2    -0.005652 0.002970 1.328e-05      1.561e-05
+sigma2    0.982906 0.095965 4.292e-04      6.727e-04
+2. Quantiles for each variable:
+				2.5%       25%       50%       75%      97.5%
+X        -4.174794 -0.725691  1.076420  2.840533  6.1935618
+XPerf     0.025110  0.030949  0.033980  0.037003  0.0428650
+XAge      0.608620  0.880648  1.023043  1.168486  1.4480001
+XAge2    -0.029801 -0.024556 -0.021822 -0.019164 -0.0140990
+XNatTeam  0.603953  0.762394  0.846461  0.932056  1.0960274
+XGoals    0.006875  0.008977  0.010091  0.011197  0.0133323
+XExp      0.038752  0.127167  0.173880  0.221355  0.3122043
+XExp2    -0.011483 -0.007623 -0.005654 -0.003662  0.0001615
+sigma2    0.811953  0.915246  0.977257  1.043158  1.1879232
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R. code. The value of soccer player with left censoring, Gibbs sampler}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+# Gibbs sampling functions
+XtX <- t(X)%*%X
+PostBeta <- function(Yl, sig2){
+	Bn <- solve(B0i + sig2^(-1)*XtX)
+	bn <- Bn%*%(B0i%*%b0 + sig2^(-1)*t(X)%*%Yl)
+	Beta <- MASS::mvrnorm(1, bn, Bn)
+	return(Beta)
+}
+PostYl <- function(Beta, L, U, i){
+	Ylmean <- X[i,]%*%Beta
+	if(y[i] == L){
+		Yli <- truncnorm::rtruncnorm(1, a = -Inf, b = L, mean = Ylmean, sd = sig2^0.5)
+	}else{
+		if(y[i] == U){
+			Yli <- truncnorm::rtruncnorm(1, a = U, b = Inf, mean = Ylmean, sd = sig2^0.5)
+		}else{
+			Yli <- y[i]
+		}
+	}
+	return(Yli)
+}
+PostSig2 <- function(Beta, Yl){
+	dn <- d0 + t(Yl - X%*%Beta)%*%(Yl - X%*%Beta)
+	sig2 <- invgamma::rinvgamma(1, shape = an/2, rate = dn/2)
+	return(sig2)
+}
+PostBetas <- matrix(0, mcmc+burnin, k); Beta <- rep(0, k)
+PostSigma2 <- rep(0, mcmc+burnin); sig2 <- 1
+L <- log(1000000); U <- Inf
+# create progress bar in case that you want to see iterations progress
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+	Yl <- sapply(1:N, function(i){PostYl(Beta = Beta, L = L, U = U, i)})
+	Beta <- PostBeta(Yl = Yl, sig2)
+	sig2 <- PostSig2(Beta = Beta, Yl = Yl) 
+	PostBetas[s,] <- Beta; PostSigma2[s] <- sig2
+	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0), "% done"))
+}
+close(pb)
+keep <- seq((burnin+1), tot, thin)
+PosteriorBetas <- PostBetas[keep,]
+colnames(PosteriorBetas) <- c("Intercept", "Perf", "Age", "Age2", "NatTeam", "Goals", "Exp", "Exp2")
+summary(coda::mcmc(PosteriorBetas))
+summary(coda::mcmc(PostSigma2[keep]))
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\section{Quantile regression}\label{sec69}
+In quantile regression the location parameters vary according to the quantile of the dependent variable. Let $q_{\tau}(\bm{x}_i)=\bm{x}_i^{\top}\bm{\beta}_{\tau}$ denote the $\tau$-th $(0<\tau<1)$ quantile regression function of $y_i$ given $\bm{x}_i$ such that $y_i=\bm{x}_i^{\top}\bm{\beta}_{\tau}+\mu_i$ where $\int_{-\infty}^{0}f_{\tau}(\mu_i)d\mu_i=\tau$, that is, the $\tau$-th quantile of $\mu_i$ is 0.
+
+In particular, \cite{Kozumi2011} propose $f_{\tau}(\mu_i)=\tau(1-\tau)\exp\left\{-\mu_i(\tau-\mathbbm{1}_{\mu_i<0})\right\}$ (asymmetric Laplace distribution), where $\mu_i(\tau-\mathbbm{1}_{\mu_i<0})$ is the check (loss) function. These authors propose the location-scale mixture of normals with a representation given by $\mu_i=\theta e_i+\psi \sqrt{e_i}z_i$ where $\theta=\frac{1-2\tau}{\tau(1-\tau)}$, $\psi^2=\frac{2}{\tau(1-\tau)}$, $e_i\sim E(1)$ and $z_i\sim N(0,1)$, $e_i\perp z_i$.\footnote{$E$ denotes an exponential density.} As a consequence of this representation and the fact that the sample is i.i.d., $p(\bm{y}|\bm{\beta}_{\tau},\bm{e},\bm{X})\propto \left(\prod_{i=1}^{n}e_i^{-1/2}\right)\exp\left\{-\sum_{i=1}^{N}\frac{(y_i-\bm{x}_i^{\top}\bm{\beta}_{\tau}-\theta e_i)^2}{2\psi^2 e_i}\right\}$.
+
+Taking as prior a normal distribution for $\bm{\beta}_{\tau}$, that is, $\bm{\beta}_{\tau}\sim N(\bm{\beta}_{\tau 0},\bm{B}_{\tau 0})$, and using data augmentation for $\bm{e}$, we can implement a Gibbs sampling algorithm in this model. The posterior distributions are
+
+\begin{equation*}
+	\bm{\beta}_{\tau}|\bm{e}, \bm{y}, \bm{X} \sim N(\bm{\beta}_{n\tau},\bm{B}_{n\tau}), 
+\end{equation*}
+\begin{equation*}
+	e_i|\bm{\beta}_{\tau}, \bm{y}, \bm{X} \sim GIG(1/2,\alpha_{ni}, \delta_{ni}),\footnote{$GIG$ denotes a  generalized inverse Gaussian density.}
+\end{equation*}
+
+where $\bm{B}_{n\tau} = \left(\bm{B}_{\tau 0}^{-1} + \sum_{i=1}^{N}\frac{\bm{x}_i\bm{x}_i^{\top}}{\psi^2 e_i}\right)^{-1}$, $\bm{\beta}_{n\tau}= \bm{B}_{n\tau}\left(\bm{B}_{\tau 0}^{-1}\bm{\beta}_{\tau 0}+\sum_{i=1}^{N}\frac{\bm{x}_i(y_i-\theta e_i)}{\psi^2 e_i}\right)$, $\alpha_{ni} = (y_i-\bm{x}_i^{\top}\bm{\beta}_{\tau})^2/\psi^2$ and $\delta_{ni} = 2+\theta^2/\psi^2$.\\
+
+\textbf{Example: The market value of soccer players in Europe continues}
+
+We continue the example of the market value of soccer players from Section \ref{sec61}. Now, we wan to know if the marginal effect of having been in the national team changes with the quantile of the market value of top soccer players in Europe. Thus, we have same regressors as in the example in the previous section, but analyze the effects in the 0.5-th an d0.9-th quantiles of the \textit{NatTeam}.
+
+The Algorithm \ref{alg:Quantile} shows how to estimate Tobit models in our GUI. Our GUI uses the command \textit{MCMCquantreg} from the package \textit{MCMCpack}. The next are code shows to perform this using this package.
+
+The results show that at the median market value, the 95\% credible interval for the coefficient associated with \textit{national team} is (0.34, 1.02), with a posterior mean of 0.69. At the 0.9 quantile, these values are (0.44, 1.59) and 1.03, respectively. It appears that being on the national team increases the market value of more expensive players more significantly on average, although there is some overlap in the credible intervals.
+
+\begin{algorithm}[h!]
+	\caption{Quantile regression}\label{alg:Quantile}
+	\begin{algorithmic}[1]  		 			
+		\State Select \textit{Univariate Models} on the top panel
+		\State Select \textit{Tobit} model using the left radio button
+		\State Upload the dataset selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend. You should see a preview of the dataset
+		\State Select MCMC iterations, burn-in and thinning parameters using the \textit{Range sliders}
+		\State Select dependent and independent variables using the \textit{Formula builder} table
+		\State Click the \textit{Build formula} button to generate the formula in \textbf{R} syntax. You can modify the formula in the \textbf{Main equation} box using valid arguments of the \textit{formula} command structure in \textbf{R}
+		\State Set the left and right censoring points. To censor above only, specify \textit{-Inf} in the left censoring box, and to censor below only, specify \textit{Inf} in the right censoring box
+		\State Set the hyperparameters: mean vector, covariance matrix, shape and scale parameters. This step is not necessary as by default our GUI uses non-informative priors
+		\State Click the \textit{Go!} button
+		\State Analyze results
+		\State Download posterior chains and diagnostic plots using the \textit{Download Posterior Chains} and \textit{Download Posterior Graphs} buttons
+	\end{algorithmic} 
+\end{algorithm}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R. code. The value of soccer player, quantile regression}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+Data <- read.csv("DataApplications/1ValueFootballPlayers.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+attach(Data)
+y <- log(ValueCens) 
+X <- cbind(1, Perf, Age, Age2, NatTeam, Goals, Exp, Exp2)
+k <- dim(X)[2]; N <- dim(X)[1]
+# Hyperparameters
+b0 <- rep(0, k); c0 <- 1000; B0 <- c0*diag(k); B0i <- solve(B0)
+# MCMC parameters
+mcmc <- 50000; burnin <- 10000
+tot <- mcmc + burnin; thin <- 1
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R. code. The value of soccer player, quantile regression}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+# Quantile
+q <- 0.5
+posterior05  <- MCMCpack::MCMCquantreg(y~X-1, tau = q, b0=b0, B0 = B0i, burnin = burnin, mcmc = mcmc, thin = thin, below = 13.82, above = Inf)
+summary(coda::mcmc(posterior05))
+1. Empirical mean and standard deviation for each variable,
+plus standard error of the mean:
+					Mean       SD  Naive SE Time-series SE
+X         7.374348 2.916758 1.304e-02      2.291e-02
+XPerf     0.029325 0.005938 2.655e-05      5.241e-05
+XAge      0.550633 0.241596 1.080e-03      1.903e-03
+XAge2    -0.012027 0.004597 2.056e-05      3.643e-05
+XNatTeam  0.685275 0.170768 7.637e-04      1.587e-03
+XGoals    0.010608 0.002425 1.085e-05      1.951e-05
+XExp      0.092561 0.085499 3.824e-04      6.799e-04
+XExp2    -0.002979 0.003877 1.734e-05      2.941e-05
+2. Quantiles for each variable:
+					2.5%       25%       50%        75%     97.5%
+X         1.74594  5.405772  7.351090  9.2994982 13.216024
+XPerf     0.01753  0.025340  0.029354  0.0333155  0.040906
+XAge      0.06845  0.390780  0.553187  0.7139430  1.016664
+XAge2    -0.02087 -0.015141 -0.012095 -0.0089849 -0.002813
+XNatTeam  0.34645  0.572081  0.686735  0.7996086  1.016189
+XGoals    0.00578  0.009055  0.010562  0.0121751  0.015403
+XExp     -0.06761  0.034149  0.089632  0.1482128  0.267536
+XExp2    -0.01094 -0.005456 -0.002891 -0.0004099  0.004466
+q <- 0.9
+posterior09  <- MCMCpack::MCMCquantreg(y~X-1, tau = q, b0=b0, B0 = B0i, burnin = burnin, mcmc = mcmc, thin = thin, below = 13.82, above = Inf)
+summary(coda::mcmc(posterior09))
+1. Empirical mean and standard deviation for each variable,
+plus standard error of the mean:
+					Mean       SD  Naive SE Time-series SE
+X         8.860043 5.933902 2.654e-02      6.686e-02
+XPerf     0.019663 0.010241 4.580e-05      1.140e-04
+XAge      0.532823 0.483213 2.161e-03      5.397e-03
+XAge2    -0.012328 0.008864 3.964e-05      9.620e-05
+XNatTeam  1.033384 0.294271 1.316e-03      3.389e-03
+XGoals    0.008781 0.004340 1.941e-05      4.991e-05
+XExp      0.132760 0.177677 7.946e-04      2.125e-03
+XExp2    -0.002713 0.007639 3.416e-05      8.531e-05
+2. Quantiles for each variable:
+					2.5%       25%       50%       75%    97.5%
+X        -2.7084122  4.829341  8.821031 12.850002 20.66191
+XPerf    -0.0001863  0.012782  0.019605  0.026495  0.03991
+XAge     -0.4180422  0.207000  0.532486  0.858221  1.48632
+XAge2    -0.0300400 -0.018216 -0.012235 -0.006345  0.00497
+XNatTeam  0.4384014  0.840123  1.038986  1.234456  1.59482
+XGoals    0.0019513  0.005661  0.008176  0.011327  0.01881
+XExp     -0.2320608  0.014760  0.139452  0.256663  0.46053
+XExp2    -0.0162717 -0.007954 -0.003198  0.002031  0.01385
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\section{Bayesian bootstrap regression}\label{sec610}
+
+We implement the Bayesian bootstrap \cite{Rubin1981} for linear regression models. In particular, the Bayesian bootstrap simulates the posterior distributions assuming that the sample cumulative distribution function (cdf) is the population cdf (this assumption is also implicit in the frequentist bootstrap \cite{Efron1979}).
+
+Given $y_i\stackrel{i.n.d.} {\thicksim}\mathcal{F}$ where $\mathcal{F}$ does not define a particular parametric family of distributions, $i=1,2,\dots,N$, but sets $E(Y_i|\bm{x}_i)=\bm{x}_i^{\top}\bm{\beta}$, such that $\bm{x}_i$ is a $K$ dimensional vector of regressors and $\bm{\beta}$ is a $K$ dimensional vector of parameters, the Bayesian bootstrap generates posterior probabilities for each $y_i$ where the values of $Y$ that are not observed have zero posterior probability.
+
+The algorithm to implement the Bayesian bootstrap is the following:
+\begin{algorithm}[!h]
+	\caption{Bayesian bootstrap in linear regression}
+	\label{alg:BB}
+	\begin{algorithmic}[1]
+		\State Draw $\bm{g}\sim Dir(\alpha_1,\alpha_2,\dots,\alpha_N)$ such that $\alpha_i=1 \ \forall i$.
+		\State $\bm{g}=(g_1,g_2,\dots,g_N)$ is the vector of probabilities to attach to $(y_1,\bm{x}_1^{\top}),(y_2,\bm{x}_2^{\top}),\dots,(y_n,\bm{x}_N^{\top})$ for each Bayesian bootstrap replication.
+		\State Sample $(y_i,\bm{x}_i^{\top})$ $S_1$ times with replacement and probabilities $g_i$, $i=1,2,\dots,N$.
+		\State Estimate $\bm{\beta}$ using ordinary least squares in the model $E(\bm{Y}|\bm{X})=\bm{X}\bm{\beta}$, $\bm{y}$ being an $S_1$ dimensional vector of realizations of $\bm{Y}$, and $\bm{X}$ an $S_1\times k$ matrix from the previous stage.$^*$ 
+		\State Repeat this process $S_2$ times.
+		\State The distribution of $\bm{\beta}^{(s_2)}$ is the Bayesian distribution of $\bm{\beta}$.		
+	\end{algorithmic}
+	$^*${\footnotesize{Ordinary least squares is the posterior mean of $\bm{\beta}$ using Jeffrey's prior in a linear regression.}}
+\end{algorithm} 
 
 
 
 \section{Summary}\label{sec611}
-We present ...
+In this chapter, we present the core univariate regression models and demonstrate how to perform Bayesian inference using Markov Chain Monte Carlo methods. Specifically, we cover a mix of algorithms: Metropolis-Hastings, Gibbs sampling, nested M-H, and M-H-within-Gibbs. These algorithms form the foundation for performing Bayesian inference in more complex settings using cross-sectional data sets
 
 \section{Exercises}\label{sec612}
 
@@ -1134,6 +1407,14 @@ We present ...
 	
 	\item \textbf{Simulation of the negative binomial model continues}
 	
-	Perform inference in the simulation of the negative binomial model using the \textit{bayesm} package in \textbf{R} software.   
+	Perform inference in the simulation of the negative binomial model using the \textit{bayesm} package in \textbf{R} software.
+	
+	\item \textbf{The market value of soccer players in Europe continues}
+	
+	Perform the application of the value of soccer players with left censuring at one million Euros in our GUI using the Algorithm \ref{alg:Tobit}, and the hyperparameters of the example.
+	
+	\item \textbf{The market value of soccer players in Europe continues}
+	
+	Program from scratch the Gibbs sampling algorithm in the example of the market value of soccer players at the 0.75 quantile.    
 
 \end{enumerate}

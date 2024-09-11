@@ -312,3 +312,56 @@ PriorNB <- list(betabar = b0, A = solve(B0), a = alpha0, b = delta0)
 ResultBayesm <- bayesm::rnegbinRw(Data = DataNB, Mcmc = mcmcNB, Prior = PriorNB)
 summary(ResultBayesm$alphadraw)
 summary(ResultBayesm$betadraw)
+
+########################## Quantile regression: Value of soccer players ##########################
+rm(list = ls())
+set.seed(010101)
+Data <- read.csv("DataApplications/1ValueFootballPlayers.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+attach(Data)
+y <- log(Value) 
+X <- cbind(1, Perf, Age, Age2, NatTeam, Goals, Exp, Exp2)
+RegLS <- lm(y ~ X -1)
+k <- dim(X)[2]
+N <- dim(X)[1]
+# Hyperparameters
+b0 <- rep(0, k)
+c0 <- 1000
+B0 <- c0*diag(k)
+B0i <- solve(B0)
+# MCMC parameters
+mcmc <- 5000
+burnin <- 1000
+tot <- mcmc + burnin
+thin <- 1
+# Quantile
+tau <- 0.5
+theta <- (1-2*tau)/(tau*(1-tau))
+psi2 <- 2/(tau*(1-tau))
+an2 <- 2+theta^2/psi2
+# Gibbs sampler
+PostBeta <- function(e){
+  Bn <- solve(B0i + psi2^(-1)*t(X)%*%diag(1/e)%*%X)
+  bn <- Bn%*%(B0i%*%b0 + psi2^(-1)*t(X)%*%diag(1/e)%*%(y-theta*e))
+  Beta <- MASS::mvrnorm(1, bn, Bn)
+  return(Beta)
+}
+PostE <- function(Beta, i){
+  dn2 <-(y[i]-X[i,]%*%Beta)^2/psi2
+  ei <- GIGrvg::rgig(1, chi = dn2, psi = an2, lambda = 1/2)
+  return(ei)
+}
+PostBetas <- matrix(0, mcmc+burnin, k)
+Beta <- RegLS$coefficients
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+  e <- sapply(1:N, function(i){PostE(Beta = Beta, i)})
+  Beta <- PostBeta(e = e)
+  PostBetas[s,] <- Beta
+  setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+keep <- seq((burnin+1), tot, thin)
+PosteriorBetas <- PostBetas[keep,]
+colnames(PosteriorBetas) <- c("Intercept", "Perf", "Age", "Age2", "NatTeam", "Goals", "Exp", "Exp2")
+summary(coda::mcmc(PosteriorBetas))
+

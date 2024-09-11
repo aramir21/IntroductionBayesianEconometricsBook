@@ -401,3 +401,119 @@ ResultBayesm <- bayesm::rnegbinRw(Data = DataNB, Mcmc = mcmcNB, Prior = PriorNB)
 summary(ResultBayesm$alphadraw)
 summary(ResultBayesm$betadraw)
 
+########################## Tobit model: Value of soccer players ##########################
+rm(list = ls())
+set.seed(010101)
+Data <- read.csv("DataApplications/1ValueFootballPlayers.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+attach(Data)
+y <- log(ValueCens) 
+# Value: Market value in Euros (2017) of soccer players
+# Regressors quantity including intercept
+X <- cbind(1, Perf, Age, Age2, NatTeam, Goals, Exp, Exp2)
+# Perf: Performance. Perf2: Performance squared. Age: Age; Age: Age squared. 
+# NatTeam: Indicator of national team. Goals: Scored goals. Goals2: Scored goals squared
+# Exp: Years of experience. Exp2: Years of experience squared. Assists: Number of assists
+k <- dim(X)[2]
+N <- dim(X)[1]
+# Hyperparameters
+d0 <- 0.001/2
+a0 <- 0.001/2
+b0 <- rep(0, k)
+c0 <- 1000
+B0 <- c0*diag(k)
+B0i <- solve(B0)
+an <- a0 + N
+# MCMC parameters
+mcmc <- 50000
+burnin <- 10000
+tot <- mcmc + burnin
+thin <- 1
+# Posterior distributions using packages: MCMCpack sets the model in terms of the precision matrix
+posterior  <- MCMCpack::MCMCtobit(y~X-1, b0=b0, B0 = B0i, c0 = a0, d0 = d0, burnin = burnin, mcmc = mcmc, thin = thin, below = 13.82, above = Inf)
+summary(coda::mcmc(posterior))
+# Posterior distributions programming the Gibbs sampling
+# Auxiliary parameters
+XtX <- t(X)%*%X
+# Gibbs sampling functions
+PostBeta <- function(Yl, sig2){
+  Bn <- solve(B0i + sig2^(-1)*XtX)
+  bn <- Bn%*%(B0i%*%b0 + sig2^(-1)*t(X)%*%Yl)
+  Beta <- MASS::mvrnorm(1, bn, Bn)
+  return(Beta)
+}
+PostYl <- function(Beta, L, U, i){
+  Ylmean <- X[i,]%*%Beta
+  if(y[i] == L){
+    Yli <- truncnorm::rtruncnorm(1, a = -Inf, b = L, mean = Ylmean, sd = sig2^0.5)
+  }else{
+    if(y[i] == U){
+      Yli <- truncnorm::rtruncnorm(1, a = U, b = Inf, mean = Ylmean, sd = sig2^0.5)
+    }else{
+      Yli <- y[i]
+    }
+  }
+  return(Yli)
+}
+PostSig2 <- function(Beta, Yl){
+  dn <- d0 + t(Yl - X%*%Beta)%*%(Yl - X%*%Beta)
+  sig2 <- invgamma::rinvgamma(1, shape = an/2, rate = dn/2)
+  return(sig2)
+}
+PostBetas <- matrix(0, mcmc+burnin, k)
+Beta <- rep(0, k)
+PostSigma2 <- rep(0, mcmc+burnin)
+sig2 <- 1
+L <- log(1000000)
+U <- Inf
+# create progress bar in case that you want to see iterations progress
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+  Yl <- sapply(1:N, function(i){PostYl(Beta = Beta, L = L, U = U, i)})
+  Beta <- PostBeta(Yl = Yl, sig2)
+  sig2 <- PostSig2(Beta = Beta, Yl = Yl) 
+  PostBetas[s,] <- Beta
+  PostSigma2[s] <- sig2
+  setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0), "% done"))
+}
+close(pb)
+keep <- seq((burnin+1), tot, thin)
+PosteriorBetas <- PostBetas[keep,]
+colnames(PosteriorBetas) <- c("Intercept", "Perf", "Age", "Age2", "NatTeam", "Goals", "Exp", "Exp2")
+summary(coda::mcmc(PosteriorBetas))
+summary(coda::mcmc(PostSigma2[keep]))
+
+######################### Quantile model: Value of soccer players ##########################
+rm(list = ls())
+set.seed(010101)
+Data <- read.csv("DataApplications/1ValueFootballPlayers.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+attach(Data)
+y <- log(ValueCens) 
+# Value: Market value in Euros (2017) of soccer players
+# Regressors quantity including intercept
+X <- cbind(1, Perf, Age, Age2, NatTeam, Goals, Exp, Exp2)
+# Perf: Performance. Perf2: Performance squared. Age: Age; Age: Age squared. 
+# NatTeam: Indicator of national team. Goals: Scored goals. Goals2: Scored goals squared
+# Exp: Years of experience. Exp2: Years of experience squared. Assists: Number of assists
+k <- dim(X)[2]
+N <- dim(X)[1]
+# Hyperparameters
+b0 <- rep(0, k)
+c0 <- 1000
+B0 <- c0*diag(k)
+B0i <- solve(B0)
+# MCMC parameters
+mcmc <- 50000
+burnin <- 10000
+tot <- mcmc + burnin
+thin <- 1
+# Quantile
+q <- 0.5
+# Posterior distributions using packages: MCMCpack sets the model in terms of the precision matrix
+posterior  <- MCMCpack::MCMCquantreg(y~X-1, tau = q, b0=b0, B0 = B0i, burnin = burnin, mcmc = mcmc, thin = thin, below = 13.82, above = Inf)
+summary(coda::mcmc(posterior))
+q <- 0.9
+# Posterior distributions using packages: MCMCpack sets the model in terms of the precision matrix
+posterior  <- MCMCpack::MCMCquantreg(y~X-1, tau = q, b0=b0, B0 = B0i, burnin = burnin, mcmc = mcmc, thin = thin, below = 13.82, above = Inf)
+summary(coda::mcmc(posterior))
+
+

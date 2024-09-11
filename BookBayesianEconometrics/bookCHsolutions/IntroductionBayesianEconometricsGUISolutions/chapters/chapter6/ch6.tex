@@ -261,6 +261,7 @@ summary(coda::mcmc(PosteriorBetas))
 
 Run the Algorithm A3 of the book to show the results of the Geweke \cite{Geweke1992}, Raftery \cite{Raftery1992} and Heidelberger \cite{Heidelberger1983} tests using our GUI.
 
+\textbf{Answer}
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -316,6 +317,8 @@ AS_2    passed     0.27982 0.009994
 	\item \textbf{Simulation exercise of the multinomial logit model continues}
 
 Perform inference in the simulation of the multinomial logit model using the command \textit{rmnlIndepMetrop} from the \textit{bayesm} package of \textbf{R} and using our GUI.
+
+\textbf{Answer}
 
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
@@ -373,6 +376,7 @@ summary(PostBeta[["betadraw"]])
 
 Simulate an ordered probit model where the first regressor distributes $N(6, 5)$ and the second distributes $G(1,1)$, the location parameter is $\bm{\beta}=\left[0.5 \ -0.25 \ 0.5\right]$, and the cutoffs is the vector $\bm{\alpha}=\left[0 \ 1 \ 2.5\right]$. Program from scratch a Metropolis-within-Gibbs sampling algorithm for this simulation.
 
+\textbf{Answer}
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -545,6 +549,7 @@ All posterior mean estimates are close to the population parameters, and the 95\
 
 Perform inference in the simulation of the negative binomial model using the \textit{bayesm} package in \textbf{R} software.
 
+\textbf{Answer}
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -582,6 +587,105 @@ summary(ResultBayesm$betadraw)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}  
-       
-	
+
+	\item \textbf{The market value of soccer players in Europe continues}
+
+Perform the application of the value of soccer players with left censuring at one million Euros in our GUI using the Algorithm A7, and the hyperparameters of the example.
+
+\textbf{Answer}
+
+These are the results of running the application in our GUI. These are very similar compared with the results in the book. 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R. code. The value of soccer players with left censoring in our GUI}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+Summary
+Iterations = 10001:60000
+Thinning interval = 1 
+Number of chains = 1 
+Sample size per chain = 50000 
+1. Empirical mean and standard deviation for each variable,
+plus standard error of the mean:
+						Mean       SD  Naive SE Time-series SE
+(Intercept)  1.014765 2.626395 1.175e-02      1.659e-02
+Perf         0.033935 0.004529 2.025e-05      2.245e-05
+Age          1.027285 0.212413 9.499e-04      1.326e-03
+Age2        -0.021914 0.003989 1.784e-05      2.528e-05
+NatTeam      0.847412 0.124884 5.585e-04      6.423e-04
+Goals        0.010092 0.001644 7.351e-06      7.712e-06
+Exp          0.175324 0.069653 3.115e-04      3.727e-04
+Exp2        -0.005696 0.002950 1.319e-05      1.527e-05
+sigma2       0.983337 0.096194 4.302e-04      6.724e-04
+2. Quantiles for each variable:
+						2.5%       25%       50%       75%      97.5%
+(Intercept) -4.212563 -0.732856  1.038281  2.796603  6.051e+00
+Perf         0.025121  0.030873  0.033896  0.036988  4.286e-02
+Age          0.618743  0.883011  1.026760  1.168860  1.450e+00
+Age2        -0.029854 -0.024580 -0.021886 -0.019203 -1.424e-02
+NatTeam      0.605030  0.763154  0.846671  0.930593  1.095e+00
+Goals        0.006893  0.008987  0.010097  0.011201  1.330e-02
+Exp          0.038522  0.128032  0.175261  0.222110  3.118e-01
+Exp2        -0.011484 -0.007671 -0.005685 -0.003706  5.502e-05
+sigma2       0.813118  0.915664  0.977298  1.043661  1.189e+00
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\item \textbf{The market value of soccer players in Europe continues}
+
+Program from scratch the Gibbs sampling algorithm in the example of the market value of soccer players at the 0.75 quantile.       
+	\textbf{Answer}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R. code. The value of soccer players, quantile regression}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+Data <- read.csv("DataApplications/1ValueFootballPlayers.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+attach(Data)
+y <- log(Value); X <- cbind(1, Perf, Age, Age2, NatTeam, Goals, Exp, Exp2)
+RegLS <- lm(y ~ X -1)
+k <- dim(X)[2]; N <- dim(X)[1]
+# Hyperparameters
+b0 <- rep(0, k); c0 <- 1000
+B0 <- c0*diag(k); B0i <- solve(B0)
+# MCMC parameters
+mcmc <- 5000; burnin <- 1000
+tot <- mcmc + burnin; thin <- 1
+# Quantile
+tau <- 0.5; theta <- (1-2*tau)/(tau*(1-tau))
+psi2 <- 2/(tau*(1-tau)); an2 <- 2+theta^2/psi2
+# Gibbs sampler
+PostBeta <- function(e){
+	Bn <- solve(B0i + psi2^(-1)*t(X)%*%diag(1/e)%*%X)
+	bn <- Bn%*%(B0i%*%b0 + psi2^(-1)*t(X)%*%diag(1/e)%*%(y-theta*e))
+	Beta <- MASS::mvrnorm(1, bn, Bn)
+	return(Beta)
+}
+PostE <- function(Beta, i){
+	dn2 <-(y[i]-X[i,]%*%Beta)^2/psi2
+	ei <- GIGrvg::rgig(1, chi = dn2, psi = an2, lambda = 1/2)
+	return(ei)
+}
+PostBetas <- matrix(0, mcmc+burnin, k)
+Beta <- RegLS$coefficients
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+	e <- sapply(1:N, function(i){PostE(Beta = Beta, i)})
+	Beta <- PostBeta(e = e)
+	PostBetas[s,] <- Beta
+	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+keep <- seq((burnin+1), tot, thin)
+PosteriorBetas <- PostBetas[keep,]
+colnames(PosteriorBetas) <- c("Intercept", "Perf", "Age", "Age2", "NatTeam", "Goals", "Exp", "Exp2")
+summary(coda::mcmc(PosteriorBetas))
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}	
+
 \end{enumerate}
