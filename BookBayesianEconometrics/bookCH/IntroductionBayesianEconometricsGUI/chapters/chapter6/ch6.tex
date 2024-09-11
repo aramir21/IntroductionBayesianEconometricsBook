@@ -804,7 +804,7 @@ We can run the ordered probit models in our GUI following the steps in the Algor
 	\end{algorithmic} 
 \end{algorithm}
 
-The following \textbf{R} code shows how to perform inference in this model using the command \textit{rordprobitGibbs} from the \textit{bayesm} library, which is the command that our GUI uses. We ask in exercise 7 to program from scratch a Metropolis-within-Gibbs sampling algorithm for this application. 
+The following \textbf{R} code shows how to perform inference in this model using the command \textit{rordprobitGibbs} from the \textit{bayesm} library, which is the command that our GUI uses.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -1064,6 +1064,43 @@ plus standard error of the mean:
 	\end{VF}
 \end{tcolorbox} 
 
+\section{Tobit model}\label{sec68}
+The dependent variable is partially observed in Tobit models due to sampling schemes, whereas the regressors are completely observed. In particular,
+
+\begin{equation*}
+	y_i=\begin{Bmatrix}
+		L \ , \ \ \ y_i^*<L\\
+		y_i^* \ , \ L\leq y_i^* < U \\ 
+		U \ , \ \ \ y_i^*\geq U
+	\end{Bmatrix},
+\end{equation*}
+
+where $y_i^*\stackrel{i.n.d.} {\thicksim}{N}(\bm{x}_i^{\top}\bm{\beta},\sigma^2)$.\footnote{We can set $L$ or $U$ equal to $-\infty$ or $\infty$ to model data censored in just one side.}\\
+
+We use conjugate independent priors $\bm{\beta}\sim N(\bm{\beta}_0,\bm{B}_0)$ and 
+$\sigma^2 \sim IG(\alpha_0/2, \delta_0/2)$, and data augmentation using $\bm{y}^*_C$ such that $y_{C_i}^*\stackrel{i.n.d.} {\thicksim}N(\bm{x}_i^{\top}\bm{\beta},\sigma^2)$, $y_{C_i}=\left\{y_{C_i^L}^*\cup y_{C_i^U}^*\right\}$ are lower and upper censored data. This allows implementing the Gibbs sampling algorithm \cite{Chib1992}.
+Then, \begin{align*}
+\pi(\bm{\beta},\sigma^2,\bm{y^*}|\bm{y},\bm{X})&\propto\prod_{i=1}^N\left[\mathbbm{1}_{y_i=L}\mathbbm{1}_{y_{C_i^L}^* < L}+\mathbbm{1}_{L\leq y_i < U}+\mathbbm{1}_{y_i=U}\mathbbm{1}_{y_{C_i^U}^* \geq U}\right]\\
+&\times{N}(y_i^*|\bm{x}_i^{\top}\bm{\beta},\sigma^2)\times N(\bm{\beta}|\bm{\beta}_0,\bm{B}_0)\times IG(\sigma^2|\alpha_0/2, \delta_0/2)
+\end{align*}
+
+The posterior distributions are
+\begin{equation*}
+	y_{C_i}^*|\bm{\beta},\sigma^2,\bm{y},\bm{X}\sim\begin{Bmatrix}
+		TN_{(-\infty,L)}(\bm{x}_i^{\top}\bm{\beta},\sigma^2) \ , \ y_i= L \\ 
+		TN_{[U,\infty)}(\bm{x}_i^{\top}\bm{\beta},\sigma^2) \ \ \ , \ y_i= U
+	\end{Bmatrix},
+\end{equation*}
+\begin{equation*}
+	\bm{\beta}|\sigma^2, \bm{y}, \bm{X} \sim \mathcal{N}(\bm{\beta}_n, \sigma^2\bm{B}_n), 
+\end{equation*}
+\begin{equation*}
+	\sigma^2|\bm{\beta}, \bm{y}, \bm{X} \sim IG(\alpha_n/2, \delta_n/2),
+\end{equation*}
+
+where $\bm{B}_n = (\bm{B}_0^{-1} + \sigma^{-2}\bm{X}^{\top}\bm{X})^{-1}$, $\bm{\beta}_n= \bm{B}_n(\bm{B}_0^{-1}\bm{\beta}_0 + \sigma^{-2}\bm{X}^{\top}\bm{y})$, $\alpha_n = \alpha_0 + N$ and $\delta_n = \delta_0 + (\bm{y}^*-\bm{X}\bm{\beta})^{\top}(\bm{y}^*-\bm{X}\bm{\beta})$.\\
+
+
 
 \section{Summary}\label{sec611}
 We present ...
@@ -1091,9 +1128,9 @@ We present ...
 	
 	Perform inference in the simulation of the multinomial logit model using the command \textit{rmnlIndepMetrop} from the \textit{bayesm} package of \textbf{R} and using our GUI.
 	
-	\item \textbf{Determinants of preventive health care visits continues}
+	\item \textbf{Simulation of the ordered probit model}
 	
-	Program from scratch a Metropolis-within-Gibbs sampling algorithm for the application of determinants of preventive health care visits.
+	Simulate an ordered probit model where the first regressor distributes $N(6, 5)$ and the second distributes $G(1,1)$, the location parameter is $\bm{\beta}=\left[0.5 \ -0.25 \ 0.5\right]$, and the cutoffs is the vector $\bm{\alpha}=\left[0 \ 1 \ 2.5\right]$. Program from scratch a Metropolis-within-Gibbs sampling algorithm for this simulation.
 	
 	\item \textbf{Simulation of the negative binomial model continues}
 	

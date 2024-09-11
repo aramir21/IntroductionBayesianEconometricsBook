@@ -160,8 +160,128 @@ mcmcpar <- list(R = mcmc, keep = 5, nu = df)
 PostBeta <- bayesm::rmnlIndepMetrop(Data = DataMlogit, Mcmc = mcmcpar)
 summary(PostBeta[["betadraw"]])
 
-########################## Ordered probit application: Preventive visits to physicians ##########################
-
+########################## Ordered probit: Simulation ##########################
+rm(list = ls())
+set.seed(010101)
+N <- 1000
+x1 <- rnorm(N, 6, 5); x2 <- rgamma(N, shape = 1, scale = 1)
+X <- cbind(1, x1, x2)
+beta <- c(0.5, -0.25, 0.5); cutoffs <- c(0, 1, 2.5)
+e <- rnorm(N,0,1)
+y_latent <- X%*%beta + e
+y <- rep(0,N)
+for (i in 1:N) {
+  if (y_latent[i] < cutoffs[1]) {
+    y[i] <- 0
+  } else {
+    if (y_latent[i] >= cutoffs[1] & y_latent[i] < cutoffs[2]) {
+      y[i] <- 1
+    } else{
+      if (y_latent[i] >= cutoffs[2] & y_latent[i] < cutoffs[3]) {
+        y[i] <- 2
+      } else{
+        y[i] <- 3
+      }
+    }
+  }
+}
+table(y)
+# Likelihood function
+LogLikOP <- function(param){
+  beta_g <- param[1:ncol(X)]
+  delta <- param[(ncol(X)+1):(ncol(X) + dplyr::n_distinct(y) - 1)]
+  Xbeta <- X%*%beta_g
+  logLik <- 0
+  for (i in 1:length(y)) {
+    if (y[i]==0) {
+      logLiki <- log(pnorm(-Xbeta[i]))
+    } else if (y[i]==1) {
+      logLiki <- log(pnorm(exp(delta[1]) - Xbeta[i]) - pnorm(-Xbeta[i]))
+    } else if (y[i]==2){
+      logLiki <- log(pnorm(exp(delta[2]) + exp(delta[1]) - Xbeta[i]) - pnorm(exp(delta[1]) - Xbeta[i]))
+    } else {
+      logLiki <- log(1 - pnorm(exp(delta[2]) + exp(delta[1]) - Xbeta[i]))
+    }
+    logLik <- logLik + logLiki
+  }
+  return(-logLik)
+}
+# ML Estimation
+param0 <- rep(0, ncol(X) + n_distinct(y)-2)
+mle <- optim(param0, LogLikOP, hessian = T, method = "BFGS")
+mle$par
+exp(mle$par[length(beta)+1])
+exp(mle$par[length(beta)+1])+exp(mle$par[length(beta)+2])
+CovarML <- solve(mle$hessian)
+# M-H within Gibbs
+mhop <- function(param0, G){
+  betasamples <- matrix(c(0), nrow = G, ncol = ncol(X))
+  betasamples[1,] <- param0[1:ncol(X)]
+  tau <- matrix(c(0), nrow = G, ncol = dplyr::n_distinct(y) - 2)
+  tau[1,] <- param0[(ncol(X)+1):(ncol(X) + dplyr::n_distinct(y) - 2)]
+  yl <- rep(0,length(y))
+  ar <- rep(0,G)
+  B1 <- solve(t(X)%*%X+solve(B0))
+  pb <- winProgressBar(title = "progress bar", min = 0, max = G, width = 300)
+  for(g in 2:G){
+    bg <- betasamples[g-1,]
+    tg <- tau[g-1,]
+    #Random walk M-H for delta
+    delta_prime <- tg + mvtnorm::rmvnorm(1, mean = rep(0,2), sigma = VarProp)
+    alpha <- min(1,(mvtnorm::dmvnorm(delta_prime, mean = d0, sigma = D0)*exp(-LogLikOP(c(bg, delta_prime)) + LogLikOP(c(bg, tg))))/mvtnorm::dmvnorm(tg, mean = d0, sigma = D0))
+    if(is.nan(alpha) | is.na(alpha)) {
+      alpha <- 0
+    }
+    #Acceptance step
+    u <- runif(1, min = 0, max = 1)
+    if(u<=alpha){
+      tau[g,] <- delta_prime
+      ar[g] <- 1
+    }else{
+      tau[g,] <- tg
+    }
+    #Generation of latent variables
+    for (i in 1:length(y)){
+      if (y[i]==0) {
+        yl[i] <- EnvStats::rnormTrunc(1, mean = X[i,]%*%bg, sd = 1, max = 0)
+      }else if(y[i]==1){
+        yl[i] <- EnvStats::rnormTrunc(1, mean = X[i,]%*%bg, sd = 1, min = 0, max = exp(tau[g,1]))
+      }else if(y[i]==2){
+        yl[i] <- EnvStats::rnormTrunc(1, mean = X[i,]%*%bg, sd = 1, min = exp(tau[g,1]), max = exp(tau[g,2])+exp(tau[g,1]))
+      }else{
+        yl[i] <- EnvStats::rnormTrunc(1, mean = X[i,]%*%bg, sd = 1, min = exp(tau[g,2])+exp(tau[g,1]))
+      }
+    }
+    #Gibbs sampling for beta
+    if(sum(is.nan(yl))>0 | sum(is.na(yl))>0 | sum(yl)==Inf){
+      betasamples[g,] <- betasamples[g-1,]
+    }else{
+      b1 <- B1%*%(t(X)%*%yl + solve(B0)%*%b0)
+      betasamples[g,] <- mvrnorm(1, mu = b1, Sigma = B1)
+    }
+    setWinProgressBar(pb, g, title=paste( round(g/G*100, 0),"% done"))
+  }
+  close(pb)
+  return(cbind(betasamples, tau, ar))
+}
+###########################################Bayesian Estimation###################################
+#Hyperparameters
+d0 <- rep(0,2)
+D0 <- diag(2)*10000
+b0 <- rep(0,ncol(X))
+B0 <- diag(ncol(X))*10000
+#Estimation
+param0 <- rep(0, ncol(X) + dplyr::n_distinct(y)-1)
+G <- 1000
+tun <- 1
+VarProp <- tun*solve(solve(CovarML[4:5, 4:5]) + solve(D0))
+param_sample <- mhop(param0, G)
+#Burn in
+B <- round(0.2*G)
+param_sample <- param_sample[(B+1):G,]
+mcmc0 <- coda::mcmc(param_sample[, 1:(ncol(X) + dplyr::n_distinct(y) - 2)])
+summary(mcmc0)
+summary(coda::mcmc(cbind(exp(param_sample[, 4]),exp(param_sample[, 4])+exp(param_sample[, 5]))))
 
 ########################## Negative binomial: Simulation ##########################
 rm(list = ls())
