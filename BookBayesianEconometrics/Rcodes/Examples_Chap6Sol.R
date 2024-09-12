@@ -365,3 +365,25 @@ PosteriorBetas <- PostBetas[keep,]
 colnames(PosteriorBetas) <- c("Intercept", "Perf", "Age", "Age2", "NatTeam", "Goals", "Exp", "Exp2")
 summary(coda::mcmc(PosteriorBetas))
 
+########################## Bayesian bootstrap: Simulation ##########################
+rm(list = ls())
+set.seed(010101)
+N <- 1000 # Sample size
+x1 <- runif(N); x2 <- rnorm(N)
+X <- cbind(x1, x2)
+k <- dim(X)[2]
+B <- rep(1, k+1)
+sig2 <- 1
+u <- rnorm(N, 0, sig2)
+y <- cbind(1, X)%*%B + u
+data <- as.data.frame(cbind(y, X))
+names(data) <- c("y", "x1", "x2")
+Reg <- function(d){
+  Reg <- lm(y ~ x1 + x2, data = d)
+  Bhat <- Reg$coef
+  return(Bhat)
+}
+Reg(data)
+S <- 1000
+BB <- bayesboot::bayesboot(data = data, statistic = Reg, R = S)
+plot(BB)

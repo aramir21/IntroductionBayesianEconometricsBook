@@ -1360,23 +1360,109 @@ Given $y_i\stackrel{i.n.d.} {\thicksim}\mathcal{F}$ where $\mathcal{F}$ does not
 
 The algorithm to implement the Bayesian bootstrap is the following:
 \begin{algorithm}[!h]
-	\caption{Bayesian bootstrap in linear regression}
-	\label{alg:BB}
+	\caption{Bayesian bootstrap from scratch in linear regression}
+	\label{Alg:BB}
 	\begin{algorithmic}[1]
 		\State Draw $\bm{g}\sim Dir(\alpha_1,\alpha_2,\dots,\alpha_N)$ such that $\alpha_i=1 \ \forall i$.
 		\State $\bm{g}=(g_1,g_2,\dots,g_N)$ is the vector of probabilities to attach to $(y_1,\bm{x}_1^{\top}),(y_2,\bm{x}_2^{\top}),\dots,(y_n,\bm{x}_N^{\top})$ for each Bayesian bootstrap replication.
-		\State Sample $(y_i,\bm{x}_i^{\top})$ $S_1$ times with replacement and probabilities $g_i$, $i=1,2,\dots,N$.
+		\State Sample $(y_i,\bm{x}_i^{\top})$ $N$ times with replacement and probabilities $g_i$, $i=1,2,\dots,N$.
 		\State Estimate $\bm{\beta}$ using ordinary least squares in the model $E(\bm{Y}|\bm{X})=\bm{X}\bm{\beta}$, $\bm{y}$ being an $S_1$ dimensional vector of realizations of $\bm{Y}$, and $\bm{X}$ an $S_1\times k$ matrix from the previous stage.$^*$ 
-		\State Repeat this process $S_2$ times.
+		\State Repeat this process $S$ times.
 		\State The distribution of $\bm{\beta}^{(s_2)}$ is the Bayesian distribution of $\bm{\beta}$.		
 	\end{algorithmic}
 	$^*${\footnotesize{Ordinary least squares is the posterior mean of $\bm{\beta}$ using Jeffrey's prior in a linear regression.}}
-\end{algorithm} 
+\end{algorithm}
 
+\textbf{Example: Simulation exercise}
+
+Let's do a simulation exercise to check the performance of the Algorithm \ref{Alg:BB} to perform inference using the Bayesian bootstrap. The data generating process is given by two regressors that distribute normal standard. The location vector is $\bm{\beta}=\left[1 \ 1 \ 1\right]$, and variance $\sigma^2=1$, the sample size is 1,000.
+
+Algorithm \ref{alg:BayBootstrap} shows how to use our GUI to run the Bayesian bootstrap. Our GUI is based on the \textit{bayesboot} command from \textit{bayesboot} package in \textbf{R}. Exercise 11 asks about using this package to perform inference in this simulation, and compared the results with the ones that we get using our GUI setting $S=10000$.
+
+\begin{algorithm}[h!]
+	\caption{Bayesian bootstrap in linear regression}\label{alg:BayBootstrap}
+	\begin{algorithmic}[1]  		 			
+		\State Select \textit{Univariate Models} on the top panel
+		\State Select \textit{Bootstrap} model using the left radio button
+		\State Upload the dataset selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend. You should see a preview of the dataset
+		\State Select number of bootstrap replications using the \textit{Range sliders}
+		\State Select dependent and independent variables using the \textit{Formula builder} table
+		\State Click the \textit{Build formula} button to generate the formula in \textbf{R} syntax. You can modify the formula in the \textbf{Main equation} box using valid arguments of the \textit{formula} command structure in \textbf{R}
+		\State Click the \textit{Go!} button
+		\State Analyze results
+		\State Download posterior chains and diagnostic plots using the \textit{Download Posterior Chains} and \textit{Download Posterior Graphs} buttons
+	\end{algorithmic} 
+\end{algorithm}
+
+The following \textbf{R} code shows how to program the Bayesian bootstrap from scratch. We observe from the results that all 95\% credible intervals encompass the population parameters, and the posterior means are close to the population parameters.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R. code. Bayesian bootstrap}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+N <- 1000; x1 <- runif(N); x2 <- rnorm(N)
+X <- cbind(x1, x2); k <- dim(X)[2]
+B <- rep(1, k+1); sig2 <- 1
+u <- rnorm(N, 0, sig2); y <- cbind(1, X)%*%B + u
+data <- as.data.frame(cbind(y, X))
+names(data) <- c("y", "x1", "x2")
+Reg <- function(d){
+	Reg <- lm(y ~ x1 + x2, data = d)
+	Bhat <- Reg$coef
+	return(Bhat)
+}
+S <- 10000; alpha <- 1
+BB <- function(S, df, alpha){
+	Betas <- matrix(NA, S, dim(df)[2])
+	N <- dim(df)[1]
+	pb <- winProgressBar(title = "progress bar", min = 0, max = S, width = 300)
+	for(s in 1:S){
+		g <- LaplacesDemon::rdirichlet(N, alpha)
+		ids <- sample(1:N, size = N, replace = TRUE, prob = g)
+		datas <- df[ids,]
+		names(datas) <- names(df)
+		Bs <- Reg(d = datas)
+		Betas[s, ] <- Bs
+		setWinProgressBar(pb, s, title=paste( round(s/S*100, 0), "% done"))
+	}
+	close(pb)
+	return(Betas)
+}
+BBs <- BB(S = S, df = data, alpha = alpha)
+summary(coda::mcmc(BBs))
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+ 
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R. code. Bayesian bootstrap, results}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+Iterations = 1:10000
+Thinning interval = 1 
+Number of chains = 1 
+Sample size per chain = 10000 
+1. Empirical mean and standard deviation for each variable,
+plus standard error of the mean:
+			Mean      SD  Naive SE Time-series SE
+[1,] 0.9172 0.06386 0.0006386      0.0006291
+[2,] 1.1733 0.10888 0.0010888      0.0010201
+[3,] 1.0137 0.03386 0.0003386      0.0003386
+2. Quantiles for each variable:
+			2.5%    25%    50%    75% 97.5%
+var1 0.7926 0.8743 0.9169 0.9599 1.043
+var2 0.9608 1.0984 1.1739 1.2468 1.389
+var3 0.9473 0.9910 1.0136 1.0365 1.079
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
 
 
 \section{Summary}\label{sec611}
-In this chapter, we present the core univariate regression models and demonstrate how to perform Bayesian inference using Markov Chain Monte Carlo methods. Specifically, we cover a mix of algorithms: Metropolis-Hastings, Gibbs sampling, nested M-H, and M-H-within-Gibbs. These algorithms form the foundation for performing Bayesian inference in more complex settings using cross-sectional data sets
+In this chapter, we present the core univariate regression models and demonstrate how to perform Bayesian inference using Markov Chain Monte Carlo methods. Specifically, we cover a mix of algorithms: Gibbs sampling, Metropolis-Hastings, nested M-H, and M-H-within-Gibbs. These algorithms form the foundation to perform Bayesian inference in more complex settings using cross-sectional data sets.
 
 \section{Exercises}\label{sec612}
 
@@ -1415,6 +1501,8 @@ In this chapter, we present the core univariate regression models and demonstrat
 	
 	\item \textbf{The market value of soccer players in Europe continues}
 	
-	Program from scratch the Gibbs sampling algorithm in the example of the market value of soccer players at the 0.75 quantile.    
+	Program from scratch the Gibbs sampling algorithm in the example of the market value of soccer players at the 0.75 quantile.
+	
+	\item Use \textit{bayesboot} package to perform inference in the simulation exercise of Section \ref{sec610}, and compared the results with the ones that we get using our GUI setting $S=10000$.    
 
 \end{enumerate}

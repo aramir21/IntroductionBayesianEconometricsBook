@@ -516,4 +516,40 @@ q <- 0.9
 posterior  <- MCMCpack::MCMCquantreg(y~X-1, tau = q, b0=b0, B0 = B0i, burnin = burnin, mcmc = mcmc, thin = thin, below = 13.82, above = Inf)
 summary(coda::mcmc(posterior))
 
-
+########################## Bayesian bootstrap: Simulation ##########################
+rm(list = ls())
+set.seed(010101)
+N <- 1000 # Sample size
+x1 <- runif(N); x2 <- rnorm(N)
+X <- cbind(x1, x2)
+k <- dim(X)[2]
+B <- rep(1, k+1)
+sig2 <- 1
+u <- rnorm(N, 0, sig2)
+y <- cbind(1, X)%*%B + u
+data <- as.data.frame(cbind(y, X))
+names(data) <- c("y", "x1", "x2")
+Reg <- function(d){
+  Reg <- lm(y ~ x1 + x2, data = d)
+  Bhat <- Reg$coef
+  return(Bhat)
+}
+S <- 10000; alpha <- 1
+BB <- function(S, df, alpha){
+  Betas <- matrix(NA, S, dim(df)[2])
+  N <- dim(df)[1]
+  pb <- winProgressBar(title = "progress bar", min = 0, max = S, width = 300)
+  for(s in 1:S){
+    g <- LaplacesDemon::rdirichlet(N, alpha)
+    ids <- sample(1:N, size = N, replace = TRUE, prob = g)
+    datas <- df[ids,]
+    names(datas) <- names(df)
+    Bs <- Reg(d = datas)
+    Betas[s, ] <- Bs
+    setWinProgressBar(pb, s, title=paste( round(s/S*100, 0), "% done"))
+  }
+  close(pb)
+  return(Betas)
+}
+BBs <- BB(S = S, df = data, alpha = alpha)
+summary(coda::mcmc(BBs))
