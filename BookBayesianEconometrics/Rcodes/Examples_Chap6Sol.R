@@ -384,6 +384,6 @@ Reg <- function(d){
   return(Bhat)
 }
 Reg(data)
-S <- 1000
+S <- 10000
 BB <- bayesboot::bayesboot(data = data, statistic = Reg, R = S)
 plot(BB)

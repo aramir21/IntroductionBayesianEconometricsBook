@@ -688,4 +688,38 @@ summary(coda::mcmc(PosteriorBetas))
 	\end{VF}
 \end{tcolorbox}	
 
+\item Use the \textit{bayesboot} package to perform inference in the simulation exercise of Section 7.10, and compared the results with the ones that we get using our GUI setting $S=10000$. 
+
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R. code. The value of soccer players, quantile regression}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+########################## Bayesian bootstrap: Simulation ##########################
+rm(list = ls())
+set.seed(010101)
+N <- 1000 # Sample size
+x1 <- runif(N); x2 <- rnorm(N)
+X <- cbind(x1, x2)
+k <- dim(X)[2]
+B <- rep(1, k+1)
+sig2 <- 1
+u <- rnorm(N, 0, sig2)
+y <- cbind(1, X)%*%B + u
+data <- as.data.frame(cbind(y, X))
+names(data) <- c("y", "x1", "x2")
+Reg <- function(d){
+	Reg <- lm(y ~ x1 + x2, data = d)
+	Bhat <- Reg$coef
+	return(Bhat)
+}
+Reg(data)
+S <- 10000
+BB <- bayesboot::bayesboot(data = data, statistic = Reg, R = S)
+plot(BB)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}	
+
 \end{enumerate}
