@@ -1,0 +1,99 @@
+\chapter{Multivariate models}\label{chap7}
+
+\section{Solutions of Exercises}\label{sec71}
+\begin{enumerate}[leftmargin=*]
+
+	\item Show that $\mathbb{E}[u_1\text{PAER}]=\frac{\alpha_1}{1-\beta_1\alpha_1}\sigma^2_1$ assuming that $\mathbb{E}[u_1u_2]=0$ where $Var(u_1)=\sigma^2_1$ in the effect of institutions on per capita GDP.
+	
+	\textbf{Answer}:
+	
+	The point of departure is the following \textit{simultaneous structural} economic model:
+	\begin{align}\label{eq:str1}
+		\log(\text{pcGDP95}_i)=\beta_0+\beta_1\text{PAER}_i+\beta_2 \text{Africa}+\beta_3 \text{Asia}+\beta_4 \text{Other}+u_{1i},
+	\end{align}
+	\begin{align}\label{eq:str2}
+		\text{PAER}_i=\alpha_0+\alpha_1\log(\text{pcGDP95}_i)+\alpha_2\log(\text{Mort}_i)+u_{2i},
+	\end{align}
+
+where \textit{pcGDP95}, \textit{PAER} and \textit{Mort} are the per capita gross domestic product (GDP) in 1995, the average index of protection against expropriation between 1985 and 1995, and the settler mortality rate during the time of colonization. \textit{Africa}, \textit{Asia} and \textit{Other} are dummies for continents, with \textit{America} as the baseline group.
+
+Replacing Equation \ref{eq:str2} into Equation \ref{eq:str1}, and solving for $\log(\textit{pcGDP95})$,
+\begin{align}\label{eq:red1}
+	\log(\text{pcGDP95}_i)=\pi_0+\pi_1\log(\text{Mort}_i)+\pi_2 \text{Africa}+\pi_3 \text{Asia}+\pi_4 \text{Other}+e_{1i},   
+\end{align}
+
+where $\pi_0=\frac{\beta_0+\beta_1\alpha_0}{1-\beta_1\alpha_1}$, $\pi_1=\frac{\beta_1\alpha_2}{1-\beta_1\alpha_1}$, $\pi_2=\frac{\beta_2}{1-\beta_1\alpha_1}$, $\pi_3=\frac{\beta_3}{1-\beta_1\alpha_1}$, and $e_1=\frac{\beta_1u_2+u_1}{1-\beta_1\alpha_1}$.
+
+Then, replacing Equation \ref{eq:red1} into Equation \ref{eq:str2}, and solving for \textit{PAER},
+\begin{align}\label{eq:red2}
+	\text{PAER}_i=\gamma_0+\gamma_1\log(\text{Mort}_i)+\gamma_2 \text{Africa}+\gamma_3 \text{Asia}+\gamma_4 \text{Other}+e_{2i},
+\end{align}
+where $\gamma_0=\frac{\alpha_0+\alpha_1\beta_0}{1-\beta_1\alpha_1}$, $\gamma_1=\frac{\alpha_2}{1-\beta_1\alpha_1}$, $\gamma_2=\frac{\alpha_1\beta_2}{1-\beta_1\alpha_1}$, $\gamma_3=\frac{\alpha_1\beta_3}{1-\beta_1\alpha_1}$, and $e_2=\frac{\alpha_1u_1+u_2}{1-\beta_1\alpha_1}$.
+
+Then, $\mathbb{E}[u_1\text{PAER}]=\mathbb{E}\left[u_1(\gamma_0+\gamma_1\log(\text{Mort}_i)+\gamma_2 \text{Africa}+\gamma_3 \text{Asia}+\gamma_4 \text{Other}+e_{2i})\right]=\mathbb{E}\left[u_1\left(\frac{\alpha_1u_1+u_2}{1-\beta_1\alpha_1}\right)\right]=\frac{\alpha_1}{1-\beta_1\alpha_1}\sigma^2_1$ given the assumptions.      
+
+\item Show that $\beta_1=\pi_1/\gamma_1$ in the effect of institutions on per capita GDP.
+
+\textbf{Answer}
+
+Given that $\pi_1=\frac{\beta_1\alpha_2}{1-\beta_1\alpha_1}$ and $\gamma_1=\frac{\alpha_2}{1-\beta_1\alpha_1}$ from the previous exercise, consequently, $\beta_1=\pi_1/\gamma_1$.
+
+\item \textbf{The effect of institutions on per capita gross domestic product continues}
+
+Use the \textit{rmultireg} command from the \textit{bayesm} package to perform inference in the example of the effect of institutions on per capita GDP.
+
+\textbf{Answer}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. The effect of institutions on per capita GDP}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls())
+set.seed(010101)
+DataInst <- read.csv("DataApplications/4Institutions.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+attach(DataInst)
+Y <- cbind(logpcGDP95, PAER)
+X <- cbind(1, logMort, Africa, Asia, Other)
+M <- dim(Y)[2]
+K <- dim(X)[2]
+# Hyperparameters
+B0 <- matrix(0, K, M)
+c0 <- 100
+V0 <- c0*diag(K)
+Psi0 <- 5*diag(M)
+a0 <- 5
+S <- 10000 #Number of posterior draws
+betadraw = matrix(double(S*K*M), ncol=K*M)
+Sigmadraw = matrix(double(S*M*M), ncol=M*M)
+pb <- winProgressBar(title = "progress bar", min = 0, max = S, width = 300)
+for (s in 1:S) {
+	Results <- bayesm::rmultireg(Y, X, Bbar = B0, A = solve(V0), nu = a0, V = Psi0)
+	betadraw[s,] <- Results$B
+	Sigmadraw[s,] <- Results$Sigma
+	setWinProgressBar(pb, s, title=paste( round(s/S*100, 0), "% done"))
+}
+close(pb)
+summary(coda::mcmc(betadraw))
+summary(coda::mcmc(Sigmadraw))
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+ 
+	\item \textbf{Demand and supply simulation}
+
+Given the structural demand-supply model:
+\begin{align*}
+	q_i^d&=\beta_1+\beta_2p_i+\beta_3y_i+\beta_4pc_i+\beta_5ps_i+u_{i1}\\
+	q_i^s&=\alpha_1+\alpha_2p_i+\alpha_3er_i+u_{i2},
+\end{align*}
+where $q^d$ is demand, $q^s$ is supply, $p$, $y$, $pc$, $ps$ and $er$ are price, income, complementary price, substitute price, and exchange rate. Complementary and substitute prices are prices of a complementary and substitute goods of $q$. Assume that $\bm{\beta}=\left[5 \ -0.5 \ 0.8 \ -0.4 \ 0.7\right]^{\top}$, $\bm{\alpha}=\left[-2 \ 0.5 \ -0.4\right]^{\top}$, $u_1\sim N(0, 0.5^2)$ and $u_2\sim N(0, 0.5^2)$. In addition, assume that $y\sim N(10,1)$, $pc\sim N(5,1)$, $ps\sim N(5,1)$ and $tc\sim N(15,1)$.
+\begin{itemize}
+	\item Find the \textit{reduce-form} model using that in equilibrium demand and supply are equal, that is, $q^d=q^s$. This condition defines the observable quantity ($q$).
+	\item Simulate $p$ and $q$ from the \textit{reduce-form} equations.
+	\item Preform inference of the \textit{reduce-form} model using the \textit{rmultireg} command from the \textit{bayesm} package.
+	\item Use the posterior draws of the \textit{reduce-form} parameters to perform inference of the \textit{structural} parameters. Any issue? Hint: Are all \textit{structural} parameters exactly identified?   
+\end{itemize}
+
+
+\end{enumerate}
