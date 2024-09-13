@@ -30,3 +30,158 @@ The prior is given by   $\pi(\bm{B}|\bm{\Sigma})\sim{N}(\bm{B}_0,\bm{V}_0, \bm{\
 
 where $\bm{V}_n=(\bm{X}^{\top}\bm{X}+\bm{V}_0^{-1})^{-1}$, $\bm{B}_n=\bm{V}_n(\bm{V}_0^{-1}\bm{B}_0 + \bm{X}^{\top}\bm{X}\hat{\bm{B}})$, $\hat{\bm{B}}=(\bm{X}^{\top}\bm{X})^{-1}\bm{X}^{\top}\bm{Y}$, $\bm{\Psi}_n = {\bf{\Psi}}_{0}+{\bf{S}}+{\bf{B}}_{0}^{\top}{\bf{V}}_{0}^{-1}{\bf{B}}_{0}+\widehat{\bf{B}}^{\top}{\bf{X}}^{\top}{\bf{X}}\widehat{\bf{B}}-{\bf{B}}_n^{\top}{\bf{V}}_n^{-1}{\bf{B}}_n$, and $\alpha_n = \alpha_0 + N$. We can use a Gibbs sampling algorithm in this model since the conditional posterior distributions are standard.\\
 
+\textbf{Example: The effect of institutions on per capita gross domestic product}
+
+To illustrate multivariate regression models, we used the dataset provided by \cite{Acemoglu2001}, who analyzed the effect of property rights on economic growth.
+
+The point of departure is the following \textit{simultaneous structural} economic model:
+\begin{align}\label{eq:str1}
+	\log(\text{pcGDP95}_i)=\beta_0+\beta_1\text{PAER}_i+\beta_2 \text{Africa}+\beta_3 \text{Asia}+\beta_4 \text{Other}+u_{1i},
+\end{align}
+\begin{align}\label{eq:str2}
+	\text{PAER}_i=\alpha_0+\alpha_1\log(\text{pcGDP95}_i)+\alpha_2\log(\text{Mort}_i)+u_{2i},
+\end{align}
+where \textit{pcGDP95}, \textit{PAER} and \textit{Mort} are the per capita gross domestic product (GDP) in 1995, the average index of protection against expropriation between 1985 and 1995, and the settler mortality rate during the time of colonization. \textit{Africa}, \textit{Asia} and \textit{Other} are dummies for continents, with \textit{America} as the baseline group.
+
+In this model, there is \textit{reverse causality} due to the contemporaneous effect of \textit{GDP} on \textit{PAER}, and vice verse.\footnote{\textit{Reverse causality} is the most controversial causation issue from a philosophy of science perspective. The root of the issue is that causation is typically based on the time sequence of cause and effect.} Therefore, estimation of Equation \label{eq:str1} without taking into account this phenomenon generates posterior mean estimates that are \textit{biased} and \textit{inconsistent} from a sampling (frequentist) point of view.\footnote{Observe that $\mathbb{E}[u_1\text{PAER}]\neq 0$, which means failing to meet a necessary requirement to get \textit{unbiased} and \textit{consistent} estimators of $\bm{\beta}$. See exercise 1.} A potential strategy to tackle this issue is to estimate the \textit{reduced-form} model.
+
+Replacing Equation \ref{eq:str2} into Equation \ref{eq:str1}, and solving for $\log(\textit{pcGDP95})$,
+\begin{align}\label{eq:red1}
+	\log(\text{pcGDP95}_i)=\pi_0+\pi_1\log(\text{Mort}_i)+\pi_2 \text{Africa}+\pi_3 \text{Asia}+\pi_4 \text{Other}+e_{1i}.   
+\end{align}
+Then, replacing Equation \ref{eq:red1} into Equation \ref{eq:str2}, and solving for \textit{PAER},
+\begin{align}\label{eq:red2}
+	\text{PAER}_i=\gamma_0+\gamma_1\log(\text{Mort}_i)+\gamma_2 \text{Africa}+\gamma_3 \text{Asia}+\gamma_4 \text{Other}+e_{2i},
+\end{align}
+where $\pi_1=\frac{\beta_1\alpha_2}{1-\beta_1\alpha_1}$ and $\gamma_1=\frac{\alpha_2}{1-\beta_1\alpha_1}$ (see Exercise 2). This means that $\beta_1=\frac{\pi_1}{\gamma_1}$, which is the effect of property rights on GDP. Observe we need independent equations ($\beta_1\alpha_1\neq 1$), and the \textit{exclusion restriction} ($\alpha_2\neq 0$). Otherwise $\beta_1$ is not identified. In general, trying to recover the \textit{structural} parameters from the \textit{reduced-form} parameters can be challenging due to the requirement of identification restrictions that can be hard to find in some cases.
+
+Observe that equations \ref{eq:red1} and \ref{eq:red2} have the form of multivariate regression models where the common set of regressors is $\bm{X}=\left[\log(\textbf{Mort}) \ \textbf{Africa} \ \textbf{Asia} \ \textbf{Other}\right]$ and $\bm{Y}=\left[\log(\textbf{pcGDP95}) \ \textbf{PAER}\right]$. Thus, we can estimate this model using the setup of this section.
+
+We set non-informative priors, $\bm{B}_0=\left[\bm{0}_5 \ \bm{0}_5\right]$, $\bm{V}_0=100\bm{I}_K$, $\bm{\Psi}_0=5\bm{I}_2$ and $\alpha_0=5$.\footnote{Observe that we are setting the priors in the \textit{reduced-form} model; this may have unintended consequences for the posterior distributions of the \textit{structural} parameters, which are ultimately the parameters researchers are interested in. See \cite[p.~302]{koop2003bayesian} for good references in this topic.}  
+
+
+Once our GUI is displayed (see beginning of this chapter), we should follow Algorithm \ref{alg:MultReg} to run multivariate linear models in our GUI (see Chapter \ref{chapGUI} for details):
+\begin{algorithm}[h!]
+	\caption{Multivariate linear model}\label{alg:MultReg}
+	\begin{algorithmic}[1]  		 			
+		\State Select \textit{Multivariate Models} on the top panel
+		\State Select \textit{Simple Multivariate} model using the left radio button
+		\State Upload the dataset selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend. You should see a preview of the dataset
+		\State Select MCMC iterations, burn-in and thinning parameters using the \textit{Range sliders}
+		\State Select the number of dependent variables in the box \textbf{Number of endogenous variables: m}
+		\State Select the number of independent variables in the box \textbf{Number of exogenous variables: k}
+		\State Set the hyperparameters: mean vectors, covariance matrix, degrees of freedom of the Inverse Wishart distribution, and the scale matrix. This step is not necessary as by default our GUI uses non-informative priors
+		\State Select the tuning parameter for the Metropolis-Hastings algorithm
+		\State Click the \textit{Go!} button
+		\State Analyze results
+		\State Download posterior chains and diagnostic plots using the \textit{Download Posterior Chains} and \textit{Download Posterior Graphs} buttons
+	\end{algorithmic} 
+\end{algorithm}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. The effect of institutions on per capita GDP}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls())
+set.seed(010101)
+DataInst <- read.csv("DataApplications/4Institutions.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+attach(DataInst)
+Y <- cbind(logpcGDP95, PAER)
+X <- cbind(1, logMort, Africa, Asia, Other)
+M <- dim(Y)[2]
+K <- dim(X)[2]
+N <- dim(Y)[1]
+# Hyperparameters
+B0 <- matrix(0, K, M)
+c0 <- 100
+V0 <- c0*diag(K)
+Psi0 <- 5*diag(M)
+a0 <- 5
+# Posterior parameters
+Bhat <- solve(t(X)%*%X)%*%t(X)%*%Y 
+S <- t(Y - X%*%Bhat)%*%(Y - X%*%Bhat)
+Vn <- solve(solve(V0) + t(X)%*%X) 
+Bn <- Vn%*%(solve(V0)%*%B0 + t(X)%*%X%*%Bhat)
+Psin <- Psi0 + S + t(B0)%*%solve(V0)%*%B0 + t(Bhat)%*%t(X)%*%X%*%Bhat - t(Bn)%*%solve(Vn)%*%Bn
+an <- a0 + N
+#Posterior draws
+s <- 10000 #Number of posterior draws
+SIGs <- replicate(s, LaplacesDemon::rinvwishart(an, Psin))
+BsCond <- sapply(1:s, function(s) {MixMatrix::rmatrixnorm(n = 1, mean=Bn, U = Vn,V = SIGs[,,s])})
+summary(coda::mcmc(t(BsCond)))
+SIGMs <- t(sapply(1:s, function(l) {gdata::lowerTriangle(SIGs[,,l], diag=TRUE, byrow=FALSE)}))
+summary(coda::mcmc(SIGMs))
+hdiBs <- HDInterval::hdi(t(BsCond), credMass = 0.95) # Highest posterior density credible interval
+hdiBs
+hdiSIG <- HDInterval::hdi(SIGMs, credMass = 0.95) # Highest posterior density credible interval
+hdiSIG
+beta1 <- BsCond[2,]/BsCond[7,] 
+summary(coda::mcmc(beta1)) # Effect of property rights on GDP
+Iterations = 1:10000
+Thinning interval = 1 
+Number of chains = 1 
+Sample size per chain = 10000 
+1. Empirical mean and standard deviation for each variable,
+plus standard error of the mean:
+Mean             SD       Naive SE Time-series SE 
+0.9343        12.8521         0.1285         0.1285 
+2. Quantiles for each variable:
+2.5%    25%    50%    75%  97.5% 
+0.5516 0.7982 0.9779 1.2310 2.7660
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+ 
+The previous \textbf{R} code shows how to perform the Gibss sampling algorithm in this example using the dataset \textit{4Institutions.csv}. We ask to run this example using the \textit{rmultireg} command from the \textit{bayesm} package as an exercise. We find that the posterior mean \textit{structural} effect of property rights on GDP is 0.93, and the 95\% credible interval is (0.55, 2.77). 
+
+\section{Seemingly unrelated regression}\label{sec72}
+
+As there are different sets of regressors in each equation, and we suspect there is correlation between the stochastic errors of these two equations, we should estimate a seemingly unrelated regressions (SUR) model.\\
+
+We should take into account that there are two equations: the first one has five regressors, including the intercept, and the second equation has two regressors (intercept plus the mortality rate).
+We used default values for the hyperparameters, this implies ``vague'' prior information, and hence an ``objective'' Bayesian approach.\\
+
+We set 10,000 MCMC iterations plus 1,000 burn-in iterations, and a thinning parameter equal to 1.
+It seems that this setting gives posterior chains that converge to stationary distributions.
+All stationary tests do not reject the null hypothesis of ``stationarity,'' and the mixing properties look good (dependence factors close to 1, autocorrelation and trace plots seem to indicate no autocorrelation).\\
+
+The most important parameters are the effect of the mortality rate on gross domestic product and property rights.
+Their 95\% credible intervals are (-0.67, -0.29) and (-0.85, -0.35), respectively (second and seventh parameters).
+This suggests that the settler mortality rate during the time of colonization is negatively associated with economic growth and property rights.
+In addition, the 95\% credible interval of the covariance between the stochastic errors of these two equations is (0.33, 0.88), which suggests that there is statistically significant evidence of correlation between the equations.\\
+
+The previous set of equations can be considered as a restricted reduced form system, where the coefficients of the continents are set equal to 0 in the property rights equation.
+We can think in the following system of structural equations as producing the previous, but unrestricted, reduced form system,
+
+
+
+We used the file \textit{4Institutions.csv}, which has the structure to estimate multivariate Bayesian regressions using our GUI, to identify the causal effect of property rights on per capita GDP.
+In particular, we use the same MCMC and hyperparameters setting as in the previous exercise to obtain the posterior estimates of the reduced system without imposing zero restrictions of the effect of continents on property rights.
+The structural parameter $\beta_1$ is equal to $\pi_1/\gamma_1$.\footnote{Substituting Equation \ref{eq:str2} into Equation \ref{eq:str1} and comparing with Equation \ref{eq:red1} yields $\pi_1=\frac{\beta_1\alpha_2}{1-\beta_1\alpha_1}$.
+	Solving for the PAER as a function of the exogenous regressors in the structural system, and comparing with Equation \ref{eq:red2}, yields $\gamma_1=\frac{\alpha_2}{1-\beta_1\alpha_1}$.
+	Observe one needs independent equations ($\beta_1\alpha_1\neq 1$), and the exclusion restriction ($\alpha_2\neq 0$).} We used the posterior draws automatically generated by our GUI to obtain the posterior chain of this structural parameter, which are the causal effects  that \cite{Acemoglu2001} wanted to identify.
+The 95\% credible interval is (0.56, 2.93), the posterior mean value is 1.12, and the median value is 0.98.
+If we estimate a multivariate system without taking into account the dummy variables associated with the continents, the causal effect has a 95\% credible interval (0.68, 1.43) with posterior mean and median values equal to 0.94 and 0.97, respectively.
+Observe that the length of the second interval is shorter than the first.
+This is because the dummy variables of the continents are not statistical relevant for the property rights equation. As a consequence, the former estimation is less efficient.\\
+
+Observe that we also obtain the posterior draws of the covariance matrix of these two reduced form equations from our GUI.
+All the convergence diagnostics indicate that the posterior draws (location and scale parameters) seem to come from stationary distributions.\\
+
+\section{Summary}\label{sec75}
+
+\section{Exercises}\label{sec76}
+\begin{enumerate}
+	\item Show that ...
+	
+	\item Show that ...
+	
+	\item \textbf{The effect of institutions on per capita gross domestic product continues}
+	
+	\item \textbf{Demand and supply simulation}
+	
+	
+\end{enumerate}
+
+
