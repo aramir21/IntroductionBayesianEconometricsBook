@@ -34,33 +34,68 @@ where $\bm{V}_n=(\bm{X}^{\top}\bm{X}+\bm{V}_0^{-1})^{-1}$, $\bm{B}_n=\bm{V}_n(\b
 
 To illustrate multivariate regression models, we used the dataset provided by \cite{Acemoglu2001}, who analyzed the effect of property rights on economic growth.
 
-The point of departure is the following \textit{simultaneous structural} economic model:
+Let's assume that the point of departure is the following \textit{simultaneous structural} economic model:\footnote{This is a model that captures the potential underlying economic relationship between the variables.}
 \begin{align}\label{eq:str1}
-	\log(\text{pcGDP95}_i)=\beta_0+\beta_1\text{PAER}_i+\beta_2 \text{Africa}+\beta_3 \text{Asia}+\beta_4 \text{Other}+u_{1i},
+	\log(\text{pcGDP95}_i)=\beta_1+\beta_2\text{PAER}_i+\beta_3 \text{Africa}+\beta_4 \text{Asia}+\beta_5 \text{Other}+u_{1i},
 \end{align}
 \begin{align}\label{eq:str2}
-	\text{PAER}_i=\alpha_0+\alpha_1\log(\text{pcGDP95}_i)+\alpha_2\log(\text{Mort}_i)+u_{2i},
+	\text{PAER}_i=\alpha_1+\alpha_2\log(\text{pcGDP95}_i)+\alpha_3\log(\text{Mort}_i)+u_{2i},
 \end{align}
 where \textit{pcGDP95}, \textit{PAER} and \textit{Mort} are the per capita gross domestic product (GDP) in 1995, the average index of protection against expropriation between 1985 and 1995, and the settler mortality rate during the time of colonization. \textit{Africa}, \textit{Asia} and \textit{Other} are dummies for continents, with \textit{America} as the baseline group.
 
-In this model, there is \textit{reverse causality} due to the contemporaneous effect of \textit{GDP} on \textit{PAER}, and vice verse.\footnote{\textit{Reverse causality} is the most controversial causation issue from a philosophy of science perspective. The root of the issue is that causation is typically based on the time sequence of cause and effect.} Therefore, estimation of Equation \label{eq:str1} without taking into account this phenomenon generates posterior mean estimates that are \textit{biased} and \textit{inconsistent} from a sampling (frequentist) point of view.\footnote{Observe that $\mathbb{E}[u_1\text{PAER}]\neq 0$, which means failing to meet a necessary requirement to get \textit{unbiased} and \textit{consistent} estimators of $\bm{\beta}$. See exercise 1.} A potential strategy to tackle this issue is to estimate the \textit{reduced-form} model.
+In this model, there is \textit{reverse (simultaneous) causality} due to the contemporaneous effect of \textit{GDP} on \textit{PAER}, and vice verse.\footnote{\textit{Reverse causality} is the most controversial causation issue from a philosophy of science perspective. The root of the issue is that causation is typically based on the time sequence of cause and effect.} Therefore, estimation of the Equation \ref{eq:str1} without taking into account this phenomenon generates posterior mean estimates that are \textit{biased} and \textit{inconsistent} from a sampling (frequentist) point of view.\footnote{Observe that $\mathbb{E}[u_1\text{PAER}]\neq 0$, which means failing to meet a necessary requirement to get \textit{unbiased} and \textit{consistent} estimators of $\bm{\beta}$. See exercise 1.} A potential strategy to tackle this issue is to estimate the \textit{reduced-form} model, that is, a model without \textit{simultaneous causality} where all \textit{endogenous variables} are function of \textit{exogenous variables}. The former variables are determinate inside the model ($\log(\text{pcGDP95}_i)$ and PAER in this example), and the latter outside the model ($\log(\text{Mort}_i)$, Africa, Asia, and Other in this example).
 
 Replacing Equation \ref{eq:str2} into Equation \ref{eq:str1}, and solving for $\log(\textit{pcGDP95})$,
 \begin{align}\label{eq:red1}
-	\log(\text{pcGDP95}_i)=\pi_0+\pi_1\log(\text{Mort}_i)+\pi_2 \text{Africa}+\pi_3 \text{Asia}+\pi_4 \text{Other}+e_{1i}.   
+	\log(\text{pcGDP95}_i)=\pi_1+\pi_2\log(\text{Mort}_i)+\pi_3 \text{Africa}+\pi_4 \text{Asia}+\pi_5 \text{Other}+e_{1i}.   
 \end{align}
 Then, replacing Equation \ref{eq:red1} into Equation \ref{eq:str2}, and solving for \textit{PAER},
 \begin{align}\label{eq:red2}
-	\text{PAER}_i=\gamma_0+\gamma_1\log(\text{Mort}_i)+\gamma_2 \text{Africa}+\gamma_3 \text{Asia}+\gamma_4 \text{Other}+e_{2i},
+	\text{PAER}_i=\gamma_1+\gamma_2\log(\text{Mort}_i)+\gamma_3 \text{Africa}+\gamma_4 \text{Asia}+\gamma_5 \text{Other}+e_{2i},
 \end{align}
-where $\pi_1=\frac{\beta_1\alpha_2}{1-\beta_1\alpha_1}$ and $\gamma_1=\frac{\alpha_2}{1-\beta_1\alpha_1}$ (see Exercise 2). This means that $\beta_1=\frac{\pi_1}{\gamma_1}$, which is the effect of property rights on GDP. Observe we need independent equations ($\beta_1\alpha_1\neq 1$), and the \textit{exclusion restriction} ($\alpha_2\neq 0$). Otherwise $\beta_1$ is not identified. In general, trying to recover the \textit{structural} parameters from the \textit{reduced-form} parameters can be challenging due to the requirement of identification restrictions that can be hard to find in some cases.
+where $\pi_2=\frac{\beta_2\alpha_3}{1-\beta_2\alpha_2}$ and $\gamma_2=\frac{\alpha_3}{1-\beta_2\alpha_2}$ given $\beta_2\alpha_2\neq 1$, that is, independent equations (see Exercise 2). 
 
-Observe that equations \ref{eq:red1} and \ref{eq:red2} have the form of multivariate regression models where the common set of regressors is $\bm{X}=\left[\log(\textbf{Mort}) \ \textbf{Africa} \ \textbf{Asia} \ \textbf{Other}\right]$ and $\bm{Y}=\left[\log(\textbf{pcGDP95}) \ \textbf{PAER}\right]$. Thus, we can estimate this model using the setup of this section.
+Observe that equations \ref{eq:red1} and \ref{eq:red2} have the form of multivariate regression model where the common set of regressors is $\bm{X}=\left[\log(\textbf{Mort}) \ \textbf{Africa} \ \textbf{Asia} \ \textbf{Other}\right]$ and $\bm{Y}=\left[\log(\textbf{pcGDP95}) \ \textbf{PAER}\right]$. Thus, we can estimate this model using the setup of this section.
 
-We set non-informative priors, $\bm{B}_0=\left[\bm{0}_5 \ \bm{0}_5\right]$, $\bm{V}_0=100\bm{I}_K$, $\bm{\Psi}_0=5\bm{I}_2$ and $\alpha_0=5$.\footnote{Observe that we are setting the priors in the \textit{reduced-form} model; this may have unintended consequences for the posterior distributions of the \textit{structural} parameters, which are ultimately the parameters researchers are interested in. See \cite[p.~302]{koop2003bayesian} for good references in this topic.}  
+Thus, we estimate in a first stage the parameters from the \textit{reduced-form} model (Equations \ref{eq:red1} and \ref{eq:red2}), but the main interest is the parameters of the \textit{structural} model (Equations \ref{eq:str1} and \ref{eq:str2}). Thus, a valid question is if we can recover the \textit{structural} parameters from the \textit{reduced-form} parameters. There are two criteria to respond this question: the order condition, which is necessary, and the rank condition, which is necessary and sufficient.\\
+ 
+\textit{The order condition}
 
+Given a system of equations with $M$ endogenous variables, and $K$ exogenous variables (including the intercept), there are two ways to assess the order condition:
+\begin{itemize}
+	\item The parameters of an equation in the system are identified if there are at least $M-1$ variables excluded from the equation (\textit{exclusion restrictions}). The equation is \textit{exactly identified} if the number of excluded variables is $M-1$, and is \textit{over identified} if the number of excluded variables is greater than $M-1$.
+	\item The parameters of equation $m$ in the system are identified if $K-K_m\geq M_m-1$, where $K_m$ and $M_m$ are the number of exogenous and endogenous variables in equation $m$, respectively. The $m$-th equation is \textit{exactly identified} if $K-K_m = M_m-1$, and \textit{over identified} if if $K-K_m > M_m-1$. 
+\end{itemize}
 
-Once our GUI is displayed (see beginning of this chapter), we should follow Algorithm \ref{alg:MultReg} to run multivariate linear models in our GUI (see Chapter \ref{chapGUI} for details):
+We can see from Equations \ref{eq:str1} and \ref{eq:str2} in this example that $K=5$, $M=2$, $K_1=4$, $K_2=2$, $M_1=2$ and $M_2=2$. This means that $K-K_1=1=M-1$ and $K-K_2=3>M-1=1$, that is, the order condition says that both equations satisfy the necessary condition of identification, the first equation would be \textit{exactly identified}, and the second equation would be \textit{over identified}. Observe that there is one excluded variable from the first equation, and there are three excluded variables from the second equation.
+\\
+
+\textit{The rank condition}
+
+The rank condition (necessary and sufficient) says that given a \textit{structural} model with $M$ equations ($M$ endogenous variables), an equation is identified if and only if there is at least one determinant different from zero from a $(M-1)\times(M-1)$ matrix built using the excluded variables in the analyzed equation, but included in any other equation of the system.
+
+It is useful to build the \textit{identification matrix} to implement the \textit{rank} condition. Table \ref{tab:71} shows this matrix in this example.
+
+\begin{table}[!h]
+	%\noautomaticrules
+	\tabletitle{Identification matrix.}\label{tab:71}%
+	\begin{tabular}{ccccccc}
+		$\log(\text{pcGDP95})$ & PAER & Constant & $\log(\text{Mort})$ & Africa & Asia & Other \\
+		\hline
+		1 & -$\beta_2$ & -$\beta_1$ & 0 & -$\beta_3$ & -$\beta_4$ & -$\beta_5$\\
+		-$\alpha_2$ & 1 & $-\alpha_1$ & -$\alpha_3$ & 0 & 0 & 0 \\
+	\end{tabular}
+\end{table}
+
+The only excluded variable in the $\log(\text{pcGDP95})$ equation is $\log(\text{Mort})$. Then, there is just one matrix that can be built using the excluded variables from this equation $[-\alpha_3]$ (see column 4 in Table \ref{tab:71}). Thus, the determinant of this matrix is $-\alpha_3$, and as far as this coefficient is different to zero, that is, that the mortality rate is relevant in the $PAER$ equation ($\alpha_3\neq 0$), the coefficients in $\log(\text{pcGDP95})$ equation are \textit{exactly identified}. For instance, $\beta_2=\frac{\pi_2}{\gamma_2}$, which is the effect of property rights on GDP, is exactly identified. 
+
+Observe the importance of excluding $\log(\text{Mort})$ from the $\log(\text{pcGDP95})$ equation, but including $\log(\text{Mort})$ in the PAER equation. This is called \textit{exclusion restriction}, and it is the requirement of having an exogenous source of variability in the PAER equation that helps to identify the $\log(\text{pcGDP95})$ equation. Having relevant exogenous sources of variability is a very important aspect in identification, estimation and inference of \textit{structural} parameters.
+
+Regarding the identification of the \textit{structural} parameters in the PAER equation, there are three potential matrices that can be constructed: $[-\beta_3]$, $[-\beta_4]$ and $[-\beta_5]$ (see columns 5, 6 and 7 in Table \ref{tab:71}), as far as any of these parameters are relevant in the $\log(\text{pcGDP95})$ equation, we achieve identification of the PAER equation. In this case, this equation is \textit{over identified}, that is, there are many ways to find the parameters in this equations. For instance, $\alpha_2=\gamma_3/\pi_3=\gamma_4/\pi_4=\gamma_5/\pi_5$ (see Exercise 2).
+
+In general, trying to recover the \textit{structural} parameters from the \textit{reduced-form} parameters can be challenging due to the requirement of relevant identification restrictions that can be hard to find in some applications.\footnote{Good references for identification in linear systems are \cite{gujarati2009basic,wooldridge2016introductory}.}
+
+We set non-informative priors in this example, $\bm{B}_0=\left[\bm{0}_5 \ \bm{0}_5\right]$, $\bm{V}_0=100\bm{I}_K$, $\bm{\Psi}_0=5\bm{I}_2$ and $\alpha_0=5$.\footnote{Observe that we are setting the priors in the \textit{reduced-form} model; this may have unintended consequences for the posterior distributions of the \textit{structural} parameters, which are ultimately the parameters researchers are interested in. See \cite[p.~302]{koop2003bayesian} for good references in this topic.} Once our GUI is displayed (see beginning of this chapter), we should follow Algorithm \ref{alg:MultReg} to run multivariate linear models in our GUI (see Chapter \ref{chapGUI} for details):
 \begin{algorithm}[h!]
 	\caption{Multivariate linear model}\label{alg:MultReg}
 	\begin{algorithmic}[1]  		 			
@@ -69,7 +104,7 @@ Once our GUI is displayed (see beginning of this chapter), we should follow Algo
 		\State Upload the dataset selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend. You should see a preview of the dataset
 		\State Select MCMC iterations, burn-in and thinning parameters using the \textit{Range sliders}
 		\State Select the number of dependent variables in the box \textbf{Number of endogenous variables: m}
-		\State Select the number of independent variables in the box \textbf{Number of exogenous variables: k}
+		\State Select the number of independent variables (including the intercept) in the box \textbf{Number of exogenous variables: k}
 		\State Set the hyperparameters: mean vectors, covariance matrix, degrees of freedom of the Inverse Wishart distribution, and the scale matrix. This step is not necessary as by default our GUI uses non-informative priors
 		\State Select the tuning parameter for the Metropolis-Hastings algorithm
 		\State Click the \textit{Go!} button
@@ -84,7 +119,7 @@ Once our GUI is displayed (see beginning of this chapter), we should follow Algo
 	\begin{VF}
 		\begin{lstlisting}[language=R]
 rm(list = ls())
-set.seed(010101)
+set.seed(12345)
 DataInst <- read.csv("DataApplications/4Institutions.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
 attach(DataInst)
 Y <- cbind(logpcGDP95, PAER)
@@ -116,7 +151,7 @@ hdiBs <- HDInterval::hdi(t(BsCond), credMass = 0.95) # Highest posterior density
 hdiBs
 hdiSIG <- HDInterval::hdi(SIGMs, credMass = 0.95) # Highest posterior density credible interval
 hdiSIG
-beta1 <- BsCond[2,]/BsCond[7,] 
+beta2 <- BsCond[2,]/BsCond[7,] 
 summary(coda::mcmc(beta1)) # Effect of property rights on GDP
 Iterations = 1:10000
 Thinning interval = 1 
@@ -125,15 +160,15 @@ Sample size per chain = 10000
 1. Empirical mean and standard deviation for each variable,
 plus standard error of the mean:
 Mean             SD       Naive SE Time-series SE 
-0.9343        12.8521         0.1285         0.1285 
+0.9796        16.8430         0.1684         0.1684 
 2. Quantiles for each variable:
 2.5%    25%    50%    75%  97.5% 
-0.5516 0.7982 0.9779 1.2310 2.7660
+0.5604 0.7984 0.9677 1.2329 2.8709 
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
  
-The previous \textbf{R} code shows how to perform the Gibss sampling algorithm in this example using the dataset \textit{4Institutions.csv}. We ask to run this example using the \textit{rmultireg} command from the \textit{bayesm} package as an exercise. We find that the posterior mean \textit{structural} effect of property rights on GDP is 0.93, and the 95\% credible interval is (0.55, 2.77). 
+The previous \textbf{R} code shows how to perform the Gibss sampling algorithm in this example using the dataset \textit{4Institutions.csv}. We ask to run this example using the \textit{rmultireg} command from the \textit{bayesm} package as an exercise. We find that the posterior mean \textit{structural} effect of property rights on GDP is 0.98, and the 95\% credible interval is (0.56, 2.87). 
 
 \section{Seemingly unrelated regression}\label{sec72}
 

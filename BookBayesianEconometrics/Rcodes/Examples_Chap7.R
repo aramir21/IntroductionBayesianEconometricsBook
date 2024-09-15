@@ -1,6 +1,6 @@
 ########################## Effects of institutions: Multivariate regression ########################## 
 rm(list = ls())
-set.seed(010101)
+set.seed(12345)
 DataInst <- read.csv("DataApplications/4Institutions.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
 attach(DataInst)
 Y <- cbind(logpcGDP95, PAER)
@@ -32,5 +32,5 @@ hdiBs <- HDInterval::hdi(t(BsCond), credMass = 0.95) # Highest posterior density
 hdiBs
 hdiSIG <- HDInterval::hdi(SIGMs, credMass = 0.95) # Highest posterior density credible interval
 hdiSIG
-beta1 <- BsCond[2,]/BsCond[7,] 
-summary(coda::mcmc(beta1)) # Effect of property rights on GDP
+beta2 <- BsCond[2,]/BsCond[7,] 
+summary(coda::mcmc(beta2)) # Effect of property rights on GDP

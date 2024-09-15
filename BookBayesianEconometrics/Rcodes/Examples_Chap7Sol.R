@@ -30,13 +30,13 @@ summary(coda::mcmc(Sigmadraw))
 # Simulation
 rm(list = ls())
 set.seed(12345)
-B0 <- 5; B1 <- -0.5; B2 <- 0.8; B3 <- -0.4; B4 <- 0.7; SD <- 0.5
-A0 <- -2; A1 <- 0.5; A2 <- -0.4; SS <- 0.5
-P0 <- (A0-B0)/(B1-A1); P2 <- -B2/(B1-A1); P3 <- -B3/(B1-A1); P1 <- A2/(B1-A1); P4 <- -B4/(B1-A1)
-T0 <- B0+B1*P0; T2 <- B2+B1*P2; T3 <- B3+B1*P3; T1 <- B1*P1; T4 <- B4+B1*P4;
+B1 <- 5; B2 <- -0.5; B3 <- 0.8; B4 <- -0.4; B5 <- 0.7; SD <- 0.5
+A1 <- -2; A2 <- 0.5; A3 <- -0.4; SS <- 0.5
+P0 <- (A1-B1)/(B2-A2); P2 <- -B3/(B2-A2); P3 <- -B4/(B2-A2); P1 <- A3/(B2-A2); P4 <- -B5/(B2-A2)
+T0 <- B1+B2*P0; T2 <- B3+B2*P2; T3 <- B4+B2*P3; T1 <- B2*P1; T4 <- B5+B2*P4;
 n <- 5000
 ED <- rnorm(n, 0, SD); ES <- rnorm(n, 0, SS)
-VP <- (ES-ED)/(B1-A1); UQ <- B1*VP+ED
+VP <- (ES-ED)/(B2-A2); UQ <- B2*VP+ED
 y <- rnorm(n, 10, 1); pc <- rnorm(n, 5, 1); er <- rnorm(n, 15, 1); ps <- rnorm(n, 5, 1);
 p <- P0+P1*er+P2*y+P3*pc+P4*ps+VP
 q <- T0+T1*er+T2*y+T3*pc+T4*ps+UQ
