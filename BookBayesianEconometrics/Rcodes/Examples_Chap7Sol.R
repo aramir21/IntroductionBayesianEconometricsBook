@@ -82,5 +82,80 @@ summary(coda::mcmc(alpha2_2))
 alpha2_3 <- beta2 + beta4/betadraw[,4] # Effect of substitute price  on demand
 summary(coda::mcmc(alpha2_3))
 
+########################## SUR: Utilities demand ########################## 
+rm(list = ls())
+set.seed(010101)
+library(dplyr)
+DataUt <- read.csv("DataApplications/Utilities.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+DataUtEst <- DataUt %>%  
+  filter(Electricity != 0 & Water !=0 & Gas != 0)
+attach(DataUtEst)
+y1 <- log(Electricity); y2 <- log(Water); y3 <- log(Gas)
+X1 <- cbind(1, LnPriceElect, LnPriceWater, LnPriceGas, IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem, Lnincome)
+X2 <- cbind(1, LnPriceElect, LnPriceWater, LnPriceGas, IndSocio1, IndSocio2, Nrooms, HouseholdMem)
+X3 <- cbind(1, LnPriceElect, LnPriceWater, LnPriceGas, IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem)
+y <- c(y1, y2, y3)
+X <- as.matrix(Matrix::bdiag(X1, X2, X3))
+M <- 3; K1 <- dim(X1)[2]; K2 <- dim(X2)[2]; K3 <- dim(X3)[2] 
+K <- K1 + K2 + K3
+N <- length(y1)
+# Hyperparameters
+b0 <- rep(0, K)
+c0 <- 100
+B0 <- c0*diag(K)
+B0i <- solve(B0)
+Psi0 <- 5*diag(M)
+Psi0i <- solve(Psi0)
+a0 <- M
+IN <- diag(N)
+an <- a0 + N
+#Posterior draws
+S <- 6000 #Number of posterior draws
+burnin <- 1000
+thin <- 1
+tot <- S+burnin
+# Gibbs functions
+PostBeta <- function(Sigma){
+  Aux <- solve(Sigma)%x%IN
+  Bn <- solve(B0i + t(X)%*%Aux%*%X)
+  bn <- Bn%*%(B0i%*%b0 + t(X)%*%Aux%*%y)
+  Beta <- MASS::mvrnorm(1, bn, Bn)
+  return(Beta)
+}
+PostSigma <- function(Beta){
+  B1 <- Beta[1:K1]; B2 <- Beta[(K1+1):(K1+K2)]; B3 <- Beta[(K1+K2+1):(K1+K2+K3)]
+  U1 <- y1 - X1%*%B1; U2 <- y2 - X2%*%B2; U3 <- y3 - X3%*%B3
+  U <- cbind(U1, U2, U3)
+  Psin <- solve(Psi0i + t(U)%*%U)
+  Sigmai <- rWishart::rWishart(1, df = an, Sigma = Psin)
+  Sigma <- solve(Sigmai[,,1]) 
+  return(Sigma)
+}
+PostBetas <- matrix(0, tot, K)
+PostSigmas <- matrix(0, tot, M*(M+1)/2)
+Beta <- rep(1, K)
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+  Sigma <- PostSigma(Beta = Beta)
+  Beta <- PostBeta(Sigma = Sigma)
+  PostBetas[s,] <- Beta
+  PostSigmas[s,] <- matrixcalc::vech(Sigma)
+  setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+keep <- seq((burnin+1), tot, thin)
+Bs <- PostBetas[keep,]
+Names <- c("Const", "LnPriceElect", "LnPriceWater", "LnPriceGas", "IndSocio1", "IndSocio2", 
+           "Altitude", "Nrooms", "HouseholdMem", "Lnincome", "Const",
+           "LnPriceElect", "LnPriceWater", "LnPriceGas", "IndSocio1", "IndSocio2", 
+           "Nrooms", "HouseholdMem","Const",
+           "LnPriceElect", "LnPriceWater", "LnPriceGas", "IndSocio1", "IndSocio2", 
+           "Altitude", "Nrooms", "HouseholdMem")
+colnames(Bs) <- Names
+summary(coda::mcmc(Bs))
+Sigmas <- PostSigmas[keep,]
+summary(coda::mcmc(Sigmas))
+
+
 
 
