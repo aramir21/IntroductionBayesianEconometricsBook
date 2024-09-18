@@ -74,4 +74,69 @@ colnames(Bs) <- Names
 summary(coda::mcmc(Bs))
 summary(coda::mcmc(PosteriorDraws[["Sigmadraw"]]))
 
+########################## Instrumental variables: Simulation ########################## 
+rm(list = ls())
+set.seed(010101)
+N <- 100
+k <- 2
+B <- rep(1, k)
+G <- rep(1, 2)
+s12 <- 0.8
+SIGMA <- matrix(c(1, s12, s12, 1), 2, 2)
+z <- rnorm(N); # w <- rnorm(N)
+Z <- cbind(1, z); w <- matrix(1,N,1)
+S <- 100
+U <- replicate(S, MASS::mvrnorm(n = N, mu = rep(0, 2), SIGMA))
+x <- G[1] + G[2]*z + U[,2,]
+y <- B[1] + B[2]*x + U[,1,]
+VarX <- G[2]^2+1 # Population variance of x
+EU1U2 <- s12 # Covariance U1
+BiasPopB2 <- EU1U2/VarX
+# Hyperparameters
+d0 <- 0.001/2
+a0 <- 0.001/2
+b0 <- rep(0, k)
+c0 <- 1000
+B0 <- c0*diag(k)
+B0i <- solve(B0)
+g0 <- rep(0, 2)
+G0 <- 1000*diag(2)
+G0i <- solve(G0)
+nu <- 3
+Psi0 <- nu*diag(2)
+# MCMC parameters
+mcmc <- 5000
+burnin <- 1000
+tot <- mcmc + burnin
+thin <- 1
+# Gibbs sampling
+Gibbs <- function(x, y){
+  Data <- list(y = y, x = x, w = w, z = Z)
+  Mcmc <- list(R = mcmc, keep = thin, nprint = 0)
+  Prior <- list(md = g0, Ad = G0i, mbg = b0, Abg = B0i, nu = nu, V = Psi0)
+  RestIV <- bayesm::rivGibbs(Data = Data, Mcmc = Mcmc, Prior = Prior)
+  PostBIV <- mean(RestIV[["betadraw"]])
+  ResLM <- MCMCpack::MCMCregress(y ~ x + w - 1, b0 = b0, B0 = B0i, c0 = a0, d0 = d0)
+  PostB <- mean(ResLM[,1])
+  Res <- c(PostB,PostBIV)
+  return(Res)
+}
+PosteriorMeans <- sapply(1:S, function(s) {Gibbs(x = x[,s], y = y[,s])})
+rowMeans(PosteriorMeans)
+Model <- c(replicate(S, "Ordinary"), replicate(S, "Instrumental"))
+postmeans <- c(t(PosteriorMeans))
+df <- data.frame(postmeans, Model, stringsAsFactors = FALSE)
+library(ggplot2); library(latex2exp)
+histExo <- ggplot(df, aes(x = postmeans, fill = Model)) +
+  geom_histogram(bins = 40, position = "identity", color = "black", alpha = 0.5) +
+  labs(title = "Overlayed Histograms", x = "Value", y = "Count") +
+  scale_fill_manual(values = c("blue", "red")) +
+  geom_vline(aes(xintercept = mean(postmeans[1:S])), color = "black", linewidth = 1, linetype = "dashed") +
+  geom_vline(aes(xintercept = mean(postmeans[101:200])), color = "black", linewidth = 1, linetype = "dashed") +
+  geom_vline(aes(xintercept = B[2]), color = "green", linewidth = 1, linetype = "dashed") +
+  xlab(TeX("$E[\\beta_2]$")) + ylab("Frequency") + 
+  ggtitle("Histogram: Posterior means simulating 100 samples") 
+histExo  
+
+
 

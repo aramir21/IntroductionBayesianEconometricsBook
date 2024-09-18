@@ -136,8 +136,14 @@ PostSigmas <- matrix(0, tot, M*(M+1)/2)
 Beta <- rep(1, K)
 pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
 for(s in 1:tot){
+  tick1 <- Sys.time()
   Sigma <- PostSigma(Beta = Beta)
+  tock1 <- Sys.time()
+  tick2 <- Sys.time()
   Beta <- PostBeta(Sigma = Sigma)
+  tock2 <- Sys.time()
+  print(tock1-tick1)
+  print(tock2-tick2)
   PostBetas[s,] <- Beta
   PostSigmas[s,] <- matrixcalc::vech(Sigma)
   setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
@@ -155,6 +161,179 @@ colnames(Bs) <- Names
 summary(coda::mcmc(Bs))
 Sigmas <- PostSigmas[keep,]
 summary(coda::mcmc(Sigmas))
+# Gibbs sampling 2 using sums rather than Kronecker product
+PostBetaNew <- function(Sigma){
+  Sigmai <- solve(Sigma)
+  XSX <- matrix(0, K, K)
+  XSy <- matrix(0, K, 1)
+  for(i in 1:N){
+    Xi <- as.matrix(Matrix::bdiag(t(X1[i,]), t(X2[i,]), t(X3[i,])))
+    yi <- c(y1[i], y2[i], y3[i])
+    XSXi <- t(Xi)%*%Sigmai%*%Xi
+    XSyi <- t(Xi)%*%Sigmai%*%yi
+    XSX <- XSX + XSXi
+    XSy <- XSy + XSyi
+  }
+  Bn <- solve(B0i + XSX)
+  bn <- Bn%*%(B0i%*%b0 + XSy)
+  Beta <- MASS::mvrnorm(1, bn, Bn)
+  return(Beta)
+}
+PostBetas <- matrix(0, tot, K)
+PostSigmas <- matrix(0, tot, M*(M+1)/2)
+Beta <- rep(1, K)
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+  Sigma <- PostSigma(Beta = Beta)
+  Beta <- PostBetaNew(Sigma = Sigma)
+  PostBetas[s,] <- Beta
+  PostSigmas[s,] <- matrixcalc::vech(Sigma)
+  setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+keep <- seq((burnin+1), tot, thin)
+Bs <- PostBetas[keep,]
+Names <- c("Const", "LnPriceElect", "LnPriceWater", "LnPriceGas", "IndSocio1", "IndSocio2", 
+           "Altitude", "Nrooms", "HouseholdMem", "Lnincome", "Const",
+           "LnPriceElect", "LnPriceWater", "LnPriceGas", "IndSocio1", "IndSocio2", 
+           "Nrooms", "HouseholdMem","Const",
+           "LnPriceElect", "LnPriceWater", "LnPriceGas", "IndSocio1", "IndSocio2", 
+           "Altitude", "Nrooms", "HouseholdMem")
+colnames(Bs) <- Names
+summary(coda::mcmc(Bs))
+Sigmas <- PostSigmas[keep,]
+summary(coda::mcmc(Sigmas))
+
+########################## Instrumental variables: Simulation ########################## 
+# Weak instruments
+rm(list = ls())
+set.seed(010101)
+N <- 100
+k <- 2
+B <- rep(1, k)
+G <- c(1, 0.2)
+s12 <- 0.8
+SIGMA <- matrix(c(1, s12, s12, 1), 2, 2)
+z <- rnorm(N); # w <- rnorm(N)
+Z <- cbind(1, z); w <- matrix(1,N,1)
+S <- 100
+U <- replicate(S, MASS::mvrnorm(n = N, mu = rep(0, 2), SIGMA))
+x <- G[1] + G[2]*z + U[,2,]
+y <- B[1] + B[2]*x + U[,1,]
+VarX <- G[2]^2+1 # Population variance of x
+EU1U2 <- s12 # Covariance U1
+BiasPopB2 <- EU1U2/VarX
+# Hyperparameters
+d0 <- 0.001/2
+a0 <- 0.001/2
+b0 <- rep(0, k)
+c0 <- 1000
+B0 <- c0*diag(k)
+B0i <- solve(B0)
+g0 <- rep(0, 2)
+G0 <- 1000*diag(2)
+G0i <- solve(G0)
+nu <- 3
+Psi0 <- nu*diag(2)
+# MCMC parameters
+mcmc <- 5000
+burnin <- 1000
+tot <- mcmc + burnin
+thin <- 1
+# Gibbs sampling
+Gibbs <- function(x, y){
+  Data <- list(y = y, x = x, w = w, z = Z)
+  Mcmc <- list(R = mcmc, keep = thin, nprint = 0)
+  Prior <- list(md = g0, Ad = G0i, mbg = b0, Abg = B0i, nu = nu, V = Psi0)
+  RestIV <- bayesm::rivGibbs(Data = Data, Mcmc = Mcmc, Prior = Prior)
+  PostBIV <- mean(RestIV[["betadraw"]])
+  ResLM <- MCMCpack::MCMCregress(y ~ x + w - 1, b0 = b0, B0 = B0i, c0 = a0, d0 = d0)
+  PostB <- mean(ResLM[,1])
+  Res <- c(PostB,PostBIV)
+  return(Res)
+}
+PosteriorMeans <- sapply(1:S, function(s) {Gibbs(x = x[,s], y = y[,s])})
+rowMeans(PosteriorMeans)
+Model <- c(replicate(S, "Ordinary"), replicate(S, "Instrumental"))
+postmeans <- c(t(PosteriorMeans))
+df <- data.frame(postmeans, Model, stringsAsFactors = FALSE)
+library(ggplot2); library(latex2exp)
+histExo <- ggplot(df, aes(x = postmeans, fill = Model)) +
+  geom_histogram(bins = 40, position = "identity", color = "black", alpha = 0.5) +
+  labs(title = "Overlayed Histograms", x = "Value", y = "Count") +
+  scale_fill_manual(values = c("blue", "red")) +
+  geom_vline(aes(xintercept = mean(postmeans[1:S])), color = "black", linewidth = 1, linetype = "dashed") +
+  geom_vline(aes(xintercept = mean(postmeans[101:200])), color = "black", linewidth = 1, linetype = "dashed") +
+  geom_vline(aes(xintercept = B[2]), color = "green", linewidth = 1, linetype = "dashed") +
+  xlab(TeX("$E[\\beta_2]$")) + ylab("Frequency") + 
+  ggtitle("Histogram: Posterior means simulating 100 samples") 
+histExo  
+
+# Endogenous instruments
+rm(list = ls())
+set.seed(010101)
+N <- 100
+k <- 2
+B <- rep(1, k)
+G <- c(1, 0.2)
+s12 <- 0.8
+SIGMA <- matrix(c(1, s12, s12, 1), 2, 2)
+z <- rnorm(N); # w <- rnorm(N)
+Z <- cbind(1, z); w <- matrix(1,N,1)
+S <- 100
+U <- replicate(S, MASS::mvrnorm(n = N, mu = rep(0, 2), SIGMA))
+x <- G[1] + G[2]*z + U[,2,]
+y <- B[1] + B[2]*x + U[,1,]
+VarX <- G[2]^2+1 # Population variance of x
+EU1U2 <- s12 # Covariance U1
+BiasPopB2 <- EU1U2/VarX
+# Hyperparameters
+d0 <- 0.001/2
+a0 <- 0.001/2
+b0 <- rep(0, k)
+c0 <- 1000
+B0 <- c0*diag(k)
+B0i <- solve(B0)
+g0 <- rep(0, 2)
+G0 <- 1000*diag(2)
+G0i <- solve(G0)
+nu <- 3
+Psi0 <- nu*diag(2)
+# MCMC parameters
+mcmc <- 5000
+burnin <- 1000
+tot <- mcmc + burnin
+thin <- 1
+# Gibbs sampling
+Gibbs <- function(x, y){
+  Data <- list(y = y, x = x, w = w, z = Z)
+  Mcmc <- list(R = mcmc, keep = thin, nprint = 0)
+  Prior <- list(md = g0, Ad = G0i, mbg = b0, Abg = B0i, nu = nu, V = Psi0)
+  RestIV <- bayesm::rivGibbs(Data = Data, Mcmc = Mcmc, Prior = Prior)
+  PostBIV <- mean(RestIV[["betadraw"]])
+  ResLM <- MCMCpack::MCMCregress(y ~ x + w - 1, b0 = b0, B0 = B0i, c0 = a0, d0 = d0)
+  PostB <- mean(ResLM[,1])
+  Res <- c(PostB,PostBIV)
+  return(Res)
+}
+PosteriorMeans <- sapply(1:S, function(s) {Gibbs(x = x[,s], y = y[,s])})
+rowMeans(PosteriorMeans)
+Model <- c(replicate(S, "Ordinary"), replicate(S, "Instrumental"))
+postmeans <- c(t(PosteriorMeans))
+df <- data.frame(postmeans, Model, stringsAsFactors = FALSE)
+library(ggplot2); library(latex2exp)
+histExo <- ggplot(df, aes(x = postmeans, fill = Model)) +
+  geom_histogram(bins = 40, position = "identity", color = "black", alpha = 0.5) +
+  labs(title = "Overlayed Histograms", x = "Value", y = "Count") +
+  scale_fill_manual(values = c("blue", "red")) +
+  geom_vline(aes(xintercept = mean(postmeans[1:S])), color = "black", linewidth = 1, linetype = "dashed") +
+  geom_vline(aes(xintercept = mean(postmeans[101:200])), color = "black", linewidth = 1, linetype = "dashed") +
+  geom_vline(aes(xintercept = B[2]), color = "green", linewidth = 1, linetype = "dashed") +
+  xlab(TeX("$E[\\beta_2]$")) + ylab("Frequency") + 
+  ggtitle("Histogram: Posterior means simulating 100 samples") 
+histExo  
+
+
 
 
 

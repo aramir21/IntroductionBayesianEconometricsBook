@@ -322,7 +322,108 @@ var9 0.29523 0.30900 0.31654 0.32428 0.3397
 
 We ask in the Exercise 5 to run this application using our GUI and the information in the dataset \textit{Utilities.csv}. Observe that this file should be modified to agree the structure that requires our GUI (see the dataset \textit{5Institutions.csv} in the folder \textit{DataApp} of our GitHub repository -\textbf{https://github.com/besmarter/BSTApp}- for a template). In addition, we ask to program from scratch the Gibbs sampler algorithm in this application.  
 
+\section{Instrumental variable}\label{sec73}
+
+This inferential approach is used when there are \textit{endogeneity} issues, that is, the stochastic error is not independent of the regressors, this in turn generates \textit{bias} in posterior mean estimates when we use an inferential approach that does not take this issue into. \textit{Endogeneity} can be caused by \textit{reverse causality}, \textit{omitting relevant correlated variables}, or \textit{measurement error} in  the regressors.\footnote{See \cite[Chap. ~15]{wooldridge2016introductory} for an introductory treatment of instrumental variable in the Frequentist inferential approach.}
+
+Let's specify the dependent variable as a linear function of one endogenous regressor and some exogenous regressors. That is, $y_{i} =\bm{x}_{ei}^{\top}\bm{\beta}_1+\beta_sx_{si}+\mu_{i}$ where $x_{si} =\bm{ x}_{ei}^{\top}\bm{\gamma}_1+\bm{z}_i^{\top}\bm{\gamma}_2+v_{i}$, ${x}_{s}$ is the variable which generates the endogeneity issues ($\mathbb{E}[x_{s}\mu]\neq 0$), $\bm{x}_e$ are $K_1$ exogenous regressors, and $\bm{z}$ are $K_2$ instruments, that is, regressors that drive $x_s$ ($\mathbb{E}[x_{s}\bm{z}]\neq \bm{0}$), but do not have a direct effect on $y$ ($\mathbb{E}[y\bm{z}|x_s]= \bm{0}$).
+
+Assuming $(u_{i},v_i)^{\top}\stackrel{i.i.d.} {\thicksim} {N}(0,\bm{\Sigma})$, $\bm{\Sigma}=[\sigma_{lm}]$, $l,m=1,2$, the likelihood function is
+\begin{align*}
+	p(\bm{\beta},\bm{\gamma},\bm{\Sigma}|\bm{y},\bm{X},\bm{Z})=\frac{1}{(2\pi)^\frac{N}{2}|\bm{\Sigma}|^\frac{N}{2}}\exp\left\{-\frac{1}{2}\sum_{i=1}^N(y_i-\bm{x}_i^{\top}\bm{\beta}, x_{si} -\bm{w}_i^{\top}\bm{\gamma})\bm{\Sigma}^{-1}
+	\begin{pmatrix}
+		y_i-\bm{x}_i^{\top}\bm{\beta} \\
+		x_{si}-\bm{w}_i^{\top}\bm{\gamma}
+	\end{pmatrix}
+	\right\},
+\end{align*}
+where $\bm{\beta}=\left[\bm{\beta}_1^{\top},\beta_s\right]^{\top}$, $\bm{\gamma}=\left[\bm{\gamma}_1^{\top},\bm{\gamma}_2^{\top}\right]^{\top}$, $\bm{x}_i=\left[\bm{x}_{ei}^{\top},x_{si}\right]^{\top}$ and $\bm{w}_i=\left[\bm{x}_{ei}^{\top},\bm{z}_{i}^{\top}\right]^{\top}$.
+
+We get standard conditional posterior densities using the following independent priors $\bm{\gamma}\sim {N}(\bm{\gamma}_0,\bm{G}_0)$, $\bm{\beta}\sim {N}(\bm{\beta}_0,\bm{B}_0)$ and $\bm{\Sigma}^{-1} \sim {W}(\alpha_0,\bm{\Sigma}_0)$.
+In particular, 
+
+\begin{equation*}
+	\bm{\beta}|\bm{\gamma},\bm{\Sigma},\bm{y},\bm{X},\bm{Z}\sim {N}(\bm{\beta}_n,\bm{B}_n)
+\end{equation*}
+\begin{equation*}
+	\bm{\gamma}|\bm{\beta},\bm{\Sigma},\bm{y},\bm{X},\bm{Z}\sim {N}(\bm{\gamma}_n,\bm{G}_n)
+\end{equation*}
+\begin{equation*}
+	\bm{\Sigma}^{-1}|\bm{\beta},\bm{\gamma},\bm{y},\bm{X},\bm{Z}\sim {W}(\alpha_n,\bm{\Sigma}_n)
+\end{equation*}
+
+where $\bm{\beta}_n=\bm{B}_n\left(\bm{B}_0^{-1}\bm{\beta}_0 + \omega_1^{-1}\sum_{i=1}^{N}\left[\bm{x}_i\left(y_i-\frac{\sigma_{12}(x_{si}-\bm{w}_i^{\top}\bm{\gamma})}{\sigma_{22}}\right)\right]\right)$, $\bm{B}_n=(\omega_1^{-1}\sum_{i=1}^{N}\bm{x}_i\bm{x}_i^{\top}+\bm{B}_0^{-1})^{-1}$, $\omega_1=\sigma_{11}-\sigma_{12}^2/\sigma_{22}$, $\bm{G}_n=(\omega_2^{-1}\sum_{i=1}^{N}\bm{w}_i\bm{w}_i^{\top}+\bm{G}_0^{-1})^{-1}$, $\bm{\gamma}_n=\bm{G}_n\left(\bm{G}_0^{-1}\bm{\gamma}_0 + \omega_2^{-1}\sum_{i=1}^{N}\left[\bm{w}_i\left(x_{si}-\frac{\sigma_{12}(y_{i}-\bm{x}_i^{\top}\bm{\beta})}{\sigma_{11}}\right)\right]\right)$,
+$\omega_2=\sigma_{22}-\sigma_{12}^2/\sigma_{11}$, $\bm{\Sigma}_n=\left[\bm{\Sigma}_0^{-1}+\sum_{i=1}^N \begin{pmatrix}
+	y_i-\bm{x}_i^{\top}\bm{\beta} \\
+	x_{si}-\bm{w}_i^{\top}\bm{\gamma}
+\end{pmatrix} (y_i-\bm{x}_i^{\top}\bm{\beta}, x_{si} -\bm{w}_i^{\top}\bm{\gamma})\right]^{-1}$, and $\alpha_n=\alpha_0+N$.
+
+We also use a Gibbs sampling algorithm in this model since we have standard conditional posterior distributions.\\
+
+\textbf{Example: Simulation exercise}
+
+Let's simulate the simple process $y_i=\beta_1+\beta_2x_{si}+\mu_i$ and $x_{si}=\gamma_1+\gamma_2z_i+v_i$ where $[\mu_i \ v_i]^{\top}\sim N(\bm{0},\bm{\Sigma})$ where $\bm{\Sigma}=[\sigma_{lj}]$ such that $\sigma_{12}\neq 0$, $i=1,2,\dots,100$.
+
+Observe that $\mu|v\sim N\left(\frac{\sigma_{12}}{\sigma_{22}}v,\sigma_{11}-\frac{\sigma_{21}^2}{\sigma_{22}}\right)$, this implies that $\mathbb{E}[\mu|x_s]=\mathbb{E}[\mu|v]=\frac{\sigma_{12}}{\sigma_{22}}v\neq 0$ given $\sigma_{12}\neq 0$ and $\mathbb{E}[\mu|z]=0$.
+Let's set all location parameters equal to 1, and $\sigma_{11}=\sigma_{22}=1$, $\sigma_{12}=0.8$, and $z\sim N(0,1)$. We know from the large sampling properties of the posterior mean that this converge to the maximum likelihood estimator (see Section \ref{sec11}, and \cite{Lehmann2003,van2000asymptotic}), which in this setting is $\hat{\beta}_2=\frac{\widehat{Cov}(x_s,y)}{\widehat{Var}(x_s)}$ which converges in probability to $\beta_2+\frac{\sigma_{12}}{\sigma_{22}Var(x_s)}=\beta_2+\frac{\sigma_{12}}{\sigma_{22}(\gamma_2^2Var(z)+\sigma_{22})}=1.4$, that is, the asymptotic bias when using the posterior mean of a linear regression without taking into account endogeneity is 0.4 in this example.
+
+We assess the sampling performance of Bayesian ``estimators" simulating this setting 100 times. The following code shows how to do this using a linear model without taking into account the \textit{endogeneity} issue (see Section \ref{sec61}), and implementing the variable instrumental model. We use $\bm{B}_0=\bm{I}_2$, $\bm{\beta}_0=\bm{0}_2$, and the parameters of the inverse gamma distribution equal to 0.0005. In the case of the instrumental variable setting, we set in addition $\bm{\gamma}=\bm{0}_2$, $\alpha_0=3$ and $\bm{\Psi}=3\bm{I}_2$. 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise, sampling properties ordinary and instrumental models}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+N <- 100; k <- 2
+B <- rep(1, k); G <- rep(1, 2); s12 <- 0.8
+SIGMA <- matrix(c(1, s12, s12, 1), 2, 2)
+z <- rnorm(N); Z <- cbind(1, z); w <- matrix(1,N,1); S <- 100
+U <- replicate(S, MASS::mvrnorm(n = N, mu = rep(0, 2), SIGMA))
+x <- G[1] + G[2]*z + U[,2,]; y <- B[1] + B[2]*x + U[,1,]
+# Hyperparameters
+d0 <- 0.001/2; a0 <- 0.001/2
+b0 <- rep(0, k); c0 <- 1000; B0 <- c0*diag(k)
+B0i <- solve(B0); g0 <- rep(0, 2)
+G0 <- 1000*diag(2); G0i <- solve(G0)
+nu <- 3; Psi0 <- nu*diag(2)
+# MCMC parameters
+mcmc <- 5000; burnin <- 1000
+tot <- mcmc + burnin; thin <- 1
+# Gibbs sampling
+Gibbs <- function(x, y){
+	Data <- list(y = y, x = x, w = w, z = Z)
+	Mcmc <- list(R = mcmc, keep = thin, nprint = 0)
+	Prior <- list(md = g0, Ad = G0i, mbg = b0, Abg = B0i, nu = nu, V = Psi0)
+	RestIV <- bayesm::rivGibbs(Data = Data, Mcmc = Mcmc, Prior = Prior)
+	PostBIV <- mean(RestIV[["betadraw"]])
+	ResLM <- MCMCpack::MCMCregress(y ~ x + w - 1, b0 = b0, B0 = B0i, c0 = a0, d0 = d0)
+	PostB <- mean(ResLM[,1]); Res <- c(PostB,PostBIV)
+	return(Res)
+}
+PosteriorMeans <- sapply(1:S, function(s) {Gibbs(x = x[,s], y = y[,s])})
+rowMeans(PosteriorMeans)
+Model <- c(replicate(S, "Ordinary"), replicate(S, "Instrumental"))
+postmeans <- c(t(PosteriorMeans))
+df <- data.frame(postmeans, Model, stringsAsFactors = FALSE)
+library(ggplot2); library(latex2exp)
+histExo <- ggplot(df, aes(x = postmeans, fill = Model)) + geom_histogram(bins = 40, position = "identity", color = "black", alpha = 0.5) + labs(title = "Overlayed Histograms", x = "Value", y = "Count") + scale_fill_manual(values = c("blue", "red")) + geom_vline(aes(xintercept = mean(postmeans[1:S])), color = "black", linewidth = 1, linetype = "dashed") + geom_vline(aes(xintercept = mean(postmeans[101:200])), color = "black", linewidth = 1, linetype = "dashed") + geom_vline(aes(xintercept = B[2]), color = "green", linewidth = 1, linetype = "dashed") + xlab(TeX("$E[\\beta_2]$")) + ylab("Frequency") + ggtitle("Histogram: Posterior means simulating 100 samples") 
+histExo 
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+Figure \ref{fig71} displays the histograms of the posterior means of $\beta_2$ using the ordinary model without taking endogeneity into account, and the instrumental variable model. In one hand, the mean of the posterior means of the ordinary model is 1.41 (black dashed line), this implies a bias equal to 0.41, which is very close to the population bias. On the other hand, the mean of the posterior means of the instrumental variable model is 1.04 (black dashed line), which is close to the population value of $\beta_2=1$ (green dashed line).
+
+We also see that the histogram of the posterior means of the ordinary model is less disperse, that is, this ``estimator" is more efficient, which is a well-known result in the Frequentist inferential approach comparing ordinary least squares and two-stage least squares (see \cite[Chap. ~5]{wooldridge2010econometric}).
+
+Two very relevant aspects in the instrumental variables literature are the \textit{weakness} and \textit{exogeneity} of the instruments. The former refers how strong is the relationship between the instruments and the endogeneous regressors, and the latter refers to the independence of the instruments of the stochastic error in the regression of $y$. We ask in exercise 6 to use the previous code as a baseline to study this two aspects.
  
+\begin{figure}
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter7/figures/Fig71.png}
+	\caption[List of figure caption goes here]{Histogram of posterior means: Ordinary and instrumental models.}\label{fig71}
+\end{figure}
+
 \section{Summary}\label{sec75}
 
 \section{Exercises}\label{sec76}
@@ -356,7 +457,15 @@ where $q^d$ is demand, $q^s$ is supply, $p$, $y$, $pc$, $ps$ and $er$ are price,
 	\item Run the \textbf{Utility demand} application using our GUI and the information in the dataset \textit{Utilities.csv}. Hint: This file should be modified to agree the structure that requires our GUI (see the dataset \textit{5Institutions.csv} in the folder \textit{DataApp} of our GitHub repository -\textbf{https://github.com/besmarter/BSTApp}- for a template).
 	\item Program from scratch the Gibbs sampler algorithm in this application.   
 \end{itemize}
-	
+
+\item \textbf{Simulation exercise of instrumental variables continues}
+
+\begin{enumerate}
+	\item Use the setting of the simulation exercise of instrumental variables to analyze what happens when the instrument is weak, for instance, setting $\gamma_2=0.2$, and compare the performance of the posterior means of the ordinary and instrumental models.
+	\item Perform a simulation that helps to analyze how the degree of exogeneity of the instrument affects the performance of the posterior mean of the instrumental variable model.	 
+\end{enumerate}
+
+
 	
 \end{enumerate}
 

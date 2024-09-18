@@ -5,7 +5,7 @@
 
 	\item Show that $\mathbb{E}[u_1\text{PAER}]=\frac{\alpha_1}{1-\beta_1\alpha_1}\sigma^2_1$ assuming that $\mathbb{E}[u_1u_2]=0$ where $Var(u_1)=\sigma^2_1$ in the effect of institutions on per capita GDP.
 	
-	\textbf{Answer}:
+	\textbf{Answer}
 	
 	The point of departure is the following \textit{simultaneous structural} economic model:
 	\begin{align}\label{eq:str1}
@@ -185,7 +185,7 @@ summary(coda::mcmc(beta5))
 	\item Program from scratch the Gibbs sampler algorithm in this application.   
 \end{itemize}
 
-
+\textbf{Answer}
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -244,6 +244,129 @@ Sigmas <- PostSigmas[keep,]; summary(coda::mcmc(Sigmas))
 	\end{VF}
 \end{tcolorbox} 
 
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Utility demand in Colombia, results}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+keep <- seq((burnin+1), tot, thin)
+Bs <- PostBetas[keep,]; summary(coda::mcmc(Bs))
+Sigmas <- PostSigmas[keep,]; summary(coda::mcmc(Sigmas))
+Quantiles for each variable:
+						2.5%      25%       50%      75%    97.5%
+Const         0.43304  1.04508  1.337751  1.64728  2.25228
+LnPriceElect -2.40343 -2.05533 -1.882159 -1.70463 -1.35979
+LnPriceWater -0.44027 -0.38524 -0.356049 -0.32676 -0.27021
+LnPriceGas   -0.21665 -0.13807 -0.098877 -0.05712  0.01673
+IndSocio1    -0.87408 -0.78454 -0.736561 -0.68898 -0.59137
+IndSocio2    -0.24504 -0.18344 -0.150827 -0.11845 -0.06029
+Altitude     -0.27153 -0.23866 -0.221539 -0.20468 -0.17325
+Nrooms        0.04598  0.06191  0.069971  0.07837  0.09379
+HouseholdMem  0.06610  0.07999  0.087320  0.09406  0.10708
+Lnincome      0.03897  0.05516  0.063130  0.07152  0.08751
+Const         0.88247  1.73546  2.162290  2.60793  3.48450
+LnPriceElect -0.83128 -0.31258 -0.051838  0.20446  0.72087
+LnPriceWater -0.49760 -0.40946 -0.363138 -0.31943 -0.23498
+LnPriceGas    0.05880  0.16932  0.228734  0.28677  0.39226
+IndSocio1    -0.63928 -0.50417 -0.427978 -0.35529 -0.21024
+IndSocio2    -0.50363 -0.40976 -0.359576 -0.30929 -0.21097
+Nrooms        0.05733  0.08126  0.093291  0.10550  0.12935
+HouseholdMem  0.09984  0.12098  0.132126  0.14265  0.16290
+Const        -2.26403 -1.57842 -1.201124 -0.84494 -0.15985
+LnPriceElect -2.41128 -2.00330 -1.786150 -1.57292 -1.17185
+LnPriceWater -0.10791 -0.03978 -0.003399  0.03329  0.10082
+LnPriceGas   -0.76450 -0.67575 -0.627062 -0.57949 -0.48807
+IndSocio1    -0.91346 -0.80094 -0.743421 -0.68334 -0.57228
+IndSocio2    -0.31613 -0.24086 -0.202828 -0.16367 -0.08824
+Altitude      0.24986  0.28987  0.310784  0.33183  0.37126
+Nrooms        0.06071  0.07899  0.089606  0.09949  0.11842
+HouseholdMem  0.14485  0.16148  0.169509  0.17797  0.19467
+Sigmas <- PostSigmas[keep,]
+summary(coda::mcmc(Sigmas))
+        2.5%     25%     50%     75%   97.5%
+var1 0.19664 0.20567 0.21072 0.21593 0.22636
+var2 0.08201 0.09289 0.09865 0.10447 0.11623
+var3 0.05222 0.06015 0.06452 0.06903 0.07799
+var4 0.47390 0.49575 0.50789 0.52046 0.54446
+var5 0.07355 0.08672 0.09381 0.10061 0.11427
+var6 0.29259 0.30618 0.31384 0.32140 0.33700
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
 
+
+\item \textbf{Simulation exercise of instrumental variables continues}
+
+\begin{enumerate}
+	\item Use the setting of the simulation exercise of instrumental variables to analyze what happens when the instrument is weak, for instance, setting $\gamma_2=0.2$, and compare the performance of the posterior means of the ordinary and instrumental models.
+	\item Perform a simulation that helps to analyze how the degree of exogeneity of the instrument affects the performance of the posterior mean of the instrumental variable model.	 
+\end{enumerate}
+
+\textbf{Answer}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Utility demand in Colombia, results}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls())
+set.seed(010101)
+N <- 100
+k <- 2
+B <- rep(1, k)
+G <- c(1, 0.2)
+s12 <- 0.8
+SIGMA <- matrix(c(1, s12, s12, 1), 2, 2)
+z <- rnorm(N); # w <- rnorm(N)
+Z <- cbind(1, z); w <- matrix(1,N,1)
+S <- 100
+U <- replicate(S, MASS::mvrnorm(n = N, mu = rep(0, 2), SIGMA))
+x <- G[1] + G[2]*z + U[,2,]
+y <- B[1] + B[2]*x + U[,1,]
+VarX <- G[2]^2+1 # Population variance of x
+EU1U2 <- s12 # Covariance U1
+BiasPopB2 <- EU1U2/VarX
+# Hyperparameters
+d0 <- 0.001/2
+a0 <- 0.001/2
+b0 <- rep(0, k)
+c0 <- 1000
+B0 <- c0*diag(k)
+B0i <- solve(B0)
+g0 <- rep(0, 2)
+G0 <- 1000*diag(2)
+G0i <- solve(G0)
+nu <- 3
+Psi0 <- nu*diag(2)
+# MCMC parameters
+mcmc <- 5000
+burnin <- 1000
+tot <- mcmc + burnin
+thin <- 1
+# Gibbs sampling
+Gibbs <- function(x, y){
+	Data <- list(y = y, x = x, w = w, z = Z)
+	Mcmc <- list(R = mcmc, keep = thin, nprint = 0)
+	Prior <- list(md = g0, Ad = G0i, mbg = b0, Abg = B0i, nu = nu, V = Psi0)
+	RestIV <- bayesm::rivGibbs(Data = Data, Mcmc = Mcmc, Prior = Prior)
+	PostBIV <- mean(RestIV[["betadraw"]])
+	ResLM <- MCMCpack::MCMCregress(y ~ x + w - 1, b0 = b0, B0 = B0i, c0 = a0, d0 = d0)
+	PostB <- mean(ResLM[,1])
+	Res <- c(PostB,PostBIV)
+	return(Res)
+}
+PosteriorMeans <- sapply(1:S, function(s) {Gibbs(x = x[,s], y = y[,s])})
+rowMeans(PosteriorMeans)
+1.781513 1.470648
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+Figure \ref{fig71} shows that having a \textit{weak instrument} generates poor performance of the posterior means of the variable instrumental model. Observe that the mean of the posterior means is less precise and biased. This is due to an identification problem in the likelihood function of $y$ and $x_s$ given $z$ (see \cite[Chap.~7]{Rossi2005}).
+
+\begin{figure}
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter7/figures/Fig71.png}
+	\caption[List of figure caption goes here]{Histogram of posterior means: Ordinary and instrumental models.}\label{fig71}
+\end{figure}
 
 \end{enumerate}
