@@ -306,7 +306,7 @@ var6 0.29259 0.30618 0.31384 0.32140 0.33700
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Utility demand in Colombia, results}
+	\textit{R code. Simulation exercise, sampling properties of instrumental variable}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
 rm(list = ls())
@@ -366,7 +366,229 @@ Figure \ref{fig71} shows that having a \textit{weak instrument} generates poor p
 
 \begin{figure}
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter7/figures/Fig71.png}
-	\caption[List of figure caption goes here]{Histogram of posterior means: Ordinary and instrumental models.}\label{fig71}
+	\caption[List of figure caption goes here]{Histogram of posterior means to assess the effects of \textit{weakness} of the instrument: Ordinary and instrumental models.}\label{fig71}
 \end{figure}
+
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise, sampling properties of instrumental variable}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+# Endogenous instruments
+rm(list = ls())
+set.seed(010101)
+N <- 100
+k <- 2
+B <- rep(1, k)
+G <- c(1, 1)
+delta <- 0.2 # Effect of instrument on y
+s12 <- 0.8
+SIGMA <- matrix(c(1, s12, s12, 1), 2, 2)
+z <- rnorm(N); # w <- rnorm(N)
+Z <- cbind(1, z); w <- matrix(1,N,1)
+S <- 100
+U <- replicate(S, MASS::mvrnorm(n = N, mu = rep(0, 2), SIGMA))
+x <- G[1] + G[2]*z + U[,2,]
+y <- B[1] + B[2]*x + delta*z + U[,1,]
+VarX <- G[2]^2+1 # Population variance of x
+EU1U2 <- s12 # Covariance U1
+BiasPopB2 <- EU1U2/VarX
+# Hyperparameters
+d0 <- 0.001/2
+a0 <- 0.001/2
+b0 <- rep(0, k)
+c0 <- 1000
+B0 <- c0*diag(k)
+B0i <- solve(B0)
+g0 <- rep(0, 2)
+G0 <- 1000*diag(2)
+G0i <- solve(G0)
+nu <- 3
+Psi0 <- nu*diag(2)
+# MCMC parameters
+mcmc <- 5000
+burnin <- 1000
+tot <- mcmc + burnin
+thin <- 1
+# Gibbs sampling
+Gibbs <- function(x, y){
+	Data <- list(y = y, x = x, w = w, z = Z)
+	Mcmc <- list(R = mcmc, keep = thin, nprint = 0)
+	Prior <- list(md = g0, Ad = G0i, mbg = b0, Abg = B0i, nu = nu, V = Psi0)
+	RestIV <- bayesm::rivGibbs(Data = Data, Mcmc = Mcmc, Prior = Prior)
+	PostBIV <- mean(RestIV[["betadraw"]])
+	ResLM <- MCMCpack::MCMCregress(y ~ x + w - 1, b0 = b0, B0 = B0i, c0 = a0, d0 = d0)
+	PostB <- mean(ResLM[,1])
+	Res <- c(PostB,PostBIV)
+	return(Res)
+}
+PosteriorMeans <- sapply(1:S, function(s) {Gibbs(x = x[,s], y = y[,s])})
+rowMeans(PosteriorMeans)
+1.508009 1.217419
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+A simple way to assess the effects of \textit{endogeneity} of the instrument in the instrumental variable model is to introduce the instrument into the \textit{structural equation}, but assume that $\mathbb{E}[yz|x_s]=0$. In particular, we generate $y_i=\beta_1+\beta_2 x_{si} + \beta_3 z_i + \mu_i$, but estimate $y_i=\beta_1+\beta_2 x_{si} + \mu_i$. Figure \ref{fig72} shows that assuming that an instrument is exogenous, when actually it is not, generates bias in the posterior mean of the instrumental variable model. Observe that \textit{exogeneity} of the instrument is equivalent to the dogmatic prior belief that the instrument does not affect the structural equation. Thus, \cite{Conley2012} propose to assess the plausibility of the \textit{exclusion restrictions} ($\beta_3=0$ and $\gamma_2\neq 0$) defining \textit{plausible exogeneity} as having prior information that the effect of the instrument in the \textit{structural equation} is near zero, but perhaps not exactly zero.  
+
+\begin{figure}
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter7/figures/Fig71.png}
+	\caption[List of figure caption goes here]{Histogram of posterior means to assess the effects of \textit{endogeneity} of the instrument: Ordinary and instrumental models.}\label{fig72}
+\end{figure}
+
+\item \textbf{Simulation exercise of instrumental variables continues II}
+
+Program from scratch the Gibbs sampling algorithm of the instrumental model for the simulation exercise of the instrumental variables.
+
+\textbf{Answer}
+
+The following code shows how to implement the Gibbs sampling algorithm from scratch. We observe that all posterior means are close to the population values, and 95\% credible intervals encompass them.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise, Gibss sampling instrumental model}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+N <- 100; k <- 2; kz <- 2
+B <- rep(1, k); G <- rep(1, kz)
+s12 <- 0.8; SIGMA <- matrix(c(1, s12, s12, 1), 2, 2)
+z <- rnorm(N); Z <- cbind(1, z); w <- matrix(1,N,1)
+S <- 100; U <- MASS::mvrnorm(n = N, mu = rep(0, 2), SIGMA)
+x <- G[1] + G[2]*z + U[,2]; y <- B[1] + B[2]*x + U[,1]
+X <- cbind(w, x)
+# Hyperparameters
+b0 <- rep(0, k); c0 <- 1000; B0 <- c0*diag(k)
+B0i <- solve(B0); g0 <- rep(0, kz)
+G0 <- 1000*diag(kz); G0i <- solve(G0)
+nu <- 3; Psi0 <- nu*diag(2); Psi0i <- solve(Psi0)
+# MCMC parameters
+mcmc <- 5000; burnin <- 1000; tot <- mcmc + burnin
+thin <- 1
+# Auxiliary elements
+XtX <- t(X)%*%X; ZtZ <- t(Z)%*%Z; nun <- nu + N
+# Gibbs sampling
+PostBeta <- function(Sigma, Gamma){
+	w1 <- Sigma[1,1] - Sigma[1,2]^2/Sigma[2,2]
+	Bn <- solve(w1^(-1)*XtX + B0i)
+	yaux <- y - (Sigma[1,2]/Sigma[2,2])*(x - Z%*%Gamma)
+	bn <- Bn%*%(B0i%*%b0 + w1^(-1)*t(X)%*%yaux)
+	Beta <- MASS::mvrnorm(1, bn, Bn)
+	return(Beta)
+}
+PostGamma <- function(Sigma, Beta){
+	w2 <- Sigma[2,2] - Sigma[1,2]^2/Sigma[1,1]
+	Gn <- solve(w2^(-1)*ZtZ + G0i)
+	xaux <- x - (Sigma[1,2]/Sigma[1,1])*(y - X%*%Beta)
+	gn <- Gn%*%(G0i%*%g0 + w2^(-1)*t(Z)%*%xaux)
+	Gamma <- MASS::mvrnorm(1, gn, Gn)
+	return(Gamma)
+}
+PostSigma <- function(Beta, Gamma){
+	Uy <- y - X%*%Beta; Ux <- x - Z%*%Gamma
+	U <- cbind(Uy, Ux)
+	Psin <- solve(Psi0i + t(U)%*%U)
+	Sigmai <- rWishart::rWishart(1, df = nun, Sigma = Psin)
+	Sigma <- solve(Sigmai[,,1]) 
+	return(Sigma)
+}
+PostBetas <- matrix(0, tot, k); PostGammas <- matrix(0, tot, kz)
+PostSigmas <- matrix(0, tot, 2*(2+1)/2); Beta <- rep(0, k); Gamma <- rep(0, kz)
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+	Sigma <- PostSigma(Beta = Beta, Gamma = Gamma)
+	Beta <- PostBeta(Sigma = Sigma, Gamma = Gamma)
+	Gamma <- PostGamma(Sigma = Sigma, Beta = Beta)
+	PostBetas[s,] <- Beta; 	PostGammas[s,] <- Gamma; PostSigmas[s,] <- matrixcalc::vech(Sigma)
+	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise, Gibss sampling instrumental model}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+keep <- seq((burnin+1), tot, thin)
+Bs <- PostBetas[keep,]
+Gs <- PostGammas[keep,]
+Sigmas <- PostSigmas[keep,]
+summary(coda::mcmc(Bs))
+1. Empirical mean and standard deviation for each variable,
+plus standard error of the mean:
+Mean     SD Naive SE Time-series SE
+[1,] 1.1519 0.1683  0.00238       0.006321
+[2,] 0.9896 0.1146  0.00162       0.005177
+summary(coda::mcmc(Gs))
+1. Empirical mean and standard deviation for each variable,
+plus standard error of the mean:
+Mean     SD Naive SE Time-series SE
+[1,] 1.133 0.1068 0.001511       0.003096
+[2,] 1.030 0.1066 0.001507       0.004193
+summary(coda::mcmc(Sigmas))
+1. Empirical mean and standard deviation for each variable,
+plus standard error of the mean:
+Mean     SD Naive SE Time-series SE
+[1,] 1.3883 0.3149 0.004454       0.012707
+[2,] 0.9992 0.2133 0.003017       0.007166
+[3,] 1.1637 0.1685 0.002382       0.002481
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\item \textbf{The effect of institutions on per capita gross domestic product continues II}
+
+Estimate the structural Equation \ref{eq:str1} using the instrumental variable model where the instrument of PAER is $\log(\textit{Mort})$. Compare the effect of property rights on per capita GDP of this model with the effect estimated in the example of the effect of institutions on per capita gross domestic product. Use the file \textit{6Institutions.csv} to do this exercise in our GUI, and set $\bm{B}_0=100\bm{I}_5$, $\bm{\beta}_0=\bm{0}_5$, $\bm{\gamma}_0=\bm{0}_2$, $\bm{G}_0=100\bm{I}_2$ $\alpha_0=3$ and $\bm{\Psi}_0=3\bm{I}_2$. The MCMC iterations, burn-in and thinning parameters are 50000, 1000 and 5, respectively. 
+
+\textbf{Answer}
+
+The following code shows how to do this using the command \textit{rivGibss} from the \textit{bayesm} package. We see that the posterior mean of the effect of property rights on per capita GDP is 0.72, and the 95\% credible interval is (0.47, 1.00). The posterior mean estimate of this effect was 0.98 in the example, and the 95\% credible interval was (0.56, 2.87) (see Section 8.1 in the book). We can observe that the indirect approach, where the \textit{reduced-form} parameters are estimated, and then, plug into the equations of the \textit{structural parameters} produce less efficient posterior estimations. 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. The effects of institutions on GDP, variable instrumental model}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+DataInst <- read.csv("DataApplications/6Institutions.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+attach(DataInst)
+y <- logpcGDP95; x <- PAER
+w <- cbind(1, Africa, Asia, Other); Z <- cbind(1, logMort)
+# Hyperparameters
+k <- 5; kz <- 2; b0 <- rep(0, k); c0 <- 100
+B0 <- c0*diag(k); B0i <- solve(B0); g0 <- rep(0, kz)
+G0 <- 100*diag(kz); G0i <- solve(G0); nu <- 5
+Psi0 <- nu*diag(2)
+# MCMC parameters
+mcmc <- 50000; burnin <- 10000; tot <- mcmc + burnin; thin <- 5
+# Gibbs sampling
+Data <- list(y = y, x = x, w = w, z = Z)
+Mcmc <- list(R = mcmc, keep = thin, nprint = 100)
+Prior <- list(md = g0, Ad = G0i, mbg = b0, Abg = B0i, nu = nu, V = Psi0)
+RestIV <- bayesm::rivGibbs(Data = Data, Mcmc = Mcmc, Prior = Prior)
+summary(RestIV[["deltadraw"]])
+summary(coda::mcmc(RestIV[["betadraw"]]))
+Iterations = 1:10000
+Thinning interval = 1 
+Number of chains = 1 
+Sample size per chain = 10000 
+1. Empirical mean and standard deviation for each variable,
+plus standard error of the mean:
+Mean             SD       Naive SE Time-series SE 
+0.759497       0.140874       0.001409       0.002477 
+2. Quantiles for each variable:
+2.5%    25%    50%    75%  97.5% 
+0.5110 0.6654 0.7502 0.8424 1.0707 
+summary(RestIV[["gammadraw"]])
+summary(RestIV[["Sigmadraw"]])
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+
 
 \end{enumerate}

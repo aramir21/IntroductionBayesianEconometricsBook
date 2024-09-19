@@ -136,14 +136,8 @@ PostSigmas <- matrix(0, tot, M*(M+1)/2)
 Beta <- rep(1, K)
 pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
 for(s in 1:tot){
-  tick1 <- Sys.time()
   Sigma <- PostSigma(Beta = Beta)
-  tock1 <- Sys.time()
-  tick2 <- Sys.time()
   Beta <- PostBeta(Sigma = Sigma)
-  tock2 <- Sys.time()
-  print(tock1-tick1)
-  print(tock2-tick2)
   PostBetas[s,] <- Beta
   PostSigmas[s,] <- matrixcalc::vech(Sigma)
   setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
@@ -275,7 +269,8 @@ set.seed(010101)
 N <- 100
 k <- 2
 B <- rep(1, k)
-G <- c(1, 0.2)
+G <- c(1, 1)
+delta <- 0.2 # Effect of instrument on y
 s12 <- 0.8
 SIGMA <- matrix(c(1, s12, s12, 1), 2, 2)
 z <- rnorm(N); # w <- rnorm(N)
@@ -283,7 +278,7 @@ Z <- cbind(1, z); w <- matrix(1,N,1)
 S <- 100
 U <- replicate(S, MASS::mvrnorm(n = N, mu = rep(0, 2), SIGMA))
 x <- G[1] + G[2]*z + U[,2,]
-y <- B[1] + B[2]*x + U[,1,]
+y <- B[1] + B[2]*x + delta*z + U[,1,]
 VarX <- G[2]^2+1 # Population variance of x
 EU1U2 <- s12 # Covariance U1
 BiasPopB2 <- EU1U2/VarX
@@ -333,8 +328,123 @@ histExo <- ggplot(df, aes(x = postmeans, fill = Model)) +
   ggtitle("Histogram: Posterior means simulating 100 samples") 
 histExo  
 
+########################## Instrumental variables: Simulation and Gibbs sampler ########################## 
+rm(list = ls())
+set.seed(010101)
+N <- 100
+k <- 2
+kz <- 2
+B <- rep(1, k)
+G <- rep(1, kz)
+s12 <- 0.8
+SIGMA <- matrix(c(1, s12, s12, 1), 2, 2)
+z <- rnorm(N);
+Z <- cbind(1, z); w <- matrix(1,N,1)
+S <- 100
+U <- MASS::mvrnorm(n = N, mu = rep(0, 2), SIGMA)
+x <- G[1] + G[2]*z + U[,2]
+y <- B[1] + B[2]*x + U[,1]
+X <- cbind(w, x)
+# Hyperparameters
+d0 <- 0.001/2
+a0 <- 0.001/2
+b0 <- rep(0, k)
+c0 <- 1000
+B0 <- c0*diag(k)
+B0i <- solve(B0)
+g0 <- rep(0, kz)
+G0 <- 1000*diag(kz)
+G0i <- solve(G0)
+nu <- 3
+Psi0 <- nu*diag(2)
+Psi0i <- solve(Psi0)
+# MCMC parameters
+mcmc <- 5000
+burnin <- 1000
+tot <- mcmc + burnin
+thin <- 1
+# Auxiliary elements
+XtX <- t(X)%*%X 
+ZtZ <- t(Z)%*%Z 
+nun <- nu + N
+# Gibbs sampling
+PostBeta <- function(Sigma, Gamma){
+  w1 <- Sigma[1,1] - Sigma[1,2]^2/Sigma[2,2]
+  Bn <- solve(w1^(-1)*XtX + B0i)
+  yaux <- y - (Sigma[1,2]/Sigma[2,2])*(x - Z%*%Gamma)
+  bn <- Bn%*%(B0i%*%b0 + w1^(-1)*t(X)%*%yaux)
+  Beta <- MASS::mvrnorm(1, bn, Bn)
+  return(Beta)
+}
+PostGamma <- function(Sigma, Beta){
+  w2 <- Sigma[2,2] - Sigma[1,2]^2/Sigma[1,1]
+  Gn <- solve(w2^(-1)*ZtZ + G0i)
+  xaux <- x - (Sigma[1,2]/Sigma[1,1])*(y - X%*%Beta)
+  gn <- Gn%*%(G0i%*%g0 + w2^(-1)*t(Z)%*%xaux)
+  Gamma <- MASS::mvrnorm(1, gn, Gn)
+  return(Gamma)
+}
+PostSigma <- function(Beta, Gamma){
+  Uy <- y - X%*%Beta; Ux <- x - Z%*%Gamma
+  U <- cbind(Uy, Ux)
+  Psin <- solve(Psi0i + t(U)%*%U)
+  Sigmai <- rWishart::rWishart(1, df = nun, Sigma = Psin)
+  Sigma <- solve(Sigmai[,,1]) 
+  return(Sigma)
+}
+PostBetas <- matrix(0, tot, k)
+PostGammas <- matrix(0, tot, kz)
+PostSigmas <- matrix(0, tot, 2*(2+1)/2)
+Beta <- rep(0, k); Gamma <- rep(0, kz)
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+  Sigma <- PostSigma(Beta = Beta, Gamma = Gamma)
+  Beta <- PostBeta(Sigma = Sigma, Gamma = Gamma)
+  Gamma <- PostGamma(Sigma = Sigma, Beta = Beta)
+  PostBetas[s,] <- Beta
+  PostGammas[s,] <- Gamma
+  PostSigmas[s,] <- matrixcalc::vech(Sigma)
+  setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+keep <- seq((burnin+1), tot, thin)
+Bs <- PostBetas[keep,]
+Gs <- PostGammas[keep,]
+Sigmas <- PostSigmas[keep,]
+summary(coda::mcmc(Bs))
+summary(coda::mcmc(Gs))
+summary(coda::mcmc(Sigmas))
 
-
-
-
-
+########################## Instrumental variables: Effect of institutions on GDP ########################## 
+# Weak instruments
+rm(list = ls())
+set.seed(010101)
+DataInst <- read.csv("DataApplications/6Institutions.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+attach(DataInst)
+y <- logpcGDP95; x <- PAER
+w <- cbind(1, Africa, Asia, Other); Z <- cbind(1, logMort)
+# Hyperparameters
+k <- 5; kz <- 2
+b0 <- rep(0, k)
+c0 <- 100
+B0 <- c0*diag(k)
+B0i <- solve(B0)
+g0 <- rep(0, kz)
+G0 <- 100*diag(kz)
+G0i <- solve(G0)
+nu <- 5
+Psi0 <- nu*diag(2)
+# MCMC parameters
+mcmc <- 50000
+burnin <- 10000
+tot <- mcmc + burnin
+thin <- 5
+# Gibbs sampling
+Data <- list(y = y, x = x, w = w, z = Z)
+Mcmc <- list(R = mcmc, keep = thin, nprint = 100)
+Prior <- list(md = g0, Ad = G0i, mbg = b0, Abg = B0i, nu = nu, V = Psi0)
+RestIV <- bayesm::rivGibbs(Data = Data, Mcmc = Mcmc, Prior = Prior)
+summary(RestIV[["deltadraw"]])
+summary(coda::mcmc(RestIV[["betadraw"]]))
+summary(RestIV[["gammadraw"]])
+summary(RestIV[["Sigmadraw"]])

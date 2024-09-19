@@ -326,7 +326,7 @@ We ask in the Exercise 5 to run this application using our GUI and the informati
 
 This inferential approach is used when there are \textit{endogeneity} issues, that is, the stochastic error is not independent of the regressors, this in turn generates \textit{bias} in posterior mean estimates when we use an inferential approach that does not take this issue into. \textit{Endogeneity} can be caused by \textit{reverse causality}, \textit{omitting relevant correlated variables}, or \textit{measurement error} in  the regressors.\footnote{See \cite[Chap. ~15]{wooldridge2016introductory} for an introductory treatment of instrumental variable in the Frequentist inferential approach.}
 
-Let's specify the dependent variable as a linear function of one endogenous regressor and some exogenous regressors. That is, $y_{i} =\bm{x}_{ei}^{\top}\bm{\beta}_1+\beta_sx_{si}+\mu_{i}$ where $x_{si} =\bm{ x}_{ei}^{\top}\bm{\gamma}_1+\bm{z}_i^{\top}\bm{\gamma}_2+v_{i}$, ${x}_{s}$ is the variable which generates the endogeneity issues ($\mathbb{E}[x_{s}\mu]\neq 0$), $\bm{x}_e$ are $K_1$ exogenous regressors, and $\bm{z}$ are $K_2$ instruments, that is, regressors that drive $x_s$ ($\mathbb{E}[x_{s}\bm{z}]\neq \bm{0}$), but do not have a direct effect on $y$ ($\mathbb{E}[y\bm{z}|x_s]= \bm{0}$).
+Let's specify the dependent variable as a linear function of one endogenous regressor and some exogenous regressors. That is, $y_{i} =\bm{x}_{ei}^{\top}\bm{\beta}_1+\beta_sx_{si}+\mu_{i}$ where $x_{si} =\bm{ x}_{ei}^{\top}\bm{\gamma}_1+\bm{z}_i^{\top}\bm{\gamma}_2+v_{i}$, ${x}_{s}$ is the variable which generates the endogeneity issues ($\mathbb{E}[\mu|x_{s}]\neq 0$), $\bm{x}_e$ are $K_1$ exogenous regressors ($\mathbb{E}[\mu|\bm{x}_{e}]= \bm{0}$), and $\bm{z}$ are $K_2$ instruments, that is, regressors that drive $x_s$ ($\mathbb{E}[x_{s}\bm{z}]\neq \bm{0}$), but do not have a direct effect on $y$ ($\mathbb{E}[y\bm{z}|x_s]= \bm{0}$). The equation of $y$ is called the \textit{structural equation}, and is the equation that the reseracher is interested in.
 
 Assuming $(u_{i},v_i)^{\top}\stackrel{i.i.d.} {\thicksim} {N}(0,\bm{\Sigma})$, $\bm{\Sigma}=[\sigma_{lm}]$, $l,m=1,2$, the likelihood function is
 \begin{align*}
@@ -339,7 +339,7 @@ Assuming $(u_{i},v_i)^{\top}\stackrel{i.i.d.} {\thicksim} {N}(0,\bm{\Sigma})$, $
 \end{align*}
 where $\bm{\beta}=\left[\bm{\beta}_1^{\top},\beta_s\right]^{\top}$, $\bm{\gamma}=\left[\bm{\gamma}_1^{\top},\bm{\gamma}_2^{\top}\right]^{\top}$, $\bm{x}_i=\left[\bm{x}_{ei}^{\top},x_{si}\right]^{\top}$ and $\bm{w}_i=\left[\bm{x}_{ei}^{\top},\bm{z}_{i}^{\top}\right]^{\top}$.
 
-We get standard conditional posterior densities using the following independent priors $\bm{\gamma}\sim {N}(\bm{\gamma}_0,\bm{G}_0)$, $\bm{\beta}\sim {N}(\bm{\beta}_0,\bm{B}_0)$ and $\bm{\Sigma}^{-1} \sim {W}(\alpha_0,\bm{\Sigma}_0)$.
+We get standard conditional posterior densities using the following independent priors $\bm{\gamma}\sim {N}(\bm{\gamma}_0,\bm{G}_0)$, $\bm{\beta}\sim {N}(\bm{\beta}_0,\bm{B}_0)$ and $\bm{\Sigma}^{-1} \sim {W}(\alpha_0,\bm{\Psi}_0)$.
 In particular, 
 
 \begin{equation*}
@@ -349,25 +349,25 @@ In particular,
 	\bm{\gamma}|\bm{\beta},\bm{\Sigma},\bm{y},\bm{X},\bm{Z}\sim {N}(\bm{\gamma}_n,\bm{G}_n)
 \end{equation*}
 \begin{equation*}
-	\bm{\Sigma}^{-1}|\bm{\beta},\bm{\gamma},\bm{y},\bm{X},\bm{Z}\sim {W}(\alpha_n,\bm{\Sigma}_n)
+	\bm{\Sigma}^{-1}|\bm{\beta},\bm{\gamma},\bm{y},\bm{X},\bm{Z}\sim {W}(\alpha_n,\bm{\Psi}_n)
 \end{equation*}
 
 where $\bm{\beta}_n=\bm{B}_n\left(\bm{B}_0^{-1}\bm{\beta}_0 + \omega_1^{-1}\sum_{i=1}^{N}\left[\bm{x}_i\left(y_i-\frac{\sigma_{12}(x_{si}-\bm{w}_i^{\top}\bm{\gamma})}{\sigma_{22}}\right)\right]\right)$, $\bm{B}_n=(\omega_1^{-1}\sum_{i=1}^{N}\bm{x}_i\bm{x}_i^{\top}+\bm{B}_0^{-1})^{-1}$, $\omega_1=\sigma_{11}-\sigma_{12}^2/\sigma_{22}$, $\bm{G}_n=(\omega_2^{-1}\sum_{i=1}^{N}\bm{w}_i\bm{w}_i^{\top}+\bm{G}_0^{-1})^{-1}$, $\bm{\gamma}_n=\bm{G}_n\left(\bm{G}_0^{-1}\bm{\gamma}_0 + \omega_2^{-1}\sum_{i=1}^{N}\left[\bm{w}_i\left(x_{si}-\frac{\sigma_{12}(y_{i}-\bm{x}_i^{\top}\bm{\beta})}{\sigma_{11}}\right)\right]\right)$,
-$\omega_2=\sigma_{22}-\sigma_{12}^2/\sigma_{11}$, $\bm{\Sigma}_n=\left[\bm{\Sigma}_0^{-1}+\sum_{i=1}^N \begin{pmatrix}
+$\omega_2=\sigma_{22}-\sigma_{12}^2/\sigma_{11}$, $\bm{\Psi}_n=\left[\bm{\Psi}_0^{-1}+\sum_{i=1}^N \begin{pmatrix}
 	y_i-\bm{x}_i^{\top}\bm{\beta} \\
 	x_{si}-\bm{w}_i^{\top}\bm{\gamma}
-\end{pmatrix} (y_i-\bm{x}_i^{\top}\bm{\beta}, x_{si} -\bm{w}_i^{\top}\bm{\gamma})\right]^{-1}$, and $\alpha_n=\alpha_0+N$.
+\end{pmatrix} (y_i-\bm{x}_i^{\top}\bm{\beta}, x_{si} -\bm{w}_i^{\top}\bm{\gamma})\right]^{-1}$, $\alpha_n=\alpha_0+N$, and $\sigma_{lj}$ are the elements of $\bm{\Sigma}$.
 
 We also use a Gibbs sampling algorithm in this model since we have standard conditional posterior distributions.\\
 
 \textbf{Example: Simulation exercise}
 
-Let's simulate the simple process $y_i=\beta_1+\beta_2x_{si}+\mu_i$ and $x_{si}=\gamma_1+\gamma_2z_i+v_i$ where $[\mu_i \ v_i]^{\top}\sim N(\bm{0},\bm{\Sigma})$ where $\bm{\Sigma}=[\sigma_{lj}]$ such that $\sigma_{12}\neq 0$, $i=1,2,\dots,100$.
+Let's simulate the simple process $y_i=\beta_1+\beta_2x_{si}+\mu_i$ and $x_{si}=\gamma_1+\gamma_2z_i+v_i$ where $[\mu_i \ v_i]^{\top}\sim N(\bm{0},\bm{\Sigma})$, $\bm{\Sigma}=[\sigma_{lj}]$ such that $\sigma_{12}\neq 0$, $i=1,2,\dots,100$.
 
 Observe that $\mu|v\sim N\left(\frac{\sigma_{12}}{\sigma_{22}}v,\sigma_{11}-\frac{\sigma_{21}^2}{\sigma_{22}}\right)$, this implies that $\mathbb{E}[\mu|x_s]=\mathbb{E}[\mu|v]=\frac{\sigma_{12}}{\sigma_{22}}v\neq 0$ given $\sigma_{12}\neq 0$ and $\mathbb{E}[\mu|z]=0$.
 Let's set all location parameters equal to 1, and $\sigma_{11}=\sigma_{22}=1$, $\sigma_{12}=0.8$, and $z\sim N(0,1)$. We know from the large sampling properties of the posterior mean that this converge to the maximum likelihood estimator (see Section \ref{sec11}, and \cite{Lehmann2003,van2000asymptotic}), which in this setting is $\hat{\beta}_2=\frac{\widehat{Cov}(x_s,y)}{\widehat{Var}(x_s)}$ which converges in probability to $\beta_2+\frac{\sigma_{12}}{\sigma_{22}Var(x_s)}=\beta_2+\frac{\sigma_{12}}{\sigma_{22}(\gamma_2^2Var(z)+\sigma_{22})}=1.4$, that is, the asymptotic bias when using the posterior mean of a linear regression without taking into account endogeneity is 0.4 in this example.
 
-We assess the sampling performance of Bayesian ``estimators" simulating this setting 100 times. The following code shows how to do this using a linear model without taking into account the \textit{endogeneity} issue (see Section \ref{sec61}), and implementing the variable instrumental model. We use $\bm{B}_0=\bm{I}_2$, $\bm{\beta}_0=\bm{0}_2$, and the parameters of the inverse gamma distribution equal to 0.0005. In the case of the instrumental variable setting, we set in addition $\bm{\gamma}=\bm{0}_2$, $\alpha_0=3$ and $\bm{\Psi}=3\bm{I}_2$. 
+We assess the sampling performance of Bayesian ``estimators" simulating this setting 100 times. The following code shows how to do this using a linear model without taking into account the \textit{endogeneity} issue (see Section \ref{sec61}), and implementing the variable instrumental model. We use $\bm{B}_0=1000\bm{I}_2$, $\bm{\beta}_0=\bm{0}_2$, and the parameters of the inverse gamma distribution equal to 0.0005. In the case of the instrumental variable setting, we set $\bm{\gamma}_0=\bm{0}_2$, $\bm{G}_0=1000\bm{I}_2$ $\alpha_0=3$ and $\bm{\Psi}_0=3\bm{I}_2$ in addition. 
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -413,16 +413,101 @@ histExo
 	\end{VF}
 \end{tcolorbox}
 
-Figure \ref{fig71} displays the histograms of the posterior means of $\beta_2$ using the ordinary model without taking endogeneity into account, and the instrumental variable model. In one hand, the mean of the posterior means of the ordinary model is 1.41 (black dashed line), this implies a bias equal to 0.41, which is very close to the population bias. On the other hand, the mean of the posterior means of the instrumental variable model is 1.04 (black dashed line), which is close to the population value of $\beta_2=1$ (green dashed line).
+Figure \ref{fig71} displays the histograms of the posterior means of $\beta_2$ using the ordinary model without taking endogeneity into account, and the instrumental variable model. In one hand, the mean of the posterior means of the ordinary model is 1.41 (black dashed line in red histogram), this implies a bias equal to 0.41, which is very close to the population bias (0.40). On the other hand, the mean of the posterior means of the instrumental variable model is 1.04 (black dashed line in blue histogram), which is close to the population value of $\beta_2=1$ (green dashed line).
 
 We also see that the histogram of the posterior means of the ordinary model is less disperse, that is, this ``estimator" is more efficient, which is a well-known result in the Frequentist inferential approach comparing ordinary least squares and two-stage least squares (see \cite[Chap. ~5]{wooldridge2010econometric}).
 
-Two very relevant aspects in the instrumental variables literature are the \textit{weakness} and \textit{exogeneity} of the instruments. The former refers how strong is the relationship between the instruments and the endogeneous regressors, and the latter refers to the independence of the instruments of the stochastic error in the regression of $y$. We ask in exercise 6 to use the previous code as a baseline to study this two aspects.
+Two very relevant aspects in the instrumental variables literature are the \textit{weakness} and \textit{exogeneity} of the instruments. The former refers how strong is the relationship between the instruments and the endogeneous regressors, and the latter refers to the independence of the instruments of the stochastic error in the \textit{structural equation}. We ask in Exercise 6 to use the previous code as a baseline to study this two aspects. Observe the link between the \textit{weakness} and \textit{exogeneity} of the instrument, and the \textit{exclusion restrictions} ($\mathbb{E}[x_s\bm{z}]\neq \bm{0}$ and $\mathbb{E}[y\bm{z}|x_s]=\bm{0}$). This is the point of departure of \cite{Conley2012} who propose to assess the plausibility of the \textit{exclusion restrictions} defining \textit{plausible exogeneity} as having prior information that the effect of the instrument in the \textit{structural equation} is near zero, but perhaps not exactly zero.  
  
 \begin{figure}
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter7/figures/Fig71.png}
 	\caption[List of figure caption goes here]{Histogram of posterior means: Ordinary and instrumental models.}\label{fig71}
 \end{figure}
+
+Algorithm \ref{alg:IVReg} can be used to estimate the instrumental variable model using our GUI. We ask in Exercise 8 to replicate the example of the effect of institutions on per capita GDP using our GUI.  
+
+\begin{algorithm}[h!]
+	\caption{Instrumental variable model}\label{alg:IVReg}
+	\begin{algorithmic}[1]  		 			
+		\State Select \textit{Multivariate Models} on the top panel
+		\State Select \textit{Variable instrumental (two equations)} model using the left radio button
+		\State Upload the dataset selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend
+		\State Select MCMC iterations, burn-in and thinning parameters using the \textit{Range sliders}
+		\State Write down the formula of the structural equation in the \textbf{Main Equation} box. This formula must be written using the syntax of the \textit{formula} command of \textbf{R} software. This equation includes intercept by default, do not include it in the equation
+		\State Write down the formula of the endogenous regressor in the \textbf{Instrumental Equation} box. This formula must be written using the syntax of the \textit{formula} command of \textbf{R} software. This equation includes intercept by default, do not include it in the equation
+		\State Set the hyperparameters: mean vectors, covariance matrices, degrees of freedom, and the scale matrix. This step is not necessary as by default our GUI uses non-informative priors
+		\State Click the \textit{Go!} button
+		\State Analyze results
+		\State Download posterior chains and diagnostic plots using the \textit{Download Posterior Chains} and \textit{Download Posterior Graphs} buttons
+	\end{algorithmic} 
+\end{algorithm}
+
+\section{Multivariate probit model}\label{sec74}
+
+In the multivariate probit model \cite{Edwards2003}, the response variable $y_{il}=\left\{0,1\right\}$ indicates that individual $i$ makes binary choices regarding alternatives $l$, $i=1,2,\dots,N$, $l=1,2,\dots,L$.\footnote{These alternatives are not mutually exclusive.} In particular,
+$y_{il}=\begin{Bmatrix}
+	0, \ y_{il}^*\leq 0 \\ 
+	1, \ y_{il}^*> 0 \\ 
+\end{Bmatrix}$
+such that $\bm{y}_{i}^*=\bm{X}_{i}\bm{\beta}+\bm{\mu}_{i}\stackrel{i.i.d.} {\thicksim}{N}(\bm0,\bm{\Sigma})$, $\bm{y}_i^*$ is an unobserved latent $L$ dimensional vector, $\bm{X}_{i}$ is an $L\times K$ design matrix of regressors, $K=L\times k$, $k$ is the number of regressors, and $\bm{\beta}=\left[\bm{\beta}_1^{\top} \ \bm{\beta}_2^{\top} \dots  \bm{\beta}_k^{\top}\right]^{\top}$, where the $\bm{\beta}_j$ make up an $L$ dimensional vector of coefficients, $j=1,2,\dots,k$. We simultaneously take into account the alternative-varying regressors (alternative attributes) and alternative-invariant regressors (individual characteristics).
+
+The likelihood function in this model is $p(\bm{\beta},\bm{\Sigma}|\bm{y},\bm{X})=\prod_{i=1}^N\prod_{l=1}^L p_{il}^{y_{il}}$ where $p_{il}=p(y_{il}^*\geq 0)$.
+Observe that $p(\bm{y}_{i}^*\geq 0)=p(\bm{\Lambda}\bm{y}_{i}^*\geq 0)$, where $\bm{\Lambda}=diag\left\{\lambda_{ll}\right\}$, $\lambda_{ll}>0$.
+This generates identification issues.
+We follow the post processing strategy proposed by \cite{Edwards2003} to get identified parameters, that is, $\tilde{\bm{\beta}}=vec\left\{\bm{D}\bm{\Gamma}\right\}$ and the correlation matrix $\bm{R}=\bm{D}\bm{\Sigma}\bm{D}$, where $\bm{D}=diag\left\{\sigma_{ll}\right\}^{-1/2}$ and $\bm{\Gamma}=\left[\bm{\beta}_1,\bm{\beta}_2,\dots,\bm{\beta}_k\right]$.\footnote{In a Bayesian setting, we can have a non identified model; however, the posterior of the model parameters exists given a proper prior distribution \cite{Edwards2003}.}
+
+We assume independent priors, $\bm{\beta}\sim{N}(\bm{\beta}_0,\bm{B}_0)$ and $\bm{\Sigma}^{-1}\sim{W}(\alpha_0,\bm{\Psi}_0)$.
+We can employ Gibbs sampling in this model because this is a standard Bayesian linear regression model when data augmentation in $\bm{y}^*$ is used.
+The posterior conditional distributions are
+
+\begin{equation*}
+	\bm{\beta}|\bm{\Sigma},\bm{w}\sim{N}(\bm{\beta}_n,\bm{B}_n),
+\end{equation*}
+\begin{equation*}
+	\bm{\Sigma}^{-1}|\bm{\beta},\bm{w}\sim{W}(\alpha_n,\bm{\Psi}_n),
+\end{equation*}
+\begin{equation*}
+	y_{il}^*|\bm{y}_{i,-l}^*,\bm{\beta},\bm{\Sigma}^{-1},\bm{y_i}\sim{T}{N}_{I_{il}}(m_{il},\tau_{ll}^2)
+\end{equation*}
+
+where $\bm{B}_n=(\bm{B}_0^{-1}+\bm{X}^{*\top}\bm{X}^*)^{-1}$, $\bm{\beta}_n=\bm{B}_n(\bm{B}_0^{-1}\bm{\beta}_0+\bm{X}^{*\top}\bm{y}^{**})$, $\bm{\Sigma}^{-1}=\bm{C}^{\top}\bm{C}$, $\bm{X}_i^{*\top}=\bm{C}^{\top}\bm{X}_i$, $\bm{y}_i^{**}=\bm{C}^{\top}\bm{y}_i^*$, $\bm{X}^*=\begin{bmatrix}\bm{X}_1^*\\
+	\bm{X}_2^*\\
+	\vdots\\
+	\bm{X}_N^*
+\end{bmatrix}$, $\alpha_n=\alpha_0+N$, $\bm{\Psi}_n=(\bm{\Psi}_0+\sum_{i=1}^N (\bm{y}_i^*-\bm{X}_i\bm{\beta})^{\top}(\bm{y}_i^*-\bm{X}_i\bm{\beta}))^{-1}$, $I_{il}=\begin{Bmatrix} y_{il}^*> 0, & y_{il}=1\\
+	y_{il}^*\leq 0 , & y_{il}=0\\
+\end{Bmatrix}$, $m_{il}=\bm{x}_{il}^{\top}\bm{\beta}+\bm{f}^{\top}(\bm{y}_{i,-l}^*-\bm{X}_{i,-l}\bm{\beta})$, $\bm{y}_{i,-l}^*$ is an $L-1$ dimensional vector of all components of $\bm{y}_i^*$ excluding $y_{il}^*$, $\bm{x}_{il}$ is the $l$-th row of $\bm{X}_i$, $\bm{X}_{i,-l}$ is $\bm{X}_{i}$ after deleting the $l$-th row, $\tau_{ll}^2=1/\sigma^{ll}$, and $\bm{f}=-\sigma^{ll}\bm{\omega}_{l,-l}$, $\sigma^{jl}$ is the $jl$-th element of $\bm{\Sigma}^{-1}$, $\bm{\Sigma}^{-1}=\begin{bmatrix}\bm{\omega}_1^{\top} \ \bm{\omega}_2^{\top} \vdots \bm{\omega}_{L}^{\top} \end{bmatrix}$, $\bm{\omega}_{l,-l}^{\top}$ is the $l$-th row of $\bm{\Sigma}^{-1}$ extracting the $l$-th element.\\
+
+
+\textbf{Example: Self selection in hospitalization due to a subsidized health care program in Medell\'in}
+
+We finish this subsection using the dataset \textit{7HealthMed.csv} where the dependent variable is equal to $y = \left[\text{Hosp} \ \text{SHI}\right]'$ where $\text{Hosp}$ is equal to 1 if an individual was hospitalized in 2007, 0 otherwise, and $\text{SHI}$ is equal to 1 if the individual had subsidized health insurance that year, and 0 otherwise.
+Recall that our application in binary response models was to uncover the determinants of hospitalization in Medell\'in (Colombia), where one of the regressors was a binary indicator of being in a subsidized health care program.
+We can use a bivariate probit model if we suspect there is a dependence regarding the decisions involving these two variables.
+We would expect a priori that being in a subsidized health care program would imply a higher probability of being hospitalized \textit{ceteris paribus}.
+However, if an individual expects to be hospitalized in the future, and the factors that drive this decision are unobserved to the econometrician, we would have a feedback effect from being hospitalized on being in a subsidized health care program.
+
+We took into account 9 regressors: a constant, female, age, squared age, self perception of health status taking as reference bad (four categories), and the proportion of the individual's age spent living in her/his neighborhood (PTL). 
+The last variable tries to take into account the social capital that can affect being in the subsidized health insurance program, as the target population is identified by the local government \cite{Ramirez2019a}. We have 12975 individuals chosen two options (subsidized regime and hospitalization).
+
+We set 20,000 MCMC iterations plus 1,000 iterations as burn-in, and a thinning parameter equal to 5.
+This implies an effective length of the posterior chains equal to 4,000 draws.
+We also used default values for the hyperparameters of the prior distributions.
+In general, the convergence diagnostics seem good, except that there is a high level of autocorrelation for the posterior chain of the correlation between the two equations, as indicated by the dependence factors, and the trace and autocorrelation plots.
+Observe that the tests of \cite{Geweke1992} and \cite{Heidelberger1983} have NaN values for the elements (1, 1) and (2, 2) of the covariance matrix, as these parameters were set equal to 1 due to identification restrictions.
+This also means just two values for the dependence factors, which are actually the same due to symmetry.
+
+The results suggest that only female is relevant to explain hospitalization.
+The 95\% credible interval is (3.13e-02, 0.22).
+Observe that only 3.11\% of the sample has been hospitalized.
+Probit models are not well designed for this kind of dataset, but our main purpose is to illustrate the use of our GUI.
+On the other hand, the results suggest that age, squared age, and the proportion of age spent living in the neighborhood are statistically relevant to explain enrollment in the subsidized program.
+Their 95\% credible intervals are (2.63e-01, 3.27e-01), (-8.05e-03, -2.05e-03) and (0.15, 0.27), respectively.
+The latter result seems to support the social capital hypothesis.
+Lastly, the 95\% credible interval for the correlation between the two binary equations is (-0.07, 0.06), suggesting that there is no self selection regarding these two decisions (hospitalization and subsidized insurance).
+So, it seems that it is better to estimate univariate binary models for each of these dependent variables, for the sake of parsimony.
+
+
 
 \section{Summary}\label{sec75}
 
@@ -432,7 +517,7 @@ Two very relevant aspects in the instrumental variables literature are the \text
 	
 	\item Show that $\beta_1=\pi_1/\gamma_1$ in the effect of institutions on per capita GDP.
 	
-	\item \textbf{The effect of institutions on per capita gross domestic product continues}
+	\item \textbf{The effect of institutions on per capita gross domestic product continues I}
 	
 	Use the \textit{rmultireg} command from the \textit{bayesm} package to perform inference in the example of the effect of institutions on per capita GDP. 
 	
@@ -458,15 +543,21 @@ where $q^d$ is demand, $q^s$ is supply, $p$, $y$, $pc$, $ps$ and $er$ are price,
 	\item Program from scratch the Gibbs sampler algorithm in this application.   
 \end{itemize}
 
-\item \textbf{Simulation exercise of instrumental variables continues}
+\item \textbf{Simulation exercise of instrumental variables continues I}
 
 \begin{enumerate}
 	\item Use the setting of the simulation exercise of instrumental variables to analyze what happens when the instrument is weak, for instance, setting $\gamma_2=0.2$, and compare the performance of the posterior means of the ordinary and instrumental models.
 	\item Perform a simulation that helps to analyze how the degree of exogeneity of the instrument affects the performance of the posterior mean of the instrumental variable model.	 
 \end{enumerate}
 
+\item \textbf{Simulation exercise of instrumental variables continues II}
 
-	
+Program from scratch the Gibbs sampling algorithm of the instrumental model for the simulation exercise of the instrumental variables.
+
+\item \textbf{The effect of institutions on per capita gross domestic product continues II}
+
+Estimate the structural Equation \ref{eq:str1} using the instrumental variable model where the instrument of PAER is $\log(\textit{Mort})$. Compare the effect of property rights on per capita GDP of this model with the effect estimated in the example of the effect of institutions on per capita gross domestic product. Use the file \textit{6Institutions.csv} to do this exercise in our GUI, and set $\bm{B}_0=100\bm{I}_5$, $\bm{\beta}_0=\bm{0}_5$, $\bm{\gamma}_0=\bm{0}_2$, $\bm{G}_0=100\bm{I}_2$ $\alpha_0=3$ and $\bm{\Psi}_0=3\bm{I}_2$. The MCMC iterations, burn-in and thinning parameters are 50000, 1000 and 5, respectively. 
+
 \end{enumerate}
 
 
