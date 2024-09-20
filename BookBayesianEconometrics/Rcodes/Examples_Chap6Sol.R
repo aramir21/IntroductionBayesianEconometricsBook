@@ -116,6 +116,42 @@ PosteriorBetas <- PostBetas[keep,]
 colnames(PosteriorBetas) <- c("Intercept", "SHI", "Female", "Age", "Age2", "Est2", "Est3", "Fair", "Good", "Excellent")
 summary(coda::mcmc(PosteriorBetas))
 
+########################## Multinomial probit: Fishing choice ##########################
+remove(list = ls())
+set.seed(12345)
+Data <- read.csv("DataApplications/3Fishing.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+attach(Data)
+str(Data)
+p <- 4; na <- 2; nd <- 1; N <- dim(Data)[1]
+Price <- c(t(Data[,2:5]))
+Catch <- c(t(Data[,6:9]))
+Xa <- Data[,2:9]
+Xd <- matrix(income, N, 1)
+X <- bayesm::createX(p = p, na = na, nd = nd, Xa = Xa, Xd = Xd, INT = TRUE, base = p, DIFF = TRUE)
+df <- list(y = mode, X = X, p = 4)
+# Hyperparameters
+k <- dim(X)[2]
+b0 <- rep(0, k)
+c0 <- 1000
+B0 <- c0*diag(k)
+B0i <- solve(B0)
+a0 <- p - 1 + 3
+Psi0 <- a0*diag(p-1)
+Prior <- list(betabar = b0, A = B0i, nu = a0, V = Psi0)
+# MCMC parameters
+mcmc <- 100000
+thin <- 5
+Mcmc <- list(R = mcmc, keep = thin)
+Results <- bayesm::rmnpGibbs(Data = df, Prior = Prior, Mcmc = Mcmc)
+
+betatilde <- Results$betadraw / sqrt(Results$sigmadraw[,1])
+attributes(betatilde)$class <- "bayesm.mat"
+summary(coda::mcmc(betatilde))
+
+sigmadraw <-  Results$sigmadraw / Results$sigmadraw[,1]
+attributes(sigmadraw)$class = "bayesm.var"
+summary(coda::mcmc(sigmadraw))
+
 ########################## Multinomial Logit: Simulation ##########################
 remove(list = ls())
 set.seed(12345)
@@ -142,7 +178,7 @@ p<-cbind(p1,p2,p3)
 y<- apply(p,1, function(x)sample(1:3, 1, prob = x, replace = TRUE))
 table(y)
 L <- length(table(y))
-dat <-data.frame(mode,X1[,1],X2[,1],X3[,1],X1[,2],X2[,2],X3[,2],X1[,3],X2[,3],X3[,3],X4)
+dat <-data.frame(y,X1[,1],X2[,1],X3[,1],X1[,2],X2[,2],X3[,2],X1[,3],X2[,3],X3[,3],X4)
 colnames(dat) <- c("mode","V1.1","V1.2","V1.3","V2.1","V2.2","V2.3","V3.1","V3.2","V3.3","V4")
 attach(dat)
 LongData <- mlogit::mlogit.data(dat, shape = "wide", varying=2:10, choice = "mode")

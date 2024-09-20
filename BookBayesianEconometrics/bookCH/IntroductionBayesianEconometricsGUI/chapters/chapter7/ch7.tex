@@ -95,7 +95,7 @@ Regarding the identification of the \textit{structural} parameters in the PAER e
 
 In general, trying to recover the \textit{structural} parameters from the \textit{reduced-form} parameters can be challenging due to the requirement of relevant identification restrictions that can be hard to find in some applications.\footnote{Good text books at introductory level for identification in linear systems are \cite[Chap. ~19]{gujarati2009basic} and \cite[Chap. ~16]{wooldridge2016introductory}.}
 
-We set non-informative priors in this example, $\bm{B}_0=\left[\bm{0}_5 \ \bm{0}_5\right]$, $\bm{V}_0=100\bm{I}_K$, $\bm{\Psi}_0=5\bm{I}_2$ and $\alpha_0=5$.\footnote{Observe that we are setting the priors in the \textit{reduced-form} model; this may have unintended consequences for the posterior distributions of the \textit{structural} parameters, which are ultimately the parameters researchers are interested in. See \cite[p.~302]{koop2003bayesian} for good references in this topic.} Once our GUI is displayed (see beginning of this chapter), we should follow Algorithm \ref{alg:MultReg} to run multivariate linear models in our GUI (see Chapter \ref{chapGUI} for details):
+We set non-informative priors in this example, $\bm{B}_0=\left[\bm{0}_5 \ \bm{0}_5\right]$, $\bm{V}_0=100\bm{I}_K$, $\bm{\Psi}_0=5\bm{I}_2$ and $\alpha_0=5$.\footnote{Observe that we are setting the priors in the \textit{reduced-form} model; this may have unintended consequences for the posterior distributions of the \textit{structural} parameters, which are ultimately the parameters researchers are interested in. See \cite[p.~302]{koop2003bayesian} for good references in this topic.} Once our GUI is displayed (see beginning of this chapter), we should follow Algorithm \ref{alg:MultReg} to run multivariate linear models in our GUI (see Chapter \ref{chapGUI} for details, particularly how to set the data set):
 \begin{algorithm}[h!]
 	\caption{Multivariate linear model}\label{alg:MultReg}
 	\begin{algorithmic}[1]  		 			
@@ -209,7 +209,9 @@ where electricity, water and gas are the monthly consumption of electricity (kWh
 
 Since there are different sets of regressors in each equation and we suspect correlation between the stochastic errors of the three equations, we should estimate a seemingly unrelated regressions (SUR) model. We expect unobserved correlation in these equations because we are modelling utilities, and in some cases, a single provider handles all three services and issues one bill.
 
-Algorithm \ref{alg:SUR} shows how to estimate SUR models in our GUI. Our GUI uses the command \textit{rsurGibbs} from the \textit{bayesm} package in \textbf{R} software. The following code shows how to program this application using this package. We use 10000 MCMC iterations, $\bm{\beta}_0=\bm{0}_{27}$, $\bm{B}_0=100\bm{I}_{27}$, $\alpha_0=5$ and $\bm{\Psi}=5\bm{I}_3$.
+Algorithm \ref{alg:SUR} shows how to estimate SUR models in our GUI. Our GUI uses the command \textit{rsurGibbs} from the \textit{bayesm} package in \textbf{R} software. See Chapter \ref{chapGUI} for details, particularly how to set the data set, and templates in our GitHub repository (\textbf{https://github.com/besmarter/BSTApp}) in the folders \textbf{DataApp} and \textbf{DataSim}. 
+
+The following code shows how to program this application using this package. We use 10000 MCMC iterations, $\bm{\beta}_0=\bm{0}_{27}$, $\bm{B}_0=100\bm{I}_{27}$, $\alpha_0=5$ and $\bm{\Psi}=5\bm{I}_3$.
 
 We find that the posterior median estimates of the own-price elasticities of demand of electricity, water and gas are -1.88, -0.36 and -0.62, where there are not 95\% credible intervals that encompass 0. This means that a 1\% increase in the prices of electricity, water and gas imply a 1.88\%, 0.36\% and 0.62\% decrease in the monthly consumption of these utilities, respectively.\footnote{This is an example where there can be concerns regarding \textit{biased} and \textit{inconsistent} posterior mean estimates, for instance, due to \textit{reverse causality} between quantity and demand. These concerns are valid; although, we are using micro-level data, which implies no demand-supply simultaneity. In addition, the utility providers are operating in regulated natural monopoly markets, this implies no endogeneity due to searching provider strategies. Finally, we took prices directly from provider records, this avoids price measurement errors \cite{ramirez2024welfare}.} In general, there is evidence supporting the relevance of all regressors in these equations, except a few exceptions, and unobserved correlation in the demand of these services supporting the relevance of a SUR model in this application.   
 
@@ -444,17 +446,17 @@ Algorithm \ref{alg:IVReg} can be used to estimate the instrumental variable mode
 
 \section{Multivariate probit model}\label{sec74}
 
-In the multivariate probit model \cite{Edwards2003}, the response variable $y_{il}=\left\{0,1\right\}$ indicates that individual $i$ makes binary choices regarding alternatives $l$, $i=1,2,\dots,N$, $l=1,2,\dots,L$.\footnote{These alternatives are not mutually exclusive.} In particular,
-$y_{il}=\begin{Bmatrix}
-	0, \ y_{il}^*\leq 0 \\ 
-	1, \ y_{il}^*> 0 \\ 
-\end{Bmatrix}$
-such that $\bm{y}_{i}^*=\bm{X}_{i}\bm{\beta}+\bm{\mu}_{i}\stackrel{i.i.d.} {\thicksim}{N}(\bm0,\bm{\Sigma})$, $\bm{y}_i^*$ is an unobserved latent $L$ dimensional vector, $\bm{X}_{i}$ is an $L\times K$ design matrix of regressors, $K=L\times k$, $k$ is the number of regressors, and $\bm{\beta}=\left[\bm{\beta}_1^{\top} \ \bm{\beta}_2^{\top} \dots  \bm{\beta}_k^{\top}\right]^{\top}$, where the $\bm{\beta}_j$ make up an $L$ dimensional vector of coefficients, $j=1,2,\dots,k$. We simultaneously take into account the alternative-varying regressors (alternative attributes) and alternative-invariant regressors (individual characteristics).
+In the multivariate probit model \cite{Edwards2003}, the response variable $y_{il}=\left\{0,1\right\}$ indicates that individual $i$ makes binary choices regarding no mutually exclusive alternatives $l$, $i=1,2,\dots,N$, $l=1,2,\dots,L$. In particular,
+\begin{align*}
+	y_{il}=\begin{Bmatrix}
+		0, \ y_{il}^*\leq 0 \\ 
+		1, \ y_{il}^*> 0 \\ 
+	\end{Bmatrix},
+\end{align*}
+where $\bm{y}_{i}^*=\bm{X}_{i}\bm{\beta}+\bm{\mu}_{i}\stackrel{i.i.d.} {\thicksim}{N}(\bm0,\bm{\Sigma})$, $\bm{y}_i^*$ is an unobserved latent $L$-dimensional vector, $\bm{X}_{i}$ is an $L\times K$ design matrix of regressors, $K=L\times k$, $k$ is the number of regressors, and $\bm{\beta}=\left[\bm{\beta}_1^{\top} \ \bm{\beta}_2^{\top} \dots  \bm{\beta}_k^{\top}\right]^{\top}$, where the $\bm{\beta}_j$ make up an $L$-dimensional vector of coefficients, $j=1,2,\dots,k$. We simultaneously take into account the alternative-varying regressors (alternative attributes) and alternative-invariant regressors (individual characteristics).
 
 The likelihood function in this model is $p(\bm{\beta},\bm{\Sigma}|\bm{y},\bm{X})=\prod_{i=1}^N\prod_{l=1}^L p_{il}^{y_{il}}$ where $p_{il}=p(y_{il}^*\geq 0)$.
-Observe that $p(\bm{y}_{i}^*\geq 0)=p(\bm{\Lambda}\bm{y}_{i}^*\geq 0)$, where $\bm{\Lambda}=diag\left\{\lambda_{ll}\right\}$, $\lambda_{ll}>0$.
-This generates identification issues.
-We follow the post processing strategy proposed by \cite{Edwards2003} to get identified parameters, that is, $\tilde{\bm{\beta}}=vec\left\{\bm{D}\bm{\Gamma}\right\}$ and the correlation matrix $\bm{R}=\bm{D}\bm{\Sigma}\bm{D}$, where $\bm{D}=diag\left\{\sigma_{ll}\right\}^{-1/2}$ and $\bm{\Gamma}=\left[\bm{\beta}_1,\bm{\beta}_2,\dots,\bm{\beta}_k\right]$.\footnote{In a Bayesian setting, we can have a non identified model; however, the posterior of the model parameters exists given a proper prior distribution \cite{Edwards2003}.}
+Observe that $p({y}_{il}^*\geq 0)=p({\lambda}_{ll}{y}_{il}^*\geq 0)$, $\lambda_{ll}>0$. This generates identification issues because just the correlation matrix can be identified, same case as the univariate probit model where the variance of the model is fixed to 1. We follow the post processing strategy proposed by \cite{Edwards2003} to get identified parameters, that is, $\tilde{\bm{\beta}}=vec\left\{\bm{\Lambda}\bm{B}\right\}$ and the correlation matrix $\bm{R}=\bm{\Lambda}\bm{\Sigma}\bm{\Lambda}$, where $\bm{\Lambda}=diag\left\{\sigma_{ll}\right\}^{-1/2}$ and $\bm{B}=\left[\bm{\beta}_1,\bm{\beta}_2,\dots,\bm{\beta}_k\right]$.\footnote{In a Bayesian setting, we can have a non identified model; however, the posterior of the model parameters exists given a proper prior distribution \cite{Edwards2003}.}
 
 We assume independent priors, $\bm{\beta}\sim{N}(\bm{\beta}_0,\bm{B}_0)$ and $\bm{\Sigma}^{-1}\sim{W}(\alpha_0,\bm{\Psi}_0)$.
 We can employ Gibbs sampling in this model because this is a standard Bayesian linear regression model when data augmentation in $\bm{y}^*$ is used.
@@ -481,7 +483,7 @@ where $\bm{B}_n=(\bm{B}_0^{-1}+\bm{X}^{*\top}\bm{X}^*)^{-1}$, $\bm{\beta}_n=\bm{
 
 \textbf{Example: Self selection in hospitalization due to a subsidized health care program in Medell\'in}
 
-We finish this subsection using the dataset \textit{7HealthMed.csv} where the dependent variable is equal to $y = \left[\text{Hosp} \ \text{SHI}\right]'$ where $\text{Hosp}$ is equal to 1 if an individual was hospitalized in 2007, 0 otherwise, and $\text{SHI}$ is equal to 1 if the individual had subsidized health insurance that year, and 0 otherwise.
+We use the dataset \textit{7HealthMed.csv} where the dependent variable is equal to $y = \left[\text{Hosp} \ \text{SHI}\right]'$ where $\text{Hosp}$ is equal to 1 if an individual was hospitalized in 2007, 0 otherwise, and $\text{SHI}$ is equal to 1 if the individual had subsidized health insurance that year, and 0 otherwise.
 Recall that our application in binary response models was to uncover the determinants of hospitalization in Medell\'in (Colombia), where one of the regressors was a binary indicator of being in a subsidized health care program.
 We can use a bivariate probit model if we suspect there is a dependence regarding the decisions involving these two variables.
 We would expect a priori that being in a subsidized health care program would imply a higher probability of being hospitalized \textit{ceteris paribus}.
@@ -489,6 +491,25 @@ However, if an individual expects to be hospitalized in the future, and the fact
 
 We took into account 9 regressors: a constant, female, age, squared age, self perception of health status taking as reference bad (four categories), and the proportion of the individual's age spent living in her/his neighborhood (PTL). 
 The last variable tries to take into account the social capital that can affect being in the subsidized health insurance program, as the target population is identified by the local government \cite{Ramirez2019a}. We have 12975 individuals chosen two options (subsidized regime and hospitalization).
+
+The Algorithm \ref{alg:MtultProbit} shows how to run a multivariate probit model in our GUI. 
+
+\begin{algorithm}[h!]
+	\caption{Instrumental variable model}\label{alg:MtultProbit}
+	\begin{algorithmic}[1]  		 			
+		\State Select \textit{Multivariate Models} on the top panel
+		\State Select \textit{Multivariate Probit} model using the left radio button
+		\State Upload the dataset selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend
+		\State Select MCMC iterations, burn-in and thinning parameters using the \textit{Range sliders}
+		\State Write down the formula of the structural equation in the \textbf{Main Equation} box. This formula must be written using the syntax of the \textit{formula} command of \textbf{R} software. This equation includes intercept by default, do not include it in the equation
+		\State Write down the formula of the endogenous regressor in the \textbf{Instrumental Equation} box. This formula must be written using the syntax of the \textit{formula} command of \textbf{R} software. This equation includes intercept by default, do not include it in the equation
+		\State Set the hyperparameters: mean vectors, covariance matrices, degrees of freedom, and the scale matrix. This step is not necessary as by default our GUI uses non-informative priors
+		\State Click the \textit{Go!} button
+		\State Analyze results
+		\State Download posterior chains and diagnostic plots using the \textit{Download Posterior Chains} and \textit{Download Posterior Graphs} buttons
+	\end{algorithmic} 
+\end{algorithm}
+
 
 We set 20,000 MCMC iterations plus 1,000 iterations as burn-in, and a thinning parameter equal to 5.
 This implies an effective length of the posterior chains equal to 4,000 draws.

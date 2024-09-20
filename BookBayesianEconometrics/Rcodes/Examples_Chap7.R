@@ -138,5 +138,42 @@ histExo <- ggplot(df, aes(x = postmeans, fill = Model)) +
   ggtitle("Histogram: Posterior means simulating 100 samples") 
 histExo  
 
+########################## Multivariate probit: Hospitalization and subsidized health system ########################## 
+rm(list = ls())
+set.seed(010101)
+library(dplyr)
+Data <- read.csv("DataApplications/7HealthMed.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+attach(Data)
+str(Data)
+# p <- 2; na <- NULL; nd <- 8; N <- dim(Data)[1]
+# Xd <- as.matrix(Data[-seq(1, N, 2), 4:11]); Xa <- NULL
+# X <- bayesm::createX(p = p, na = NULL, nd = nd, Xd = Xd, Xa = NULL, INT = TRUE, DIFF = TRUE)
+p <- 2; nd <- 9; N <- length(y)/p
+y <- y
+Xd <- as.matrix(Data[seq(1, p*N, 2),3:11])
+X <- bayesm::createX(p = p, na = NULL, nd = nd, Xa = NULL, Xd = Xd, INT = FALSE)
+df <- list(y = y, X = X, p = p)
+# Hyperparameters
+k <- dim(X)[2]*p
+b0 <- rep(0, k)
+c0 <- 1000
+B0 <- c0*diag(k)
+B0i <- solve(B0)
+a0 <- p - 1 + 3
+Psi0 <- a0*diag(p-1)
+Prior <- list(betabar = b0, A = B0i, nu = a0, V = Psi0)
+# MCMC parameters
+mcmc <- 100000
+thin <- 5
+Mcmc <- list(R = mcmc, keep = thin)
+Results <- bayesm::rmvpGibbs(Data = df, Mcmc = Mcmc)
 
+betatilde <- Results$betadraw / sqrt(Results$sigmadraw[,1])
+attributes(betatilde)$class <- "bayesm.mat"
+summary(coda::mcmc(betatilde))
 
+sigmadraw <-  Results$sigmadraw / Results$sigmadraw[,1]
+attributes(sigmadraw)$class = "bayesm.var"
+summary(coda::mcmc(sigmadraw))
+
+rmvpGibbs
