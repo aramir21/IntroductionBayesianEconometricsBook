@@ -518,6 +518,105 @@ In general, the convergence diagnostics seem good, except that there is a high l
 Observe that the tests of \cite{Geweke1992} and \cite{Heidelberger1983} have NaN values for the elements (1, 1) and (2, 2) of the covariance matrix, as these parameters were set equal to 1 due to identification restrictions.
 This also means just two values for the dependence factors, which are actually the same due to symmetry.
 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Self selection in hospitalization}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+Data <- read.csv("DataApplications/7HealthMed.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+attach(Data); str(Data)
+p <- 2; nd <- 9; N <- length(y)/p; y <- y
+Xd <- as.matrix(Data[seq(1, p*N, 2),3:11])
+XcreateMP<-function(p,nxs,nind,Data){
+	pandterm = function(message) {
+		stop(message, call. = FALSE)
+	}
+	if (missing(nxs)) 
+	pandterm("requires number of regressors: include intercept if required")
+	if (missing(nind)) 
+	pandterm("requires number of units (individuals)")
+	if (missing(Data)) 
+	pandterm("requires dataset")
+	if (nrow(Data)!=nind*2)
+	pandterm("check dataset! number of units times number alternatives should be equal to dataset rows")
+	XXDat<-array(0,c(p,1+nxs,nind))
+	XX<-array(0,c(p,nxs*p,nind))
+	YY<-array(0,c(p,1,nind))
+	is<- seq(p,nind*p,p)
+	cis<- seq(nxs,nxs*p+1,nxs)
+	for(i in is){
+		j<-which(i==is)
+		XXDat[,,j]<-as.matrix(Data[c((i-(p-1)):i),-1])
+		YY[,,j]<-XXDat[,1,j]
+		for(l in 1:p){
+			XX[l,((cis[l]-(nxs-1)):cis[l]),j]<-XXDat[l,-1,j]
+		}
+	}
+	return(list(y=YY,X=XX))
+}
+Dat <- XcreateMP(p = p, nxs = nd, nind = N, Data = Data)
+y<-NULL; X<-NULL
+for(i in 1:dim(Dat$y)[3]){
+	y<-c(y,Dat$y[,,i])
+	X<-rbind(X,Dat$X[,,i])
+}
+DataMP = list(p=p, y=y, X=X)
+# Hyperparameters
+k <- dim(X)[2]; b0 <- rep(0, k); c0 <- 1000; B0 <- c0*diag(k)
+B0i <- solve(B0); a0 <- p - 1 + 3; Psi0 <- a0*diag(p)
+Prior <- list(betabar = b0, A = B0i, nu = a0, V = Psi0)
+# MCMC parameters
+mcmc <- 100000; thin <- 5
+Mcmc <- list(R = mcmc, keep = thin)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Self selection in hospitalization, results}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+Results <- bayesm::rmvpGibbs(Data = DataMP, Mcmc = Mcmc, Prior = Prior)
+betatilde <- Results$betadraw / sqrt(Results$sigmadraw[,1])
+attributes(betatilde)$class <- "bayesm.mat"
+summary(coda::mcmc(betatilde))
+Quantiles for each variable:
+2.5%        25%        50%        75%     97.5%
+var1  -5.5137018 -1.946e+00 -1.298e+00 -6.494e-01 2.9004506
+var2   0.0327632  9.315e-02  1.252e-01  1.572e-01 0.2178014
+var3  -0.0078208 -3.120e-03 -6.648e-04  1.798e-03 0.0065977
+var4  -0.0000417  1.462e-05  4.411e-05  7.356e-05 0.0001297
+var5  -3.8462383 -2.747e-01  3.677e-01  1.015e+00 4.5937307
+var6  -4.3469133 -7.901e-01 -1.459e-01  4.952e-01 4.0485322
+var7  -5.0522003 -1.496e+00 -8.543e-01 -2.101e-01 3.3375816
+var8  -4.9152373 -1.360e+00 -7.058e-01 -7.392e-02 3.4898306
+var9  -0.1838265 -1.097e-01 -6.940e-02 -2.936e-02 0.0472931
+var10 -2.8060844  3.396e-01  1.169e+00  2.732e+00 6.3954827
+var11  0.2280206  5.567e-01  9.842e-01  2.293e+00 3.3507157
+var12 -0.0574587 -2.311e-02 -9.777e-03 -3.976e-03 0.0033351
+var13  0.0001256  3.125e-04  5.964e-04  1.323e-03 0.0020878
+var14 -3.0896704  2.245e-01  9.712e-01  2.419e+00 6.1875147
+var15 -3.8584533 -1.963e-01  3.769e-01  1.285e+00 4.8754045
+var16 -4.5826124 -8.322e-01 -1.249e-01  4.637e-01 3.9548010
+var17 -4.5922641 -9.026e-01 -1.634e-01  4.225e-01 3.9128193
+var18  0.1511020  3.760e-01  7.023e-01  1.561e+00 2.4146495
+sigmadraw <-  Results$sigmadraw / Results$sigmadraw[,1]
+attributes(sigmadraw)$class = "bayesm.var"
+summary(coda::mcmc(sigmadraw))
+Quantiles for each variable:
+2.5%     25%       50%      75%    97.5%
+var1  1.0000  1.0000  1.000000  1.00000   1.0000
+var2 -0.4574 -0.0828 -0.007985  0.05506   0.3883
+var3 -0.4574 -0.0828 -0.007985  0.05506   0.3883
+var4  0.5711  3.3214  9.789460 56.30992 110.2846
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+
 The results suggest that only female is relevant to explain hospitalization.
 The 95\% credible interval is (3.13e-02, 0.22).
 Observe that only 3.11\% of the sample has been hospitalized.

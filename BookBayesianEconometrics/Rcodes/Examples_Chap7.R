@@ -141,39 +141,66 @@ histExo
 ########################## Multivariate probit: Hospitalization and subsidized health system ########################## 
 rm(list = ls())
 set.seed(010101)
-library(dplyr)
 Data <- read.csv("DataApplications/7HealthMed.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
 attach(Data)
 str(Data)
-# p <- 2; na <- NULL; nd <- 8; N <- dim(Data)[1]
-# Xd <- as.matrix(Data[-seq(1, N, 2), 4:11]); Xa <- NULL
-# X <- bayesm::createX(p = p, na = NULL, nd = nd, Xd = Xd, Xa = NULL, INT = TRUE, DIFF = TRUE)
 p <- 2; nd <- 9; N <- length(y)/p
 y <- y
 Xd <- as.matrix(Data[seq(1, p*N, 2),3:11])
-X <- bayesm::createX(p = p, na = NULL, nd = nd, Xa = NULL, Xd = Xd, INT = FALSE)
-df <- list(y = y, X = X, p = p)
+XcreateMP<-function(p,nxs,nind,Data){
+  pandterm = function(message) {
+    stop(message, call. = FALSE)
+  }
+  if (missing(nxs)) 
+    pandterm("requires number of regressors: include intercept if required")
+  if (missing(nind)) 
+    pandterm("requires number of units (individuals)")
+  if (missing(Data)) 
+    pandterm("requires dataset")
+  if (nrow(Data)!=nind*2)
+    pandterm("check dataset! number of units times number alternatives should be equal to dataset rows")
+  
+  XXDat<-array(0,c(p,1+nxs,nind))
+  XX<-array(0,c(p,nxs*p,nind))
+  YY<-array(0,c(p,1,nind))
+  is<- seq(p,nind*p,p)
+  cis<- seq(nxs,nxs*p+1,nxs)
+  for(i in is){
+    j<-which(i==is)
+    XXDat[,,j]<-as.matrix(Data[c((i-(p-1)):i),-1])
+    YY[,,j]<-XXDat[,1,j]
+    for(l in 1:p){
+      XX[l,((cis[l]-(nxs-1)):cis[l]),j]<-XXDat[l,-1,j]
+    }
+  }
+  return(list(y=YY,X=XX))
+}
+Dat <- XcreateMP(p = p, nxs = nd, nind = N, Data = Data)
+y<-NULL
+X<-NULL
+for(i in 1:dim(Dat$y)[3]){
+  y<-c(y,Dat$y[,,i])
+  X<-rbind(X,Dat$X[,,i])
+}
+DataMP = list(p=p, y=y, X=X)
 # Hyperparameters
-k <- dim(X)[2]*p
+k <- dim(X)[2]
 b0 <- rep(0, k)
 c0 <- 1000
 B0 <- c0*diag(k)
 B0i <- solve(B0)
 a0 <- p - 1 + 3
-Psi0 <- a0*diag(p-1)
+Psi0 <- a0*diag(p)
 Prior <- list(betabar = b0, A = B0i, nu = a0, V = Psi0)
 # MCMC parameters
 mcmc <- 100000
 thin <- 5
 Mcmc <- list(R = mcmc, keep = thin)
-Results <- bayesm::rmvpGibbs(Data = df, Mcmc = Mcmc)
-
+Results <- bayesm::rmvpGibbs(Data = DataMP, Mcmc = Mcmc, Prior = Prior)
 betatilde <- Results$betadraw / sqrt(Results$sigmadraw[,1])
 attributes(betatilde)$class <- "bayesm.mat"
 summary(coda::mcmc(betatilde))
-
 sigmadraw <-  Results$sigmadraw / Results$sigmadraw[,1]
 attributes(sigmadraw)$class = "bayesm.var"
 summary(coda::mcmc(sigmadraw))
 
-rmvpGibbs
