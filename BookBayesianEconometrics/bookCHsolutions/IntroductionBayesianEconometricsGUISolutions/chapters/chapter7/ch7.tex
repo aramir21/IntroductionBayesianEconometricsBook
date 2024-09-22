@@ -589,6 +589,130 @@ summary(RestIV[["Sigmadraw"]])
 	\end{VF}
 \end{tcolorbox}
 
+\item \textbf{Multivariate probit with different regressors}
+
+Let's do a simulation exercise where $y_{i1}^*=0.5-1.2x_{i11}+0.7x_{i12}+0.8x_{i3}+\mu_{i1}$ and $y_{i2}^*=1.5-0.8x_{i21}+0.5x_{i22}+\mu_{i2}$, $\bm{\Sigma}=\begin{Bmatrix}
+	1 & 0.5\\
+	0.5 & 1
+\end{Bmatrix}$, where all regressors distribute standard normal, and $N=5000$. Use $\bm{\beta}_0=\bm{0}$, $\bm{B}_0=1000\bm{B}$, $\alpha_0=4$ and $\bm{\Psi}_0=4\bm{I}_2$. Set number of iterations 10000 and a thinning parameter equal to 5.   
+
+\begin{itemize}
+	\item Perform inference using the setting of Section \ref{sec74}, that is, assuming that $x_{i3}$ could have an effect on $y_{i2}$.
+	\item Program a Gibss sampling algorithm taking into account that there are a different number of regressors in each binary decision, that is, $x_{i3}$ does not have an effect on $y_{i2}$. 
+\end{itemize} 
+
+\textbf{Answer}
+
+The following code shows how to perform inference assuming same number of regressors in both binary results. We see that all 95\% credible intervals encompass the population values, and the posterior mean estimates are very close to the population parameters. 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Multivariate probit model: Same number of regressors in each binary response}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+remove(list = ls())
+n<-5000  #Individuals
+p<-2  #Number dependent variables (For instance to buy or not to buy different products)
+xo<- 2  #Number of choice dependent variables (For instance price of products)
+xi<- 1  #Number of regressors that dependt on individuals (For instance income)
+B1<-c(0.5,-1.2,0.7,0.8)
+B2<-c(1.5,-0.8,0.5,0) # The last regressor is not relevant for the second product
+Cor<-matrix(c(1,0.5,0.5,1),p,p)
+yX<-NULL
+for (i in 1:n){
+	ei<-MASS::mvrnorm(1,c(0,0),Cor); xs<-rnorm(xi)
+	x1i<-c(1,rnorm(xo),xs); 	yl1i<-sum(x1i*B1)
+	y1i<-yl1i+ei[1]>0; 	x2i<-c(1,rnorm(xo),xs)
+	yl2i<-sum(x2i*B2); 	y2i<-yl2i+ei[2]>0
+	yXi<-rbind(c(y1i,x1i),c(y2i,x2i))
+	yXi<-cbind(i,yXi)
+	colnames(yXi)<-c("id","y","cte","x1o","x2o","xi")
+	yX<-rbind(yX,yXi)
+}
+nd <- 4 # Number of regressors
+Xd <- as.matrix(yX[,3:6])
+XcreateMP<-function(p,nxs,nind,Data){
+	pandterm = function(message) {
+		stop(message, call. = FALSE)
+	}
+	if (missing(nxs)) 
+	pandterm("requires number of regressors: include intercept if required")
+	if (missing(nind)) 
+	pandterm("requires number of units (individuals)")
+	if (missing(Data)) 
+	pandterm("requires dataset")
+	if (nrow(Data)!=nind*2)
+	pandterm("check dataset! number of units times number alternatives should be equal to dataset rows")
+	
+	XXDat<-array(0,c(p,1+nxs,nind))
+	XX<-array(0,c(p,nxs*p,nind))
+	YY<-array(0,c(p,1,nind))
+	is<- seq(p,nind*p,p)
+	cis<- seq(nxs,nxs*p+1,nxs)
+	for(i in is){
+		j<-which(i==is)
+		XXDat[,,j]<-as.matrix(Data[c((i-(p-1)):i),-1])
+		YY[,,j]<-XXDat[,1,j]
+		for(l in 1:p){
+			XX[l,((cis[l]-(nxs-1)):cis[l]),j]<-XXDat[l,-1,j]
+		}
+	}
+	return(list(y=YY,X=XX))
+}
+Dat <- XcreateMP(p = p, nxs = nd, nind = n, Data = yX)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Multivariate probit model: Same number of regressors in each binary response}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+y<-NULL
+X<-NULL
+for(i in 1:dim(Dat$y)[3]){
+	y<-c(y,Dat$y[,,i])
+	X<-rbind(X,Dat$X[,,i])
+}
+DataMP = list(p=p, y=y, X=X)
+# Hyperparameters
+k <- dim(X)[2]
+b0 <- rep(0, k)
+c0 <- 1000
+B0 <- c0*diag(k)
+B0i <- solve(B0)
+a0 <- p - 1 + 3
+Psi0 <- a0*diag(p)
+Prior <- list(betabar = b0, A = B0i, nu = a0, V = Psi0)
+# MCMC parameters
+mcmc <- 10000
+thin <- 5
+Mcmc <- list(R = mcmc, keep = thin)
+Results <- bayesm::rmvpGibbs(Data = DataMP, Mcmc = Mcmc, Prior = Prior)
+betatildeEq1 <- Results$betadraw[,1:4] / sqrt(Results$sigmadraw[,1])
+summary(coda::mcmc(betatildeEq1))
+betatildeEq2 <- Results$betadraw[,5:8] / sqrt(Results$sigmadraw[,4])
+summary(coda::mcmc(betatildeEq2))
+sigmadraw12 <-  Results$sigmadraw[,2] / (Results$sigmadraw[,1]*Results$sigmadraw[,4])^0.5
+summary(coda::mcmc(sigmadraw12))
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+The following code shows the implementation of a Gibbs sampling algorithm from scratch.
+
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Multivariate probit model: Different number of regressors in each binary response}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+
+		\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
 
 
 \end{enumerate}

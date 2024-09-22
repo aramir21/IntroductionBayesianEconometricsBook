@@ -144,9 +144,9 @@ set.seed(010101)
 Data <- read.csv("DataApplications/7HealthMed.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
 attach(Data)
 str(Data)
-p <- 2; nd <- 9; N <- length(y)/p
+p <- 2; nd <- 7; N <- length(y)/p
 y <- y
-Xd <- as.matrix(Data[seq(1, p*N, 2),3:11])
+Xd <- as.matrix(Data[seq(1, p*N, 2),3:9])
 XcreateMP<-function(p,nxs,nind,Data){
   pandterm = function(message) {
     stop(message, call. = FALSE)
@@ -193,14 +193,13 @@ a0 <- p - 1 + 3
 Psi0 <- a0*diag(p)
 Prior <- list(betabar = b0, A = B0i, nu = a0, V = Psi0)
 # MCMC parameters
-mcmc <- 100000
+mcmc <- 20000
 thin <- 5
 Mcmc <- list(R = mcmc, keep = thin)
 Results <- bayesm::rmvpGibbs(Data = DataMP, Mcmc = Mcmc, Prior = Prior)
-betatilde <- Results$betadraw / sqrt(Results$sigmadraw[,1])
-attributes(betatilde)$class <- "bayesm.mat"
-summary(coda::mcmc(betatilde))
-sigmadraw <-  Results$sigmadraw / Results$sigmadraw[,1]
-attributes(sigmadraw)$class = "bayesm.var"
-summary(coda::mcmc(sigmadraw))
-
+betatilde1 <- Results$betadraw[,1:7] / sqrt(Results$sigmadraw[,1])
+summary(coda::mcmc(betatilde1))
+betatilde2 <- Results$betadraw[,8:14] / sqrt(Results$sigmadraw[,4])
+summary(coda::mcmc(betatilde2))
+sigmadraw12 <-  Results$sigmadraw[,3] / (Results$sigmadraw[,1]*Results$sigmadraw[,4])^0.5
+summary(coda::mcmc(sigmadraw12))

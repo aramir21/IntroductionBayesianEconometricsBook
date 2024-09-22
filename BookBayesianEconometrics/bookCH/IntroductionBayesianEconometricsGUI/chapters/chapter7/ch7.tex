@@ -173,7 +173,16 @@ Mean             SD       Naive SE Time-series SE
 
 In seemingly unrelated regression (SUR) models there are $M$ dependent variables with potentially different regressors such that the stochastic errors are contemporaneously correlated. This is $\bm{y}_{j}=\bm{X}_{j}\bm{\beta}_j+\bm{\mu}_{j}$, where $\bm{y}_j$ is a $N$-dimensional vector, $\bm{X}_j$ is a matrix of dimension $N\times K_m$ of regressors, $\bm{\beta}_j$ is a $K_m$-dimensional vector of location parameters, and $\bm{\mu}_j$ is a $N$-dimensional vector of stochastic errors, $m=1,2,\dots,M$.
 	
-Setting $\bm{\mu}_i=\left[\mu_{i1} \ \mu_{i2} \dots \mu_{iM}\right]^{\top}$ such that $\bm{\mu}_i\sim{N}(\bm{0},\bm{\Sigma})$, and stacking the $M$ equations, we can write $\bm{y}=\bm{X}\bm{\beta}+\bm{\mu}$ where $\bm{y}=\left[\bm{y}_{1}^{\top} \ \bm{y}_{2}^{\top} \dots \bm{y}_{M}^{\top}\right]^{\top}$ is a $MN$-dimensional vector,  $\bm{\beta}=\left[\bm{\beta}_{1}^{\top} \ \bm{\beta}_{2}^{\top} \ldots \bm{\beta}_{M}^{\top}\right]^{\top}$ is a $ K$ dimensional vector, $K=\sum_{m=1}^{M} K_m$, $\bm{X}$ is an $MN\times K$ block diagonal matrix composed of $\bm{X}_{m}$ and $\bm{\mu}=\left[\bm{\mu}_{1}^{\top} \ \bm{\mu}_{2}^{\top} \dots ,\bm{\mu}_{M}^{\top}\right]^{\top}$ is a $MN$-dimensional vector of stochastic errors such that $\bm{\mu}\sim{N}(\bm{0},\bm{\Sigma}\otimes \bm{I}_N)$.
+Setting $\bm{\mu}_i=\left[\mu_{i1} \ \mu_{i2} \dots \mu_{iM}\right]^{\top}$ such that $\bm{\mu}_i\sim{N}(\bm{0},\bm{\Sigma})$, and stacking the $M$ equations, we can write $\bm{y}=\bm{X}\bm{\beta}+\bm{\mu}$ where $\bm{y}=\left[\bm{y}_{1}^{\top} \ \bm{y}_{2}^{\top} \dots \bm{y}_{M}^{\top}\right]^{\top}$ is a $MN$-dimensional vector,  $\bm{\beta}=\left[\bm{\beta}_{1}^{\top} \ \bm{\beta}_{2}^{\top} \ldots \bm{\beta}_{M}^{\top}\right]^{\top}$ is a $ K$ dimensional vector, $K=\sum_{m=1}^{M} K_m$, $\bm{X}$ is an $MN\times K$ block diagonal matrix composed of $\bm{X}_{m}$, that is,
+\begin{align*}
+	\bm{X}&=\begin{Bmatrix}
+		\bm{X}_1 & \bm{0} & \dots & \bm{0}\\
+		\bm{0} & \bm{X}_2 & \dots & \bm{0}\\
+		\vdots & \vdots & \ddots & \vdots\\
+		\bm{0} & \bm{0} & \dots & \bm{X}_M		
+	\end{Bmatrix},
+\end{align*}
+and $\bm{\mu}=\left[\bm{\mu}_{1}^{\top} \ \bm{\mu}_{2}^{\top} \dots ,\bm{\mu}_{M}^{\top}\right]^{\top}$ is a $MN$-dimensional vector of stochastic errors such that $\bm{\mu}\sim{N}(\bm{0},\bm{\Sigma}\otimes \bm{I}_N)$.
 Then, 
 \begin{align*}
 	p(\bm{\beta},\bm{\Sigma}|\bm{y},\bm{X})\propto \left|\bm{\Sigma} \right|^{-N/2}\exp\left\{ -\frac{1}{2}(\bm{y}-\bm{X\beta})^{\top}(\bm{\Sigma}^{-1}\otimes \bm{I}_N\})(\bm{y}-\bm{X\beta})\right\}.
@@ -446,17 +455,17 @@ Algorithm \ref{alg:IVReg} can be used to estimate the instrumental variable mode
 
 \section{Multivariate probit model}\label{sec74}
 
-In the multivariate probit model \cite{Edwards2003}, the response variable $y_{il}=\left\{0,1\right\}$ indicates that individual $i$ makes binary choices regarding no mutually exclusive alternatives $l$, $i=1,2,\dots,N$, $l=1,2,\dots,L$. In particular,
+In the multivariate probit model \cite{Edwards2003}, the response variable $y_{il}=\left\{0,1\right\}$ indicates that individual $i$ makes binary choices regarding no mutually exclusive alternatives $l=1,2,\dots,L$, $i=1,2,\dots,N$. In particular,
 \begin{align*}
 	y_{il}=\begin{Bmatrix}
 		0, \ y_{il}^*\leq 0 \\ 
 		1, \ y_{il}^*> 0 \\ 
 	\end{Bmatrix},
 \end{align*}
-where $\bm{y}_{i}^*=\bm{X}_{i}\bm{\beta}+\bm{\mu}_{i}\stackrel{i.i.d.} {\thicksim}{N}(\bm0,\bm{\Sigma})$, $\bm{y}_i^*$ is an unobserved latent $L$-dimensional vector, $\bm{X}_{i}$ is an $L\times K$ design matrix of regressors, $K=L\times k$, $k$ is the number of regressors, and $\bm{\beta}=\left[\bm{\beta}_1^{\top} \ \bm{\beta}_2^{\top} \dots  \bm{\beta}_k^{\top}\right]^{\top}$, where the $\bm{\beta}_j$ make up an $L$-dimensional vector of coefficients, $j=1,2,\dots,k$. We simultaneously take into account the alternative-varying regressors (alternative attributes) and alternative-invariant regressors (individual characteristics).
+where $\bm{y}_{i}^*=\bm{X}_{i}\bm{\beta}+\bm{\mu}_{i}\stackrel{i.i.d.} {\thicksim}{N}(\bm0,\bm{\Sigma})$, $\bm{y}_i^*$ is an unobserved latent $L$-dimensional vector, $\bm{X}_{i}=\bm{x}_i^{\top} \otimes \bm{I}_L$ is an $L\times K$ design matrix of regressors, $K=L\times k$, $k$ is the number of regressors (length of $\bm{x}_i$). In addition, $\bm{\beta}=\left[\bm{\beta}_1^{\top} \ \bm{\beta}_2^{\top} \dots  \bm{\beta}_k^{\top}\right]^{\top}$, where the $\bm{\beta}_j$ make up an $L$-dimensional vector of coefficients, $j=1,2,\dots,k$.
 
 The likelihood function in this model is $p(\bm{\beta},\bm{\Sigma}|\bm{y},\bm{X})=\prod_{i=1}^N\prod_{l=1}^L p_{il}^{y_{il}}$ where $p_{il}=p(y_{il}^*\geq 0)$.
-Observe that $p({y}_{il}^*\geq 0)=p({\lambda}_{ll}{y}_{il}^*\geq 0)$, $\lambda_{ll}>0$. This generates identification issues because just the correlation matrix can be identified, same case as the univariate probit model where the variance of the model is fixed to 1. We follow the post processing strategy proposed by \cite{Edwards2003} to get identified parameters, that is, $\tilde{\bm{\beta}}=vec\left\{\bm{\Lambda}\bm{B}\right\}$ and the correlation matrix $\bm{R}=\bm{\Lambda}\bm{\Sigma}\bm{\Lambda}$, where $\bm{\Lambda}=diag\left\{\sigma_{ll}\right\}^{-1/2}$ and $\bm{B}=\left[\bm{\beta}_1,\bm{\beta}_2,\dots,\bm{\beta}_k\right]$.\footnote{In a Bayesian setting, we can have a non identified model; however, the posterior of the model parameters exists given a proper prior distribution \cite{Edwards2003}.}
+Observe that $p({y}_{il}^*\geq 0)=p({\lambda}_{ll}{y}_{il}^*\geq 0)$, $\lambda_{ll}>0$. This generates identification issues because just the correlation matrix can be identified, same case as the univariate probit model where the variance of the model is fixed to 1. We follow the post processing strategy proposed by \cite{Edwards2003} to get identified parameters, that is, $\tilde{\bm{\beta}}=vec\left\{\bm{\Lambda}\bm{B}\right\}$ and the correlation matrix $\bm{R}=\bm{\Lambda}\bm{\Sigma}\bm{\Lambda}$, where $\bm{\Lambda}=diag\left\{\sigma_{ll}\right\}^{-1/2}$ and $\bm{B}=\left[\bm{\beta}_1 \ \bm{\beta}_2\dots \bm{\beta}_k\right]$.\footnote{In a Bayesian setting, we can have a non identified model; however, the posterior of the model parameters exists given a proper prior distribution \cite{Edwards2003}.}
 
 We assume independent priors, $\bm{\beta}\sim{N}(\bm{\beta}_0,\bm{B}_0)$ and $\bm{\Sigma}^{-1}\sim{W}(\alpha_0,\bm{\Psi}_0)$.
 We can employ Gibbs sampling in this model because this is a standard Bayesian linear regression model when data augmentation in $\bm{y}^*$ is used.
@@ -472,51 +481,45 @@ The posterior conditional distributions are
 	y_{il}^*|\bm{y}_{i,-l}^*,\bm{\beta},\bm{\Sigma}^{-1},\bm{y_i}\sim{T}{N}_{I_{il}}(m_{il},\tau_{ll}^2)
 \end{equation*}
 
-where $\bm{B}_n=(\bm{B}_0^{-1}+\bm{X}^{*\top}\bm{X}^*)^{-1}$, $\bm{\beta}_n=\bm{B}_n(\bm{B}_0^{-1}\bm{\beta}_0+\bm{X}^{*\top}\bm{y}^{**})$, $\bm{\Sigma}^{-1}=\bm{C}^{\top}\bm{C}$, $\bm{X}_i^{*\top}=\bm{C}^{\top}\bm{X}_i$, $\bm{y}_i^{**}=\bm{C}^{\top}\bm{y}_i^*$, $\bm{X}^*=\begin{bmatrix}\bm{X}_1^*\\
-	\bm{X}_2^*\\
-	\vdots\\
-	\bm{X}_N^*
-\end{bmatrix}$, $\alpha_n=\alpha_0+N$, $\bm{\Psi}_n=(\bm{\Psi}_0+\sum_{i=1}^N (\bm{y}_i^*-\bm{X}_i\bm{\beta})^{\top}(\bm{y}_i^*-\bm{X}_i\bm{\beta}))^{-1}$, $I_{il}=\begin{Bmatrix} y_{il}^*> 0, & y_{il}=1\\
+where $\bm{B}_n=(\bm{B}_0^{-1}+\bm{X}^{*\top}\bm{X}^*)^{-1}$, $\bm{\beta}_n=\bm{B}_n(\bm{B}_0^{-1}\bm{\beta}_0+\bm{X}^{*\top}\bm{y}^{**})$, $\bm{\Sigma}^{-1}=\bm{C}^{\top}\bm{C}$, $\bm{X}_i^{*}=\bm{C}^{\top}\bm{X}_i$, $\bm{y}_i^{**}=\bm{C}^{\top}\bm{y}_i^*$, $\alpha_n=\alpha_0+N$, $\bm{\Psi}_n=(\bm{\Psi}_0+\sum_{i=1}^N (\bm{y}_i^*-\bm{X}_i\bm{\beta})^{\top}(\bm{y}_i^*-\bm{X}_i\bm{\beta}))^{-1}$,  $m_{il}=\bm{x}_{il}^{\top}\bm{\beta}+\bm{f}^{\top}(\bm{y}_{i,-l}^*-\bm{X}_{i,-l}\bm{\beta})$, $\bm{y}_{i,-l}^*$ is an $L-1$ dimensional vector of all components of $\bm{y}_i^*$ excluding $y_{il}^*$, $\bm{x}_{il}$ is the $l$-th row of $\bm{X}_i$, $\bm{X}_{i,-l}$ is $\bm{X}_{i}$ after deleting the $l$-th row, $\tau_{ll}^2=1/\sigma^{ll}$, $\bm{f}=-\sigma^{ll}\bm{\omega}_{l,-l}$, $\sigma^{jl}$ is the $jl$-th element of $\bm{\Sigma}^{-1}$, $\bm{\omega}_{l,-l}^{\top}$ is the $l$-th row of $\bm{\Sigma}^{-1}$ extracting the $l$-th element, and 
+\begin{align*}
+	\bm{X}^*=\begin{bmatrix}\bm{X}_1^*\\
+		\bm{X}_2^*\\
+		\vdots\\
+		\bm{X}_N^*
+	\end{bmatrix}, & \ I_{il}=\begin{Bmatrix} y_{il}^*> 0, & y_{il}=1\\
 	y_{il}^*\leq 0 , & y_{il}=0\\
-\end{Bmatrix}$, $m_{il}=\bm{x}_{il}^{\top}\bm{\beta}+\bm{f}^{\top}(\bm{y}_{i,-l}^*-\bm{X}_{i,-l}\bm{\beta})$, $\bm{y}_{i,-l}^*$ is an $L-1$ dimensional vector of all components of $\bm{y}_i^*$ excluding $y_{il}^*$, $\bm{x}_{il}$ is the $l$-th row of $\bm{X}_i$, $\bm{X}_{i,-l}$ is $\bm{X}_{i}$ after deleting the $l$-th row, $\tau_{ll}^2=1/\sigma^{ll}$, and $\bm{f}=-\sigma^{ll}\bm{\omega}_{l,-l}$, $\sigma^{jl}$ is the $jl$-th element of $\bm{\Sigma}^{-1}$, $\bm{\Sigma}^{-1}=\begin{bmatrix}\bm{\omega}_1^{\top} \ \bm{\omega}_2^{\top} \vdots \bm{\omega}_{L}^{\top} \end{bmatrix}$, $\bm{\omega}_{l,-l}^{\top}$ is the $l$-th row of $\bm{\Sigma}^{-1}$ extracting the $l$-th element.\\
+\end{Bmatrix},\text{ and}&\bm{\Sigma}^{-1}=\begin{bmatrix}\bm{\omega}_1^{\top} \\ \bm{\omega}_2^{\top} \\ \vdots \\ \bm{\omega}_{L}^{\top} \end{bmatrix}.
+\end{align*}
 
+The setting in this section constraints to have same amount of regressors in each binary decision. However, we can see that the multivariate probit model is similar to a SUR model in latent variables. We ask in exercise 9 to implement a Gibbs sampling algorithm for a multivariate probit model with different regressors in each equation.\\
 
-\textbf{Example: Self selection in hospitalization due to a subsidized health care program in Medell\'in}
+\textbf{Example: Self selection in hospitalization due to a subsidized health care program}
 
-We use the dataset \textit{7HealthMed.csv} where the dependent variable is equal to $y = \left[\text{Hosp} \ \text{SHI}\right]'$ where $\text{Hosp}$ is equal to 1 if an individual was hospitalized in 2007, 0 otherwise, and $\text{SHI}$ is equal to 1 if the individual had subsidized health insurance that year, and 0 otherwise.
-Recall that our application in binary response models was to uncover the determinants of hospitalization in Medell\'in (Colombia), where one of the regressors was a binary indicator of being in a subsidized health care program.
-We can use a bivariate probit model if we suspect there is a dependence regarding the decisions involving these two variables.
-We would expect a priori that being in a subsidized health care program would imply a higher probability of being hospitalized \textit{ceteris paribus}.
-However, if an individual expects to be hospitalized in the future, and the factors that drive this decision are unobserved to the econometrician, we would have a feedback effect from being hospitalized on being in a subsidized health care program.
+We use the dataset \textit{7HealthMed.csv} where the dependent variable is equal to $y = \left[\text{Hosp} \ \text{SHI}\right]^{\top}$ where $\text{Hosp}$ is equal to 1 if an individual was hospitalized in the year previous to the survey, 0 otherwise, and $\text{SHI}$ is equal to 1 if the individual had subsidized health insurance, and 0 otherwise. 
 
-We took into account 9 regressors: a constant, female, age, squared age, self perception of health status taking as reference bad (four categories), and the proportion of the individual's age spent living in her/his neighborhood (PTL). 
-The last variable tries to take into account the social capital that can affect being in the subsidized health insurance program, as the target population is identified by the local government \cite{Ramirez2019a}. We have 12975 individuals chosen two options (subsidized regime and hospitalization).
+Recall that our application in binary response models was to uncover the determinants of hospitalization in Medell\'in (Colombia), where one of the regressors was a binary indicator of being in a subsidized health care program (Section \ref{sec63}). We can use a bivariate probit model if we suspect there is a dependence regarding the decisions involving these two variables. We would expect a priori that being in a subsidized health care program would imply a higher probability of being hospitalized \textit{ceteris paribus} due to a reduced cost for the patient. However, if an individual expects to be hospitalized in the future, and the factors that drive this decision are unobserved to the modeler, we would have a feedback effect from being hospitalized on being in a subsidized health care program.
+
+We took into account 7 regressors: a constant, female, age, self perception of health status, fair, good and excelent, taking as reference bad, and the proportion of the individual's age spent living in her/his neighborhood. The last variable tries to take into account the social capital that can affect being in the subsidized health insurance program, as the target population is identified by the local government \cite{Ramirez2019a}. We have 12975 individuals chosen two options (subsidized regime and hospitalization).
 
 The Algorithm \ref{alg:MtultProbit} shows how to run a multivariate probit model in our GUI. 
 
 \begin{algorithm}[h!]
-	\caption{Instrumental variable model}\label{alg:MtultProbit}
+	\caption{Multivariate probit model}\label{alg:MtultProbit}
 	\begin{algorithmic}[1]  		 			
 		\State Select \textit{Multivariate Models} on the top panel
 		\State Select \textit{Multivariate Probit} model using the left radio button
 		\State Upload the dataset selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend
 		\State Select MCMC iterations, burn-in and thinning parameters using the \textit{Range sliders}
-		\State Write down the formula of the structural equation in the \textbf{Main Equation} box. This formula must be written using the syntax of the \textit{formula} command of \textbf{R} software. This equation includes intercept by default, do not include it in the equation
-		\State Write down the formula of the endogenous regressor in the \textbf{Instrumental Equation} box. This formula must be written using the syntax of the \textit{formula} command of \textbf{R} software. This equation includes intercept by default, do not include it in the equation
-		\State Set the hyperparameters: mean vectors, covariance matrices, degrees of freedom, and the scale matrix. This step is not necessary as by default our GUI uses non-informative priors
+		\State Write down the number of cross-sectional units in the \textbf{Number of individuals: n} box
+		\State Write down the number of exogenous variables in the \textbf{Number of exogenous variables: k} box
+		\State Write down the number of choices in the \textbf{Number of choices: l} box
+		\State Set the hyperparameters: mean vectors, covariance matrix, degrees of freedom, and the scale matrix. This step is not necessary as by default our GUI uses non-informative priors
 		\State Click the \textit{Go!} button
 		\State Analyze results
 		\State Download posterior chains and diagnostic plots using the \textit{Download Posterior Chains} and \textit{Download Posterior Graphs} buttons
 	\end{algorithmic} 
 \end{algorithm}
-
-
-We set 20,000 MCMC iterations plus 1,000 iterations as burn-in, and a thinning parameter equal to 5.
-This implies an effective length of the posterior chains equal to 4,000 draws.
-We also used default values for the hyperparameters of the prior distributions.
-In general, the convergence diagnostics seem good, except that there is a high level of autocorrelation for the posterior chain of the correlation between the two equations, as indicated by the dependence factors, and the trace and autocorrelation plots.
-Observe that the tests of \cite{Geweke1992} and \cite{Heidelberger1983} have NaN values for the elements (1, 1) and (2, 2) of the covariance matrix, as these parameters were set equal to 1 due to identification restrictions.
-This also means just two values for the dependence factors, which are actually the same due to symmetry.
 
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
@@ -526,9 +529,9 @@ This also means just two values for the dependence factors, which are actually t
 		\begin{lstlisting}[language=R]
 rm(list = ls()); set.seed(010101)
 Data <- read.csv("DataApplications/7HealthMed.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
-attach(Data); str(Data)
-p <- 2; nd <- 9; N <- length(y)/p; y <- y
-Xd <- as.matrix(Data[seq(1, p*N, 2),3:11])
+attach(Data): str(Data)
+p <- 2; nd <- 7; N <- length(y)/p: y <- y
+Xd <- as.matrix(Data[seq(1, p*N, 2),3:9])
 XcreateMP<-function(p,nxs,nind,Data){
 	pandterm = function(message) {
 		stop(message, call. = FALSE)
@@ -564,12 +567,12 @@ for(i in 1:dim(Dat$y)[3]){
 }
 DataMP = list(p=p, y=y, X=X)
 # Hyperparameters
-k <- dim(X)[2]; b0 <- rep(0, k); c0 <- 1000; B0 <- c0*diag(k)
-B0i <- solve(B0); a0 <- p - 1 + 3; Psi0 <- a0*diag(p)
+k <- dim(X)[2]; b0 <- rep(0, k); c0 <- 1000
+B0 <- c0*diag(k); B0i <- solve(B0)
+a0 <- p - 1 + 3; Psi0 <- a0*diag(p)
 Prior <- list(betabar = b0, A = B0i, nu = a0, V = Psi0)
 # MCMC parameters
-mcmc <- 100000; thin <- 5
-Mcmc <- list(R = mcmc, keep = thin)
+mcmc <- 20000; thin <- 5; Mcmc <- list(R = mcmc, keep = thin)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
@@ -580,54 +583,41 @@ Mcmc <- list(R = mcmc, keep = thin)
 	\begin{VF}
 		\begin{lstlisting}[language=R]
 Results <- bayesm::rmvpGibbs(Data = DataMP, Mcmc = Mcmc, Prior = Prior)
-betatilde <- Results$betadraw / sqrt(Results$sigmadraw[,1])
-attributes(betatilde)$class <- "bayesm.mat"
-summary(coda::mcmc(betatilde))
+betatilde1 <- Results$betadraw[,1:7] / sqrt(Results$sigmadraw[,1])
+summary(coda::mcmc(betatilde1))
 Quantiles for each variable:
-2.5%        25%        50%        75%     97.5%
-var1  -5.5137018 -1.946e+00 -1.298e+00 -6.494e-01 2.9004506
-var2   0.0327632  9.315e-02  1.252e-01  1.572e-01 0.2178014
-var3  -0.0078208 -3.120e-03 -6.648e-04  1.798e-03 0.0065977
-var4  -0.0000417  1.462e-05  4.411e-05  7.356e-05 0.0001297
-var5  -3.8462383 -2.747e-01  3.677e-01  1.015e+00 4.5937307
-var6  -4.3469133 -7.901e-01 -1.459e-01  4.952e-01 4.0485322
-var7  -5.0522003 -1.496e+00 -8.543e-01 -2.101e-01 3.3375816
-var8  -4.9152373 -1.360e+00 -7.058e-01 -7.392e-02 3.4898306
-var9  -0.1838265 -1.097e-01 -6.940e-02 -2.936e-02 0.0472931
-var10 -2.8060844  3.396e-01  1.169e+00  2.732e+00 6.3954827
-var11  0.2280206  5.567e-01  9.842e-01  2.293e+00 3.3507157
-var12 -0.0574587 -2.311e-02 -9.777e-03 -3.976e-03 0.0033351
-var13  0.0001256  3.125e-04  5.964e-04  1.323e-03 0.0020878
-var14 -3.0896704  2.245e-01  9.712e-01  2.419e+00 6.1875147
-var15 -3.8584533 -1.963e-01  3.769e-01  1.285e+00 4.8754045
-var16 -4.5826124 -8.322e-01 -1.249e-01  4.637e-01 3.9548010
-var17 -4.5922641 -9.026e-01 -1.634e-01  4.225e-01 3.9128193
-var18  0.1511020  3.760e-01  7.023e-01  1.561e+00 2.4146495
-sigmadraw <-  Results$sigmadraw / Results$sigmadraw[,1]
-attributes(sigmadraw)$class = "bayesm.var"
-summary(coda::mcmc(sigmadraw))
+
+				2.5%       25%       50%       75%     97.5%
+var1 -1.2247602 -1.059257 -0.970870 -0.889741 -0.733411
+var2  0.0269885  0.090098  0.121863  0.155585  0.220662
+var3  0.0007652  0.002207  0.002925  0.003685  0.005049
+var4 -0.7477149 -0.598898 -0.522549 -0.445173 -0.296718
+var5 -1.4520842 -1.309922 -1.234633 -1.160468 -1.018396
+var6 -1.3503717 -1.182381 -1.092511 -1.005472 -0.837939
+var7 -0.1791758 -0.103506 -0.064418 -0.024499  0.051849
+betatilde2 <- Results$betadraw[,8:14] / sqrt(Results$sigmadraw[,4])
+summary(coda::mcmc(betatilde2))
 Quantiles for each variable:
-2.5%     25%       50%      75%    97.5%
-var1  1.0000  1.0000  1.000000  1.00000   1.0000
-var2 -0.4574 -0.0828 -0.007985  0.05506   0.3883
-var3 -0.4574 -0.0828 -0.007985  0.05506   0.3883
-var4  0.5711  3.3214  9.789460 56.30992 110.2846
+				2.5%       25%       50%       75%    97.5%
+var1  0.306343  0.477265  0.564698  0.656616  0.82932
+var2  0.258347  0.289819  0.305902  0.322116  0.35284
+var3  0.007848  0.008656  0.009124  0.009591  0.01045
+var4 -0.488810 -0.313532 -0.218459 -0.130373  0.04144
+var5 -0.677686 -0.511529 -0.418139 -0.332415 -0.17322
+var6 -0.703355 -0.527642 -0.433378 -0.341355 -0.16989
+var7  0.164388  0.203623  0.224533  0.245306  0.28513
+sigmadraw12 <-  Results$sigmadraw[,3] / (Results$sigmadraw[,1]*Results$sigmadraw[,4])^0.5
+summary(coda::mcmc(sigmadraw12))
+Quantiles for each variable:
+2.5%       25%       50%       75%     97.5% 
+-0.070515 -0.025009 -0.002895  0.018432  0.060986
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
 
+We set 20,000 MCMC iterations using a thinning parameter equal to 5. The hyperparameters are $\bm{\beta}_0=\bm{0}_{14}$, $\bm{B}_0=100\bm{I}_{14}$, $\alpha_0=4$ and $\bm{\Psi}_0=4\bm{I}_2$.\footnote{Take into account that the order of the location coefficients in our GUI is by equations, not by regressors as the theory setting in this section. This is important to set hyperparameters and read the results of the location parameters.}
 
-The results suggest that only female is relevant to explain hospitalization.
-The 95\% credible interval is (3.13e-02, 0.22).
-Observe that only 3.11\% of the sample has been hospitalized.
-Probit models are not well designed for this kind of dataset, but our main purpose is to illustrate the use of our GUI.
-On the other hand, the results suggest that age, squared age, and the proportion of age spent living in the neighborhood are statistically relevant to explain enrollment in the subsidized program.
-Their 95\% credible intervals are (2.63e-01, 3.27e-01), (-8.05e-03, -2.05e-03) and (0.15, 0.27), respectively.
-The latter result seems to support the social capital hypothesis.
-Lastly, the 95\% credible interval for the correlation between the two binary equations is (-0.07, 0.06), suggesting that there is no self selection regarding these two decisions (hospitalization and subsidized insurance).
-So, it seems that it is better to estimate univariate binary models for each of these dependent variables, for the sake of parsimony.
-
-
+The previous \textbf{R} code shows to get the posterior draws using the \textit{rmvpGibbs} command from the \textit{bayesm} packge. The results suggest that females, older people whose self perception of health status is bad have a higher probability of being hospitalized. In addition, female, older people whose self perception of health status is bad or regular and have lived a higher proportion of their life in the actual neighborhood have a higher probability of being in the subsidized health care system. However, the results suggest that there is no unobserved correlation between the two equations as the 95\% credible of the correlation is (-0.07, 0.06).
 
 \section{Summary}\label{sec75}
 
@@ -676,7 +666,19 @@ Program from scratch the Gibbs sampling algorithm of the instrumental model for 
 
 \item \textbf{The effect of institutions on per capita gross domestic product continues II}
 
-Estimate the structural Equation \ref{eq:str1} using the instrumental variable model where the instrument of PAER is $\log(\textit{Mort})$. Compare the effect of property rights on per capita GDP of this model with the effect estimated in the example of the effect of institutions on per capita gross domestic product. Use the file \textit{6Institutions.csv} to do this exercise in our GUI, and set $\bm{B}_0=100\bm{I}_5$, $\bm{\beta}_0=\bm{0}_5$, $\bm{\gamma}_0=\bm{0}_2$, $\bm{G}_0=100\bm{I}_2$ $\alpha_0=3$ and $\bm{\Psi}_0=3\bm{I}_2$. The MCMC iterations, burn-in and thinning parameters are 50000, 1000 and 5, respectively. 
+Estimate the structural Equation \ref{eq:str1} using the instrumental variable model where the instrument of PAER is $\log(\textit{Mort})$. Compare the effect of property rights on per capita GDP of this model with the effect estimated in the example of the effect of institutions on per capita gross domestic product. Use the file \textit{6Institutions.csv} to do this exercise in our GUI, and set $\bm{B}_0=100\bm{I}_5$, $\bm{\beta}_0=\bm{0}_5$, $\bm{\gamma}_0=\bm{0}_2$, $\bm{G}_0=100\bm{I}_2$ $\alpha_0=3$ and $\bm{\Psi}_0=3\bm{I}_2$. The MCMC iterations, burn-in and thinning parameters are 50000, 1000 and 5, respectively.
+
+\item \textbf{Multivariate probit with different regressors}
+
+Let's do a simulation exercise where $y_{i1}^*=0.5-1.2x_{i11}+0.7x_{i12}+0.8x_{i3}+\mu_{i1}$ and $y_{i2}^*=1.5-0.8x_{i21}+0.5x_{i22}+\mu_{i2}$, $\bm{\Sigma}=\begin{Bmatrix}
+	1 & 0.5\\
+	0.5 & 1
+\end{Bmatrix}$, where all regressors distribute standard normal, and $N=5000$. Use $\bm{\beta}_0=\bm{0}$, $\bm{B}_0=1000\bm{B}$, $\alpha_0=4$ and $\bm{\Psi}_0=4\bm{I}_2$. Set number of iterations 10000 and a thinning parameter equal to 5.  
+
+\begin{itemize}
+	\item Perform inference using the setting of Section \ref{sec74}, that is, assuming that $x_{i3}$ could have an effect on $y_{i2}$.
+	\item Program a Gibss sampling algorithm taking into account that there are a different number of regressors in each binary decision, that is, $x_{i3}$ does not have an effect on $y_{i2}$. 
+\end{itemize}      
 
 \end{enumerate}
 

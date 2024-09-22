@@ -448,3 +448,181 @@ summary(RestIV[["deltadraw"]])
 summary(coda::mcmc(RestIV[["betadraw"]]))
 summary(RestIV[["gammadraw"]])
 summary(RestIV[["Sigmadraw"]])
+
+########################## Multivariate probit: Simulation ########################## 
+remove(list = ls())
+n<-500  #Individuals
+p<-2  #Number dependent variables (For instance to buy or not to buy different products)
+xo<- 2  #Number of choice dependent variables (For instance price of products)
+xi<- 1  #Number of regressors that dependt on individuals (For instance income)
+B1<-c(0.5,-1.2,0.7,0.8)
+B2<-c(1.5,-0.8,0.5,0) # The last regressor is not relevant for the second product
+Cor<-matrix(c(1,0.5,0.5,1),p,p)
+yX<-NULL
+for (i in 1:n){
+  ei<-MASS::mvrnorm(1,c(0,0),Cor)
+  xs<-rnorm(xi)
+  x1i<-c(1,rnorm(xo),xs)
+  yl1i<-sum(x1i*B1)
+  y1i<-yl1i+ei[1]>0
+  x2i<-c(1,rnorm(xo),xs)
+  yl2i<-sum(x2i*B2)
+  y2i<-yl2i+ei[2]>0
+  yXi<-rbind(c(y1i,x1i),c(y2i,x2i))
+  yXi<-cbind(i,yXi)
+  colnames(yXi)<-c("id","y","cte","x1o","x2o","xi")
+  yX<-rbind(yX,yXi)
+}
+
+nd <- 4 # Number of regressors
+Xd <- as.matrix(yX[,3:6])
+XcreateMP<-function(p,nxs,nind,Data){
+  pandterm = function(message) {
+    stop(message, call. = FALSE)
+  }
+  if (missing(nxs)) 
+    pandterm("requires number of regressors: include intercept if required")
+  if (missing(nind)) 
+    pandterm("requires number of units (individuals)")
+  if (missing(Data)) 
+    pandterm("requires dataset")
+  if (nrow(Data)!=nind*2)
+    pandterm("check dataset! number of units times number alternatives should be equal to dataset rows")
+  
+  XXDat<-array(0,c(p,1+nxs,nind))
+  XX<-array(0,c(p,nxs*p,nind))
+  YY<-array(0,c(p,1,nind))
+  is<- seq(p,nind*p,p)
+  cis<- seq(nxs,nxs*p+1,nxs)
+  for(i in is){
+    j<-which(i==is)
+    XXDat[,,j]<-as.matrix(Data[c((i-(p-1)):i),-1])
+    YY[,,j]<-XXDat[,1,j]
+    for(l in 1:p){
+      XX[l,((cis[l]-(nxs-1)):cis[l]),j]<-XXDat[l,-1,j]
+    }
+  }
+  return(list(y=YY,X=XX))
+}
+Dat <- XcreateMP(p = p, nxs = nd, nind = n, Data = yX)
+y<-NULL
+X<-NULL
+for(i in 1:dim(Dat$y)[3]){
+  y<-c(y,Dat$y[,,i])
+  X<-rbind(X,Dat$X[,,i])
+}
+DataMP = list(p=p, y=y, X=X)
+# Hyperparameters
+k <- dim(X)[2]
+b0 <- rep(0, k)
+c0 <- 1000
+B0 <- c0*diag(k)
+B0i <- solve(B0)
+a0 <- p - 1 + 3
+Psi0 <- a0*diag(p)
+Prior <- list(betabar = b0, A = B0i, nu = a0, V = Psi0)
+# MCMC parameters
+mcmc <- 2000
+thin <- 5
+Mcmc <- list(R = mcmc, keep = thin)
+Results <- bayesm::rmvpGibbs(Data = DataMP, Mcmc = Mcmc, Prior = Prior)
+betatildeEq1 <- Results$betadraw[,1:4] / sqrt(Results$sigmadraw[,1])
+summary(coda::mcmc(betatildeEq1))
+betatildeEq2 <- Results$betadraw[,5:8] / sqrt(Results$sigmadraw[,4])
+summary(coda::mcmc(betatildeEq2))
+sigmadraw12 <-  Results$sigmadraw[,2] / (Results$sigmadraw[,1]*Results$sigmadraw[,4])^0.5
+summary(coda::mcmc(sigmadraw12))
+
+### Gibs sampler using basically the SUR structure augmenting with latent variables yl1 and yl2
+ids1 <- seq(1, p*n, 2); ids2 <- seq(2, p*n, 2)  
+y1 <- y[ids1]; y2 <- y[ids2]
+X1 <- X[ids1,1:4]; X2 <- X[ids2, 5:7]  
+y <- c(y1, y2)
+X <- as.matrix(Matrix::bdiag(X1, X2))
+M <- 2; K1 <- dim(X1)[2]; K2 <- dim(X2)[2]
+K <- K1 + K2
+N <- length(y1)
+# Hyperparameters
+b0 <- rep(0, K)
+c0 <- 1000
+B0 <- c0*diag(K)
+B0i <- solve(B0)
+Psi0 <- 4*diag(M)
+Psi0i <- solve(Psi0)
+a0 <- M
+IN <- diag(N)
+an <- a0 + N
+#Posterior draws
+S <- 2000 #Number of posterior draws
+burnin <- 1
+thin <- 5
+tot <- S+burnin
+# Gibbs functions
+PostBeta <- function(Sigma, Yl1, Yl2){
+  Aux <- solve(Sigma)%x%IN
+  Bn <- solve(B0i + t(X)%*%Aux%*%X)
+  Yl <- c(Yl1, Yl2)
+  bn <- Bn%*%(B0i%*%b0 + t(X)%*%Aux%*%Yl)
+  Beta <- MASS::mvrnorm(1, bn, Bn)
+  return(Beta)
+}
+PostSigma <- function(Beta, Yl1, Yl2){
+  B1 <- Beta[1:K1]; B2 <- Beta[(K1+1):(K1+K2)]
+  U1 <- Yl1 - X1%*%B1; U2 <- Yl2 - X2%*%B2
+  U <- cbind(U1, U2)
+  Psin <- solve(Psi0i + t(U)%*%U)
+  Sigmai <- rWishart::rWishart(1, df = an, Sigma = Psin)
+  Sigma <- solve(Sigmai[,,1]) 
+  return(Sigma)
+}
+PostYl1 <- function(Beta, Sigma, i){
+  Beta1 <- Beta[1:K1]
+  Ylmean1 <- X1[i,]%*%Beta1
+  if(y1[i] == 1){
+    Yl1i <- truncnorm::rtruncnorm(1, a = 0, b = Inf, mean = Ylmean1, sd = 1)
+  }else{
+    Yl1i <- truncnorm::rtruncnorm(1, a = -Inf, b = 0, mean = Ylmean1, sd = 1)
+  }
+  return(Yl1i)
+}
+PostYl2 <- function(Beta, Sigma, i){
+  Beta2 <- Beta[(K1+1):(K1+K2)]
+  Ylmean2 <- X2[i,]%*%Beta2
+  if(y2[i] == 1){
+    Yl2i <- truncnorm::rtruncnorm(1, a = 0, b = Inf, mean = Ylmean2, sd = 1)
+  }else{
+    Yl2i <- truncnorm::rtruncnorm(1, a = -Inf, b = 0, mean = Ylmean2, sd = 1)
+  }
+  return(Yl2i)
+}
+
+PostBetas <- matrix(0, tot, K)
+PostSigmas <- matrix(0, tot, M*(M+1)/2)
+Beta <- rep(1, K)
+Sigma <- diag(M)
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+  Yl1 <- sapply(1:n, function(i){PostYl1(Beta = Beta, Sigma = Sigma, i)})
+  Yl2 <- sapply(1:n, function(i){PostYl2(Beta = Beta, Sigma = Sigma, i)})
+  Sigma <- PostSigma(Beta = Beta, Yl1 = Yl1, Yl2 = Yl2)
+  Beta <- PostBeta(Sigma = Sigma, Yl1 = Yl1, Yl2 = Yl2)
+  PostBetas[s,] <- Beta
+  PostSigmas[s,] <- matrixcalc::vech(Sigma)
+  setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+keep <- seq((burnin+1), tot, thin)
+Bs <- PostBetas[keep,]
+betatilde1 <- Bs[,1:K1] / sqrt(PostSigmas[keep,1])
+summary(coda::mcmc(betatilde1))
+betatilde2 <- Bs[,(K1+1):(K1+K2)] / sqrt(PostSigmas[keep,3])
+summary(coda::mcmc(betatilde2))
+sigmadraw12 <-  PostSigmas[keep,2] / (PostSigmas[keep,1]*PostSigmas[keep,3])^0.5
+summary(coda::mcmc(sigmadraw12))
+
+### Gibs sampler using setting in Section 8.4 in book
+
+
+
+
+
