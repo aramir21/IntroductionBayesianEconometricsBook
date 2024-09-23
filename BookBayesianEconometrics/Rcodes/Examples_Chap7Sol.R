@@ -451,27 +451,29 @@ summary(RestIV[["Sigmadraw"]])
 
 ########################## Multivariate probit: Simulation ########################## 
 remove(list = ls())
-n<-500  #Individuals
-p<-2  #Number dependent variables (For instance to buy or not to buy different products)
-xo<- 2  #Number of choice dependent variables (For instance price of products)
-xi<- 1  #Number of regressors that dependt on individuals (For instance income)
-B1<-c(0.5,-1.2,0.7,0.8)
-B2<-c(1.5,-0.8,0.5,0) # The last regressor is not relevant for the second product
-Cor<-matrix(c(1,0.5,0.5,1),p,p)
-yX<-NULL
+n <-1000  #Individuals
+p <-2  #Number dependent variables (For instance to buy or not to buy different products)
+xo <- 2  #Number of choice dependent variables (For instance price of products)
+xi <- 1  #Number of regressors that dependt on individuals (For instance income)
+B1 <- c(0.5,-1.2,0.7,0.8)
+B2 <- c(1.5,-0.8,0.5,0) # The last regressor is not relevant for the second product
+Cor <- matrix(c(1,0.5,0.5,1),p,p)
+yX <- NULL
+yl <- NULL
 for (i in 1:n){
-  ei<-MASS::mvrnorm(1,c(0,0),Cor)
-  xs<-rnorm(xi)
-  x1i<-c(1,rnorm(xo),xs)
-  yl1i<-sum(x1i*B1)
-  y1i<-yl1i+ei[1]>0
-  x2i<-c(1,rnorm(xo),xs)
-  yl2i<-sum(x2i*B2)
-  y2i<-yl2i+ei[2]>0
-  yXi<-rbind(c(y1i,x1i),c(y2i,x2i))
-  yXi<-cbind(i,yXi)
-  colnames(yXi)<-c("id","y","cte","x1o","x2o","xi")
-  yX<-rbind(yX,yXi)
+  ei <- MASS::mvrnorm(1, c(0,0), Cor)
+  xs <- rnorm(xi)
+  x1i <- c(1, rnorm(xo), xs)
+  yl1i <- sum(x1i*B1)
+  y1i <- yl1i + ei[1] > 0
+  x2i <- c(1, rnorm(xo), xs)
+  yl2i <- sum(x2i*B2)
+  y2i <- yl2i + ei[2] > 0
+  yXi <- rbind(c(y1i, x1i), c(y2i, x2i))
+  yXi <- cbind(i, yXi)
+  colnames(yXi) <- c("id", "y", "cte", "x1o", "x2o", "xi")
+  yX <- rbind(yX, yXi)
+  yl <- c(yl, c(yl1i + ei[1], yl2i + ei[2])) 
 }
 
 nd <- 4 # Number of regressors
@@ -523,6 +525,7 @@ Psi0 <- a0*diag(p)
 Prior <- list(betabar = b0, A = B0i, nu = a0, V = Psi0)
 # MCMC parameters
 mcmc <- 2000
+burnin <- 1000
 thin <- 5
 Mcmc <- list(R = mcmc, keep = thin)
 Results <- bayesm::rmvpGibbs(Data = DataMP, Mcmc = Mcmc, Prior = Prior)
@@ -533,7 +536,111 @@ summary(coda::mcmc(betatildeEq2))
 sigmadraw12 <-  Results$sigmadraw[,2] / (Results$sigmadraw[,1]*Results$sigmadraw[,4])^0.5
 summary(coda::mcmc(sigmadraw12))
 
-### Gibs sampler using basically the SUR structure augmenting with latent variables yl1 and yl2
+# Omitting last regressor for y2
+Xnew <- X[,-8]
+DataMP = list(p=p, y=y, X=Xnew)
+# Hyperparameters
+k <- dim(Xnew)[2]
+b0 <- rep(0, k)
+c0 <- 1000
+B0 <- c0*diag(k)
+B0i <- solve(B0)
+Prior <- list(betabar = b0, A = B0i, nu = a0, V = Psi0)
+Results <- bayesm::rmvpGibbs(Data = DataMP, Mcmc = Mcmc, Prior = Prior)
+betatildeEq1 <- Results$betadraw[,1:4] / sqrt(Results$sigmadraw[,1])
+summary(coda::mcmc(betatildeEq1))
+betatildeEq2 <- Results$betadraw[,5:7] / sqrt(Results$sigmadraw[,4])
+summary(coda::mcmc(betatildeEq2))
+sigmadraw12 <-  Results$sigmadraw[,2] / (Results$sigmadraw[,1]*Results$sigmadraw[,4])^0.5
+summary(coda::mcmc(sigmadraw12))
+
+### Gibbs sampler using Section 8.4
+PostBetaNew <- function(Sigma, Yl){
+  # Sigma <- Cor; Yl <- yl 
+  Sigmai <- solve(Sigma)
+  C <- chol(Sigmai)
+  Xstar <- matrix(0, n*p, k)
+  Ystar <- matrix(0, n*p, 1)
+  for(i in seq(1, n*p, 2)){
+    Xstari <- C%*%Xnew[i:(i+1),]
+    Xstar[i:(i+1),] <- Xstari
+    Ystari <- C%*%Yl[i:(i+1)]
+    Ystar[i:(i+1)] <- Ystari
+  }
+  Bn <- solve(B0i + t(Xstar)%*%Xstar)
+  bn <- Bn%*%(B0i%*%b0 + t(Xstar)%*%Ystar)
+  Beta <- MASS::mvrnorm(1, bn, Bn)
+  return(Beta)
+}
+PostSigmaNew <- function(Beta, Yl){
+  # Beta <- c(B1, B2[-4]); Yl <- yl 
+  U <- matrix(0, p, p)
+  for(i in seq(1, n*p, 2)){
+    Ui <- (Yl[i:(i+1)] - Xnew[i:(i+1),]%*%Beta)%*%t(Yl[i:(i+1)] - Xnew[i:(i+1),]%*%Beta)
+    U <- U + Ui
+  }
+  Psin <- solve(Psi0i + U)
+  Sigmai <- rWishart::rWishart(1, df = an, Sigma = Psin)
+  Sigma <- solve(Sigmai[,,1]) 
+}
+PostYlNew <- function(Beta, Sigma, Yl){
+  # Beta <- c(B1, B2[-4]); Sigma <- Cor; Yl <- yl
+  Sigmai <- solve(Sigma)
+  w1 <- Sigmai[1, ]
+  w2 <- Sigmai[2, ]
+  f1 <- -Sigmai[1, 1]*w1[-1]
+  f2 <- -Sigmai[2, 2]*w2[-2]
+  t11 <- 1/Sigmai[1, 1]
+  t22 <- 1/Sigmai[2, 2]
+  Ylnew <- Yl
+  for(i in seq(1, n*p, 2)){
+    Ylmean1 <- Xnew[i,]%*%Beta + f1*(Yl[i+1] - Xnew[i+1,]%*%Beta)
+    if(y[i] == 1){
+      Ylnew[i] <- truncnorm::rtruncnorm(1, a = 0, b = Inf, mean = Ylmean1, sd = t11^0.5) 
+    }else{
+      Ylnew[i] <- truncnorm::rtruncnorm(1, a = -Inf, b = 0, mean = Ylmean1, sd = t11^0.5) 
+    }
+    Ylmean2 <- Xnew[i+1,]%*%Beta + f2*(Yl[i] - Xnew[i,]%*%Beta)
+    if(y[i+1] == 1){
+      Ylnew[i+1] <- truncnorm::rtruncnorm(1, a = 0, b = Inf, mean = Ylmean2, sd = t22^0.5) 
+    }else{
+      Ylnew[i+1] <- truncnorm::rtruncnorm(1, a = -Inf, b = 0, mean = Ylmean2, sd = t22^0.5) 
+    }
+  }
+  return(Ylnew)
+}
+an <- a0 + n
+Psi0i <- solve(Psi0)
+K1 <- 4; K2 <- 3; K <- K1 + K2
+tot <- mcmc + burnin
+PostBetas <- matrix(0, tot, K)
+PostSigmas <- matrix(0, tot, p*(p+1)/2)
+Beta <- rep(1, K)
+Sigma <- diag(p)
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+  Yl <- PostYlNew(Beta = Beta, Sigma = Sigma, Yl = Yl)
+  Sigma <- PostSigmaNew(Beta = Beta, Yl = Yl)
+  Beta <- PostBetaNew(Sigma = Sigma, Yl = Yl)
+  PostBetas[s,] <- Beta
+  PostSigmas[s,] <- matrixcalc::vech(Sigma)
+  setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+keep <- seq((burnin+1), tot, thin)
+Bs <- PostBetas[keep,]
+betatilde1 <- Bs[,1:K1] / sqrt(PostSigmas[keep,1])
+summary(coda::mcmc(betatilde1))
+betatilde2 <- Bs[,(K1+1):(K1+K2)] / sqrt(PostSigmas[keep,3])
+summary(coda::mcmc(betatilde2))
+summary(coda::mcmc(PostSigmas[keep,]))
+sigmadraw12 <-  PostSigmas[keep,2] / (PostSigmas[keep,1]*PostSigmas[keep,3])^0.5
+summary(coda::mcmc(sigmadraw12))
+plot(coda::mcmc(sigmadraw12))
+
+
+
+### Gibbs sampler using basically the SUR structure augmenting with latent variables yl1 and yl2
 ids1 <- seq(1, p*n, 2); ids2 <- seq(2, p*n, 2)  
 y1 <- y[ids1]; y2 <- y[ids2]
 X1 <- X[ids1,1:4]; X2 <- X[ids2, 5:7]  
@@ -553,8 +660,8 @@ a0 <- M
 IN <- diag(N)
 an <- a0 + N
 #Posterior draws
-S <- 2000 #Number of posterior draws
-burnin <- 1
+S <- 10000 #Number of posterior draws
+burnin <- 1000
 thin <- 5
 tot <- S+burnin
 # Gibbs functions
@@ -595,6 +702,26 @@ PostYl2 <- function(Beta, Sigma, i){
   }
   return(Yl2i)
 }
+PostYl <- function(Beta, Sigma, i){
+  Beta1 <- Beta[1:K1]
+  Ylmean1 <- X1[i,]%*%Beta1
+  Beta2 <- Beta[(K1+1):(K1+K2)]
+  Ylmean2 <- X2[i,]%*%Beta2
+  if(y1[i] == 0 & y2[i] == 0){
+    Yli <- tmvtnorm::rtmvnorm(1, mean = c(Ylmean1, Ylmean2), sigma = Sigma, lower = c(-Inf, -Inf), upper = c(0, 0), algorithm = "gibbs")
+  }else{
+    if(y1[i] == 1 & y2[i] == 0){
+      Yli <- tmvtnorm::rtmvnorm(1, mean = c(Ylmean1, Ylmean2), sigma = Sigma, lower = c(0, -Inf), upper = c(Inf, 0), algorithm = "gibbs")
+    }else{
+      if(y1[i] == 0 & y2[i] == 1){
+        Yli <- tmvtnorm::rtmvnorm(1, mean = c(Ylmean1, Ylmean2), sigma = Sigma, lower = c(-Inf, 0), upper = c(0, Inf), algorithm = "gibbs")
+      }else{
+        Yli <- tmvtnorm::rtmvnorm(1, mean = c(Ylmean1, Ylmean2), sigma = Sigma, lower = c(0, 0), upper = c(Inf, Inf), algorithm = "gibbs")
+      }
+    }
+  }
+  return(c(Yli))
+}
 
 PostBetas <- matrix(0, tot, K)
 PostSigmas <- matrix(0, tot, M*(M+1)/2)
@@ -602,10 +729,11 @@ Beta <- rep(1, K)
 Sigma <- diag(M)
 pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
 for(s in 1:tot){
-  Yl1 <- sapply(1:n, function(i){PostYl1(Beta = Beta, Sigma = Sigma, i)})
-  Yl2 <- sapply(1:n, function(i){PostYl2(Beta = Beta, Sigma = Sigma, i)})
-  Sigma <- PostSigma(Beta = Beta, Yl1 = Yl1, Yl2 = Yl2)
-  Beta <- PostBeta(Sigma = Sigma, Yl1 = Yl1, Yl2 = Yl2)
+  # Yl1 <- sapply(1:n, function(i){PostYl1(Beta = Beta, Sigma = Sigma, i)})
+  # Yl2 <- sapply(1:n, function(i){PostYl2(Beta = Beta, Sigma = Sigma, i)})
+  Yl <- sapply(1:N, function(i){PostYl(Beta = Beta, Sigma = Sigma, i)})
+  Sigma <- PostSigma(Beta = Beta, Yl1 = Yl[1,], Yl2 = Yl[2,])
+  Beta <- PostBeta(Sigma = Sigma, Yl1 = Yl[1,], Yl2 = Yl[2,])
   PostBetas[s,] <- Beta
   PostSigmas[s,] <- matrixcalc::vech(Sigma)
   setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
@@ -619,10 +747,4 @@ betatilde2 <- Bs[,(K1+1):(K1+K2)] / sqrt(PostSigmas[keep,3])
 summary(coda::mcmc(betatilde2))
 sigmadraw12 <-  PostSigmas[keep,2] / (PostSigmas[keep,1]*PostSigmas[keep,3])^0.5
 summary(coda::mcmc(sigmadraw12))
-
-### Gibs sampler using setting in Section 8.4 in book
-
-
-
-
-
+plot(coda::mcmc(sigmadraw12))
