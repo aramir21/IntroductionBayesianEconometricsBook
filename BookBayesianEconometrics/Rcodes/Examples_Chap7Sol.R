@@ -451,7 +451,7 @@ summary(RestIV[["Sigmadraw"]])
 
 ########################## Multivariate probit: Simulation ########################## 
 remove(list = ls())
-n <-1000  #Individuals
+n <-5000  #Individuals
 p <-2  #Number dependent variables (For instance to buy or not to buy different products)
 xo <- 2  #Number of choice dependent variables (For instance price of products)
 xi <- 1  #Number of regressors that dependt on individuals (For instance income)
@@ -584,14 +584,12 @@ PostSigmaNew <- function(Beta, Yl){
   Sigma <- solve(Sigmai[,,1]) 
 }
 PostYlNew <- function(Beta, Sigma, Yl){
-  # Beta <- c(B1, B2[-4]); Sigma <- Cor; Yl <- yl
-  Sigmai <- solve(Sigma)
-  w1 <- Sigmai[1, ]
-  w2 <- Sigmai[2, ]
-  f1 <- -Sigmai[1, 1]*w1[-1]
-  f2 <- -Sigmai[2, 2]*w2[-2]
-  t11 <- 1/Sigmai[1, 1]
-  t22 <- 1/Sigmai[2, 2]
+  w1 <- Sigma[1, ]
+  w2 <- Sigma[2, ]
+  f1 <- w1[-1]*Sigma[2, 2]^(-1)
+  f2 <- w2[-2]*Sigma[1, 1]^(-1)
+  t11 <- Sigma[1, 1] - w1[-1]*Sigma[2, 2]^(-1)*w1[-1]  
+  t22 <- Sigma[2, 2] - w2[-2]*Sigma[1, 1]^(-1)*w2[-2] 
   Ylnew <- Yl
   for(i in seq(1, n*p, 2)){
     Ylmean1 <- Xnew[i,]%*%Beta + f1*(Yl[i+1] - Xnew[i+1,]%*%Beta)
@@ -600,7 +598,7 @@ PostYlNew <- function(Beta, Sigma, Yl){
     }else{
       Ylnew[i] <- truncnorm::rtruncnorm(1, a = -Inf, b = 0, mean = Ylmean1, sd = t11^0.5) 
     }
-    Ylmean2 <- Xnew[i+1,]%*%Beta + f2*(Yl[i] - Xnew[i,]%*%Beta)
+    Ylmean2 <- Xnew[i+1,]%*%Beta + f2*(Ylnew[i] - Xnew[i,]%*%Beta)
     if(y[i+1] == 1){
       Ylnew[i+1] <- truncnorm::rtruncnorm(1, a = 0, b = Inf, mean = Ylmean2, sd = t22^0.5) 
     }else{
@@ -619,7 +617,7 @@ Beta <- rep(1, K)
 Sigma <- diag(p)
 pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
 for(s in 1:tot){
-  Yl <- PostYlNew(Beta = Beta, Sigma = Sigma, Yl = Yl)
+  Yl <- PostYlNew(Beta = Beta, Sigma = Sigma, Yl = yl)
   Sigma <- PostSigmaNew(Beta = Beta, Yl = Yl)
   Beta <- PostBetaNew(Sigma = Sigma, Yl = Yl)
   PostBetas[s,] <- Beta
@@ -634,117 +632,6 @@ summary(coda::mcmc(betatilde1))
 betatilde2 <- Bs[,(K1+1):(K1+K2)] / sqrt(PostSigmas[keep,3])
 summary(coda::mcmc(betatilde2))
 summary(coda::mcmc(PostSigmas[keep,]))
-sigmadraw12 <-  PostSigmas[keep,2] / (PostSigmas[keep,1]*PostSigmas[keep,3])^0.5
-summary(coda::mcmc(sigmadraw12))
-plot(coda::mcmc(sigmadraw12))
-
-
-
-### Gibbs sampler using basically the SUR structure augmenting with latent variables yl1 and yl2
-ids1 <- seq(1, p*n, 2); ids2 <- seq(2, p*n, 2)  
-y1 <- y[ids1]; y2 <- y[ids2]
-X1 <- X[ids1,1:4]; X2 <- X[ids2, 5:7]  
-y <- c(y1, y2)
-X <- as.matrix(Matrix::bdiag(X1, X2))
-M <- 2; K1 <- dim(X1)[2]; K2 <- dim(X2)[2]
-K <- K1 + K2
-N <- length(y1)
-# Hyperparameters
-b0 <- rep(0, K)
-c0 <- 1000
-B0 <- c0*diag(K)
-B0i <- solve(B0)
-Psi0 <- 4*diag(M)
-Psi0i <- solve(Psi0)
-a0 <- M
-IN <- diag(N)
-an <- a0 + N
-#Posterior draws
-S <- 10000 #Number of posterior draws
-burnin <- 1000
-thin <- 5
-tot <- S+burnin
-# Gibbs functions
-PostBeta <- function(Sigma, Yl1, Yl2){
-  Aux <- solve(Sigma)%x%IN
-  Bn <- solve(B0i + t(X)%*%Aux%*%X)
-  Yl <- c(Yl1, Yl2)
-  bn <- Bn%*%(B0i%*%b0 + t(X)%*%Aux%*%Yl)
-  Beta <- MASS::mvrnorm(1, bn, Bn)
-  return(Beta)
-}
-PostSigma <- function(Beta, Yl1, Yl2){
-  B1 <- Beta[1:K1]; B2 <- Beta[(K1+1):(K1+K2)]
-  U1 <- Yl1 - X1%*%B1; U2 <- Yl2 - X2%*%B2
-  U <- cbind(U1, U2)
-  Psin <- solve(Psi0i + t(U)%*%U)
-  Sigmai <- rWishart::rWishart(1, df = an, Sigma = Psin)
-  Sigma <- solve(Sigmai[,,1]) 
-  return(Sigma)
-}
-PostYl1 <- function(Beta, Sigma, i){
-  Beta1 <- Beta[1:K1]
-  Ylmean1 <- X1[i,]%*%Beta1
-  if(y1[i] == 1){
-    Yl1i <- truncnorm::rtruncnorm(1, a = 0, b = Inf, mean = Ylmean1, sd = 1)
-  }else{
-    Yl1i <- truncnorm::rtruncnorm(1, a = -Inf, b = 0, mean = Ylmean1, sd = 1)
-  }
-  return(Yl1i)
-}
-PostYl2 <- function(Beta, Sigma, i){
-  Beta2 <- Beta[(K1+1):(K1+K2)]
-  Ylmean2 <- X2[i,]%*%Beta2
-  if(y2[i] == 1){
-    Yl2i <- truncnorm::rtruncnorm(1, a = 0, b = Inf, mean = Ylmean2, sd = 1)
-  }else{
-    Yl2i <- truncnorm::rtruncnorm(1, a = -Inf, b = 0, mean = Ylmean2, sd = 1)
-  }
-  return(Yl2i)
-}
-PostYl <- function(Beta, Sigma, i){
-  Beta1 <- Beta[1:K1]
-  Ylmean1 <- X1[i,]%*%Beta1
-  Beta2 <- Beta[(K1+1):(K1+K2)]
-  Ylmean2 <- X2[i,]%*%Beta2
-  if(y1[i] == 0 & y2[i] == 0){
-    Yli <- tmvtnorm::rtmvnorm(1, mean = c(Ylmean1, Ylmean2), sigma = Sigma, lower = c(-Inf, -Inf), upper = c(0, 0), algorithm = "gibbs")
-  }else{
-    if(y1[i] == 1 & y2[i] == 0){
-      Yli <- tmvtnorm::rtmvnorm(1, mean = c(Ylmean1, Ylmean2), sigma = Sigma, lower = c(0, -Inf), upper = c(Inf, 0), algorithm = "gibbs")
-    }else{
-      if(y1[i] == 0 & y2[i] == 1){
-        Yli <- tmvtnorm::rtmvnorm(1, mean = c(Ylmean1, Ylmean2), sigma = Sigma, lower = c(-Inf, 0), upper = c(0, Inf), algorithm = "gibbs")
-      }else{
-        Yli <- tmvtnorm::rtmvnorm(1, mean = c(Ylmean1, Ylmean2), sigma = Sigma, lower = c(0, 0), upper = c(Inf, Inf), algorithm = "gibbs")
-      }
-    }
-  }
-  return(c(Yli))
-}
-
-PostBetas <- matrix(0, tot, K)
-PostSigmas <- matrix(0, tot, M*(M+1)/2)
-Beta <- rep(1, K)
-Sigma <- diag(M)
-pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
-for(s in 1:tot){
-  # Yl1 <- sapply(1:n, function(i){PostYl1(Beta = Beta, Sigma = Sigma, i)})
-  # Yl2 <- sapply(1:n, function(i){PostYl2(Beta = Beta, Sigma = Sigma, i)})
-  Yl <- sapply(1:N, function(i){PostYl(Beta = Beta, Sigma = Sigma, i)})
-  Sigma <- PostSigma(Beta = Beta, Yl1 = Yl[1,], Yl2 = Yl[2,])
-  Beta <- PostBeta(Sigma = Sigma, Yl1 = Yl[1,], Yl2 = Yl[2,])
-  PostBetas[s,] <- Beta
-  PostSigmas[s,] <- matrixcalc::vech(Sigma)
-  setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
-}
-close(pb)
-keep <- seq((burnin+1), tot, thin)
-Bs <- PostBetas[keep,]
-betatilde1 <- Bs[,1:K1] / sqrt(PostSigmas[keep,1])
-summary(coda::mcmc(betatilde1))
-betatilde2 <- Bs[,(K1+1):(K1+K2)] / sqrt(PostSigmas[keep,3])
-summary(coda::mcmc(betatilde2))
 sigmadraw12 <-  PostSigmas[keep,2] / (PostSigmas[keep,1]*PostSigmas[keep,3])^0.5
 summary(coda::mcmc(sigmadraw12))
 plot(coda::mcmc(sigmadraw12))

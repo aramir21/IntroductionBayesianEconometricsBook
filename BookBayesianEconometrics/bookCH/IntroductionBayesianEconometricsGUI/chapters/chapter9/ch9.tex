@@ -1,1 +1,70 @@
 \chapter{Panel data models}\label{chap9}
+
+We describe how to perform inference in hierarchical longitudinal models using a Bayesian framework. Specifically, we present models for continuous (normal), binary (logit), and count (Poisson) responses. Some applications and exercises highlight the potential of these models.
+
+Remember that we can run our GUI typing
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. How to display our graphical user interface}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+		shiny::runGitHub("besmarter/BSTApp", launch.browser = T)
+		\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+in the \textbf{R} package console or any \textbf{R} code editor, and once our GUI is deployed, select \textit{Hierarchical Longitudinal Models}.
+
+\section{Normal model}\label{sec91}
+
+The hierarchical longitudinal normal model establishes $\bm{y}_i=\bm{X}_i\bm{\beta}+\bm{W}_i\bm{b}_i+\bm{\mu}_i$ where $\bm{y}_i$ are $n_i$ vectors corresponding to units $i=1,2,\dots,m$, $\bm{X}_i$ are $n_i\times k$ matrices, $\bm{\beta}$ is a $k$ dimensional vector of ``fixed'' effects, $\bm{W}_i$ are $n_i\times q$ matrices associated with random effects ($q$ typically less than $k$), $\bm{b}_i$ is a $q$ dimensional vector of unit-specific random effects such that $\bm{b}_i\sim\mathcal{N}(\bm{0},\bm{D})$, and $\bm{\mu}_i\sim\mathcal{N}(\bm{0},\sigma^2\bm{I}_{n_i})$ are stochastic errors.
+
+We use standard conjugate prior distributions following \cite{Chib1999}.
+In particular, $\bm{\beta} \sim \mathcal{N}(\bm{\beta}_0,\bm{B}_0)$, 
+$\sigma^2 \sim \mathcal{I}\mathcal{G}(\alpha_0, 1/\delta_0)$ and $\bm{D}\sim\mathcal{I}\mathcal{W}(d_0,d_0\bm{D}_0)$, and taking into account that $\bm{y}_i|\bm{\beta},\bm{D},\sigma^2\sim\mathcal{N}(\bm{X}_i\bm{\beta},\bm{V}_i)$ where $\bm{V_i}=\sigma^2\bm{I}+\bm{W}_i\bm{D}\bm{W}_i'$, we have
+
+\begin{equation*}\label{eq:19}
+	\bm{\beta}|\sigma^2,\bm{D},\bm{y}, \bm{X}, \bm{W} \sim \mathcal{N}(\bm{\beta}^*,\bm{B}), 
+\end{equation*}
+\begin{equation*}\label{eq:20}
+	\bm{b}_i|\bm{\beta},\sigma^2,\bm{D},\bm{y}, \bm{X}, \bm{W} \sim \mathcal{N}(\bm{b}_i^*,\bm{B}_i), 
+\end{equation*}
+\begin{equation*}\label{eq:21}
+	\bm{D}| \bm{b} \sim \mathcal{I}\mathcal{W}(d^*, \bm{D}^*),
+\end{equation*}
+\begin{equation*}\label{eq:22}
+	\sigma^2| \bm{\beta}, \bm{D}, \bm{b}, \bm{y}, \bm{X}, \bm{W} \sim \mathcal{I}\mathcal{G}(\alpha^*, \delta^*),
+\end{equation*}
+\noindent where $\bm{B} = (\bm{B}_0^{-1} +\sigma^{-2}\sum_{i=1}^n \bm{X}_i'\bm{V}_i^{-1}\bm{X}_i)^{-1}$, $\bm{\beta}^*= \bm{B}(\bm{B}_0^{-1}\bm{\beta}_0 +\sigma^{-2} \sum_{i=1}^n\bm{X}_i'\bm{V}_i^{-1}\bm{y}_i)$, $\bm{B}_i = (\bm{D}^{-1} +\sigma^{-2} \bm{W}_i'\bm{W}_i)^{-1}$, $\bm{b}_i^*= \bm{B}_i(\sigma^{-2} \bm{W}_i'(\bm{y}_i-\bm{X}_i\bm{\beta}))$, $d^* = d_0 + m$ and $\bm{D}^* = d_0\bm{D}_0 + \sum_{i=1}^m \bm{b}_i\bm{b}_i'$, $\alpha^*=\alpha_0+\frac{1}{2}\sum_{i=1}^m n_i$ and $\delta^*=1/\delta_0+\frac{1}{2}\sum_{i=1}^m(\bm{y}_i-\bm{X}_i\bm{\beta}-\bm{W}_i\bm{b}_i)'(\bm{y}_i-\bm{X}_i\bm{\beta}-\bm{W}_i\bm{b}_i)$.\\ 
+
+\textbf{Example: The relation between productivity and public investment}
+
+We used the dataset named \textit{8PublicCap.csv} used by \cite{Ramirez2017} to analyze the relation  between public investment and gross state product in the setting of a spatial panel dataset consisting of 48 US states from 1970 to 1986.
+In particular, the specification to type into the main equation box of fixed effects is
+$$\log(\text{gsp})\sim\log(\text{pcap})+\log(\text{pc})+\log(\text{emp})+\text{unemp},$$
+
+\noindent where gsp in the gross state product, pcap is public capital, and pc is private capital all in US\$, emp is employment (people), and unemp is the unemployment rate in percentage.\\
+
+We left empty the main equation box of random effects as we assumed that the unobserved heterogeneity is not associated with any particular regressors.
+This means that we control for the unobserved heterogeneity using just the constant terms.
+The variable which identifies the units is id.\\
+
+We ran this application using 10,000 MCMC iterations plus a burn-in equal to 5,000 iterations, and a thinning parameter equal to 1.
+We also used the default values for the hyperparameters of the prior distributions.
+It seems that all posterior draws come from stationary distributions, as suggested by the diagnostics and posterior plots.\\
+
+The 95\% symmetric credible intervals for public capital, private capital, employment, and unemployment, are (-2.54e-02, -2.06e-02), (2.92e-01, 2.96e-01), (7.62e-01, 7.67e-01) and (-5.47e-03, -5.31e-03), respectively.
+The posterior mean elasticity estimate of public capital to gsp is -0.023, that is, an increase by 1\% in public capital means a 0.023\% decrease in gross state product.
+The posterior mean estimates of private capital and employment elasticities are 0.294 and 0.765, respectively.
+In addition, a 1\% increase in the unemployment rate means a decrease of 0.54\% in gsp.
+It seems that all these variables are statistically relevant.
+In addition, the posterior mean estimates of the variance associated with the unobserved heterogeneity and stochastic errors are 1.06e-01 and 1.45e-03.
+We obtained the posterior chain of the proportion of the variance associated with the unobserved heterogeneity.
+The 95\% symmetric credible interval is (0.98, 0.99) for this proportion, that is, unobserved heterogeneity is very important to explain the total variability.\\
+
+
+
+\section{Logit model}\label{sec92}
+
+\section{Poisson model}\label{sec93}
