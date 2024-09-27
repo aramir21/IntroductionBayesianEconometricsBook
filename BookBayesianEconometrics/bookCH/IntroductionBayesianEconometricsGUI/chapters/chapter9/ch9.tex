@@ -1,6 +1,8 @@
-\chapter{Panel data models}\label{chap9}
+\chapter{Panel/Longitudinal data models}\label{chap9}
 
-We describe how to perform inference in hierarchical longitudinal models using a Bayesian framework. Specifically, we present models for continuous (normal), binary (logit), and count (Poisson) responses. Some applications and exercises highlight the potential of these models.
+We describe how to perform inference in panel/longitudinal models using a Bayesian framework. In this context, multiple cross-sectional units are observed repeatedly over time, a structure referred to as panel data by econometricians and longitudinal data by statisticians. Specifically, we present models for continuous (normal), binary (logit), and count (Poisson) responses. Applications and exercises illustrate the potential of these models.
+
+In panel/longitudinal data sets, we have $y_{it}$ where $i=1,2,\dots,N$ and $t=1,2,\dots,T_i$. If $T_i=T$ for all $i$, the dataset is \textit{balanced}; otherwise, it is \textit{unbalanced}. Longitudinal data typically involves by far more cross-sectional units than time periods. It assumes that cross-sectional units are independent, though serial correlation exists within each unit over time, and unobserved heterogeneity for each unit must be accounted for. We can treat this unobserved heterogeneity as random variables, assuming it is either independent or dependent on control variables. Econometricians refer to these cases as \textit{random effects} and \textit{fixed effects}, respectively. The Bayesian literature takes a different approach, modeling the panel structure hierarchically, where the unobserved heterogeneity may or may not depend on other controls.\footnote{See \cite{rendon2013fixed} for a nice comparison of Frequentist and Bayesian treatments of panel data models.}
 
 Remember that we can run our GUI typing
 
@@ -15,13 +17,24 @@ Remember that we can run our GUI typing
 
 in the \textbf{R} package console or any \textbf{R} code editor, and once our GUI is deployed, select \textit{Hierarchical Longitudinal Models}.
 
+
+
 \section{Normal model}\label{sec91}
 
-The hierarchical longitudinal normal model establishes $\bm{y}_i=\bm{X}_i\bm{\beta}+\bm{W}_i\bm{b}_i+\bm{\mu}_i$ where $\bm{y}_i$ are $N_i$-dimensional vectors corresponding to units $i=1,2,\dots,N$, $\bm{X}_i$ are $N_i\times K$ matrices, $\bm{\beta}$ is a $K$-dimensional vector of ``fixed'' effects, $\bm{W}_i$ are $N_i\times J$ matrices associated with random effects ($J$ typically less than $K$), $\bm{b}_i$ is a $J$-dimensional vector of unit-specific random effects such that $\bm{b}_i\sim{N}(\bm{0},\bm{D})$, and $\bm{\mu}_i\sim{N}(\bm{0},\sigma^2\bm{I}_{N_i})$ are stochastic errors.
+The panel/longitudinal normal model establishes $\bm{y}_i=\bm{X}_i\bm{\beta}+\bm{W}_i\bm{b}_i+\bm{\mu}_i$ where $\bm{y}_i$ are $T_i$-dimensional vectors corresponding to units $i=1,2,\dots,N$, $\bm{X}_i$ and $\bm{W}_i$ are $T_i\times K_1$ and $T_i\times K_2$ matrices, respectively. In the statistical literature, $\bm{\beta}$ is a $K_1$-dimensional vector of \textit{fixed effects}, and $\bm{b}_i$ is a $K_2$-dimensional vector of unit-specific \textit{random effects} that allow unit-specific means, and enable to capture marginal dependence among the observations on the cross-sectional units. Observe that we have random intercepts if $\bm{W}_i=\bm{i}_{T_i}$, where $\bm{i}_{T_i}$ is a $T_i$-dimensional vector of ones. We assume normal stochastic errors, $\bm{\mu}_i\sim{N}(\bm{0},\sigma^2\bm{I}_{T_i})$.
 
-We use standard conjugate prior distributions following \cite{Chib1999}.
-In particular, $\bm{\beta} \sim {N}(\bm{\beta}_0,\bm{B}_0)$, 
-$\sigma^2 \sim {I}{G}(\alpha_0, 1/\delta_0)$ and $\bm{D}\sim{I}{W}(d_0,d_0\bm{D}_0)$, and taking into account that $\bm{y}_i|\bm{\beta},\bm{D},\sigma^2\sim{N}(\bm{X}_i\bm{\beta},\bm{V}_i)$ where $\bm{V_i}=\sigma^2\bm{I}_{N_i}+\bm{W}_i\bm{D}\bm{W}_i^{\top}$, we have
+Panel data modeling in the Bayesian approach assumes a hierarchical structure in the \textit{random effects}. Following \cite{Chib1999}, we assume $\bm{b}_i\sim{N}(\bm{0},\bm{D})$ where $\bm{D}$ allows serial correlation within each cross-sectional unit $i$ such that $\bm{D}\sim{I}{W}(d_0,d_0\bm{D}_0)$. Thus, there is an additional layer of priors as there is a prior on the hyperparameter $\bm{D}$, that is, we have a hierarchical structure. 
+
+In addition, we have standard conjugate prior distributions for $\bm{\beta}$ and $\sigma^2$, $\bm{\beta} \sim {N}(\bm{\beta}_0,\bm{B}_0)$ and 
+$\sigma^2 \sim {I}{G}(\alpha_0, 1/\delta_0)$. 
+
+\cite{Chib1999} propose a blocking algorithm to perform inference in longitudinal hierarchical models by considering the distribution of $\bm{y}_i$ marginalized over the random effects. Given that $\bm{y}_i| \bm{\beta},\bm{b}_i,\sigma^2,\bm{X}_i,\bm{W}_i\sim N(\bm{X}_i\bm{\beta}+\bm{W}_i\bm{b}_i,\sigma^2\bm{I}_{T_i})$, we can see that    $\bm{y}_i|\bm{\beta},\bm{D},\sigma^2,\bm{X}_i,\bm{W}_i\sim{N}(\bm{X}_i\bm{\beta},\bm{V}_i)$ given that $\mathbb{E}[\bm{b}_i]=\bm{0}$ and $Var[\bm{B}_i]=D$, where $\bm{V_i}=\sigma^2\bm{I}_{T_i}+\bm{W}_i\bm{D}\bm{W}_i^{\top}$.
+
+Thus, we can deduce the posterior distribution of $\bm{\beta}$ given $\sigma^2$ and $\bm{D}$,
+
+\begin{align*}
+	\pi(\bm{\beta}|\sigma^2, \bm{D}) & \propto 
+\end{align*} 
 
 \begin{equation*}
 	\bm{\beta}|\sigma^2,\bm{D},\bm{y}, \bm{X}, \bm{W} \sim {N}(\bm{\beta}_n,\bm{B}_n), 
