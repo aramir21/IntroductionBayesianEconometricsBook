@@ -2,7 +2,7 @@
 
 We describe how to perform inference in panel/longitudinal models using a Bayesian framework. In this context, multiple cross-sectional units are observed repeatedly over time, a structure referred to as panel data by econometricians and longitudinal data by statisticians. Specifically, we present models for continuous (normal), binary (logit), and count (Poisson) responses. Applications and exercises illustrate the potential of these models.
 
-In panel/longitudinal data sets, we have $y_{it}$ where $i=1,2,\dots,N$ and $t=1,2,\dots,T_i$. If $T_i=T$ for all $i$, the dataset is \textit{balanced}; otherwise, it is \textit{unbalanced}. Longitudinal data typically involves by far more cross-sectional units than time periods. It assumes that cross-sectional units are independent, though serial correlation exists within each unit over time, and unobserved heterogeneity for each unit must be accounted for. We can treat this unobserved heterogeneity as random variables, assuming it is either independent or dependent on control variables. Econometricians refer to these cases as \textit{random effects} and \textit{fixed effects}, respectively. The Bayesian literature takes a different approach, modeling the panel structure hierarchically, where the unobserved heterogeneity may or may not depend on other controls.\footnote{See \cite{rendon2013fixed} for a nice comparison of Frequentist and Bayesian treatments of panel data models.}
+In panel/longitudinal data sets, we have $y_{it}$ where $i=1,2,\dots,N$ and $t=1,2,\dots,T_i$. If $T_i=T$ for all $i$, the dataset is \textit{balanced}; otherwise, it is \textit{unbalanced}. Longitudinal data typically involves by far more cross-sectional units than time periods, this is called typically a \textit{short panel}. It assumes that cross-sectional units are independent, though serial correlation exists within each unit over time, and unobserved heterogeneity for each unit must be accounted for. We can treat this unobserved heterogeneity as random variables, assuming it is either independent or dependent on control variables. Econometricians refer to these cases as \textit{random effects} and \textit{fixed effects}, respectively. The Bayesian literature takes a different approach, modeling the panel structure hierarchically, where the unobserved heterogeneity may or may not depend on other controls.\footnote{See \cite{rendon2013fixed} for a nice comparison of Frequentist and Bayesian treatments of panel data models.}
 
 Remember that we can run our GUI typing
 
@@ -21,24 +21,37 @@ in the \textbf{R} package console or any \textbf{R} code editor, and once our GU
 
 \section{Normal model}\label{sec91}
 
-The panel/longitudinal normal model establishes $\bm{y}_i=\bm{X}_i\bm{\beta}+\bm{W}_i\bm{b}_i+\bm{\mu}_i$ where $\bm{y}_i$ are $T_i$-dimensional vectors corresponding to units $i=1,2,\dots,N$, $\bm{X}_i$ and $\bm{W}_i$ are $T_i\times K_1$ and $T_i\times K_2$ matrices, respectively. In the statistical literature, $\bm{\beta}$ is a $K_1$-dimensional vector of \textit{fixed effects}, and $\bm{b}_i$ is a $K_2$-dimensional vector of unit-specific \textit{random effects} that allow unit-specific means, and enable to capture marginal dependence among the observations on the cross-sectional units. Observe that we have random intercepts if $\bm{W}_i=\bm{i}_{T_i}$, where $\bm{i}_{T_i}$ is a $T_i$-dimensional vector of ones. We assume normal stochastic errors, $\bm{\mu}_i\sim{N}(\bm{0},\sigma^2\bm{I}_{T_i})$.
+The panel/longitudinal normal model establishes $\bm{y}_i=\bm{X}_i\bm{\beta}+\bm{W}_i\bm{b}_i+\bm{\mu}_i$ where $\bm{y}_i$ are $T_i$-dimensional vectors corresponding to units $i=1,2,\dots,N$, $\bm{X}_i$ and $\bm{W}_i$ are $T_i\times K_1$ and $T_i\times K_2$ matrices, respectively. In the statistical literature, $\bm{\beta}$ is a $K_1$-dimensional vector of \textit{fixed effects}, and $\bm{b}_i$ is a $K_2$-dimensional vector of unit-specific \textit{random effects} that allow unit-specific means, and enable to capture marginal dependence among the observations on the cross-sectional units. Observe that we have random intercepts if $\bm{W}_i=\bm{i}_{T_i}$, where $\bm{i}_{T_i}$ is a $T_i$-dimensional vector of ones. We assume normal stochastic errors, $\bm{\mu}_i\sim{N}(\bm{0},\sigma^2\bm{I}_{T_i})$, which means that the likelihood function is
 
-Panel data modeling in the Bayesian approach assumes a hierarchical structure in the \textit{random effects}. Following \cite{Chib1999}, we assume $\bm{b}_i\sim{N}(\bm{0},\bm{D})$ where $\bm{D}$ allows serial correlation within each cross-sectional unit $i$ such that $\bm{D}\sim{I}{W}(d_0,d_0\bm{D}_0)$. Thus, there is an additional layer of priors as there is a prior on the hyperparameter $\bm{D}$, that is, we have a hierarchical structure. 
+{\footnotesize
+\begin{align*}
+	p(\bm{\beta},\bm{b}_i,\sigma^2|\bm{y}, \bm{X},\bm{W}) & \propto \prod_{i=1}^N |\sigma^2\bm{I}_{T_i}|^{-1/2}\exp\left\{-\frac{1}{2\sigma^2}(\bm{y}_i-\bm{X}_i\bm{\beta}-\bm{W}_i\bm{b}_i)^{\top}(\bm{y}_i-\bm{X}_i\bm{\beta}-\bm{W}_i\bm{b}_i)\right\}\\
+	& = (\sigma^2)^{-\frac{\sum_{i=1}^N T_i}{2}}\exp\left\{-\frac{1}{2\sigma^2}\sum_{i=1}^N(\bm{y}_i-\bm{X}_i\bm{\beta}-\bm{W}_i\bm{b}_i)^{\top}(\bm{y}_i-\bm{X}_i\bm{\beta}-\bm{W}_i\bm{b}_i)\right\}\\
+\end{align*} 
+}
+
+Panel data modeling in the Bayesian approach assumes a hierarchical structure in the \textit{random effects}. Following \cite{Chib1999}, there is a first stage where $\bm{b}_i\sim{N}(\bm{0},\bm{D})$, $\bm{D}$ allows serial correlation within each cross-sectional unit $i$, and then, there is a second stage where $\bm{D}\sim{I}{W}(d_0,d_0\bm{D}_0)$. Thus, we can see that there is an additional layer of priors as there is a prior on the hyperparameter $\bm{D}$. 
 
 In addition, we have standard conjugate prior distributions for $\bm{\beta}$ and $\sigma^2$, $\bm{\beta} \sim {N}(\bm{\beta}_0,\bm{B}_0)$ and 
 $\sigma^2 \sim {I}{G}(\alpha_0, 1/\delta_0)$. 
 
-\cite{Chib1999} propose a blocking algorithm to perform inference in longitudinal hierarchical models by considering the distribution of $\bm{y}_i$ marginalized over the random effects. Given that $\bm{y}_i| \bm{\beta},\bm{b}_i,\sigma^2,\bm{X}_i,\bm{W}_i\sim N(\bm{X}_i\bm{\beta}+\bm{W}_i\bm{b}_i,\sigma^2\bm{I}_{T_i})$, we can see that    $\bm{y}_i|\bm{\beta},\bm{D},\sigma^2,\bm{X}_i,\bm{W}_i\sim{N}(\bm{X}_i\bm{\beta},\bm{V}_i)$ given that $\mathbb{E}[\bm{b}_i]=\bm{0}$ and $Var[\bm{B}_i]=D$, where $\bm{V_i}=\sigma^2\bm{I}_{T_i}+\bm{W}_i\bm{D}\bm{W}_i^{\top}$.
+\cite{Chib1999} propose a blocking algorithm to perform inference in longitudinal hierarchical models by considering the distribution of $\bm{y}_i$ marginalized over the random effects. Given that $\bm{y}_i| \bm{\beta},\bm{b}_i,\sigma^2,\bm{X}_i,\bm{W}_i\sim N(\bm{X}_i\bm{\beta}+\bm{W}_i\bm{b}_i,\sigma^2\bm{I}_{T_i})$, we can see that    $\bm{y}_i|\bm{\beta},\bm{D},\sigma^2,\bm{X}_i,\bm{W}_i\sim{N}(\bm{X}_i\bm{\beta},\bm{V}_i)$, where $\bm{V}_i=\sigma^2\bm{I}_{T_i}+\bm{W}_i\bm{D}\bm{W}_i^{\top}$ given that $\mathbb{E}[\bm{b}_i]=\bm{0}$ and $Var[\bm{B}_i]=\bm{D}$.
 
 Thus, we can deduce the posterior distribution of $\bm{\beta}$ given $\sigma^2$ and $\bm{D}$,
 
 \begin{align*}
-	\pi(\bm{\beta}|\sigma^2, \bm{D}) & \propto 
+	\pi(\bm{\beta}|\sigma^2, \bm{D}) & \propto \exp\left\{-\frac{1}{2}\sum_{i=1}^N(\bm{y}_i-\bm{X}_i\bm{\beta})^{\top}\bm{V}_i^{-1}(\bm{y}_i-\bm{X}_i\bm{\beta})\right\}\\
+	&\times \exp\left\{-\frac{1}{2}(\bm{\beta}-\bm{\beta}_0)^{\top}\bm{B}_0^{-1}(\bm{\beta}-\bm{\beta}_0)\right\}.
 \end{align*} 
+
+This implies that (see exercise 1)  
 
 \begin{equation*}
 	\bm{\beta}|\sigma^2,\bm{D},\bm{y}, \bm{X}, \bm{W} \sim {N}(\bm{\beta}_n,\bm{B}_n), 
 \end{equation*}
+where $\bm{B}_n = (\bm{B}_0^{-1} +\sum_{i=1}^N \bm{X}_i^{\top}\bm{V}_i^{-1}\bm{X}_i)^{-1}$, $\bm{\beta}_n= \bm{B}_n(\bm{B}_0^{-1}\bm{\beta}_0 + \sum_{i=1}^N\bm{X}_i^{\top}\bm{V}_i^{-1}\bm{y}_i)$.
+
+We can use the likelihood $p(\bm{\beta},\bm{b}_i,\sigma^2|\bm{y}, \bm{X},\bm{W})$ to get the posterior distributions of $\bm{b}_i$, $\sigma^2$ and $\bm{D}$ (see exercise 2). In particular,
 \begin{equation*}
 	\bm{b}_i|\bm{\beta},\sigma^2,\bm{D},\bm{y}, \bm{X}, \bm{W} \sim {N}(\bm{b}_i,\bm{B}_i), 
 \end{equation*}
@@ -48,7 +61,7 @@ Thus, we can deduce the posterior distribution of $\bm{\beta}$ given $\sigma^2$ 
 \begin{equation*}
 	\sigma^2| \bm{\beta}, \bm{D}, \bm{b}, \bm{y}, \bm{X}, \bm{W} \sim {I}{G}(\alpha_n, \delta_n),
 \end{equation*}
-\noindent where $\bm{B}_n = (\bm{B}_0^{-1} +\sigma^{-2}\sum_{i=1}^N \bm{X}_i^{\top}\bm{V}_i^{-1}\bm{X}_i)^{-1}$, $\bm{\beta}_n= \bm{B}_n(\bm{B}_0^{-1}\bm{\beta}_0 +\sigma^{-2} \sum_{i=1}^N\bm{X}_i^{\top}\bm{V}_i^{-1}\bm{y}_i)$, $\bm{B}_i = (\bm{D}^{-1}_0 +\sigma^{-2} \bm{W}_i^{\top}\bm{W}_i)^{-1}$, $\bm{b}_i^*= \bm{B}_i(\sigma^{-2} \bm{W}_i^{\top}(\bm{y}_i-\bm{X}_i\bm{\beta}))$, $d_n = d_0 + N$ and $\bm{D}_n = d_0\bm{D}_0 + \sum_{i=1}^N \bm{b}_i\bm{b}_i^{\top}$, $\alpha_n=\alpha_0+\frac{1}{2}\sum_{i=1}^N N_i$ and $\delta_n=1/\delta_0+\frac{1}{2}\sum_{i=1}^N(\bm{y}_i-\bm{X}_i\bm{\beta}-\bm{W}_i\bm{b}_i)^{\top}(\bm{y}_i-\bm{X}_i\bm{\beta}-\bm{W}_i\bm{b}_i)$.\\ 
+where $\bm{B}_i = (\bm{D}^{-1}_0 +\sigma^{-2} \bm{W}_i^{\top}\bm{W}_i)^{-1}$, $\bm{b}_i^*= \bm{B}_i(\sigma^{-2} \bm{W}_i^{\top}(\bm{y}_i-\bm{X}_i\bm{\beta}))$, $d_n = d_0 + N$ and $\bm{D}_n = d_0\bm{D}_0 + \sum_{i=1}^N \bm{b}_i\bm{b}_i^{\top}$, $\alpha_n=\alpha_0+\frac{1}{2}\sum_{i=1}^N N_i$ and $\delta_n=1/\delta_0+\frac{1}{2}\sum_{i=1}^N(\bm{y}_i-\bm{X}_i\bm{\beta}-\bm{W}_i\bm{b}_i)^{\top}(\bm{y}_i-\bm{X}_i\bm{\beta}-\bm{W}_i\bm{b}_i)$.\\ 
 
 \textbf{Example: The relation between productivity and public investment}
 
@@ -80,3 +93,13 @@ The 95\% symmetric credible interval is (0.98, 0.99) for this proportion, that i
 \section{Logit model}\label{sec92}
 
 \section{Poisson model}\label{sec93}
+
+\section{Summary}\label{sec94}
+
+\section{Exercises}\label{sec95}
+
+\begin{enumerate}
+	
+	\item Show that the posterior distribution of $\bm{\beta}|\sigma^2,\bm{D}$ is $N(\bm{\beta}_n,\bm{B}_n)$, where $\bm{B}_n = (\bm{B}_0^{-1} +\sum_{i=1}^N \bm{X}_i^{\top}\bm{V}_i^{-1}\bm{X}_i)^{-1}$, $\bm{\beta}_n= \bm{B}_n(\bm{B}_0^{-1}\bm{\beta}_0 + \sum_{i=1}^N\bm{X}_i^{\top}\bm{V}_i^{-1}\bm{y}_i)$.
+	
+\end{enumerate}
