@@ -23,7 +23,6 @@ tot <- mcmc + burnin
 thin <- 1
 # Gibbs functions
 PostBeta <- function(sig2, D){
-  # sig2 <- 0.001; D <- 0.1
   Vi <- sig2*diag(T) + as.numeric(D)*it%*%t(it)
   ViInv <- solve(Vi)
   XVX <- matrix(0, K1, K1)
@@ -31,10 +30,10 @@ PostBeta <- function(sig2, D){
   for(i in 1:N){
     ids <- which(id == i)
     Xi <- X[ids, ]
-    XVXi <- t(Xi)%*%Vi%*%Xi
+    XVXi <- t(Xi)%*%ViInv%*%Xi
     XVX <- XVX + XVXi
     yi <- y[ids]
-    XVyi <- t(Xi)%*%Vi%*%yi
+    XVyi <- t(Xi)%*%ViInv%*%yi
     XVy <- XVy + XVyi
   }
   Bn <- solve(B0i + XVX)
@@ -43,7 +42,6 @@ PostBeta <- function(sig2, D){
   return(Beta)
 }
 Postb <- function(Beta, sig2, D){
-  # sig2 <- 0.001; D <- 0.1; Beta <- c(1.5332, 0.2822, 0.254, 0.522, -0.0152)
   Di <- solve(D)
   Bni <- solve(sig2^(-1)*WtW + Di)
   bis <- NULL
@@ -60,7 +58,6 @@ Postb <- function(Beta, sig2, D){
   return(bis)
 }
 PostSig2 <- function(Beta, D, bs){
-  # D <- 0.1; Beta <- c(1.5332, 0.2822, 0.254, 0.522, -0.0152); bs <- bis
   an <- a0 + 0.5*N*T
   ete <- 0
   for(i in 1:N){
@@ -73,11 +70,10 @@ PostSig2 <- function(Beta, D, bs){
     ete <- ete + etei
   }
   dn <- 1/d0 + 0.5*ete 
-  sig2 <- invgamma::rinvgamma(1, shape = an, rate = dn)
+  sig2 <- invgamma::rinvgamma(1, shape = an, scale = dn)
   return(sig2)
 }
 PostD <- function(bs){
-  # bs <- bis
   rn <- r0 + N
   btb <- 0
   for(i in 1:N){
@@ -95,13 +91,15 @@ PostSig2s <- rep(0, tot)
 Postbs <- matrix(0, tot, N)
 Beta <- rep(1, K1)
 D <- diag(K2)
-sig2 <- 0.01
+RegLS <- lm(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp)
+SumLS <- summary(RegLS)
+sig2 <- SumLS[["sigma"]]^0.5
 pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
 for(s in 1:tot){
   bs <- Postb(Beta = Beta, sig2 = sig2, D = D)
   D <- PostD(bs = bs)
-  sig2 <- PostSig2(Beta = Beta, bs = bs, D = D)
   Beta <- PostBeta(sig2 = sig2, D = D)
+  sig2 <- PostSig2(Beta = Beta, bs = bs, D = D)
   PostBetas[s,] <- Beta
   PostDs[s,] <- matrixcalc::vech(D)
   PostSig2s[s] <- sig2
@@ -111,3 +109,15 @@ for(s in 1:tot){
 close(pb)
 keep <- seq((burnin+1), tot, thin)
 Bs <- PostBetas[keep,]
+Ds <- PostDs[keep,]
+bs <- Postbs[keep,]
+sig2s <- PostSig2s[keep]
+summary(coda::mcmc(Bs))
+summary(coda::mcmc(Ds))
+summary(coda::mcmc(bs))
+summary(coda::mcmc(sig2s))
+summary(coda::mcmc(Ds^0.5/(sig2s+Ds)^0.5))
+# Convergence diagnostics
+coda::geweke.diag(Bs)
+coda::raftery.diag(Bs,q=0.5,r=0.05,s = 0.95)
+coda::heidel.diag(Bs)
