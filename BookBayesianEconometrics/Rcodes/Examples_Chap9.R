@@ -24,8 +24,8 @@ coda::heidel.diag(Betas)
 
 ########################## Simulation exercise: Longitudinal normal model ########################## 
 rm(list = ls())
-set.seed(12345)
-NT <- 1000
+set.seed(010101)
+NT <- 2000
 N <- 50
 id <- c(1:N, sample(1:N, NT - N,replace=TRUE))
 table(id)
@@ -50,15 +50,15 @@ for(i in 1:NT){
 Data <- as.data.frame(cbind(y, x1, x2, x3, w1, id))
 mcmc <- 5000; burnin <- 1000; thin <- 1; tot <- mcmc + burnin
 b0 <- rep(0, K1); B0 <- diag(K1); B0i <- solve(B0) 
-r0 <- 2; R0 <- diag(K2); a0 <- 0.001; d0 <- 0.001
+r0 <- K2; R0 <- diag(K2); a0 <- 0.001; d0 <- 0.001
 # MCMChregress
 Resultshreg <- MCMCpack::MCMChregress(fixed = y~x1 + x2 + x3, random = ~w1, group="id",
                       data = Data, burnin = burnin, mcmc = mcmc, thin = thin, 
                       mubeta = b0, Vbeta = B0,
                       r = r0, R = R0, nu = a0, delta = d0)
 Betas <- Resultshreg[["mcmc"]][,1:K1]
-Sigma2RanEff <- Resultshreg[["mcmc"]][,c(2*N+K1+1, 2*N+K1+K2^2)]
-Sigma2 <- Resultshreg[["mcmc"]][,2*N+K1+K2^2+1]
+Sigma2RanEff <- Resultshreg[["mcmc"]][,c(K2*N+K1+1, 2*N+K1+K2^2)]
+Sigma2 <- Resultshreg[["mcmc"]][,K2*N+K1+K2^2+1]
 summary(Betas)
 summary(Sigma2RanEff)
 summary(Sigma2)
@@ -87,6 +87,29 @@ PostBeta <- function(sig2, D){
   Beta <- MASS::mvrnorm(1, bn, Bn)
   return(Beta)
 }
+# This version of the function follows MCMCpack function named cMCMChregress.cc that uses 
+# http://en.wikipedia.org/wiki/Woodbury_matrix_identity with A=(1/V_run)*Id
+PostBetaNew <- function(sig2, D){
+  Di <- solve(D)
+  XVXn <- matrix(0, K1, K1)
+  XVyn <- matrix(0, K1, 1)
+  for(i in 1:N){
+    ids <- which(id == i)
+    Ti <- length(ids)
+    Wi <- W[ids, ]
+    Xi <- X[ids, ]
+    yi <- y[ids]
+    sig2i <- sig2^(-1)
+    XVXi <- t(Xi)%*%Xi*sig2i - sig2i^(2)*t(Xi)%*%Wi%*%solve(Di+sig2i*t(Wi)%*%Wi)%*%t(Wi)%*%Xi
+    XVyi <- t(Xi)%*%yi*sig2i - sig2i^(2)*t(Xi)%*%Wi%*%solve(Di+sig2i*t(Wi)%*%Wi)%*%t(Wi)%*%yi 
+    XVXn <- XVXn + XVXi
+    XVyn <- XVyn + XVyi
+  }
+  BnNew <- solve(B0i + XVXn)
+  bnNew <- BnNew%*%(B0i%*%b0 + XVyn)
+  Beta <- MASS::mvrnorm(1, bnNew, BnNew)
+  return(Beta)
+}
 Postb <- function(Beta, sig2, D){
   Di <- solve(D)
   bis <- matrix(0, N, K2)
@@ -103,7 +126,7 @@ Postb <- function(Beta, sig2, D){
   }
   return(bis)
 }
-PostSig2 <- function(Beta, D, bs){
+PostSig2 <- function(Beta, bs){
   an <- a0 + 0.5*NT
   ete <- 0
   for(i in 1:N){
@@ -116,7 +139,7 @@ PostSig2 <- function(Beta, D, bs){
     ete <- ete + etei
   }
   dn <- d0 + 0.5*ete 
-  sig2 <- invgamma::rinvgamma(1, shape = an, rate = dn)
+  sig2 <- MCMCpack::rinvgamma(1, shape = an, scale = dn)
   return(sig2)
 }
 PostD <- function(bs){
@@ -128,10 +151,7 @@ PostD <- function(bs){
     btb <- btb + btbi
   }
   Rn <- d0*R0 + btb
-  # See the density of the inverse Wishart in the rinvwishart help and compare to our math.
-  # This explains why nu is equal to rn + 2*K2 + 2*1 
-  # Sigma <- LaplacesDemon::rinvwishart(nu = rn + 2*K2 + 2*1, S = Rn)
-  Sigma <- LaplacesDemon::rinvwishart(nu = rn, S = Rn)
+  Sigma <- MCMCpack::riwish(v = rn, S = Rn)
   return(Sigma)
 }
 PostBetas <- matrix(0, tot, K1)
@@ -148,7 +168,8 @@ for(s in 1:tot){
   bs <- Postb(Beta = Beta, sig2 = sig2, D = D)
   D <- PostD(bs = bs)
   Beta <- PostBeta(sig2 = sig2, D = D)
-  sig2 <- PostSig2(Beta = Beta, bs = bs, D = D)
+  # Beta <- PostBetaNew(sig2 = sig2, D = D)
+  sig2 <- PostSig2(Beta = Beta, bs = bs)
   PostBetas[s,] <- Beta
   PostDs[s,] <- matrixcalc::vech(D)
   PostSig2s[s] <- sig2
@@ -162,11 +183,14 @@ Ds <- PostDs[keep,]
 bs <- Postbs[, , keep]
 sig2s <- PostSig2s[keep]
 summary(coda::mcmc(Bs))
+plot(coda::mcmc(Bs))
 summary(coda::mcmc(Ds))
+plot(coda::mcmc(Ds))
 summary(coda::mcmc(sig2s))
+plot(coda::mcmc(sig2s))
 # Convergence diagnostics
 coda::geweke.diag(Bs)
-coda::raftery.diag(Bs,q=0.5,r=0.05,s = 0.95)
+coda::raftery.diag(Bs, q = 0.5, r = 0.05, s = 0.95)
 coda::heidel.diag(Bs)
 
 

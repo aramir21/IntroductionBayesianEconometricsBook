@@ -39,7 +39,7 @@ $\sigma^2 \sim {I}{G}(\alpha_0, \delta_0)$.
 
 We can deduce the posterior distribution of $\bm{\beta}$ given $\sigma^2$ and $\bm{D}$,
 \begin{align*}
-	\pi(\bm{\beta}|\sigma^2, \bm{D}) & \propto \exp\left\{-\frac{1}{2}\sum_{i=1}^N(\bm{y}_i-\bm{X}_i\bm{\beta})^{\top}\bm{V}_i^{-1}(\bm{y}_i-\bm{X}_i\bm{\beta})\right\}\\
+	\pi(\bm{\beta}|\sigma^2, \bm{D},\bm{y}, \bm{X}, \bm{W}) & \propto \exp\left\{-\frac{1}{2}\sum_{i=1}^N(\bm{y}_i-\bm{X}_i\bm{\beta})^{\top}\bm{V}_i^{-1}(\bm{y}_i-\bm{X}_i\bm{\beta})\right\}\\
 	&\times \exp\left\{-\frac{1}{2}(\bm{\beta}-\bm{\beta}_0)^{\top}\bm{B}_0^{-1}(\bm{\beta}-\bm{\beta}_0)\right\}.
 \end{align*} 
 This implies that (see Exercise 1)  
@@ -69,14 +69,15 @@ This is the kernel of a multivariate normal distribution with mean $\bm{b}_{ni}$
 \end{equation*} 
 Let's see the posterior distribution of $\sigma^2$,
 \begin{align*}
-	\pi(\sigma^2|\bm{\beta},\bm{b}_i,\bm{D},\bm{y}, \bm{X}, \bm{W})&\propto (\sigma^2)^{-\frac{\sum_{i=1}^N T_i}{2}}\exp\left\{-\frac{1}{2\sigma^2}\sum_{i=1}^N(\bm{y}_i-\bm{X}_i\bm{\beta}-\bm{W}_i\bm{b}_i)^{\top}(\bm{y}_i-\bm{X}_i\bm{\beta}-\bm{W}_i\bm{b}_i)\right\}\\
+	\pi(\sigma^2|\bm{\beta},\bm{b},\bm{y}, \bm{X}, \bm{W})&\propto (\sigma^2)^{-\frac{\sum_{i=1}^N T_i}{2}}\exp\left\{-\frac{1}{2\sigma^2}\sum_{i=1}^N(\bm{y}_i-\bm{X}_i\bm{\beta}-\bm{W}_i\bm{b}_i)^{\top}(\bm{y}_i-\bm{X}_i\bm{\beta}-\bm{W}_i\bm{b}_i)\right\}\\
 	&\times (\sigma^2)^{-\alpha_0-1}\exp\left\{-\frac{\delta_0}{\sigma^2}\right\}\\
 	&=(\sigma^2)^{-\frac{\sum_{i=1}^N T_i}{2}-\alpha_0-1}\\
-	&\times \exp\left\{-\frac{1}{\sigma^2}\left(\delta_0+\sum_{i=1}^N\frac{(\bm{y}_i-\bm{X}_i\bm{\beta}-\bm{W}_i\bm{b}_i)^{\top}(\bm{y}_i-\bm{X}_i\bm{\beta}-\bm{W}_i\bm{b}_i)}{2}\right)\right\}. 
+	&\times \exp\left\{-\frac{1}{\sigma^2}\left(\delta_0+\sum_{i=1}^N\frac{(\bm{y}_i-\bm{X}_i\bm{\beta}-\bm{W}_i\bm{b}_i)^{\top}(\bm{y}_i-\bm{X}_i\bm{\beta}-\bm{W}_i\bm{b}_i)}{2}\right)\right\}, 
 \end{align*}
+where $\bm{b}=[\bm{b}_1^{\top}, \bm{b}_2^{\top},\dots, \bm{b}_N^{\top}]^{\top}$.
 Thus,
 \begin{equation*}
-	\sigma^2| \bm{\beta}, \bm{D}, \bm{b}, \bm{y}, \bm{X}, \bm{W} \sim {I}{G}(\alpha_n, \delta_n),
+	\sigma^2| \bm{\beta}, \bm{b}, \bm{y}, \bm{X}, \bm{W} \sim {I}{G}(\alpha_n, \delta_n),
 \end{equation*}
 where $\alpha_n=\alpha_0+\frac{1}{2}\sum_{i=1}^N T_i$ and $\delta_n=\delta_0+\frac{1}{2}\sum_{i=1}^N(\bm{y}_i-\bm{X}_i\bm{\beta}-\bm{W}_i\bm{b}_i)^{\top}(\bm{y}_i-\bm{X}_i\bm{\beta}-\bm{W}_i\bm{b}_i)$.
 
@@ -124,7 +125,7 @@ Algorithm \ref{alg:HLN} shows how to perform inference in hierarchical longitudi
 	\end{algorithmic} 
 \end{algorithm}
 
-We ask in Exercise 2 to run this application in our GUI using 10000 MCMC iterations plus a burn-in equal to 5000 iterations, and a thinning parameter equal to 1. We also used the default values for the hyperparameters of the prior distributions, that is, $\bm{\beta}_0=\bm{0}_5$, $\bm{B}_0=\bm{I}_5$, $\alpha_0=\delta_0=0.001$, $d_0=5$ and $\bm{D}_0=\bm{I}_1$. It seems that all posterior draws come from stationary distributions, as suggested by the diagnostics and posterior plots (see Exercise 2).
+We ask in Exercise 2 to run this application in our GUI using 10000 MCMC iterations plus a burn-in equal to 5000 iterations, and a thinning parameter equal to 1. We also used the default values for the hyperparameters of the prior distributions, that is, $\bm{\beta}_0=\bm{0}_5$, $\bm{B}_0=\bm{I}_5$, $\alpha_0=\delta_0=0.001$, $d_0=1$ and $\bm{D}_0=\bm{I}_1$. It seems that all posterior draws come from stationary distributions, as suggested by the diagnostics and posterior plots (see Exercise 2).
 
 The following code uses the command \textit{MCMChregress} from the package \textit{MCMCpack} to run this application. This command is also used by our GUI to perform inference in hierarchical longitudinal normal models.
 
@@ -135,14 +136,17 @@ We can see that the 95\% symmetric credible intervals for public capital, privat
 	\textit{R code. The relationship between productivity and public investment, MCMChregress command}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-rm(list = ls()); set.seed(12345)
+rm(list = ls())
+set.seed(12345)
 DataGSP <- read.csv("DataApplications/8PublicCap.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
 attach(DataGSP)
 K1 <- 5; K2 <- 1
 b0 <- rep(0, K1); B0 <- diag(K1)
 r0 <- 5; R0 <- diag(K2)
 a0 <- 0.001; d0 <- 0.001
-Resultshreg <- MCMCpack::MCMChregress(fixed = log(gsp)~log(pcap)+log(pc)+log(emp)+unemp, random = ~1, group = "id", data = DataGSP, burnin = 5000, mcmc = 10000, thin = 1, r = r0, R = R0, nu = a0, delta = d0)
+Resultshreg <- MCMCpack::MCMChregress(fixed = log(gsp)~log(pcap)+log(pc)+log(emp)+unemp, random = ~1, 
+group = "id", data = DataGSP, burnin = 5000, mcmc = 10000, thin = 1,
+r = r0, R = R0, nu = a0, delta = d0)
 Betas <- Resultshreg[["mcmc"]][,1:K1]
 Sigma2RanEff <- Resultshreg[["mcmc"]][,54]
 Sigma2 <- Resultshreg[["mcmc"]][,55]
@@ -190,9 +194,8 @@ There are many extensions of this model, for instance, \cite{Chib1999} propose t
 	\begin{itemize}
 		\item Perform inference of this example using our GUI.
 		\item Program from scratch a Gibbs sampling algorithm to perform this application.
-		\item Perform inference in this example assuming that $\mu_{it}|\tau_{it}\sim N(0, \sigma^2/\tau_{it})$ and $\tau_{it}\sim G(v/2,v/2)$ setting $v=5$ 
+		\item Perform inference in this example assuming that $\mu_{it}|\tau_{it}\sim N(0, \sigma^2/\tau_{it})$ and $\tau_{it}\sim G(v/2,v/2)$ setting $v=5$. 
 	\end{itemize}
-
   
 	\item Given the simulation setting of Section \ref{sec91}, assume that $\bm{b}_i$ dependents on $\bm{z}_i=[1 \ x_{it1} \ x_{it2}]^{\top}$ such that $\bm{b}_i\sim N(\bm{Z}_i\bm{\gamma},\bm{D})$ where $\bm{Z}_i=\bm{I}_{K_2}\otimes \bm{z}_i^{\top}$ and $\bm{\gamma}\sim N(\bm{0}_3,\bm{I}_3)$. Write a code to perform inference in this setting, and compare the posterior estimates with the population parameters.
 	
