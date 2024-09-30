@@ -26,7 +26,7 @@ coda::heidel.diag(Betas)
 rm(list = ls())
 set.seed(12345)
 NT <- 1000
-N <- 25
+N <- 50
 id <- c(1:N, sample(1:N, NT - N,replace=TRUE))
 table(id)
 x1 <- rnorm(NT); x2 <- rnorm(NT); x3 <- rnorm(NT) 
@@ -36,7 +36,7 @@ w1 <- rnorm(NT)
 W <- cbind(1, w1)
 K2 <- dim(W)[2]
 B <- c(0.5, 0.4, 0.6, -0.6)
-D <- c(0.5, 0.6)
+D <- c(0.7, 0.6)
 b1 <- rnorm(N, 0, sd = D[1]^0.5)
 b2 <- rnorm(N, 0, sd = D[2]^0.5)
 b <- cbind(b1, b2)
@@ -50,15 +50,15 @@ for(i in 1:NT){
 Data <- as.data.frame(cbind(y, x1, x2, x3, w1, id))
 mcmc <- 5000; burnin <- 1000; thin <- 1; tot <- mcmc + burnin
 b0 <- rep(0, K1); B0 <- diag(K1); B0i <- solve(B0) 
-r0 <- 5; R0 <- diag(K2); a0 <- 0.001; d0 <- 0.001
+r0 <- 2; R0 <- diag(K2); a0 <- 0.001; d0 <- 0.001
 # MCMChregress
 Resultshreg <- MCMCpack::MCMChregress(fixed = y~x1 + x2 + x3, random = ~w1, group="id",
                       data = Data, burnin = burnin, mcmc = mcmc, thin = thin, 
                       mubeta = b0, Vbeta = B0,
                       r = r0, R = R0, nu = a0, delta = d0)
 Betas <- Resultshreg[["mcmc"]][,1:K1]
-Sigma2RanEff <- Resultshreg[["mcmc"]][,c(55, 58)]
-Sigma2 <- Resultshreg[["mcmc"]][,59]
+Sigma2RanEff <- Resultshreg[["mcmc"]][,c(2*N+K1+1, 2*N+K1+K2^2)]
+Sigma2 <- Resultshreg[["mcmc"]][,2*N+K1+K2^2+1]
 summary(Betas)
 summary(Sigma2RanEff)
 summary(Sigma2)
@@ -104,7 +104,7 @@ Postb <- function(Beta, sig2, D){
   return(bis)
 }
 PostSig2 <- function(Beta, D, bs){
-  an <- a0 + 0.5*N*T
+  an <- a0 + 0.5*NT
   ete <- 0
   for(i in 1:N){
     ids <- which(id == i)
@@ -115,8 +115,8 @@ PostSig2 <- function(Beta, D, bs){
     etei <- t(ei)%*%ei
     ete <- ete + etei
   }
-  dn <- 1/d0 + 0.5*ete 
-  sig2 <- invgamma::rinvgamma(1, shape = an, scale = dn)
+  dn <- d0 + 0.5*ete 
+  sig2 <- invgamma::rinvgamma(1, shape = an, rate = dn)
   return(sig2)
 }
 PostD <- function(bs){
@@ -127,7 +127,10 @@ PostD <- function(bs){
     btbi <- bsi%*%t(bsi)
     btb <- btb + btbi
   }
-  Rn <- R0 + btb
+  Rn <- d0*R0 + btb
+  # See the density of the inverse Wishart in the rinvwishart help and compare to our math.
+  # This explains why nu is equal to rn + 2*K2 + 2*1 
+  # Sigma <- LaplacesDemon::rinvwishart(nu = rn + 2*K2 + 2*1, S = Rn)
   Sigma <- LaplacesDemon::rinvwishart(nu = rn, S = Rn)
   return(Sigma)
 }
@@ -135,11 +138,11 @@ PostBetas <- matrix(0, tot, K1)
 PostDs <- matrix(0, tot, K2*(K2+1)/2)
 PostSig2s <- rep(0, tot)
 Postbs <- array(0, c(N, K2, tot))
-Beta <- rep(1, K1)
-D <- diag(K2)
 RegLS <- lm(y ~ X - 1)
 SumLS <- summary(RegLS)
-sig2 <- SumLS[["sigma"]]^0.5
+Beta <- SumLS[["coefficients"]][,1]
+sig2 <- SumLS[["sigma"]]^2
+D <- diag(K2)
 pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
 for(s in 1:tot){
   bs <- Postb(Beta = Beta, sig2 = sig2, D = D)

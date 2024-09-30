@@ -69,8 +69,8 @@ PostSig2 <- function(Beta, D, bs){
     etei <- t(ei)%*%ei
     ete <- ete + etei
   }
-  dn <- 1/d0 + 0.5*ete 
-  sig2 <- invgamma::rinvgamma(1, shape = an, scale = dn)
+  dn <- d0 + 0.5*ete 
+  sig2 <- invgamma::rinvgamma(1, shape = an, rate = dn)
   return(sig2)
 }
 PostD <- function(bs){
@@ -81,7 +81,7 @@ PostD <- function(bs){
     btbi <- bsi%*%t(bsi)
     btb <- btb + btbi
   }
-  Rn <- R0 + btb
+  Rn <- r0*R0 + btb
   Sigma <- LaplacesDemon::rinvwishart(nu = rn, S = Rn)
   return(Sigma)
 }
@@ -89,17 +89,19 @@ PostBetas <- matrix(0, tot, K1)
 PostDs <- matrix(0, tot, K2*(K2+1)/2)
 PostSig2s <- rep(0, tot)
 Postbs <- matrix(0, tot, N)
-Beta <- rep(1, K1)
-D <- diag(K2)
 RegLS <- lm(log(gsp)~log(pcap)+log(pc)+log(emp)+unemp)
 SumLS <- summary(RegLS)
-sig2 <- SumLS[["sigma"]]^0.5
+Beta <- SumLS[["coefficients"]][,1]
+sig2 <- SumLS[["sigma"]]^2
+D <- diag(K2)
 pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
 for(s in 1:tot){
   bs <- Postb(Beta = Beta, sig2 = sig2, D = D)
   D <- PostD(bs = bs)
+  # D <- matrix(0.1,1,1)
   Beta <- PostBeta(sig2 = sig2, D = D)
   sig2 <- PostSig2(Beta = Beta, bs = bs, D = D)
+  # sig2 <- 1.453e-03
   PostBetas[s,] <- Beta
   PostDs[s,] <- matrixcalc::vech(D)
   PostSig2s[s] <- sig2
