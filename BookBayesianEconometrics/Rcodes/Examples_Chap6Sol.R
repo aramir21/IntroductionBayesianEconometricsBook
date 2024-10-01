@@ -13,8 +13,8 @@ X <- cbind(1, Perf, Age, Age2, NatTeam, Goals, Exp, Exp2)
 k <- dim(X)[2]
 N <- dim(X)[1]
 # Hyperparameters
-d0 <- 0.001/2
-a0 <- 0.001/2
+d0 <- 0.001
+a0 <- 0.001
 b0 <- rep(0, k)
 c0 <- 1000
 B0 <- c0*diag(k)
@@ -43,20 +43,24 @@ PostBeta <- function(sig2, tau){
 }
 PostTau <- function(sig2, Beta, i){
   v2n <- v + sig2^(-1)*(y[i]-X[i,]%*%Beta)^2
-  taui <- rgamma(1, v1n, v2n)
+  taui <- rgamma(1, v1n/2, v2n/2)
   return(taui)
 }
 PostBetas <- matrix(0, mcmc+burnin, k)
 PostSigma2 <- rep(0, mcmc+burnin)
 Beta <- rep(0, k)
 tau <- rep(1, N)
+# create progress bar in case that you want to see iterations progress
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
 for(s in 1:tot){
   sig2 <- PostSig2(Beta = Beta, tau = tau)
   PostSigma2[s] <- sig2
   Beta <- PostBeta(sig2 = sig2, tau = tau)
   PostBetas[s,] <- Beta
   tau <- sapply(1:N, function(i){PostTau(sig2 = sig2, Beta = Beta, i)})
+  setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0), "% done"))
 }
+close(pb)
 keep <- seq((burnin+1), tot, thin)
 PosteriorBetas <- PostBetas[keep,]
 colnames(PosteriorBetas) <- c("Intercept", "Perf", "Age", "Age2", "NatTeam", "Goals", "Exp", "Exp2")
@@ -108,7 +112,6 @@ for(s in 1:tot){
   Beta <- PostBeta(Yl = Yl)
   PostBetas[s,] <- Beta
   setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0), "% done"))
-
 }
 close(pb)
 keep <- seq((burnin+1), tot, thin)

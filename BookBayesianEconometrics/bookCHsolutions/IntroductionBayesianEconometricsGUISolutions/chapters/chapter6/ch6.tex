@@ -57,7 +57,7 @@ We can see that (1) is the kernel of a multivariate normal distribution with mea
 
 We see that the posterior distributions are from the same family as the prior distributions.
 
-\item Show that the posterior conditional distributions of the Gaussian linear model with heteroskedasticity assuming independent priors $\pi(\bm{\beta},\sigma^2,\bm{\tau})=\pi(\bm{\beta})\times\pi(\sigma^2)\times\prod_{i=1}^N\pi(\tau_i)$, where $\bm{\beta} \sim N(\bm{\beta}_0, {\bf{B}}_0)$, $\sigma^2 \sim IG(\alpha_0/2, \delta_0/2)$ and $\tau_i\sim G(v/2,v/2)$ are $\bm{\beta}|\sigma^2,\bm{\tau},{\bf{y}},{\bf{X}}\sim N(\bm{\beta}_n,{\bf{B}}_n)$, $\sigma^2|\bm{\beta},\bm{\tau},{\bf{y}},{\bf{X}}\sim IG(\alpha_n,\delta_n)$ and $\tau_i|\bm{\beta},\sigma^2,{\bf{y}},{\bf{X}}\sim G(v_{1n},v_{2in})$, where $\bm{\tau}=[\tau_1,\dots,\tau_n]^{\top}$, ${\bf{B}}_n=({\bf{B}}_0^{-1}+\sigma^{-2}{{\bf{X}}}^{\top}\Psi{{\bf{X}}})^{-1}$, $\bm{\beta}_n={\bf{B}}_n({\bf{B}}_0^{-1}\bm{\beta}_0+\sigma^{-2}{\bf{X}}^{\top}\Psi{\bf{y}})$, $\alpha_n=\alpha_0+N$, $\delta_n=\delta_0+({\bf{y}}-{\bf{X}}\bm{\beta})^{\top}\Psi({\bf{y}}-{\bf{X}}\bm{\beta})$, $v_{1n}=v+1$, $v_{2in}=v+\sigma^{-2}(y_i-{\bf{x}}_i^{\top}\bm{\beta})^2$, and $\Psi=\text{diagonal}\left\{\tau_i\right\}$.
+\item Show that the posterior conditional distributions of the Gaussian linear model with heteroskedasticity assuming independent priors $\pi(\bm{\beta},\sigma^2,\bm{\tau})=\pi(\bm{\beta})\times\pi(\sigma^2)\times\prod_{i=1}^N\pi(\tau_i)$, where $\bm{\beta} \sim N(\bm{\beta}_0, {\bf{B}}_0)$, $\sigma^2 \sim IG(\alpha_0/2, \delta_0/2)$ and $\tau_i\sim G(v/2,v/2)$ are $\bm{\beta}|\sigma^2,\bm{\tau},{\bf{y}},{\bf{X}}\sim N(\bm{\beta}_n,{\bf{B}}_n)$, $\sigma^2|\bm{\beta},\bm{\tau},{\bf{y}},{\bf{X}}\sim IG(\alpha_n/2,\delta_n/2)$ and $\tau_i|\bm{\beta},\sigma^2,{\bf{y}},{\bf{X}}\sim G(v_{1n}/2,v_{2in}/2)$, where $\bm{\tau}=[\tau_1,\dots,\tau_n]^{\top}$, ${\bf{B}}_n=({\bf{B}}_0^{-1}+\sigma^{-2}{{\bf{X}}}^{\top}\Psi{{\bf{X}}})^{-1}$, $\bm{\beta}_n={\bf{B}}_n({\bf{B}}_0^{-1}\bm{\beta}_0+\sigma^{-2}{\bf{X}}^{\top}\Psi{\bf{y}})$, $\alpha_n=\alpha_0+N$, $\delta_n=\delta_0+({\bf{y}}-{\bf{X}}\bm{\beta})^{\top}\Psi({\bf{y}}-{\bf{X}}\bm{\beta})$, $v_{1n}=v+1$, $v_{2in}=v+\sigma^{-2}(y_i-{\bf{x}}_i^{\top}\bm{\beta})^2$, and $\Psi=\text{diagonal}\left\{\tau_i\right\}$.
 
 \textbf{Answer}
 
@@ -75,13 +75,15 @@ Thus, the conditional posterior distribution of $\sigma^2|\bm{\beta}, \bm{\tau},
 	\pi(\sigma^2|\bm{\beta}, \bm{\tau}, \bf{y}, {\bf{X}}) & \propto (\sigma^2)^{-\frac{N+\alpha_0}{2}}\exp\left\{-\frac{1}{2\sigma^2}({\bf{y}}-{\bf{X}}\bm{\beta})^{\top}\Psi({\bf{y}}-{\bf{X}}\bm{\beta})+\delta_0\right\}.
 \end{align*}
 
-This is the kernel of an inverse-gamma distribution with shape parameter $\alpha_n$ and rate parameter $\delta_n$.
+This is the kernel of an inverse-gamma distribution with shape parameter $\alpha_n/2$ and rate parameter $\delta_n/2$.
 
 The conditional posterior distribution of $\tau_i|\bm{\beta}, \sigma^2, \bf{y}, {\bf{X}}$ is
 \begin{align*}
 	\pi(\tau_i|\bm{\beta}, \sigma^2,\bf{y}, {\bf{X}}) & \propto
-	\tau_i^{(v+1)/2-1}\exp\left\{-\frac{\tau_i}{2}[\sigma^{-2}({\bf{y}}_i-{\bf{x}}_i^{\top}\bm{\beta})^2+v]\right\}.
+	\tau_i^{(v+1)/2-1}\exp\left\{-\frac{\tau_i}{2}[\sigma^{-2}(y_i-{\bf{x}}_i^{\top}\bm{\beta})^2+v]\right\}.
 \end{align*}
+
+This is the kernel of a gamma distribution with parameter $(v+1)/2$ and $(\sigma^{-2}(y_i-{\bf{x}}_i^{\top}\bm{\beta})^2+v)/2$. 
 
 The conditional posterior distribution of $\bm{\beta}|\sigma^2, \bm{\tau}, \bf{y}, {\bf{X}}$ is given by
 
@@ -118,8 +120,8 @@ X <- cbind(1, Perf, Age, Age2, NatTeam, Goals, Exp, Exp2)
 k <- dim(X)[2]
 N <- dim(X)[1]
 # Hyperparameters
-d0 <- 0.001/2
-a0 <- 0.001/2
+d0 <- 0.001
+a0 <- 0.001
 b0 <- rep(0, k)
 c0 <- 1000
 B0 <- c0*diag(k)
@@ -148,7 +150,7 @@ PostBeta <- function(sig2, tau){
 }
 PostTau <- function(sig2, Beta, i){
 	v2n <- v + sig2^(-1)*(y[i]-X[i,]%*%Beta)^2
-	taui <- rgamma(1, v1n, v2n)
+	taui <- rgamma(1, v1n/2, v2n/2)
 	return(taui)
 }			
 \end{lstlisting}
@@ -164,13 +166,17 @@ PostBetas <- matrix(0, mcmc+burnin, k)
 PostSigma2 <- rep(0, mcmc+burnin)
 Beta <- rep(0, k)
 tau <- rep(1, N)
+# create progress bar in case that you want to see iterations progress
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
 for(s in 1:tot){
 	sig2 <- PostSig2(Beta = Beta, tau = tau)
 	PostSigma2[s] <- sig2
 	Beta <- PostBeta(sig2 = sig2, tau = tau)
 	PostBetas[s,] <- Beta
 	tau <- sapply(1:N, function(i){PostTau(sig2 = sig2, Beta = Beta, i)})
+	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0), "% done"))
 }
+close(pb)
 keep <- seq((burnin+1), tot, thin)
 PosteriorBetas <- PostBetas[keep,]
 colnames(PosteriorBetas) <- c("Intercept", "Perf", "Age", "Age2", "NatTeam", "Goals", "Exp", "Exp2")
@@ -185,14 +191,14 @@ Sample size per chain = 5000
 1. Empirical mean and standard deviation for each variable,
 plus standard error of the mean:
 Mean             SD       Naive SE Time-series SE 
-1.246823       0.235881       0.003336       0.004010 
+1.256091       0.254974       0.003606       0.004579 
 2. Quantiles for each variable:
-2.5%   25%   50%   75% 97.5% 
-0.815 1.086 1.238 1.395 1.744 					
+2.5%    25%    50%    75%  97.5% 
+0.8078 1.0746 1.2367 1.4189 1.7959  					
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
-We see in this application that the value of a top soccer player in Europe increases 124\% ($\exp(0.80)-1)$) on average when he has played in the national team, the credible interval at 95\% is (81\%, 174\%). These values are not very different from the application assuming homoscedasticity in the book.
+We see in this application that the value of a top soccer player in Europe increases 124\% ($\exp(0.80)-1)$) on average when he has played in the national team, the credible interval at 95\% is (81\%, 180\%). These values are not very different from the application assuming homoscedasticity in the book.
 
 
 	\item \textbf{Example: Determinants of hospitalization continues}

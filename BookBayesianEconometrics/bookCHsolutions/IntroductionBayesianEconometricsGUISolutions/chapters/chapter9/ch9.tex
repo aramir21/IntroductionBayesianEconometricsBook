@@ -3,7 +3,7 @@
 \section{Solutions of Exercises}\label{sec91}
 \begin{enumerate}[leftmargin=*]
 
-	\item Show that the posterior distribution of $\bm{\beta}|\sigma^2,\bm{D}$ is $N(\bm{\beta}_n,\bm{B}_n)$, where $\bm{B}_n = (\bm{B}_0^{-1} +\sum_{i=1}^N \bm{X}_i^{\top}\bm{V}_i^{-1}\bm{X}_i)^{-1}$, $\bm{\beta}_n= \bm{B}_n(\bm{B}_0^{-1}\bm{\beta}_0 + \sum_{i=1}^N\bm{X}_i^{\top}\bm{V}_i^{-1}\bm{y}_i)$.
+	\item Show that the posterior distribution of $\bm{\beta}|\sigma^2,\bm{D}$ is $N(\bm{\beta}_n,\bm{B}_n)$, where $\bm{B}_n = (\bm{B}_0^{-1} +\sum_{i=1}^N \bm{X}_i^{\top}\bm{V}_i^{-1}\bm{X}_i)^{-1}$ and $\bm{\beta}_n= \bm{B}_n(\bm{B}_0^{-1}\bm{\beta}_0 + \sum_{i=1}^N\bm{X}_i^{\top}\bm{V}_i^{-1}\bm{y}_i)$.
 	
 	\textbf{Answer}
 
@@ -30,7 +30,7 @@ This is the kernel of a multivariate random variable with mean $\bm{\beta}_n$ an
 \begin{itemize}
 	\item Perform inference of this example using our GUI.
 	\item Program from scratch a Gibbs sampling algorithm to perform this application.
-	\item Perform inference in this example assuming that $\mu_{it}|\tau_{it}\sim N(0, \sigma^2/\tau_{it})$ and $\tau_{it}\sim G(v/2,v/2)$ setting $v=5$. 
+	\item Perform inference in this example assuming that there is heteroskedasticity, $\mu_{it}|\tau_{it}\sim N(0, \sigma^2/\tau_{it})$ and $\tau_{it}\sim G(v/2,v/2)$ setting $v=5$. 
 \end{itemize}
 
 \textbf{Answer}
@@ -73,7 +73,8 @@ PostBeta <- function(sig2, D){
 	bn <- Bn%*%(B0i%*%b0 + XVy)
 	Beta <- MASS::mvrnorm(1, bn, Bn)
 	return(Beta)
-}\end{lstlisting}
+}
+\end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
 
@@ -136,15 +137,11 @@ PostD <- function(bs){
 	\textit{R code. The relationship between productivity and public investment, programming from scratch the Gibbs sampler}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-PostBetas <- matrix(0, tot, K1)
-PostDs <- matrix(0, tot, K2*(K2+1)/2)
-PostSig2s <- rep(0, tot)
-Postbs <- array(0, c(N, K2, tot))
-RegLS <- lm(y ~ X - 1)
-SumLS <- summary(RegLS)
+PostBetas <- matrix(0, tot, K1); PostDs <- matrix(0, tot, K2*(K2+1)/2)
+PostSig2s <- rep(0, tot); Postbs <- array(0, c(N, K2, tot))
+RegLS <- lm(y ~ X - 1); SumLS <- summary(RegLS)
 Beta <- SumLS[["coefficients"]][,1]
-sig2 <- SumLS[["sigma"]]^2
-D <- diag(K2)
+sig2 <- SumLS[["sigma"]]^2; D <- diag(K2)
 pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
 for(s in 1:tot){
 	bs <- Postb(Beta = Beta, sig2 = sig2, D = D)
@@ -160,11 +157,16 @@ for(s in 1:tot){
 }
 close(pb)
 keep <- seq((burnin+1), tot, thin)
-Bs <- PostBetas[keep,]
-Ds <- PostDs[keep,]
-bs <- Postbs[, , keep]
-sig2s <- PostSig2s[keep]
+Bs <- PostBetas[keep,]; Ds <- PostDs[keep,]
+bs <- Postbs[, , keep]; sig2s <- PostSig2s[keep]
 summary(coda::mcmc(Bs))
+Quantiles for each variable:
+				2.5%       25%       50%       75%     97.5%
+var1  1.727227  1.934457  2.037411  2.138829  2.325961
+var2 -0.033664  0.001015  0.018974  0.037977  0.076626
+var3  0.274521  0.303619  0.318302  0.332881  0.363323
+var4  0.652937  0.692479  0.712605  0.730885  0.768415
+var5 -0.008724 -0.007265 -0.006548 -0.005844 -0.004508
 summary(coda::mcmc(Ds))
 summary(coda::mcmc(sig2s))
 # Convergence diagnostics
@@ -174,8 +176,197 @@ coda::heidel.diag(Bs)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
+The likelihood function in the case with heteroskedasticity is proportional to 
+	\begin{align*}
+		p(\bm{\beta},\bm{b},\sigma^2,\bm{\tau}|\bm{y}, \bm{X},\bm{W}) & \propto \prod_{i=1}^N |\sigma^2 \bm{\Psi}_i|^{-1/2}\\
+		&\times \exp\left\{-\frac{1}{2\sigma^2}(\bm{y}_i-\bm{X}_i\bm{\beta}-\bm{W}_i\bm{b}_i)^{\top}\bm{\Psi}^{-1}_i(\bm{y}_i-\bm{X}_i\bm{\beta}-\bm{W}_i\bm{b}_i)\right\},
+	\end{align*} 
+where $\bm{b}=[\bm{b}_1^{\top}, \bm{b}_2^{\top},\dots, \bm{b}_N^{\top}]^{\top}$, $\bm{\tau}=[\tau_{it}]^{\top}$ and $\bm{\Psi}_i=diag\left\{\tau_{it}^{-1}\right\}$. 
+
+Following the same procedure as in Section 9.1 of the book, and Exercise 1 of this chapter, we have that
+\begin{equation*}
+	\bm{\beta}|\sigma^2,\bm{\tau},\bm{D},\bm{y}, \bm{X}, \bm{W} \sim {N}(\bm{\beta}_n,\bm{B}_n), 
+\end{equation*}
+where $\bm{B}_n = (\bm{B}_0^{-1} +\sum_{i=1}^N \bm{X}_i^{\top}\bm{V}_i^{-1}\bm{X}_i)^{-1}$, $\bm{\beta}_n= \bm{B}_n(\bm{B}_0^{-1}\bm{\beta}_0 + \sum_{i=1}^N\bm{X}_i^{\top}\bm{V}_i^{-1}\bm{y}_i)$ and $\bm{V}_i=\sigma^2\bm{\Psi}_i+\sigma_{b}^2\bm{i}_{T_i}\bm{i}_{T_i}^{\top}$.
+\begin{equation*}
+	\bm{b}_i|\bm{\beta},\sigma^2,\bm{\tau},\bm{D},\bm{y}, \bm{X}, \bm{W} \sim {N}(\bm{b}_{ni},\bm{B}_{ni}), 
+\end{equation*} 
+where $\bm{B}_{ni}=(\sigma^{-2}\bm{W}_i^{\top}\bm{\Psi}_i^{-1}\bm{W}_i+\bm{D}^{-1})^{-1}$ and $\bm{b}_{ni}=\bm{B}_{ni}(\sigma^{-2}\bm{W}_i^{\top}\bm{\Psi}_i^{-1}(\bm{y}_i-\bm{X}_i\bm{\beta}))$.
+\begin{equation*}
+	\sigma^2| \bm{\beta}, \bm{b}, \bm{\tau}, \bm{y}, \bm{X}, \bm{W} \sim {I}{G}(\alpha_n, \delta_n),
+\end{equation*}
+where $\alpha_n=\alpha_0+\frac{1}{2}\sum_{i=1}^N T_i$ and $\delta_n=\delta_0+\frac{1}{2}\sum_{i=1}^N(\bm{y}_i-\bm{X}_i\bm{\beta}-\bm{W}_i\bm{b}_i)^{\top}\bm{\Psi}_i^{-1}(\bm{y}_i-\bm{X}_i\bm{\beta}-\bm{W}_i\bm{b}_i)$.  
+\begin{equation*}
+	\bm{D}| \bm{b} \sim {I}{W}(d_n, \bm{D}_n),
+\end{equation*}
+where $d_n=d_0+N$ and $\bm{D}_n=d_0\bm{D}_0+\sum_{i=1}^N\bm{b}_i\bm{b}_i^{\top}$.
+\begin{equation*}
+	\tau_{it}|\sigma^2, \bm{\beta}, \bm{b}, \bm{y}, \bm{X}, \bm{W} \sim {G}(v_{1n}/2, v_{2ni}/2),
+\end{equation*}
+where $v_{1n}=v+1$ and $v_{2ni}=v+\sigma^{-2}(y_{it}-\bm{x}_{it}^{\top}\bm{\beta}-\bm{w}_{it}^{\top}\bm{b}_i)^2$.
+
+The following code shows to implement this for the productivity application. The results of the \textit{fixed effects} are very similar compared to the results without taken into account heteroskedasticity. 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. The relationship between productivity and public investment, programming from scratch the Gibbs sampler with heteroskedasticity}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls())
+set.seed(12345)
+DataGSP <- read.csv("DataApplications/8PublicCap.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+attach(DataGSP)
+N <- length(unique(id))
+y <- log(gsp)
+NT <- length(y)
+X <- cbind(1, log(pcap), log(pc), log(emp), unemp)
+K1 <- dim(X)[2]
+W <- matrix(rep(1, NT), NT, 1)
+K2 <- dim(W)[2]
+mcmc <- 10000; burnin <- 5000; thin <- 1; tot <- mcmc + burnin
+b0 <- rep(0, K1); B0 <- diag(K1); B0i <- solve(B0) 
+r0 <- 5; R0 <- diag(K2); a0 <- 0.001; d0 <- 0.001; v <- 5
+# Gibbs by hand
+PostBeta <- function(sig2, D, tau){
+	XVX <- matrix(0, K1, K1)
+	XVy <- matrix(0, K1, 1)
+	for(i in 1:N){
+		ids <- which(id == i)
+		Ti <- length(ids)
+		Wi <- W[ids, ]
+		taui <- tau[ids]
+		Vi <- sig2*solve(diag(1/taui)) + Wi%*%D%*%t(Wi)
+		ViInv <- solve(Vi)
+		Xi <- X[ids, ]
+		XVXi <- t(Xi)%*%ViInv%*%Xi
+		XVX <- XVX + XVXi
+		yi <- y[ids]
+		XVyi <- t(Xi)%*%ViInv%*%yi
+		XVy <- XVy + XVyi
+	}
+	Bn <- solve(B0i + XVX)
+	bn <- Bn%*%(B0i%*%b0 + XVy)
+	Beta <- MASS::mvrnorm(1, bn, Bn)
+	return(Beta)
+}
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. The relationship between productivity and public investment, programming from scratch the Gibbs sampler with heteroskedasticity}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+Postb <- function(Beta, sig2, D, tau){
+	Di <- solve(D); 	bis <- matrix(0, N, K2)
+	for(i in 1:N){
+		ids <- which(id == i)
+		Wi <- W[ids, ]; Xi <- X[ids, ]
+		yi <- y[ids]; taui <- tau[ids]
+		Taui <- solve(diag(1/taui))
+		Wtei <- sig2^(-1)*t(Wi)%*%Taui%*%(yi - Xi%*%Beta)
+		Bni <- solve(sig2^(-1)*t(Wi)%*%Taui%*%Wi + Di)
+		bni <- Bni%*%Wtei
+		bi <- MASS::mvrnorm(1, bni, Bni)
+		bis[i, ] <- bi
+	}
+	return(bis)
+}
+PostSig2 <- function(Beta, bs, tau){
+	an <- a0 + 0.5*NT; ete <- 0
+	for(i in 1:N){
+		ids <- which(id == i)
+		Xi <- X[ids, ]; yi <- y[ids]
+		Wi <- W[ids, ]; taui <- tau[ids]
+		Taui <- solve(diag(1/taui))
+		ei <- yi - Xi%*%Beta - Wi*bs[i]
+		etei <- t(ei)%*%Taui%*%ei
+		ete <- ete + etei
+	}
+	dn <- d0 + 0.5*ete 
+	sig2 <- MCMCpack::rinvgamma(1, shape = an, scale = dn)
+	return(sig2)
+}
+PostD <- function(bs){
+	rn <- r0 + N
+	btb <- matrix(0, K2, K2)
+	for(i in 1:N){
+		bsi <- bs[i, ]
+		btbi <- bsi%*%t(bsi)
+		btb <- btb + btbi
+	}
+	Rn <- d0*R0 + btb
+	Sigma <- MCMCpack::riwish(v = rn, S = Rn)
+	return(Sigma)
+}
+PostTau <- function(sig2, Beta, bs){
+	v1n <- v + 1
+	v2n <- NULL
+	for(i in 1:NT){
+		Xi <- X[i, ]; yi <- y[i]
+		Wi <- W[i, ]; bi <- bs[id[i],]
+		v2ni <- v + sig2^(-1)*(yi - Xi%*%Beta - Wi%*%bi)^2
+		v2n <- c(v2n, v2ni)
+	}
+	tau <- rgamma(NT, shape = rep(v1n/2, NT), rate = v2n/2)
+	return(tau)
+}
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
 
 
-\item Given the simulation setting of Section 9.1 in the book, assume that $\bm{b}_i$ dependents on $\bm{z}_i=[1 \ x_{it1} \ x_{it2}]^{\top}$ such that $\bm{b}_i\sim N(\bm{Z}_i\bm{\gamma},\bm{D})$ where $\bm{Z}_i=\bm{I}_{K_2}\otimes \bm{z}_i^{\top}$ and $\bm{\gamma}\sim N(\bm{0}_3,\bm{I}_3)$. Write a code to perform inference in this setting, and compare the posterior estimates with the population parameters.
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. The relationship between productivity and public investment, programming from scratch the Gibbs sampler with heteroskedasticity}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+PostBetas <- matrix(0, tot, K1); PostDs <- matrix(0, tot, K2*(K2+1)/2)
+PostSig2s <- rep(0, tot); Postbs <- array(0, c(N, K2, tot))
+PostTaus <- matrix(0, tot, NT); RegLS <- lm(y ~ X - 1)
+SumLS <- summary(RegLS); Beta <- SumLS[["coefficients"]][,1]
+sig2 <- SumLS[["sigma"]]^2; D <- diag(K2)
+tau <- rgamma(NT, shape = v/2, rate = v/2) 
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+	bs <- Postb(Beta = Beta, sig2 = sig2, D = D, tau = tau)
+	D <- PostD(bs = bs)
+	Beta <- PostBeta(sig2 = sig2, D = D, tau = tau)
+	sig2 <- PostSig2(Beta = Beta, bs = bs, tau = tau)
+	tau <- PostTau(sig2 = sig2, Beta = Beta, bs = bs)
+	PostBetas[s,] <- Beta
+	PostDs[s,] <- matrixcalc::vech(D)
+	PostSig2s[s] <- sig2
+	Postbs[, , s] <- bs
+	PostTaus[s,] <- tau
+	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+keep <- seq((burnin+1), tot, thin)
+Bs <- PostBetas[keep,]
+Ds <- PostDs[keep,]
+bs <- Postbs[, , keep]
+sig2s <- PostSig2s[keep]
+taus <- PostTaus[keep,]
+summary(coda::mcmc(Bs))
+Quantiles for each variable:
+				2.5%       25%       50%       75%     97.5%
+var1  1.61764  1.891242  2.029985  2.165677  2.427349
+var2 -0.07088 -0.016921  0.013080  0.044681  0.107360
+var3  0.27259  0.312197  0.333106  0.353678  0.395123
+var4  0.59507  0.664490  0.699526  0.734612  0.796977
+var5 -0.01046 -0.008533 -0.007586 -0.006666 -0.004918
+summary(coda::mcmc(Ds))
+summary(coda::mcmc(sig2s))\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+
+\item Assume that $y_{it}=\beta_0+\beta_1x_{it1}+\beta_2x_{it2}+\beta_3x_{it3}+\beta_4 z_{i1}+b_i+w_{it1}b_{i1}+\mu_{it}$ where $x_{itk}\sim N(0,1)$, $k=1,2,3$, $z_{i1}\sim B(0.5)$, $w_{it1}\sim N(0,1)$, $b_i\sim N(0, 0.7^{1/2})$, $b_{i1}\sim N(0, 0.6^{1/2})$, $\mu_{it}\sim N(0, 0.1^{1/2})$ $\bm{\beta}=[0.5 \ 0.4 \ 0.6 \ -0.6 \ 0.7]^{\top}$, $i=1,2,\dots,50$, and the sample size is 2000 in an \textit{unbalanced panel structure}. In addition, we assume that $\bm{b}_i$ dependents on $\bm{z}_i=[1 \ z_{i1}]^{\top}$ such that $\bm{b}_i\sim N(\bm{Z}_i\bm{\gamma},\bm{D})$ where $\bm{Z}_i=\bm{I}_{K_2}\otimes \bm{z}_i^{\top}$, where $\bm{\gamma}=[1 \ 1 \ 1 \ 1]$. The prior for $\bm{\gamma}$ is $N(\bm{0}_4,\bm{I}_4)$. 
+	\begin{itemize}
+	\item Perform inference in this model without taking into account the dependence between $\bm{b}_i$ and $z_{i1}$, and compare the posterior estimates with the population parameters.
+	\item Perform inference in this model taking into account the dependence between $\bm{b}_i$ and $z_{i1}$, and compare the posterior estimates with the population parameters. 
+\end{itemize}
 
 \end{enumerate}
