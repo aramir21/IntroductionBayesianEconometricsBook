@@ -176,7 +176,7 @@ Quantiles for each variable:
 
 There are many extensions of this model, for instance, \cite{Chib1999} propose to introduce heteroskedasticity in this model by assuming $\mu_{it}|\tau_{it}\sim N(0, \sigma^2/\tau_{it})$, $\tau_{it}\sim G(v/2,v/2)$. We ask in Exercise 2 to perform inference in the relation between productivity and public investment example using this setting. Another potential extension is to allow dependence between $\bm{b}_i$ and some controls, let's say $\bm{z}_i$, a $K_3$-dimensional vector, and assume $\bm{b}_i\sim N(\bm{Z}_i\bm{\gamma},\bm{D})$ where $\bm{Z}_i=\bm{I}_{K_2}\otimes \bm{z}_i^{\top}$, and complete the model using a prior for $\bm{\gamma}$, $\bm{\gamma}\sim N(\bm{\gamma}_0,\bm{\Gamma}_0)$. We ask to perform a simulation using this setting in Exercise 3.\\   
 
-\textbf{Example: Simulation exercise}
+\textbf{Example: Simulation exercise of the longitudinal normal model with heteroskedasticity}
 
 Let's perform a simulation exercise to assess some potential extensions of the longitudinal hierarchical normal model. The point of departure is to assume that $y_{it}=\beta_0+\beta_1x_{it1}+\beta_2x_{it2}+\beta_3x_{it3}+b_i+w_{it1}b_{i1}+\mu_{it}$ where $x_{itk}\sim N(0,1)$, $k=1,2,3$, $w_{it1}\sim N(0,1)$, $b_i\sim N(0, 0.7^{1/2})$, $b_{i1}\sim N(0, 0.6^{1/2})$, $\mu_{it}\sim N(0, 0.1^{1/2})$ $\bm{\beta}=[0.5 \ 0.4 \ 0.6 \ -0.6]^{\top}$, $i=1,2,\dots,50$, and the sample size is 2000 in an \textit{unbalanced panel structure}. 
 
@@ -196,7 +196,7 @@ where $\alpha_n=\alpha_0+\frac{1}{2}\sum_{i=1}^N T_i$ and $\delta_n=\delta_0+\fr
 \begin{equation*}
 	\bm{D}| \bm{b} \sim {I}{W}(d_n, \bm{D}_n),
 \end{equation*}
-where $d_n=d_0+N$ and $\bm{D}_n=d_0\bm{D}_0+\sum_{i=1}^N\bm{b}_i\bm{b}_i^{\top}$.
+where $d_n=d_0+N$ and $\bm{D}_n=d_0\bm{D}_0+\sum_{i=1}^N\bm{b}_i\bm{b}_i^{\top}$. And
 \begin{equation*}
 	\tau_{it}|\sigma^2, \bm{\beta}, \bm{b}, \bm{y}, \bm{X}, \bm{W} \sim {G}(v_{1n}/2, v_{2ni}/2),
 \end{equation*}
@@ -378,6 +378,10 @@ We can see that all the 95\% credible intervals encompass the population paramet
 
 \section{Logit model}\label{sec92}
 
+We can use the framework of Section \ref{sec91} to perform inference in models where we have longitudinal/panel data of binary response variables. In particular, let $y_{it}\sim{B}(\pi_{it})$ where $logit(\pi_{it})=\log\left(\frac{\pi_{it}}{1-\pi_{it}}\right)\equiv y_{it}^*=\bm{x}_{it}^{\top}\bm{\beta}+\bm{w}_{it}^{\top}\bm{b}_i+{\mu}_{it}$. Thus, we augment the model with the latent variable $y_{it}^*$, and perform inference as in the previous section. 
+
+We can implement a Gibbs sampling algorithm to sample draws from the posterior conditional distributions of $\bm{\beta}$, $\sigma^2$, $\bm{b}_i$ and $\bm{D}$ using the equations in Section \ref{sec91} conditional on $\bm{y}_i^*$. We can use a random walk Metropolis-Hastings algorithm to sample $y_{it}^*$ where the proposal distribution is Gaussian with mean $y_{ij}^*$ and variance equal to 1, that is, $y_{ij}^{*c}$=$y_{it}^*+\epsilon_{it}$ where $\epsilon_{it}\sim\mathcal{N}(0,1)$ which implies $\pi_{it}=\frac{1}{1+e^{-y_{it}^*}}$ and $\pi_{it}^c=\frac{1}{1+e^{-y_{it}^{*c}}}$.
+
 \section{Poisson model}\label{sec93}
 
 \section{Summary}\label{sec94}
@@ -396,7 +400,10 @@ We can see that all the 95\% credible intervals encompass the population paramet
 		\item Perform inference in this example assuming that $\mu_{it}|\tau_{it}\sim N(0, \sigma^2/\tau_{it})$ and $\tau_{it}\sim G(v/2,v/2)$ setting $v=5$. 
 	\end{itemize}
   
-	\item Assume that $y_{it}=\beta_0+\beta_1x_{it1}+\beta_2x_{it2}+\beta_3x_{it3}+\beta_4 z_{i1}+b_i+w_{it1}b_{i1}+\mu_{it}$ where $x_{itk}\sim N(0,1)$, $k=1,2,3$, $z_{i1}\sim B(0.5)$, $w_{it1}\sim N(0,1)$, $b_i\sim N(0, 0.7^{1/2})$, $b_{i1}\sim N(0, 0.6^{1/2})$, $\mu_{it}\sim N(0, 0.1^{1/2})$ $\bm{\beta}=[0.5 \ 0.4 \ 0.6 \ -0.6 \ 0.7]^{\top}$, $i=1,2,\dots,50$, and the sample size is 2000 in an \textit{unbalanced panel structure}. In addition, we assume that $\bm{b}_i$ dependents on $\bm{z}_i=[1 \ z_{i1}]^{\top}$ such that $\bm{b}_i\sim N(\bm{Z}_i\bm{\gamma},\bm{D})$ where $\bm{Z}_i=\bm{I}_{K_2}\otimes \bm{z}_i^{\top}$, where $\bm{\gamma}=[1 \ 1 \ 1 \ 1]$. The prior for $\bm{\gamma}$ is $N(\bm{0}_4,\bm{I}_4)$.
+	\item \textbf{Simulation exercise of the longitudinal normal model continues}
+	
+	
+	Assume that $y_{it}=\beta_0+\beta_1x_{it1}+\beta_2x_{it2}+\beta_3x_{it3}+\beta_4 z_{i1}+b_i+w_{it1}b_{i1}+\mu_{it}$ where $x_{itk}\sim N(0,1)$, $k=1,2,3$, $z_{i1}\sim B(0.5)$, $w_{it1}\sim N(0,1)$, $b_i\sim N(0, 0.7^{1/2})$, $b_{i1}\sim N(0, 0.6^{1/2})$, $\mu_{it}\sim N(0, 0.1^{1/2})$ $\bm{\beta}=[0.5 \ 0.4 \ 0.6 \ -0.6 \ 0.7]^{\top}$, $i=1,2,\dots,50$, and the sample size is 2000 in an \textit{unbalanced panel structure}. In addition, we assume that $\bm{b}_i$ dependents on $\bm{z}_i=[1 \ z_{i1}]^{\top}$ such that $\bm{b}_i\sim N(\bm{Z}_i\bm{\gamma},\bm{D})$ where $\bm{Z}_i=\bm{I}_{K_2}\otimes \bm{z}_i^{\top}$, where $\bm{\gamma}=[1 \ 1 \ 1 \ 1]$. The prior for $\bm{\gamma}$ is $N(\bm{\gamma}_0,\bm{\Gamma}_0)$ where we set $\bm{\gamma}_0=\bm{0}_4$ and $\bm{\Gamma}_0=\bm{I}_4$. 
 	
 	\begin{itemize}
 		\item Perform inference in this model without taking into account the dependence between $\bm{b}_i$ and $z_{i1}$, and compare the posterior estimates with the population parameters.

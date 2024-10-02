@@ -199,7 +199,7 @@ where $\alpha_n=\alpha_0+\frac{1}{2}\sum_{i=1}^N T_i$ and $\delta_n=\delta_0+\fr
 \begin{equation*}
 	\bm{D}| \bm{b} \sim {I}{W}(d_n, \bm{D}_n),
 \end{equation*}
-where $d_n=d_0+N$ and $\bm{D}_n=d_0\bm{D}_0+\sum_{i=1}^N\bm{b}_i\bm{b}_i^{\top}$.
+where $d_n=d_0+N$ and $\bm{D}_n=d_0\bm{D}_0+\sum_{i=1}^N\bm{b}_i\bm{b}_i^{\top}$. And
 \begin{equation*}
 	\tau_{it}|\sigma^2, \bm{\beta}, \bm{b}, \bm{y}, \bm{X}, \bm{W} \sim {G}(v_{1n}/2, v_{2ni}/2),
 \end{equation*}
@@ -363,10 +363,268 @@ summary(coda::mcmc(sig2s))\end{lstlisting}
 \end{tcolorbox}
 
 
-\item Assume that $y_{it}=\beta_0+\beta_1x_{it1}+\beta_2x_{it2}+\beta_3x_{it3}+\beta_4 z_{i1}+b_i+w_{it1}b_{i1}+\mu_{it}$ where $x_{itk}\sim N(0,1)$, $k=1,2,3$, $z_{i1}\sim B(0.5)$, $w_{it1}\sim N(0,1)$, $b_i\sim N(0, 0.7^{1/2})$, $b_{i1}\sim N(0, 0.6^{1/2})$, $\mu_{it}\sim N(0, 0.1^{1/2})$ $\bm{\beta}=[0.5 \ 0.4 \ 0.6 \ -0.6 \ 0.7]^{\top}$, $i=1,2,\dots,50$, and the sample size is 2000 in an \textit{unbalanced panel structure}. In addition, we assume that $\bm{b}_i$ dependents on $\bm{z}_i=[1 \ z_{i1}]^{\top}$ such that $\bm{b}_i\sim N(\bm{Z}_i\bm{\gamma},\bm{D})$ where $\bm{Z}_i=\bm{I}_{K_2}\otimes \bm{z}_i^{\top}$, where $\bm{\gamma}=[1 \ 1 \ 1 \ 1]$. The prior for $\bm{\gamma}$ is $N(\bm{0}_4,\bm{I}_4)$. 
+\item \textbf{Simulation exercise of the longitudinal normal model continues}
+
+Assume that $y_{it}=\beta_0+\beta_1x_{it1}+\beta_2x_{it2}+\beta_3x_{it3}+\beta_4 z_{i1}+b_i+w_{it1}b_{i1}+\mu_{it}$ where $x_{itk}\sim N(0,1)$, $k=1,2,3$, $z_{i1}\sim B(0.5)$, $w_{it1}\sim N(0,1)$, $b_i\sim N(0, 0.7^{1/2})$, $b_{i1}\sim N(0, 0.6^{1/2})$, $\mu_{it}\sim N(0, 0.1^{1/2})$ $\bm{\beta}=[0.5 \ 0.4 \ 0.6 \ -0.6 \ 0.7]^{\top}$, $i=1,2,\dots,50$, and the sample size is 2000 in an \textit{unbalanced panel structure}. In addition, we assume that $\bm{b}_i$ dependents on $\bm{z}_i=[1 \ z_{i1}]^{\top}$ such that $\bm{b}_i\sim N(\bm{Z}_i\bm{\gamma},\bm{D})$ where $\bm{Z}_i=\bm{I}_{K_2}\otimes \bm{z}_i^{\top}$, and $\bm{\gamma}=[1 \ 1 \ 1 \ 1]$. The prior for $\bm{\gamma}$ is $N(\bm{\gamma}_0,\bm{\Gamma}_0)$ where we set $\bm{\gamma}_0=\bm{0}_4$ and $\bm{\Gamma}_0=\bm{I}_4$. 
 	\begin{itemize}
 	\item Perform inference in this model without taking into account the dependence between $\bm{b}_i$ and $z_{i1}$, and compare the posterior estimates with the population parameters.
 	\item Perform inference in this model taking into account the dependence between $\bm{b}_i$ and $z_{i1}$, and compare the posterior estimates with the population parameters. 
 \end{itemize}
+
+\textbf{Answer}
+
+Following the same procedure as in Section 9.1 of the book, and Exercise 1 of this chapter, we have that
+\begin{equation*}
+	\bm{\beta}|\sigma^2,\bm{\gamma},\bm{D},\bm{y}, \bm{X}, \bm{W}, \bm{Z} \sim {N}(\bm{\beta}_n,\bm{B}_n), 
+\end{equation*}
+where $\bm{B}_n = (\bm{B}_0^{-1} +\sum_{i=1}^N \bm{X}_i^{\top}\bm{V}_i^{-1}\bm{X}_i)^{-1}$, $\bm{\beta}_n= \bm{B}_n(\bm{B}_0^{-1}\bm{\beta}_0 + \sum_{i=1}^N\bm{X}_i^{\top}\bm{V}_i^{-1}(\bm{y}_i-\bm{W}_i\bm{Z}_i\bm{\gamma}))$ and $\bm{V}_i=\sigma^2\bm{I}_{T_i}+\sigma_{b}^2\bm{i}_{T_i}\bm{i}_{T_i}^{\top}$.
+\begin{equation*}
+	\bm{b}_i|\bm{\beta},\sigma^2,\bm{\gamma},\bm{D},\bm{y}, \bm{X}, \bm{W}, \bm{Z} \sim {N}(\bm{b}_{ni},\bm{B}_{ni}), 
+\end{equation*} 
+where $\bm{B}_{ni}=(\sigma^{-2}\bm{W}_i^{\top}\bm{W}_i+\bm{D}^{-1})^{-1}$ and $\bm{b}_{ni}=\bm{B}_{ni}(\sigma^{-2}\bm{W}_i^{\top}(\bm{y}_i-\bm{X}_i\bm{\beta})+\bm{D}^{-1}\bm{Z}_i\bm{\gamma})$.
+\begin{equation*}
+	\sigma^2| \bm{\beta}, \bm{b}, \bm{\tau}, \bm{y}, \bm{X}, \bm{W} \sim {I}{G}(\alpha_n, \delta_n),
+\end{equation*}
+where $\alpha_n=\alpha_0+\frac{1}{2}\sum_{i=1}^N T_i$ and $\delta_n=\delta_0+\frac{1}{2}\sum_{i=1}^N(\bm{y}_i-\bm{X}_i\bm{\beta}-\bm{W}_i\bm{b}_i)^{\top}(\bm{y}_i-\bm{X}_i\bm{\beta}-\bm{W}_i\bm{b}_i)$.  
+\begin{equation*}
+	\bm{D}| \bm{b}, \bm{\gamma}, \bm{Z} \sim {I}{W}(d_n, \bm{D}_n),
+\end{equation*}
+where $d_n=d_0+N$ and $\bm{D}_n=d_0\bm{D}_0+\sum_{i=1}^N(\bm{b}_i-\bm{Z}_i\bm{\gamma})(\bm{b}_i-\bm{Z}_i\bm{\gamma})^{\top}$. And
+\begin{equation*}
+	\bm{\gamma}|\bm{b}, \bm{D}, \bm{Z}\sim {N}(\bm{\gamma}_n,\bm{\Gamma}_n),
+\end{equation*}
+where $\bm{\Gamma}_n=(\sum_{i=1}^N \bm{Z}_i^{\top}\bm{D}^{-1}\bm{Z}_i+\bm{\Gamma}_0^{-1})^{-1}$ and $\bm{\gamma}_n=\bm{\Gamma}_n(\sum_{i=1}^N \bm{Z}_i^{\top}\bm{D}^{-1}\bm{b}_i+\bm{\Gamma}_0^{-1}\bm{\gamma}_0)$.
+
+The following code shwos how to implement this longitudinal normal model where \textit{random effects} are correlated with regressors. We set MCMC iterations, burn-in and thinning parameters equal to 15000, 5000 and 5, respectively. In addition, $\bm{\beta}_0=\bm{0}_5$, $\bm{B}_0=\bm{I}_5$, $\alpha_0=\delta_0=0.001$, $d_0=2$, $\bm{D}_0=\bm{I}_2$, $\bm{\gamma}_0=\bm{0}_4$ and $\bm{\Gamma}_0=\bm{I}_4$.
+
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Longitudinal normal model with fixed effects correlated to regressors}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls())
+set.seed(010101)
+NT <- 2000
+N <- 50
+id <- c(1:N, sample(1:N, NT - N,replace=TRUE))
+table(id)
+x1 <- rnorm(NT); x2 <- rnorm(NT)
+x3 <- rnorm(NT); z1 <- rbinom(N, 1, 0.5)
+zdata <- NULL
+for(i in 1:NT){
+	zdatai <- z1[id[i]]
+	zdata <- c(zdata, zdatai)
+}
+X <- cbind(1, x1, x2, x3, zdata)
+K1 <- dim(X)[2]
+w1 <- rnorm(NT) 
+W <- cbind(1, w1)
+K2 <- dim(W)[2]
+B <- c(0.5, 0.4, 0.6, -0.6, 0.7)
+D <- c(0.7, 0.6)
+sig2 <- 0.1
+u <- rnorm(NT, 0, sd = sig2^0.5)
+Z <- cbind(1, z1)
+K3 <- dim(Z)[2]
+G <- rep(1, K3*K2)
+b <- matrix(0, N, K2)
+for(i in 1:N){
+	ZGi <- t(kronecker(diag(K2), Z[i, ]))%*%G
+	b[i, ] <- MASS::mvrnorm(1, ZGi, diag(D))
+}
+y <- NULL
+for(i in 1:NT){
+	yi <- X[i,]%*%B + W[i,]%*%b[id[i],] + u[i] 
+	y <- c(y, yi)
+}
+Data <- as.data.frame(cbind(y, x1, x2, x3, zdata, w1, id))
+mcmc <- 15000; burnin <- 5000; thin <- 10; tot <- mcmc + burnin
+b0 <- rep(0, K1); B0 <- diag(K1); B0i <- solve(B0) 
+r0 <- K2; R0 <- diag(K2); a0 <- 0.001; d0 <- 0.001
+g0 <- rep(0, K2*K3); G0 <- diag(K2*K3); G0i <- solve(G0)
+Resultshreg <- MCMCpack::MCMChregress(fixed = y~x1 + x2 + x3 + zdata, random = ~w1, group="id",
+data = Data, burnin = burnin, mcmc = mcmc, thin = thin, 
+mubeta = b0, Vbeta = B0,
+r = r0, R = R0, nu = a0, delta = d0)
+Betas <- Resultshreg[["mcmc"]][,1:K1]
+Sigma2RanEff <- Resultshreg[["mcmc"]][,c(K2*N+K1+1, 2*N+K1+K2^2)]
+Sigma2 <- Resultshreg[["mcmc"]][,K2*N+K1+K2^2+1]
+summary(Betas)
+summary(Sigma2RanEff)
+summary(Sigma2)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Longitudinal normal model with fixed effects correlated to regressors}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+PostBeta <- function(sig2, Gamma, D){
+	XVX <- matrix(0, K1, K1)
+	XVy <- matrix(0, K1, 1)
+	for(i in 1:N){
+		ids <- which(id == i)
+		Ti <- length(ids)
+		Wi <- W[ids, ]
+		Vi <- sig2*diag(Ti) + Wi%*%D%*%t(Wi)
+		ViInv <- solve(Vi)
+		Xi <- X[ids, ]
+		XVXi <- t(Xi)%*%ViInv%*%Xi
+		XVX <- XVX + XVXi
+		Zi <- Z[i, ]
+		yi <- y[ids]
+		ZGi <- t(kronecker(diag(K2), Zi))%*%Gamma
+		XVyi <- t(Xi)%*%ViInv%*%(yi - Wi%*%ZGi)
+		XVy <- XVy + XVyi
+	}
+	Bn <- solve(B0i + XVX)
+	bn <- Bn%*%(B0i%*%b0 + XVy)
+	Beta <- MASS::mvrnorm(1, bn, Bn)
+	return(Beta)
+}
+Postb <- function(Beta, sig2, Gamma, D){
+	Di <- solve(D)
+	bis <- matrix(0, N, K2)
+	for(i in 1:N){
+		ids <- which(id == i)
+		Wi <- W[ids, ]
+		Xi <- X[ids, ]
+		yi <- y[ids]
+		Wtei <- sig2^(-1)*t(Wi)%*%(yi - Xi%*%Beta)
+		Bni <- solve(sig2^(-1)*t(Wi)%*%Wi + Di)
+		Zi <- Z[i, ]
+		ZGi <- t(kronecker(diag(K2), Zi))%*%Gamma
+		bni <- Bni%*%(Wtei + Di%*%ZGi)
+		bi <- MASS::mvrnorm(1, bni, Bni)
+		bis[i, ] <- bi
+	}
+	return(bis)
+}
+PostSig2 <- function(Beta, bs){
+an <- a0 + 0.5*NT
+ete <- 0
+for(i in 1:N){
+	ids <- which(id == i)
+	Xi <- X[ids, ]
+	yi <- y[ids]
+	Wi <- W[ids, ]
+	ei <- yi - Xi%*%Beta - Wi%*%bs[i, ]
+	etei <- t(ei)%*%ei
+	ete <- ete + etei
+}
+dn <- d0 + 0.5*ete 
+sig2 <- MCMCpack::rinvgamma(1, shape = an, scale = dn)
+return(sig2)
+}
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Longitudinal normal model with fixed effects correlated to regressors}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+PostGamma <- function(bs, D){
+	Di <- solve(D)
+	ZDZ <- matrix(0, K2*K3, K2*K3)
+	ZDb <- matrix(0, K2*K3, 1)
+	for(i in 1:N){
+		Zi <- Z[i, ]
+		ZZi <- t(kronecker(diag(K2), Zi))
+		ZDZi <- t(ZZi)%*%Di%*%ZZi
+		ZDZ <- ZDZ + ZDZi
+		bi <- bs[i,]
+		ZDbi <- t(ZZi)%*%Di%*%bi
+		ZDb <- ZDb + ZDbi
+	}
+	Gn <- solve(G0i + ZDZ)
+	gn <- Gn%*%(G0i%*%g0 + ZDb)
+	Gamma <- MASS::mvrnorm(1, gn, Gn)
+	return(Gamma)
+}
+PostD <- function(bs, Gamma){
+	rn <- r0 + N
+	btb <- matrix(0, K2, K2)
+	for(i in 1:N){
+		bsi <- bs[i, ]
+		Zi <- Z[i, ]
+		ZGi <- t(kronecker(diag(K2), Zi))%*%Gamma
+		btbi <- (bsi-ZGi)%*%t(bsi-ZGi)
+		btb <- btb + btbi
+	}
+	Rn <- d0*R0 + btb
+	Sigma <- MCMCpack::riwish(v = rn, S = Rn)
+	return(Sigma)
+}
+PostBetas <- matrix(0, tot, K1); PostGammas <- matrix(0, tot, K2*K3)
+PostDs <- matrix(0, tot, K2*(K2+1)/2); PostSig2s <- rep(0, tot)
+Postbs <- array(0, c(N, K2, tot)); RegLS <- lm(y ~ X - 1)
+SumLS <- summary(RegLS); Beta <- SumLS[["coefficients"]][,1]
+sig2 <- SumLS[["sigma"]]^2; Gamma <- rep(0, K2*K3)
+D <- diag(K2)
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+	bs <- Postb(Beta = Beta, sig2 = sig2, Gamma = Gamma, D = D)
+	D <- PostD(bs = bs, Gamma = Gamma)
+	Beta <- PostBeta(sig2 = sig2, Gamma = Gamma, D = D)
+	sig2 <- PostSig2(Beta = Beta, bs = bs)
+	Gamma <- PostGamma(bs = bs, D = D) 
+	PostBetas[s,] <- Beta
+	PostDs[s,] <- matrixcalc::vech(D)
+	PostSig2s[s] <- sig2
+	Postbs[, , s] <- bs
+	PostGammas[s,] <- Gamma
+	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Longitudinal normal model with fixed effects correlated to regressors}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+keep <- seq((burnin+1), tot, thin)
+Bs <- PostBetas[keep,]
+Ds <- PostDs[keep,]
+bs <- Postbs[, , keep]
+sig2s <- PostSig2s[keep]
+Gs <- PostGammas[keep, ]
+summary(coda::mcmc(Bs))
+Quantiles for each variable:
+				2.5%     25%     50%     75%   97.5%
+var1 -0.3437  0.4087  0.7846  1.2108  2.1137
+var2  0.3520  0.3800  0.3891  0.3977  0.4243
+var3  0.5757  0.6008  0.6102  0.6193  0.6444
+var4 -0.6247 -0.5989 -0.5887 -0.5780 -0.5530
+var5 -0.3534  0.4210  0.8600  1.3199  2.1592
+summary(coda::mcmc(Ds))
+Quantiles for each variable:
+2.5%     25%     50%      75%  97.5%
+var1  0.6405  0.8765  1.0900  1.45774 3.3695
+var2 -0.4688 -0.2151 -0.1182 -0.02945 0.1423
+var3  0.4133  0.5314  0.6151  0.70782 0.9530
+summary(coda::mcmc(sig2s))
+Quantiles for each variable:
+2.5%    25%    50%    75%  97.5% 
+0.1075 0.2088 0.3826 0.7386 2.5551 
+summary(coda::mcmc(Gs))
+Quantiles for each variable:
+        2.5%    25%    50%   75% 97.5%
+var1 -0.4446 0.3318 0.7535 1.168 2.002
+var2 -0.4786 0.4345 0.8332 1.225 1.996
+var3  0.8643 1.0627 1.1615 1.272 1.482
+var4  0.5410 0.8468 0.9992 1.138 1.436
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+In one hand, the 95\% credible intervals of the model without taking into account the dependence between the \textit{random effects} and $z_{i1}$ overestimates the posterior mean of $\beta_0$, $\beta_4$ and the variance of $b_{i1}$. In addition, the credible intervals are very narrow. However, the variance of $\mu_i$ is well estimated. On the other hand, all the 95\% credible intervals of the model taking into account the dependence between the \textit{random effects} and $z_{i1}$ encompass the population parameters. However, there is a lot of variability in $\beta_0$ and $\beta_4$ posterior estimates. The posterior mean estimate of the variance of $b_{i1}$ is very close to the population value, and the location parameters associated with $z_{i1}$ in the mean of the \textit{random effects} is also well estimated by the posterior mean. However, the variance of the model is overestimated.  
 
 \end{enumerate}
