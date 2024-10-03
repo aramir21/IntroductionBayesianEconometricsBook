@@ -100,7 +100,7 @@ All the posterior conditional distributions belong to standard families, this im
 We used the dataset named \textit{8PublicCap.csv} used by \cite{Ramirez2017} to analyze the relation  between public investment and gross state product in the setting of a spatial panel dataset consisting of 48 US states from 1970 to 1986.
 In particular, we perform inference based on the following equation 
 \begin{equation*}
-	\log(\text{gsp})=b_i+\beta_1+\beta_2\log(\text{pcap})+\beta_3\log(\text{pc})+\beta_4\log(\text{emp})+\beta_5\text{unemp}+\mu_i,
+	\log(\text{gsp}_{it})=b_i+\beta_1+\beta_2\log(\text{pcap}_{it})+\beta_3\log(\text{pc}_{it})+\beta_4\log(\text{emp}_{it})+\beta_5\text{unemp}_{it}+\mu_{it},
 \end{equation*}
 
 where gsp in the gross state product, pcap is public capital, and pc is private capital all in USD, emp is employment (people), and unemp is the unemployment rate in percentage.
@@ -115,7 +115,7 @@ Algorithm \ref{alg:HLN} shows how to perform inference in hierarchical longitudi
 		\State Upload the dataset selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend
 		\State Select MCMC iterations, burn-in and thinning parameters using the \textit{Range sliders}
 		\State Write down the formula of the \textit{fixed effects} equation in the \textbf{Main Equation: Fixed Effects} box. This formula must be written using the syntax of the \textit{formula} command of \textbf{R} software. This equation includes intercept by default, do not include it in the equation
-		\State Write down the formula of the \textit{random effects} equation in the \textbf{Main Equation: Random Effects} box. This formula must be written using the syntax of the \textit{formula} command of \textbf{R} software. This equation includes intercept by default, do not include it in the equation. If there are just random intercepts do not write anything in this box
+		\State Write down the formula of the \textit{random effects} equation in the \textbf{Main Equation: Random Effects} box without writing the dependent variable, that is, starting the equation with the \textit{tilde} symbol. This formula must be written using the syntax of the \textit{formula} command of \textbf{R} software. This equation includes intercept by default, do not include it in the equation. If there are just random intercepts do not write anything in this box
 		\State Write down the name of the grouping variable, that is, the variable that indicates the cross-sectional units 
 		\State Set the hyperparameters of the \textit{fixed effects}: mean vector, covariance matrix, shape and scale parameters. This step is not necessary as by default our GUI uses non-informative priors
 		\State Set the hyperparameters of the \textit{random effects}: degrees of freedom and scale matrix of the inverse Wishart distribution. This step is not necessary as by default our GUI uses non-informative priors
@@ -138,7 +138,7 @@ We can see that the 95\% symmetric credible intervals for public capital, privat
 		\begin{lstlisting}[language=R]
 rm(list = ls())
 set.seed(12345)
-DataGSP <- read.csv("DataApplications/8PublicCap.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+DataGSP <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/8PublicCap.csv", sep = ",", header = TRUE, quote = "")
 attach(DataGSP)
 K1 <- 5; K2 <- 1
 b0 <- rep(0, K1); B0 <- diag(K1)
@@ -378,9 +378,60 @@ We can see that all the 95\% credible intervals encompass the population paramet
 
 \section{Logit model}\label{sec92}
 
-We can use the framework of Section \ref{sec91} to perform inference in models where we have longitudinal/panel data of binary response variables. In particular, let $y_{it}\sim{B}(\pi_{it})$ where $logit(\pi_{it})=\log\left(\frac{\pi_{it}}{1-\pi_{it}}\right)\equiv y_{it}^*=\bm{x}_{it}^{\top}\bm{\beta}+\bm{w}_{it}^{\top}\bm{b}_i+{\mu}_{it}$. Thus, we augment the model with the latent variable $y_{it}^*$, and perform inference as in the previous section. 
+We can use the framework of Section \ref{sec91} to perform inference in models where we have longitudinal/panel data of binary response variables. In particular, let $y_{it}\sim{B}(\pi_{it})$ where $\text{logit}(\pi_{it})=\log\left(\frac{\pi_{it}}{1-\pi_{it}}\right)\equiv y_{it}^*=\bm{x}_{it}^{\top}\bm{\beta}+\bm{w}_{it}^{\top}\bm{b}_i+{\mu}_{it}$. Thus, we augment the model with the latent variable $y_{it}^*$, and perform inference as in the previous section. 
 
 We can implement a Gibbs sampling algorithm to sample draws from the posterior conditional distributions of $\bm{\beta}$, $\sigma^2$, $\bm{b}_i$ and $\bm{D}$ using the equations in Section \ref{sec91} conditional on $\bm{y}_i^*$. We can use a random walk Metropolis-Hastings algorithm to sample $y_{it}^*$ where the proposal distribution is Gaussian with mean $y_{ij}^*$ and variance equal to 1, that is, $y_{ij}^{*c}$=$y_{it}^*+\epsilon_{it}$ where $\epsilon_{it}\sim\mathcal{N}(0,1)$ which implies $\pi_{it}=\frac{1}{1+e^{-y_{it}^*}}$ and $\pi_{it}^c=\frac{1}{1+e^{-y_{it}^{*c}}}$.
+
+\textbf{Example: The effects of health care reforms and doctor visits in Germany}
+
+We used the dataset \textit{9VisitDoc.csv} provided by \cite{Winkelmann2004}.\footnote{See \textit{http://qed.econ.queensu.ca/jae/2004-v19.4/winkelmann/} for details} We analyze the determinants of a binary variable (DocVis) which is equal to 1 if an individual visited a physician in the last three months, and 0 otherwise.
+The dataset contains 32837 observations of 9197 individuals in an \textit{unbalanced longitudinal/panel} datatset over the years 1995--1999 from the German Socioeconomic Panel Data.
+
+The specification is given by 
+\begin{equation*}
+	\text{logit}(\pi_{it})=\beta_1+\beta_2\text{Age}+\beta_3\text{Male}+\beta_4\text{Educ}+\beta_5\text{Married}+\beta_6\text{Sozh}+\beta_1\text{LogInc},
+\end{equation*}
+
+where $\pi_{it}=p(\text{DocVis}_{it}=1)$. 
+
+This specification controls for age, a gender indicator (male equal to 1), years of schooling, an indicator of marital status (married equal to 1), whether the individual receives welfare payments (Sozh equal to 1), and the logarithm of monthly gross income. We also assume that the unobserved heterogeneity is associated with self perception of health status: good and bad. 
+
+We set 10000 MCMC iterations plus 1000 burn-in, and a thinning parameter equal to 1. In addition, $\bm{\beta}_0=\bm{0}_7$, $\bm{B}_0=\bm{I}_7$, $\alpha_0=\delta_0=0.001$, $d_0=5$ and $\bm{D}_0=\bm{I}_2$. 
+
+The Algorithm \ref{alg:HLogit} shows how to perform inference of the hierarchical longitudinal logit model using our GUI. We show in the following code how to perform inference of this example using the command \textit{MCMChlogit} from the \textit{MCMCpack} package.
+
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. The effects of health care reforms and doctor visits in Germany}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+			
+		\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+The results suggest that age and income increase the probability of visiting the physician, the posterior estimates have 95\% symmetric credible intervals equal to (2.25e-02, 2.93e-02) and (8.05e-02, 2.48e-01), whereas men have a lower probability of visiting a physician, the 95\% credible interval is (-1.02, -0.93).
+The posterior mean of the variances of the unobserved heterogeneity associated with the bad and good health status are 0.51 and 0.88, and the variance of the unobserved heterogeneity not associated with these variables is 1.81. The posterior mean of the variance associated with the stochastic error is 0.14.\\
+
+\begin{algorithm}[h!]
+	\caption{Hierarchical longitudinal logit models}\label{alg:HLogit}
+	\begin{algorithmic}[1]  		 			
+		\State Select \textit{Hierarchical Longitudinal Model} on the top panel
+		\State Select \textit{Logit} model using the left radio button
+		\State Upload the dataset selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend
+		\State Select MCMC iterations, burn-in and thinning parameters using the \textit{Range sliders}
+		\State Write down the formula of the \textit{fixed effects} equation in the \textbf{Main Equation: Fixed Effects} box. This formula must be written using the syntax of the \textit{formula} command of \textbf{R} software. This equation includes intercept by default, do not include it in the equation
+		\State Write down the formula of the \textit{random effects} equation in the \textbf{Main Equation: Random Effects} box without writing the dependent variable, that is, starting the equation with the \textit{tilde} symbol. This formula must be written using the syntax of the \textit{formula} command of \textbf{R} software. This equation includes intercept by default, do not include it in the equation. If there are just random intercepts do not write anything in this box
+		\State Write down the name of the grouping variable, that is, the variable that indicates the cross-sectional units 
+		\State Set the hyperparameters of the \textit{fixed effects}: mean vector, covariance matrix, shape and scale parameters. This step is not necessary as by default our GUI uses non-informative priors
+		\State Set the hyperparameters of the \textit{random effects}: degrees of freedom and scale matrix of the inverse Wishart distribution. This step is not necessary as by default our GUI uses non-informative priors
+		\State Click the \textit{Go!} button
+		\State Analyze results
+		\State Download posterior chains and diagnostic plots using the \textit{Download Posterior Chains} and \textit{Download Posterior Graphs} buttons
+	\end{algorithmic} 
+\end{algorithm}
+
 
 \section{Poisson model}\label{sec93}
 
