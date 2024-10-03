@@ -1,7 +1,7 @@
 rm(list = ls())
 set.seed(010101)
 ########################## Linear regression: Value of soccer players (heteroskedasticity) ##########################
-Data <- read.csv("DataApplications/1ValueFootballPlayers.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+Data <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/1ValueFootballPlayers.csv", sep = ",", header = TRUE, quote = "")
 attach(Data)
 y <- log(Value) 
 # Value: Market value in Euros (2017) of soccer players
@@ -72,7 +72,7 @@ summary(coda::mcmc(exp(PosteriorBetas[,5])-1))
 ########################## Probit model: Determinants of hospitalization ##########################
 rm(list = ls())
 set.seed(010101)
-Data <- read.csv("DataApplications/2HealthMed.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+Data <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/2HealthMed.csv", sep = ",", header = TRUE, quote = "")
 attach(Data)
 str(Data)
 y <- Hosp # Dependent variables
@@ -122,7 +122,7 @@ summary(coda::mcmc(PosteriorBetas))
 ########################## Multinomial probit: Fishing choice ##########################
 remove(list = ls())
 set.seed(12345)
-Data <- read.csv("DataApplications/3Fishing.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+Data <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/3Fishing.csv", sep = ",", header = TRUE, quote = "")
 attach(Data)
 str(Data)
 p <- 4; na <- 2; nd <- 1; N <- dim(Data)[1]
@@ -303,7 +303,6 @@ mhop <- function(param0, G){
   close(pb)
   return(cbind(betasamples, tau, ar))
 }
-###########################################Bayesian Estimation###################################
 #Hyperparameters
 d0 <- rep(0,2)
 D0 <- diag(2)*10000
@@ -355,7 +354,7 @@ summary(ResultBayesm$betadraw)
 ########################## Quantile regression: Value of soccer players ##########################
 rm(list = ls())
 set.seed(010101)
-Data <- read.csv("DataApplications/1ValueFootballPlayers.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+Data <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/1ValueFootballPlayers.csv", sep = ",", header = TRUE, quote = "")
 attach(Data)
 y <- log(Value) 
 X <- cbind(1, Perf, Age, Age2, NatTeam, Goals, Exp, Exp2)

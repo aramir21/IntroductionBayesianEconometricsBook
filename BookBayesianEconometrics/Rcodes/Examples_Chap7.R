@@ -1,7 +1,7 @@
 ########################## Effects of institutions: Multivariate regression ########################## 
 rm(list = ls())
 set.seed(12345)
-DataInst <- read.csv("DataApplications/4Institutions.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+DataInst <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/4Institutions.csv", sep = ",", header = TRUE, quote = "")
 attach(DataInst)
 Y <- cbind(logpcGDP95, PAER)
 X <- cbind(1, logMort, Africa, Asia, Other)
@@ -39,7 +39,7 @@ summary(coda::mcmc(beta2)) # Effect of property rights on GDP
 rm(list = ls())
 set.seed(010101)
 library(dplyr)
-DataUt <- read.csv("DataApplications/Utilities.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+DataUt <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/Utilities.csv", sep = ",", header = TRUE, quote = "")
 DataUtEst <- DataUt %>%  
   filter(Electricity != 0 & Water !=0 & Gas != 0)
 attach(DataUtEst)
@@ -141,7 +141,7 @@ histExo
 ########################## Multivariate probit: Hospitalization and subsidized health system ########################## 
 rm(list = ls())
 set.seed(010101)
-Data <- read.csv("DataApplications/7HealthMed.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+Data <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/7HealthMed.csv", sep = ",", header = TRUE, quote = "")
 attach(Data)
 str(Data)
 p <- 2; nd <- 7; N <- length(y)/p

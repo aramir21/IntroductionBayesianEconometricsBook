@@ -1,7 +1,7 @@
 ########################## Effects of institutions: Multivariate regression ########################## 
 rm(list = ls())
 set.seed(010101)
-DataInst <- read.csv("DataApplications/4Institutions.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+DataInst <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/4Institutions.csv", sep = ",", header = TRUE, quote = "")
 attach(DataInst)
 Y <- cbind(logpcGDP95, PAER)
 X <- cbind(1, logMort, Africa, Asia, Other)
@@ -86,7 +86,7 @@ summary(coda::mcmc(alpha2_3))
 rm(list = ls())
 set.seed(010101)
 library(dplyr)
-DataUt <- read.csv("DataApplications/Utilities.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+DataUt <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/Utilities.csv", sep = ",", header = TRUE, quote = "")
 DataUtEst <- DataUt %>%  
   filter(Electricity != 0 & Water !=0 & Gas != 0)
 attach(DataUtEst)
@@ -419,7 +419,7 @@ summary(coda::mcmc(Sigmas))
 # Weak instruments
 rm(list = ls())
 set.seed(010101)
-DataInst <- read.csv("DataApplications/6Institutions.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+DataInst <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/6Institutions.csv", sep = ",", header = TRUE, quote = "")
 attach(DataInst)
 y <- logpcGDP95; x <- PAER
 w <- cbind(1, Africa, Asia, Other); Z <- cbind(1, logMort)

@@ -419,27 +419,50 @@ Sigma2RanEff <- Resultshlogit[["mcmc"]][,c(K2*N+K1+1, 2*N+K1+K2^2)]
 Sigma2 <- Resultshlogit[["mcmc"]][,K2*N+K1+K2^2+1]
 summary(Betas)
 summary(Sigma2RanEff)
-summary(Sigma2)
 plot(Betas)
 plot(Sigma2RanEff)
-plot(Sigma2)
 coda::geweke.diag(Betas)
 coda::raftery.diag(Betas,q=0.5, r=0.05, s = 0.95)
 coda::heidel.diag(Betas)
-# Gibbs by hand
-PostBeta <- function(sig2, D){
+# Metropolis-Hastings within Gibbs by hand
+LatentMH <- function(tuning, Beta, bs){
+  ylhat <- rep(0, NT)
+  for(i in 1:NT){
+    ylhat[i] <- X[i,]%*%Beta + W[i,]%*%bs[id[i],]
+  }
+  e <- rnorm(NT, 0, sd = tuning)
+  ylprop <- ylhat + e
+  pihat <- 1/(1+exp(-ylhat)) 
+  piprop <- 1/(1+exp(-ylprop))
+  logPosthat <- dbinom(y, 1, prob = pihat, log = TRUE)
+  logPostprop <- dbinom(y, 1, prob = piprop, log = TRUE)
+  alpha <- min(1, exp(logPostprop - logPosthat))
+  u <- runif(1)
+  if(u <= alpha){
+    ylhat <- ylprop
+    acept <- 1
+  }else{
+    ylhat <- ylhat
+    acept <- 0
+  }
+  res <- list(ylhat = ylhat, acept = acept)
+  return(res)
+}
+# Beta <- B; bs <- b; tuning <- 1
+# EnsLatY <- LatentMH(tuning, Beta, bs)
+PostBeta <- function(D, ylhat){
   XVX <- matrix(0, K1, K1)
   XVy <- matrix(0, K1, 1)
   for(i in 1:N){
     ids <- which(id == i)
     Ti <- length(ids)
     Wi <- W[ids, ]
-    Vi <- sig2*diag(Ti) + Wi%*%D%*%t(Wi)
+    Vi <- diag(Ti) + Wi%*%D%*%t(Wi)
     ViInv <- solve(Vi)
     Xi <- X[ids, ]
     XVXi <- t(Xi)%*%ViInv%*%Xi
     XVX <- XVX + XVXi
-    yi <- y[ids]
+    yi <- ylhat[ids]
     XVyi <- t(Xi)%*%ViInv%*%yi
     XVy <- XVy + XVyi
   }
@@ -448,61 +471,26 @@ PostBeta <- function(sig2, D){
   Beta <- MASS::mvrnorm(1, bn, Bn)
   return(Beta)
 }
-# This version of the function follows MCMCpack function named cMCMChregress.cc that uses 
-# http://en.wikipedia.org/wiki/Woodbury_matrix_identity with A=(1/V_run)*Id
-PostBetaNew <- function(sig2, D){
-  Di <- solve(D)
-  XVXn <- matrix(0, K1, K1)
-  XVyn <- matrix(0, K1, 1)
-  for(i in 1:N){
-    ids <- which(id == i)
-    Ti <- length(ids)
-    Wi <- W[ids, ]
-    Xi <- X[ids, ]
-    yi <- y[ids]
-    sig2i <- sig2^(-1)
-    XVXi <- t(Xi)%*%Xi*sig2i - sig2i^(2)*t(Xi)%*%Wi%*%solve(Di+sig2i*t(Wi)%*%Wi)%*%t(Wi)%*%Xi
-    XVyi <- t(Xi)%*%yi*sig2i - sig2i^(2)*t(Xi)%*%Wi%*%solve(Di+sig2i*t(Wi)%*%Wi)%*%t(Wi)%*%yi 
-    XVXn <- XVXn + XVXi
-    XVyn <- XVyn + XVyi
-  }
-  BnNew <- solve(B0i + XVXn)
-  bnNew <- BnNew%*%(B0i%*%b0 + XVyn)
-  Beta <- MASS::mvrnorm(1, bnNew, BnNew)
-  return(Beta)
-}
-Postb <- function(Beta, sig2, D){
+# D <- matrix(c(0.7, 0, 0, 0.6), 2, 2); ylhat <- yl
+# PostBeta(D, ylhat)
+Postb <- function(Beta, D, ylhat){
   Di <- solve(D)
   bis <- matrix(0, N, K2)
   for(i in 1:N){
     ids <- which(id == i)
     Wi <- W[ids, ]
     Xi <- X[ids, ]
-    yi <- y[ids]
-    Wtei <- sig2^(-1)*t(Wi)%*%(yi - Xi%*%Beta)
-    Bni <- solve(sig2^(-1)*t(Wi)%*%Wi + Di)
+    yi <- ylhat[ids]
+    Wtei <- t(Wi)%*%(yi - Xi%*%Beta)
+    Bni <- solve(t(Wi)%*%Wi + Di)
     bni <- Bni%*%Wtei
     bi <- MASS::mvrnorm(1, bni, Bni)
     bis[i, ] <- bi
   }
   return(bis)
 }
-PostSig2 <- function(Beta, bs){
-  an <- a0 + 0.5*NT
-  ete <- 0
-  for(i in 1:N){
-    ids <- which(id == i)
-    Xi <- X[ids, ]
-    yi <- y[ids]
-    Wi <- W[ids, ]
-    ei <- yi - Xi%*%Beta - Wi%*%bs[i, ]
-    etei <- t(ei)%*%ei
-    ete <- ete + etei
-  }
-  dn <- d0 + 0.5*ete 
-  sig2 <- MCMCpack::rinvgamma(1, shape = an, scale = dn)
-  return(sig2)
-}
+# D <- matrix(c(0.7, 0, 0, 0.6), 2, 2); ylhat <- yl; Beta <- B
+# Postb(Beta, D, ylhat)
 PostD <- function(bs){
   rn <- r0 + N
   btb <- matrix(0, K2, K2)
@@ -517,24 +505,27 @@ PostD <- function(bs){
 }
 PostBetas <- matrix(0, tot, K1)
 PostDs <- matrix(0, tot, K2*(K2+1)/2)
-PostSig2s <- rep(0, tot)
 Postbs <- array(0, c(N, K2, tot))
-RegLS <- lm(y ~ X - 1)
-SumLS <- summary(RegLS)
-Beta <- SumLS[["coefficients"]][,1]
-sig2 <- SumLS[["sigma"]]^2
+Accepts <- rep(NULL, tot)
+RegLogit <- glm(y ~ X - 1, family = binomial(link = "logit"))
+SumLogit <- summary(RegLogit)
+Beta0 <- SumLogit[["coefficients"]][,1]
 D <- diag(K2)
+bs1 <- rnorm(N, 0, sd = D[1]^0.5)
+bs2 <- rnorm(N, 0, sd = D[2]^0.5)
+bs <- cbind(bs1, bs2)
 pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
 for(s in 1:tot){
-  bs <- Postb(Beta = Beta, sig2 = sig2, D = D)
+  LatY <- LatentMH(tuning = tuning, Beta = Beta, bs = bs)
+  ylhat <- EnsLatY[["ylhat"]]
+  bs <- Postb(Beta = Beta, D = D, ylhat = ylhat)
   D <- PostD(bs = bs)
-  Beta <- PostBeta(sig2 = sig2, D = D)
-  # Beta <- PostBetaNew(sig2 = sig2, D = D)
-  sig2 <- PostSig2(Beta = Beta, bs = bs)
+  Beta <- PostBeta(D = D, ylhat = ylhat)
   PostBetas[s,] <- Beta
   PostDs[s,] <- matrixcalc::vech(D)
-  PostSig2s[s] <- sig2
   Postbs[, , s] <- bs
+  Accepts[s] <- EnsLatY[["acept"]]
+  tuning <- 1
   setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
 }
 close(pb)
@@ -542,13 +533,11 @@ keep <- seq((burnin+1), tot, thin)
 Bs <- PostBetas[keep,]
 Ds <- PostDs[keep,]
 bs <- Postbs[, , keep]
-sig2s <- PostSig2s[keep]
+mean(Accepts)
 summary(coda::mcmc(Bs))
 plot(coda::mcmc(Bs))
 summary(coda::mcmc(Ds))
 plot(coda::mcmc(Ds))
-summary(coda::mcmc(sig2s))
-plot(coda::mcmc(sig2s))
 # Convergence diagnostics
 coda::geweke.diag(Bs)
 coda::raftery.diag(Bs, q = 0.5, r = 0.05, s = 0.95)

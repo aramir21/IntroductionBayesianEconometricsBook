@@ -1,7 +1,7 @@
 ########################## Effects of capital on productivity USA states: Longitudinal normal model ########################## 
 rm(list = ls())
 set.seed(12345)
-DataGSP <- read.csv("DataApplications/8PublicCap.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+DataGSP <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/8PublicCap.csv", sep = ",", header = TRUE, quote = "")
 attach(DataGSP)
 N <- length(unique(id))
 y <- log(gsp)
@@ -139,7 +139,7 @@ coda::heidel.diag(Bs)
 ########################## Effects of capital on productivity USA states: Longitudinal normal model with heteroskedasticity########################## 
 rm(list = ls())
 set.seed(12345)
-DataGSP <- read.csv("DataApplications/8PublicCap.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+DataGSP <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/8PublicCap.csv", sep = ",", header = TRUE, quote = "")
 attach(DataGSP)
 N <- length(unique(id))
 y <- log(gsp)

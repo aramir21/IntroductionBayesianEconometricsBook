@@ -1,7 +1,7 @@
 rm(list = ls())
 set.seed(010101)
 ########################## Multinomial-Dirichlet example: Liverpool vs Manchester city ##########################
-Data <- read.csv("DataApplications/DataOddsLIVvsMAN.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+Data <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/DataOddsLIVvsMAN.csv", sep = ",", header = TRUE, quote = "")
 # https://www.oddsportal.com/soccer/england/premier-league/liverpool-manchester-city-WrqgEz5S/
 # Betting odds at 6-10-2022 19:00 hours (Colombia time)
 # Liverpool vs Manchester city at 16-10-2022
@@ -154,7 +154,7 @@ OptShare
 rm(list = ls())
 set.seed(010101)
 # Electricity demand
-DataUt <- read.csv("DataApplications/Utilities.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+DataUt <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/Utilities.csv", sep = ",", header = TRUE, quote = "")
 
 DataUtEst <- DataUt %>% 
   filter(Electricity	 != 0)

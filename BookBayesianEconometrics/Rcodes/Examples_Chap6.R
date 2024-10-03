@@ -1,7 +1,7 @@
 rm(list = ls())
 set.seed(010101)
 ########################## Linear regression: Value of soccer players ##########################
-Data <- read.csv("DataApplications/1ValueFootballPlayers.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+Data <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/1ValueFootballPlayers.csv", sep = ",", header = TRUE, quote = "")
 attach(Data)
 y <- log(Value) 
 # Value: Market value in Euros (2017) of soccer players
@@ -111,7 +111,7 @@ MHfunc <- function(y, X, b0 = rep(0, dim(X)[2] + 1), B0 = 1000*diag(dim(X)[2] + 
     likepast <- sum((Xm%*%BETA) * Y - apply((Xm%*%BETA), 1, function(x) log(1 + exp(x)))) # Log likelihood for the actual draw
     priorcand <- (-1/2)*crossprod((BETAc - b0), solve(B0))%*%(BETAc - b0) # Log prior for candidate
     priorpast <- (-1/2)*crossprod((BETA - b0), solve(B0))%*%(BETA - b0) # Log prior for actual draw
-    alpha <- min(1, exp((likecand - priorcand) - (likepast - priorpast))) #Probability of selecting candidate
+    alpha <- min(1, exp((likecand + priorcand) - (likepast + priorpast))) #Probability of selecting candidate
     u <- runif(1) # Decision rule for selecting candidate
     if(u < alpha){
       BETA <- BETAc # Changing reference for candidate if selected
@@ -144,7 +144,7 @@ coda::heidel.diag(PostPar)
 ########################## Probit: Hospitalization ##########################
 rm(list = ls())
 set.seed(010101)
-mydata <- read.csv("DataApplications/2HealthMed.csv", header = T, sep = ",")
+mydata <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/2HealthMed.csv", sep = ",", header = TRUE, quote = "")
 attach(mydata)
 str(mydata)
 y <- Hosp # Dependent variables
@@ -257,7 +257,7 @@ summary(coda::mcmc(ResultsPost$BetasPost[keep[-1], ]))
 ########################## Ordered probit: Preventive doctor visits ##########################
 rm(list = ls())
 set.seed(010101)
-Data <- read.csv("DataApplications/2HealthMed.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+Data <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/2HealthMed.csv", sep = ",", header = TRUE, quote = "")
 attach(Data)
 y <- MedVisPrevOr 
 # MedVisPrevOr: Oredered variable for preventive visits to doctors in one year: 1 (none), 2 (once), ... 6 (five or more)
@@ -404,7 +404,7 @@ summary(ResultBayesm$betadraw)
 ########################## Tobit model: Value of soccer players ##########################
 rm(list = ls())
 set.seed(010101)
-Data <- read.csv("DataApplications/1ValueFootballPlayers.csv", sep = ",", header = TRUE, fileEncoding = "latin1")
+Data <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/1ValueFootballPlayers.csv", sep = ",", header = TRUE, quote = "")
 attach(Data)
 y <- log(ValueCens) 
 # Value: Market value in Euros (2017) of soccer players
