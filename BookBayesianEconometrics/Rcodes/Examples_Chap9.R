@@ -376,6 +376,33 @@ coda::geweke.diag(Bs)
 coda::raftery.diag(Bs, q = 0.5, r = 0.05, s = 0.95)
 coda::heidel.diag(Bs)
 
+########################## Visits to doctor: Longitudinal logit model ########################## 
+rm(list = ls())
+set.seed(12345)
+Data <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/9VisitDoc.csv", sep = ",", header = TRUE, quote = "")
+attach(Data)
+K1 <- 7; K2 <- 2; N <- 9197
+b0 <- rep(0, K1); B0 <- diag(K1)
+r0 <- 5; R0 <- diag(K2)
+a0 <- 0.001; d0 <- 0.001
+RegLogit <- glm(DocVis ~ Age + Male + Sport + LogInc + GoodHealth + BadHealth, family = binomial(link = "logit"))
+SumLogit <- summary(RegLogit)
+Beta0 <- SumLogit[["coefficients"]][,1]
+mcmc <- 10000; burnin <- 1000; thin <- 10
+# MCMChlogit
+Resultshlogit <- MCMCpack::MCMChlogit(fixed = DocVis ~ Age + Male + Sport + LogInc + GoodHealth + BadHealth, random = ~Sozh, group="id",
+                                      data = Data, burnin = burnin, mcmc = mcmc, thin = thin, 
+                                      mubeta = b0, Vbeta = B0,
+                                      r = r0, R = R0, nu = a0, delta = d0,
+                                      beta.start = Beta0, FixOD = 1)
+
+Betas <- Resultshlogit[["mcmc"]][,1:K1]
+Sigma2RanEff <- Resultshlogit[["mcmc"]][,c(K2*N+K1+1, 2*N+K1+K2^2)]
+summary(Betas)
+summary(Sigma2RanEff)
+plot(Betas)
+plot(Sigma2RanEff)
+
 ########################## Simulation exercise: Longitudinal logit model ########################## 
 rm(list = ls())
 set.seed(010101)
@@ -509,23 +536,35 @@ Postbs <- array(0, c(N, K2, tot))
 Accepts <- rep(NULL, tot)
 RegLogit <- glm(y ~ X - 1, family = binomial(link = "logit"))
 SumLogit <- summary(RegLogit)
-Beta0 <- SumLogit[["coefficients"]][,1]
+Beta <- SumLogit[["coefficients"]][,1]
 D <- diag(K2)
 bs1 <- rnorm(N, 0, sd = D[1]^0.5)
 bs2 <- rnorm(N, 0, sd = D[2]^0.5)
 bs <- cbind(bs1, bs2)
+tuning <- 0.1; ropt <- 0.44
 pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
 for(s in 1:tot){
+  tunepariter <- seq(round(tot/10, 0), tot, round(tot/10, 0))
   LatY <- LatentMH(tuning = tuning, Beta = Beta, bs = bs)
-  ylhat <- EnsLatY[["ylhat"]]
+  ylhat <- LatY[["ylhat"]]
   bs <- Postb(Beta = Beta, D = D, ylhat = ylhat)
   D <- PostD(bs = bs)
   Beta <- PostBeta(D = D, ylhat = ylhat)
   PostBetas[s,] <- Beta
   PostDs[s,] <- matrixcalc::vech(D)
   Postbs[, , s] <- bs
-  Accepts[s] <- EnsLatY[["acept"]]
-  tuning <- 1
+  Accepts[s] <- LatY[["acept"]]
+  l <- 1
+  if(s == tunepariter[l]){
+    AcceptRate <- mean(Accepts[1:s])
+    if(AcceptRate > ropt){
+      tuning = tuning*(2-(1-AcceptRate)/(1-ropt))
+    }else{
+      tuning = tuning/(2-AcceptRate/ropt)
+    } 
+    print(AcceptRate)
+    l <- l + 1
+  }
   setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
 }
 close(pb)

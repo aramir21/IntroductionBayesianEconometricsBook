@@ -178,7 +178,7 @@ There are many extensions of this model, for instance, \cite{Chib1999} propose t
 
 \textbf{Example: Simulation exercise of the longitudinal normal model with heteroskedasticity}
 
-Let's perform a simulation exercise to assess some potential extensions of the longitudinal hierarchical normal model. The point of departure is to assume that $y_{it}=\beta_0+\beta_1x_{it1}+\beta_2x_{it2}+\beta_3x_{it3}+b_i+w_{it1}b_{i1}+\mu_{it}$ where $x_{itk}\sim N(0,1)$, $k=1,2,3$, $w_{it1}\sim N(0,1)$, $b_i\sim N(0, 0.7^{1/2})$, $b_{i1}\sim N(0, 0.6^{1/2})$, $\mu_{it}\sim N(0, 0.1^{1/2})$ $\bm{\beta}=[0.5 \ 0.4 \ 0.6 \ -0.6]^{\top}$, $i=1,2,\dots,50$, and the sample size is 2000 in an \textit{unbalanced panel structure}. 
+Let's perform a simulation exercise to assess some potential extensions of the longitudinal hierarchical normal model. The point of departure is to assume that $y_{it}=\beta_0+\beta_1x_{it1}+\beta_2x_{it2}+\beta_3x_{it3}+b_i+w_{it1}b_{i1}+\mu_{it}$ where $x_{itk}\sim N(0,1)$, $k=1,2,3$, $w_{it1}\sim N(0,1)$, $b_i\sim N(0, 0.7^{1/2})$, $b_{i1}\sim N(0, 0.6^{1/2})$, $\mu_{it}\sim N(0, 0.1^{1/2})$, and $\bm{\beta}=[0.5 \ 0.4 \ 0.6 \ -0.6]^{\top}$, $i=1,2,\dots,50$. The sample size is 2000 in an \textit{unbalanced panel structure}. 
 
 Following same stages as in this section and Exercise 1, the posterior conditional distributions assuming that $\mu_{it}|\tau_{it}\sim N(0, \sigma^2/\tau_{it})$, $\tau_{it}\sim G(v/2,v/2)$ are given by 
 \begin{equation*}
@@ -380,7 +380,7 @@ We can see that all the 95\% credible intervals encompass the population paramet
 
 We can use the framework of Section \ref{sec91} to perform inference in models where we have longitudinal/panel data of binary response variables. In particular, let $y_{it}\sim{B}(\pi_{it})$ where $\text{logit}(\pi_{it})=\log\left(\frac{\pi_{it}}{1-\pi_{it}}\right)\equiv y_{it}^*=\bm{x}_{it}^{\top}\bm{\beta}+\bm{w}_{it}^{\top}\bm{b}_i+{\mu}_{it}$. Thus, we augment the model with the latent variable $y_{it}^*$, and perform inference as in the previous section. 
 
-We can implement a Gibbs sampling algorithm to sample draws from the posterior conditional distributions of $\bm{\beta}$, $\sigma^2$, $\bm{b}_i$ and $\bm{D}$ using the equations in Section \ref{sec91} conditional on $\bm{y}_i^*$. We can use a random walk Metropolis-Hastings algorithm to sample $y_{it}^*$ where the proposal distribution is Gaussian with mean $y_{ij}^*$ and variance equal to 1, that is, $y_{ij}^{*c}$=$y_{it}^*+\epsilon_{it}$ where $\epsilon_{it}\sim\mathcal{N}(0,1)$ which implies $\pi_{it}=\frac{1}{1+e^{-y_{it}^*}}$ and $\pi_{it}^c=\frac{1}{1+e^{-y_{it}^{*c}}}$.
+We can implement a Gibbs sampling algorithm to sample draws from the posterior conditional distributions of $\bm{\beta}$, $\sigma^2$, $\bm{b}_i$ and $\bm{D}$ using the equations in Section \ref{sec91} conditional on $\bm{y}_i^*$. We can use a random walk Metropolis-Hastings algorithm to sample $y_{it}^*$ where the proposal distribution is Gaussian with mean $y_{ij}^*$ and variance equal to 1, that is, $y_{ij}^{*c}$=$y_{it}^*+\epsilon_{it}$ where $\epsilon_{it}\sim\mathcal{N}(0,v^2)$ which implies $\pi_{it}=\frac{1}{1+e^{-y_{it}^*}}$ and $\pi_{it}^c=\frac{1}{1+e^{-y_{it}^{*c}}}$, where $v$ is a tuning parameter that should be set to have good acceptance rate in the M-H algorithm.
 
 \textbf{Example: The effects of health care reforms and doctor visits in Germany}
 
@@ -388,26 +388,56 @@ We used the dataset \textit{9VisitDoc.csv} provided by \cite{Winkelmann2004}.\fo
 The dataset contains 32837 observations of 9197 individuals in an \textit{unbalanced longitudinal/panel} datatset over the years 1995--1999 from the German Socioeconomic Panel Data.
 
 The specification is given by 
-\begin{equation*}
-	\text{logit}(\pi_{it})=\beta_1+\beta_2\text{Age}+\beta_3\text{Male}+\beta_4\text{Educ}+\beta_5\text{Married}+\beta_6\text{Sozh}+\beta_1\text{LogInc},
-\end{equation*}
+\begin{align*}
+	\text{logit}(\pi_{it})&=\beta_1+\beta_2\text{Age}+\beta_3\text{Male}+\beta_4\text{Sport}+\beta_5\text{LogInc}\\
+	&+\beta_6 \text{GoodHealth} + \beta_7\text{BadHealth} + b_i + b_{i1}\text{Sozh},
+\end{align*}
 
 where $\pi_{it}=p(\text{DocVis}_{it}=1)$. 
 
-This specification controls for age, a gender indicator (male equal to 1), years of schooling, an indicator of marital status (married equal to 1), whether the individual receives welfare payments (Sozh equal to 1), and the logarithm of monthly gross income. We also assume that the unobserved heterogeneity is associated with self perception of health status: good and bad. 
+This specification controls for age, a gender indicator (male equal to 1), years of schooling, an indicator of marital status (married equal to 1),  the logarithm of monthly gross income, and self perception of health status, good and bad. We also assume that the unobserved heterogeneity is associated with whether the individual receives welfare payments (Sozh equal to 1). 
 
-We set 10000 MCMC iterations plus 1000 burn-in, and a thinning parameter equal to 1. In addition, $\bm{\beta}_0=\bm{0}_7$, $\bm{B}_0=\bm{I}_7$, $\alpha_0=\delta_0=0.001$, $d_0=5$ and $\bm{D}_0=\bm{I}_2$. 
+We set 10000 MCMC iterations plus 1000 burn-in, and a thinning parameter equal to 10. In addition, $\bm{\beta}_0=\bm{0}_7$, $\bm{B}_0=\bm{I}_7$, $\alpha_0=\delta_0=0.001$, $d_0=5$ and $\bm{D}_0=\bm{I}_2$. 
 
-The Algorithm \ref{alg:HLogit} shows how to perform inference of the hierarchical longitudinal logit model using our GUI. We show in the following code how to perform inference of this example using the command \textit{MCMChlogit} from the \textit{MCMCpack} package.
-
+The Algorithm \ref{alg:HLogit} shows how to perform inference of the hierarchical longitudinal logit model using our GUI. We show in the following code how to perform inference of this example using the command \textit{MCMChlogit} from the \textit{MCMCpack} package.\footnote{We fixed the variance for over-dispersion ($\sigma^2$) setting \textit{FixOD = 1} in this example. Our GUI does not fix this value, that is, it sets \textit{FixOD = 0}, which is the default value in the command \textit{MCMChlogit}.} The command \textit{MCMChlogit} uses an adaptive algorithm to tune $v$ based on an optimal acceptance rate equal to 0.44. 
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 	\textit{R code. The effects of health care reforms and doctor visits in Germany}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-			
-		\end{lstlisting}
+rm(list = ls())
+set.seed(12345)
+Data <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/9VisitDoc.csv", sep = ",", header = TRUE, quote = "")
+attach(Data)
+K1 <- 7; K2 <- 2; N <- 9197
+b0 <- rep(0, K1); B0 <- diag(K1)
+r0 <- 5; R0 <- diag(K2)
+a0 <- 0.001; d0 <- 0.001
+RegLogit <- glm(DocVis ~ Age + Male + Sport + LogInc + GoodHealth + BadHealth, family = binomial(link = "logit"))
+SumLogit <- summary(RegLogit)
+Beta0 <- SumLogit[["coefficients"]][,1]
+mcmc <- 10000; burnin <- 1000; thin <- 10
+# MCMChlogit
+Resultshlogit <- MCMCpack::MCMChlogit(fixed = DocVis ~ Age + Male + Sport + LogInc + GoodHealth + BadHealth, random = ~Sozh, group="id", data = Data, burnin = burnin, mcmc = mcmc, thin = thin, mubeta = b0, Vbeta = B0, r = r0, R = R0, nu = a0, delta = d0, beta.start = Beta0, FixOD = 1)
+Betas <- Resultshlogit[["mcmc"]][,1:K1]
+Sigma2RanEff <- Resultshlogit[["mcmc"]][,c(K2*N+K1+1, 2*N+K1+K2^2)]
+summary(Betas)
+Quantiles for each variable:
+						2.5%       25%       50%      75%    97.5%
+beta.(Intercept) -1.1085 -0.6428 -0.4169 -0.166  0.280
+beta.Age          0.0051  0.0078  0.0095  0.010  0.013
+beta.Male        -1.1914 -1.1325 -1.0981 -1.065 -1.008
+beta.Sport        0.2256  0.2846  0.3159  0.348  0.401
+beta.LogInc       0.1782  0.2357  0.2661  0.299  0.367
+beta.GoodHealth  -1.1648 -1.1046 -1.0701 -1.040 -0.983
+beta.BadHealth    1.2233  1.3242  1.3716  1.426  1.533
+summary(Sigma2RanEff)
+Quantiles for each variable:
+								2.5%    25%   50%   75% 97.5%
+VCV.(Intercept).(Intercept) 2.0749 2.1709 2.238 2.303 2.422
+VCV.Sozh.Sozh               0.3536 0.4875 0.626 0.906 1.271
+\end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
 
@@ -432,6 +462,9 @@ The posterior mean of the variances of the unobserved heterogeneity associated w
 	\end{algorithmic} 
 \end{algorithm}
 
+\textbf{Example: Simulation exercise of the longitudinal logit model}
+
+Let's perform a simulation exercise to assess the performance of the hierarchical longitudinal logit model. The point of departure is to assume that $y_{it}^*=\beta_0+\beta_1x_{it1}+\beta_2x_{it2}+\beta_3x_{it3}+b_i+w_{it1}b_{i1}$ where $x_{itk}\sim N(0,1)$, $k=1,2,3$, $w_{it1}\sim N(0,1)$, $b_i\sim N(0, 0.7^{1/2})$, $b_{i1}\sim N(0, 0.6^{1/2})$, $\bm{\beta}=[0.5 \ 0.4 \ 0.6 \ -0.6]^{\top}$, $i=1,2,\dots,50$, and $y_{it}\sim B(\pi_{it}$, where $\pi_{it}=1/(1+\exp(y_{it}^*))$. The sample size is 2000 in an \textit{unbalanced panel structure}. 
 
 \section{Poisson model}\label{sec93}
 
