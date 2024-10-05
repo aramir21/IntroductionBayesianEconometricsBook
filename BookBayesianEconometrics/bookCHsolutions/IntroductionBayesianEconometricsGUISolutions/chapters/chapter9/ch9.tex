@@ -29,8 +29,8 @@ This is the kernel of a multivariate random variable with mean $\bm{\beta}_n$ an
 
 \begin{itemize}
 	\item Perform inference of this example using our GUI.
-	\item Program from scratch a Gibbs sampling algorithm to perform this application.
-	\item Perform inference in this example assuming that there is heteroskedasticity, $\mu_{it}|\tau_{it}\sim N(0, \sigma^2/\tau_{it})$ and $\tau_{it}\sim G(v/2,v/2)$ setting $v=5$. 
+	\item Program from scratch a Gibbs sampling algorithm to perform this application. Set $\bm{\beta}_0=\bm{0}_5$, $\bm{B}_0=\bm{I}_5$, $\alpha_0=\delta_0=0.001$, $d_0=5$ and $\bm{D}_0=\bm{I}_1$.
+	\item Perform inference in this example assuming that $\mu_{it}|\tau_{it}\sim N(0, \sigma^2/\tau_{it})$ and $\tau_{it}\sim G(v/2,v/2)$ setting $v=5$. 
 \end{itemize}
 
 \textbf{Answer}
@@ -365,7 +365,7 @@ summary(coda::mcmc(sig2s))\end{lstlisting}
 
 \item \textbf{Simulation exercise of the longitudinal normal model continues}
 
-Assume that $y_{it}=\beta_0+\beta_1x_{it1}+\beta_2x_{it2}+\beta_3x_{it3}+\beta_4 z_{i1}+b_i+w_{it1}b_{i1}+\mu_{it}$ where $x_{itk}\sim N(0,1)$, $k=1,2,3$, $z_{i1}\sim B(0.5)$, $w_{it1}\sim N(0,1)$, $b_i\sim N(0, 0.7^{1/2})$, $b_{i1}\sim N(0, 0.6^{1/2})$, $\mu_{it}\sim N(0, 0.1^{1/2})$ $\bm{\beta}=[0.5 \ 0.4 \ 0.6 \ -0.6 \ 0.7]^{\top}$, $i=1,2,\dots,50$, and the sample size is 2000 in an \textit{unbalanced panel structure}. In addition, we assume that $\bm{b}_i$ dependents on $\bm{z}_i=[1 \ z_{i1}]^{\top}$ such that $\bm{b}_i\sim N(\bm{Z}_i\bm{\gamma},\bm{D})$ where $\bm{Z}_i=\bm{I}_{K_2}\otimes \bm{z}_i^{\top}$, and $\bm{\gamma}=[1 \ 1 \ 1 \ 1]$. The prior for $\bm{\gamma}$ is $N(\bm{\gamma}_0,\bm{\Gamma}_0)$ where we set $\bm{\gamma}_0=\bm{0}_4$ and $\bm{\Gamma}_0=\bm{I}_4$. 
+Assume that $y_{it}=\beta_1x_{it1}+\beta_2x_{it2}+\beta_3x_{it3}+\beta_4 z_{i1}+b_i+w_{it1}b_{i1}+\mu_{it}$ where $x_{itk}\sim N(0,1)$, $k=1,2,3$, $z_{i1}\sim B(0.5)$, $w_{it1}\sim N(0,1)$, $b_i\sim N(0, 0.7^{1/2})$, $b_{i1}\sim N(0, 0.6^{1/2})$, $\mu_{it}\sim N(0, 0.1^{1/2})$ $\bm{\beta}=[0.4 \ 0.6 \ -0.6 \ 0.7]^{\top}$, $i=1,2,\dots,50$, and the sample size is 2000 in an \textit{unbalanced panel structure}. In addition, we assume that $\bm{b}_i$ dependents on $\bm{z}_i=[1 \ z_{i1}]^{\top}$ such that $\bm{b}_i\sim N(\bm{Z}_i\bm{\gamma},\bm{D})$ where $\bm{Z}_i=\bm{I}_{K_2}\otimes \bm{z}_i^{\top}$, and $\bm{\gamma}=[1 \ 1 \ 1 \ 1]$. The prior for $\bm{\gamma}$ is $N(\bm{\gamma}_0,\bm{\Gamma}_0)$ where we set $\bm{\gamma}_0=\bm{0}_4$ and $\bm{\Gamma}_0=\bm{I}_4$. In addition, Set $\bm{\beta}_0=\bm{0}_4$, $\bm{B}_0=\bm{I}_4$, $\alpha_0=\delta_0=0.001$, $d_0=2$ and $\bm{D}_0=\bm{I}_2$. 
 	\begin{itemize}
 	\item Perform inference in this model without taking into account the dependence between $\bm{b}_i$ and $z_{i1}$, and compare the posterior estimates with the population parameters.
 	\item Perform inference in this model taking into account the dependence between $\bm{b}_i$ and $z_{i1}$, and compare the posterior estimates with the population parameters. 
@@ -416,7 +416,7 @@ for(i in 1:NT){
 	zdatai <- z1[id[i]]
 	zdata <- c(zdata, zdatai)
 }
-X <- cbind(1, x1, x2, x3, zdata)
+X <- cbind(x1, x2, x3, zdata)
 K1 <- dim(X)[2]
 w1 <- rnorm(NT) 
 W <- cbind(1, w1)
@@ -440,16 +440,14 @@ for(i in 1:NT){
 }
 Data <- as.data.frame(cbind(y, x1, x2, x3, zdata, w1, id))
 mcmc <- 15000; burnin <- 5000; thin <- 10; tot <- mcmc + burnin
-b0 <- rep(0, K1); B0 <- diag(K1); B0i <- solve(B0) 
+b0 <- rep(0, K1+1); B0 <- diag(K1+1); B0i <- solve(B0) 
 r0 <- K2; R0 <- diag(K2); a0 <- 0.001; d0 <- 0.001
 g0 <- rep(0, K2*K3); G0 <- diag(K2*K3); G0i <- solve(G0)
-Resultshreg <- MCMCpack::MCMChregress(fixed = y~x1 + x2 + x3 + zdata, random = ~w1, group="id",
-data = Data, burnin = burnin, mcmc = mcmc, thin = thin, 
-mubeta = b0, Vbeta = B0,
-r = r0, R = R0, nu = a0, delta = d0)
-Betas <- Resultshreg[["mcmc"]][,1:K1]
-Sigma2RanEff <- Resultshreg[["mcmc"]][,c(K2*N+K1+1, 2*N+K1+K2^2)]
-Sigma2 <- Resultshreg[["mcmc"]][,K2*N+K1+K2^2+1]
+Resultshreg <- MCMCpack::MCMChregress(fixed = y~x1 + x2 + x3 + zdata, random = ~w1, group="id", data = Data, burnin = burnin, mcmc = mcmc, thin = thin, 
+mubeta = b0, Vbeta = B0, r = r0, R = R0, nu = a0, delta = d0)
+Betas <- Resultshreg[["mcmc"]][,1:(K1+1)]
+Sigma2RanEff <- Resultshreg[["mcmc"]][,c(K2*N+K1+2, 2*N+K1+1+K2^2)]
+Sigma2 <- Resultshreg[["mcmc"]][,K2*N+K1+K2^2+2]
 summary(Betas)
 summary(Sigma2RanEff)
 summary(Sigma2)
@@ -567,6 +565,7 @@ Postbs <- array(0, c(N, K2, tot)); RegLS <- lm(y ~ X - 1)
 SumLS <- summary(RegLS); Beta <- SumLS[["coefficients"]][,1]
 sig2 <- SumLS[["sigma"]]^2; Gamma <- rep(0, K2*K3)
 D <- diag(K2)
+b0 <- rep(0, K1); B0 <- diag(K1); B0i <- solve(B0) 
 pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
 for(s in 1:tot){
 	bs <- Postb(Beta = Beta, sig2 = sig2, Gamma = Gamma, D = D)
@@ -599,32 +598,167 @@ sig2s <- PostSig2s[keep]
 Gs <- PostGammas[keep, ]
 summary(coda::mcmc(Bs))
 Quantiles for each variable:
-				2.5%     25%     50%     75%   97.5%
-var1 -0.3437  0.4087  0.7846  1.2108  2.1137
-var2  0.3520  0.3800  0.3891  0.3977  0.4243
-var3  0.5757  0.6008  0.6102  0.6193  0.6444
-var4 -0.6247 -0.5989 -0.5887 -0.5780 -0.5530
-var5 -0.3534  0.4210  0.8600  1.3199  2.1592
+			2.5%     25%     50%     75%   97.5%
+var1  0.3629  0.3812  0.3880  0.3945  0.4120
+var2  0.5844  0.6032  0.6098  0.6176  0.6381
+var3 -0.6114 -0.5950 -0.5880 -0.5809 -0.5605
+var4 -0.4455  0.4155  0.8598  1.3047  2.0654
 summary(coda::mcmc(Ds))
 Quantiles for each variable:
-2.5%     25%     50%      75%  97.5%
-var1  0.6405  0.8765  1.0900  1.45774 3.3695
-var2 -0.4688 -0.2151 -0.1182 -0.02945 0.1423
-var3  0.4133  0.5314  0.6151  0.70782 0.9530
+			2.5%     25%     50%      75%  97.5%
+var1  0.5858  0.7798  0.9173  1.13381 2.0153
+var2 -0.3914 -0.1901 -0.1104 -0.03585 0.1250
+var3  0.4285  0.5495  0.6314  0.72342 0.9662
 summary(coda::mcmc(sig2s))
 Quantiles for each variable:
-2.5%    25%    50%    75%  97.5% 
-0.1075 0.2088 0.3826 0.7386 2.5551 
+Quantiles for each variable:
+2.5%     25%     50%     75%   97.5% 
+0.09609 0.11486 0.17790 0.35215 1.12537 
 summary(coda::mcmc(Gs))
 Quantiles for each variable:
-        2.5%    25%    50%   75% 97.5%
-var1 -0.4446 0.3318 0.7535 1.168 2.002
-var2 -0.4786 0.4345 0.8332 1.225 1.996
-var3  0.8643 1.0627 1.1615 1.272 1.482
-var4  0.5410 0.8468 0.9992 1.138 1.436
+			2.5%    25%    50%   75% 97.5%
+var1  0.6552 0.8998 1.0288 1.162 1.402
+var2 -0.4463 0.4056 0.7882 1.242 2.144
+var3  0.8583 1.0599 1.1623 1.271 1.482
+var4  0.5525 0.8430 1.0038 1.147 1.416
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
-In one hand, the 95\% credible intervals of the model without taking into account the dependence between the \textit{random effects} and $z_{i1}$ overestimates the posterior mean of $\beta_0$, $\beta_4$ and the variance of $b_{i1}$. In addition, the credible intervals are very narrow. However, the variance of $\mu_i$ is well estimated. On the other hand, all the 95\% credible intervals of the model taking into account the dependence between the \textit{random effects} and $z_{i1}$ encompass the population parameters. However, there is a lot of variability in $\beta_0$ and $\beta_4$ posterior estimates. The posterior mean estimate of the variance of $b_{i1}$ is very close to the population value, and the location parameters associated with $z_{i1}$ in the mean of the \textit{random effects} is also well estimated by the posterior mean. However, the variance of the model is overestimated.  
+In one hand, the 95\% credible intervals of the model without taking into account the dependence between the \textit{random effects} and $z_{i1}$ overestimates the posterior mean of $\beta_4$ and the variance of $b_{i1}$. In addition, the credible intervals are very narrow. However, the variance of $\mu_i$ is well estimated. On the other hand, all the 95\% credible intervals of the model taking into account the dependence between the \textit{random effects} and $z_{i1}$ encompass the population parameters. However, there is a lot of variability in $\beta_4$ posterior estimates. The posterior mean estimate of the variance of $b_{i1}$ is close to the population value, and the location parameters associated with $z_{i1}$ in the mean of the \textit{random effects} are also well estimated by the posterior mean. However, the variance of the model is overestimated.
+
+\item \textbf{The effects of health care reforms and doctor visits in Germany continues}
+
+\begin{enumerate}
+	\item Replicate this example using our GUI, which by default does not fix the over-dispersion parameter ($\sigma^2$), and compare the results with the results of this example in Section 9.2.
+\end{enumerate}
+
+\textbf{Answer}
+
+This code replicates what we get using our GUI.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. The effects of health care reforms and doctor visits in Germany, results}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls())
+set.seed(12345)
+Data <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/9VisitDoc.csv", sep = ",", header = TRUE, quote = "")
+attach(Data)
+K1 <- 7; K2 <- 2; N <- 9197
+b0 <- rep(0, K1); B0 <- diag(K1)
+r0 <- 5; R0 <- diag(K2)
+a0 <- 0.001; d0 <- 0.001
+RegLogit <- glm(DocVis ~ Age + Male + Sport + LogInc + GoodHealth + BadHealth, family = binomial(link = "logit"))
+SumLogit <- summary(RegLogit)
+Beta0 <- SumLogit[["coefficients"]][,1]
+mcmc <- 10000; burnin <- 1000; thin <- 10
+# MCMChlogit
+Resultshlogit <- MCMCpack::MCMChlogit(fixed = DocVis ~ Age + Male + Sport + LogInc + GoodHealth + BadHealth, random = ~Sozh, group="id", data = Data, burnin = burnin, mcmc = mcmc, thin = thin, mubeta = b0, Vbeta = B0, r = r0, R = R0, nu = a0, delta = d0, beta.start = Beta0, FixOD = 0)
+Betas <- Resultshlogit[["mcmc"]][,1:K1]
+Sigma2RanEff <- Resultshlogit[["mcmc"]][,c(K2*N+K1+1, 2*N+K1+K2^2)]
+summary(Betas)
+summary(Sigma2RanEff)
+summary(Sigma2)
+Quantiles for each variable:
+				   2.5%        25%        50%        75%      97.5%
+Intercept  -9.48e-01 -5.27e-01 -2.86e-01 -6.28e-02  2.99e-01
+Age         4.88e-03  7.27e-03  8.35e-03  9.31e-03  1.09e-02
+Male       -9.90e-01 -9.52e-01 -9.31e-01 -9.10e-01 -8.75e-01
+Sport       1.80e-01  2.25e-01  2.55e-01  2.85e-01  3.47e-01
+LogInc      1.38e-01  1.85e-01  2.15e-01  2.49e-01  3.01e-01
+GoodHealth -9.56e-01 -9.18e-01 -8.97e-01 -8.75e-01 -8.36e-01
+BadHealth   1.08e+00  1.14e+00  1.19e+00  1.23e+00  1.28e+00
+D11		      1.43e+00  1.53e+00  1.58e+00  1.62e+00  1.70e+00
+D21		     -2.67e-01  1.94e-02  1.85e-01  4.08e-01  5.81e-01
+D12		     -2.67e-01  1.94e-02  1.85e-01  4.08e-01  5.81e-01
+D22         6.05e-01  7.99e-01  9.75e-01  1.21e+00  1.62e+00
+sigma2      6.37e-02  7.76e-02  1.01e-01  1.15e-01  1.58e-01
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+We see in this example running our GUI that we get qualitatively same results as the results fixing the over-dispersion parameter in Section 9.2 in the book. However, there small numerical differences in the \textit{fixed effects}, and the differences are greater in the posterior results of the covariance matrix of the \textit{random effects}.
+
+\item \textbf{Simulation exercise of the longitudinal logit model}
+
+Perform a simulation exercise to assess the performance of the hierarchical longitudinal logit model. The point of departure is to assume that $y_{it}^*=\beta_0+\beta_1x_{it1}+\beta_2x_{it2}+\beta_3x_{it3}+b_i+w_{it1}b_{i1}$ where $x_{itk}\sim N(0,1)$, $k=1,2,3$, $w_{it1}\sim N(0,1)$, $b_i\sim N(0, 0.7^{1/2})$, $b_{i1}\sim N(0, 0.6^{1/2})$, $\bm{\beta}=[0.5 \ 0.4 \ 0.6 \ -0.6]^{\top}$, $i=1,2,\dots,50$, and $y_{it}\sim B(\pi_{it}$, where $\pi_{it}=1/(1+\exp(y_{it}^*))$. The sample size is 1000 in an \textit{unbalanced panel structure}.
+
+\begin{itemize}
+	\item Perform inference using the command $MCMChlogit$ fixing the over-dispersion parameter, and using $\bm{\beta}_0=\bm{0}_4$, $\bm{B}_0=\bm{I}_4$, $\alpha_0=\delta_0=0.001$, $d_0=2$ and $\bm{D}_0=\bm{I}_2$.
+	\item Program from scratch a Metropolis-within-Gibbs algorithm to perform inference in this simulation without fixing $\sigma^2$.  
+\end{itemize}
+
+\textbf{Answer}
+
+The following code shows the simulation setting, and the results using the \textit{MCMChlogit} command. We see that all posterior estimates encompass the population values.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Hierarchical longitudinal logit model using MCMChlogit}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+NT <- 1000; N <- 50
+id <- c(1:N, sample(1:N, NT - N,replace=TRUE))
+x1 <- rnorm(NT); x2 <- rnorm(NT); x3 <- rnorm(NT) 
+X <- cbind(1, x1, x2, x3); K1 <- dim(X)[2]
+w1 <- rnorm(NT); W <- cbind(1, w1); K2 <- dim(W)[2]
+B <- c(0.5, 0.4, 0.6, -0.6); D <- c(0.7, 0.6)
+sig2 <- 0.1
+b1 <- rnorm(N, 0, sd = D[1]^0.5)
+b2 <- rnorm(N, 0, sd = D[2]^0.5)
+b <- cbind(b1, b2)
+yl <- NULL
+for(i in 1:NT){
+	ylmeani <- X[i,]%*%B + W[i,]%*%b[id[i],]
+	yli <- rnorm(1, ylmeani, sig2^0.5)
+	yl <- c(yl, yli)
+}
+pit <- 1/(1+exp(-yl))
+y <- rbinom(NT, 1, prob = pit)
+Data <- as.data.frame(cbind(y, x1, x2, x3, w1, id))
+mcmc <- 15000; burnin <- 5000; thin <- 10; tot <- mcmc + burnin
+b0 <- rep(0, K1); B0 <- diag(K1); B0i <- solve(B0) 
+r0 <- K2; R0 <- diag(K2); a0 <- 0.001; d0 <- 0.001
+RegLogit <- glm(y ~ X - 1, family = binomial(link = "logit"))
+SumLogit <- summary(RegLogit)
+
+Beta0 <- SumLogit[["coefficients"]][,1]
+sig20 <- sum(SumLogit[["deviance.resid"]]^2)/SumLogit[["df.residual"]]
+Resultshlogit <- MCMCpack::MCMChlogit(fixed = y~x1 + x2 + x3, random = ~w1, group="id", data = Data, burnin = burnin, mcmc = mcmc, thin = thin, 
+mubeta = b0, Vbeta = B0, r = r0, R = R0, nu = a0, delta = d0,
+beta.start = Beta0, FixOD = 1, sigma2.start = sig20)
+Betas <- Resultshlogit[["mcmc"]][,1:K1]
+Sigma2RanEff <- Resultshlogit[["mcmc"]][,c(K2*N+K1+1, 2*N+K1+K2^2)]
+Sigma2 <- Resultshlogit[["mcmc"]][,K2*N+K1+K2^2+1]
+summary(Betas)
+Quantiles for each variable:
+							2.5%     25%     50%     75%   97.5%
+beta.(Intercept)  0.4258  0.6165  0.7140  0.8155  1.0041
+beta.x1           0.3294  0.4372  0.4999  0.5617  0.6684
+beta.x2           0.5555  0.6763  0.7388  0.8062  0.9377
+beta.x3          -0.9327 -0.7957 -0.7276 -0.6591 -0.5383
+summary(Sigma2RanEff)
+Quantiles for each variable:
+2.5%    25%    50%    75% 97.5%
+D11 0.3394 0.5366 0.6962 0.8652 1.338
+D22 0.4101 0.6478 0.8091 1.0039 1.611
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+The following code shows the algorithm step by step.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Hierarchical longitudinal logit model from scratch}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+
+		\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
 
 \end{enumerate}
