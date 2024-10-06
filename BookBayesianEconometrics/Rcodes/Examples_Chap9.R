@@ -595,8 +595,8 @@ Beta <- SumPois[["coefficients"]][,1]
 sig2 <- sum(SumPois[["deviance.resid"]]^2)/SumPois[["df.residual"]]
 # sig2 <- 0.1
 D <- diag(K2)
-bs1 <- rnorm(N, 0, sd = D[1]^0.5)
-bs2 <- rnorm(N, 0, sd = D[2]^0.5)
+bs1 <- rnorm(N, 0, sd = D[1,1]^0.5)
+bs2 <- rnorm(N, 0, sd = D[2,2]^0.5)
 bs <- cbind(bs1, bs2)
 tuning <- 0.1; ropt <- 0.44
 tunepariter <- seq(round(tot/10, 0), tot, round(tot/10, 0));   l <- 1

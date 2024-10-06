@@ -820,10 +820,10 @@ PostBeta <- function(D, ylhat, sig2){
   for(i in 1:N){
     ids <- which(id == i)
     Ti <- length(ids)
-    Wi <- W[ids, ]
+    Wi <- matrix(W[ids, ], Ti, K2)
     Vi <- diag(Ti)*sig2 + Wi%*%D%*%t(Wi)
     ViInv <- solve(Vi)
-    Xi <- X[ids, ]
+    Xi <- matrix(X[ids, ], Ti, K1)
     XVXi <- t(Xi)%*%ViInv%*%Xi
     XVX <- XVX + XVXi
     yi <- ylhat[ids]
@@ -842,8 +842,9 @@ Postb <- function(Beta, D, ylhat, sig2){
   bis <- matrix(0, N, K2)
   for(i in 1:N){
     ids <- which(id == i)
-    Wi <- W[ids, ]
-    Xi <- X[ids, ]
+    Ti <- length(ids)
+    Wi <- matrix(W[ids, ], Ti, K2)
+    Xi <- matrix(X[ids, ], Ti, K1)
     yi <- ylhat[ids]
     Wtei <- sig2^(-1)*t(Wi)%*%(yi - Xi%*%Beta)
     Bni <- solve(sig2^(-1)*t(Wi)%*%Wi + Di)
@@ -872,9 +873,10 @@ PostSig2 <- function(Beta, bs, ylhat){
   ete <- 0
   for(i in 1:N){
     ids <- which(id == i)
-    Xi <- X[ids, ]
+    Ti <- length(ids)
+    Xi <- matrix(X[ids, ], Ti, K1)
     yi <- ylhat[ids]
-    Wi <- W[ids, ]
+    Wi <- matrix(W[ids, ], Ti, K2)
     ei <- yi - Xi%*%Beta - Wi%*%bs[i, ]
     etei <- t(ei)%*%ei
     ete <- ete + etei
@@ -894,8 +896,8 @@ Beta <- SumPois[["coefficients"]][,1]
 sig2 <- sum(SumPois[["deviance.resid"]]^2)/SumPois[["df.residual"]]
 # sig2 <- 0.1
 D <- diag(K2)
-bs1 <- rnorm(N, 0, sd = D[1]^0.5)
-bs2 <- rnorm(N, 0, sd = D[2]^0.5)
+bs1 <- rnorm(N, 0, sd = D[1,1]^0.5)
+bs2 <- rnorm(N, 0, sd = D[2,2]^0.5)
 bs <- cbind(bs1, bs2)
 tuning <- 0.1; ropt <- 0.44
 tunepariter <- seq(round(tot/10, 0), tot, round(tot/10, 0));   l <- 1
