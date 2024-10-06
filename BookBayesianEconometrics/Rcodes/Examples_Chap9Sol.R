@@ -605,7 +605,7 @@ LatentMHV1 <- function(tuning, Beta, bs, sig2){
     ids <- which(id == i)
     yi <- y[i]
     ylhatmeani <- X[i,]%*%Beta + W[i,]%*%bs[id[i],]
-    ylhati <- rnorm(1, ylhatmeani, sig2)
+    ylhati <- rnorm(1, ylhatmeani, sd = sig2^0.5)
     pihati <- 1/(1+exp(-ylhati))
     ei <- rnorm(1, 0, sd = tuning)
     ylpropi <- ylhati + ei
@@ -629,7 +629,6 @@ LatentMHV1 <- function(tuning, Beta, bs, sig2){
 }
 # Beta <- B; bs <- b; tuning <- 0.1; sig2 <- sig20
 # EnsLatY <- LatentMH(tuning, Beta, bs, sig2)
-
 PostBeta <- function(D, ylhat, sig2){
   XVX <- matrix(0, K1, K1)
   XVy <- matrix(0, K1, 1)
@@ -683,14 +682,32 @@ PostD <- function(bs){
   Sigma <- MCMCpack::riwish(v = rn, S = Rn)
   return(Sigma)
 }
+PostSig2 <- function(Beta, bs, ylhat){
+  an <- a0 + 0.5*NT
+  ete <- 0
+  for(i in 1:N){
+    ids <- which(id == i)
+    Xi <- X[ids, ]
+    yi <- ylhat[ids]
+    Wi <- W[ids, ]
+    ei <- yi - Xi%*%Beta - Wi%*%bs[i, ]
+    etei <- t(ei)%*%ei
+    ete <- ete + etei
+  }
+  dn <- d0 + 0.5*ete 
+  sig2 <- MCMCpack::rinvgamma(1, shape = an, scale = dn)
+  return(sig2)
+}
 PostBetas <- matrix(0, tot, K1)
 PostDs <- matrix(0, tot, K2*(K2+1)/2)
 Postbs <- array(0, c(N, K2, tot))
+PostSig2s <- rep(0, tot)
 Accepts <- rep(NULL, tot)
 RegLogit <- glm(y ~ X - 1, family = binomial(link = "logit"))
 SumLogit <- summary(RegLogit)
 Beta <- SumLogit[["coefficients"]][,1]
 sig2 <- sum(SumLogit[["deviance.resid"]]^2)/SumLogit[["df.residual"]]
+# sig2 <- 0.1
 D <- diag(K2)
 bs1 <- rnorm(N, 0, sd = D[1]^0.5)
 bs2 <- rnorm(N, 0, sd = D[2]^0.5)
@@ -699,15 +716,202 @@ tuning <- 0.1; ropt <- 0.44
 tunepariter <- seq(round(tot/10, 0), tot, round(tot/10, 0));   l <- 1
 pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
 for(s in 1:tot){
-  # LatY <- LatentMH(tuning = tuning, Beta = Beta, bs = bs, sig2 = sig2)
-  LatY <- LatentMHV1(tuning = tuning, Beta = Beta, bs = bs, sig2 = sig2)
-  ylhat <- LatY[["ylhat"]]
+  # LatY <- LatentMHV1(tuning = tuning, Beta = Beta, bs = bs, sig2 = sig2)
+  # ylhat <- LatY[["ylhat"]]
+  ylhat <- yl
   bs <- Postb(Beta = Beta, D = D, ylhat = ylhat, sig2 = sig2)
   D <- PostD(bs = bs)
   Beta <- PostBeta(D = D, ylhat = ylhat, sig2 = sig2)
+  sig2 <- PostSig2(Beta = Beta, bs = bs, ylhat = ylhat)
   PostBetas[s,] <- Beta
   PostDs[s,] <- matrixcalc::vech(D)
   Postbs[, , s] <- bs
+  PostSig2s[s] <- sig2
+  # AcceptRate <- LatY[["accept"]]
+  # Accepts[s] <- AcceptRate
+  # if(AcceptRate > ropt){
+  #   tuning = tuning*(2-(1-AcceptRate)/(1-ropt))
+  # }else{
+  #   tuning = tuning/(2-AcceptRate/ropt)
+  # }
+  # if(s == tunepariter[l]){
+  #   # AcceptRate <- mean(Accepts[1:s])
+  #   # if(AcceptRate > ropt){
+  #   #   tuning = tuning*(2-(1-AcceptRate)/(1-ropt))
+  #   # }else{
+  #   #   tuning = tuning/(2-AcceptRate/ropt)
+  #   # }
+  #   print(AcceptRate)
+  #   l <- l + 1
+  # }
+  setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+keep <- seq((burnin+1), tot, thin)
+Bs <- PostBetas[keep,]
+Ds <- PostDs[keep,]
+bs <- Postbs[, , keep]
+sig2s <- PostSig2s[keep]
+mean(Accepts)
+summary(coda::mcmc(Bs))
+plot(coda::mcmc(Bs))
+summary(coda::mcmc(Ds))
+plot(coda::mcmc(Ds))
+summary(coda::mcmc(sig2s))
+# Convergence diagnostics
+coda::geweke.diag(Bs)
+coda::raftery.diag(Bs, q = 0.5, r = 0.05, s = 0.95)
+coda::heidel.diag(Bs)
+
+########################## Visits to doctor: Longitudinal Poisson model ########################## 
+rm(list = ls())
+set.seed(12345)
+Data <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/9VisitDoc.csv", sep = ",", header = TRUE, quote = "")
+attach(Data)
+K1 <- 7; K2 <- 2; N <- 9197
+b0 <- rep(0, K1); B0 <- diag(K1)
+r0 <- 5; R0 <- diag(K2)
+a0 <- 0.001; d0 <- 0.001
+NT <- dim(Data)[1]
+N <- length(unique(id))
+X <- cbind(1, Age, Male, Sport, LogInc, GoodHealth, BadHealth)
+K1 <- dim(X)[2]
+W <- cbind(1, Sozh)
+K2 <- dim(W)[2]
+y <- DocNum
+mcmc <- 15000; burnin <- 5000; thin <- 10; tot <- mcmc + burnin
+b0 <- rep(0, K1); B0 <- diag(K1); B0i <- solve(B0) 
+r0 <- K2; R0 <- diag(K2); a0 <- 0.001; d0 <- 0.001
+LatentMHV1 <- function(tuning, Beta, bs, sig2){
+  ylhat <- rep(0, NT)
+  accept <- NULL
+  for(i in 1:NT){
+    ids <- which(id == i)
+    yi <- y[i]
+    ylhatmeani <- X[i,]%*%Beta + W[i,]%*%bs[id[i],]
+    ylhati <- rnorm(1, ylhatmeani, sd = sig2^0.5)
+    # ylhati <- X[i,]%*%Beta + W[i,]%*%bs[id[i],] + sig2/2
+    lambdahati <- exp(ylhati)
+    ei <- rnorm(1, 0, sd = tuning)
+    ylpropi <- ylhati + ei
+    lambdapropi <- exp(ylpropi)
+    logPosthati <- sum(dpois(yi, lambdahati, log = TRUE) + dnorm(ylhati, ylhatmeani, sig2^0.5, log = TRUE))
+    logPostpropi <- sum(dpois(yi, lambdapropi, log = TRUE) + dnorm(ylpropi, ylhatmeani, sig2^0.5, log = TRUE))
+    alphai <- min(1, exp(logPostpropi - logPosthati))
+    ui <- runif(1)
+    if(ui <= alphai){
+      ylhati <- ylpropi
+      accepti <- 1
+    }else{
+      ylhati <- ylhati
+      accepti <- 0
+    }
+    ylhat[i] <- ylhati
+    accept <- c(accept, accepti)
+  }
+  res <- list(ylhat = ylhat, accept = mean(accept))
+  return(res)
+}
+# Beta <- B; bs <- b; tuning <- 0.1; sig2 <- sig20
+# EnsLatY <- LatentMH(tuning, Beta, bs, sig2)
+PostBeta <- function(D, ylhat, sig2){
+  XVX <- matrix(0, K1, K1)
+  XVy <- matrix(0, K1, 1)
+  for(i in 1:N){
+    ids <- which(id == i)
+    Ti <- length(ids)
+    Wi <- W[ids, ]
+    Vi <- diag(Ti)*sig2 + Wi%*%D%*%t(Wi)
+    ViInv <- solve(Vi)
+    Xi <- X[ids, ]
+    XVXi <- t(Xi)%*%ViInv%*%Xi
+    XVX <- XVX + XVXi
+    yi <- ylhat[ids]
+    XVyi <- t(Xi)%*%ViInv%*%yi
+    XVy <- XVy + XVyi
+  }
+  Bn <- solve(B0i + XVX)
+  bn <- Bn%*%(B0i%*%b0 + XVy)
+  Beta <- MASS::mvrnorm(1, bn, Bn)
+  return(Beta)
+}
+# D <- matrix(c(0.7, 0, 0, 0.6), 2, 2); ylhat <- yl; sig2 <- sig2
+# PostBeta(D, ylhat, sig2)
+Postb <- function(Beta, D, ylhat, sig2){
+  Di <- solve(D)
+  bis <- matrix(0, N, K2)
+  for(i in 1:N){
+    ids <- which(id == i)
+    Wi <- W[ids, ]
+    Xi <- X[ids, ]
+    yi <- ylhat[ids]
+    Wtei <- sig2^(-1)*t(Wi)%*%(yi - Xi%*%Beta)
+    Bni <- solve(sig2^(-1)*t(Wi)%*%Wi + Di)
+    bni <- Bni%*%Wtei
+    bi <- MASS::mvrnorm(1, bni, Bni)
+    bis[i, ] <- bi
+  }
+  return(bis)
+}
+# D <- matrix(c(0.7, 0, 0, 0.6), 2, 2); ylhat <- yl; Beta <- B; sig2 <- sig2
+# Postb(Beta, D, ylhat, sig2)
+PostD <- function(bs){
+  rn <- r0 + N
+  btb <- matrix(0, K2, K2)
+  for(i in 1:N){
+    bsi <- bs[i, ]
+    btbi <- bsi%*%t(bsi)
+    btb <- btb + btbi
+  }
+  Rn <- d0*R0 + btb
+  Sigma <- MCMCpack::riwish(v = rn, S = Rn)
+  return(Sigma)
+}
+PostSig2 <- function(Beta, bs, ylhat){
+  an <- a0 + 0.5*NT
+  ete <- 0
+  for(i in 1:N){
+    ids <- which(id == i)
+    Xi <- X[ids, ]
+    yi <- ylhat[ids]
+    Wi <- W[ids, ]
+    ei <- yi - Xi%*%Beta - Wi%*%bs[i, ]
+    etei <- t(ei)%*%ei
+    ete <- ete + etei
+  }
+  dn <- d0 + 0.5*ete 
+  sig2 <- MCMCpack::rinvgamma(1, shape = an, scale = dn)
+  return(sig2)
+}
+PostBetas <- matrix(0, tot, K1)
+PostDs <- matrix(0, tot, K2*(K2+1)/2)
+Postbs <- array(0, c(N, K2, tot))
+PostSig2s <- rep(0, tot)
+Accepts <- rep(NULL, tot)
+RegPois <- glm(DocNum ~ Age + Male + Sport + LogInc + GoodHealth + BadHealth, family = poisson(link = "log"))
+SumPois <- summary(RegPois)
+Beta <- SumPois[["coefficients"]][,1]
+sig2 <- sum(SumPois[["deviance.resid"]]^2)/SumPois[["df.residual"]]
+# sig2 <- 0.1
+D <- diag(K2)
+bs1 <- rnorm(N, 0, sd = D[1]^0.5)
+bs2 <- rnorm(N, 0, sd = D[2]^0.5)
+bs <- cbind(bs1, bs2)
+tuning <- 0.1; ropt <- 0.44
+tunepariter <- seq(round(tot/10, 0), tot, round(tot/10, 0));   l <- 1
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+  LatY <- LatentMHV1(tuning = tuning, Beta = Beta, bs = bs, sig2 = sig2)
+  ylhat <- LatY[["ylhat"]]
+  # ylhat <- yl
+  bs <- Postb(Beta = Beta, D = D, ylhat = ylhat, sig2 = sig2)
+  D <- PostD(bs = bs)
+  Beta <- PostBeta(D = D, ylhat = ylhat, sig2 = sig2)
+  sig2 <- PostSig2(Beta = Beta, bs = bs, ylhat = ylhat)
+  PostBetas[s,] <- Beta
+  PostDs[s,] <- matrixcalc::vech(D)
+  Postbs[, , s] <- bs
+  PostSig2s[s] <- sig2
   AcceptRate <- LatY[["accept"]]
   Accepts[s] <- AcceptRate
   if(AcceptRate > ropt){
@@ -732,18 +936,17 @@ keep <- seq((burnin+1), tot, thin)
 Bs <- PostBetas[keep,]
 Ds <- PostDs[keep,]
 bs <- Postbs[, , keep]
+sig2s <- PostSig2s[keep]
 mean(Accepts)
 summary(coda::mcmc(Bs))
 plot(coda::mcmc(Bs))
 summary(coda::mcmc(Ds))
 plot(coda::mcmc(Ds))
+summary(coda::mcmc(sig2s))
 # Convergence diagnostics
 coda::geweke.diag(Bs)
 coda::raftery.diag(Bs, q = 0.5, r = 0.05, s = 0.95)
 coda::heidel.diag(Bs)
-
-
-
 
 
 

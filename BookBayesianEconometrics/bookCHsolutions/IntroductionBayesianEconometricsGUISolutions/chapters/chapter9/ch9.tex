@@ -540,8 +540,7 @@ PostGamma <- function(bs, D){
 		ZDbi <- t(ZZi)%*%Di%*%bi
 		ZDb <- ZDb + ZDbi
 	}
-	Gn <- solve(G0i + ZDZ)
-	gn <- Gn%*%(G0i%*%g0 + ZDb)
+	Gn <- solve(G0i + ZDZ); gn <- Gn%*%(G0i%*%g0 + ZDb)
 	Gamma <- MASS::mvrnorm(1, gn, Gn)
 	return(Gamma)
 }
@@ -564,8 +563,7 @@ PostDs <- matrix(0, tot, K2*(K2+1)/2); PostSig2s <- rep(0, tot)
 Postbs <- array(0, c(N, K2, tot)); RegLS <- lm(y ~ X - 1)
 SumLS <- summary(RegLS); Beta <- SumLS[["coefficients"]][,1]
 sig2 <- SumLS[["sigma"]]^2; Gamma <- rep(0, K2*K3)
-D <- diag(K2)
-b0 <- rep(0, K1); B0 <- diag(K1); B0i <- solve(B0) 
+D <- diag(K2); b0 <- rep(0, K1); B0 <- diag(K1); B0i <- solve(B0) 
 pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
 for(s in 1:tot){
 	bs <- Postb(Beta = Beta, sig2 = sig2, Gamma = Gamma, D = D)
@@ -573,14 +571,11 @@ for(s in 1:tot){
 	Beta <- PostBeta(sig2 = sig2, Gamma = Gamma, D = D)
 	sig2 <- PostSig2(Beta = Beta, bs = bs)
 	Gamma <- PostGamma(bs = bs, D = D) 
-	PostBetas[s,] <- Beta
-	PostDs[s,] <- matrixcalc::vech(D)
-	PostSig2s[s] <- sig2
-	Postbs[, , s] <- bs
+	PostBetas[s,] <- Beta; PostDs[s,] <- matrixcalc::vech(D)
+	PostSig2s[s] <- sig2; Postbs[, , s] <- bs
 	PostGammas[s,] <- Gamma
 	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
 }
-close(pb)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
@@ -590,6 +585,7 @@ close(pb)
 	\textit{R code. Simulation exercise: Longitudinal normal model with fixed effects correlated to regressors}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
+close(pb)
 keep <- seq((burnin+1), tot, thin)
 Bs <- PostBetas[keep,]
 Ds <- PostDs[keep,]
@@ -626,11 +622,9 @@ var4  0.5525 0.8430 1.0038 1.147 1.416
 \end{tcolorbox}
 In one hand, the 95\% credible intervals of the model without taking into account the dependence between the \textit{random effects} and $z_{i1}$ overestimates the posterior mean of $\beta_4$ and the variance of $b_{i1}$. In addition, the credible intervals are very narrow. However, the variance of $\mu_i$ is well estimated. On the other hand, all the 95\% credible intervals of the model taking into account the dependence between the \textit{random effects} and $z_{i1}$ encompass the population parameters. However, there is a lot of variability in $\beta_4$ posterior estimates. The posterior mean estimate of the variance of $b_{i1}$ is close to the population value, and the location parameters associated with $z_{i1}$ in the mean of the \textit{random effects} are also well estimated by the posterior mean. However, the variance of the model is overestimated.
 
-\item \textbf{The effects of health care reforms and doctor visits in Germany continues}
+\item \textbf{Doctor visits in Germany continues I}
 
-\begin{enumerate}
-	\item Replicate this example using our GUI, which by default does not fix the over-dispersion parameter ($\sigma^2$), and compare the results with the results of this example in Section 9.2.
-\end{enumerate}
+Replicate this example using our GUI, which by default does not fix the over-dispersion parameter ($\sigma^2$), and compare the results with the results of this example in Section 9.2.
 
 \textbf{Answer}
 
@@ -638,7 +632,7 @@ This code replicates what we get using our GUI.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. The effects of health care reforms and doctor visits in Germany, results}
+	\textit{R code. Doctor visits in Germany, results}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
 rm(list = ls())
@@ -682,7 +676,7 @@ We see in this example running our GUI that we get qualitatively same results as
 
 \item \textbf{Simulation exercise of the longitudinal logit model}
 
-Perform a simulation exercise to assess the performance of the hierarchical longitudinal logit model. The point of departure is to assume that $y_{it}^*=\beta_0+\beta_1x_{it1}+\beta_2x_{it2}+\beta_3x_{it3}+b_i+w_{it1}b_{i1}$ where $x_{itk}\sim N(0,1)$, $k=1,2,3$, $w_{it1}\sim N(0,1)$, $b_i\sim N(0, 0.7^{1/2})$, $b_{i1}\sim N(0, 0.6^{1/2})$, $\bm{\beta}=[0.5 \ 0.4 \ 0.6 \ -0.6]^{\top}$, $i=1,2,\dots,50$, and $y_{it}\sim B(\pi_{it}$, where $\pi_{it}=1/(1+\exp(y_{it}^*))$. The sample size is 1000 in an \textit{unbalanced panel structure}.
+Perform a simulation exercise to assess the performance of the hierarchical longitudinal logit model. The point of departure is to assume that $y_{it}^*=\beta_0+\beta_1x_{it1}+\beta_2x_{it2}+\beta_3x_{it3}+b_i+w_{it1}b_{i1}$ where $x_{itk}\sim N(0,1)$, $k=1,2,3$, $w_{it1}\sim N(0,1)$, $b_i\sim N(0, 0.7^{1/2})$, $b_{i1}\sim N(0, 0.6^{1/2})$, $\bm{\beta}=[0.5 \ 0.4 \ 0.6 \ -0.6]^{\top}$, $i=1,2,\dots,50$, and $y_{it}\sim B(\pi_{it}$, where $\pi_{it}=1/(1+\exp(-y_{it}^*))$. The sample size is 1000 in an \textit{unbalanced panel structure}.
 
 \begin{itemize}
 	\item Perform inference using the command $MCMChlogit$ fixing the over-dispersion parameter, and using $\bm{\beta}_0=\bm{0}_4$, $\bm{B}_0=\bm{I}_4$, $\alpha_0=\delta_0=0.001$, $d_0=2$ and $\bm{D}_0=\bm{I}_2$.
@@ -759,6 +753,26 @@ The following code shows the algorithm step by step.
 		\end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
+
+\item \textbf{Doctor visits in Germany continues II} 
+
+Use the package \textit{MCMCpack} to perform inference in the number of visits to doctors (\textit{DocNum}) with the same specification of the example of \textbf{Doctor visits in Germany} of Section 9.2 of the book.
+
+\textbf{Answer}
+
+This algorithm shows how to perform inference in this application programming from scratch the algorithm.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Doctor visits in Germany: Hierarchical longitudinal Poisson model from scratch}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+			
+		\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+
 
 
 \end{enumerate}

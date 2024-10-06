@@ -144,9 +144,7 @@ K1 <- 5; K2 <- 1
 b0 <- rep(0, K1); B0 <- diag(K1)
 r0 <- 5; R0 <- diag(K2)
 a0 <- 0.001; d0 <- 0.001
-Resultshreg <- MCMCpack::MCMChregress(fixed = log(gsp)~log(pcap)+log(pc)+log(emp)+unemp, random = ~1, 
-group = "id", data = DataGSP, burnin = 5000, mcmc = 10000, thin = 1,
-r = r0, R = R0, nu = a0, delta = d0)
+Resultshreg <- MCMCpack::MCMChregress(fixed = log(gsp)~log(pcap)+log(pc)+log(emp)+unemp, random = ~1, group = "id", data = DataGSP, burnin = 5000, mcmc = 10000, thin = 1, r = r0, R = R0, nu = a0, delta = d0)
 Betas <- Resultshreg[["mcmc"]][,1:K1]
 Sigma2RanEff <- Resultshreg[["mcmc"]][,54]
 Sigma2 <- Resultshreg[["mcmc"]][,55]
@@ -380,22 +378,26 @@ We can see that all the 95\% credible intervals encompass the population paramet
 
 We can use the framework of Section \ref{sec91} to perform inference in models where we have longitudinal/panel data of binary response variables. In particular, let $y_{it}\sim{B}(\pi_{it})$ where $\text{logit}(\pi_{it})=\log\left(\frac{\pi_{it}}{1-\pi_{it}}\right)\equiv y_{it}^*$ such that $y_{it}^*\sim N(\bm{x}_{it}^{\top}\bm{\beta}+\bm{w}_{it}^{\top}\bm{b}_i, \sigma^2)$. Thus, we can \textit{augment} the model with the latent variable $y_{it}^*$, and perform inference using a Metropolis-within-Gibbs sampling algorithm based on the posterior conditional distributions of the previous section. 
 
-We can implement a Gibbs sampling algorithm to sample draws from the posterior conditional distributions of $\bm{\beta}$, $\sigma^2$, $\bm{b}_i$ and $\bm{D}$ using the equations in Section \ref{sec91} conditional on $\bm{y}_i^*$. Then, we can use a random walk Metropolis-Hastings algorithm to sample $y_{it}^*$ where the proposal distribution is Gaussian with mean $y_{ij}^*$ and variance equal to $v^2$, that is, $y_{ij}^{*c}$=$y_{it}^*+\epsilon_{it}$ where $\epsilon_{it}\sim\mathcal{N}(0,v^2)$. We should take into account that $\mathbb{E}[{\pi}_{it}]=1/(1+\exp\left\{(\bm{x}_{it}^{\top}\bm{\beta}+\bm{w}_{it}^{\top}\bm{b}_i)/\sqrt{1+(16\sqrt{3}/(15\pi))^2\sigma^2}\right\})$ \cite[~pag. 136]{diggle2002analysis}.
+We can implement a Gibbs sampling algorithm to sample draws from the posterior conditional distributions of $\bm{\beta}$, $\sigma^2$, $\bm{b}_i$ and $\bm{D}$ using the equations in Section \ref{sec91} conditional on $\bm{y}_i^*$. Then, we can use a random walk Metropolis-Hastings algorithm to sample $y_{it}^*$ where the proposal distribution is Gaussian with mean $y_{ij}^*$ and variance equal to $v^2$, that is, $y_{ij}^{*c}$=$y_{it}^*+\epsilon_{it}$ where $\epsilon_{it}\sim\mathcal{N}(0,v^2)$, $v$ is a tuning parameter to get good acceptance rates.% We should take into account that $\mathbb{E}[{\pi}_{it}]=1/(1+\exp\left\{(\bm{x}_{it}^{\top}\bm{\beta}+\bm{w}_{it}^{\top}\bm{b}_i)/\sqrt{1+(16\sqrt{3}/(15\pi))^2\sigma^2}\right\})$ \cite[~pag. 136]{diggle2002analysis}.
 
-
-To get a good $y_{ij}^*$ which implies $\pi_{it}=\frac{1}{1+e^{-y_{it}^*}}$ and $\pi_{it}^c=\frac{1}{1+e^{-y_{it}^{*c}}}$, where $v$ is a tuning parameter that should be set to have good acceptance rate in the M-H algorithm.
-
-The posterior distribution is
+The posterior distribution of this model is
 \begin{align*}
 	\pi(\bm{\beta},\sigma^2, \bm{b}_i, \bm{D}, \bm{y}^*|\bm{y}, \bm{X}, \bm{W})&\propto \prod_{i=1}^N \prod_{t=1}^{T_i}\left\{\pi_{it}^{y_{it}}(1-\pi_{it})^{1-y_{it}}\right.\\
 	&\left.\times (\sigma^2)^{-1}\exp\left\{-\frac{1}{2\sigma^2}(y_{it}^*-\bm{x}_{it}^{\top}\bm{\beta}-\bm{w}_{it}^{\top}\bm{b}_i)^{\top}(y_{it}^*-\bm{x}_{it}^{\top}\bm{\beta}-\bm{w}_{it}^{\top}\bm{b}_i)\right\}\right\}\\
 	&\times \exp\left\{-\frac{1}{2}(\bm{\beta}-\bm{\beta}_0)^{\top}\bm{B}_0^{-1}(\bm{\beta}-\bm{\beta}_0)\right\}\\
 	&\times \exp\left\{-\frac{1}{2}\sum_{i=1}^N \bm{b}_i^{\top}\bm{D}^{-1}\bm{b}_i\right\}\\
 	&\times (\sigma^2)^{-\alpha_0-1}\exp\left\{-\frac{\delta_0}{\sigma^2}\right\}\\
-	&\times |\bm{D}|^{-(d_0+K_2+1)/2}\exp\left\{-\frac{1}{2}tr(d_0\bm{D}_0\bm{D}^{-1})\right\}	
+	&\times |\bm{D}|^{-(d_0+K_2+1)/2}\exp\left\{-\frac{1}{2}tr(d_0\bm{D}_0\bm{D}^{-1})\right\}.	
 \end{align*}
 
-\textbf{Example: The effects of health care reforms and doctor visits in Germany}
+We can get samples of $y_{it}^*$ from a normal distribution with mean equal to $\bm{x}_{it}^{\top}\bm{\beta}+\bm{w}_{it}^{\top}\bm{b}_i$ and variance $\sigma^2$, and use these samples to get $\pi_{it}=\frac{1}{1+e^{-y_{it}^*}}$, $y_{it}^{*c}=y_{it}^{*}+\epsilon_{it}$ and $\pi_{it}^c=\frac{1}{1+e^{-y_{it}^{*c}}}$, and calculate the acceptance rate of the Metropolis-Hastings algorithm, 
+{\footnotesize
+\begin{align*}
+	\alpha=\min\left(1,\frac{ \pi_{it}^{cy_{it}}(1-\pi_{it}^c)^{(1-y_{it})}\times\exp\left\{-\frac{1}{2\sigma^2}(y_{it}^{c*}-\bm{x}_{it}^{\top}\bm{\beta}-\bm{w}_{it}^{\top}\bm{b}_i)^{\top}(y_{it}^{c*}-\bm{x}_{it}^{\top}\bm{\beta}-\bm{w}_{it}^{\top}\bm{b}_i)\right\}}{\pi_{it}^{y_{it}}(1-\pi_{it})^{(1-y_{it})}\times\exp\left\{-\frac{1}{2\sigma^2}(y_{it}^{*}-\bm{x}_{it}^{\top}\bm{\beta}-\bm{w}_{it}^{\top}\bm{b}_i)^{\top}(y_{it}^{*}-\bm{x}_{it}^{\top}\bm{\beta}-\bm{w}_{it}^{\top}\bm{b}_i)\right\}}\right).
+\end{align*}
+}\\
+
+\textbf{Example: Doctor visits in Germany}
 
 We used the dataset \textit{9VisitDoc.csv} provided by \cite{Winkelmann2004}.\footnote{See \textit{http://qed.econ.queensu.ca/jae/2004-v19.4/winkelmann/} for details} We analyze the determinants of a binary variable (DocVis) which is equal to 1 if an individual visited a physician in the last three months, and 0 otherwise.
 The dataset contains 32837 observations of 9197 individuals in an \textit{unbalanced longitudinal/panel} datatset over the years 1995--1999 from the German Socioeconomic Panel Data.
@@ -416,7 +418,7 @@ The Algorithm \ref{alg:HLogit} shows how to perform inference of the hierarchica
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. The effects of health care reforms and doctor visits in Germany}
+	\textit{R code. Doctor visits in Germany}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
 rm(list = ls())
@@ -476,7 +478,244 @@ The results suggest that age, sports, income and a bad perception of health stat
 
 \section{Poisson model}\label{sec93}
 
+We can use same ideas as in Section \ref{sec92} to perform inference in longitudinal/panel datasets where the dependent variable takes non-negative integers. Let's assume that $y_{it}\sim P(\lambda_{it})$ where $\log(\lambda_{it})=y_{it}^*$ such that $y_{it}^*\sim N(\bm{x}_{it}^{\top}\bm{\beta}+\bm{w}_{it}^{\top}\bm{b}_i,\sigma^2)$. We can \textit{augment} the model with the latent variable $y_{it}^{*}$, and again use a Metropolis-within-Gibbs algorithm to perform inference in this model.
+
+The posterior distribution of this model is
+\begin{align*}
+	\pi(\bm{\beta},\sigma^2, \bm{b}_i, \bm{D}, \bm{y}^*|\bm{y}, \bm{X}, \bm{W})&\propto \prod_{i=1}^N \prod_{t=1}^{T_i}\left\{\lambda_{it}^{y_{it}}\exp\left\{-\lambda_{it}\right\}\right.\\
+	&\left.\times (\sigma^2)^{-1}\exp\left\{-\frac{1}{2\sigma^2}(y_{it}^*-\bm{x}_{it}^{\top}\bm{\beta}-\bm{w}_{it}^{\top}\bm{b}_i)^{\top}(y_{it}^*-\bm{x}_{it}^{\top}\bm{\beta}-\bm{w}_{it}^{\top}\bm{b}_i)\right\}\right\}\\
+	&\times \exp\left\{-\frac{1}{2}(\bm{\beta}-\bm{\beta}_0)^{\top}\bm{B}_0^{-1}(\bm{\beta}-\bm{\beta}_0)\right\}\\
+	&\times \exp\left\{-\frac{1}{2}\sum_{i=1}^N \bm{b}_i^{\top}\bm{D}^{-1}\bm{b}_i\right\}\\
+	&\times (\sigma^2)^{-\alpha_0-1}\exp\left\{-\frac{\delta_0}{\sigma^2}\right\}\\
+	&\times |\bm{D}|^{-(d_0+K_2+1)/2}\exp\left\{-\frac{1}{2}tr(d_0\bm{D}_0\bm{D}^{-1})\right\}.	
+\end{align*}
+
+We can get samples of $y_{it}^*$ from a normal distribution with mean equal to $\bm{x}_{it}^{\top}\bm{\beta}+\bm{w}_{it}^{\top}\bm{b}_i$ and variance $\sigma^2$, and use these samples to get $\lambda_{it}=\exp(y_{it}^*)$, $y_{it}^{*c}=y_{it}^{*}+\epsilon_{it}$, where $\epsilon_{it}\sim\mathcal{N}(0,v^2)$, $v$ is a tuning parameter to get good acceptance rates, and $\lambda_{it}^c=\exp(y_{it}^{*c})$. The acceptance rate of the Metropolis-Hastings algorithm is 
+{\footnotesize
+	\begin{align*}
+		\alpha=\min\left(1,\frac{ \lambda_{it}^{cy_{it}}\exp(-\lambda_{it}^c)\times\exp\left\{-\frac{1}{2\sigma^2}(y_{it}^{c*}-\bm{x}_{it}^{\top}\bm{\beta}-\bm{w}_{it}^{\top}\bm{b}_i)^{\top}(y_{it}^{c*}-\bm{x}_{it}^{\top}\bm{\beta}-\bm{w}_{it}^{\top}\bm{b}_i)\right\}}{\lambda_{it}^{y_{it}}\exp(-\lambda_{it})\times\exp\left\{-\frac{1}{2\sigma^2}(y_{it}^{*}-\bm{x}_{it}^{\top}\bm{\beta}-\bm{w}_{it}^{\top}\bm{b}_i)^{\top}(y_{it}^{*}-\bm{x}_{it}^{\top}\bm{\beta}-\bm{w}_{it}^{\top}\bm{b}_i)\right\}}\right).
+	\end{align*}
+}
+
+In addition, we should use the posterior conditional distributions from Section \ref{sec91} to complete the algorithm getting samples of $\bm{\beta}$, $\sigma^2$, $\bm{b}_i$ and $\bm{D}$ replacing $y_{it}$ by ${y}_{it}^*$.\\
+
+\textbf{Example: Simulation exercise}
+
+Let's perform a simulation exercise to assess the performance of the hierarchical longitudinal Poisson model. The point of departure is to assume that $y_{it}^*=\beta_0+\beta_1x_{it1}+\beta_2x_{it2}+\beta_3x_{it3}+b_i+w_{it1}b_{i1}$ where $x_{itk}\sim N(0,1)$, $k=1,2,3$, $w_{it1}\sim N(0,1)$, $b_i\sim N(0, 0.7^{1/2})$, $b_{i1}\sim N(0, 0.6^{1/2})$, $\bm{\beta}=[0.5 \ 0.4 \ 0.6 \ -0.6]^{\top}$, $i=1,2,\dots,50$, and $y_{it}\sim P(\lambda_{it})$, where $\lambda_{it}=\exp(y_{it}^*)$. The sample size is 1000 in an \textit{unbalanced panel structure}.
+
+Let's set $\bm{\beta}_0=\bm{0}_4$, $\bm{B}_0=\bm{I}_4$, $\alpha_0=\delta_0=0.001$, $d_0=2$ and $\bm{D}_0=\bm{I}_2$. The number of MCMC iterations, burn-in and thinning parameters are 15000, 5000 and 10, respectively.
+
+We can perform inference of the hierarchical longitudinal Poisson model in our GUI using Algorithm \ref{alg:HPosi}. Our GUI is based on the command \textit{MCMChpoisson} from the \textit{MCMCpack} package. We ask in Exercise 6 to use this package to perform inference in the number of visits to doctors (\textit{DocNum}) with the same specification of the example of \textbf{Doctor visits in Germany} of Section \ref{sec92}.
+
+\begin{algorithm}[h!]
+	\caption{Hierarchical longitudinal Poisson models}\label{alg:HPosi}
+	\begin{algorithmic}[1]  		 			
+		\State Select \textit{Hierarchical Longitudinal Model} on the top panel
+		\State Select \textit{Poisson} model using the left radio button
+		\State Upload the dataset selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend
+		\State Select MCMC iterations, burn-in and thinning parameters using the \textit{Range sliders}
+		\State Write down the formula of the \textit{fixed effects} equation in the \textbf{Main Equation: Fixed Effects} box. This formula must be written using the syntax of the \textit{formula} command of \textbf{R} software. This equation includes intercept by default, do not include it in the equation
+		\State Write down the formula of the \textit{random effects} equation in the \textbf{Main Equation: Random Effects} box without writing the dependent variable, that is, starting the equation with the \textit{tilde} symbol. This formula must be written using the syntax of the \textit{formula} command of \textbf{R} software. This equation includes intercept by default, do not include it in the equation. If there are just random intercepts do not write anything in this box
+		\State Write down the name of the grouping variable, that is, the variable that indicates the cross-sectional units 
+		\State Set the hyperparameters of the \textit{fixed effects}: mean vector, covariance matrix, shape and scale parameters. This step is not necessary as by default our GUI uses non-informative priors
+		\State Set the hyperparameters of the \textit{random effects}: degrees of freedom and scale matrix of the inverse Wishart distribution. This step is not necessary as by default our GUI uses non-informative priors
+		\State Click the \textit{Go!} button
+		\State Analyze results
+		\State Download posterior chains and diagnostic plots using the \textit{Download Posterior Chains} and \textit{Download Posterior Graphs} buttons
+	\end{algorithmic} 
+\end{algorithm}
+ 
+The following code shows how to perform inference in the hierarchical longitudinal Poisson model programming the Metropolis-within-Gibbs sampler.
+
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Hierarchical longitudinal Poisson model}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+NT <- 1000; N <- 50
+id <- c(1:N, sample(1:N, NT - N,replace=TRUE))
+x1 <- rnorm(NT); x2 <- rnorm(NT); x3 <- rnorm(NT) 
+X <- cbind(1, x1, x2, x3)
+K1 <- dim(X)[2]; w1 <- rnorm(NT) 
+W <- cbind(1, w1); K2 <- dim(W)[2]
+B <- c(0.5, 0.4, 0.6, -0.6)
+D <- c(0.7, 0.6); sig2 <- 0.1
+b1 <- rnorm(N, 0, sd = D[1]^0.5)
+b2 <- rnorm(N, 0, sd = D[2]^0.5)
+b <- cbind(b1, b2)
+yl <- NULL
+for(i in 1:NT){
+	ylmeani <- X[i,]%*%B + W[i,]%*%b[id[i],]
+	yli <- rnorm(1, ylmeani, sig2^0.5)
+	yl <- c(yl, yli)
+}
+lambdait <- exp(yl); y <- rpois(NT, lambdait)
+Data <- as.data.frame(cbind(y, x1, x2, x3, w1, id))
+mcmc <- 15000; burnin <- 5000; thin <- 10; tot <- mcmc + burnin
+b0 <- rep(0, K1); B0 <- diag(K1); B0i <- solve(B0) 
+r0 <- K2; R0 <- diag(K2); a0 <- 0.001; d0 <- 0.001
+LatentMHV1 <- function(tuning, Beta, bs, sig2){
+	ylhat <- rep(0, NT)
+	accept <- NULL
+	for(i in 1:NT){
+		ids <- which(id == i)
+		yi <- y[i]
+		ylhatmeani <- X[i,]%*%Beta + W[i,]%*%bs[id[i],]
+		ylhati <- rnorm(1, ylhatmeani, sd = sig2^0.5)
+		lambdahati <- exp(ylhati)
+		ei <- rnorm(1, 0, sd = tuning)
+		ylpropi <- ylhati + ei
+		lambdapropi <- exp(ylpropi)
+		logPosthati <- sum(dpois(yi, lambdahati, log = TRUE) + dnorm(ylhati, ylhatmeani, sig2^0.5, log = TRUE))
+		logPostpropi <- sum(dpois(yi, lambdapropi, log = TRUE) + dnorm(ylpropi, ylhatmeani, sig2^0.5, log = TRUE))
+		alphai <- min(1, exp(logPostpropi - logPosthati))
+		ui <- runif(1)
+		if(ui <= alphai){
+			ylhati <- ylpropi; accepti <- 1
+		}else{
+			ylhati <- ylhati; accepti <- 0
+		}
+		ylhat[i] <- ylhati
+		accept <- c(accept, accepti)
+	}
+	res <- list(ylhat = ylhat, accept = mean(accept))
+	return(res)
+}
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Hierarchical longitudinal Poisson model}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+PostBeta <- function(D, ylhat, sig2){
+	XVX <- matrix(0, K1, K1); XVy <- matrix(0, K1, 1)
+	for(i in 1:N){
+		ids <- which(id == i); Ti <- length(ids)
+		Wi <- W[ids, ]
+		Vi <- diag(Ti)*sig2 + Wi%*%D%*%t(Wi)
+		ViInv <- solve(Vi); Xi <- X[ids, ]
+		XVXi <- t(Xi)%*%ViInv%*%Xi
+		XVX <- XVX + XVXi
+		yi <- ylhat[ids]
+		XVyi <- t(Xi)%*%ViInv%*%yi
+		XVy <- XVy + XVyi
+	}
+	Bn <- solve(B0i + XVX); bn <- Bn%*%(B0i%*%b0 + XVy)
+	Beta <- MASS::mvrnorm(1, bn, Bn)
+	return(Beta)
+}
+Postb <- function(Beta, D, ylhat, sig2){
+	Di <- solve(D); bis <- matrix(0, N, K2)
+	for(i in 1:N){
+		ids <- which(id == i)
+		Wi <- W[ids, ]; Xi <- X[ids, ]
+		yi <- ylhat[ids]
+		Wtei <- sig2^(-1)*t(Wi)%*%(yi - Xi%*%Beta)
+		Bni <- solve(sig2^(-1)*t(Wi)%*%Wi + Di)
+		bni <- Bni%*%Wtei
+		bi <- MASS::mvrnorm(1, bni, Bni)
+		bis[i, ] <- bi
+	}
+	return(bis)
+}
+PostD <- function(bs){
+	rn <- r0 + N; btb <- matrix(0, K2, K2)
+	for(i in 1:N){
+		bsi <- bs[i, ]; btbi <- bsi%*%t(bsi)
+		btb <- btb + btbi
+	}
+	Rn <- d0*R0 + btb
+	Sigma <- MCMCpack::riwish(v = rn, S = Rn)
+	return(Sigma)
+}
+PostSig2 <- function(Beta, bs, ylhat){
+	an <- a0 + 0.5*NT; ete <- 0
+	for(i in 1:N){
+		ids <- which(id == i)
+		Xi <- X[ids, ]
+		yi <- ylhat[ids]
+		Wi <- W[ids, ]
+		ei <- yi - Xi%*%Beta - Wi%*%bs[i, ]
+		etei <- t(ei)%*%ei
+		ete <- ete + etei
+	}
+	dn <- d0 + 0.5*ete 
+	sig2 <- MCMCpack::rinvgamma(1, shape = an, scale = dn)
+	return(sig2)
+}
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Hierarchical longitudinal Poisson model}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+PostBetas <- matrix(0, tot, K1); PostDs <- matrix(0, tot, K2*(K2+1)/2)
+Postbs <- array(0, c(N, K2, tot)); PostSig2s <- rep(0, tot)
+Accepts <- rep(NULL, tot)
+RegPois <- glm(y ~ X - 1, family = poisson(link = "log"))
+SumPois <- summary(RegPois)
+Beta <- SumPois[["coefficients"]][,1]
+sig2 <- sum(SumPois[["deviance.resid"]]^2)/SumPois[["df.residual"]]
+D <- diag(K2); bs1 <- rnorm(N, 0, sd = D[1]^0.5)
+bs2 <- rnorm(N, 0, sd = D[2]^0.5); bs <- cbind(bs1, bs2)
+tuning <- 0.1; ropt <- 0.44
+tunepariter <- seq(round(tot/10, 0), tot, round(tot/10, 0));   l <- 1
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+	LatY <- LatentMHV1(tuning = tuning, Beta = Beta, bs = bs, sig2 = sig2)
+	ylhat <- LatY[["ylhat"]]
+	bs <- Postb(Beta = Beta, D = D, ylhat=ylhat, sig2 = sig2)
+	D <- PostD(bs = bs)
+	Beta <- PostBeta(D = D, ylhat = ylhat, sig2 = sig2)
+	sig2 <- PostSig2(Beta = Beta, bs = bs, ylhat = ylhat)
+	PostBetas[s,] <- Beta
+	PostDs[s,] <- matrixcalc::vech(D)
+	Postbs[, , s] <- bs; PostSig2s[s] <- sig2
+	AcceptRate <- LatY[["accept"]]
+	Accepts[s] <- AcceptRate
+	if(AcceptRate > ropt){
+		tuning = tuning*(2-(1-AcceptRate)/(1-ropt))
+	}else{
+		tuning = tuning/(2-AcceptRate/ropt)
+	}
+	if(s == tunepariter[l]){
+		print(AcceptRate); l <- l + 1
+	}
+	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+keep <- seq((burnin+1), tot, thin)
+Bs <- PostBetas[keep,]; Ds <- PostDs[keep,]
+bs <- Postbs[, , keep]; sig2s <- PostSig2s[keep]
+summary(coda::mcmc(Bs))
+Quantiles for each variable:
+				2.5%     25%     50%     75%   97.5%
+var1  0.08413  0.3828  0.5294  0.6679  0.9217
+var2  0.24635  0.3216  0.3593  0.3985  0.4794
+var3  0.41690  0.5007  0.5461  0.5884  0.6769
+var4 -0.69640 -0.6162 -0.5706 -0.5272 -0.4464
+summary(coda::mcmc(Ds))
+Quantiles for each variable:
+        2.5%     25%     50%      75%   97.5%
+var1  0.3424  0.4777  0.5827  0.69957 1.01526
+var2 -0.3323 -0.1924 -0.1287 -0.06925 0.04244
+var3  0.1258  0.2216  0.2781  0.34702 0.53527
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+We can see that all 95\% credible intervals encompass the population parameters of the \textit{fixed effects}, the posterior medians are relatively near the population values. However, we do not get good posterior estimates of the covariance matrix of the \textit{random effects} as the 95\% credible intervals do not encompass the second element of the diagonal of this matrix. In addition, the posterior draws of this algorithm over-estimates the over-dispersion parameter.
+
 \section{Summary}\label{sec94}
+We present in this chapter how to perform inference in longitudinal/panel data models from a Bayesian perspective. In particular, the Bayesian approach uses a hierarchical structure where the \textit{random effects} have priors depending on hyperparameters which in turn have also priors. We show the three most common cases: continuous, binary and count dependent variables. These basic models that we show in this chapter can be easily extended to more flexible cases given the hierarchical structure. 
 
 \section{Exercises}\label{sec95}
 
@@ -502,11 +741,9 @@ The results suggest that age, sports, income and a bad perception of health stat
 		\item Perform inference in this model taking into account the dependence between $\bm{b}_i$ and $z_{i1}$, and compare the posterior estimates with the population parameters. 
 	\end{itemize}
 
-\item \textbf{The effects of health care reforms and doctor visits in Germany continues}
+\item \textbf{Doctor visits in Germany continues I}
 
-\begin{enumerate}
-	\item Replicate this example using our GUI, which by default does not fix the over-dispersion parameter ($\sigma^2$), and compare the results with the results of this example in Section \ref{sec92}.
-\end{enumerate}
+Replicate this example using our GUI, which by default does not fix the over-dispersion parameter ($\sigma^2$), and compare the results with the results of this example in Section \ref{sec92}.
 
 \item \textbf{Simulation exercise of the longitudinal logit model}
 
@@ -517,8 +754,8 @@ Perform a simulation exercise to assess the performance of the hierarchical long
 	\item Program from scratch a Metropolis-within-Gibbs algorithm to perform inference in this simulation without fixing $\sigma^2$.  
 \end{itemize} 
 
+\item \textbf{Doctor visits in Germany continues II} 
 
-	
-	
+Use the package \textit{MCMCpack} to perform inference in the number of visits to doctors (\textit{DocNum}) with the same specification of the example of \textbf{Doctor visits in Germany} of Section \ref{sec92}.	
 	
 \end{enumerate}
