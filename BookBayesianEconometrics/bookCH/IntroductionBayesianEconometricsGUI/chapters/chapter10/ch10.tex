@@ -1,5 +1,123 @@
 \chapter{Bayesian model average}\label{chap10}
 
+We describe in this chapter how to introduce model uncertainty and average over different models in a probabilistic consistent way. We describe .... 
+
+Remember that we can run our GUI typing
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. How to display our graphical user interface}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+	shiny::runGitHub("besmarter/BSTApp", launch.browser = T)\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+in the \textbf{R} package console or any \textbf{R} code editor, and once our GUI is deployed, select \textit{Bayesian Model Averaging}. However, users should see Chapter \ref{chapGUI} for other options and details.
+
+\section{Introduction}\label{sec101}
+Remember from Chapter \ref{chap1} that Bayesian model averaging (BMA) is an approach which takes into account model uncertainty. In particular, we consider uncertainty in the regressors (variable selection) in a regression framework where there are $K$ possible explanatory variables. This implies $\mathcal{M}_m$ potential models indexed by parameters $\bm{\theta}_m$, $m=1,2,\dots,2^K$.
+
+Following \cite{Simmons2010}, the posterior model probability is
+\begin{equation*}
+	\pi(\mathcal{M}_j |\bm{y})=\frac{p(\bm{y} | \mathcal{M}_j)\pi(\mathcal{M}_j)}{\sum_{m=1}^{2^K}p(\bm{y} | \mathcal{M}_m)\pi(\mathcal{M}_m)},
+\end{equation*}
+where $\pi(\mathcal{M}_j)$ is the prior model probability,\footnote{We attach equal prior probabilities to each model in our GUI. However, this choice gives more prior probability to the set of models of medium size (think about the $k$-th row of Pascal's triangle). An interesting alternative is to use the Beta-Binomial prior proposed by \cite{ley2009effect}.} $p(\bm{y} | \mathcal{M}_j)=\int_{\bm{\Theta}_j} p(\bm{y}| \bm{\theta}_j,\mathcal{M}_j)\pi(\bm{\theta}_j | \mathcal{M}_j) d\bm{\theta}_{j}$ is the marginal likelihood, and $\pi(\bm{\theta}_j | \mathcal{M}_j)$ is the prior distribution of $\bm{\theta}_j$.
+
+Following \cite{Raftery93}, the posterior distribution of $\bm{\theta}$ is 
+\begin{equation*}
+	\pi(\bm{\theta}|\bm{y})= \sum_{m=1}^{2^K}\pi(\bm{\theta}_m|\bm{y},\mathcal{M}_m) \pi(\mathcal{M}_m|\bm{y})
+\end{equation*}
+where $\pi(\bm{\theta}_m|\bm{y},\mathcal{M}_m)$ is the posterior distribution of $\bm{\theta}$ under model $m$, $\mathbb{E}[\bm{\theta}|\bm{y}]=\sum_{m=1}^{2^K}\hat{\bm{\theta}}_m \pi(\mathcal{M}_m|\bm{y})$, $Var(\bm{\theta}|\bm{y})= \sum_{m=1}^{2^K}\pi(\mathcal{M}_m|\bm{y}) \widehat{Var} (\bm{\theta}|\bm{y},\mathcal{M}_m)+\sum_{m=1}^{2^K} \pi(\mathcal{M}_m|\bm{y}) (\hat{\bm{\theta}}_m-\mathbb{E}[\bm{\theta}|\bm{y}])^2$, $\hat{\bm{\theta}}_m$ and $\widehat{Var}(\bm{\theta}|\bm{y},\mathcal{M}_m)$ are the posterior mean and variance under model $m$, respectively.
+
+The posterior variance highlights how the BMA method takes into account
+model uncertainty. The first term is the weighted variance of each model, averaged over all potential models, and the second term indicates how stable the estimates are across models. The more the estimates differ between models, the greater is the posterior variance.
+
+The posterior predictive distribution is
+\begin{equation*}
+	\pi(\bm{Y}_0|\bm{y})= \sum_{m=1}^{2^K}p_m(\bm{Y}_0|\bm{y},\mathcal{M}_m) \pi(M_m|\bm{y})
+\end{equation*}
+
+where $p_m(\bm{Y}_0|\bm{y},\mathcal{M}_m)=\int_{\bm{\Theta}_m} p(\bm{Y}_0|\bm{y},\bm{\theta}_m,\mathcal{M}_m)\pi(\bm{\theta}_m |\bm{y}, \mathcal{M}_m) d\bm{\theta}_{m}$ is the posterior predictive distribution under model $m$. 
+
+Another important statistic in BMA is the posterior inclusion probability associated with variable $\bm{x}_k$, $k=1,2,\dots,K$, which is
+
+\begin{equation*}
+	PIP(\bm{x}_k)=\sum_{m=1}^{2^K}\pi(\mathcal{M}_m|\bm{y})\times \mathbbm{1}_{k,m},
+\end{equation*}
+where
+$\mathbbm{1}_{k,m}= \left\{ \begin{array}{lcc}
+	1&   if  & \bm{x}_{k}\in \mathcal{M}_m \\
+	\\ 0 &  if & \bm{x}_{k}\not \in \mathcal{M}_m
+\end{array}
+\right\}.$\\
+
+\cite{Kass1995} suggest that posterior inclusion probabilities (PIP) less than 0.5 are evidence against the regressor, $0.5\leq PIP<0.75$ is weak evidence, $0.75\leq PIP<0.95$ is positive evidence, $0.95\leq PIP<0.99$ is strong evidence, and $PIP\geq 0.99$ is very strong evidence.
+
+There are two main computational issues in implementing BMA.
+First, the marginal likelihood $p(\bm{y} | \mathcal{M}_j)=\int_{\bm{\Theta}_j} p(\bm{y}| \bm{\theta}_j,\mathcal{M}_j)\pi(\bm{\theta}_j | \mathcal{M}_j) d\bm{\theta}_{j}$ most of the time does not have an analytic solution, and second, the number of models in the model space is $2^k$, which sometimes can be enormous.\\
+
+The Bayesian information criterion is a possible solution for the first issue.
+Defining $h(\bm{\theta}|\mathcal{M}_j)=-\frac{\log(p(\bm{y}| \bm{\theta}_j,\mathcal{M}_j)\pi(\bm{\theta}_j | \mathcal{M}_j))}{n}$, then $p(\bm{y} | \mathcal{M}_j)=\int_{\bm{\Theta}_j} exp\left\{-n h(\bm{\theta}|\mathcal{M}_j)\right\}  d\bm{\theta}_{j}$.
+If $n$ is sufficiently large ($n\to \infty$), we can make the following assumptions \cite{Hoeting1999}:
+
+\begin{itemize}
+	\item We can use the Laplace method for approximating integrals \cite{Tierney1986}.
+	\item The posterior mode is reached at the same point as the maximum likelihood estimator (MLE), denoted by $\hat{\bm{\theta}}_{MLE}$.
+\end{itemize}
+
+We get the following results under these assumptions:
+\begin{align*}
+	p(\bm{y} | \mathcal{M}_j)\approx&\left( \frac{2\pi}{n}\right)^{k_j/2}|\bm{\Sigma}|^{-1/2} exp\left\{-n h(\bm{\hat{\theta}}_j^{MLE}|\mathcal{M}_j)\right\}, \ n\rightarrow\infty,
+\end{align*}
+\noindent where $\bm{\Sigma}$ is the Hessian matrix of $h(\bm{\hat{\theta}}_j^{MLE}|\mathcal{M}_j)$, and $k_j=dim\left\{\bm{\theta}_j\right\}$.\\
+
+This implies
+\begin{align*}
+	\log\left(p(\bm{y} | \mathcal{M}_j)\right)\approx& \frac{k_j}{2}\log(2\pi)- \frac{k_j}{2}\log(n) -\frac{1}{2}\log(|\bm{\Sigma}|) + \log(p(\bm{y}| \bm{\hat{\theta}}_j^{MLE},\mathcal{M}_j))+\log(\pi(\bm{\hat{\theta}}_j^{MLE} | \mathcal{M}_j)), \ n\rightarrow\infty.
+\end{align*}
+
+Since $\frac{k_j}{2}\log(2\pi)$ and $\log(\pi(\bm{\hat{\theta}}_j^{MLE} | \mathcal{M}_j))$ are constants as functions of $\bm{y}$, and $|\bm{\Sigma}|$ is bounded by a finite constant, we have
+\begin{align*}
+	log\left(p(\bm{y} | \mathcal{M}_j)\right)\approx& -\frac{k_j}{2}\log(n)+\log(p(\bm{y}| \bm{\hat{\theta}}_j^{MLE},\mathcal{M}_j))= -\frac{BIC}{2}, \ n \rightarrow \infty.
+\end{align*}
+
+The second computational issue, which is related to the size of the model space ($2^k$), is basically a problem of ranking models.
+This can be tackled using different approaches, such as Occam's window criterion \cite{Madigan1994,Raftery1997}, reversible jump Markov chain Monte Carlo computation \cite{Green1995}, Markov chain Monte Carlo model composition \cite{madigan95}, and multiple testing using intrinsic priors \cite{Casella2006} or nonlocal prior densities \cite{Johnson2012}.
+In this GUI we focus on Occam's window and Markov chain Monte Carlo model composition.\footnote{Variable selection (model selection) is a topic related to model uncertainty.
+	Approaches such as stochastic search variable selection (spike and slab) \cite{George1993,George1997,Ishwaran2005} and Bayesian Lasso \cite{Park2008} are good examples of how to tackle this issue.
+	Future developments will include these approaches.}\\
+
+In Occam's window, a model is discarded if its predictive performance is much worse than that of the best model  \cite{Madigan1994,Raftery1997}.
+Thus, models not belonging to $\mathcal{M}'=\left\{\mathcal{M}_j:\frac{Max_r {\pi(M_r|\bm{y})}}{\pi(\mathcal{M}_j|\bm{y})}\leq c\right\}$ should be discarded, where $c$ is chosen by the user (\cite{Madigan1994} propose $c=20$).
+In addition, complicated models than are less supported by the data than simpler models are also discarded, that is, $\mathcal{M}''=\left\{\mathcal{M}_j:\exists M_m\in\mathcal{M}',M_m\subset \mathcal{M}_j,\frac{\pi(M_m|\bm{y})}{\pi(\mathcal{M}_j|\bm{y})}>1\right\}$.
+Then, the set of models used in BMA is $\mathcal{M}^*=\mathcal{M}'\cap \mathcal{M}''^c\in\mathcal{M}$.
+\cite{Raftery1997} find that the number of models in $\mathcal{M}^*$ is normally less than 25.\\
+
+However, the previous theoretical framework requires calculating $Max_r {\pi(M_r|\bm{y})}$, which implies calculating all possible models in $\mathcal{M}$.
+This is computationally burdensome.
+Hence, a heuristic approach is proposed by \cite{Raftery2012} based on ideas of \cite{Madigan1994}.
+The search strategy is based on a series of nested comparisons of ratios of posterior model probabilities.
+Let $M_0$ be a model with one regressor less than model $M_1$.
+If $\log(\pi(M_0|\bm{y})/\pi(M_1|\bm{y}))>\log(O_R)$, then $M_1$ is rejected and $M_0$ is considered; if $\log(\pi(M_0|\bm{y})/\pi(M_1|\bm{y}))\leq -\log(O_L)$, then $M_0$ is rejected, and $M_1$ is considered; and if $\log(O_L)<\log(\pi(M_0|\bm{y})/\pi(M_1|\bm{y}))\leq \log(O_R$), $M_0$ and $M_1$ are considered.
+Here $O_R$ is a number specifying the maximum ratio for excluding models in Occam's window, and $O_L=1/O_R^{2}$ is defined by default in \cite{Raftery2012}.
+The search strategy can be ``up,'' adding one regressor, or ``down,'' dropping one regressor (see \cite{Madigan1994}, down and up algorithms for details).
+The leaps and bounds algorithm \cite{Furnival1974} is implemented to improve the computational efficiency of this search strategy \cite{Raftery2012}.
+Once the set of potentially acceptable models is defined, we discard all the models that are not in $\mathcal{M}'$, and the models that are in $\mathcal{M}''$ where 1 is replaced by $exp\left\{O_R\right\}$ due to the leaps and bounds algorithm giving an approximation to BIC, so as to ensure that no good models are discarded.\\
+
+The second approach that we consider in this GUI to tackle the model space size issue is Markov chain Monte Carlo model composition \cite{madigan1995bayesian1}.
+In particular, given the space of models $\mathcal{M}$, we simulate a chain of $M_{s}$ models, $s = 1, 2, ..., S<<2^k$, where the algorithm randomly extracts a candidate model $M_{c}$ from a neighborhood of models ($nbd(M)$) that consists of the actual model itself and the set of models with either one variable more or one variable less \cite{Raftery1997}.
+Therefore, there is a transition kernel in the space of models $q(M\rightarrow M_{c})$, such that $q(M\rightarrow M_{c})=0 \ \forall M_{c}\notin nbd(M)$ and $q(M\rightarrow M_{c})=\frac{1}{|nbd(M)|} \ \forall M\in nbd(M)$, $|nbd(M)|$ being the number of neighbors of $M$.
+This candidate model is accepted with probability
+
+\begin{equation*} \label{eq:37}
+	\alpha (M_{s-1},M_{c})=Min \bigg \{ \frac{|nbd(M)|p(\bm{y} | M_c)\pi(M_c)}{|nbd(M^{c})|p(\bm{y}| M_{(s-1)})\pi(M_{(s-1)})},1 \bigg \}.
+\end{equation*}
+
+Observe that by construction $|nbd(M)|=|nbd(M_c)|=k$, except in extreme cases where a model has only one regressor or has all regressors.\\
+
+
+
 \section{Calculating the marginal likelihood}\label{sec10_1}
 
 \subsection{Savage-Dickey density ratio}\label{sec10_11}
@@ -7,3 +125,4 @@
 \subsection{Gelfand-Dey method}\label{sec10_12}
 
 \subsection{Chib's methods}\label{sec10_13}
+

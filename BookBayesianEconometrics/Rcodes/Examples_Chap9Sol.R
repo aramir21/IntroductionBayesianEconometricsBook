@@ -682,7 +682,7 @@ PostD <- function(bs){
   Sigma <- MCMCpack::riwish(v = rn, S = Rn)
   return(Sigma)
 }
-PostSig2 <- function(Beta, bs, ylhat){
+PostSig2 <- function(Beta, bs, ylhat, ss){
   an <- a0 + 0.5*NT
   ete <- 0
   for(i in 1:N){
@@ -696,6 +696,11 @@ PostSig2 <- function(Beta, bs, ylhat){
   }
   dn <- d0 + 0.5*ete 
   sig2 <- MCMCpack::rinvgamma(1, shape = an, scale = dn)
+  if(sig2 > ss){
+    sig2 <- ss
+  }else{
+    sig2 <- sig2
+  }
   return(sig2)
 }
 PostBetas <- matrix(0, tot, K1)
@@ -707,7 +712,7 @@ RegLogit <- glm(y ~ X - 1, family = binomial(link = "logit"))
 SumLogit <- summary(RegLogit)
 Beta <- SumLogit[["coefficients"]][,1]
 sig2 <- sum(SumLogit[["deviance.resid"]]^2)/SumLogit[["df.residual"]]
-# sig2 <- 0.1
+ss0 <- sig2
 D <- diag(K2)
 bs1 <- rnorm(N, 0, sd = D[1]^0.5)
 bs2 <- rnorm(N, 0, sd = D[2]^0.5)
@@ -716,34 +721,34 @@ tuning <- 0.1; ropt <- 0.44
 tunepariter <- seq(round(tot/10, 0), tot, round(tot/10, 0));   l <- 1
 pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
 for(s in 1:tot){
-  # LatY <- LatentMHV1(tuning = tuning, Beta = Beta, bs = bs, sig2 = sig2)
-  # ylhat <- LatY[["ylhat"]]
-  ylhat <- yl
+  LatY <- LatentMHV1(tuning = tuning, Beta = Beta, bs = bs, sig2 = sig2)
+  ylhat <- LatY[["ylhat"]]
+  # ylhat <- yl
   bs <- Postb(Beta = Beta, D = D, ylhat = ylhat, sig2 = sig2)
   D <- PostD(bs = bs)
   Beta <- PostBeta(D = D, ylhat = ylhat, sig2 = sig2)
-  sig2 <- PostSig2(Beta = Beta, bs = bs, ylhat = ylhat)
+  sig2 <- PostSig2(Beta = Beta, bs = bs, ylhat = ylhat, ss = ss0)
   PostBetas[s,] <- Beta
   PostDs[s,] <- matrixcalc::vech(D)
   Postbs[, , s] <- bs
   PostSig2s[s] <- sig2
-  # AcceptRate <- LatY[["accept"]]
-  # Accepts[s] <- AcceptRate
-  # if(AcceptRate > ropt){
-  #   tuning = tuning*(2-(1-AcceptRate)/(1-ropt))
-  # }else{
-  #   tuning = tuning/(2-AcceptRate/ropt)
-  # }
-  # if(s == tunepariter[l]){
-  #   # AcceptRate <- mean(Accepts[1:s])
-  #   # if(AcceptRate > ropt){
-  #   #   tuning = tuning*(2-(1-AcceptRate)/(1-ropt))
-  #   # }else{
-  #   #   tuning = tuning/(2-AcceptRate/ropt)
-  #   # }
-  #   print(AcceptRate)
-  #   l <- l + 1
-  # }
+  AcceptRate <- LatY[["accept"]]
+  Accepts[s] <- AcceptRate
+  if(AcceptRate > ropt){
+    tuning = tuning*(2-(1-AcceptRate)/(1-ropt))
+  }else{
+    tuning = tuning/(2-AcceptRate/ropt)
+  }
+  if(s == tunepariter[l]){
+    # AcceptRate <- mean(Accepts[1:s])
+    # if(AcceptRate > ropt){
+    #   tuning = tuning*(2-(1-AcceptRate)/(1-ropt))
+    # }else{
+    #   tuning = tuning/(2-AcceptRate/ropt)
+    # }
+    print(AcceptRate)
+    l <- l + 1
+  }
   setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
 }
 close(pb)
@@ -767,6 +772,9 @@ coda::heidel.diag(Bs)
 rm(list = ls())
 set.seed(12345)
 Data <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/9VisitDoc.csv", sep = ",", header = TRUE, quote = "")
+library(dplyr)
+Data <- Data %>% 
+  filter(id <= 500)
 attach(Data)
 K1 <- 7; K2 <- 2; N <- 9197
 b0 <- rep(0, K1); B0 <- diag(K1)
@@ -782,6 +790,7 @@ y <- DocNum
 mcmc <- 15000; burnin <- 5000; thin <- 10; tot <- mcmc + burnin
 b0 <- rep(0, K1); B0 <- diag(K1); B0i <- solve(B0) 
 r0 <- K2; R0 <- diag(K2); a0 <- 0.001; d0 <- 0.001
+
 LatentMHV1 <- function(tuning, Beta, bs, sig2){
   ylhat <- rep(0, NT)
   accept <- NULL
@@ -949,6 +958,10 @@ summary(coda::mcmc(sig2s))
 coda::geweke.diag(Bs)
 coda::raftery.diag(Bs, q = 0.5, r = 0.05, s = 0.95)
 coda::heidel.diag(Bs)
+
+
+
+
 
 
 

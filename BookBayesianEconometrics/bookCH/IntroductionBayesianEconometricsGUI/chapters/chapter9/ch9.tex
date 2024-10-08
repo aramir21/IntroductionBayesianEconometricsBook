@@ -4,7 +4,7 @@ We describe how to perform inference in panel/longitudinal models using a Bayesi
 
 In panel/longitudinal data sets, we have $y_{it}$ where $i=1,2,\dots,N$ and $t=1,2,\dots,T_i$. If $T_i=T$ for all $i$, the dataset is \textit{balanced}; otherwise, it is \textit{unbalanced}. Longitudinal data typically involves by far more cross-sectional units than time periods, this is called typically a \textit{short panel}. It assumes that cross-sectional units are independent, though serial correlation exists within each unit over time, and unobserved heterogeneity for each unit must be accounted for. We can treat this unobserved heterogeneity as random variables, assuming it is either independent or dependent on control variables. Econometricians refer to these cases as \textit{random effects} and \textit{fixed effects}, respectively. The Bayesian literature takes a different approach, modeling the panel structure hierarchically, where the unobserved heterogeneity may or may not depend on other controls.\footnote{See \cite{rendon2013fixed} for a nice comparison of Frequentist and Bayesian treatments of panel data models.}
 
-Remember that we can run our GUI typing
+Remember that the easiest way to run our GUI is typing
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -15,9 +15,7 @@ Remember that we can run our GUI typing
 	\end{VF}
 \end{tcolorbox} 
 
-in the \textbf{R} package console or any \textbf{R} code editor, and once our GUI is deployed, select \textit{Hierarchical Longitudinal Models}.
-
-
+in the \textbf{R} package console or any \textbf{R} code editor, and once our GUI is deployed, select \textit{Hierarchical Longitudinal Models}. However, users should see Chapter \ref{chapGUI} for details.
 
 \section{Normal model}\label{sec91}
 
@@ -378,7 +376,7 @@ We can see that all the 95\% credible intervals encompass the population paramet
 
 We can use the framework of Section \ref{sec91} to perform inference in models where we have longitudinal/panel data of binary response variables. In particular, let $y_{it}\sim{B}(\pi_{it})$ where $\text{logit}(\pi_{it})=\log\left(\frac{\pi_{it}}{1-\pi_{it}}\right)\equiv y_{it}^*$ such that $y_{it}^*\sim N(\bm{x}_{it}^{\top}\bm{\beta}+\bm{w}_{it}^{\top}\bm{b}_i, \sigma^2)$. Thus, we can \textit{augment} the model with the latent variable $y_{it}^*$, and perform inference using a Metropolis-within-Gibbs sampling algorithm based on the posterior conditional distributions of the previous section. 
 
-We can implement a Gibbs sampling algorithm to sample draws from the posterior conditional distributions of $\bm{\beta}$, $\sigma^2$, $\bm{b}_i$ and $\bm{D}$ using the equations in Section \ref{sec91} conditional on $\bm{y}_i^*$. Then, we can use a random walk Metropolis-Hastings algorithm to sample $y_{it}^*$ where the proposal distribution is Gaussian with mean $y_{ij}^*$ and variance equal to $v^2$, that is, $y_{ij}^{*c}$=$y_{it}^*+\epsilon_{it}$ where $\epsilon_{it}\sim\mathcal{N}(0,v^2)$, $v$ is a tuning parameter to get good acceptance rates.% We should take into account that $\mathbb{E}[{\pi}_{it}]=1/(1+\exp\left\{(\bm{x}_{it}^{\top}\bm{\beta}+\bm{w}_{it}^{\top}\bm{b}_i)/\sqrt{1+(16\sqrt{3}/(15\pi))^2\sigma^2}\right\})$ \cite[~pag. 136]{diggle2002analysis}.
+We can implement a Gibbs sampling algorithm to sample draws from the posterior conditional distributions of $\bm{\beta}$, $\sigma^2$, $\bm{b}_i$ and $\bm{D}$ using the equations in Section \ref{sec91} conditional on $\bm{y}_i^*$. Then, we can use a random walk Metropolis-Hastings algorithm to sample $y_{it}^*$ where the proposal distribution is Gaussian with mean $y_{ij}^*$ and variance equal to $v^2$, that is, $y_{ij}^{*c}$=$y_{it}^*+\epsilon_{it}$ where $\epsilon_{it}\sim\mathcal{N}(0,v^2)$, $v$ is a tuning parameter to get good acceptance rates. We should take into account for doing predictions that $\mathbb{E}[{\pi}_{it}]=1/(1+\exp\left\{(\bm{x}_{it}^{\top}\bm{\beta}+\bm{w}_{it}^{\top}\bm{b}_i)/\sqrt{1+(16\sqrt{3}/(15\pi))^2\sigma^2}\right\})$ \cite[~pag. 136]{diggle2002analysis}.
 
 The posterior distribution of this model is
 \begin{align*}
@@ -497,7 +495,9 @@ We can get samples of $y_{it}^*$ from a normal distribution with mean equal to $
 	\end{align*}
 }
 
-In addition, we should use the posterior conditional distributions from Section \ref{sec91} to complete the algorithm getting samples of $\bm{\beta}$, $\sigma^2$, $\bm{b}_i$ and $\bm{D}$ replacing $y_{it}$ by ${y}_{it}^*$.\\
+In addition, we should use the posterior conditional distributions from Section \ref{sec91} to complete the algorithm getting samples of $\bm{\beta}$, $\sigma^2$, $\bm{b}_i$ and $\bm{D}$ replacing $y_{it}$ by ${y}_{it}^*$.
+
+We should take into account for doing predictions that $\mathbb{E}[{\lambda}_{it}]=\exp\left\{\bm{x}_{it}^{\top}\bm{\beta}+\bm{w}_{it}^{\top}\bm{b}_i+0.5\sigma^2\right\}$ \cite[~pag. 137]{diggle2002analysis}.\\
 
 \textbf{Example: Simulation exercise}
 
@@ -505,7 +505,7 @@ Let's perform a simulation exercise to assess the performance of the hierarchica
 
 Let's set $\bm{\beta}_0=\bm{0}_4$, $\bm{B}_0=\bm{I}_4$, $\alpha_0=\delta_0=0.001$, $d_0=2$ and $\bm{D}_0=\bm{I}_2$. The number of MCMC iterations, burn-in and thinning parameters are 15000, 5000 and 10, respectively.
 
-We can perform inference of the hierarchical longitudinal Poisson model in our GUI using Algorithm \ref{alg:HPosi}. Our GUI is based on the command \textit{MCMChpoisson} from the \textit{MCMCpack} package. We ask in Exercise 6 to use this package to perform inference in the number of visits to doctors (\textit{DocNum}) with the same specification of the example of \textbf{Doctor visits in Germany} of Section \ref{sec92}.
+We can perform inference of the hierarchical longitudinal Poisson model in our GUI using Algorithm \ref{alg:HPosi}. Our GUI is based on the command \textit{MCMChpoisson} from the \textit{MCMCpack} package. 
 
 \begin{algorithm}[h!]
 	\caption{Hierarchical longitudinal Poisson models}\label{alg:HPosi}
@@ -751,11 +751,11 @@ Perform a simulation exercise to assess the performance of the hierarchical long
 
 \begin{itemize}
 	\item Perform inference using the command $MCMChlogit$ fixing the over-dispersion parameter, and using $\bm{\beta}_0=\bm{0}_4$, $\bm{B}_0=\bm{I}_4$, $\alpha_0=\delta_0=0.001$, $d_0=2$ and $\bm{D}_0=\bm{I}_2$.
-	\item Program from scratch a Metropolis-within-Gibbs algorithm to perform inference in this simulation without fixing $\sigma^2$.  
+	\item Program from scratch a Metropolis-within-Gibbs algorithm to perform inference in this simulation.  
 \end{itemize} 
 
 \item \textbf{Doctor visits in Germany continues II} 
 
-Use the package \textit{MCMCpack} to perform inference in the number of visits to doctors (\textit{DocNum}) with the same specification of the example of \textbf{Doctor visits in Germany} of Section \ref{sec92}.	
+Take a sub-sample of the first 500 individuals of the datatset \textit{9VisitDoc.csv} to perform inference in the number of visits to doctors (\textit{DocNum}) with the same specification of the example of \textbf{Doctor visits in Germany} of Section \ref{sec92}.	
 	
 \end{enumerate}

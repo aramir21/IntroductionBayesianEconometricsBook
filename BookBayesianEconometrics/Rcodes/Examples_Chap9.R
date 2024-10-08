@@ -417,7 +417,7 @@ SumLogit <- summary(RegLogit)
 Beta0 <- SumLogit[["coefficients"]][,1]
 mcmc <- 10000; burnin <- 1000; thin <- 10
 # MCMChlogit
-Resultshlogit <- MCMCpack::MCMChpoisson(fixed = DocNum ~ Age + Male + Sport + LogInc + GoodHealth + BadHealth, random = ~Sozh, group = "id",
+Resultshlogit <- MCMCpack::MCMChlogit(fixed = DocVis ~ Age + Male + Sport + LogInc + GoodHealth + BadHealth, random = ~Sozh, group = "id",
                                         data = Data, burnin = burnin, mcmc = mcmc, thin = thin, 
                                         mubeta = b0, Vbeta = B0,
                                         r = r0, R = R0, nu = a0, delta = d0,
