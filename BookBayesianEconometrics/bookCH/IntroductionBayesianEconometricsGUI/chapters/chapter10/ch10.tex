@@ -58,8 +58,25 @@ $\mathbbm{1}_{k,m}= \left\{ \begin{array}{lcc}
 
 \cite{Kass1995} suggest that posterior inclusion probabilities (PIP) less than 0.5 are evidence against the regressor, $0.5\leq PIP<0.75$ is weak evidence, $0.75\leq PIP<0.95$ is positive evidence, $0.95\leq PIP<0.99$ is strong evidence, and $PIP\geq 0.99$ is very strong evidence.
 
-There are two main computational issues in implementing BMA. First, the number of models in the model space is $2^K$, which sometimes can be enormous, and second, the marginal likelihood $p(\bm{y} | \mathcal{M}_j)=\int_{\bm{\Theta}_j} p(\bm{y}| \bm{\theta}_j,\mathcal{M}_j)\pi(\bm{\theta}_j | \mathcal{M}_j) d\bm{\theta}_{j}$ most of the time does not have an analytic solution. 
+There are two main computational issues in implementing BMA based on variable selection. First, the number of models in the model space is $2^K$, which sometimes can be enormous. For instance, three regressors imply just eight models, see Table \ref{tab:chap10}, but 40 regressors implies approximately  1.1e+12 models. Take into account that models always include the intercept, and all regressors should be standardized to avoid scale issues.\footnote{Scaling variables is always an important step in variable selection.} The second computational issue is calculating the marginal likelihood $p(\bm{y} | \mathcal{M}_j)=\int_{\bm{\Theta}_j} p(\bm{y}| \bm{\theta}_j,\mathcal{M}_j)\pi(\bm{\theta}_j | \mathcal{M}_j) d\bm{\theta}_{j}$, which most of the time does not have an analytic solution. 
 
+\begin{table}[!ht]
+	\tabletitle{Space of models: Three regressors.}\label{tab:chap10}
+%	\begin{threeparttable}
+		\resizebox{1\textwidth}{!}{\begin{minipage}{\textwidth}
+				\begin{tabular}{ccccccccc}
+					 Regressor & \multicolumn{8}{c}{Inclusion}\\
+					\hline
+					$x_1$ & 1 & 1 & 1 & 1 & 0 & 0 & 0 & 0\\
+					$x_2$ & 1 & 1 & 0 & 0 & 1 & 1 & 0 & 0\\
+					$x_3$ & 1 & 0 & 1 & 0 & 1 & 0 & 1 & 0\\ 			
+				\end{tabular}
+				\begin{tablenotes}[para,flushleft]
+					\footnotesize \textit{Notes}: ``1" indicates inclusion of the regressor, and ``0" indicates no inclusion. The space of models is composed by 8 models. The model always includes intercept.\\
+				\end{tablenotes}
+		\end{minipage}}
+%	\end{threeparttable}
+\end{table}
 The first computational issue is basically a problem of ranking models. This can be tackled using different approaches, such as Occam's window criterion \cite{Madigan1994,Raftery1997}, reversible jump Markov chain Monte Carlo computation \cite{Green1995}, Markov chain Monte Carlo model composition \cite{madigan95}, and multiple testing using intrinsic priors \cite{Casella2006} or nonlocal prior densities \cite{Johnson2012}. We focus on Occam's window and Markov chain Monte Carlo model composition in our GUI.\footnote{Variable selection (model selection or regularization) is a topic related to model uncertainty. Approaches such as stochastic search variable selection (spike and slab) \cite{George1993,George1997} and Bayesian Lasso \cite{Park2008} are good examples of how to tackle this issue. See Chapter \ref{chap13}.}
 
 In Occam's window, a model is discarded if its predictive performance is much worse than that of the best model  \cite{Madigan1994,Raftery1997}.
@@ -111,21 +128,130 @@ The marginal likelihood thus asymptotically converges to a linear transformation
 
 \section{The Gaussian linear model}\label{sec10_2}
 
-The Gaussian linear model specifies $\bf{y}=\bm{X}\bm{\beta}+\bm{\mu}$ such that $\bm{\mu}\sim{N}(\bm{0},\sigma^2\bm{I}_n)$, and the conjugate priors for the parameters are $\bm{\beta}|\sigma^2 \sim {N}(\bm{\beta}_0, \sigma^2 \bm{B}_0)$ and $\sigma^2 \sim {I}{G}(\alpha_0/2, \delta_0/2)$ (see Section \ref{sec43}).
-Given the likelihood function, $p(\bm{\beta}, \sigma^2|\bm{y}, \bm{X}) = (2\pi\sigma^2)^{-\frac{N}{2}} \exp \left\{-\frac{1}{2\sigma^2} (\bm{y} - \bm{X\beta})^{\top}(\bm{y} - \bm{X\beta}) \right\}$, we show in Section \ref{sec43} that the marginal likelihood is given by 
+The Gaussian linear model specifies $\bf{y}=\bm{X}_m\bm{\beta}_m+\bm{\mu}_m$ such that $\bm{\mu}_m\sim{N}(\bm{0},\sigma^2\bm{I}_n)$, and the conjugate priors for the parameters are $\bm{\beta}_m|\sigma^2 \sim {N}(\bm{\beta}_{m0}, \sigma^2 \bm{B}_{m0})$ and $\sigma^2 \sim {I}{G}(\alpha_0/2, \delta_0/2)$ (see Section \ref{sec43}). 
+
+Given the likelihood function, 
 \begin{equation*}
-	p(\bm{y}|\mathcal{M}_m)= \frac{1}{\pi^{N/2}}\frac{\delta_{m0}^{\alpha_{m0}/2}}{\delta_{mn}^{\alpha_{mn}/2}}\frac{|{\bf{B}}_{mn}|^{1/2}}{|{\bf{B}}_{m0}|^{1/2}}\frac{\Gamma(\alpha_{mn}/2)}{\Gamma(\alpha_{m0}/2)}
+	p(\bm{\beta}_m, \sigma^2|\bm{y}, \bm{X}_m) = (2\pi\sigma^2)^{-\frac{N}{2}} \exp \left\{-\frac{1}{2\sigma^2} (\bm{y} - \bm{X}_m\bm{\beta}_m)^{\top}(\bm{y} - \bm{X}_m\bm{\beta}_m) \right\},
+\end{equation*}
+we show in Section \ref{sec43} that the marginal likelihood is given by 
+\begin{equation*}
+	p(\bm{y}|\mathcal{M}_m)= \frac{1}{\pi^{N/2}}\frac{\delta_{m0}^{\alpha_{m0}/2}}{\delta_{mn}^{\alpha_{mn}/2}}\frac{|{\bf{B}}_{mn}|^{1/2}}{|{\bf{B}}_{m0}|^{1/2}}\frac{\Gamma(\alpha_{mn}/2)}{\Gamma(\alpha_{m0}/2)},
 \end{equation*}
 where all parameter are indexed to model $\mathcal{M}_m$, that is, $\alpha_{mn}=\alpha_{m0}+N$, $\delta_{mn}=\delta_{m0} + {\bf{y}}^{\top}{\bf{y}} + \bm{\beta}_{m0}^{\top}{\bf{B}}_{m0}^{-1}\bm{\beta}_{m0} - \bm{\beta}_{mn}^{\top}{\bf{B}}_{mn}^{-1}\bm{\beta}_{mn}$, $\bm{B}_{mn}=({\bf{B}}_{m0}^{-1} + {\bf{X}}^{\top}_m{\bf{X}}_m)^{-1}$, and $\bm{\beta}_{mn} = {{\bf{B}}}_{mn}({\bf{B}}_{m0}^{-1}\bm{\beta}_{m0} + {\bf{X}}^{\top}_m{\bf{X}}_m\hat{\bm{\beta}}_m)$, $\hat{\bm{\beta}}_m$ is the maximum likelihood estimator.
 
-We implement three approaches to perform BMA in the Gaussian linear model: the BIC approximation using the Occam's window approach, the MC3 algorithm using the analytical expression for calculating the marginal likelihood, and an instrumental variable approach.
+We implement in our GUI three approaches to perform BMA in the Gaussian linear model: the BIC approximation using the Occam's window approach, the MC3 algorithm using the analytical expression for calculating the marginal likelihood, and an instrumental variable approach based on conditional likelihoods.
 
 \subsection{The BIC using the Occam's window}\label{sec10_21}
 
 We can show that the Bayesian information criterion is $N\log(\sum_{i=1}^N(y_i-\bm{x}_{mi}^{\top}\hat{\bm{\beta}}_m)^2/N)+K_m\log(N)$ in the particular case of the Gaussian linear model (see Exercise 1). Thus, we use this approximation with the Occam's window approach to decrease the computational burden of Bayesian model averaging.\\
 
-\textbf{Example: Simulation exercise}
-Let's perform a simulation exercise to assess the performance of this approximation approach in a model where the computational burden is low and we know the data generating process.
+\textbf{Example: Simulation exercises}
+
+Let's perform some simulation exercises to assess the performance of the BIC approximation using the Occam's window, and the Markov chain Monte Carlo model composition approaches. Let's begin with a model where the computational burden is low and we know the data generating process. In particular, we set 10 regressors such that $x_k\sim N(1, 1)$, $k =1,\dots,6$, and $x_k\sim B(0.5)$, $k=7,\dots,10$. We set $\bm{\beta}=[1 \ 0 \ 0 \ 0 \ 0.5 \ 0, 0, 0, 0, -0.7]^{\top}$ such that just $x_1$, $x_5$ and $x_{10}$ are relevant to drive $y_i=1+\bm{x}^{\top}\bm{\beta}+\mu_i$, $\mu_i\sim N(0,0.5^2)$. Observe that we just have $2^{10}=1024$ models in this setting, thus, we can calculate the posterior model probability for each model. 
+
+Our GUI uses the commands \textit{bic.glm} and \textit{MC3.REG} from the package \textit{BMA} to perform Bayesian model average in the linear regression model using the BIC approximation and MC3, respectively. These commands in turn are based on \cite{Raftery1995} and \cite{Raftery1997}. The following code shows how to perform the simulation and get the posterior mean and standard deviation using these commands with the default values of hyperparameters and tuning parameters.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Bayesian model average, small setting}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+N <- 1000
+K1 <- 6; K2 <- 4; K <- K1 + K2
+X1 <- matrix(rnorm(N*K1,1 ,1), N, K1)
+X2 <- matrix(rbinom(N*K2, 1, 0.5), N, K2)
+X <- cbind(X1, X2); e <- rnorm(N, 0, 0.5)
+B <- c(1,0,0,0,0.5,0,0,0,0,-0.7)
+y <- 1 + X%*%B + e
+df <- as.data.frame(cbind(y, X)) 
+colnames(df) <- c("y", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10")
+#### BIC approximation
+BMAglm <- BMA::bic.glm(y ~ X, data = df, glm.family = gaussian()) 
+summary(BMAglm)
+           p!=0    EV         SD        model 1     model 2   
+Intercept  100     1.03306  0.0305   1.032e+00   1.047e+00
+X1.x       100.0   1.00178  0.0153   1.002e+00   1.002e+00
+X2.x         0.0   0.00000  0.0000       .           .    
+X3.x         0.0   0.00000  0.0000       .           .    
+X4.x         0.0   0.00000  0.0000       .           .    
+X5.x       100.0   0.49762  0.0157   4.976e-01   4.975e-01
+X6.x         4.8  -0.00072  0.0047       .      -1.509e-02
+X7.x         0.0   0.00000  0.0000       .           .    
+X8.x         0.0   0.00000  0.0000       .           .    
+X9.x         0.0   0.00000  0.0000       .           .    
+X10.x      100.0  -0.70355  0.0310  -7.036e-01  -7.036e-01
+
+nVar                                       3           4      
+BIC                                     -5.8e+03  -5.8e+03
+post prob                                0.952       0.048
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+We can see from the results that the BIC approximation with the Occam's window, and the MC3 algorithm perform a good job finding the relevant regressors, and their posterior BMA means are very close to the population values. We also see that the BMA results are very similar in the two approaches.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Bayesian model average, small setting}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+#### Markov chain Monte Carlo model composition
+BMAreg <- BMA::MC3.REG(y, X, num.its=500)
+Models <- unique(BMAreg[["variables"]])
+nModels <- dim(Models)[1]
+nVistModels <- dim(BMAreg[["variables"]])[1]
+PMP <- NULL
+for(m in 1:nModels){
+	idModm <- NULL
+	for(j in 1:nVistModels){
+		if(sum(Models[m,] == BMAreg[["variables"]][j,]) == K){
+			idModm <- c(idModm, j)
+		}else{
+			idModm <- idModm
+		} 
+	}
+	PMPm <- sum(BMAreg[["post.prob"]][idModm])
+	PMP <- c(PMP, PMPm)
+}
+PIP <- NULL
+for(k in 1:K){
+	PIPk <- sum(PMP[which(Models[,k] == 1)])
+	PIP <- c(PIP, PIPk)
+}
+plot(PIP)
+Means <- matrix(0, nModels, K)
+Vars <- matrix(0, nModels, K)
+for(m in 1:nModels){
+	idXs <- which(Models[m,] == 1)
+	if(length(idXs) == 0){
+		Regm <- lm(y ~ 1)
+	}
+	Xm <- X[, idXs]
+	Regm <- lm(y ~ Xm)
+	SumRegm <- summary(Regm)
+	Means[m, idXs] <- SumRegm[["coefficients"]][-1,1]
+	Vars[m, idXs] <- SumRegm[["coefficients"]][-1,2]^2 
+}
+BMAmeans <- colSums(Means*PMP)
+BMAsd <- (colSums(PMP*Vars)  + colSums(PMP*(Means-matrix(rep(BMAmeans, each = nModels), nModels, K))^2))^0.5
+BMAmeans
+[1]  1.001771e+00 -5.322016e-05  6.635422e-06  3.721457e-07  4.976335e-01
+[6] -1.271339e-04  1.000932e-08  2.107441e-05  6.578654e-06 -7.035557e-01 
+BMAsd
+[1] 1.527261e-02 1.353624e-03 5.936816e-04 1.163947e-04 1.566698e-02 1.987360e-03
+[7] 2.778896e-05 1.270579e-03 6.997305e-04 3.093389e-02
+BMAmeans/BMAsd
+[1]  6.559266e+01 -3.931680e-02  1.117673e-02  3.197272e-03  3.176320e+01
+[6] -6.397124e-02  3.601905e-04  1.658647e-02  9.401697e-03 -2.274385e+01
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+We show in the following code how to program an algorithm from scratch to perform BMA using the setting from Section \ref{sec43}. We should take into account that we demean the dependent variable to handle the intercept in the regression, use a non-informative prior for the variance, as this parameter is common to all the models, and use an informative prior for the location parameters due to the marginal likelihood being sensitive to non-informative priors. In particular, we use a very common prior for the location parameters in the BMA literature, that is, the Zellner's prior \cite{zellner1986assessing}, where $\bm{\beta}_{m0}=\bm{0}_m$ and $\bm{B}_{m0}=(g_m\bm{X}_m^{\top}\bm{X}_m)^{-1}$. Observe that this covariance matrix is similar to the covariance matrix of ordinary least squares estimator of the location parameters. This suggests that there is compatibility between the prior information and the sample information, and the only parameter to elicit is $g_m$, which facilitates this task, as eliciting covariance matrices is a very hard endeavor.  
+
+
 
 \textbf{Determinants of export diversification I}
 
