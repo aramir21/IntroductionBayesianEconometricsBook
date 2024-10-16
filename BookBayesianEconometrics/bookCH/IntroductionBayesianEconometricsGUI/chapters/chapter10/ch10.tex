@@ -128,23 +128,35 @@ The marginal likelihood thus asymptotically converges to a linear transformation
 
 \section{The Gaussian linear model}\label{sec10_2}
 
-The Gaussian linear model specifies $\bf{y}=\bm{X}_m\bm{\beta}_m+\bm{\mu}_m$ such that $\bm{\mu}_m\sim{N}(\bm{0},\sigma^2\bm{I}_n)$, and the conjugate priors for the parameters are $\bm{\beta}_m|\sigma^2 \sim {N}(\bm{\beta}_{m0}, \sigma^2 \bm{B}_{m0})$ and $\sigma^2 \sim {I}{G}(\alpha_0/2, \delta_0/2)$ (see Section \ref{sec43}). 
+The Gaussian linear model specifies $\bf{y}=\alpha\bm{i}_N+\bm{X}_m\bm{\beta}_m+\bm{\mu}_m$ such that $\bm{\mu}_m\sim{N}(\bm{0},\sigma^2\bm{I}_n)$, and $\bm{X}_m$ does not have the column of ones. Following \cite{koop2003bayesian}, the conjugate prior for the location parameters is $\bm{\beta}_m|\sigma^2 \sim {N}(\bm{\beta}_{m0}, \sigma^2 \bm{B}_{m0})$, and the priors for $\sigma^2$ and $\alpha$ can be improper, as these parameters are common to all models $\mathcal{M}_m$. Particularly, $\pi(\sigma^2)\propto \sqrt{\sigma^2}$ and $\pi(\alpha)\propto 1$.
 
+The selection of the hyperparameters of $\bm{\beta}_m$ is more critical, as these parameters are not common to all models. A very common prior for the location parameters in the BMA literature is the Zellner's prior \cite{zellner1986assessing}, where $\bm{\beta}_{m0}=\bm{0}_m$ and $\bm{B}_{m0}=(g_m\bm{X}_m^{\top}\bm{X}_m)^{-1}$. Observe that this covariance matrix is similar to the covariance matrix of ordinary least squares estimator of the location parameters. This suggests that there is compatibility between the prior information and the sample information, and the only parameter to elicit is $g_m\geq 0$, which facilitates the elicitation process, as eliciting covariance matrices is a very hard endeavor.
+
+Following same steps as in Section \ref{sec43}, the posterior conditional distribution of $\bm{\beta}_m$ has covariance matrix $\sigma^2\bm{B}_{mn}$, where $\bm{B}_{mn}=((1+g_m)\bm{X}_m^{\top}\bm{X}_m)^{-1}$ (Exercise 1), which means that $g_m=0$ implies a non-informative prior, whereas $g_m=1$ implies that prior and data information have same weights. We follow \cite{fernandez2001benchmark}, who recommend
+\begin{align*}
+	g_m & =
+	\begin{Bmatrix}
+		1/K^2, & N \leq K^2\\
+		1/N, & N>K^2 
+	\end{Bmatrix}.
+\end{align*}  
+ 
 Given the likelihood function, 
 \begin{equation*}
-	p(\bm{\beta}_m, \sigma^2|\bm{y}, \bm{X}_m) = (2\pi\sigma^2)^{-\frac{N}{2}} \exp \left\{-\frac{1}{2\sigma^2} (\bm{y} - \bm{X}_m\bm{\beta}_m)^{\top}(\bm{y} - \bm{X}_m\bm{\beta}_m) \right\},
+	p(\bm{\beta}_m, \sigma^2|\bm{y}, \bm{X}_m) = (2\pi\sigma^2)^{-\frac{N}{2}} \exp \left\{-\frac{1}{2\sigma^2} (\bm{y} - \alpha\bm{i}_N - \bm{X}_m\bm{\beta}_m)^{\top}(\bm{y} - \alpha\bm{i}_N - \bm{X}_m\bm{\beta}_m) \right\},
 \end{equation*}
-we show in Section \ref{sec43} that the marginal likelihood is given by 
-\begin{equation*}
-	p(\bm{y}|\mathcal{M}_m)= \frac{1}{\pi^{N/2}}\frac{\delta_{m0}^{\alpha_{m0}/2}}{\delta_{mn}^{\alpha_{mn}/2}}\frac{|{\bf{B}}_{mn}|^{1/2}}{|{\bf{B}}_{m0}|^{1/2}}\frac{\Gamma(\alpha_{mn}/2)}{\Gamma(\alpha_{m0}/2)},
-\end{equation*}
-where all parameter are indexed to model $\mathcal{M}_m$, that is, $\alpha_{mn}=\alpha_{m0}+N$, $\delta_{mn}=\delta_{m0} + {\bf{y}}^{\top}{\bf{y}} + \bm{\beta}_{m0}^{\top}{\bf{B}}_{m0}^{-1}\bm{\beta}_{m0} - \bm{\beta}_{mn}^{\top}{\bf{B}}_{mn}^{-1}\bm{\beta}_{mn}$, $\bm{B}_{mn}=({\bf{B}}_{m0}^{-1} + {\bf{X}}^{\top}_m{\bf{X}}_m)^{-1}$, and $\bm{\beta}_{mn} = {{\bf{B}}}_{mn}({\bf{B}}_{m0}^{-1}\bm{\beta}_{m0} + {\bf{X}}^{\top}_m{\bf{X}}_m\hat{\bm{\beta}}_m)$, $\hat{\bm{\beta}}_m$ is the maximum likelihood estimator.
+the marginal likelihood associated with model $\mathcal{M}_m$ is proportional to (Exercise 1) 
+\begin{align*}
+	p(\bm{y}|\mathcal{M}_m)&\propto \left(\frac{g_m}{1+g_m}\right)^{k_m/2}\\
+	&\times \left[\frac{1}{1+g_m}(\bm{y}-\bm{X}_m\hat{\bm{\beta}}_m)^{\top}(\bm{y}-\bm{X}_m\hat{\bm{\beta}}_m)+\frac{g_m}{1+g_m}(\bm{y}-\bar{y}\bm{i}_N)^{\top}(\bm{y}-\bar{y}\bm{i}_N)\right]^{-(N-1)/2},
+\end{align*}
+where all parameter are indexed to model $\mathcal{M}_m$, $\hat{\bm{\beta}}_m$ is the maximum likelihood estimator, and $\bar{y}$ is the sample mean of $\bm{y}$.
 
-We implement in our GUI three approaches to perform BMA in the Gaussian linear model: the BIC approximation using the Occam's window approach, the MC3 algorithm using the analytical expression for calculating the marginal likelihood, and an instrumental variable approach based on conditional likelihoods.
+We implement in our GUI three approaches to perform BMA in the Gaussian linear model: the BIC approximation using the Occam's window approach, the MC3 algorithm using the analytical expression for calculating the marginal likelihood, and an instrumental variable approach based on conditional likelihoods.\\
 
-\subsection{The BIC using the Occam's window}\label{sec10_21}
+%\subsection{The BIC using the Occam's window}\label{sec10_21}
 
-We can show that the Bayesian information criterion is $N\log(\sum_{i=1}^N(y_i-\bm{x}_{mi}^{\top}\hat{\bm{\beta}}_m)^2/N)+K_m\log(N)$ in the particular case of the Gaussian linear model (see Exercise 1). Thus, we use this approximation with the Occam's window approach to decrease the computational burden of Bayesian model averaging.\\
+%We can show that the Bayesian information criterion is $N\log(\sum_{i=1}^N(y_i-\bm{x}_{mi}^{\top}\hat{\bm{\beta}}_m)^2/N)+K_m\log(N)$ in the particular case of the Gaussian linear model (see Exercise 1). Thus, we use this approximation with the Occam's window approach to decrease the computational burden of Bayesian model averaging.\\
 
 \textbf{Example: Simulation exercises}
 
@@ -227,12 +239,13 @@ for(m in 1:nModels){
 	idXs <- which(Models[m,] == 1)
 	if(length(idXs) == 0){
 		Regm <- lm(y ~ 1)
-	}
-	Xm <- X[, idXs]
-	Regm <- lm(y ~ Xm)
-	SumRegm <- summary(Regm)
-	Means[m, idXs] <- SumRegm[["coefficients"]][-1,1]
-	Vars[m, idXs] <- SumRegm[["coefficients"]][-1,2]^2 
+	}else{
+		Xm <- X[, idXs]
+		Regm <- lm(y ~ Xm)
+		SumRegm <- summary(Regm)
+		Means[m, idXs] <- SumRegm[["coefficients"]][-1,1]
+		Vars[m, idXs] <- SumRegm[["coefficients"]][-1,2]^2 
+	} 
 }
 BMAmeans <- colSums(Means*PMP)
 BMAsd <- (colSums(PMP*Vars)  + colSums(PMP*(Means-matrix(rep(BMAmeans, each = nModels), nModels, K))^2))^0.5
@@ -249,22 +262,31 @@ BMAmeans/BMAsd
 	\end{VF}
 \end{tcolorbox}
 
-We show in the following code how to program an algorithm from scratch to perform BMA using the setting from Section \ref{sec43}. We should take into account that we demean the dependent variable to handle the intercept in the regression, use a non-informative prior for the variance, as this parameter is common to all the models, and use an informative prior for the location parameters due to the marginal likelihood being sensitive to non-informative priors. In particular, we use a very common prior for the location parameters in the BMA literature, that is, the Zellner's prior \cite{zellner1986assessing}, where $\bm{\beta}_{m0}=\bm{0}_m$ and $\bm{B}_{m0}=(g_m\bm{X}_m^{\top}\bm{X}_m)^{-1}$. Observe that this covariance matrix is similar to the covariance matrix of ordinary least squares estimator of the location parameters. This suggests that there is compatibility between the prior information and the sample information, and the only parameter to elicit is $g_m$, which facilitates this task, as eliciting covariance matrices is a very hard endeavor.  
+We show in the following code how to program an algorithm from scratch to perform BMA using the setting from Section \ref{sec10_2}. 
 
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. How to display our graphical user interface}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+		shiny::runGitHub("besmarter/BSTApp", launch.browser = T)\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+ 
 
 
 \textbf{Determinants of export diversification I}
 
 
-\subsection{The Markov chain Monte Carlo model composition}\label{sec10_22}
-The second approach that we implement in our GUI is using the Markov chain Monte Carlo model composition (MC3) using the analytical expression of the marginal likelihood of the Gaussian linear model.\\
+%\subsection{The Markov chain Monte Carlo model composition}\label{sec10_22}
+%The second approach that we implement in our GUI is using the Markov chain Monte Carlo model composition (MC3) using the analytical expression of the marginal likelihood of the Gaussian linear model.\\
 
-\textbf{Example: Simulation exercise}
-Let's perform the same simulation exercise of the previous section to assess the performance of this approach. 
+%\textbf{Example: Simulation exercise}
+%Let's perform the same simulation exercise of the previous section to assess the performance of this approach. 
 
-\textbf{Determinants of export diversification II}
+%\textbf{Determinants of export diversification II}
 
-\subsection{Instrumental variable }\label{sec10_23}
+\subsection{Instrumental variable }\label{sec10_21}
 
 We also implement the instrumental variable approach of Section \ref{sec73} to tackle potential endogeneity issues in BMA. We assume that $\bm{\gamma}\sim {N}(\bm{0},\bm{I})$, $\bm{\beta}\sim {N}(\bm{0},\bm{I})$, and $\bm{\Sigma}^{-1} \sim {W}(3,\bm{I})$ \cite{Karl2012}.
 
@@ -327,6 +349,15 @@ The BIC approximation to the marginal likelihood is an asymptotic approximation.
 \section{Exercises}\label{sec10_8}
 
 \begin{enumerate}
-	\item Show that the Bayesian information criterion is equal to $N\log(\sum_{i=1}^N(y_i-\bm{x}_{mi}^{\top}\bm{\beta}_m)^2/N)+K_m\log(N)$ in the Gaussian linear model. 
+	\item The Gaussian linear model specifies $\bf{y}=\alpha\bm{i}_N+\bm{X}_m\bm{\beta}_m+\bm{\mu}_m$ such that $\bm{\mu}_m\sim{N}(\bm{0},\sigma^2\bm{I}_n)$, and $\bm{X}_m$ does not have the column of ones. Assuming that $\pi(\sigma^2)\propto \sqrt{\sigma^2}$, $\pi(\alpha)\propto 1$, and $\bm{\beta}_m|\sigma^2 \sim {N}(\bm{0}_{k_m}, \sigma^2 (g_m\bm{X}_m^{\top}\bm{X}_m)^{-1})$.
+	\begin{enumerate}
+		\item Show that the posterior conditional distribution of $\bm{\beta}_m$ is $N(\bm{\beta}_{mn},\sigma^2\bm{B}_{mn})$, where $\bm{\beta}_{mn}=\bm{B}_{mn}\bm{X}_m^{\top}(\bm{y}-\alpha\bm{i}_N)$ and $\bm{B}_{mn}=((1+g_m)\bm{X}_m^{\top}\bm{X}_m)^{-1}$.
+		\item Show that the marginal the marginal likelihood associated with model $\mathcal{M}_m$ is proportional to
+		\begin{align*}
+			p(\bm{y}|\mathcal{M}_m)&\propto \left(\frac{g_m}{1+g_m}\right)^{k_m/2}\\
+			&\times \left[\frac{1}{1+g_m}(\bm{y}-\bm{X}_m\hat{\bm{\beta}}_m)^{\top}(\bm{y}-\bm{X}_m\hat{\bm{\beta}}_m)+\frac{g_m}{1+g_m}(\bm{y}-\bar{y}\bm{i}_N)^{\top}(\bm{y}-\bar{y}\bm{i}_N)\right]^{-(N-1)/2},
+		\end{align*}
+		where all parameter are indexed to model $\mathcal{M}_m$, $\hat{\bm{\beta}}_m$ is the maximum likelihood estimator, and $\bar{y}$ is the sample mean of $\bm{y}$.   
+	\end{enumerate}  
 	
 \end{enumerate}
