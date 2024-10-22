@@ -16,7 +16,7 @@ write.csv(df, file="51SimNormalBMANew.csv", row.names=FALSE)
 BMAglm <- BMA::bic.glm(y ~ X, data = df, glm.family = gaussian()) 
 summary(BMAglm)
 
-#### Markov chain Monte Carlo model composition
+#### Markov chain Monte Carlo model composition using BMA package
 BMAreg <- BMA::MC3.REG(y, X, num.its=500)
 Models <- unique(BMAreg[["variables"]])
 nModels <- dim(Models)[1]
@@ -60,33 +60,36 @@ BMAsd <- (colSums(PMP*Vars)  + colSums(PMP*(Means-matrix(rep(BMAmeans, each = nM
 plot(BMAmeans)
 plot(BMAsd)
 plot(BMAmeans/BMAsd)
-#### From scratch
-combs <- expand.grid(c(0,1), c(0,1), c(0,1), c(0,1), c(0,1),c(0,1), c(0,1), c(0,1), c(0,1), c(0,1))
-mll <- rep(NA, 2^K)
-Xnew <- apply(X, 2, scale)
-vpos <- N
-mll <- rep(NA, 2^K)
-# Initial exact exercise
-for (i in 1:(2^K)) {
-  indr <- combs[i, ] == 1
+#### Markov chain Monte Carlo model composition from scratch
+LogMLfunt <- function(Model){
+  indr <- Model == 1
   kr <- sum(indr)
-  if(kr == 0){
-    gr <- ifelse(N > kr^2, 1/N, kr^(-2))
-    PX <- diag(N)
-    s2pos <- c(t(y)%*%PX%*%y/(1 + gr) + gr*(t(y - mean(y))%*%(y - mean(y)))/(1 + gr))
-    mll[i] <- (kr/2)*log(gr/(1+gr))-(N-1)/2*log(s2pos)
-  }else{
+  if(kr > 0){
     gr <- ifelse(N > kr^2, 1/N, kr^(-2))
     Xr <- matrix(Xnew[ , indr], ncol = kr)
-    PX <- diag(N) - Xr%*%solve(t(Xr)%*%Xr)%*%t(Xr)
-    s2pos <- c(t(y)%*%PX%*%y/(1 + gr) + gr*(t(y - mean(y))%*%(y - mean(y)))/(1 + gr))
-    mll[i] <- (kr/2)*log(gr/(1+gr))-(N-1)/2*log(s2pos)
+    # PX <- diag(N) - Xr%*%solve(t(Xr)%*%Xr)%*%t(Xr)
+    # s2pos <- c(t(y)%*%PX%*%y/(1 + gr) + gr*(t(y - mean(y))%*%(y - mean(y)))/(1 + gr))
+    PX <- Xr%*%solve(t(Xr)%*%Xr)%*%t(Xr)
+    s2pos <- c((t(y - mean(y))%*%(y - mean(y))) - t(y)%*%PX%*%y/(1 + gr))
+    mllMod <- (kr/2)*log(gr/(1+gr))-(N-1)/2*log(s2pos)
+  }else{
+    gr <- ifelse(N > kr^2, 1/N, kr^(-2))
+    # PX <- diag(N)
+    # s2pos <- c(t(y)%*%PX%*%y/(1 + gr) + gr*(t(y - mean(y))%*%(y - mean(y)))/(1 + gr))
+    s2pos <- c((t(y - mean(y))%*%(y - mean(y))))
+    mllMod <- (kr/2)*log(gr/(1+gr))-(N-1)/2*log(s2pos)
   }
+  return(mllMod)
 }
+combs <- expand.grid(c(0,1), c(0,1), c(0,1), c(0,1), c(0,1),c(0,1), c(0,1), c(0,1), c(0,1), c(0,1))
+Xnew <- apply(X, 2, scale)
+mll <- sapply(1:2^K, function(s){LogMLfunt(matrix(combs[s,], 1, K))})
 # Results
 MaxPMP <- which.max(mll)
 StMarLik <- exp(mll-max(mll))
-PMP <- StMarLik/sum(StMarLik) 
+PMP <- StMarLik/sum(StMarLik)
+PMP[MaxPMP]
+combs[MaxPMP,]
 PIP <- NULL
 for(k in 1:K){
   PIPk <- sum(PMP[which(combs[,k] == 1)])
@@ -113,114 +116,145 @@ BMAsd <- (colSums(PMP*Vars)  + colSums(PMP*(Means-matrix(rep(BMAmeans, each = nM
 plot(BMAmeans)
 plot(BMAsd)
 plot(BMAmeans/BMAsd)
-
-# MC3 methods
-# Initial parameters
-final <- 500
-burnin <- 0.2*final
-iter <- burnin + final
-
-# M best models
-M <- 1000
-vals <- matrix(runif(K*M), ncol = K, nrow = M)
-model.mat <- ifelse(vals <= 0.5, 0, 1)
-if(any(rowSums(model.mat == rep(0, K)) == 5)) {
-  model.mat[which(rowSums(model.mat == rep(0, K)) == 5), ] <- rep(1, K)
-}
-mmll <- rep(NA, M)
-for (i in 1:M) {
-  ind <- (model.mat[i, ] == 1)
-  kr <- sum(ind)
-  if(kr == 0){
-    gr <- ifelse(N > kr^2, 1/N, kr^(-2))
-    PX <- diag(N)
-    s2pos <- c(t(y)%*%PX%*%y/(1 + gr) + gr*(t(y - mean(y))%*%(y - mean(y)))/(1 + gr))
-    mmll[i] <- (kr/2)*log(gr/(1+gr))-(N-1)/2*log(s2pos)
+# MC3 method
+# Initial models
+M <- 100
+Models <- matrix(rbinom(K*M, 1, p = 0.5), ncol = K, nrow = M)
+mllnew <- sapply(1:M, function(s){LogMLfunt(matrix(Models[s,], 1, K))})
+oind <- order(mllnew, decreasing = TRUE)
+mllnew <- mllnew[oind]
+Models <- Models[oind, ]
+# Hyperparameters MC3
+iter <- 6000
+pb <- winProgressBar(title = "progress bar", min = 0, max = iter, width = 300)
+s <- 1
+while(s <= iter){
+  ActModel <- Models[M,]
+  idK <- which(ActModel == 1)
+  Kact <- length(idK)
+  if(Kact < K & Kact > 1){
+    CardMol <- K
+    opt <- sample(1:3, 1)
+    if(opt == 1){ # Same
+      CandModel <- ActModel
+    }else{
+      if(opt == 2){ # Add
+        All <- 1:K
+        NewX <- sample(All[-idK], 1)
+        CandModel <- ActModel
+        CandModel[NewX] <- 1
+      }else{ # Subtract
+        LessX <- sample(idK, 1)
+        CandModel <- ActModel
+        CandModel[LessX] <- 0
+      }
+    }
   }else{
-    gr <- ifelse(N > kr^2, 1/N, kr^(-2))
-    Xr <- matrix(Xnew[ , ind], ncol = kr)
-    PX <- diag(N) - Xr%*%solve(t(Xr)%*%Xr)%*%t(Xr)
-    s2pos <- c(t(y)%*%PX%*%y/(1 + gr) + gr*(t(y - mean(y))%*%(y - mean(y)))/(1 + gr))
-    mmll[i] <- (kr/2)*log(gr/(1+gr))-(N-1)/2*log(s2pos)
-  }
-}
-StMarLik <- exp(mmll-max(mmll))
-nmmll <- StMarLik/sum(StMarLik) 
-oind <- order(nmmll, decreasing = TRUE)
-mmll <- mmll[oind]
-model.mat <- model.mat[oind, ]
-
-for (i in 1:iter) {
-  indi <- (model.mat[M, ] == 1)
-  kr <- sum(indi)
-  repeat{
-    vals <- runif(K)
-    cmodel <- ifelse(vals <= 0.5, 0, 1)
-    indc <- (cmodel == 1)
-    if (abs(kr - sum(indc)) <= 1 & sum(indc) != 0) {
-      break
+    CardMol <- K + 1
+    if(Kact == K){
+      opt <- sample(1:2, 1)
+      if(opt == 1){ # Same
+        CandModel <- ActModel
+      }else{ # Subtract
+        LessX <- sample(1:K, 1)
+        CandModel <- ActModel
+        CandModel[LessX] <- 0
+      }
+    }else{
+      if(K == 1){
+        opt <- sample(1:3, 1)
+        if(opt == 1){ # Same
+          CandModel <- ActModel
+        }else{
+          if(opt == 2){ # Add
+            All <- 1:K
+            NewX <- sample(All[-idK], 1)
+            CandModel <- ActModel
+            CandModel[NewX] <- 1
+          }else{ # Subtract
+            LessX <- sample(idK, 1)
+            CandModel <- ActModel
+            CandModel[LessX] <- 0
+          }
+        }
+      }else{ # Add
+        NewX <- sample(1:K, 1)
+        CandModel <- ActModel
+        CandModel[NewX] <- 1
+      }
     }
   }
-  Xr <- matrix(Xnew[ , indi], ncol = kr)
-  PX <- diag(N) - Xr%*%solve(t(Xr)%*%Xr)%*%t(Xr)
-  s2pos <- c(t(y)%*%PX%*%y/(1 + gr) + gr*(t(y - mean(y))%*%(y - mean(y)))/(1 + gr))
-  imll <- (kr/2)*log(gr/(1+gr))-(N-1)/2*log(s2pos)
-  
-  Xr <- matrix(Xnew[ , indc], ncol = sum(indc))
-  PX <- diag(N) - Xr%*%solve(t(Xr)%*%Xr)%*%t(Xr)
-  s2pos <- c(t(y)%*%PX%*%y/(1 + gr) + gr*(t(y - mean(y))%*%(y - mean(y)))/(1 + gr))
-  cmll <- (kr/2)*log(gr/(1+gr))-(N-1)/2*log(s2pos)
-  
-  alpha <- min(exp(cmll-imll), 1)
-  U <- runif(1)
-  if (U <= alpha) {
-    model.mat[M, ] <- cmodel
-    mmll[M] <- cmll
+  LogMLact <- LogMLfunt(matrix(ActModel, 1, K))
+  LogMLcand <- LogMLfunt(matrix(CandModel, 1, K))
+  alpha <- min(1, exp(LogMLcand-LogMLact)) # Let's reasonably assume same prior model probability for candidate and actual, and same carnality of neighbor models
+  u <- runif(1)
+  if(u <= alpha){
+    mllnew[M] <- LogMLcand
+    Models[M, ] <- CandModel
+    oind <- order(mllnew, decreasing = TRUE)
+    mllnew <- mllnew[oind]
+    Models <- Models[oind, ]
+  }else{
+    mllnew <- mllnew
+    Models <- Models
   }
-  StMarLik <- exp(mmll-max(mmll))
-  nmmll <- StMarLik/sum(StMarLik) 
-  oind <- order(nmmll, decreasing = TRUE)
-  mmll <- mmll[oind]
-  model.mat <- model.mat[oind, ]
+  s <- s + 1
+  setWinProgressBar(pb, s, title=paste( round(s/iter*100, 0),"% done"))
 }
-
-(pip <- colMeans(model.mat))
-
-# Initial model
-imodel <- c(0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
-final.models <- matrix(NA, nrow = iter, ncol = K)
-
-for (i in 1:iter) {
-  indi <- (imodel == 1)
-  kr <- sum(indi)
-  repeat{
-    vals <- runif(K)
-    cmodel <- ifelse(vals <= 0.5, 0, 1)
-    indc <- (cmodel == 1)
-    if (abs(kr - sum(indc)) <= 1 & sum(indc) != 0) {
-      break
+close(pb)
+ModelsUni <- unique(Models)
+mllnewUni <- sapply(1:dim(ModelsUni)[1], function(s){LogMLfunt(matrix(ModelsUni[s,], 1, K))})
+StMarLik <- exp(mllnewUni-mllnewUni[1])
+PMP <- StMarLik/sum(StMarLik) # PMP based on unique selected models
+plot(PMP)
+# PMP using number of visits
+nModels <- dim(ModelsUni)[1]
+StMarLik <- exp(mllnew-mllnew[1])
+PMPold <- StMarLik/sum(StMarLik) # PMP all selected models
+PMPot <- NULL
+PMPap <- NULL
+FreqMod <- NULL
+for(m in 1:nModels){
+  idModm <- NULL
+  for(j in 1:M){
+    if(sum(ModelsUni[m,] == Models[j,]) == K){
+      idModm <- c(idModm, j)
+    }else{
+      idModm <- idModm
     }
   }
-  Xr <- matrix(Xnew[ , indi], ncol = kr)
-  PX <- diag(N) - Xr%*%solve(t(Xr)%*%Xr)%*%t(Xr)
-  s2pos <- c(t(y)%*%PX%*%y/(1 + gr) + gr*(t(y - mean(y))%*%(y - mean(y)))/(1 + gr))
-  imll <- log((gr/(1+gr))^(kr/2))*(s2pos^(-(N-1)/2))
-  
-  Xr <- matrix(Xnew[ , indc], ncol = sum(indc))
-  PX <- diag(N) - Xr%*%solve(t(Xr)%*%Xr)%*%t(Xr)
-  s2pos <- c(t(y)%*%PX%*%y/(1 + gr) + gr*(t(y - mean(y))%*%(y - mean(y)))/(1 + gr))
-  cmll <- log((gr/(1+gr))^(sum(indc)/2))*(s2pos^(-(N-1)/2))
-  
-  alpha <- min(exp(cmll-imll), 1)
-  U <- runif(1)
-  if (U <= alpha) {
-    imodel <- cmodel
-  }
-  final.models[i, ] <- imodel
+  PMPm <- sum(PMPold[idModm]) # PMP unique models using sum of all selected models
+  PMPot <- c(PMPot, PMPm)
+  PMPapm <- length(idModm)/M # PMP using relative frequency in all selected models
+  PMPap <- c(PMPap, PMPapm)
+  FreqMod <- c(FreqMod, length(idModm))
 }
-
-final.models <- final.models[-(1:burnin), ]
-(pip <- colMeans(final.models))
+cbind(PMP, PMPot, PMPap)
+PIP <- NULL
+for(k in 1:K){
+  PIPk <- sum(PMP[which(ModelsUni[,k] == 1)])
+  PIP <- c(PIP, PIPk)
+}
+plot(PIP)
+Means <- matrix(0, nModels, K)
+Vars <- matrix(0, nModels, K)
+for(m in 1:nModels){
+  idXs <- which(ModelsUni[m,] == 1)
+  if(length(idXs) == 0){
+    Regm <- lm(y ~ 1)
+  }else{
+    Xm <- X[, idXs]
+    Regm <- lm(y ~ Xm)
+    SumRegm <- summary(Regm)
+    Means[m, idXs] <- SumRegm[["coefficients"]][-1,1]
+    Vars[m, idXs] <- SumRegm[["coefficients"]][-1,2]^2 
+  }
+}
+BMAmeans <- colSums(Means*PMP)
+BMAsd <- (colSums(PMP*Vars)  + colSums(PMP*(Means-matrix(rep(BMAmeans, each = nModels), nModels, K))^2))^0.5 
+plot(BMAmeans)
+plot(BMAsd)
+plot(BMAmeans/BMAsd)
 
 
 

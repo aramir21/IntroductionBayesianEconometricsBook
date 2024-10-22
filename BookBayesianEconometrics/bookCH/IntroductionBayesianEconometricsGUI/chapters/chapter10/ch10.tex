@@ -16,7 +16,7 @@ Remember that we can run our GUI typing
 in the \textbf{R} package console or any \textbf{R} code editor, and once our GUI is deployed, select \textit{Bayesian Model Averaging}. However, users should see Chapter \ref{chapGUI} for other options and details.
 
 \section{Foundation}\label{sec10_1}
-Remember from Chapter \ref{chap1} that Bayesian model averaging (BMA) is an approach which takes into account model uncertainty. In particular, we consider uncertainty in the regressors (variable selection) in a regression framework where there are $K$ possible explanatory variables. This implies $2^K$ potential models indexed by parameters $\bm{\theta}_m$, $m=1,2,\dots,2^K$.
+Remember from Chapter \ref{chap1} that Bayesian model averaging (BMA) is an approach which takes into account model uncertainty. In particular, we consider uncertainty in the regressors (variable selection) in a regression framework where there are $K$ possible explanatory variables.\footnote{Take into account that $K$ can increase when interaction terms and/or polynomial terms of the original control variables are included.} This implies $2^K$ potential models indexed by parameters $\bm{\theta}_m$, $m=1,2,\dots,2^K$.
 
 Following \cite{Simmons2010}, the posterior model probability is
 \begin{equation*}
@@ -128,7 +128,7 @@ The marginal likelihood thus asymptotically converges to a linear transformation
 
 \section{The Gaussian linear model}\label{sec10_2}
 
-The Gaussian linear model specifies $\bf{y}=\alpha\bm{i}_N+\bm{X}_m\bm{\beta}_m+\bm{\mu}_m$ such that $\bm{\mu}_m\sim{N}(\bm{0},\sigma^2\bm{I}_n)$, and $\bm{X}_m$ does not have the column of ones. Following \cite{koop2003bayesian}, the conjugate prior for the location parameters is $\bm{\beta}_m|\sigma^2 \sim {N}(\bm{\beta}_{m0}, \sigma^2 \bm{B}_{m0})$, and the priors for $\sigma^2$ and $\alpha$ can be improper, as these parameters are common to all models $\mathcal{M}_m$. Particularly, $\pi(\sigma^2)\propto \sqrt{\sigma^2}$ and $\pi(\alpha)\propto 1$.
+The Gaussian linear model specifies $\bf{y}=\alpha\bm{i}_N+\bm{X}_m\bm{\beta}_m+\bm{\mu}_m$ such that $\bm{\mu}_m\sim{N}(\bm{0},\sigma^2\bm{I}_n)$, and $\bm{X}_m$ does not have the column of ones. Following \cite{koop2003bayesian}, the conjugate prior for the location parameters is $\bm{\beta}_m|\sigma^2 \sim {N}(\bm{\beta}_{m0}, \sigma^2 \bm{B}_{m0})$, and the priors for $\sigma^2$ and $\alpha$ can be improper, as these parameters are common to all models $\mathcal{M}_m$. Particularly, $\pi(\sigma^2)\propto 1/\sqrt{\sigma^2}$ and $\pi(\alpha)\propto 1$.
 
 The selection of the hyperparameters of $\bm{\beta}_m$ is more critical, as these parameters are not common to all models. A very common prior for the location parameters in the BMA literature is the Zellner's prior \cite{zellner1986assessing}, where $\bm{\beta}_{m0}=\bm{0}_m$ and $\bm{B}_{m0}=(g_m\bm{X}_m^{\top}\bm{X}_m)^{-1}$. Observe that this covariance matrix is similar to the covariance matrix of ordinary least squares estimator of the location parameters. This suggests that there is compatibility between the prior information and the sample information, and the only parameter to elicit is $g_m\geq 0$, which facilitates the elicitation process, as eliciting covariance matrices is a very hard endeavor.
 
@@ -262,14 +262,198 @@ BMAmeans/BMAsd
 	\end{VF}
 \end{tcolorbox}
 
-We show in the following code how to program an algorithm from scratch to perform BMA using the setting from Section \ref{sec10_2}. 
+We can perform Bayesian model averaging in our GUI using Algorithm \ref{alg:BMAnormal}.  
+
+\begin{algorithm}[h!]
+	\caption{Bayesian model average in linear Gaussian models}\label{alg:BMAnormal}
+	\begin{algorithmic}[1]  		 			
+		\State Select \textit{Hierarchical Longitudinal Model} on the top panel
+		\State Select \textit{Poisson} model using the left radio button
+		\State Upload the dataset selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend
+		\State Select MCMC iterations, burn-in and thinning parameters using the \textit{Range sliders}
+		\State Click the \textit{Go!} button
+		\State Analyze results
+		\State Download posterior chains and diagnostic plots using the \textit{Download Posterior Chains} and \textit{Download Posterior Graphs} buttons
+	\end{algorithmic} 
+\end{algorithm}
+
+
+We show in the following code how to program a MC3 algorithm from scratch to perform BMA using the setting from Section \ref{sec10_2}. The first part of the code is the function to calculate the log marginal likelihood. This is a small simulation setting, thus we can calculate the marginal likelihood for all 1024 models, and then calculate the posterior model probability standardizing using the model with the largest log marginal likelihood. We see from the results that this model is the data generating process. We also find that the posterior inclusion probabilities for $x_{1}$, $x_{5}$ and $x_{10}$ are 1, whereas the PIP for the other variables are less than 0.05. Although BMA allows incorporating model uncertainty in a regression framework, sometimes it is desirable to select just one model. Two compelling alternatives are the model with the largest posterior model probability, and the median probability model. The latter is the model which includes every predictor that has posterior inclusion probability higher than 0.5. The first model is the best alternative for prediction in the case of a 0--1 loss function \cite{Clyde2004}, whereas the second is the best alternative when there is a quadratic loss function in prediction \cite{Barbieri2004}. In this simulation, the two criteria indicate selection of the data generating process.
+
+We also show how to estimate the posterior mean and standard deviation based on BMA. We see that the posterior means are very close to the population parameters.  
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. How to display our graphical user interface}
+	\textit{R code. Simulation exercise: Bayesian model average, small setting from scratch}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-		shiny::runGitHub("besmarter/BSTApp", launch.browser = T)\end{lstlisting}
+LogMLfunt <- function(Model){
+	indr <- Model == 1
+	kr <- sum(indr)
+	if(kr > 0){
+		gr <- ifelse(N > kr^2, 1/N, kr^(-2))
+		Xr <- matrix(Xnew[ , indr], ncol = kr)
+		PX <- Xr%*%solve(t(Xr)%*%Xr)%*%t(Xr)
+		s2pos <- c((t(y - mean(y))%*%(y - mean(y))) - t(y)%*%PX%*%y/(1 + gr))
+		mllMod <- (kr/2)*log(gr/(1+gr))-(N-1)/2*log(s2pos)
+	}else{
+		gr <- ifelse(N > kr^2, 1/N, kr^(-2))
+		s2pos <- c((t(y - mean(y))%*%(y - mean(y))))
+		mllMod <- (kr/2)*log(gr/(1+gr))-(N-1)/2*log(s2pos)
+	}
+	return(mllMod)
+}
+combs <- expand.grid(c(0,1), c(0,1), c(0,1), c(0,1), c(0,1),c(0,1), c(0,1), c(0,1), c(0,1), c(0,1))
+Xnew <- apply(X, 2, scale)
+mll <- sapply(1:2^K, function(s){LogMLfunt(matrix(combs[s,], 1, K))})
+MaxPMP <- which.max(mll); StMarLik <- exp(mll-max(mll))
+PMP <- StMarLik/sum(StMarLik)
+PMP[MaxPMP]
+combs[MaxPMP,]
+    Var1 Var2 Var3 Var4 Var5 Var6 Var7 Var8 Var9 Var10
+530    1    0    0    0    1    0    0    0    0     1
+PIP <- NULL
+for(k in 1:K){
+	PIPk <- sum(PMP[which(combs[,k] == 1)]); PIP <- c(PIP, PIPk)
+}
+PIP
+[1] 1.00000000 0.03617574 0.03208369 0.03516743 1.00000000 0.04795509 0.03457102 0.03468819 0.03510209 1.00000000
+nModels <- dim(combs)[1]; Means <- matrix(0, nModels, K)
+Vars <- matrix(0, nModels, K)
+for(m in 1:nModels){
+	idXs <- which(combs[m,] == 1)
+	if(length(idXs) == 0){
+		Regm <- lm(y ~ 1)
+	}else{
+		Xm <- X[, idXs]; Regm <- lm(y ~ Xm)
+		SumRegm <- summary(Regm)
+		Means[m, idXs] <- SumRegm[["coefficients"]][-1,1]
+		Vars[m, idXs] <- SumRegm[["coefficients"]][-1,2]^2 
+	}
+}
+BMAmeans <- colSums(Means*PMP)
+1.0018105888 -0.0003196423  0.0001489711  0.0002853524  0.4976225353 -0.0007229563  0.0005342718  0.0005441905  0.0005758708 -0.7035206822
+BMAsd <- (colSums(PMP*Vars)  + colSums(PMP*(Means-matrix(rep(BMAmeans, each = nModels), nModels, K))^2))^0.5
+0.015274980 0.003304115 0.002814491 0.003214722 0.015668278 0.004694003 0.006400541 0.006435695 0.006528471 0.030940753 
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+The following part of the code shows how to perform the MC3 algorithm. This algorithm is not necessary in this case due to being a small dimensional problem, but it helps as a pedagogical exercise. The point of departure is to set $S=100$ random models, and order their log marginal likelihoods. Thus, the logic of the algorithm is to pick the worse model among the $S$ models, and propose a candidate model to compete against it. We repeat this MC3 iterations (1000 in the code). Observe that 1000 iterations is less than the number of potential models (1024). This is the idea of the MC3 algorithm, that is, performing less iterations than the number of elements of the space of models. 
+
+In our algorithm, we analyze all model scenarios using different conditionals and reasonably assume the same prior model probability for all models and the same cardinality for both the actual and candidate models. We can calculate the posterior model probability (PMP) in different ways. One way is to recover the unique models from the final set of $S$ models, calculate the log marginal likelihood for these models, and standardize using the best model among them. Another way is to calculate the PMP using the complete set of $S$ final models, accounting for the fact that the same model can appear multiple times in this set, thus requiring us to sum the PMPs of repeated models. An additional way is to calculate the PMP using the relative frequency with which a model appears in the final set of $S$ models. These three methods can yield different PMP, particularly when the number of MC3 iterations is small. In our setting using 1000 MC3 iterations, the data generating process got the largest PMP in the three ways to calculate the PMP. 
+
+A remarkable point in this algorithm is that we can get just one model after substantially increasing the number of iterations (try this code using 10000 iterations). This can be a good feature if we require just one model. However, this neglects model uncertainty, which can be a desirable characteristic. We ask to program an algorithm where we end up with $S$ different models after finishing the MC3 iterations (Exercise 2).
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Bayesian model average, small setting from scratch}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+M <- 100
+Models <- matrix(rbinom(K*M, 1, p = 0.5), ncol=K, nrow = M)
+mllnew <- sapply(1:M,function(s){LogMLfunt(matrix(Models[s,], 1, K))})
+oind <- order(mllnew, decreasing = TRUE)
+mllnew <- mllnew[oind]; Models <- Models[oind, ]; iter <- 1000
+pb <- winProgressBar(title = "progress bar", min = 0, max = iter, width = 300); s <- 1
+while(s <= iter){
+	ActModel <- Models[M,]; idK <- which(ActModel == 1)
+	Kact <- length(idK)
+	if(Kact < K & Kact > 1){
+		CardMol <- K; opt <- sample(1:3, 1)
+		if(opt == 1){ # Same
+			CandModel <- ActModel
+		}else{
+			if(opt == 2){ # Add
+				All <- 1:K; NewX <- sample(All[-idK], 1)
+				CandModel <- ActModel; CandModel[NewX] <- 1
+			}else{ # Subtract
+				LessX <- sample(idK, 1); CandModel <- ActModel
+				CandModel[LessX] <- 0
+			}
+		}
+	}else{
+		CardMol <- K + 1
+		if(Kact == K){
+			opt <- sample(1:2, 1)
+			if(opt == 1){ # Same
+				CandModel <- ActModel
+			}else{ # Subtract
+				LessX <- sample(1:K, 1); CandModel <- ActModel
+				CandModel[LessX] <- 0
+			}
+		}else{
+			if(K == 1){
+				opt <- sample(1:3, 1)
+				if(opt == 1){ # Same
+					CandModel <- ActModel
+				}else{
+					if(opt == 2){ # Add
+						All <- 1:K; NewX <- sample(All[-idK], 1)
+						CandModel <- ActModel; CandModel[NewX] <- 1
+					}else{ # Subtract
+						LessX <- sample(idK, 1); CandModel <- ActModel
+						CandModel[LessX] <- 0
+					}
+				}
+			}else{ # Add
+				NewX <- sample(1:K, 1); CandModel <- ActModel
+				CandModel[NewX] <- 1
+			}
+		}
+	}
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Bayesian model average, small setting from scratch}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+	LogMLact <- LogMLfunt(matrix(ActModel, 1, K))
+	LogMLcand <- LogMLfunt(matrix(CandModel, 1, K))
+	alpha <- min(1, exp(LogMLcand-LogMLact))
+	u <- runif(1)
+	if(u <= alpha){
+		mllnew[M] <- LogMLcand; Models[M, ] <- CandModel
+		oind <- order(mllnew, decreasing = TRUE)
+		mllnew <- mllnew[oind]; Models <- Models[oind, ]
+	}else{
+		mllnew <- mllnew; Models <- Models
+	}
+	s <- s + 1
+	setWinProgressBar(pb, s, title=paste( round(s/iter*100, 0),"% done"))
+}
+close(pb)
+ModelsUni <- unique(Models)
+mllnewUni <- sapply(1:dim(ModelsUni)[1], function(s){LogMLfunt(matrix(ModelsUni[s,], 1, K))})
+StMarLik <- exp(mllnewUni-mllnewUni[1])
+PMP <- StMarLik/sum(StMarLik) # PMP based on unique selected models
+plot(PMP)
+# PMP using number of visits
+nModels <- dim(ModelsUni)[1]
+StMarLik <- exp(mllnew-mllnew[1])
+PMPold <- StMarLik/sum(StMarLik) # PMP all selected models
+PMPot <- NULL
+PMPap <- NULL
+FreqMod <- NULL
+for(m in 1:nModels){
+	idModm <- NULL
+	for(j in 1:M){
+		if(sum(ModelsUni[m,] == Models[j,]) == K){
+			idModm <- c(idModm, j)
+		}else{
+			idModm <- idModm
+		}
+	}
+	PMPm <- sum(PMPold[idModm]) # PMP unique models using sum of all selected models
+	PMPot <- c(PMPot, PMPm)
+	PMPapm <- length(idModm)/M # PMP using relative frequency in all selected models
+	PMPap <- c(PMPap, PMPapm)
+	FreqMod <- c(FreqMod, length(idModm))
+}
+\end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
  
@@ -349,15 +533,19 @@ The BIC approximation to the marginal likelihood is an asymptotic approximation.
 \section{Exercises}\label{sec10_8}
 
 \begin{enumerate}
-	\item The Gaussian linear model specifies $\bf{y}=\alpha\bm{i}_N+\bm{X}_m\bm{\beta}_m+\bm{\mu}_m$ such that $\bm{\mu}_m\sim{N}(\bm{0},\sigma^2\bm{I}_n)$, and $\bm{X}_m$ does not have the column of ones. Assuming that $\pi(\sigma^2)\propto \sqrt{\sigma^2}$, $\pi(\alpha)\propto 1$, and $\bm{\beta}_m|\sigma^2 \sim {N}(\bm{0}_{k_m}, \sigma^2 (g_m\bm{X}_m^{\top}\bm{X}_m)^{-1})$.
-	\begin{enumerate}
+	\item The Gaussian linear model specifies $\bf{y}=\alpha\bm{i}_N+\bm{X}_m\bm{\beta}_m+\bm{\mu}_m$ such that $\bm{\mu}_m\sim{N}(\bm{0},\sigma^2\bm{I}_n)$, and $\bm{X}_m$ does not have the column of ones. Assuming that $\pi(\sigma^2)\propto 1/\sqrt{\sigma^2}$, $\pi(\alpha)\propto 1$, and $\bm{\beta}_m|\sigma^2 \sim {N}(\bm{0}_{k_m}, \sigma^2 (g_m\bm{X}_m^{\top}\bm{X}_m)^{-1})$.
+	\begin{itemize}
 		\item Show that the posterior conditional distribution of $\bm{\beta}_m$ is $N(\bm{\beta}_{mn},\sigma^2\bm{B}_{mn})$, where $\bm{\beta}_{mn}=\bm{B}_{mn}\bm{X}_m^{\top}(\bm{y}-\alpha\bm{i}_N)$ and $\bm{B}_{mn}=((1+g_m)\bm{X}_m^{\top}\bm{X}_m)^{-1}$.
 		\item Show that the marginal the marginal likelihood associated with model $\mathcal{M}_m$ is proportional to
 		\begin{align*}
 			p(\bm{y}|\mathcal{M}_m)&\propto \left(\frac{g_m}{1+g_m}\right)^{k_m/2}\\
 			&\times \left[\frac{1}{1+g_m}(\bm{y}-\bm{X}_m\hat{\bm{\beta}}_m)^{\top}(\bm{y}-\bm{X}_m\hat{\bm{\beta}}_m)+\frac{g_m}{1+g_m}(\bm{y}-\bar{y}\bm{i}_N)^{\top}(\bm{y}-\bar{y}\bm{i}_N)\right]^{-(N-1)/2},
 		\end{align*}
-		where all parameter are indexed to model $\mathcal{M}_m$, $\hat{\bm{\beta}}_m$ is the maximum likelihood estimator, and $\bar{y}$ is the sample mean of $\bm{y}$.   
-	\end{enumerate}  
+		where all parameter are indexed to model $\mathcal{M}_m$, $\hat{\bm{\beta}}_m$ is the maximum likelihood estimator, and $\bar{y}$ is the sample mean of $\bm{y}$. Take into account that $\bm{i}_N^{\top}\bm{X}_m=\bm{0}_{k_m}$ due to all columns being centered with respect to their means.   
+	\end{itemize}
+
+\item \textbf{Simulation exercise of the Markov chain Monte Carlo model composition continues}
+
+Program an algorithm to perform MC3 where the final $S$ models are unique. Use the simulation setting of Section \ref{sec10_2} increasing the number of regressors to 40, this implies approximately 1.1e+12 models.    
 	
 \end{enumerate}
