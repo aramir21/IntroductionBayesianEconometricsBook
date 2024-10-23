@@ -42,7 +42,7 @@ oind <- order(mllnew, decreasing = TRUE)
 mllnew <- mllnew[oind]
 Models <- Models[oind, ]
 # Hyperparameters MC3
-iter <- 10000
+iter <- 50000
 pb <- winProgressBar(title = "progress bar", min = 0, max = iter, width = 300)
 s <- 1
 while(s <= iter){
@@ -171,20 +171,24 @@ plot(BMAmeans/BMAsd)
 ########################## Determinants of export diversification: BMA normal model ########################## 
 rm(list = ls())
 set.seed(010101)
-
-df <- as.data.frame(cbind(y, X)) 
-colnames(df) <- c("y", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17", "x18", "x19", "x20", "x21", "x22", "x23", "x24", "x25", "x26", "x27", "x28", "x29", "x30", "x31", "x32", "x33", "x34", "x35", "x36", "x37", "x38", "x39", "x40")
-write.csv(df, file="51SimNormalBMANew.csv", row.names=FALSE)
+Data <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/10ExportDiversificationHHI.csv", sep = ",", header = TRUE, quote = "")
+attach(Data)
+y <- Data[,1]
+X <- as.matrix(Data[,-1])
+K <- dim(X)[2]
 #### BIC approximation
-BMAglm <- BMA::bic.glm(y ~ X, data = df, glm.family = gaussian()) 
+# BMAglm <- BMA::bic.glm(avghhi ~ island+landlocked+opec+british+dutch+french+spanish+portuguese+language+commonlaw+europe+asia+africa+namerica+       
+#                        smamerica+avgpolity+avggov+avggoveff+avgtradefreedom+avglinfl+avgedu1+avgedu2+avgedu3+avgedu4+avgedu5+avgexports+avgimports+
+#                        avgnatres+avgcapital+avgfdi+avglgdpcap+avgtot+avgfuel+avgki+avglpop+avgroads, data = Data, glm.family = gaussian(), strict = FALSE, OR = 50) 
+BMAglm <- BMA::bicreg(X, y, strict = FALSE, OR = 50)
 summary(BMAglm)
 
 #### Markov chain Monte Carlo model composition using BMA package
-BMAreg <- BMA::MC3.REG(y, X, num.its=500)
+BMAreg <- BMA::MC3.REG(y, X, num.its=10000)
 Models <- unique(BMAreg[["variables"]])
 nModels <- dim(Models)[1]
 nVistModels <- dim(BMAreg[["variables"]])[1]
-PMP <- NULL
+PMPmc3 <- NULL
 for(m in 1:nModels){
   idModm <- NULL
   for(j in 1:nVistModels){
@@ -195,17 +199,17 @@ for(m in 1:nModels){
     } 
   }
   PMPm <- sum(BMAreg[["post.prob"]][idModm])
-  PMP <- c(PMP, PMPm)
+  PMPmc3 <- c(PMPmc3, PMPm)
 }
-PMP
-PIP <- NULL
+PMPmc3
+PIPmc3 <- NULL
 for(k in 1:K){
-  PIPk <- sum(PMP[which(Models[,k] == 1)])
-  PIP <- c(PIP, PIPk)
+  PIPk <- sum(PMPmc3[which(Models[,k] == 1)])
+  PIPmc3 <- c(PIPmc3, PIPk)
 }
-plot(PIP)
-Means <- matrix(0, nModels, K)
-Vars <- matrix(0, nModels, K)
+plot(PIPmc3)
+Meansmc3 <- matrix(0, nModels, K)
+Varsmc3 <- matrix(0, nModels, K)
 for(m in 1:nModels){
   idXs <- which(Models[m,] == 1)
   if(length(idXs) == 0){
@@ -214,15 +218,15 @@ for(m in 1:nModels){
     Xm <- X[, idXs]
     Regm <- lm(y ~ Xm)
     SumRegm <- summary(Regm)
-    Means[m, idXs] <- SumRegm[["coefficients"]][-1,1]
-    Vars[m, idXs] <- SumRegm[["coefficients"]][-1,2]^2 
+    Meansmc3[m, idXs] <- SumRegm[["coefficients"]][-1,1]
+    Varsmc3[m, idXs] <- SumRegm[["coefficients"]][-1,2]^2 
   }
 }
-BMAmeans <- colSums(Means*PMP)
-BMAsd <- (colSums(PMP*Vars)  + colSums(PMP*(Means-matrix(rep(BMAmeans, each = nModels), nModels, K))^2))^0.5 
-plot(BMAmeans)
-plot(BMAsd)
-plot(BMAmeans/BMAsd)
+BMAmeansmc3 <- colSums(Meansmc3*PMPmc3)
+BMAsdmc3 <- (colSums(PMPmc3*Varsmc3)  + colSums(PMPmc3*(Meansmc3-matrix(rep(BMAmeansmc3, each = nModels), nModels, K))^2))^0.5 
+plot(BMAmeansmc3)
+plot(BMAsdmc3)
+plot(BMAmeansmc3/BMAsdmc3)
 
 
 

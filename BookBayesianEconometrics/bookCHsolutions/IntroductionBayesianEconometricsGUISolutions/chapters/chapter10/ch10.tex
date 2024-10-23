@@ -16,20 +16,318 @@
 \end{itemize}
 \textbf{Answer}
 
+The marginal likelihood of this model is
+
+\begin{align*}
+	p({\bf{y}})&=\int_0^{\infty}\int_{R^K}\int_R\pi (\bm{\beta} | \sigma^2)\pi(\sigma^2)\pi(\alpha)p({\bf{y}}|\bm{\beta}, \sigma^2, \alpha)d\alpha d\bm{\beta} d\sigma^2\\
+	&\propto \int_0^{\infty}\int_{R^K}\int_R (\sigma^2)^{-k_m/2} |g_m\bm{X}_m^{\top}\bm{X}_m|^{1/2}\exp\left\{-\frac{1}{2\sigma^2}(\bm{\beta}^{\top}(g_m\bm{X}_m^{\top}\bm{X}_m)\bm{\beta})\right\}(\sigma^2)^{-1}\\
+	&\times (\sigma^2)^{-N/2}\exp\left\{-\frac{1}{2\sigma^2}(\bm{y}-\alpha\bm{i}_N-\bm{X}_m\bm{\beta})^{\top}(\bm{y}-\alpha\bm{i}_N-\bm{X}_m\bm{\beta})\right\}d\alpha d\bm{\beta} d\sigma^2.
+\end{align*}
+Taking into account that $(\bm{y}-\alpha\bm{i}_N-\bm{X}_m\bm{\beta})^{\top}(\bm{y}-\alpha\bm{i}_N-\bm{X}_m\bm{\beta})=(\bm{y}-\bm{X}_m\bm{\beta})^{\top}(\bm{y}-\bm{X}_m\bm{\beta})+N(\alpha-\bar{y})^2-N\bar{y}^2$, 
+
+\begin{align*}
+	p({\bf{y}})	&\propto \int_0^{\infty}\int_{R^K} (\sigma^2)^{-k_m/2} |g_m\bm{X}_m^{\top}\bm{X}_m|^{1/2}\exp\left\{-\frac{1}{2\sigma^2}(\bm{\beta}^{\top}(g_m\bm{X}_m^{\top}\bm{X}_m)\bm{\beta})\right\}(\sigma^2)^{-1}\\
+	&\times (\sigma^2)^{-N/2}\exp\left\{-\frac{1}{2\sigma^2}[(\bm{y}-\bm{X}_m\bm{\beta})^{\top}(\bm{y}-\bm{X}_m\bm{\beta})-N\bar{y}^2]\right\}\\
+	&\times \int_R \exp\left\{-\frac{1}{2\sigma^2}(N(\alpha-\bar{y})^2)\right\} d\alpha d\bm{\beta} d\sigma^2.
+\end{align*}
+
+The last term is the kernel of a normal density function with mean $\bar{y}$ and variance $\sigma^2/N$, then
+
+\begin{align*}
+	p({\bf{y}})	&\propto \int_0^{\infty}\int_{R^K} (\sigma^2)^{-k_m/2} |g_m\bm{X}_m^{\top}\bm{X}_m|^{1/2}\exp\left\{-\frac{1}{2\sigma^2}(\bm{\beta}^{\top}(g_m\bm{X}_m^{\top}\bm{X}_m)\bm{\beta})\right\}(\sigma^2)^{-1}\\
+	&\times (\sigma^2)^{-N/2}(\sigma^2)^{1/2}\exp\left\{-\frac{1}{2\sigma^2}[(\bm{y}-\bm{X}_m\bm{\beta})^{\top}(\bm{y}-\bm{X}_m\bm{\beta})-N\bar{y}^2]\right\}d\bm{\beta} d\sigma^2.
+\end{align*}
+
+Collecting terms for $\bm{\beta}$, we have $(\bm{y}-\bm{X}_m\bm{\beta})^{\top}(\bm{y}-\bm{X}_m\bm{\beta})-N\bar{y}^2+\bm{\beta}^{\top}(g_m\bm{X}_m^{\top}\bm{X}_m)\bm{\beta}=(\bm{\beta}-\bm{\beta}_{mn})^{\top}\bm{B}_{mn}^{-1}(\bm{\beta}-\bm{\beta}_{mn})+\bm{y}^{\top}\bm{y}-N\bar{y}^2-\bm{\beta}_{mn}^{\top}\bm{B}_{mn}\bm{\beta}_{mn}$ where $\bm{\beta}_{mn}=\bm{B}_{mn}\bm{X}^{\top}\bm{y}$ and $\bm{B}_{mn}=((1+g_m)\bm{X}^{\top}\bm{X})^{-1}$. Then,
+
+\begin{align*}
+	p({\bf{y}})	&\propto \int_0^{\infty} (\sigma^2)^{-k_m/2} |g_m\bm{X}_m^{\top}\bm{X}_m|^{1/2}\exp\left\{-\frac{1}{2\sigma^2}(\bm{y}^{\top}\bm{y}-N\bar{y}^2-\bm{\beta}_{mn}^{\top}\bm{B}_{mn}\bm{\beta}_{mn})\right\}(\sigma^2)^{-1}\\
+	&\times (\sigma^2)^{-N/2}(\sigma^2)^{1/2}\int_{R^K}\exp\left\{-\frac{1}{2\sigma^2}(\bm{\beta}-\bm{\beta}_{mn})^{\top}\bm{B}_{mn}^{-1}(\bm{\beta}-\bm{\beta}_{mn})\right\}d\bm{\beta} d\sigma^2.
+\end{align*}
+The last term is the kernel of a multivariate normal density with mean $\bm{\beta}_{mn}$ and variance $\bm{B}_{mn}$ (proof of the first bullet). Then,
+
+\begin{align*}
+	p({\bf{y}})	&\propto \int_0^{\infty}\left(\frac{g_m}{1+g_m}\right)^{k_m/2}(\sigma^2)^{-(N-1)/2-1} \exp\left\{-\frac{1}{2\sigma^2}(\bm{y}^{\top}\bm{y}-N\bar{y}^2-\bm{\beta}_{mn}^{\top}\bm{B}_{mn}\bm{\beta}_{mn})\right\}d\sigma^2.
+\end{align*}
+
+This is the kernel of an inverse-gamma density with parameters $\alpha_n=(N-1)/2$ and $\delta_n=\bm{y}^{\top}\bm{y}-N\bar{y}^2-\bm{\beta}_{mn}^{\top}\bm{B}_{mn}\bm{\beta}_{mn}$, where $\bm{y}^{\top}\bm{y}-N\bar{y}^2-\bm{\beta}_{mn}^{\top}\bm{B}_{mn}\bm{\beta}_{mn}=(\bm{y}-\bm{i}_N\alpha)^{\top}(\bm{y}-\bm{i}_N\alpha)-(1+g_m)^{-1}\bm{y}^{\top}(\bm{X}(\bm{X}^{\top}\bm{X})^{-1}\bm{X}^{\top})\bm{y}$. Then,
+
+\begin{align*}
+	p(\bm{y}|\mathcal{M}_m)&\propto \left(\frac{g_m}{1+g_m}\right)^{k_m/2} \left[(\bm{y}-\bar{y}\bm{i}_N)^{\top}(\bm{y}-\bar{y}\bm{i}_N)-\frac{1}{1+g_m}(\bm{y}^{\top}\bm{P}_{X_m}\bm{y})\right]^{-(N-1)/2},
+\end{align*}
+
+\item \textbf{Determinants of export diversification I}
+
+\cite{Jetter2015} use BMA to study the determinants of export diversification. Use the dataset \textit{10ExportDiversificationHHI} to perform BMA using the BIC approximation and MC3 to check if these two approaches agree.
+
+\textbf{Answer}
+
+We see from the results that the two approaches show that the most relevant variables to determine export diversification are \textit{portuguese} (Portugal former colony), \textit{avgedu5} (primary education) and \textit{avgnatres} (natural resources). See \cite{Jetter2015} for details of all variables.  
+
+	\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Determinants of export diversification}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+Data <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/10ExportDiversificationHHI.csv", sep = ",", header = TRUE, quote = "")
+attach(Data)
+y <- Data[,1]; X <- as.matrix(Data[,-1]); K <- dim(X)[2]
+BMAglm <- BMA::bicreg(X, y, strict = FALSE, OR = 50)
+summary(BMAglm)
+BMAreg <- BMA::MC3.REG(y, X, num.its=10000)
+Models <- unique(BMAreg[["variables"]])
+nModels <- dim(Models)[1]
+nVistModels <- dim(BMAreg[["variables"]])[1]
+PMPmc3 <- NULL
+for(m in 1:nModels){
+	idModm <- NULL
+	for(j in 1:nVistModels){
+		if(sum(Models[m,] == BMAreg[["variables"]][j,]) == K){
+			idModm <- c(idModm, j)
+		}else{
+			idModm <- idModm
+		} 
+	}
+	PMPm <- sum(BMAreg[["post.prob"]][idModm])
+	PMPmc3 <- c(PMPmc3, PMPm)
+}
+PMPmc3
+PIPmc3 <- NULL
+for(k in 1:K){
+	PIPk <- sum(PMPmc3[which(Models[,k] == 1)])
+	PIPmc3 <- c(PIPmc3, PIPk)
+}
+plot(PIPmc3)
+Meansmc3 <- matrix(0, nModels, K)
+Varsmc3 <- matrix(0, nModels, K)
+for(m in 1:nModels){
+	idXs <- which(Models[m,] == 1)
+	if(length(idXs) == 0){
+		Regm <- lm(y ~ 1)
+	}else{
+		Xm <- X[, idXs]
+		Regm <- lm(y ~ Xm)
+		SumRegm <- summary(Regm)
+		Meansmc3[m, idXs] <- SumRegm[["coefficients"]][-1,1]
+		Varsmc3[m, idXs] <- SumRegm[["coefficients"]][-1,2]^2 
+	}
+}
+BMAmeansmc3 <- colSums(Meansmc3*PMPmc3)
+BMAsdmc3 <- (colSums(PMPmc3*Varsmc3)  + colSums(PMPmc3*(Meansmc3-matrix(rep(BMAmeansmc3, each = nModels), nModels, K))^2))^0.5 
+plot(BMAmeansmc3)
+plot(BMAsdmc3)
+plot(BMAmeansmc3/BMAsdmc3)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+ 
+
 \item \textbf{Simulation exercise of the Markov chain Monte Carlo model composition continues}
 
-Program an algorithm to perform MC3 where the final $S$ models are unique. Use the simulation setting of Section \ref{sec10_2} increasing the number of regressors to 40, this implies approximately 1.1e+12 models. 	
+Program an algorithm to perform MC3 where the final $S$ models are unique. Use the simulation setting of Section 10.2 of the book increasing the number of regressors to 40, this implies approximately 1.1e+12 models. 	
 	
 	\textbf{Answer}
 	
+The following code shows how to perform BMA using MC3 with the consideration that all final $S$ models should be different.
+
+After running the algorithm 50000 ($<<2^{40}$) times, we can see that the PIP is 1 for variables $x_1$, $x_5$ and $x_{10}$, which are the variables in the data generating process (population statistical model). However, we can see that variable $x_{23}$ has a high PIP (0.49), this makes that the PMP of the model including $x_1$, $x_5$, $x_{10}$ and $x_{23}$ is the highest, followed by the model including $x_1$, $x_5$ and $x_{10}$, which is the population statistical model. This highlights the relevance of performing BMA; selecting just one model based on the highest PMP would induce a mistake. Although selecting the median probability model would uncover the population statistical model. 
+
+Estimating the BMA mean shows that we get values very close to the population values, a remarkable results is all other BMA posterior means are close to 0, including the mean coefficient of $x_{23}$ despite that its PIP is almost 0.5. We calculate the posterior ratio between the mean and standard deviation, and get values higher than 2 just for $x_1$, $x_5$ and $x_{10}$, again given evidence for the data generating process.     
+	
 	\begin{tcolorbox}[enhanced,width=4.67in,center upper,
 		fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-		\textit{R code. Name}
+		\textit{R code. Markov chain Monte Carlo model composition}
 		\begin{VF}
 			\begin{lstlisting}[language=R]
-	shiny::runGitHub("besmarter/BSTApp", launch.browser = T)
+rm(list = ls()); set.seed(010101)
+N <- 1000
+K1 <- 6; K2 <- 4; K3 <- 30; K <- K1 + K2 + K3
+X1 <- matrix(rnorm(N*K1,1 ,1), N, K1)
+X2 <- matrix(rbinom(N*K2, 1, 0.5), N, K2)
+X3 <- matrix(rnorm(N*K3,1 ,1), N, K3)
+X <- cbind(X1, X2, X3); e <- rnorm(N, 0, 0.5)
+B <- c(1,0,0,0,0.5,0,0,0,0,-0.7, rep(0, 30))
+y <- 1 + X%*%B + e
+LogMLfunt <- function(Model){
+	indr <- Model == 1
+	kr <- sum(indr)
+	if(kr > 0){
+		gr <- ifelse(N > kr^2, 1/N, kr^(-2))
+		Xr <- matrix(Xnew[ , indr], ncol = kr)
+		# PX <- diag(N) - Xr%*%solve(t(Xr)%*%Xr)%*%t(Xr)
+		# s2pos <- c(t(y)%*%PX%*%y/(1 + gr) + gr*(t(y - mean(y))%*%(y - mean(y)))/(1 + gr))
+		PX <- Xr%*%solve(t(Xr)%*%Xr)%*%t(Xr)
+		s2pos <- c((t(y - mean(y))%*%(y - mean(y))) - t(y)%*%PX%*%y/(1 + gr))
+		mllMod <- (kr/2)*log(gr/(1+gr))-(N-1)/2*log(s2pos)
+	}else{
+		gr <- ifelse(N > kr^2, 1/N, kr^(-2))
+		# PX <- diag(N)
+		# s2pos <- c(t(y)%*%PX%*%y/(1 + gr) + gr*(t(y - mean(y))%*%(y - mean(y)))/(1 + gr))
+		s2pos <- c((t(y - mean(y))%*%(y - mean(y))))
+		mllMod <- (kr/2)*log(gr/(1+gr))-(N-1)/2*log(s2pos)
+	}
+	return(mllMod)
+}
+Xnew <- apply(X, 2, scale); M <- 100
+Models <- matrix(rbinom(K*M, 1, p = 0.5), ncol = K, nrow = M + 800)
+Models <- unique(Models)[1:M,]
+mllnew <- sapply(1:M, function(s){LogMLfunt(matrix(Models[s,], 1, K))})
+oind <- order(mllnew, decreasing = TRUE)
+mllnew <- mllnew[oind]
+Models <- Models[oind, ]
+iter <- 50000; s <- 1
+pb <- winProgressBar(title = "progress bar", min = 0, max = iter, width = 300)
 \end{lstlisting}
 		\end{VF}
 	\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Markov chain Monte Carlo model composition}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+while(s <= iter){
+	ActModel <- Models[M,]
+	idK <- which(ActModel == 1)
+	Kact <- length(idK)
+	Continue <- 0
+	while(Continue == 0){
+		if(Kact < K & Kact > 1){
+			CardMol <- K
+			opt <- sample(1:3, 1)
+			if(opt == 1){ # Same
+				CandModel <- ActModel
+			}else{
+				if(opt == 2){ # Add
+					All <- 1:K
+					NewX <- sample(All[-idK], 1)
+					CandModel <- ActModel
+					CandModel[NewX] <- 1
+				}else{ # Subtract
+					LessX <- sample(idK, 1)
+					CandModel <- ActModel
+					CandModel[LessX] <- 0
+				}
+			}
+		}else{
+			CardMol <- K + 1
+			if(Kact == K){
+				opt <- sample(1:2, 1)
+				if(opt == 1){ # Same
+					CandModel <- ActModel
+				}else{ # Subtract
+					LessX <- sample(1:K, 1)
+					CandModel <- ActModel
+					CandModel[LessX] <- 0
+				}
+			}else{
+				if(K == 1){
+					opt <- sample(1:3, 1)
+					if(opt == 1){ # Same
+						CandModel <- ActModel
+					}else{
+						if(opt == 2){ # Add
+							All <- 1:K
+							NewX <- sample(All[-idK], 1)
+							CandModel <- ActModel
+							CandModel[NewX] <- 1
+						}else{ # Subtract
+							LessX <- sample(idK, 1)
+							CandModel <- ActModel
+							CandModel[LessX] <- 0
+						}
+					}
+				}else{ # Add
+					NewX <- sample(1:K, 1)
+					CandModel <- ActModel
+					CandModel[NewX] <- 1
+				}
+			}
+		}
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Markov chain Monte Carlo model composition}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+		check <- NULL
+	for(j in 1:M){
+		if(sum(Models[j,] == CandModel) == K){
+			checkj <- 0
+			check <- c(check, checkj)
+		}else{
+			checkj <- 1
+			check <- c(check, checkj)
+		}
+	}
+	dimUniModels <- sum(check)
+	if(dimUniModels == M){
+		Continue <- 1
+	}else{
+		Continue <- 0
+	}
+}
+LogMLact <- LogMLfunt(matrix(ActModel, 1, K))
+LogMLcand <- LogMLfunt(matrix(CandModel, 1, K))
+alpha <- min(1, exp(LogMLcand-LogMLact)); u <- runif(1)
+if(u <= alpha){
+mllnew[M] <- LogMLcand
+Models[M, ] <- CandModel
+oind <- order(mllnew, decreasing = TRUE)
+mllnew <- mllnew[oind]
+Models <- Models[oind, ]
+}else{
+mllnew <- mllnew
+Models <- Models
+}
+s <- s + 1
+setWinProgressBar(pb, s, title=paste( round(s/iter*100, 0),"% done"))
+}
+close(pb)
+ModelsUni <- unique(Models)
+mllnewUni <- sapply(1:dim(ModelsUni)[1], function(s){LogMLfunt(matrix(ModelsUni[s,], 1, K))})
+StMarLik <- exp(mllnewUni-mllnewUni[1])
+PMP <- StMarLik/sum(StMarLik)
+PIP <- NULL
+for(k in 1:K){
+PIPk <- sum(PMP[which(ModelsUni[,k] == 1)])
+PIP <- c(PIP, PIPk)
+}
+PIP
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Markov chain Monte Carlo model composition}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+Means <- matrix(0, M, K)
+Vars <- matrix(0, M, K)
+for(m in 1:M){
+	idXs <- which(ModelsUni[m,] == 1)
+	if(length(idXs) == 0){
+		Regm <- lm(y ~ 1)
+	}else{
+		Xm <- X[, idXs]
+		Regm <- lm(y ~ Xm)
+		SumRegm <- summary(Regm)
+		Means[m, idXs] <- SumRegm[["coefficients"]][-1,1]
+		Vars[m, idXs] <- SumRegm[["coefficients"]][-1,2]^2 
+	}
+}
+BMAmeans <- colSums(Means*PMP)
+BMAsd <- (colSums(PMP*Vars)  + colSums(PMP*(Means-matrix(rep(BMAmeans, each = M), M, K))^2))^0.5 
+plot(BMAmeans)
+plot(BMAsd)
+plot(BMAmeans/BMAsd)
+\end{lstlisting}
+\end{VF}
+\end{tcolorbox} 
 	
 \end{enumerate}

@@ -9,11 +9,11 @@ X <- cbind(X1, X2)
 e <- rnorm(N, 0, 0.5)
 B <- c(1,0,0,0,0.5,0,0,0,0,-0.7)
 y <- 1 + X%*%B + e
-df <- as.data.frame(cbind(y, X)) 
-colnames(df) <- c("y", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10")
-write.csv(df, file="51SimNormalBMANew.csv", row.names=FALSE)
+# df <- as.data.frame(cbind(y, X)) 
+# colnames(df) <- c("y", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10")
+# write.csv(df, file="51SimNormalBMANew.csv", row.names=FALSE)
 #### BIC approximation
-BMAglm <- BMA::bic.glm(y ~ X, data = df, glm.family = gaussian()) 
+BMAglm <- BMA::bicreg(X, y, strict = FALSE, OR = 50) 
 summary(BMAglm)
 
 #### Markov chain Monte Carlo model composition using BMA package

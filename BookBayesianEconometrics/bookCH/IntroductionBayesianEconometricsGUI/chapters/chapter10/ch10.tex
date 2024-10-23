@@ -159,9 +159,9 @@ We implement in our GUI three approaches to perform BMA in the Gaussian linear m
 
 \textbf{Example: Simulation exercises}
 
-Let's perform some simulation exercises to assess the performance of the BIC approximation using the Occam's window, and the Markov chain Monte Carlo model composition approaches. Let's begin with a model where the computational burden is low and we know the data generating process. In particular, we set 10 regressors such that $x_k\sim N(1, 1)$, $k =1,\dots,6$, and $x_k\sim B(0.5)$, $k=7,\dots,10$. We set $\bm{\beta}=[1 \ 0 \ 0 \ 0 \ 0.5 \ 0, 0, 0, 0, -0.7]^{\top}$ such that just $x_1$, $x_5$ and $x_{10}$ are relevant to drive $y_i=1+\bm{x}^{\top}\bm{\beta}+\mu_i$, $\mu_i\sim N(0,0.5^2)$. Observe that we just have $2^{10}=1024$ models in this setting, thus, we can calculate the posterior model probability for each model. 
+Let's perform some simulation exercises to assess the performance of the BIC approximation using the Occam's window, and the Markov chain Monte Carlo model composition approaches. Let's begin with a model where the computational burden is low and we know the data generating process (population statistical model). In particular, we set 10 regressors such that $x_k\sim N(1, 1)$, $k =1,\dots,6$, and $x_k\sim B(0.5)$, $k=7,\dots,10$. We set $\bm{\beta}=[1 \ 0 \ 0 \ 0 \ 0.5 \ 0, 0, 0, 0, -0.7]^{\top}$ such that just $x_1$, $x_5$ and $x_{10}$ are relevant to drive $y_i=1+\bm{x}^{\top}\bm{\beta}+\mu_i$, $\mu_i\sim N(0,0.5^2)$. Observe that we just have $2^{10}=1024$ models in this setting, thus, we can calculate the posterior model probability for each model. 
 
-Our GUI uses the commands \textit{bic.glm} and \textit{MC3.REG} from the package \textit{BMA} to perform Bayesian model average in the linear regression model using the BIC approximation and MC3, respectively. These commands in turn are based on \cite{Raftery1995} and \cite{Raftery1997}. The following code shows how to perform the simulation and get the posterior mean and standard deviation using these commands with the default values of hyperparameters and tuning parameters.
+Our GUI uses the commands \textit{bicreg} and \textit{MC3.REG} from the package \textit{BMA} to perform Bayesian model average in the linear regression model using the BIC approximation and MC3, respectively. These commands in turn are based on \cite{Raftery1995} and \cite{Raftery1997}. The following code shows how to perform the simulation and get the posterior mean and standard deviation using these commands with the default values of hyperparameters and tuning parameters.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -176,27 +176,8 @@ X2 <- matrix(rbinom(N*K2, 1, 0.5), N, K2)
 X <- cbind(X1, X2); e <- rnorm(N, 0, 0.5)
 B <- c(1,0,0,0,0.5,0,0,0,0,-0.7)
 y <- 1 + X%*%B + e
-df <- as.data.frame(cbind(y, X)) 
-colnames(df) <- c("y", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10")
-#### BIC approximation
-BMAglm <- BMA::bic.glm(y ~ X, data = df, glm.family = gaussian()) 
+BMAglm <- BMA::bicreg(X, y, strict = FALSE, OR = 50) 
 summary(BMAglm)
-           p!=0    EV         SD        model 1     model 2   
-Intercept  100     1.03306  0.0305   1.032e+00   1.047e+00
-X1.x       100.0   1.00178  0.0153   1.002e+00   1.002e+00
-X2.x         0.0   0.00000  0.0000       .           .    
-X3.x         0.0   0.00000  0.0000       .           .    
-X4.x         0.0   0.00000  0.0000       .           .    
-X5.x       100.0   0.49762  0.0157   4.976e-01   4.975e-01
-X6.x         4.8  -0.00072  0.0047       .      -1.509e-02
-X7.x         0.0   0.00000  0.0000       .           .    
-X8.x         0.0   0.00000  0.0000       .           .    
-X9.x         0.0   0.00000  0.0000       .           .    
-X10.x      100.0  -0.70355  0.0310  -7.036e-01  -7.036e-01
-
-nVar                                       3           4      
-BIC                                     -5.8e+03  -5.8e+03
-post prob                                0.952       0.048
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
@@ -208,7 +189,6 @@ We can see from the results that the BIC approximation with the Occam's window, 
 	\textit{R code. Simulation exercise: Bayesian model average, small setting}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-#### Markov chain Monte Carlo model composition
 BMAreg <- BMA::MC3.REG(y, X, num.its=500)
 Models <- unique(BMAreg[["variables"]])
 nModels <- dim(Models)[1]
@@ -255,8 +235,6 @@ BMAsd
 [1] 1.527261e-02 1.353624e-03 5.936816e-04 1.163947e-04 1.566698e-02 1.987360e-03
 [7] 2.778896e-05 1.270579e-03 6.997305e-04 3.093389e-02
 BMAmeans/BMAsd
-[1]  6.559266e+01 -3.931680e-02  1.117673e-02  3.197272e-03  3.176320e+01
-[6] -6.397124e-02  3.601905e-04  1.658647e-02  9.401697e-03 -2.274385e+01
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
@@ -291,7 +269,7 @@ We can perform Bayesian model averaging in our GUI for linear Gaussian models us
 	\end{algorithmic} 
 \end{algorithm}
 
-We show in the following code how to program a MC3 algorithm from scratch to perform BMA using the setting from Section \ref{sec10_2}. The first part of the code is the function to calculate the log marginal likelihood. This is a small simulation setting, thus we can calculate the marginal likelihood for all 1024 models, and then calculate the posterior model probability standardizing using the model with the largest log marginal likelihood. We see from the results that this model is the data generating process. We also find that the posterior inclusion probabilities for $x_{1}$, $x_{5}$ and $x_{10}$ are 1, whereas the PIP for the other variables are less than 0.05. Although BMA allows incorporating model uncertainty in a regression framework, sometimes it is desirable to select just one model. Two compelling alternatives are the model with the largest posterior model probability, and the median probability model. The latter is the model which includes every predictor that has posterior inclusion probability higher than 0.5. The first model is the best alternative for prediction in the case of a 0--1 loss function \cite{Clyde2004}, whereas the second is the best alternative when there is a quadratic loss function in prediction \cite{Barbieri2004}. In this simulation, the two criteria indicate selection of the data generating process.
+We show in the following code how to program a MC3 algorithm from scratch to perform BMA using the setting from Section \ref{sec10_2}. The first part of the code is the function to calculate the log marginal likelihood. This is a small simulation setting, thus we can calculate the marginal likelihood for all 1024 models, and then calculate the posterior model probability standardizing using the model with the largest log marginal likelihood. We see from the results that this model is the data generating process (population statistical model). We also find that the posterior inclusion probabilities for $x_{1}$, $x_{5}$ and $x_{10}$ are 1, whereas the PIP for the other variables are less than 0.05. Although BMA allows incorporating model uncertainty in a regression framework, sometimes it is desirable to select just one model. Two compelling alternatives are the model with the largest posterior model probability, and the median probability model. The latter is the model which includes every predictor that has posterior inclusion probability higher than 0.5. The first model is the best alternative for prediction in the case of a 0--1 loss function \cite{Clyde2004}, whereas the second is the best alternative when there is a quadratic loss function in prediction \cite{Barbieri2004}. In this simulation, the two criteria indicate selection of the data generating process.
 
 We also show how to estimate the posterior mean and standard deviation based on BMA. We see that the posterior means are very close to the population parameters.  
 
