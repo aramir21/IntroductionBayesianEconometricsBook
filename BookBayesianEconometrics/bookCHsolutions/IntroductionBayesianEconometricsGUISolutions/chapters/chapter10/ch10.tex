@@ -58,11 +58,11 @@ This is the kernel of an inverse-gamma density with parameters $\alpha_n=(N-1)/2
 
 \item \textbf{Determinants of export diversification I}
 
-\cite{Jetter2015} use BMA to study the determinants of export diversification. Use the dataset \textit{10ExportDiversificationHHI} to perform BMA using the BIC approximation and MC3 to check if these two approaches agree.
+\cite{Jetter2015} use BMA to study the determinants of export diversification. Use the dataset \textit{10ExportDiversificationHHI.csv} to perform BMA using the BIC approximation and MC3 with 10000 iterations to check if these two approaches agree.
 
 \textbf{Answer}
 
-We see from the results that the two approaches show that the most relevant variables to determine export diversification are \textit{portuguese} (Portugal former colony), \textit{avgedu5} (primary education) and \textit{avgnatres} (natural resources). See \cite{Jetter2015} for details of all variables.  
+The first aspect to note is that the BIC approximation is faster by far than the MC3 algorithm. We see from the results that the two approaches show that the most relevant variables to determine export diversification are \textit{avgedu5} (primary education) and \textit{avgnatres} (natural resources). See \cite{Jetter2015} for details of all variables. The model with the highest PMP using MC3 includes these two variables (PMP = 0.16), while the model with the highest PMP using the BIC approximation in addition to these two variables also includes Portugal former colony and population (PMP = 0.03). Both methods agree that export diversification increases with primary education, and decreases with natural resources.     
 
 	\begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -117,7 +117,9 @@ BMAmeansmc3 <- colSums(Meansmc3*PMPmc3)
 BMAsdmc3 <- (colSums(PMPmc3*Varsmc3)  + colSums(PMPmc3*(Meansmc3-matrix(rep(BMAmeansmc3, each = nModels), nModels, K))^2))^0.5 
 plot(BMAmeansmc3)
 plot(BMAsdmc3)
-plot(BMAmeansmc3/BMAsdmc3)
+Ratio <- BMAmeansmc3/BMAsdmc3
+RessulMC3 <- as.data.frame(cbind(PIPmc3, Models[1,], BMAmeansmc3, BMAsdmc3, Ratio))
+PMPmc3
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
@@ -328,6 +330,155 @@ plot(BMAsd)
 plot(BMAmeans/BMAsd)
 \end{lstlisting}
 \end{VF}
+\end{tcolorbox}
+
+\item \textbf{Simulation exercise of IV BMA continues}
+
+Use the simulation setting with endogeneity in Section 10.2 to perform BMA based on the BIC approximation and MC3.
+
+\textbf{Answer}
+
+The following code shows how to perform BMA using the BIC approximation and MC3 in this simulation setting with endogeneity. We see from the results that the BIC approximation does a good job with the PIP, as all variables in the data generating process are equal 1. The critical point is the BMA posterior means of the endogenous regressors, as these are far from the population values. The population values of $x_{i1}$ and $x_{i2}$ are 0.5 and -1, whereas the posterior means are 0.97 and -0.52. Regarding the MC3 algorithm, 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. BIC and MC3 in model with endogeneity}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls())
+set.seed(010101)
+simIV <- function(delta1,delta2,beta0,betas1,betas2,beta2,Sigma,n,z) {
+	eps <- matrix(rnorm(3*n),ncol=3) %*% chol(Sigma)
+	xs1 <- z%*%delta1 + eps[,1]
+	xs2 <- z%*%delta2 + eps[,2]
+	x2 <- rnorm(dim(z)[1])
+	y <- beta0+betas1*xs1+betas2*xs2+beta2*x2 + eps[,3]
+	X <- as.matrix(cbind(xs1,xs2,1,x2)) 
+	colnames(X) <- c("x1en","x2en","cte","xex")
+	y <- matrix(y,dim(z)[1],1)
+	colnames(y) <- c("y")
+	list(X=X,y=y)
+}
+n <- 1000 ; p <- 3 
+z <- matrix(runif(n*p),ncol=p)
+rho31 <- 0.8; rho32 <- 0.5;
+Sigma <- matrix(c(1,0,rho31,0,1,rho32,rho31,rho32,1),ncol=3)
+delta1 <- c(4,-1,2); delta2 <- c(-2,3,-1); betas1 <- .5; betas2 <- -1; beta2 <- 1; beta0 <- 2
+simiv <- simIV(delta1,delta2,beta0,betas1,betas2,beta2,Sigma,n,z)
+nW <- 18
+W <- matrix(rnorm(nW*dim(z)[1]),dim(z)[1],nW)
+YXW<-cbind(simiv$y, simiv$X, W)
+y <- YXW[,1]; X <- YXW[,2:3]; W <- YXW[,-c(1:4)]
+Xnew <- cbind(X, W)
+BMAglm <- BMA::bicreg(Xnew, y, strict = FALSE, OR = 50) 
+summary(BMAglm)
+BMAreg <- BMA::MC3.REG(y, Xnew, num.its=10000)
+Models <- unique(BMAreg[["variables"]])
+nModels <- dim(Models)[1]
+nVistModels <- dim(BMAreg[["variables"]])[1]
+PMP <- NULL
+for(m in 1:nModels){
+	idModm <- NULL
+	for(j in 1:nVistModels){
+		if(sum(Models[m,] == BMAreg[["variables"]][j,]) == K){
+			idModm <- c(idModm, j)
+		}else{
+			idModm <- idModm
+		} 
+	}
+	PMPm <- sum(BMAreg[["post.prob"]][idModm])
+	PMP <- c(PMP, PMPm)
+}
+PMP
+PIP <- NULL
+for(k in 1:K){
+	PIPk <- sum(PMP[which(Models[,k] == 1)])
+	PIP <- c(PIP, PIPk)
+}
+plot(PIP)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. BIC and MC3 in model with endogeneity}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+Means <- matrix(0, nModels, K)
+Vars <- matrix(0, nModels, K)
+for(m in 1:nModels){
+	idXs <- which(Models[m,] == 1)
+	if(length(idXs) == 0){
+		Regm <- lm(y ~ 1)
+	}else{
+		Xm <- X[, idXs]
+		Regm <- lm(y ~ Xm)
+		SumRegm <- summary(Regm)
+		Means[m, idXs] <- SumRegm[["coefficients"]][-1,1]
+		Vars[m, idXs] <- SumRegm[["coefficients"]][-1,2]^2 
+	}
+}
+BMAmeans <- colSums(Means*PMP)
+BMAsd <- (colSums(PMP*Vars)  + colSums(PMP*(Means-matrix(rep(BMAmeans, each = nModels), nModels, K))^2))^0.5 
+plot(BMAmeans)
+plot(BMAsd)
+plot(BMAmeans/BMAsd)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\item \textbf{Determinants of export diversification II}
+
+Use the datasets \textit{11ExportDiversificationHHI.csv} and \textit{12ExportDiversificationHHIInstr.csv} to perform IV BMA assuming that the log of per capita gross domestic product is endogenous (\textit{avglgdpcap}). See \cite{Jetter2015} for details.  
+
+\textbf{Answer}
+
+The results show that primary education (\textit{avgedu5}) and natural resources (\textit{avgnatres}) have again the highest PIP, 0.77 and 0.92, respectively. The former variable increases export diversification, and the latter decreases export diversification. However, it seems that endogeneity is not a concern in this application, as the 95\% credible interval of $\sigma_{12}$ is (-0.014, 0.024).   
+
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. IV BMA in export diversification}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+########################## Determinants of export diversification: BMA normal model ########################## 
+rm(list = ls())
+set.seed(010101)
+DataMain <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/11ExportDiversificationHHI.csv", sep = ",", header = TRUE, quote = "")
+DataInst <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/12ExportDiversificationHHIInstr.csv", sep = ",", header = TRUE, quote = "")
+attach(DataMain)
+attach(DataInst)
+y <- DataMain[,1]
+X <- as.matrix(DataMain[,2])
+W <- as.matrix(DataMain[,-c(1:2)])
+Z <- as.matrix(DataInst)
+S <- 10000; burnin <- 1000
+regivBMA <- ivbma::ivbma(Y = y, X = X, Z = Z, W = W, s = S+burnin, b = burnin, odens = S, print.every = round(S/10), run.diagnostics = FALSE)
+PIPmain <- regivBMA[["L.bar"]] # PIP outcome
+PIPmain
+EVmain <- regivBMA[["rho.bar"]] # Posterior mean outcome
+EVmain
+PIPaux <- regivBMA[["M.bar"]] # PIP auxiliary
+PIPaux
+EVaux <- regivBMA[["lambda.bar"]] # Posterior mean auxiliary
+plot(EVaux[,1])
+EVsigma <- regivBMA[["Sigma.bar"]] # Posterior mean variance matrix
+EVsigma
+summary(coda::mcmc(regivBMA[["Sigma"]][1,2,]))
+Iterations = 1:10000
+Thinning interval = 1 
+Number of chains = 1 
+Sample size per chain = 10000 
+1. Empirical mean and standard deviation for each variable,
+plus standard error of the mean:
+Mean             SD       Naive SE Time-series SE 
+3.944e-03      9.592e-03      9.592e-05      4.043e-04 
+2. Quantiles for each variable:
+2.5%       25%       50%       75%     97.5% 
+-0.014155 -0.002415  0.003592  0.009988  0.024047 
+\end{lstlisting}
+	\end{VF}
 \end{tcolorbox} 
 	
 \end{enumerate}

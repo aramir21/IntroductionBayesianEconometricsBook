@@ -227,7 +227,102 @@ BMAsdmc3 <- (colSums(PMPmc3*Varsmc3)  + colSums(PMPmc3*(Meansmc3-matrix(rep(BMAm
 plot(BMAmeansmc3)
 plot(BMAsdmc3)
 plot(BMAmeansmc3/BMAsdmc3)
+Ratio <- BMAmeansmc3/BMAsdmc3
+RessulMC3 <- as.data.frame(cbind(PIPmc3, Models[1,], BMAmeansmc3, BMAsdmc3, Ratio))
+PMPmc3
+########################## Simulation exercise: IV BMA ########################## 
+rm(list = ls())
+set.seed(010101)
+simIV <- function(delta1,delta2,beta0,betas1,betas2,beta2,Sigma,n,z) {
+  eps <- matrix(rnorm(3*n),ncol=3) %*% chol(Sigma)
+  xs1 <- z%*%delta1 + eps[,1]
+  xs2 <- z%*%delta2 + eps[,2]
+  x2 <- rnorm(dim(z)[1])
+  y <- beta0+betas1*xs1+betas2*xs2+beta2*x2 + eps[,3]
+  X <- as.matrix(cbind(xs1,xs2,1,x2)) 
+  colnames(X) <- c("x1en","x2en","cte","xex")
+  y <- matrix(y,dim(z)[1],1)
+  colnames(y) <- c("y")
+  list(X=X,y=y)
+}
+n <- 1000 ; p <- 3 
+z <- matrix(runif(n*p),ncol=p)
+rho31 <- 0.8; rho32 <- 0.5;
+Sigma <- matrix(c(1,0,rho31,0,1,rho32,rho31,rho32,1),ncol=3)
+delta1 <- c(4,-1,2); delta2 <- c(-2,3,-1); betas1 <- .5; betas2 <- -1; beta2 <- 1; beta0 <- 2
+simiv <- simIV(delta1,delta2,beta0,betas1,betas2,beta2,Sigma,n,z)
+nW <- 18
+W <- matrix(rnorm(nW*dim(z)[1]),dim(z)[1],nW)
+YXW<-cbind(simiv$y, simiv$X, W)
+y <- YXW[,1]; X <- YXW[,2:3]; W <- YXW[,-c(1:4)]
+Xnew <- cbind(X, W)
+BMAglm <- BMA::bicreg(Xnew, y, strict = FALSE, OR = 50) 
+summary(BMAglm)
+BMAreg <- BMA::MC3.REG(y, Xnew, num.its=10000)
+Models <- unique(BMAreg[["variables"]])
+nModels <- dim(Models)[1]
+nVistModels <- dim(BMAreg[["variables"]])[1]
+PMP <- NULL
+for(m in 1:nModels){
+  idModm <- NULL
+  for(j in 1:nVistModels){
+    if(sum(Models[m,] == BMAreg[["variables"]][j,]) == K){
+      idModm <- c(idModm, j)
+    }else{
+      idModm <- idModm
+    } 
+  }
+  PMPm <- sum(BMAreg[["post.prob"]][idModm])
+  PMP <- c(PMP, PMPm)
+}
+PMP
+PIP <- NULL
+for(k in 1:K){
+  PIPk <- sum(PMP[which(Models[,k] == 1)])
+  PIP <- c(PIP, PIPk)
+}
+plot(PIP)
+Means <- matrix(0, nModels, K)
+Vars <- matrix(0, nModels, K)
+for(m in 1:nModels){
+  idXs <- which(Models[m,] == 1)
+  if(length(idXs) == 0){
+    Regm <- lm(y ~ 1)
+  }else{
+    Xm <- X[, idXs]
+    Regm <- lm(y ~ Xm)
+    SumRegm <- summary(Regm)
+    Means[m, idXs] <- SumRegm[["coefficients"]][-1,1]
+    Vars[m, idXs] <- SumRegm[["coefficients"]][-1,2]^2 
+  }
+}
+BMAmeans <- colSums(Means*PMP)
+BMAsd <- (colSums(PMP*Vars)  + colSums(PMP*(Means-matrix(rep(BMAmeans, each = nModels), nModels, K))^2))^0.5 
+plot(BMAmeans)
+plot(BMAsd)
+plot(BMAmeans/BMAsd)
 
-
-
-
+########################## Determinants of export diversification: BMA normal model ########################## 
+rm(list = ls())
+set.seed(010101)
+DataMain <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/11ExportDiversificationHHI.csv", sep = ",", header = TRUE, quote = "")
+DataInst <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/12ExportDiversificationHHIInstr.csv", sep = ",", header = TRUE, quote = "")
+attach(DataMain)
+attach(DataInst)
+y <- DataMain[,1]
+X <- as.matrix(DataMain[,2])
+W <- as.matrix(DataMain[,-c(1:2)])
+Z <- as.matrix(DataInst)
+S <- 10000; burnin <- 1000
+regivBMA <- ivbma::ivbma(Y = y, X = X, Z = Z, W = W, s = S+burnin, b = burnin, odens = S, print.every = round(S/10), run.diagnostics = FALSE)
+PIPmain <- regivBMA[["L.bar"]] # PIP outcome
+PIPmain
+EVmain <- regivBMA[["rho.bar"]] # Posterior mean outcome
+EVmain
+PIPaux <- regivBMA[["M.bar"]] # PIP auxiliary
+PIPaux
+EVaux <- regivBMA[["lambda.bar"]] # Posterior mean auxiliary
+plot(EVaux[,1])
+EVsigma <- regivBMA[["Sigma.bar"]] # Posterior mean variance matrix
+EVsigma
+summary(coda::mcmc(regivBMA[["Sigma"]][1,2,]))
