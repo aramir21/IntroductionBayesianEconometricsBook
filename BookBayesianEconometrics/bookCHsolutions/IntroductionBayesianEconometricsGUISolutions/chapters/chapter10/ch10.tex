@@ -338,7 +338,7 @@ Use the simulation setting with endogeneity in Section 10.2 to perform BMA based
 
 \textbf{Answer}
 
-The following code shows how to perform BMA using the BIC approximation and MC3 in this simulation setting with endogeneity. We see from the results that the BIC approximation does a good job with the PIP, as all variables in the data generating process are equal 1. The critical point is the BMA posterior means of the endogenous regressors, as these are far from the population values. The population values of $x_{i1}$ and $x_{i2}$ are 0.5 and -1, whereas the posterior means are 0.97 and -0.52. Regarding the MC3 algorithm, 
+The following code shows how to perform BMA using the BIC approximation and MC3 in this simulation setting with endogeneity. We see from the results that the BIC approximation does a good job with the PIP, as all variables in the data generating process are equal 1. The critical point is the BMA posterior means of the endogenous regressors, as these are far from the population values. The population values of $x_{i1}$ and $x_{i2}$ are 0.5 and -1, whereas the posterior means are 0.97 and -0.52. Regarding the MC3 algorithm, we also get PIP equal to 1 for the variables in the data generating process, and the BMA means are ...  
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -376,6 +376,7 @@ BMAreg <- BMA::MC3.REG(y, Xnew, num.its=10000)
 Models <- unique(BMAreg[["variables"]])
 nModels <- dim(Models)[1]
 nVistModels <- dim(BMAreg[["variables"]])[1]
+K <- dim(Xnew)[2]
 PMP <- NULL
 for(m in 1:nModels){
 	idModm <- NULL
@@ -412,7 +413,7 @@ for(m in 1:nModels){
 	if(length(idXs) == 0){
 		Regm <- lm(y ~ 1)
 	}else{
-		Xm <- X[, idXs]
+		Xm <- Xnew[, idXs]
 		Regm <- lm(y ~ Xm)
 		SumRegm <- summary(Regm)
 		Means[m, idXs] <- SumRegm[["coefficients"]][-1,1]

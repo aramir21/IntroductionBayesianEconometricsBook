@@ -262,6 +262,7 @@ BMAreg <- BMA::MC3.REG(y, Xnew, num.its=10000)
 Models <- unique(BMAreg[["variables"]])
 nModels <- dim(Models)[1]
 nVistModels <- dim(BMAreg[["variables"]])[1]
+K <- dim(Xnew)[2]
 PMP <- NULL
 for(m in 1:nModels){
   idModm <- NULL
@@ -289,7 +290,7 @@ for(m in 1:nModels){
   if(length(idXs) == 0){
     Regm <- lm(y ~ 1)
   }else{
-    Xm <- X[, idXs]
+    Xm <- Xnew[, idXs]
     Regm <- lm(y ~ Xm)
     SumRegm <- summary(Regm)
     Means[m, idXs] <- SumRegm[["coefficients"]][-1,1]
