@@ -549,25 +549,79 @@ We know from Section \ref{sec41} that the Poisson distribution belongs to the ex
 
 We can use the setting of the GLM to perform BMA using the BIC approximation following \cite{Raftery1995}. In particular, $BIC=k_m\log(N)-2\log(p(\hat{\bm{\theta}_m}|\bm{y}))$, where $\hat{\bm{\theta}}_m$ is the maximum likelihood estimator. Thus, we just need to calculate the likelihood function at the maximum likelihood estimator.\\
 
-\textbf{Example: Simulation exercise}  
+\textbf{Example: Simulation exercises}
+
+Let's perform some simulation exercises to assess the performance of the BIC approximation using the Occam's window in GLMs. There are 27 regressors, where $x_{i1}$ and $x_{i2}$ are just the relevant regressors in all exercises, $i=1,2,\dots,1000$.
+\begin{itemize}
+	\item Logit: $x_k\sim N(0, 1)$, $k =1,\dots,27$, and $P(Y_i=1|\bm{x}_i)=\exp(0.5+0.8x_{i1}-1.2x_{i2})/(1+\exp(0.5+0.8x_{i1}-1.2x_{i2}))$.
+	
+	\item Gamma: $x_k\sim N(0, 0.5^2)$, $k =1,\dots,27$, and $y_i\sim G(\alpha,\delta)$ where $\alpha=-(0.5+0.2x_{i1}0.1x_{i2})^{-1}$ and $\delta=1$.
+	
+	\item Poisson: $x_k\sim N(0, 1)$, $k =1,\dots,27$, and $\mathbb{E}[Y_i|\bm{x}_i]=\lambda_i=\exp(0.5+1.1x_{i1}+0.7x_{i2})$.   
+\end{itemize}
+
+Our GUI uses the command \textit{bic.glm} from the \textit{BMA} package to perform BMA using the BIC approximation with the Occam's window in GLMs. The Algorithm \ref{alg:BMABIC} shows how to do this in our GUI, and the following code shows how to perform BMA in logit models using the simulation setting.
+
+\begin{algorithm}[h!]
+	\caption{Bayesian model average in generalized linear models using the Bayesian information criterion}\label{alg:BMABIC}
+	\begin{algorithmic}[1]  		 			
+		\State Select \textit{Bayesian Model Averaging} on the top panel
+		\State Select the generalized linear model using the left radio button. Options: \textit{Binomial data (Logit)}, \textit{Real positive data (Gamma)} and \textit{Count data (Poisson)}
+		\State Upload the dataset selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend
+		\State Type the \textit{OR} number of the Occam's window in the box under \textbf{OR: Number between 5 and 50}, this is not necessary as by default there is 50
+		\State Type the \textit{OL} number of the Occam's window in the box under \textbf{OL: Number between 0.0001 and 1}, this is not necessary as by default there is 0.0025
+		\State Click the \textit{Go!} button
+		\State Analyze results: After a few seconds or minutes, a table appears showing, for each regressor in the dataset, the PIP (posterior inclusion probability, \textbf{p!=0}), the BMA posterior mean (\textbf{EV}), the BMA standard deviation (\textbf{SD}), and the posterior mean for models with the highest PMP. At the bottom of the table, for the models with the largest PMP, the number of variables (\textbf{nVar}), the BIC, and the PMP (\textbf{post prob}) are displayed
+		\State Download posterior results using the \textit{Download results using BIC}. There are two files, the first has the best models by row according to the PMP (last column) indicating with a 1 inclusion of the variable (0 indicates no inclusion), and the second file has the PIP, the BMA expected value and standard deviation for each variable in the dataset
+	\end{algorithmic} 
+\end{algorithm}
+
+The results show that the PIPs of $x_{i1}$ and $x_{i2}$ are equal 1 in all three settings, the data generating process gets the highest PMP with values around 0.3, and the BMA posterior means are close to the population values in each simulation setting. The other variables get PIPs close to 0, except a few exceptions, and the BMA posterior means are also close to 0. This suggests that the BIC approximation does a good job finding the data generating process in generalized linear models.
+ 
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: BMA for generalized linear models}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+### Logit ###
+rm(list = ls()); set.seed(010101)
+n<-1000; B<-c(0.5,0.8,-1.2)
+X<-matrix(cbind(rep(1,n),rnorm(n,0,1),rnorm(n,0,1)),n,length(B))
+p <- exp(X%*%B)/(1+exp(X%*%B)); y <- rbinom(n, 1, p)
+nXgar<-25; Xgar<-matrix(rnorm(nXgar*n),n,nXgar)
+df<-as.data.frame(cbind(y,X[,-1],Xgar))
+colnames(df) <- c("y", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17", "x18", "x19", "x20", "x21", "x22", "x23", "x24", "x25", "x26", "x27")
+BMAglmLogit <- BMA::bic.glm(y ~ x1+x2+x3+x4+x5+x6+x7+x8+x9+x10+x11+x12+x13+x14+x15+x16+x17+x18+x19+x20+x21+x22+x23+x24+x25+x26+x27, data = df, glm.family = binomial(link="logit"), strict = FALSE, OR = 50)
+summary(BMAglmLogit)
+### Gamma ###
+rm(list = ls()); set.seed(010101)
+n<-1000; B<- c(0.5, 0.2, 0.1)
+X<-matrix(cbind(rep(1,n),rnorm(n,0,0.5),rnorm(n,0,0.5)),n,length(B))
+y1 <- (X%*%B)^(-1)
+y <- rgamma(n,y1,scale=1)
+nXgar<-25; Xgar<-matrix(rnorm(nXgar*n),n,nXgar)
+df<-as.data.frame(cbind(y,X[,-1],Xgar))
+colnames(df) <- c("y", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17", "x18", "x19", "x20", "x21", "x22", "x23", "x24", "x25", "x26", "x27")
+BMAglmGamma <- BMA::bic.glm(y ~ x1+x2+x3+x4+x5+x6+x7+x8+x9+x10+x11+x12+x13+x14+x15+x16+x17+x18+x19+x20+x21+x22+x23+x24+x25+x26+x27, data = df, glm.family = Gamma(link="inverse"), strict = FALSE, OR = 50)
+summary(BMAglmGamma)
+### Poisson ###
+rm(list = ls()); set.seed(010101)
+n<-1000; B<-c(0.5,1.1,0.7)
+X<-matrix(cbind(rep(1,n),rnorm(n,0,1),rnorm(n,0,1)),n,length(B))
+y1<-exp(X%*%B); y<-rpois(n,y1)
+nXgar<-25; Xgar<-matrix(rnorm(nXgar*n),n,nXgar)
+df<-as.data.frame(cbind(y,X[,-1],Xgar))
+colnames(df) <- c("y", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17", "x18", "x19", "x20", "x21", "x22", "x23", "x24", "x25", "x26", "x27")
+BMAglmPoisson <- BMA::bic.glm(y ~ x1+x2+x3+x4+x5+x6+x7+x8+x9+x10+x11+x12+x13+x14+x15+x16+x17+x18+x19+x20+x21+x22+x23+x24+x25+x26+x27, data = df, glm.family = poisson(link="log"), strict = FALSE, OR = 50)
+summary(BMAglmPoisson)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+  
 
 
 
 %The Gaussian linear model is an example of a generalized linear model. A GLM is characterized by a distribution function that is in the exponential family, that is, $p_i(y_i|\theta_i,\phi)=h(y_i,\phi)Exp\left\{(\theta_iy_i-b(\theta_i))/a(\phi)\right\}$ (canonical representation), $y_i\stackrel{i.n.d.} {\thicksim}p_i$, $i=1,2,\dots,n$. It also has a linear predictor $\theta_i=\bm{x}_i^{\top}\bm{\beta}$, and a link function $g$ such that $E(Y_i|x_i)\equiv \mu_i=b'(\theta_i)=g^{-1}(\bm{x}_i^{\top}\bm{\beta})$ ($g$ is monotonic and differentiable), and $V(Y_i)=b''(\theta_i)a(\phi)$ \cite{McCullagh1989}. The identity function $\mu_i=\bm{x}_i^{\top}\bm{\beta}$ is the canonical link function in the case of the Gaussian model.\footnote{A canonical link functions is characterized by the existence of a sufficient statistic ($\bm{X}^{\top}\bm{y}$) equal in dimension to $\bm{\beta}$.} This statistical framework can help us to characterize:
-
-\section{The logit model}\label{sec10_3}
-
-The logit model is also a GLM, where the link function is $\bm{x}_i^{\top}\bm{\beta}=log\left(\frac{\mu_i}{1-\mu_i}\right)$.
-We carry out BMA using the BIC approximation and the Occam's window approach in the logit model.
-
-\section{The gamma model}\label{sec10_4}
-The gamma model is also a GLM, where the link function is $\bm{x}_i^{\top}\bm{\beta}=\mu_i^{-1}$.
-We carry out BMA using the BIC approximation and the Occam's window approach in the gamma model.
-
-\section{The Poisson model}\label{sec10_5}
-The logit model is also a GLM, where the link function is $\bm{x}_i^{\top}\bm{\beta}=\log(\mu_i)$.
-We carry out BMA using the BIC approximation and the Occam's window approach in the Poisson model.
-
 
 \section{Calculating the marginal likelihood}\label{sec10_6}
 
@@ -610,6 +664,14 @@ Use the simulation setting with endogeneity in Section \ref{sec10_2} to perform 
 
 \item \textbf{Determinants of export diversification II}
 
-Use the datasets \textit{11ExportDiversificationHHI.csv} and \textit{12ExportDiversificationHHIInstr.csv} to perform IV BMA assuming that the log of per capita gross domestic product is endogenous (\textit{avglgdpcap}). See \cite{Jetter2015} for details.      
+Use the datasets \textit{11ExportDiversificationHHI.csv} and \textit{12ExportDiversificationHHIInstr.csv} to perform IV BMA assuming that the log of per capita gross domestic product is endogenous (\textit{avglgdpcap}). See \cite{Jetter2015} for details.
+
+\item Show that the link function in the case of the Bernoulli distribution is $\log\left(\frac{\theta}{1-\theta}\right)$.
+
+\item Use the file \textit{13InternetMed.csv} to perform BMA using the logit link function.
+
+\item Use the file \textit{14ValueFootballPlayers.csv} to perform BMA using the gamma distribution.  
+
+\item Use the file \textit{15Fertil2.csv} to perform BMA using the exponential link function.        
 	
 \end{enumerate}

@@ -9,9 +9,6 @@ X <- cbind(X1, X2)
 e <- rnorm(N, 0, 0.5)
 B <- c(1,0,0,0,0.5,0,0,0,0,-0.7)
 y <- 1 + X%*%B + e
-# df <- as.data.frame(cbind(y, X)) 
-# colnames(df) <- c("y", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10")
-# write.csv(df, file="51SimNormalBMANew.csv", row.names=FALSE)
 #### BIC approximation
 BMAglm <- BMA::bicreg(X, y, strict = FALSE, OR = 50) 
 summary(BMAglm)
@@ -292,3 +289,56 @@ plot(EVaux[,1])
 plot(EVaux[,2])
 EVsigma <- regivBMA[["Sigma.bar"]] # Posterior mean variance matrix
 EVsigma 
+
+########################## Simulation exercise: BMA logit ########################## 
+rm(list = ls())
+set.seed(010101)
+n<-1000 
+B<-c(0.5,0.8,-1.2)
+X<-matrix(cbind(rep(1,n),rnorm(n,0,1),rnorm(n,0,1)),n,length(B))
+p <- exp(X%*%B)/(1+exp(X%*%B))
+y <- rbinom(n, 1, p)
+table(y)
+nXgar<-25
+Xgar<-matrix(rnorm(nXgar*n),n,nXgar)
+df<-as.data.frame(cbind(y,X[,-1],Xgar))
+colnames(df) <- c("y", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17", "x18", "x19", "x20", "x21", "x22", "x23", "x24", "x25", "x26", "x27")
+### BIC approximation
+BMAglmLogit <- BMA::bic.glm(y ~ x1+x2+x3+x4+x5+x6+x7+x8+x9+x10+x11+x12+x13+x14+x15+x16+x17+x18+x19+x20+x21+x22+x23+x24+x25+x26+x27, data = df, glm.family = binomial(link="logit"), strict = FALSE, OR = 50)
+summary(BMAglmLogit)
+
+########################## Simulation exercise: BMA gamma ########################## 
+rm(list = ls())
+set.seed(010101)
+n<-1000 
+B<- c(0.5, 0.2, 0.1) # c(0.5,0.5,0.5)
+X<-matrix(cbind(rep(1,n),rnorm(n,0,0.5),rnorm(n,0,0.5)),n,length(B))
+y1 <- (X%*%B)^(-1) # exp(X%*%B)
+plot(y1)
+y <- rgamma(n,y1,scale=1)
+nXgar<-25
+Xgar<-matrix(rnorm(nXgar*n),n,nXgar)
+df<-as.data.frame(cbind(y,X[,-1],Xgar))
+colnames(df) <- c("y", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17", "x18", "x19", "x20", "x21", "x22", "x23", "x24", "x25", "x26", "x27")
+### BIC approximation
+BMAglmGamma <- BMA::bic.glm(y ~ x1+x2+x3+x4+x5+x6+x7+x8+x9+x10+x11+x12+x13+x14+x15+x16+x17+x18+x19+x20+x21+x22+x23+x24+x25+x26+x27, data = df, glm.family = Gamma(link="inverse"), strict = FALSE, OR = 50)
+summary(BMAglmGamma)
+
+########################## Simulation exercise: BMA Poisson ########################## 
+rm(list = ls())
+set.seed(010101)
+n<-1000 
+B<-c(0.5,1.1,0.7)
+X<-matrix(cbind(rep(1,n),rnorm(n,0,1),rnorm(n,0,1)),n,length(B))
+y1<-exp(X%*%B)
+y<-rpois(n,y1)
+nXgar<-25
+Xgar<-matrix(rnorm(nXgar*n),n,nXgar)
+df<-as.data.frame(cbind(y,X[,-1],Xgar))
+colnames(df) <- c("y", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17", "x18", "x19", "x20", "x21", "x22", "x23", "x24", "x25", "x26", "x27")
+### BIC approximation
+BMAglmPoisson <- BMA::bic.glm(y ~ x1+x2+x3+x4+x5+x6+x7+x8+x9+x10+x11+x12+x13+x14+x15+x16+x17+x18+x19+x20+x21+x22+x23+x24+x25+x26+x27, data = df, glm.family = poisson(link="log"), strict = FALSE, OR = 50)
+summary(BMAglmPoisson)
+
+
+
