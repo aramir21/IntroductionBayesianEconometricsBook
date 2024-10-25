@@ -338,7 +338,7 @@ Use the simulation setting with endogeneity in Section 10.2 to perform BMA based
 
 \textbf{Answer}
 
-The following code shows how to perform BMA using the BIC approximation and MC3 in this simulation setting with endogeneity. We see from the results that the BIC approximation does a good job with the PIP, as all variables in the data generating process are equal 1. The critical point is the BMA posterior means of the endogenous regressors, as these are far from the population values. The population values of $x_{i1}$ and $x_{i2}$ are 0.5 and -1, whereas the posterior means are 0.97 and -0.52. Regarding the MC3 algorithm, we also get PIP equal to 1 for the variables in the data generating process, and the BMA means are ...  
+The following code shows how to perform BMA using the BIC approximation and MC3 in this simulation setting with endogeneity. We see from the results that the BIC approximation and MC3 do a good job with the PMP and the PIP, as the data generating process gets the highest PMP using both approaches, and the PIPs of the variables in the data generating process are equal 1. The critical point is the BMA posterior means of the endogenous regressors, as these are far from the population values. The population values of $x_{i1}$ and $x_{i2}$ are 0.5 and -1, whereas the posterior means are 0.97 and -0.52. 
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -427,7 +427,49 @@ plot(BMAsd)
 plot(BMAmeans/BMAsd)
 \end{lstlisting}
 	\end{VF}
+\end{tcolorbox}
+
+The previous results are intuitive, as the PMP are calculated based on fit (and penalty for complexity), for instance, $BIC=k_m\log(N)-2\log(p(\hat{\bm{\theta}_m}|\bm{y}))$, where $\hat{\bm{\theta}}_m$ is the maximum likelihood estimator. Observe that the fit is not affected by endogeneity. Thus, the PMP are well calculated. However, the coefficients are not well identified.  
+
+This suggests a simple strategy to perform BMA taking into account endogeneity, calculate the PMPs using standard BMA approaches, for instance, BIC approximation, and then estimate the BMA means using these PMPs, but estimating the different models using instrumental variables. This approach is easily implemented using packages from \textbf{R}. The following code does this:
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Easy IV BMA}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+BMAglm <- BMA::bicreg(Xnew, y, strict = FALSE, OR = 50) 
+summary(BMAglm)
+PMPBIC <- BMAglm[["postprob"]]
+ModelsBIC <- BMAglm[["which"]]
+nModels <- dim(ModelsBIC)[1]
+K <- dim(Xnew)[2]
+Means <- matrix(0, nModels, K)
+Vars <- matrix(0, nModels, K)
+for(m in 1:nModels){
+	idXs <- which(ModelsBIC[m,] == 1)
+	if(length(idXs) == 0){
+		Regm <- lm(y ~ 1)
+	}else{
+		Xm <- Xnew[, idXs]
+		Regm <- ivreg::ivreg(y ~ Xm | z + W)
+		SumRegm <- summary(Regm)
+		Means[m, idXs] <- SumRegm[["coefficients"]][-1,1]
+		Vars[m, idXs] <- SumRegm[["coefficients"]][-1,2]^2 
+	}
+}
+BMAmeans <- colSums(Means*PMPBIC)
+BMAsd <- (colSums(PMPBIC*Vars)  + colSums(PMPBIC*(Means-matrix(rep(BMAmeans, each = nModels), nModels, K))^2))^0.5 
+BMAmeans
+5.589366e-01 -9.431664e-01  1.035593e+00 -1.967444e-05 -1.429801e-04 -3.310215e-04  4.036846e-04 4.651796e-03 -2.673730e-03  6.462503e-05  4.286529e-04 -1.829889e-04  5.073229e-03 -1.007356e-04 -5.377972e-04  1.644475e-03 -4.029205e-04 -1.457381e-04  6.421582e-04  2.211994e-04  2.216503e-04
+plot(BMAsd)
+plot(BMAmeans/BMAsd)
+17.764095075 -23.233601133  34.734610916  -0.005600369  -0.039168667  -0.071895067   0.080909448 0.274994618  -0.210854131   0.018790592   0.061271650  -0.047117887   0.305639285  -0.028830411 -0.092463544   0.169455952  -0.058299940  -0.038099792   0.102373567   0.056074670   0.055500343
+		\end{lstlisting}
+	\end{VF}
 \end{tcolorbox} 
+
+We observe that the Easy IV BMA means of the endogenous regressors are 0.59 and -0.94, which are closer to the population values (0.5 and -1) than the exogenous BMA means (0.97 and -0.52) and align closely with the IV BMA means calculated using conditional Bayes factors (0.51 and -0.98; see Section 10.2 in the book). Additionally, the ratios between the Easy IV BMA means and their standard deviations exceed 2 in absolute value for these variables, and the t-intervals encompass the population values   
 
 \item \textbf{Determinants of export diversification II}
 
@@ -480,6 +522,17 @@ Mean             SD       Naive SE Time-series SE
 -0.014155 -0.002415  0.003592  0.009988  0.024047 
 \end{lstlisting}
 	\end{VF}
-\end{tcolorbox} 
+\end{tcolorbox}
+
+\item Show that the link function in the case of the Bernoulli distribution is $\log\left(\frac{\theta}{1-\theta}\right)$.
+
+\textbf{Answer}
+\begin{align}
+	p(\mathbf{y}|\theta)&=\theta^{y}(1-\theta)^{1-y}\nonumber\\
+	&=(1-\theta)\exp\left\{ y\log\left(\frac{\theta}{1-\theta}\right)\right\}\nonumber\\
+	&=\exp\left\{ y\log\left(\frac{\theta}{1-\theta}\right)+\log(1-\theta)\right\}\nonumber,
+\end{align}
+
+then $\eta(\theta)=\log\left(\frac{\theta}{1-\theta}\right)$, and this density in the canonical form is $p(y|\eta)=\exp\left\{ y\eta-\log(1+\exp(\eta))\right\}$  consequently, $\mathbb{E}[Y|\bm{x}]=\nabla\left(\log(1+\exp(\eta))\right)=\frac{\exp(\eta)}{1+\exp(\eta)}=\theta=\frac{\exp(\bm{x}^{\top}\bm{\beta})}{1+\exp(\bm{x}^{\top}\bm{\beta})}$. Then, the link function in the Bernoulli case is the \textit{logit} function.
 	
 \end{enumerate}

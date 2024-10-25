@@ -303,6 +303,33 @@ plot(BMAmeans)
 plot(BMAsd)
 plot(BMAmeans/BMAsd)
 
+#PIP from BIC, and coefficients from Instrumental variable
+BMAglm <- BMA::bicreg(Xnew, y, strict = FALSE, OR = 50) 
+summary(BMAglm)
+PMPBIC <- BMAglm[["postprob"]]
+ModelsBIC <- BMAglm[["which"]]
+nModels <- dim(ModelsBIC)[1]
+K <- dim(Xnew)[2]
+Means <- matrix(0, nModels, K)
+Vars <- matrix(0, nModels, K)
+for(m in 1:nModels){
+  idXs <- which(ModelsBIC[m,] == 1)
+  if(length(idXs) == 0){
+    Regm <- lm(y ~ 1)
+  }else{
+    Xm <- Xnew[, idXs]
+    Regm <- ivreg::ivreg(y ~ Xm | z + W)
+    SumRegm <- summary(Regm)
+    Means[m, idXs] <- SumRegm[["coefficients"]][-1,1]
+    Vars[m, idXs] <- SumRegm[["coefficients"]][-1,2]^2 
+  }
+}
+BMAmeans <- colSums(Means*PMPBIC)
+BMAsd <- (colSums(PMPBIC*Vars)  + colSums(PMPBIC*(Means-matrix(rep(BMAmeans, each = nModels), nModels, K))^2))^0.5 
+plot(BMAmeans)
+plot(BMAsd)
+plot(BMAmeans/BMAsd)
+
 ########################## Determinants of export diversification: BMA normal model ########################## 
 rm(list = ls())
 set.seed(010101)

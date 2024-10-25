@@ -124,7 +124,8 @@ Since $\frac{K_j}{2}\log(2\pi)$ and $\log(\pi(\bm{\hat{\theta}}_j^{MLE} | \mathc
 	log\left(p(\bm{y} | \mathcal{M}_j)\right)\approx& -\frac{K_j}{2}\log(N)+\log(p(\bm{y}| \bm{\hat{\theta}}_j^{MLE},\mathcal{M}_j))= -\frac{BIC}{2}, \ N \rightarrow \infty.
 \end{align*}
 
-The marginal likelihood thus asymptotically converges to a linear transformation of the Bayesian Information Criterion (BIC), significantly simplifying its calculation.
+The marginal likelihood thus asymptotically converges to a linear transformation of the Bayesian Information Criterion (BIC), significantly simplifying its calculation. In addition, the BIC is consistent, that is, the probability of uncovering the population statistical model converges to one as the sample size converges to infinity given a $\mathcal{M}$-closed view \cite[Chap.~6]{Bernardo1994}, that is, one of the models in consideration is the population statistical model (data generating process) \cite{schwarz1978estimating, burnham2004multimodel}. In case that there is an $\mathcal{M}$-completed view of nature, that is, there is a true data generating process, but the space of models that we are comparing does not include it, the BIC asymptotically selects the model that minimizes the Kullback-Leiber (KL) divergence to the true (population) model \cite[Chap. ~4]{claeskens2008model}. 
+
 
 \section{The Gaussian linear model}\label{sec10_2}
 
@@ -542,14 +543,17 @@ EVsigma <- regivBMA[["Sigma.bar"]] # Posterior mean variance matrix
 
 \section{Generalized linear models}\label{sec10_3}
 
-Generalized linear models (GLM) were introduced by \cite{nelder1972generalized}, and extend the concept of linear regressions to a more general setting. These models are characterized by: i) a dependent variable $\bm{y}$ whose probability distribution function belongs to the exponential family, ii) a linear predictor $\bm{x}^{\top}\bm{\beta}$, and iii) a link function such that $\mathbb{E}[Y|\bm{x}]=g^{-1}(\bm{x}^{\top}\bm{\beta})$, which implies that $g(\mathbb{E}[Y|\bm{x}])=\bm{x}^{\top}\bm{\beta}$.
+Generalized linear models (GLM) were introduced by \cite{nelder1972generalized}, and extend the concept of linear regressions to a more general setting. These models are characterized by: i) a dependent variable ${y}_i$ whose probability distribution function belongs to the exponential family (see Section \ref{sec41}), ii) a linear predictor $\eta=\bm{x}^{\top}\bm{\beta}$, and iii) a link function such that $\mathbb{E}[Y|\bm{x}]=g^{-1}(\bm{x}^{\top}\bm{\beta})$, which implies that $g(\mathbb{E}[Y|\bm{x}])=\bm{x}^{\top}\bm{\beta}$. GLM can be extended to overdispersed exponential family \cite{McCullagh1989}.
 
-The Bayesian information criterion (BIC) is consistent, that is, the probability of uncovering the population statistical model converges to one as the sample size converges to infinity given a $\mathcal{M}$-closed view \cite[Chap.~6]{Bernardo1994}, that is, one of the models in consideration is the population statistical model (data generating process) \cite{schwarz1978estimating, burnham2004multimodel}. In case that there is an $\mathcal{M}$-completed view of nature, that is, there is a true data generating process, but the space of models that we are comparing does not include it, the BIC asymptotically selects the model that minimizes the Kullback-Leiber (KL) divergence to the true (population) model \cite[Chap. ~4]{claeskens2008model}. 
+We know from Section \ref{sec41} that the Poisson distribution belongs to the exponential family such that $p(y|\lambda)=\frac{\exp(-\lambda)\exp(y\log(\lambda))}{y!}$ or in the canonical form $p(y|\eta)=\frac{\exp(\eta y-\exp(\eta))}{y!}$, where $\eta=\log(\lambda)$, which means that $\bm{x}^{\top}\bm{\beta}=\log(\lambda)$, and consequently, $\mathbb{E}[Y|\bm{x}]=\nabla(\exp(\eta))=\exp(\eta)=\lambda=\exp(\bm{x}^{\top}\bm{\beta})$. Then, the link function in the Poisson case is the \textit{log} function. We ask in Exercise 6 to show that the link function in Bernoulli case is the \textit{logit} function. Another examples are the identity function in the case of the Gaussian distribution, and the negative inverse in the case of the gamma density.
 
-The Gaussian linear model is an example of a generalized linear model.
-A GLM is characterized by a distribution function that is in the exponential family, that is, $p_i(y_i|\theta_i,\phi)=h(y_i,\phi)Exp\left\{(\theta_iy_i-b(\theta_i))/a(\phi)\right\}$ (canonical representation), $y_i\stackrel{i.n.d.} {\thicksim}p_i$, $i=1,2,\dots,n$.
-It also has a linear predictor $\theta_i=\bm{x}_i^{\top}\bm{\beta}$, and a link function $g$ such that $E(Y_i|x_i)\equiv \mu_i=b'(\theta_i)=g^{-1}(\bm{x}_i^{\top}\bm{\beta})$ ($g$ is monotonic and differentiable), and $V(Y_i)=b''(\theta_i)a(\phi)$ \cite{McCullagh1989}.
-The identity function $\mu_i=\bm{x}_i^{\top}\bm{\beta}$ is the canonical link function in the case of the Gaussian model.\footnote{A canonical link functions is characterized by the existence of a sufficient statistic ($\bm{X}^{\top}\bm{y}$) equal in dimension to $\bm{\beta}$.} This statistical framework can help us to characterize:
+We can use the setting of the GLM to perform BMA using the BIC approximation following \cite{Raftery1995}. In particular, $BIC=k_m\log(N)-2\log(p(\hat{\bm{\theta}_m}|\bm{y}))$, where $\hat{\bm{\theta}}_m$ is the maximum likelihood estimator. Thus, we just need to calculate the likelihood function at the maximum likelihood estimator.\\
+
+\textbf{Example: Simulation exercise}  
+
+
+
+%The Gaussian linear model is an example of a generalized linear model. A GLM is characterized by a distribution function that is in the exponential family, that is, $p_i(y_i|\theta_i,\phi)=h(y_i,\phi)Exp\left\{(\theta_iy_i-b(\theta_i))/a(\phi)\right\}$ (canonical representation), $y_i\stackrel{i.n.d.} {\thicksim}p_i$, $i=1,2,\dots,n$. It also has a linear predictor $\theta_i=\bm{x}_i^{\top}\bm{\beta}$, and a link function $g$ such that $E(Y_i|x_i)\equiv \mu_i=b'(\theta_i)=g^{-1}(\bm{x}_i^{\top}\bm{\beta})$ ($g$ is monotonic and differentiable), and $V(Y_i)=b''(\theta_i)a(\phi)$ \cite{McCullagh1989}. The identity function $\mu_i=\bm{x}_i^{\top}\bm{\beta}$ is the canonical link function in the case of the Gaussian model.\footnote{A canonical link functions is characterized by the existence of a sufficient statistic ($\bm{X}^{\top}\bm{y}$) equal in dimension to $\bm{\beta}$.} This statistical framework can help us to characterize:
 
 \section{The logit model}\label{sec10_3}
 
