@@ -620,7 +620,9 @@ summary(BMAglmPoisson)
   
 We can take advantage of the \textit{glm} function in \textbf{R} to perform BMA programming a MC3 algorithm. The following code shows how to do this. Fist, we simulate the data, second we have a function to get the log marginal likelihood approximation using the results from the  \textit{glm} function. Then, we have the initial models to begin the MC3 algorithm. After this, we have the MC3 algorithm using small modifications of the code that we use to perform MC3 in Gaussian linear models. We can calculate the PMPs, PIPs, BMA means and standard deviations as we previously did.
 
-The simulation setting implies $2^{27}$ models, which implies approximately 135 million models in the model space. We run our MC3 algorithm using the BIC approximation with 50000 iterations. This takes by far more time that the BIC approximation from the \textit{BMA} package, but it seems to do a good job finding the relevant regressors, and their BMA posterior means and standard deviations. The highest PMP is ?? and is associated with the model ???, the PIPs of the relevant regressors in the population statistical models are equal 1, and the BMA means are ???. The t-ratio are higher than 2 (in absolute value) by far for $x_{i1}$ and $x_{i2}$. The other variables have BMA means near 0, and the t-ratios are also near 0. We ask in Exercise 10 to use this approach to perform a BMA algorithm in the logit regression using the simulation setting of logit models of this section.    
+The simulation setting implies $2^{27}$ models, which implies approximately 135 million models in the model space. We run our MC3 algorithm using the BIC approximation with 50000 iterations. This takes by far more time that the BIC approximation from the \textit{BMA} package, but it seems to do a good job finding the data generating process as the PMP of this model is equal 1, the posterior inclusion probabilities are equal 1 for $x_{i1}$ and $x_{i2}$, the posterior means are 1.1 and 0.7, that is, equal to the population values, and the t-ratios are by far higher than 2. However, running 50000 iterations implies mass concentration in one model, in this case the data generating process. If we run 25000 MC3 iterations, the highest PMP is 0.8, but it is not associated with the data generating process. Although, the PIP is equal 1 for $x_{i1}$ and $x_{i2}$, but there are other regressors that get high PIPs. The BMA means are equal to the population values for $x_{i1}$ and $x_{i2}$, and the PIPs for the other regressors are equal 0. The t-ratios of the regressors in the population statistical model are larger than 2 by far, whereas the t-ratios of the other regressors are equal to 0. This exercise shows that 25000 iterations were not enough to uncover the data generating process. However, this exercise also shows an important point, we need too analyze all the relevant results from the BMA analysis, no just the PMPs and/or PIPs.
+
+We ask in Exercise 10 to use this approach to perform a BMA algorithm in the logit regression using the simulation setting of logit models of this section.    
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -654,7 +656,7 @@ mllnew <- sapply(1:M, function(s){BICfunt(matrix(Models[s,], 1, K))})
 oind <- order(mllnew, decreasing = TRUE)
 mllnew <- mllnew[oind]; Models <- Models[oind, ]
 # Hyperparameters MC3
-iter <- 50000
+iter <- 25000
 pb <- winProgressBar(title = "progress bar", min = 0, max = iter, width = 300)
 s <- 1
 while(s <= iter){
@@ -791,7 +793,7 @@ plot(BMAmeans/BMAsd)
 
 \section{Calculating the marginal likelihood}\label{sec10_6}
 
-The BIC approximation to the marginal likelihood is an asymptotic approximation. This implies limitations. Thus, there are other strategies that can be used to calculate the marginal likelihood when there is no analytic solution.
+The BIC approximation to the marginal likelihood is an asymptotic approximation. This implies limitations in small samples. Thus, there are other strategies that can be used to calculate the marginal likelihood when there is no analytic solution.
 
 \subsection{Savage-Dickey density ratio}\label{sec10_11}
 
@@ -834,11 +836,11 @@ Use the datasets \textit{11ExportDiversificationHHI.csv} and \textit{12ExportDiv
 
 \item Show that the link function in the case of the Bernoulli distribution is $\log\left(\frac{\theta}{1-\theta}\right)$.
 
-\item Use the file \textit{13InternetMed.csv} to perform BMA using the logit link function.
+\item \cite{ramirez2020dynamic,ramirez2021specification} perform variable selection using the file \textit{13InternetMed.csv}. In this data set, the dependent variable is an indicator of Internet adoption (internet) for 5000 households in Medell\'in (Colombia) during the period 2006--2014. This dataset contains information about 18 potential determinants, which means 262144 ($2^{18}$) potential models just taking into account variable uncertainty (see these papers for details about the data set). Perform BMA using the logit link function using this data set.  
 
-\item Use the file \textit{14ValueFootballPlayers.csv} to perform BMA using the gamma distribution.  
+\item \cite{Serna2018} use the file \textit{14ValueFootballPlayers.csv} to analyze the market value of soccer players in the most important leagues in Europe. In particular, there are 26 potential determinants of the market value (dependent variable) of a stratified sample of 335 soccer players in the five most important leagues in Europe (see \cite{Serna2018} for details). Use this data set to perform BMA using the gamma distribution setting default values for Occam's window.  
 
-\item Use the file \textit{15Fertil2.csv} to perform BMA using the exponential link function.
+\item Use the dataset \textit{15Fertile2.csv} from \cite[p.~547]{Wooldridge2012} to perform BMA using the Poisson model with the log link. This data set has information about 1,781 women from Botswana in 1988 (for details, see \textbf{https://rdrr.io/cran/wooldridge/man/fertil2.html}, and take into account that we deleted some variables and omitted observations with NA values). The dependent variable is the number of children ever born (ceb), which is a count variable, as a function of 19 potential determinants.
 
 \item Perform BMA in the logit model using MC3 and the BIC approximation using the simulation setting of Section \ref{sec10_3}.        
 	

@@ -367,7 +367,7 @@ oind <- order(mllnew, decreasing = TRUE)
 mllnew <- mllnew[oind]
 Models <- Models[oind, ]
 # Hyperparameters MC3
-iter <- 50000
+iter <- 25000
 pb <- winProgressBar(title = "progress bar", min = 0, max = iter, width = 300)
 s <- 1
 while(s <= iter){

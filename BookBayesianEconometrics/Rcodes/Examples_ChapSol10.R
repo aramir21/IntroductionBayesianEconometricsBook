@@ -354,3 +354,190 @@ plot(EVaux[,1])
 EVsigma <- regivBMA[["Sigma.bar"]] # Posterior mean variance matrix
 EVsigma
 summary(coda::mcmc(regivBMA[["Sigma"]][1,2,]))
+
+########################## Determinants of internet adoption: BMA logit model ########################## 
+rm(list = ls())
+set.seed(010101)
+DataMain <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/13InternetMed.csv", sep = ",", header = TRUE, quote = "")
+attach(DataMain)
+### BIC approximation
+y <- DataMain[,1]
+X <- as.matrix(DataMain[,-1])
+BMAglm <- BMA::bic.glm(X, y, strict = FALSE, OR = 50, glm.family = binomial(link="logit"))
+summary(BMAglm)
+
+########################## Determinants of market value of soccer players in Europe: BMA gamma model ########################## 
+rm(list = ls())
+set.seed(010101)
+DataMain <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/14ValueFootballPlayers.csv", sep = ",", header = TRUE, quote = "")
+attach(DataMain)
+### BIC approximation
+y <- DataMain[,1]
+X <- as.matrix(DataMain[,-1])
+BMAglm <- BMA::bic.glm(X, y, strict = FALSE, OR = 50, glm.family = Gamma(link="log"))
+summary(BMAglm)
+
+########################## Determinants of fertility in Bostwana: BMA Poisson model ########################## 
+rm(list = ls())
+set.seed(010101)
+DataMain <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/15Fertil2.csv", sep = ",", header = TRUE, quote = "")
+attach(DataMain)
+### BIC approximation
+y <- DataMain[,1]
+X <- as.matrix(DataMain[,-1])
+BMAglm <- BMA::bic.glm(X, y, strict = FALSE, OR = 50, glm.family = poisson(link="log"))
+summary(BMAglm)
+
+########################## Simulation exercise: BMA Logit ########################## 
+rm(list = ls())
+set.seed(010101)
+n<-1000 
+B<-c(0.5,0.8,-1.2)
+X<-matrix(cbind(rep(1,n),rnorm(n,0,1),rnorm(n,0,1)),n,length(B))
+p <- exp(X%*%B)/(1+exp(X%*%B))
+y <- rbinom(n, 1, p)
+table(y)
+nXgar<-25
+Xgar<-matrix(rnorm(nXgar*n),n,nXgar)
+df<-as.data.frame(cbind(y,X[,-1],Xgar))
+colnames(df) <- c("y", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17", "x18", "x19", "x20", "x21", "x22", "x23", "x24", "x25", "x26", "x27")
+### BIC approximation
+BMAglmLogit <- BMA::bic.glm(y ~ x1+x2+x3+x4+x5+x6+x7+x8+x9+x10+x11+x12+x13+x14+x15+x16+x17+x18+x19+x20+x21+x22+x23+x24+x25+x26+x27, data = df, glm.family = binomial(link="logit"), strict = FALSE, OR = 50)
+summary(BMAglmLogit)
+
+########################## Simulation exercise: BMA logit using BIC from scratch ########################## 
+Xnew <- df[,-1]
+BICfunt <- function(Model){
+  indr <- Model == 1
+  kr <- sum(indr)
+  if(kr > 0){
+    Xr <- as.matrix(Xnew[ , indr])
+    model <- glm(y ~ Xr, family = binomial(link = "logit"))
+    model_bic <- BIC(model)
+    mllMod <- -model_bic/2
+  }else{
+    model <- glm(y ~ 1, family = binomial(link = "logit"))
+    model_bic <- BIC(model)
+    mllMod <- -model_bic/2
+  }
+  return(mllMod)
+}
+# MC3 method
+# Initial models
+M <- 500
+K <- dim(df)[2] - 1
+Models <- matrix(rbinom(K*M, 1, p = 0.5), ncol = K, nrow = M)
+mllnew <- sapply(1:M, function(s){BICfunt(matrix(Models[s,], 1, K))})
+oind <- order(mllnew, decreasing = TRUE)
+mllnew <- mllnew[oind]
+Models <- Models[oind, ]
+# Hyperparameters MC3
+iter <- 25000
+pb <- winProgressBar(title = "progress bar", min = 0, max = iter, width = 300)
+s <- 1
+while(s <= iter){
+  ActModel <- Models[M,]
+  idK <- which(ActModel == 1)
+  Kact <- length(idK)
+  if(Kact < K & Kact > 1){
+    CardMol <- K
+    opt <- sample(1:3, 1)
+    if(opt == 1){ # Same
+      CandModel <- ActModel
+    }else{
+      if(opt == 2){ # Add
+        All <- 1:K
+        NewX <- sample(All[-idK], 1)
+        CandModel <- ActModel
+        CandModel[NewX] <- 1
+      }else{ # Subtract
+        LessX <- sample(idK, 1)
+        CandModel <- ActModel
+        CandModel[LessX] <- 0
+      }
+    }
+  }else{
+    CardMol <- K + 1
+    if(Kact == K){
+      opt <- sample(1:2, 1)
+      if(opt == 1){ # Same
+        CandModel <- ActModel
+      }else{ # Subtract
+        LessX <- sample(1:K, 1)
+        CandModel <- ActModel
+        CandModel[LessX] <- 0
+      }
+    }else{
+      if(K == 1){
+        opt <- sample(1:3, 1)
+        if(opt == 1){ # Same
+          CandModel <- ActModel
+        }else{
+          if(opt == 2){ # Add
+            All <- 1:K
+            NewX <- sample(All[-idK], 1)
+            CandModel <- ActModel
+            CandModel[NewX] <- 1
+          }else{ # Subtract
+            LessX <- sample(idK, 1)
+            CandModel <- ActModel
+            CandModel[LessX] <- 0
+          }
+        }
+      }else{ # Add
+        NewX <- sample(1:K, 1)
+        CandModel <- ActModel
+        CandModel[NewX] <- 1
+      }
+    }
+  }
+  LogMLact <- BICfunt(matrix(ActModel, 1, K))
+  LogMLcand <- BICfunt(matrix(CandModel, 1, K))
+  alpha <- min(1, exp(LogMLcand-LogMLact)) # Let's reasonably assume same prior model probability for candidate and actual, and same carnality of neighbor models
+  u <- runif(1)
+  if(u <= alpha){
+    mllnew[M] <- LogMLcand
+    Models[M, ] <- CandModel
+    oind <- order(mllnew, decreasing = TRUE)
+    mllnew <- mllnew[oind]
+    Models <- Models[oind, ]
+  }else{
+    mllnew <- mllnew
+    Models <- Models
+  }
+  s <- s + 1
+  setWinProgressBar(pb, s, title=paste( round(s/iter*100, 0),"% done"))
+}
+close(pb)
+ModelsUni <- unique(Models)
+mllnewUni <- sapply(1:dim(ModelsUni)[1], function(s){BICfunt(matrix(ModelsUni[s,], 1, K))})
+StMarLik <- exp(mllnewUni-mllnewUni[1])
+PMP <- StMarLik/sum(StMarLik) # PMP based on unique selected models
+plot(PMP)
+ModelsUni[1,]
+PIP <- NULL
+for(k in 1:K){
+  PIPk <- sum(PMP[which(ModelsUni[,k] == 1)])
+  PIP <- c(PIP, PIPk)
+}
+plot(PIP)
+nModels <- dim(ModelsUni)[1]
+Means <- matrix(0, nModels, K)
+Vars <- matrix(0, nModels, K)
+for(m in 1:nModels){
+  idXs <- which(ModelsUni[m,] == 1)
+  if(length(idXs) == 0){
+    Regm <- glm(y ~ 1, family = binomial(link = "logit"))
+  }else{
+    Xm <- as.matrix(Xnew[, idXs])
+    Regm <- glm(y ~ Xm, family = binomial(link = "logit"))
+    SumRegm <- summary(Regm)
+    Means[m, idXs] <- SumRegm[["coefficients"]][-1,1]
+    Vars[m, idXs] <- SumRegm[["coefficients"]][-1,2]^2 
+  }
+}
+BMAmeans <- colSums(Means*PMP)
+BMAsd <- (colSums(PMP*Vars)  + colSums(PMP*(Means-matrix(rep(BMAmeans, each = nModels), nModels, K))^2))^0.5 
+plot(BMAmeans)
+plot(BMAsd)
+plot(BMAmeans/BMAsd)
