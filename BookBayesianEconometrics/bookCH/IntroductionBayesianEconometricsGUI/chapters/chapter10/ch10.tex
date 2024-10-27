@@ -636,7 +636,7 @@ y1<-exp(X%*%B); y<-rpois(n,y1)
 nXgar<-25; Xgar<-matrix(rnorm(nXgar*n),n,nXgar)
 df<-as.data.frame(cbind(y,X[,-1],Xgar))
 colnames(df) <- c("y", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17", "x18", "x19", "x20", "x21", "x22", "x23", "x24", "x25", "x26", "x27")
-Xnew <- df[,-1]
+Xnew <- apply(df[,-1], 2, scale)
 BICfunt <- function(Model){
 	indr <- Model == 1; kr <- sum(indr)
 	if(kr > 0){
@@ -763,6 +763,7 @@ for(k in 1:K){
 	PIP <- c(PIP, PIPk)
 }
 plot(PIP)
+Xnew <- df[,-1]
 nModels <- dim(ModelsUni)[1]
 Means <- matrix(0, nModels, K)
 Vars <- matrix(0, nModels, K)
@@ -793,9 +794,48 @@ plot(BMAmeans/BMAsd)
 
 \section{Calculating the marginal likelihood}\label{sec10_6}
 
-The BIC approximation to the marginal likelihood is an asymptotic approximation. This implies limitations in small samples. Thus, there are other strategies that can be used to calculate the marginal likelihood when there is no analytic solution.
+The BIC is an asymptotic shortcut to approximate the marginal likelihood, and consequently, obtain the Bayes factors. However, this has limitations in small sample size applications. Thus, there are other methods to calculate the Bayes factors when there is no an analytical solution of the marginal likelihood.
+
+Observe that calculating the Bayes factor with respect to a reference model ($\mathcal{M}_0$) help to obtain the posterior model probabilities,
+
+\begin{align*}
+	\pi(\mathcal{M}_j |\bm{y})&=\frac{p(\bm{y} | \mathcal{M}_j)\pi(\mathcal{M}_j)}{\sum_{m=1}^{M}p(\bm{y} | \mathcal{M}_m)\pi(\mathcal{M}_m)}\\
+	&=\frac{p(\bm{y} | \mathcal{M}_j)\pi(\mathcal{M}_j)/p(\bm{y} | \mathcal{M}_0)}{\sum_{m=1}^{M}p(\bm{y} | \mathcal{M}_m)\pi(\mathcal{M}_m)/p(\bm{y} | \mathcal{M}_0)}\\
+	&=\frac{BF_{j0}\times\pi(\mathcal{M}_j)}{\sum_{m=1}^{M}BF_{l0}\times\pi(\mathcal{M}_l)}.
+\end{align*}
+
+Thus, $\pi(\mathcal{M}_j |\bm{y})=\frac{BF_{j0}}{\sum_{m=1}^{M}BF_{l0}}$ assuming equal prior model probabilities.
+
+In addition, it has been established in many settings that the Bayes factor is consistent, that is, the probability of uncovering the true data generating process converges to 1 when the sample size converges to infinity, or, it asymptotically identifies the model that minimizes the Kullback-Leibler divergence with respect to the data generating process when this is no part of the models into consideration \cite{chib2016bayes,walker2004new,walker2004modern}.\footnote{\cite{Johnson2012} highlight the important difference between pairwise consistency, and model selection consistency. The latter requires consistency of a sequence of pairwise nested comparisons.}  
 
 \subsection{Savage-Dickey density ratio}\label{sec10_11}
+
+The Savage-Dickey density ratio is a way to calculate the Bayes factors when we compare nested models with particular priors \cite{dickey1971weighted,verdinelli1995computing}. In particular, given the parameter space $\bm{\theta}=(\bm{\omega}^{\top}, \bm{\psi}^{\top})^{\top}\in \bm{\Theta}=\bm{\Omega}\times \bm{\Psi}$, where we wish to test the null hypothesis $H_0:\bm{\omega}=\bm{\omega}_0$ (model $\mathcal{M}_1$) versus $H_1:\bm{\omega}\neq \bm{\omega}_0$ (model $\mathcal{M}_2$), if $\pi(\bm{\psi}|\bm{\omega}_0,\mathcal{M}_2)=\pi(\bm{\psi}|\mathcal{M}_1)$,\footnote{Note that a sufficient condition for this assumption is to assume the same prior for the parameters that are the same in each model. \cite{verdinelli1995computing} incorporate a correction factor when this assumption is not satisfied.} then the Bayes factor comparing $\mathcal{M}_1$ versus $\mathcal{M}_2$ is
+
+\begin{equation}\label{eq:SD}
+	BF_{12}=\frac{\pi(\bm{\omega}=\bm{\omega}_0|\bm{y},\mathcal{M}_2)}{\pi(\bm{\omega}=\bm{\omega}_0|\mathcal{M}_2)},
+\end{equation}
+where $\pi(\bm{\omega}=\bm{\omega}_0|\bm{y},\mathcal{M}_2)$ and $\pi(\bm{\omega}=\bm{\omega}_0|\mathcal{M}_2)$ are the posterior and prior densities of $\bm{\omega}$ under $\mathcal{M}_2$ evaluated at $\bm{\omega}_0$ (see \cite{verdinelli1995computing}). 
+
+Equation \ref{eq:SD} is called the Savage-Dickey density ratio. It is very easy to calculate as just requires estimation of model $\mathcal{M}_2$, and evaluation of the prior and posterior densities. This means no evaluation of the marginal likelihood \cite[Chap.~4]{koop2003bayesian}.\\
+
+\textbf{Example: Simulation exercise}
+
+We know that the marginal likelihood function of the linear Gaussian model with independent priors does not have an analytical solution. Then, let's perform a simulation exercise assuming that there are five fixed regressors, for instance, factors in treatment effects, and other five additional regressors that we are not sure about their relevance in the model. We can use BMA in this setting to check robustness of the treatment factors regarding the model specification associated with the other five regressors.
+
+Let's assume that the data generating process is $y_{it}=0.8+0.3x_{i3}+0.7x_{i7}-0.5x_{10i}+\mu_i$, where $\bm{x}_{i}\sim B(5, \bm{p})$,  $\bm{p}=[0.1 \ 0.3 \ 0.3 \ 0.2 \ 0.1]^{\top}$, $x_{ik}\sim N(0,1)$, $k=6,\dots,10$, and $y_i=0.7+0.3x_{i3}+0.7x_{i7}-0.5x_{i10}+\mu_i$, $\mu_i\sim N(0,1)$. 
+
+In the Gaussian linear model with independent priors (see Section \ref{sec62}), we have ${\bf{y}}={\bf{X}}\bm{\bm{\beta}}+\bm{\mu}$ such that $\bm{\mu}\sim N(\bf{0},\sigma^2\bf{I}_N)$, $\bm{\beta} \sim N(\bm{\beta}_0, {\bf{B}}_0)$ and $\sigma^2 \sim IG(\alpha_0/2, \delta_0/2)$. Then, $\bm{\beta}|\sigma^2, {\bf{y}}, {\bf{X}} \sim N(\bm{\beta}_n, \sigma^2{\bf{B}}_n)$ and $\sigma^2|\bm{\beta}, {\bf{y}}, {\bf{X}} \sim IG(\alpha_n/2, \delta_n/2)$, where  ${\bf{B}}_n = ({\bf{B}}_0^{-1} + \sigma^{-2} {\bf{X}}^{\top}{\bf{X}})^{-1}$, $\bm{\beta}_n= {\bf{B}}_n({\bf{B}}_0^{-1}\bm{\beta}_0 + \sigma^{-2} {\bf{X}}^{\top}{\bf{y}})$, $\alpha_n = \alpha_0 + N$ and $\delta_n = \delta_0 + ({\bf{y}}-{\bf{X}}\bm{\beta})^{\top}({\bf{y}}-{\bf{X}}\bm{\beta})$.
+
+We can use as reference the model with all the regressors. Then,
+\begin{align*}
+	\pi(\bm{\beta}=\bm{0}_{0k}|\mathcal{M}_2)=(2\pi)^{-2/10}|\bm{B}_{0}|^{-1/2}\exp\left\{-\frac{1}{2}(\bm{0}_{0k}-\bm{\beta}_{0})^{\top}\bm{B}_{0}^{-1}(\bm{0}_{0k}-\bm{\beta}_{0})\right\}
+\end{align*}  
+
+\begin{align*}
+	\pi(\bm{\beta}=\bm{0}_{0m}|\mathcal{M}_2)&=(2\pi\sigma^2)^{-2/7}|g_m\bm{X}_m^{\top}\bm{X}_m|^{-1/2}\\
+	&\times\exp\left\{-\frac{1}{2\sigma^2}(\bm{0}_{0m}-\bm{\beta}_{0})^{\top}(g\bm{X}_m^{\top}\bm{X}_m)^{-1}(\bm{0}_{0m}-\bm{\beta}_{0})\right\}
+\end{align*}  
 
 \subsection{Gelfand-Dey method}\label{sec10_12}
 

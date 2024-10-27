@@ -341,7 +341,8 @@ BMAglmPoisson <- BMA::bic.glm(y ~ x1+x2+x3+x4+x5+x6+x7+x8+x9+x10+x11+x12+x13+x14
 summary(BMAglmPoisson)
 
 ########################## Simulation exercise: BMA Poisson using BIC from scratch ########################## 
-Xnew <- df[,-1]
+Xnew <- apply(df[,-1], 2, scale)
+# Xnew <- df[,-1]
 BICfunt <- function(Model){
   indr <- Model == 1
   kr <- sum(indr)
@@ -456,6 +457,7 @@ for(k in 1:K){
   PIP <- c(PIP, PIPk)
 }
 plot(PIP)
+Xnew <- df[,-1]
 nModels <- dim(ModelsUni)[1]
 Means <- matrix(0, nModels, K)
 Vars <- matrix(0, nModels, K)
@@ -477,7 +479,66 @@ plot(BMAmeans)
 plot(BMAsd)
 plot(BMAmeans/BMAsd)
 
-
-
+########################## Simulation exercise: Savage-Dickey ratio ########################## 
+rm(list = ls())
+set.seed(010101)
+n <- 1000; K1 <- 1; K2 <- 5; K <- K1 + K2 
+B <- c(0.3, 0, 0.7, 0, 0, -0.5) 
+# X1 <- fastDummies::dummy_cols(factor(rbinom(n, K1, c(0.1, 0.3, 0.3, 0.2, 0.1))))
+# X1 <- as.matrix(X1[,-c(1,2)])
+X1 <- rbinom(n, 1, 0.4)
+X2 <- matrix(rnorm(K2*n), n, K2)
+X <- cbind(X1, X2)
+y <- 0.7+X%*%B + rnorm(n) 
+combs <- expand.grid(c(0,1), c(0,1), c(0,1), c(0,1), c(0,1))
+M <- dim(combs)[1]
+combsNew <- cbind(matrix(rep(1, M*K1), M, K1), combs)
+Xnew <- apply(X, 2, scale)
+LogMLfunt <- function(Model){
+  indr <- Model == 1
+  kr <- sum(indr)
+  if(kr > 0){
+    gr <- ifelse(n > kr^2, 1/n, kr^(-2))
+    Xr <- matrix(Xnew[ , indr], ncol = kr)
+    # PX <- diag(n) - Xr%*%solve(t(Xr)%*%Xr)%*%t(Xr)
+    # s2pos <- c(t(y)%*%PX%*%y/(1 + gr) + gr*(t(y - mean(y))%*%(y - mean(y)))/(1 + gr))
+    PX <- Xr%*%solve(t(Xr)%*%Xr)%*%t(Xr)
+    s2pos <- c((t(y - mean(y))%*%(y - mean(y))) - t(y)%*%PX%*%y/(1 + gr))
+    mllMod <- (kr/2)*log(gr/(1+gr))-(n-1)/2*log(s2pos)
+  }else{
+    gr <- ifelse(n > kr^2, 1/n, kr^(-2))
+    # PX <- diag(n)
+    # s2pos <- c(t(y)%*%PX%*%y/(1 + gr) + gr*(t(y - mean(y))%*%(y - mean(y)))/(1 + gr))
+    s2pos <- c((t(y - mean(y))%*%(y - mean(y))))
+    mllMod <- (kr/2)*log(gr/(1+gr))-(n-1)/2*log(s2pos)
+  }
+  return(mllMod)
+}
+mll <- sapply(1:M, function(s){LogMLfunt(matrix(combsNew[s,], 1, K))})
+# Results
+MaxPMP <- which.max(mll)
+StMarLik <- exp(mll-max(mll))
+PMP <- StMarLik/sum(StMarLik)
+PMP[MaxPMP]
+combsNew[MaxPMP,]
+Means <- matrix(0, M, K)
+Vars <- matrix(0, M, K)
+for(m in 1:M){
+  idXs <- which(combsNew[m,] == 1)
+  if(length(idXs) == 0){
+    Regm <- lm(y ~ 1)
+  }else{
+    Xm <- X[, idXs]
+    Regm <- lm(y ~ Xm)
+    SumRegm <- summary(Regm)
+    Means[m, idXs] <- SumRegm[["coefficients"]][-1,1]
+    Vars[m, idXs] <- SumRegm[["coefficients"]][-1,2]^2 
+  }
+}
+BMAmeans <- colSums(Means*PMP)
+BMAsd <- (colSums(PMP*Vars)  + colSums(PMP*(Means-matrix(rep(BMAmeans, each = M), M, K))^2))^0.5 
+plot(BMAmeans)
+plot(BMAsd)
+plot(BMAmeans/BMAsd)
 
 
