@@ -482,63 +482,63 @@ plot(BMAmeans/BMAsd)
 ########################## Simulation exercise: Savage-Dickey ratio ########################## 
 rm(list = ls())
 set.seed(010101)
-n <- 1000; K1 <- 1; K2 <- 5; K <- K1 + K2 
-B <- c(0.3, 0, 0.7, 0, 0, -0.5) 
-# X1 <- fastDummies::dummy_cols(factor(rbinom(n, K1, c(0.1, 0.3, 0.3, 0.2, 0.1))))
-# X1 <- as.matrix(X1[,-c(1,2)])
-X1 <- rbinom(n, 1, 0.4)
-X2 <- matrix(rnorm(K2*n), n, K2)
-X <- cbind(X1, X2)
-y <- 0.7+X%*%B + rnorm(n) 
-combs <- expand.grid(c(0,1), c(0,1), c(0,1), c(0,1), c(0,1))
-M <- dim(combs)[1]
-combsNew <- cbind(matrix(rep(1, M*K1), M, K1), combs)
-Xnew <- apply(X, 2, scale)
-LogMLfunt <- function(Model){
-  indr <- Model == 1
-  kr <- sum(indr)
-  if(kr > 0){
-    gr <- ifelse(n > kr^2, 1/n, kr^(-2))
-    Xr <- matrix(Xnew[ , indr], ncol = kr)
-    # PX <- diag(n) - Xr%*%solve(t(Xr)%*%Xr)%*%t(Xr)
-    # s2pos <- c(t(y)%*%PX%*%y/(1 + gr) + gr*(t(y - mean(y))%*%(y - mean(y)))/(1 + gr))
-    PX <- Xr%*%solve(t(Xr)%*%Xr)%*%t(Xr)
-    s2pos <- c((t(y - mean(y))%*%(y - mean(y))) - t(y)%*%PX%*%y/(1 + gr))
-    mllMod <- (kr/2)*log(gr/(1+gr))-(n-1)/2*log(s2pos)
-  }else{
-    gr <- ifelse(n > kr^2, 1/n, kr^(-2))
-    # PX <- diag(n)
-    # s2pos <- c(t(y)%*%PX%*%y/(1 + gr) + gr*(t(y - mean(y))%*%(y - mean(y)))/(1 + gr))
-    s2pos <- c((t(y - mean(y))%*%(y - mean(y))))
-    mllMod <- (kr/2)*log(gr/(1+gr))-(n-1)/2*log(s2pos)
-  }
-  return(mllMod)
+N <- 1000; K <- 5; K2 <- 3 
+B <- c(0.7, 0.3, 0.7, -0.2, 0.1) 
+X1 <- rbinom(N, 1, 0.3)
+X2 <- matrix(rnorm(K2*N), N, K2)
+X <- cbind(1, X1, X2)
+Y <- X%*%B + rnorm(N, 0, sd = 2)
+# Hyperparameters
+d0 <- 4# 0.001/2
+a0 <- 4# 0.001/2
+b0 <- rep(0, K)
+LogMarLikLM <- function(X, c0){
+  K <- dim(X)[2]
+  N <- dim(X)[1]	
+  # Hyperparameters
+  B0 <- c0*diag(K)
+  b0 <- rep(0, K)
+  # Posterior parameters
+  bhat <- solve(t(X)%*%X)%*%t(X)%*%Y
+  # Force this matrix to be symmetric
+  Bn <- as.matrix(Matrix::forceSymmetric(solve(solve(B0) + t(X)%*%X))) 
+  bn <- Bn%*%(solve(B0)%*%b0 + t(X)%*%X%*%bhat)
+  dn <- as.numeric(d0 + t(Y)%*%Y+t(b0)%*%solve(B0)%*%b0-t(bn)%*%solve(Bn)%*%bn)
+  an <- a0 + N
+  # Log marginal likelihood
+  logpy <- (N/2)*log(1/pi)+(a0/2)*log(d0)-(an/2)*log(dn) + 0.5*log(det(Bn)/det(B0)) + lgamma(an/2)-lgamma(a0/2)
+  return(-logpy)
 }
-mll <- sapply(1:M, function(s){LogMLfunt(matrix(combsNew[s,], 1, K))})
-# Results
-MaxPMP <- which.max(mll)
-StMarLik <- exp(mll-max(mll))
-PMP <- StMarLik/sum(StMarLik)
-PMP[MaxPMP]
-combsNew[MaxPMP,]
-Means <- matrix(0, M, K)
-Vars <- matrix(0, M, K)
-for(m in 1:M){
-  idXs <- which(combsNew[m,] == 1)
-  if(length(idXs) == 0){
-    Regm <- lm(y ~ 1)
-  }else{
-    Xm <- X[, idXs]
-    Regm <- lm(y ~ Xm)
-    SumRegm <- summary(Regm)
-    Means[m, idXs] <- SumRegm[["coefficients"]][-1,1]
-    Vars[m, idXs] <- SumRegm[["coefficients"]][-1,2]^2 
-  }
-}
-BMAmeans <- colSums(Means*PMP)
-BMAsd <- (colSums(PMP*Vars)  + colSums(PMP*(Means-matrix(rep(BMAmeans, each = M), M, K))^2))^0.5 
-plot(BMAmeans)
-plot(BMAsd)
-plot(BMAmeans/BMAsd)
-
+# Empirical Bayes: Obtain c0 maximizing the log 
+c0 <- 1 
+EB2 <- optim(c0, fn = LogMarLikLM, method = "Brent", lower = 0.0001, upper = 10^6, X = X)
+c2Opt <- EB2$par # c0 <- EB2$par
+LogMarM2 <- -LogMarLikLM(X = X, c0 = c2Opt)
+EB1 <- optim(c0, fn = LogMarLikLM, method = "Brent", lower = 0.0001, upper = 10^6, X = X[,1:3])
+c1Opt <- EB1$par
+LogMarM1 <- -LogMarLikLM(X = X[,1:3], c0 = c1Opt)
+BF12 <- exp(LogMarM1-LogMarM2) 
+BF12; 1/BF12
+# Savage-Dickey density ration
+# Posterior evaluation
+Brest <- c(0,0)
+an <- N + a0
+B0 <- c2Opt*diag(K) 
+Bn <- solve(solve(B0)+t(X)%*%X)
+bhat <- solve(t(X)%*%X)%*%t(X)%*%Y
+bn <- Bn%*%(solve(B0)%*%b0+t(X)%*%X%*%bhat)
+dn <- as.numeric(d0 + t(Y-X%*%bhat)%*%(Y-X%*%bhat)+t(bhat - b0)%*%solve(solve(t(X)%*%X)+B0)%*%(bhat - b0))
+Hn <- as.matrix(Matrix::forceSymmetric(dn*Bn/an))
+PostRest <- LaplacesDemon::dmvt(x = Brest, mu = bn[4:5], S = Hn[4:5,4:5], df = an, log=FALSE)
+# Prior evaluation
+# Analytic
+PriorRestAn <- a0/(2*pi*c2Opt*d0)
+# Computational
+S <- 100000
+sig2 <- invgamma::rinvgamma(S, shape = a0/2, rate = d0/2)
+PriorRestCom <- mean(sapply(sig2, function(x){mnormt::dmnorm(Brest, mean = rep(0, 2), varcov = x*B0[4:5,4:5], log = FALSE)})) 
+PriorRestAn/PriorRestCom
+BF12SD <- PostRest/PriorRestAn 
+BF12SD; 1/BF12SD
+BF12/BF12SD
 

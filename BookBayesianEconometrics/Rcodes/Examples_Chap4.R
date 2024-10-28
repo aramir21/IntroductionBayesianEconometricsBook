@@ -155,7 +155,7 @@ rm(list = ls())
 set.seed(010101)
 # Electricity demand
 DataUt <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/Utilities.csv", sep = ",", header = TRUE, quote = "")
-
+library(dplyr)
 DataUtEst <- DataUt %>% 
   filter(Electricity	 != 0)
 
@@ -177,8 +177,8 @@ k <- dim(X)[2]
 N <- dim(X)[1]
 
 # Hyperparameters
-d0 <- 0.001/2
-a0 <- 0.001/2
+d0 <- 0.001
+a0 <- 0.001
 b0 <- rep(0, k)
 c0 <- 1000
 B0 <- c0*diag(k)

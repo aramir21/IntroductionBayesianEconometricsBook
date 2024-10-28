@@ -117,8 +117,8 @@ LogMarLikLM <- function(X, c0){
   return(-logpy)
 }
 # Hyperparameters
-d0 <- 0.001/2
-a0 <- 0.001/2
+d0 <- 0.001
+a0 <- 0.001
 # Empirical Bayes: Obtain c0 maximizing the log marginal likelihood
 c0 <- 1000 
 EB <- optim(c0, fn = LogMarLikLM, method = "Brent", lower = 0.0001, upper = 10^6, X = X)

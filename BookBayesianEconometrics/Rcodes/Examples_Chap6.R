@@ -13,8 +13,8 @@ X <- cbind(1, Perf, Age, Age2, NatTeam, Goals, Exp, Exp2)
 k <- dim(X)[2]
 N <- dim(X)[1]
 # Hyperparameters
-d0 <- 0.001/2
-a0 <- 0.001/2
+d0 <- 0.001
+a0 <- 0.001
 b0 <- rep(0, k)
 c0 <- 1000
 B0 <- c0*diag(k)
@@ -416,8 +416,8 @@ X <- cbind(1, Perf, Age, Age2, NatTeam, Goals, Exp, Exp2)
 k <- dim(X)[2]
 N <- dim(X)[1]
 # Hyperparameters
-d0 <- 0.001/2
-a0 <- 0.001/2
+d0 <- 0.001
+a0 <- 0.001
 b0 <- rep(0, k)
 c0 <- 1000
 B0 <- c0*diag(k)

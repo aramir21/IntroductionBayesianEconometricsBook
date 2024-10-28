@@ -129,7 +129,7 @@ The marginal likelihood thus asymptotically converges to a linear transformation
 
 \section{The Gaussian linear model}\label{sec10_2}
 
-The Gaussian linear model specifies $\bf{y}=\alpha\bm{i}_N+\bm{X}_m\bm{\beta}_m+\bm{\mu}_m$ such that $\bm{\mu}_m\sim{N}(\bm{0},\sigma^2\bm{I}_n)$, and $\bm{X}_m$ does not have the column of ones. Following \cite{koop2003bayesian}, the conjugate prior for the location parameters is $\bm{\beta}_m|\sigma^2 \sim {N}(\bm{\beta}_{m0}, \sigma^2 \bm{B}_{m0})$, and the priors for $\sigma^2$ and $\alpha$ can be improper, as these parameters are common to all models $\mathcal{M}_m$. Particularly, $\pi(\sigma^2)\propto 1/\sigma^2$ (Jeffreys' prior for the linear Gaussian model, see \cite{prior1991bayesian}) and $\pi(\alpha)\propto 1$.
+The Gaussian linear model specifies $\bm{y}=\alpha\bm{i}_N+\bm{X}_m\bm{\beta}_m+\bm{\mu}_m$ such that $\bm{\mu}_m\sim{N}(\bm{0},\sigma^2\bm{I}_n)$, and $\bm{X}_m$ does not have the column of ones. Following \cite{koop2003bayesian}, the conjugate prior for the location parameters is $\bm{\beta}_m|\sigma^2 \sim {N}(\bm{\beta}_{m0}, \sigma^2 \bm{B}_{m0})$, and the priors for $\sigma^2$ and $\alpha$ can be improper, as these parameters are common to all models $\mathcal{M}_m$. Particularly, $\pi(\sigma^2)\propto 1/\sigma^2$ (Jeffreys' prior for the linear Gaussian model, see \cite{prior1991bayesian}) and $\pi(\alpha)\propto 1$.
 
 The selection of the hyperparameters of $\bm{\beta}_m$ is more critical, as these parameters are not common to all models. A very common prior for the location parameters in the BMA literature is the Zellner's prior \cite{zellner1986assessing}, where $\bm{\beta}_{m0}=\bm{0}_m$ and $\bm{B}_{m0}=(g_m\bm{X}_m^{\top}\bm{X}_m)^{-1}$. Observe that this covariance matrix is similar to the covariance matrix of ordinary least squares estimator of the location parameters. This suggests that there is compatibility between the prior information and the sample information, and the only parameter to elicit is $g_m\geq 0$, which facilitates the elicitation process, as eliciting covariance matrices is a very hard endeavor.
 
@@ -821,9 +821,54 @@ Equation \ref{eq:SD} is called the Savage-Dickey density ratio. It is very easy 
 
 \textbf{Example: Simulation exercise}
 
+Let's check the performance of the Savage-Dickey density ratio to estimate the Bayes factor in a setting where we can get the analytical solution of the marginal likelihoods. In particular, the Gaussian linear model with conjugate prior.
+
+Let's assume that the data generating process is $y_{it}=0.7+0.3x_{i1}+0.7x_{i2}-0.2x_{i3}+0.1x_{i4}\mu_i$, where $\bm{x}_{i1}\sim B(0.3)$, $x_{ik}\sim N(0,1)$, $k=2,\dots,4$, and $\mu_i\sim N(0,2^2)$, $i=1,2,\dots,1000$. Let's set $H_0:[\beta_3 \ \beta_4]^{\top}=\bm{0}$ (model $\mathcal{M}_1$) versus $H_1:[\beta_3 \ \beta_4]^{\top}\neq\bm{0}$ (model $\mathcal{M}_2$).
+
+We know from Section \ref{sec43} that the Bayes factor is
+\begin{align*}
+	BF_{12}&=\frac{p(\bf{y}|\mathcal{M}_1)}{p(\bf{y}|\mathcal{M}_2)}\\
+	&=\frac{\frac{\delta_{10}^{\alpha_{10}/2}}{\delta_{1n}^{\alpha_{1n}/2}}\frac{|{\bf{B}}_{1n}|^{1/2}}{|{\bf{B}}_{10}|^{1/2}}\frac{\Gamma(\alpha_{1n}/2)}{\Gamma(\alpha_{10}/2)}}{\frac{\delta_{20}^{\alpha_{20}/2}}{\delta_{2n}^{\alpha_{2n}/2}}\frac{|{\bf{B}}_{2n}|^{1/2}}{|{\bf{B}}_{20}|^{1/2}}\frac{\Gamma(\alpha_{2n}/2)}{\Gamma(\alpha_{20}/2)}},
+\end{align*}
+where  ${{\bm{B}}}_{mn} = ({\bm{B}}_{m0}^{-1} + {\bm{X}}_m^{\top}{\bm{X}}_m)^{-1}$, $\bm{\beta}_{mn} = {{\bf{B}}}_{mn}({\bm{B}}_{m0}^{-1}\bm{\beta}_{m0} + {\bm{X}}_m^{\top}{\bm{X}}_m\hat{\bm{\beta}}_m)$, $\alpha_{mn}=\alpha_{m0}+N$, and $\delta_{mn}=\delta_{m0}+({\bm{y}}-{\bm{X}}_m\hat{\bm{\beta}}_m)^{\top}({\bm{y}}-{\bm{X}}_m\hat{\bm{\beta}}_m)+(\hat{\bm{\beta}}_m-\bm{\beta}_{m0})^{\top}(({\bm{X}_m}^{\top}{\bm{X}_m})^{-1}+{\bm{B}}_{m0})^{-1}(\hat{\bm{\beta}}_m-\bm{\beta}_{m0})$, $m=1,2$ are the indices of the models.
+
+The Bayes factor using the Savage-Dickey density ratio is
+
+\begin{align*}
+	BF_{12}&=\frac{\pi(\bm{\beta}_{4:5}=\bm{0}_2|\bm{y},\mathcal{M}_2)}{\pi(\bm{\beta}_{4:5}=\bm{0}_2|\mathcal{M}_2)},
+\end{align*}
+where $\pi(\bm{\beta}_{4:5}=\bm{0}_2|\bm{y},\mathcal{M}_2)$ is the density of a bivariate student's t-distribution with mean equal to the last two elements of $\bm{\beta}_{2n}$, scale matrix $\bm{H}_{2n,4:5,4:5}$, that is, the elements 4:4, 4:5, 5:4 and 5:5 of the matrix $\bm{H}_{2n}$, where $\bm{H}_{2n}=\delta_{2n}\bm{B}_{2n}/\alpha_{2n}$, and degrees of freedom $\alpha_{2n}$.
+
+Given that the prior distribution of $\bm{\beta}|\sigma^2$ is $N(\bm{\beta}_0,\sigma^2\bm{B}_0)$, this implies that $\bm{\beta}_{4:5}|\sigma^2\sim N(\bm{\beta}_{0,4:5,4:5},\sigma^2\bm{B}_{0,4:5,4:5})$. Then,
+\begin{align*}
+	\pi(\bm{\beta}_{4:5}=\bm{0}_2|\mathcal{M}_2)&=\int_{0}^{\infty}(2\pi\sigma^2)^{-2/2}|\bm{B}_0|^{-1/2}\exp\left\{-\frac{1}{2\sigma^2}(\bm{\beta}_{4:5}-\bm{\beta}_{0,4:5})^{\top}\bm{B}_{0,4:5}^{-1}(\bm{\beta}_{4:5}-\bm{\beta}_{0,4:5})\right\}\\
+	&\times \frac{(\delta_0/2)^{\alpha_0/2}}{\Gamma(\alpha_0/2)}\left(\frac{1}{\sigma^2}\right)^{\alpha_0/2+1}\exp \left\{-\frac{\delta_0}{2\sigma^2} \right\}d\sigma^2
+\end{align*}
+
+   
+\begin{comment}
+Given the prior specification of Section \ref{sec10_2}, the Bayes factor is
+\begin{align*}
+	BF_{12}&=\frac{\left(\frac{g_1}{1+g_1}\right)^{k_1/2} \left[(\bm{y}-\bar{y}\bm{i}_N)^{\top}(\bm{y}-\bar{y}\bm{i}_N)-\frac{1}{1+g_1}(\bm{y}^{\top}\bm{P}_{X_1}\bm{y})\right]^{-(N-1)/2}}{\left(\frac{g_2}{1+g_2}\right)^{k_2/2} \left[(\bm{y}-\bar{y}\bm{i}_N)^{\top}(\bm{y}-\bar{y}\bm{i}_N)-\frac{1}{1+g_2}(\bm{y}^{\top}\bm{P}_{X_2}\bm{y})\right]^{-(N-1)/2}},
+\end{align*}
+where $\bm{P}_{X_m}=\bm{X}_m(\bm{X}_m^{\top}\bm{X}_m)^{-1}\bm{X}_m$ is the projection matrix on the space generated by the columns of $\bm{X}_m$, $m=1,2$. In particular, $k_1=2$, $k_2=4$, $\bm{X}_1$ does not take into account $x_{i3}$ neither $x_{i4}$, whereas $\bm{X}_2$ takes into account all the regressors.
+
+The Bayes factor of the restricted model versus the unrestricted model is equal to 0.0129. This is strong evidence against model $\mathcal{M}_1$ according to the Kass and Raftery guidelines (see Table \ref{tab:guide}). 
+
+Let's calculate the Bayes factor using the Savage-Dickey density ration. We have in this setting
+\begin{align*}
+	\pi(\bm{\beta}=\bm{0}_{0m}|\mathcal{M}_2)&=(2\pi\sigma^2)^{-2/7}|g_m\bm{X}_m^{\top}\bm{X}_m|^{-1/2}\\
+	&\times\exp\left\{-\frac{1}{2\sigma^2}(\bm{0}_{0m}-\bm{\beta}_{0})^{\top}(g_m\bm{X}_m^{\top}\bm{X}_m)^{-1}(\bm{0}_{0m}-\bm{\beta}_{0})\right\}
+\end{align*}  
+
 We know that the marginal likelihood function of the linear Gaussian model with independent priors does not have an analytical solution. Then, let's perform a simulation exercise assuming that there are five fixed regressors, for instance, factors in treatment effects, and other five additional regressors that we are not sure about their relevance in the model. We can use BMA in this setting to check robustness of the treatment factors regarding the model specification associated with the other five regressors.
 
-Let's assume that the data generating process is $y_{it}=0.8+0.3x_{i3}+0.7x_{i7}-0.5x_{10i}+\mu_i$, where $\bm{x}_{i}\sim B(5, \bm{p})$,  $\bm{p}=[0.1 \ 0.3 \ 0.3 \ 0.2 \ 0.1]^{\top}$, $x_{ik}\sim N(0,1)$, $k=6,\dots,10$, and $y_i=0.7+0.3x_{i3}+0.7x_{i7}-0.5x_{i10}+\mu_i$, $\mu_i\sim N(0,1)$. 
+Let's assume that the data generating process is $y_{it}=0.8+0.3x_{i3}+0.7x_{i7}-0.5x_{10i}+\mu_i$, where $\bm{x}_{i}\sim B(5, \bm{p})$, $\bm{p}=[0.1 \ 0.3 \ 0.3 \ 0.2 \ 0.1]^{\top}$, $x_{ik}\sim N(0,1)$, $k=6,\dots,10$, and $y_i=0.7+0.3x_{i3}+0.7x_{i7}-0.5x_{i10}+\mu_i$, $\mu_i\sim N(0,1)$.
+
+
+
+
+where all parameter are indexed to model $\mathcal{M}_m$, $\bm{P}_{X_m}=\bm{X}_m(\bm{X}_m^{\top}\bm{X}_m)^{-1}\bm{X}_m$ is the projection matrix on the space generated by the columns of $\bm{X}_m$, and $\bar{y}$ is the sample mean of $\bm{y}$. 
 
 In the Gaussian linear model with independent priors (see Section \ref{sec62}), we have ${\bf{y}}={\bf{X}}\bm{\bm{\beta}}+\bm{\mu}$ such that $\bm{\mu}\sim N(\bf{0},\sigma^2\bf{I}_N)$, $\bm{\beta} \sim N(\bm{\beta}_0, {\bf{B}}_0)$ and $\sigma^2 \sim IG(\alpha_0/2, \delta_0/2)$. Then, $\bm{\beta}|\sigma^2, {\bf{y}}, {\bf{X}} \sim N(\bm{\beta}_n, \sigma^2{\bf{B}}_n)$ and $\sigma^2|\bm{\beta}, {\bf{y}}, {\bf{X}} \sim IG(\alpha_n/2, \delta_n/2)$, where  ${\bf{B}}_n = ({\bf{B}}_0^{-1} + \sigma^{-2} {\bf{X}}^{\top}{\bf{X}})^{-1}$, $\bm{\beta}_n= {\bf{B}}_n({\bf{B}}_0^{-1}\bm{\beta}_0 + \sigma^{-2} {\bf{X}}^{\top}{\bf{y}})$, $\alpha_n = \alpha_0 + N$ and $\delta_n = \delta_0 + ({\bf{y}}-{\bf{X}}\bm{\beta})^{\top}({\bf{y}}-{\bf{X}}\bm{\beta})$.
 
@@ -836,6 +881,7 @@ We can use as reference the model with all the regressors. Then,
 	\pi(\bm{\beta}=\bm{0}_{0m}|\mathcal{M}_2)&=(2\pi\sigma^2)^{-2/7}|g_m\bm{X}_m^{\top}\bm{X}_m|^{-1/2}\\
 	&\times\exp\left\{-\frac{1}{2\sigma^2}(\bm{0}_{0m}-\bm{\beta}_{0})^{\top}(g\bm{X}_m^{\top}\bm{X}_m)^{-1}(\bm{0}_{0m}-\bm{\beta}_{0})\right\}
 \end{align*}  
+\end{comment}
 
 \subsection{Gelfand-Dey method}\label{sec10_12}
 
