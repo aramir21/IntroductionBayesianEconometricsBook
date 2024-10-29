@@ -482,8 +482,8 @@ plot(BMAmeans/BMAsd)
 ########################## Simulation exercise: Savage-Dickey ratio ########################## 
 rm(list = ls())
 set.seed(010101)
-N <- 1000; K <- 5; K2 <- 3 
-B <- c(0.7, 0.3, 0.7, -0.2, 0.1) 
+N <- 500; K <- 5; K2 <- 3 
+B <- c(0.7, 0.3, 0.7, -0.2, 0.2) 
 X1 <- rbinom(N, 1, 0.3)
 X2 <- matrix(rnorm(K2*N), N, K2)
 X <- cbind(1, X1, X2)
@@ -492,6 +492,7 @@ Y <- X%*%B + rnorm(N, 0, sd = 2)
 d0 <- 4# 0.001/2
 a0 <- 4# 0.001/2
 b0 <- rep(0, K)
+c0 <- 0.5
 LogMarLikLM <- function(X, c0){
   K <- dim(X)[2]
   N <- dim(X)[1]	
@@ -510,35 +511,120 @@ LogMarLikLM <- function(X, c0){
   return(-logpy)
 }
 # Empirical Bayes: Obtain c0 maximizing the log 
-c0 <- 1 
 EB2 <- optim(c0, fn = LogMarLikLM, method = "Brent", lower = 0.0001, upper = 10^6, X = X)
-c2Opt <- EB2$par # c0 <- EB2$par
-LogMarM2 <- -LogMarLikLM(X = X, c0 = c2Opt)
-EB1 <- optim(c0, fn = LogMarLikLM, method = "Brent", lower = 0.0001, upper = 10^6, X = X[,1:3])
-c1Opt <- EB1$par
-LogMarM1 <- -LogMarLikLM(X = X[,1:3], c0 = c1Opt)
+cOpt <- EB2$par # c0 <- EB2$par
+LogMarM2 <- -LogMarLikLM(X = X, c0 = cOpt)
+LogMarM1 <- -LogMarLikLM(X = X[,1:4], c0 = cOpt)
 BF12 <- exp(LogMarM1-LogMarM2) 
 BF12; 1/BF12
 # Savage-Dickey density ration
 # Posterior evaluation
-Brest <- c(0,0)
+Brest <- 0
 an <- N + a0
-B0 <- c2Opt*diag(K) 
+B0 <- cOpt*diag(K) 
 Bn <- solve(solve(B0)+t(X)%*%X)
 bhat <- solve(t(X)%*%X)%*%t(X)%*%Y
 bn <- Bn%*%(solve(B0)%*%b0+t(X)%*%X%*%bhat)
 dn <- as.numeric(d0 + t(Y-X%*%bhat)%*%(Y-X%*%bhat)+t(bhat - b0)%*%solve(solve(t(X)%*%X)+B0)%*%(bhat - b0))
 Hn <- as.matrix(Matrix::forceSymmetric(dn*Bn/an))
-PostRest <- LaplacesDemon::dmvt(x = Brest, mu = bn[4:5], S = Hn[4:5,4:5], df = an, log=FALSE)
+PostRest <- LaplacesDemon::dmvt(x = Brest, mu = bn[5], S = Hn[5,5], df = an, log=FALSE)
 # Prior evaluation
 # Analytic
-PriorRestAn <- a0/(2*pi*c2Opt*d0)
+PriorRestAn <- gamma((a0+1)/2)/((pi*cOpt*d0)^(1/2)*gamma(a0/2))
 # Computational
 S <- 100000
 sig2 <- invgamma::rinvgamma(S, shape = a0/2, rate = d0/2)
-PriorRestCom <- mean(sapply(sig2, function(x){mnormt::dmnorm(Brest, mean = rep(0, 2), varcov = x*B0[4:5,4:5], log = FALSE)})) 
+PriorRestCom <- mean(sapply(sig2, function(x){dnorm(Brest, mean = 0, sd = (x*cOpt)^0.5, log = FALSE)})) 
 PriorRestAn/PriorRestCom
 BF12SD <- PostRest/PriorRestAn 
 BF12SD; 1/BF12SD
-BF12/BF12SD
+log(1/BF12)/log(1/BF12SD)
 
+# Chib's method
+sig2Post <- MCMCpack::rinvgamma(S,an/2,dn/2)
+BetasGibbs <- sapply(1:S, function(s){MASS::mvrnorm(n = 1, mu = bn, Sigma = sig2Post[s]*Bn)})
+# Mode function for continuous data
+mode_continuous <- function(x){
+  density_est <- density(x)               # Estimate density
+  mode_value <- density_est$x[which.max(density_est$y)]  # Get x value at max density
+  return(mode_value)
+}
+# Unrestricted model
+BetasMode <- apply(BetasGibbs, 1, mode_continuous)
+Sigma2Mode <- mode_continuous(sig2Post)
+VarModel <- Sigma2Mode*diag(N)
+MeanModel <- X%*%BetasMode
+LogLik <- mvtnorm::dmvnorm(c(Y), mean = MeanModel, sigma = VarModel, log = TRUE, checkSymmetry = TRUE)
+LogPrior <- mvtnorm::dmvnorm(BetasMode, mean = rep(0, K), sigma = Sigma2Mode*cOpt*diag(K), log = TRUE, checkSymmetry = TRUE)+log(MCMCpack::dinvgamma(Sigma2Mode, a0/2, d0/2))
+LogPost1 <- mvtnorm::dmvnorm(BetasMode, mean = bn, sigma = Sigma2Mode*Bn, log = TRUE, checkSymmetry = TRUE)
+LogPost2 <- log(MCMCpack::dinvgamma(Sigma2Mode, an/2, dn/2))
+LogMarLikChib <- LogLik + LogPrior -(LogPost1 + LogPost2)
+# Restricted model
+anRest <- N + a0
+XRest <- X[,-5]
+KRest <- dim(XRest)[2]
+B0Rest <- cOpt*diag(KRest) 
+BnRest <- solve(solve(B0Rest)+t(XRest)%*%XRest)
+bhatRest <- solve(t(XRest)%*%XRest)%*%t(XRest)%*%Y
+b0Rest <- rep(0, KRest)
+bnRest <- BnRest%*%(solve(B0Rest)%*%b0Rest+t(XRest)%*%XRest%*%bhatRest)
+dnRest <- as.numeric(d0 + t(Y-XRest%*%bhatRest)%*%(Y-XRest%*%bhatRest)+t(bhatRest - b0Rest)%*%solve(solve(t(XRest)%*%XRest)+B0Rest)%*%(bhatRest - b0Rest))
+sig2PostRest <- MCMCpack::rinvgamma(S,anRest/2,dnRest/2)
+BetasGibbsRest <- sapply(1:S, function(s){MASS::mvrnorm(n = 1, mu = bnRest, Sigma = sig2PostRest[s]*BnRest)})
+BetasModeRest <- apply(BetasGibbsRest, 1, mode_continuous)
+Sigma2ModeRest <- mode_continuous(sig2PostRest)
+VarModelRest <- Sigma2ModeRest*diag(N)
+MeanModelRest <- XRest%*%BetasModeRest
+LogLikRest <- mvtnorm::dmvnorm(c(Y), mean = MeanModelRest, sigma = VarModelRest, log = TRUE, checkSymmetry = TRUE)
+LogPriorRest <- mvtnorm::dmvnorm(BetasModeRest, mean = rep(0, KRest), sigma = Sigma2ModeRest*cOpt*diag(KRest), log = TRUE, checkSymmetry = TRUE)+log(MCMCpack::dinvgamma(Sigma2ModeRest, a0/2, d0/2))
+LogPost1Rest <- mvtnorm::dmvnorm(BetasModeRest, mean = bnRest, sigma = Sigma2ModeRest*BnRest, log = TRUE, checkSymmetry = TRUE)
+LogPost2Rest <- log(MCMCpack::dinvgamma(Sigma2ModeRest, anRest/2, dnRest/2))
+LogMarLikChibRest <- LogLikRest + LogPriorRest -(LogPost1Rest + LogPost2Rest)
+
+# Gelfand-Dey method
+GDmarglik <- function(ids, X, Betas, MeanBetas, VarBetas, sig2Post){
+  K <- dim(X)[2]
+  Lognom <- mvtnorm::dmvnorm(Betas[ids,], mean = MeanBetas, sigma = VarBetas, log = TRUE, checkSymmetry = TRUE)
+  Logden1 <- mvtnorm::dmvnorm(Betas[ids,], mean = rep(0, K), sigma = cOpt*diag(K), log = TRUE, checkSymmetry = TRUE)
+  VarModel <- sig2Post[ids]*diag(N)
+  MeanModel <- X%*%Betas[ids,]
+  Logden2 <- mvtnorm::dmvnorm(c(Y), mean = MeanModel, sigma = VarModel, log = TRUE, checkSymmetry = TRUE)
+  LogGDid <- Lognom - Logden1 - Logden2
+  GDid <- exp(LogGDid)
+  return(GDid)
+}
+sig2Post <- MCMCpack::rinvgamma(S,an/2,dn/2)
+Betas <- LaplacesDemon::rmvt(S, bn, Hn, an)
+MeanBetas <- colMeans(Betas)
+VarBetas <- var(Betas)
+iVarBetas <- solve(VarBetas)
+ChiSQ <- sapply(1:S, function(s){(Betas[s,]-MeanBetas)%*%iVarBetas%*%(Betas[s,]-MeanBetas)})
+alpha <- 0.01
+criticalval <- qchisq(1-alpha, K)
+idGoodBetas <- which(ChiSQ <= criticalval)
+InvMargLik2 <- sapply(idGoodBetas, function(x){GDmarglik(ids = x, X = X, Betas = Betas, MeanBetas = MeanBetas, VarBetas = VarBetas, sig2Post = sig2Post)})
+summary(coda::mcmc(InvMargLik2))
+# Restricted model
+anRest <- N + a0
+XRest <- X[,-5]
+KRest <- dim(XRest)[2]
+B0Rest <- cOpt*diag(KRest) 
+BnRest <- solve(solve(B0Rest)+t(XRest)%*%XRest)
+bhatRest <- solve(t(XRest)%*%XRest)%*%t(XRest)%*%Y
+b0Rest <- rep(0, KRest)
+bnRest <- BnRest%*%(solve(B0Rest)%*%b0Rest+t(XRest)%*%XRest%*%bhatRest)
+dnRest <- as.numeric(d0 + t(Y-XRest%*%bhatRest)%*%(Y-XRest%*%bhatRest)+t(bhatRest - b0Rest)%*%solve(solve(t(XRest)%*%XRest)+B0Rest)%*%(bhatRest - b0Rest))
+HnRest <- as.matrix(Matrix::forceSymmetric(dnRest*BnRest/anRest))
+sig2PostRest <- MCMCpack::rinvgamma(S,anRest/2,dnRest/2)
+BetasRest <- LaplacesDemon::rmvt(S, bnRest, HnRest, anRest)
+MeanBetasRest <- colMeans(BetasRest)
+VarBetasRest <- var(BetasRest)
+iVarBetasRest <- solve(VarBetasRest)
+ChiSQRest <- sapply(1:S, function(s){(BetasRest[s,]-MeanBetasRest)%*%iVarBetasRest%*%(BetasRest[s,]-MeanBetasRest)})
+alpha <- 0.01
+criticalvalRest <- qchisq(1-alpha, KRest)
+idGoodBetasRest <- which(ChiSQRest <= criticalvalRest)
+InvMargLik1 <- sapply(idGoodBetasRest, function(x){GDmarglik(ids = x, X = XRest, Betas = BetasRest, MeanBetas = MeanBetasRest, VarBetas = VarBetasRest, sig2Post = sig2PostRest)})
+summary(coda::mcmc(InvMargLik1))
+BFFD <- mean(InvMargLik2)/mean(InvMargLik1)
+BFFD; mean(1/BFFD)
