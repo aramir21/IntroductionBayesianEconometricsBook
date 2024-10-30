@@ -864,30 +864,218 @@ where $\bm{\theta}^{(s)}_m$ are draws from the posterior distribution.\\
 
 \textbf{Example: Simulation exercise}
 
-Let's check the performance of the Savage-Dickey density ratio to estimate the Bayes factor in a setting where we can get the analytical solution of the marginal likelihoods. In particular, the Gaussian linear model with conjugate prior.
+Let's check the performance of the Chib's method and Gelfand-Dey method to calculate the marginal likelihood, and consequently, the Bayes factor in a setting where we can get the analytical solution of the marginal likelihood. In particular, the Gaussian linear model with conjugate prior (see Section \ref{sec43}).
 
-Let's assume that the data generating process is $y_{it}=0.7+0.3x_{i1}+0.7x_{i2}-0.2x_{i3}+0.1x_{i4}\mu_i$, where $\bm{x}_{i1}\sim B(0.3)$, $x_{ik}\sim N(0,1)$, $k=2,\dots,4$, and $\mu_i\sim N(0,2^2)$, $i=1,2,\dots,1000$. Let's set $H_0:[\beta_3 \ \beta_4]^{\top}=\bm{0}$ (model $\mathcal{M}_1$) versus $H_1:[\beta_3 \ \beta_4]^{\top}\neq\bm{0}$ (model $\mathcal{M}_2$).
+Let's assume that the data generating process is $y_{it}=0.7+0.3x_{i1}+0.7x_{i2}-0.2x_{i3}+0.2x_{i4}\mu_i$, where $\bm{x}_{i1}\sim B(0.3)$, $x_{ik}\sim N(0,1)$, $k=2,\dots,4$, and $\mu_i\sim N(0,2^2)$, $i=1,2,\dots,500$. Let's set $H_0:\beta_4={0}$ (model $\mathcal{M}_1$) versus $H_1:\ \beta_4\neq {0}$ (model $\mathcal{M}_2$).
 
-We know from Section \ref{sec43} that the Bayes factor is
+Let's assume that $\bm{\beta}_{m0}=\bm{0}_{m0}$, $\bm{B}_{m0}=0.5\bm{I}_{m}$, $\alpha_0=\delta_0=4$. The dimensions of $\bm{0}_{m0}$ and $\bm{I}_{m}$ are 4 for model $\mathcal{M}_1$ and 5 for $\mathcal{M}_2$. In addition, let's assume equal prior probabilities.  
+
+We know from Section \ref{sec43} that the marginal likelihood is
 \begin{align*}
-	BF_{12}&=\frac{p(\bf{y}|\mathcal{M}_1)}{p(\bf{y}|\mathcal{M}_2)}\\
-	&=\frac{\frac{\delta_{10}^{\alpha_{10}/2}}{\delta_{1n}^{\alpha_{1n}/2}}\frac{|{\bf{B}}_{1n}|^{1/2}}{|{\bf{B}}_{10}|^{1/2}}\frac{\Gamma(\alpha_{1n}/2)}{\Gamma(\alpha_{10}/2)}}{\frac{\delta_{20}^{\alpha_{20}/2}}{\delta_{2n}^{\alpha_{2n}/2}}\frac{|{\bf{B}}_{2n}|^{1/2}}{|{\bf{B}}_{20}|^{1/2}}\frac{\Gamma(\alpha_{2n}/2)}{\Gamma(\alpha_{20}/2)}},
+	p(\bf{y}|\mathcal{M}_m)&=\frac{\delta_{m0}^{\alpha_{m0}/2}}{\delta_{mn}^{\alpha_{mn}/2}}\frac{|{\bf{B}}_{mn}|^{1/2}}{|{\bf{B}}_{m0}|^{1/2}}\frac{\Gamma(\alpha_{mn}/2)}{\Gamma(\alpha_{m0}/2)},
 \end{align*}
 where  ${{\bm{B}}}_{mn} = ({\bm{B}}_{m0}^{-1} + {\bm{X}}_m^{\top}{\bm{X}}_m)^{-1}$, $\bm{\beta}_{mn} = {{\bf{B}}}_{mn}({\bm{B}}_{m0}^{-1}\bm{\beta}_{m0} + {\bm{X}}_m^{\top}{\bm{X}}_m\hat{\bm{\beta}}_m)$, $\alpha_{mn}=\alpha_{m0}+N$, and $\delta_{mn}=\delta_{m0}+({\bm{y}}-{\bm{X}}_m\hat{\bm{\beta}}_m)^{\top}({\bm{y}}-{\bm{X}}_m\hat{\bm{\beta}}_m)+(\hat{\bm{\beta}}_m-\bm{\beta}_{m0})^{\top}(({\bm{X}_m}^{\top}{\bm{X}_m})^{-1}+{\bm{B}}_{m0})^{-1}(\hat{\bm{\beta}}_m-\bm{\beta}_{m0})$, $m=1,2$ are the indices of the models.
 
+The log marginal likelihoods for models $\mathcal{M}_1$ and $\mathcal{M}_2$ are -1089.82 and -1087.94, respectively. This implies a $2\times\log(BF_{21})=3.75$ which means positive evidence against model $\mathcal{M}_1$ (see Table \ref{tab:guide}).
+
+We calculate the log marginal likelihood using the Chib's method taking into account that 
+\begin{align*}
+	\log(p(\bm{y}|\mathcal{M}_m))&=\log(p(\bm{y}|\bm{\theta}^*,\mathcal{M}_m))+\log(\pi(\bm{\theta}^*|\mathcal{M}_m))-\log(\pi(\bm{\theta}^*|\bm{y},\mathcal{M}_m)),\\
+\end{align*}
+where $p(\bm{y}|\bm{\theta}^*,\mathcal{M}_m)$ is the value of a normal density with mean $\bm{X}_m\bm{\beta}_{m}^*$ and variance $\sigma^{2*}_m\bm{I}_N$ evaluated at $\bm{y}$. In addition, $\log(\pi(\bm{\theta}^*|\mathcal{M}_m))=\log(\pi(\bm{\beta}_m^*|\sigma^{2*}_m))+\log(\pi(\sigma^{2*}_m))$, where the first term is the density of a normal with mean $\bm{\beta}_{m0}$ and variance matrix $\sigma^{2*}\bm{B}_{m0}$ evaluated at $\bm{\beta}_m^*$, and the second term is the density of an inverse-gamma with parameters $\alpha_{m0}/2$ and $\delta_{m0}/2$ evaluated at $\sigma^{2*}_m$. Finally, the third term in the right hand of the previous expression is $\log(\pi(\bm{\theta}^*|\bm{y},\mathcal{M}_m))=\log(\pi(\bm{\beta}_m^*|\sigma^{2*}_m,\bm{y}))+\log(\pi(\sigma^{2*}_m|\bm{y}))$, where the first term is the density of a normal with mean $\bm{\beta}_{mn}$ and variance matrix $\sigma^{2*}_m\bm{B}_{mn}$ evaluated at $\bm{\beta}_m^*$, and the second term is the density of an inverse-gamma with parameters $\alpha_{mn}/2$ and $\delta_{mn}/2$ evaluated at $\sigma^{2*}_m$. We use the modes of the posterior draws of $\bm{\beta}_m$ and $\sigma^2_m$ as reference values. 
+
+We get the same value, up to two decimals, for the log marginal likelihood of the restricted model using the Chib's method and the analytical expression (-1089.82). The log marginal likelihood of the unrestricted model is -1088.21 using the Chib's method, whereas this is -1087.94 using the analytical expression. Thus, $2\times\log(BF_{21})=3.23$, that is, positive evidence against model $\mathcal{M}_1$ (see Table \ref{tab:guide}).
+
+We calculate the log marginal likelihood using the Gelfand-Dey method taking into account that
+\begin{align*}
+	\log\left[\frac{p(\bm{\theta}^{(s)})}{\pi(\bm{\theta}^{(s)}|\mathcal{M}_m)p(\bm{y}|\bm{\theta}^{(s)}_m,\mathcal{M}_m)}\right]&=\log(p(\bm{\theta}^{(s)}))-\log(\pi(\bm{\theta}^{(s)}|\mathcal{M}_m))-\log(p(\bm{y}|\bm{\theta}^{(s)}_m,\mathcal{M}_m)),
+\end{align*}
+where $p(\bm{\theta}^{(s)})$ is the truncated multivariate normal density of Subsection \ref{sec10_4_3} evaluated at $\bm{\theta}^{(s)}=[\bm{\beta}^{(s)\top} \ \sigma^{2(s)}]^{\top}$, which is the $s$-th posterior draw of the Gibbs sampling algorithm, such that $\bm{\theta}^{(s)}$ satisfies the truncation restriction. $\log(\pi(\bm{\theta}^{(s)}|\mathcal{M}_m))=\log(\pi(\bm{\beta}_m^{(s)}|\sigma^{2(s)}_m))+\log(\pi(\sigma^{2(s)}_m))$, where the first term is the density of a normal with mean $\bm{\beta}_{m0}$ and variance matrix $\sigma^{2(s)}\bm{B}_{m0}$ evaluated at $\bm{\beta}_m^{(s)}$, and the second term is the density of an inverse-gamma with parameters $\alpha_{m0}/2$ and $\delta_{m0}/2$ evaluated at $\sigma^{2(s)}_m$. The third term $p(\bm{y}|\bm{\theta}^{(s)},\mathcal{M}_m)$ is the value of a normal density with mean $\bm{X}_m\bm{\beta}_{m}^{(s)}$ and variance $\sigma^{2(s)}_m\bm{I}_N$ evaluated at $\bm{y}$.
+
+The log marginal likelihoods of the restricted and unrestricted models using the Gelfand-Dey method are -1087.43 and -1084.53, respectively. This implies $2\times \log(BF_{21})=5.80$, which is positive evidence in favor of the unrestricted model.
+
+We see in this example that these methods give good approximations to the true marginal likelihoods. However, the Chib's method did a better job than the Gelfand-Dey method. In addition, the computational demand in the Gelfand-Dey method is by far larger than the Chib's method. We can see this because the Chib's method requires just an evaluation, whereas the Gelfand-Dey method requires many evaluations based on the posterior draws. However, the Gelfand-Dey method is more general, and give uncertainty measures regarding the log marginal likelihood calculations.
+
+The following code shows how to do this calculations.
+
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Bayes factors}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+set.seed(010101)
+N <- 500; K <- 5; K2 <- 3 
+B <- c(0.7, 0.3, 0.7, -0.2, 0.2) 
+X1 <- rbinom(N, 1, 0.3)
+X2 <- matrix(rnorm(K2*N), N, K2)
+X <- cbind(1, X1, X2)
+Y <- X%*%B + rnorm(N, 0, sd = 2)
+# Hyperparameters
+d0 <- 4
+a0 <- 4
+b0 <- rep(0, K)
+cOpt <- 0.5
+LogMarLikLM <- function(X, c0){
+	K <- dim(X)[2]; N <- dim(X)[1]	
+	# Hyperparameters
+	B0 <- c0*diag(K); b0 <- rep(0, K)
+	# Posterior parameters
+	bhat <- solve(t(X)%*%X)%*%t(X)%*%Y
+	Bn <- as.matrix(Matrix::forceSymmetric(solve(solve(B0) + t(X)%*%X))) 
+	bn <- Bn%*%(solve(B0)%*%b0 + t(X)%*%X%*%bhat)
+	dn <- as.numeric(d0 + t(Y)%*%Y+t(b0)%*%solve(B0)%*%b0-t(bn)%*%solve(Bn)%*%bn)
+	an <- a0 + N
+	# Log marginal likelihood
+	logpy <- (N/2)*log(1/pi)+(a0/2)*log(d0)-(an/2)*log(dn) + 0.5*log(det(Bn)/det(B0)) + lgamma(an/2)-lgamma(a0/2)
+	return(-logpy)
+}
+LogMarM2 <- -LogMarLikLM(X = X, c0 = cOpt)
+LogMarM1 <- -LogMarLikLM(X = X[,1:4], c0 = cOpt)
+BF12 <- exp(LogMarM1-LogMarM2) 
+BF12; 1/BF12
+2*log(1/BF12}
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}            
+
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Bayes factors}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+# Chib's method
+sig2Post <- MCMCpack::rinvgamma(S,an/2,dn/2)
+BetasGibbs <- sapply(1:S, function(s){MASS::mvrnorm(n = 1, mu = bn, Sigma = sig2Post[s]*Bn)})
+# Mode function for continuous data
+mode_continuous <- function(x){
+	density_est <- density(x)       
+	mode_value <- density_est$x[which.max(density_est$y)]  
+	return(mode_value)
+}
+# Unrestricted model
+BetasMode <- apply(BetasGibbs, 1, mode_continuous)
+Sigma2Mode <- mode_continuous(sig2Post)
+VarModel <- Sigma2Mode*diag(N)
+MeanModel <- X%*%BetasMode
+LogLik <- mvtnorm::dmvnorm(c(Y), mean = MeanModel, sigma = VarModel, log = TRUE, checkSymmetry = TRUE)
+LogPrior <- mvtnorm::dmvnorm(BetasMode, mean = rep(0, K), sigma = Sigma2Mode*cOpt*diag(K), log = TRUE, checkSymmetry = TRUE)+log(MCMCpack::dinvgamma(Sigma2Mode, a0/2, d0/2))
+LogPost1 <- mvtnorm::dmvnorm(BetasMode, mean = bn, sigma = Sigma2Mode*Bn, log = TRUE, checkSymmetry = TRUE)
+LogPost2 <- log(MCMCpack::dinvgamma(Sigma2Mode, an/2, dn/2))
+LogMarLikChib <- LogLik + LogPrior -(LogPost1 + LogPost2)
+# Restricted model
+anRest <- N + a0; XRest <- X[,-5]
+KRest <- dim(XRest)[2]; B0Rest <- cOpt*diag(KRest) 
+BnRest <- solve(solve(B0Rest)+t(XRest)%*%XRest)
+bhatRest <- solve(t(XRest)%*%XRest)%*%t(XRest)%*%Y
+b0Rest <- rep(0, KRest)
+bnRest <- BnRest%*%(solve(B0Rest)%*%b0Rest+t(XRest)%*%XRest%*%bhatRest)
+dnRest <- as.numeric(d0 + t(Y-XRest%*%bhatRest)%*%(Y-XRest%*%bhatRest)+t(bhatRest - b0Rest)%*%solve(solve(t(XRest)%*%XRest)+B0Rest)%*%(bhatRest - b0Rest))
+sig2PostRest <- MCMCpack::rinvgamma(S,anRest/2,dnRest/2)
+BetasGibbsRest <- sapply(1:S, function(s){MASS::mvrnorm(n = 1, mu = bnRest, Sigma = sig2PostRest[s]*BnRest)})
+BetasModeRest <- apply(BetasGibbsRest, 1, mode_continuous)
+Sigma2ModeRest <- mode_continuous(sig2PostRest)
+VarModelRest <- Sigma2ModeRest*diag(N)
+MeanModelRest <- XRest%*%BetasModeRest
+LogLikRest <- mvtnorm::dmvnorm(c(Y), mean = MeanModelRest, sigma = VarModelRest, log = TRUE, checkSymmetry = TRUE)
+LogPriorRest <- mvtnorm::dmvnorm(BetasModeRest, mean = rep(0, KRest), sigma = Sigma2ModeRest*cOpt*diag(KRest), log = TRUE, checkSymmetry = TRUE)+log(MCMCpack::dinvgamma(Sigma2ModeRest, a0/2, d0/2))
+LogPost1Rest <- mvtnorm::dmvnorm(BetasModeRest, mean = bnRest, sigma = Sigma2ModeRest*BnRest, log = TRUE, checkSymmetry = TRUE)
+LogPost2Rest <- log(MCMCpack::dinvgamma(Sigma2ModeRest, anRest/2, dnRest/2))
+LogMarLikChibRest <- LogLikRest + LogPriorRest -(LogPost1Rest + LogPost2Rest)
+BFChibs <- exp(LogMarLikChibRest-LogMarLikChib)
+BFChibs; 1/BFChibs; 2*log(1/BFChibs)
+\end{lstlisting}
+\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Bayes factors}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+# Gelfand-Dey method
+GDmarglik <- function(ids, X, Betas, MeanThetas, VarThetas, sig2Post){
+	K <- dim(X)[2]; Thetas <- c(Betas[ids,], sig2Post[ids])
+	Lognom <- mvtnorm::dmvnorm(Thetas, mean = MeanThetas, sigma = VarThetas, log = TRUE, checkSymmetry = TRUE)
+	Logden1 <- mvtnorm::dmvnorm(Betas[ids,], mean = rep(0, K), sigma = sig2Post[ids]*cOpt*diag(K), log = TRUE, checkSymmetry = TRUE) + log(MCMCpack::dinvgamma(sig2Post[ids], a0/2, d0/2))
+	VarModel <- sig2Post[ids]*diag(N)
+	MeanModel <- X%*%Betas[ids,]
+	Logden2 <- mvtnorm::dmvnorm(c(Y), mean = MeanModel, sigma = VarModel, log = TRUE, checkSymmetry = TRUE)
+	LogGDid <- Lognom - Logden1 - Logden2
+	return(LogGDid)
+}
+sig2Post <- MCMCpack::rinvgamma(S,an/2,dn/2)
+Betas <- LaplacesDemon::rmvt(S, bn, Hn, an)
+Thetas <- cbind(Betas, sig2Post)
+MeanThetas <- colMeans(Thetas); VarThetas <- var(Thetas)
+iVarThetas <- solve(VarThetas)
+ChiSQ <- sapply(1:S, function(s){(Thetas[s,]-MeanThetas)%*%iVarThetas%*%(Thetas[s,]-MeanThetas)})
+alpha <- 0.01; criticalval <- qchisq(1-alpha, K + 1)
+idGoodThetas <- which(ChiSQ <= criticalval)
+pb <- winProgressBar(title = "progress bar", min = 0, max = S, width = 300)
+InvMargLik2 <- NULL
+for(s in idGoodThetas){
+	LogInvs <- GDmarglik(ids = s, X = X, Betas = Betas, MeanThetas = MeanThetas, VarThetas = VarThetas, sig2Post = sig2Post)
+	InvMargLik2 <- c(InvMargLik2, LogInvs)
+	setWinProgressBar(pb, s, title=paste( round(s/S*100, 0),"% done"))
+}
+close(pb); mean(InvMargLik2)
+# Restricted model
+anRest <- N + a0; XRest <- X[,-5]
+KRest <- dim(XRest)[2]; B0Rest <- cOpt*diag(KRest) 
+BnRest <- solve(solve(B0Rest)+t(XRest)%*%XRest)
+bhatRest <- solve(t(XRest)%*%XRest)%*%t(XRest)%*%Y
+b0Rest <- rep(0, KRest)
+bnRest <- BnRest%*%(solve(B0Rest)%*%b0Rest+t(XRest)%*%XRest%*%bhatRest)
+dnRest <- as.numeric(d0 + t(Y-XRest%*%bhatRest)%*%(Y-XRest%*%bhatRest)+t(bhatRest - b0Rest)%*%solve(solve(t(XRest)%*%XRest)+B0Rest)%*%(bhatRest - b0Rest))
+HnRest <- as.matrix(Matrix::forceSymmetric(dnRest*BnRest/anRest))
+sig2PostRest <- MCMCpack::rinvgamma(S,anRest/2,dnRest/2)
+BetasRest <- LaplacesDemon::rmvt(S, bnRest, HnRest, anRest)
+ThetasRest <- cbind(BetasRest, sig2PostRest)
+MeanThetasRest <- colMeans(ThetasRest)
+VarThetasRest <- var(ThetasRest)
+iVarThetasRest <- solve(VarThetasRest)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}  
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Bayes factors}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+ChiSQRest <- sapply(1:S, function(s){(ThetasRest[s,]-MeanThetasRest)%*%iVarThetasRest%*%(ThetasRest[s,]-MeanThetasRest)})
+idGoodThetasRest <- which(ChiSQRest <= criticalval)
+pb <- winProgressBar(title = "progress bar", min = 0, max = S, width = 300)
+InvMargLik1 <- NULL
+for(s in idGoodThetasRest){
+	LogInvs <- GDmarglik(ids = s, X = XRest, Betas = BetasRest, MeanThetas = MeanThetasRest, VarThetas = VarThetasRest, sig2Post = sig2PostRest)
+	InvMargLik1 <- c(InvMargLik1, LogInvs)
+	setWinProgressBar(pb, s, title=paste( round(s/S*100, 0),"% done"))
+}
+close(pb); summary(coda::mcmc(InvMargLik1))
+mean(InvMargLik1)
+BFFD <- exp(mean(InvMargLik2)-mean(InvMargLik1))
+BFFD; mean(1/BFFD); 2*log(1/BFFD)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}  
+
+\begin{comment}
 The Bayes factor using the Savage-Dickey density ratio is
 
 \begin{align*}
-	BF_{12}&=\frac{\pi(\bm{\beta}_{4:5}=\bm{0}_2|\bm{y},\mathcal{M}_2)}{\pi(\bm{\beta}_{4:5}=\bm{0}_2|\mathcal{M}_2)},
+	BF_{12}&=\frac{\pi(\bm{\beta}_{5}=\bm{0}_2|\bm{y},\mathcal{M}_2)}{\pi(\bm{\beta}_{5}=\bm{0}_2|\mathcal{M}_2)},
 \end{align*}
-where $\pi(\bm{\beta}_{4:5}=\bm{0}_2|\bm{y},\mathcal{M}_2)$ is the density of a bivariate student's t-distribution with mean equal to the last two elements of $\bm{\beta}_{2n}$, scale matrix $\bm{H}_{2n,4:5,4:5}$, that is, the elements 4:4, 4:5, 5:4 and 5:5 of the matrix $\bm{H}_{2n}$, where $\bm{H}_{2n}=\delta_{2n}\bm{B}_{2n}/\alpha_{2n}$, and degrees of freedom $\alpha_{2n}$.
+where $\pi(\bm{\beta}_{5}=\bm{0}_2|\bm{y},\mathcal{M}_2)$ is the density of a  student's t-distribution with mean equal to the last element of $\bm{\beta}_{2n}$, scale parameter $\bm{H}_{2n,5,5}$, that is, the element 5:5 of the matrix $\bm{H}_{2n}$, where $\bm{H}_{2n}=\delta_{2n}\bm{B}_{2n}/\alpha_{2n}$, and degrees of freedom $\alpha_{2n}$.
 
-Given that the prior distribution of $\bm{\beta}|\sigma^2$ is $N(\bm{\beta}_0,\sigma^2\bm{B}_0)$, this implies that $\bm{\beta}_{4:5}|\sigma^2\sim N(\bm{\beta}_{0,4:5,4:5},\sigma^2\bm{B}_{0,4:5,4:5})$. Then,
+Given that the prior distribution of $\bm{\beta}|\sigma^2$ is $N(\bm{\beta}_0,\sigma^2\bm{B}_0)$, this implies that $\bm{\beta}_{5}|\sigma^2\sim N(\bm{\beta}_{0,5},\sigma^2\bm{B}_{0,5,5})$. Then,
 \begin{align*}
-	\pi(\bm{\beta}_{4:5}=\bm{0}_2|\mathcal{M}_2)&=\int_{0}^{\infty}(2\pi\sigma^2)^{-2/2}|\bm{B}_0|^{-1/2}\exp\left\{-\frac{1}{2\sigma^2}(\bm{\beta}_{4:5}-\bm{\beta}_{0,4:5})^{\top}\bm{B}_{0,4:5}^{-1}(\bm{\beta}_{4:5}-\bm{\beta}_{0,4:5})\right\}\\
+	\pi(\bm{\beta}_{5}|\mathcal{M}_2)&=\int_{0}^{\infty}(2\pi\sigma^2)^{-1/2}|\bm{B}_0|^{-1/2}\exp\left\{-\frac{1}{2\sigma^2}(\bm{\beta}_{4:5}-\bm{\beta}_{0,4:5})^{\top}\bm{B}_{0,4:5}^{-1}(\bm{\beta}_{4:5}-\bm{\beta}_{0,4:5})\right\}\\
 	&\times \frac{(\delta_0/2)^{\alpha_0/2}}{\Gamma(\alpha_0/2)}\left(\frac{1}{\sigma^2}\right)^{\alpha_0/2+1}\exp \left\{-\frac{\delta_0}{2\sigma^2} \right\}d\sigma^2
 \end{align*}
-
+\end{comment}
 
 \begin{comment}
 	Given the prior specification of Section \ref{sec10_2}, the Bayes factor is
@@ -927,9 +1115,10 @@ Given that the prior distribution of $\bm{\beta}|\sigma^2$ is $N(\bm{\beta}_0,\s
 \end{comment}
     
 
-\section{Summary}\label{sec10_7}
+\section{Summary}\label{sec10_5}
+In this chapter we introduced Bayesian model average in generalized linear models. In the case of linear Gaussian models, we perform BMA using three approaches: the Bayesian information criterion approximation with the Occam's window, the Markov chain Monte Carlo model composition algorithm, and the conditional Bayes factors when taking into account endogeneity. In the case of other generalized linear models, logit, gamma and Poisson, we show how to use the BIC approximation to perform BMA. In the case that the BIC approximation does not perform a good job due to small or moderate sample sizes, we present alternative ways to calculate the marginal likelihood: the Savage-Dickey density ration, Chib's method and Gelfand-Dey method.  
 
-\section{Exercises}\label{sec10_8}
+\section{Exercises}\label{sec10_6}
 
 \begin{enumerate}
 	\item The Gaussian linear model specifies $\bf{y}=\alpha\bm{i}_N+\bm{X}_m\bm{\beta}_m+\bm{\mu}_m$ such that $\bm{\mu}_m\sim{N}(\bm{0},\sigma^2\bm{I}_n)$, and $\bm{X}_m$ does not have the column of ones. Assuming that $\pi(\sigma^2)\propto 1/{\sigma^2}$, $\pi(\alpha)\propto 1$, and $\bm{\beta}_m|\sigma^2 \sim {N}(\bm{0}_{k_m}, \sigma^2 (g_m\bm{X}_m^{\top}\bm{X}_m)^{-1})$.
