@@ -596,7 +596,7 @@ BFChibs; 1/BFChibs
 GDmarglik <- function(ids, X, Betas, MeanThetas, VarThetas, sig2Post){
   K <- dim(X)[2]
   Thetas <- c(Betas[ids,], sig2Post[ids])
-  Lognom <- mvtnorm::dmvnorm(Thetas, mean = MeanThetas, sigma = VarThetas, log = TRUE, checkSymmetry = TRUE)
+  Lognom <- (1/(1-alpha))*mvtnorm::dmvnorm(Thetas, mean = MeanThetas, sigma = VarThetas, log = TRUE, checkSymmetry = TRUE)
   Logden1 <- mvtnorm::dmvnorm(Betas[ids,], mean = rep(0, K), sigma = sig2Post[ids]*cOpt*diag(K), log = TRUE, checkSymmetry = TRUE) + log(MCMCpack::dinvgamma(sig2Post[ids], a0/2, d0/2))
   VarModel <- sig2Post[ids]*diag(N)
   MeanModel <- X%*%Betas[ids,]

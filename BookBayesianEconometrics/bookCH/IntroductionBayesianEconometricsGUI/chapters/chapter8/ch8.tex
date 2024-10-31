@@ -1,5 +1,7 @@
 \chapter{Time series models}\label{chap8}
-We describe how to perform time series model using a Bayesian framework. In particular,
+In this chapter, we provide a brief introduction to performing inference in time series models using a Bayesian framework. There is a large literature in time series in statistics and econometrics, and it would be impossible to present a good treatment in a few pages of an introductory book. However, there excellent books in Bayesian inference in time series, see for instance, \cite{west2006bayesian,petris2009dynamic,pole2018applied}.
+
+A time series is a sequence of observations collected in chronological order, allowing us to track how variables change over time. However, it also introduces technical challenges, as we must account for statistical features such as autocorrelation and stationarity. Since time series data is time-dependent, we adjust our notation. Specifically, we use $t$ and $T$ instead of $i$ and $N$ to explicitly indicate time.
 
 Remember that we can run our GUI typing
 
@@ -12,9 +14,44 @@ Remember that we can run our GUI typing
 	\end{VF}
 \end{tcolorbox} 
 
-in the \textbf{R} package console or any \textbf{R} code editor. However, users should see Chapter \ref{chapGUI} for details.
+in the \textbf{R} package console or any \textbf{R} code editor, and once our GUI is deployed, select \textit{Time series Models}. However, users should see Chapter \ref{chapGUI} for details.
 
-\section{Univariate time series: ARIMA models}\label{sec81}
+\section{Autoregressive models}\label{sec81}
+
+Let's start with the linear Gaussian model with autorregresive error,
+
+\begin{align}
+	y_t & = \bm{x}_t^{\top}\bm{\beta}+\mu_t\label{eq1}\\
+	\phi(L)\mu_t & = e_t \label{eq2}, 
+\end{align}
+where $e_t \stackrel{iid}{\sim} N(0,\sigma^2)$, $\phi(L)=1-\phi_1L-\phi_2L^2-\dots-\phi_pL^p$ is a polynomial in the lag operator ($L$), where $Lz_t=z_{t-1}$, and in general, $L^rz_t=z_{t-r}$.
+
+Thus, we see that stochastic error $\mu_t$ follows an \textit{autoregressive process of order $p$}, that is, $\mu_t\sim AR(p)$. It is standard practice to assume that $\mu_t$ is second-order stationary, this implies that the mean, variance and covariance of $\mu_t$ are constant. This implies that all roots of $\phi(L)$ lie outside the unit circle.
+
+The likelihood function conditional on the first $p$ observations is
+\begin{align*}
+	p(y_{p+1},\dots,y_T|y_{p},\dots,y_1,\bm{\theta})&=\prod_{t=p+1}^{T}p(y_t|H_{t-1},\bm{\theta})\\
+	&\propto \sigma^{-(T-p)}\exp\left\{-\frac{1}{2\sigma^2}\sum_{t=p+1}^T(y_t-\hat{y}_{t|t-1,\bm{\theta}})^2\right\},
+\end{align*} 
+where $H_{t-1}$ is the past history, $\bm{\theta}$ collects all parameters ($\bm{\theta}, \phi_1,\dots,\phi_p, \sigma^2$), and $\hat{y}_{t|t-1,\bm{\theta}}=(1-\phi(L))y_t+\phi(L)\bm{x}^{\top}\bm{\beta}$.
+
+We can see that multiplying the first expression in Equation \ref{eq1} by $\phi(L)$, we can express the model as 
+\begin{align}\label{eq3}
+	y_t^*=\bm{x}_t^{*\top}\bm{\beta}+e_t
+\end{align}
+where $y_t^*=\phi(L)y_t$ and $\bm{x}_t^{*}=\phi(L)\bm{x}_t$.
+
+Thus, collecting all observations $t=p+1,p+2,\dots,T$, we have $\bm{y}^*=\bm{X}^*\bm{\beta}+\bm{e}$, where $\bm{e}\sim N(\bm{0},\sigma^2\bm{I}_{T-p})$, $\bm{y}^*$ is a $T-p$ dimensional vector, and $\bm{X}^*$ is a $(T-p)\times K$ dimensional matrix.
+
+Assuming that $\bm{\beta}|\sigma\sim N(\bm{\beta}_0,\sigma^2\bm{B}_0)$, $\sigma^2\sim IG(\alpha_0/2,\delta_0/2)$ and $\bm{\phi}\sim N(\phi_0,\bm{\Phi}_0)\mathbbm{1}[\bm{\phi}\in S_{\phi}]$, where $S_{\phi}$ is the stationary region of $\bm{\phi}=[\phi_1 \ \dots \ \phi_p]^{\top}$. Then, Equation \ref{eq3} that $\bm{\beta}|\sigma^2,\bm{\phi}\sim N(\bm{\beta}_n, \sigma^2{\bf{B}}_n)$, where $\bm{B}_n = (\bm{B}_0^{-1} + \bm{X}^{*\top}\bm{X}^{*})^{-1}$ and $\bm{\beta}_n = \bm{B}_n(\bm{B}_0^{-1}\bm{\beta}_0 + \bm{X}^{*\top}\bm{y}^{*})$. In addition, $\sigma^2|\bm{\beta},\bm{\phi}\sim IG(\alpha_n/2,\delta_n/2)$ where $\alpha_n=\alpha_0+T-p$ and $\delta_n=\delta_0+(\bm{y}^*-\bm{X}^{*}\bm{\beta})^{\top}(\bm{y}^*-\bm{X}^{*}\bm{\beta})+(\bm{\beta}-\bm{\beta}_0)\bm{B}_0^{-1}(\bm{\beta}-\bm{\beta}_0)$.   
+   
+
+
+\section{State-space models}
+
+\section{Stochastic volatility models}
+
+
 
 \section{Conditional heteroskedasticity: GARCH models}\label{sec82}
 
