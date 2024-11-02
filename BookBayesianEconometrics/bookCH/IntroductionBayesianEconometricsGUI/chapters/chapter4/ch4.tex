@@ -744,7 +744,52 @@ where $({\bf{B}}_0^{-1} + {\bf{X}}^{\top}{\bf{X}})^{-1}{\bf{B}}_0^{-1}=\bf{I}_K-
 
 In addition, we know that the posterior conditional covariance matrix of the location parameters $\sigma^2({\bf{B}}_0^{-1} + {\bf{X}}^{\top}{\bf{X}})^{-1}=\sigma^2({\bf{X}}^{\top}{\bf{X}})^{-1}-\sigma^2\left(({\bf{X}}^{\top}{\bf{X}})^{-1}({\bf{B}}_0 + ({\bf{X}}^{\top}{\bf{X}})^{-1})^{-1}({\bf{X}}^{\top}{\bf{X}})^{-1}\right)$ is positive semi-definite.\footnote{A particular case of the Woodbury matrix identity.} Given that $\sigma^2({\bf{X}}^{\top}{\bf{X}})^{-1}$ is the covariance matrix of the maximum likelihood estimator, we observe that prior information reduces estimation uncertainty.
 
-Now, we calculate the posterior marginal distribution of $\bm{\beta}$,
+Another way to see this model is considering that $\bm{y}$ and $\bm{\beta}$ are random objects under the Bayesian framework. Thus, we can have the joint distribution of these two vectors,
+\begin{align*}
+	\begin{bmatrix}
+		\bm{\beta}\\ 
+		\bm{y}
+	\end{bmatrix}\sim N\left [ \begin{pmatrix}
+		\bm{\beta}_{0} \\
+		\bm{X}\bm{\beta}_{0}
+	\end{pmatrix} , \sigma^2\begin{pmatrix}
+		\bm{B}_{0} & \bm{B}_{0} \bm{X}^{\top} \\ 
+		\bm{X}\bm{B}_{0}^{\top} & \bm{X}\bm{B}_{0}\bm{X}^{\top}+\bm{I}_N
+	\end{pmatrix}\right ],
+\end{align*}
+where we use that $Cov[\bm{\beta},\bm{y}]=\mathbb{E}[\bm{\beta}\bm{y}^{\top}]-\mathbb{E}[\bm{\beta}]\mathbb{E}[\bm{y}^{\top}]=\mathbb{E}[\bm{\beta}(\bm{X}\bm{\beta}+\bm{\mu})^{\top}]-\mathbb{E}[\bm{\beta}]\mathbb{E}[\bm{y}^{\top}]=[Var[\bm{\beta}]+\mathbb{E}[\bm{\beta}]\mathbb{E}[\bm{\beta}^{\top}]]\bm{X}^{\top}-\mathbb{E}[\bm{\beta}]\mathbb{E}[\bm{y}^{\top}]=\sigma^2\bm{B}_0\bm{X}^{\top}+\bm{\beta}_0\bm{\beta}_0^{\top}\bm{X}^{\top}-\bm{\beta}_0\bm{\beta}_0^{\top}\bm{X}^{\top}=\sigma^2\bm{B}_0\bm{X}^{\top}$.
+
+Then, we can get the conditional distribution of $\bm{\beta}|\bm{y}$ using the properties of the multivariate normal distribution, this is normal with mean equal to $\bm{\beta}_{0}+\bm{B}_{0}\bm{X}^{\top}(\bm{X}\bm{B}_{0}\bm{X}^{\top}+ \bm{I}_N)^{-1}(\bm{y}-\bm{X}\bm{\beta}_{0})$ and covariance matrix $\sigma^2(\bm{B}_{0}-\bm{B}_{0}\bm{X}^{\top}(\bm{X}\bm{B}_{0}\bm{X}^{\top}+\bm{I}_N)^{-1} \bm{X}\bm{B}_{0}^{\top})$. Observe that in this representation, the posterior mean is equal to the prior mean plus a correction term that takes into account the deviation between the observations and the prior expected value ($\bm{X}\bm{\beta}_{0}$). The weight of this correction is given by the matrix $\bm{B}_{0}\bm{X}^{\top}(\bm{X}\bm{B}_{0}\bm{X}^{\top}+ \bm{I}_N)^{-1}$. 
+
+This form of expressing the posterior distribution is relevant to get some intuition of the Bayesian inference of time series models in the \textit{Gaussian linear state-space representation} in Chapter \ref{chap8}, also know as the Kalman filter in time series literature.
+
+We can show that both conditional posterior distributions are the same. In particular, the posterior mean in this representation is $[\bm{I}_K-\bm{B}_{0}\bm{X}^{\top}(\bm{X}\bm{B}_{0}\bm{X}^{\top}+ \bm{I}_N)^{-1}\bm{X}]\bm{\beta}_{0}+\bm{B}_{0}\bm{X}^{\top}(\bm{X}\bm{B}_{0}\bm{X}^{\top}+ \bm{I}_N)^{-1}\bm{y}$, where 
+\begin{align*}
+		\bm{B}_{0}\bm{X}^{\top}(\bm{X}\bm{B}_{0}\bm{X}^{\top}+ \bm{I}_N)^{-1}
+		&=\bm{B}_{0}\bm{X}^{\top}[\bm{I}_N-\bm{I}_N\bm{X}(\bm{B}_0^{-1}+\bm{X}^{\top}\bm{I}_N\bm{X})^{-1}\bm{X}^{\top}\bm{I}_N]\\
+		&=\bm{B}_{0}[\bm{I}_K-\bm{X}^{\top}\bm{I}_N\bm{X}(\bm{B}_0^{-1}+\bm{X}^{\top}\bm{I}_N\bm{X})^{-1}]\bm{X}^{\top}\\
+		&=\bm{B}_{0}[\bm{I}_K-[\bm{I}_K-\bm{B}_0^{-1}(\bm{B}_0^{-1}+\bm{X}^{\top}\bm{I}_N\bm{X})^{-1}]]\bm{X}^{\top}\\
+		&=(\bm{B}_0^{-1}+\bm{X}^{\top}\bm{X})^{-1}\bm{X}^{\top},
+\end{align*}
+where the first equality uses the Woodbury matrix identity (matrix inversion lemma), and the third equality uses $\bm{D}(\bm{D}+\bm{E})^{-1}=\bm{I}-\bm{E}(\bm{D}+\bm{E})^{-1}$. 
+
+Thus, $[\bm{I}_K-\bm{B}_{0}\bm{X}^{\top}(\bm{X}\bm{B}_{0}\bm{X}^{\top}+ \bm{I}_N)^{-1}\bm{X}]\bm{\beta}_{0}+\bm{B}_{0}\bm{X}^{\top}(\bm{X}\bm{B}_{0}\bm{X}^{\top}+ \bm{I}_N)^{-1}\bm{y}=[\bm{I}_K-(\bm{B}_0^{-1}+\bm{X}^{\top}\bm{X})^{-1}\bm{X}^{\top}\bm{X}]\bm{\beta}_{0}+(\bm{B}_0^{-1}+\bm{X}^{\top}\bm{X})^{-1}\bm{X}^{\top}\bm{y}=[\bm{I}_K-(\bm{B}_0^{-1}+\bm{X}^{\top}\bm{X})^{-1}\bm{X}^{\top}\bm{X}]\bm{\beta}_{0}+(\bm{B}_0^{-1}+\bm{X}^{\top}\bm{X})^{-1}\bm{X}^{\top}\bm{X}\hat{\bm{\beta}}$. Again, we see that the posterior mean is a weighted average between the prior mean, and the maximum likelihood estimator.
+
+The equality of variances of both approaches is as follows:
+\begin{align*}
+		Var[\bm{\beta}|\bm{y}]&
+		= \sigma^2(\bm{B}_{0}-\bm{B}_{0}\bm{X}^{\top}(\bm{X}\bm{B}_{0}\bm{X}^\top+\bm{I}_N)^{-1} \bm{X}\bm{B}_{0})\\
+		&=\sigma^2(\bm{B}_{0}-\bm{B}_{0}\bm{X}^{\top}(\bm{I}_N- \bm{I}_N\bm{X}(\bm{B}_{0}^{-1}+\bm{X}^{\top}\bm{I}_N\bm{X})^{-1}\bm{X}^{\top}\bm{I}_N)\bm{X}\bm{B}_{0})\\
+		&=\sigma^2(\bm{B}_{0}-\bm{B}_{0}\bm{X}^{\top}\bm{X}\bm{B}_{0}+ \bm{B}_{0}\bm{X}^{\top}\bm{X}(\bm{B}_{0}^{-1}+\bm{X}^{\top}\bm{X})^{-1}\bm{X}^{\top}\bm{X}\bm{B}_{0})\\
+		&=\sigma^2(\bm{B}_{0}-\bm{B}_{0}\bm{X}^{\top}\bm{X}\bm{B}_{0}+ \bm{B}_{0}\bm{X}^{\top}\bm{X}[\bm{I}_K-(\bm{B}_{0}^{-1}+\bm{X}^{\top}\bm{X})^{-1}\bm{B}_{0}^{-1}]\bm{B}_{0})\\
+		&=\sigma^2(\bm{B}_{0}-\bm{B}_{0}\bm{X}^{\top}\bm{X}(\bm{B}_{0}^{-1}+\bm{X}^{\top}\bm{X})^{-1})\\
+		&=\sigma^2(\bm{B}_{0}[\bm{I}_K-\bm{X}^{\top}\bm{X}(\bm{B}_{0}^{-1}+\bm{X}^{\top}\bm{X})^{-1}])\\
+		&=\sigma^2(\bm{B}_{0}[\bm{I}_K-(\bm{I}_K-\bm{B}_{0}^{-1}(\bm{B}_{0}^{-1}+\bm{X}^{\top}\bm{X})^{-1})])\\
+		&=\sigma^2(\bm{B}_{0}^{-1}+\bm{X}^{\top}\bm{X})^{-1},
+\end{align*}
+where the second equality uses the Woodbury matrix identity, the fourth equality uses $(\bm{D}+\bm{E})^{-1}\bm{D}=\bm{I}-(\bm{D}+\bm{E})^{-1}\bm{E}$, and the seventh equality uses $\bm{D}(\bm{D}+\bm{E})^{-1}=\bm{I}-\bm{E}(\bm{D}+\bm{E})^{-1}$.  
+
+Now, we calculate the posterior marginal distribution of $\bm{\beta}$ following the standard approach,
 
 \begin{align*}
 	\pi(\bm{\beta}|{\bf{y}},{\bf{X}}) & = \int_0^{\infty} \pi(\bm{\beta}, \sigma^2|{\bf{y}},{\bf{X}}) d\sigma^2 \\
