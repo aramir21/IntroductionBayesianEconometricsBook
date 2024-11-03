@@ -1,7 +1,9 @@
 \chapter{Time series models}\label{chap8}
-In this chapter, we provide a brief introduction to performing inference in time series models using a Bayesian framework. There is a large literature in time series in statistics and econometrics, and it would be impossible to present a good treatment in a few pages of an introductory book. However, there excellent books in Bayesian inference in time series, see for instance, \cite{west2006bayesian,petris2009dynamic,pole2018applied}.
+In this chapter, we provide a brief introduction to performing inference in time series models using a Bayesian framework. There is a large literature in time series in statistics and econometrics, and it would be impossible to present a good treatment in a few pages of an introductory book. However, there are excellent books in Bayesian inference in time series, see for instance, \cite{west2006bayesian,petris2009dynamic,pole2018applied}.
 
 A time series is a sequence of observations collected in chronological order, allowing us to track how variables change over time. However, it also introduces technical challenges, as we must account for statistical features such as autocorrelation and stationarity. Since time series data is time-dependent, we adjust our notation. Specifically, we use $t$ and $T$ instead of $i$ and $N$ to explicitly indicate time.
+
+Our starting point in this chapter is the \textit{state-space representation} of time series models. Much of the Bayesian inference literature in time series adopts this approach, as it allows dynamic systems to be modeled in a structured way. This representation provides modularity, flexibility, efficiency, and interpretability in complex models where the state evolves over time. It also enables the use of recursive estimation methods, such as the \textit{Kalman filter} for dynamic Gaussian linear models and the \textit{particle filter} (also known as \textit{sequential Monte Carlo}) for non-Gaussian and nonlinear state-space models. The latter method is especially useful for \textit{online} predictions or when there are data storage limitations. These inferential tools are based on the sequential updating process of Bayes' rule, where the posterior at time $t$ becomes the prior at time $t+1$ (see Equation \ref{equpdate}).
 
 Remember that we can run our GUI typing
 
@@ -16,7 +18,69 @@ Remember that we can run our GUI typing
 
 in the \textbf{R} package console or any \textbf{R} code editor, and once our GUI is deployed, select \textit{Time series Models}. However, users should see Chapter \ref{chapGUI} for details.
 
-\section{Autoregressive models}\label{sec81}
+\section{State-space representation}\label{sec81}
+A \textit{state-space model} is composed by of an \textit{unobservable state vector}  $\bm{\beta}_t \in \mathbb{R}^K$, and an \textit{observed} measure $\bm{Y}_t \in \mathbb{R}^M$, $t=1,2,\dots$ such that (i) $\bm{\beta}_t$ is a \textit{Markov process}, this is, $\pi(\bm{\beta}_t|\bm{\beta}_{1:t-1})=\pi(\bm{\beta}_t|\bm{\beta}_{t-1})$, all the information regarding $\bm{\beta}_t$ based on all its history up to $t-1$ is carried by $\bm{\beta}_{t-1}$, and (ii) $\bm{Y}_t$ is independent of $\bm{Y}_s$ conditional on $\bm{\beta}_t$, $t\neq s$ \cite[Chap.~2]{petris2009dynamic}.
+
+These assumptions imply that $\pi(\bm{\beta}_{0:t},\bm{y}_{1:t})=\pi(\bm{\beta}_0)\prod_{s=1}^{t}\pi(\bm{\beta}_s|\bm{\beta}_{s-1})\pi(\bm{y}_s|\bm{\beta}_s)$.\footnote{A \textit{state-space model} where the states are random variables taking discrete values is called \textit{hidden Markov model}.}
+
+There are three key aspects of \textit{state-space models}: \textit{filtering}, \textit{smoothing}, and \textit{forecasting}. In \textit{filtering}, we aim to estimate the current state given observations up to time $t$, specifically obtaining the density $\pi(\bm{\beta}_{s}|\bm{y}_{1:t})$ for $s = t$. In \textit{smoothing}, we conduct a retrospective analysis of the system, obtaining $\pi(\bm{\beta}_{s}|\bm{y}_{1:t})$ for $s < t$. In \textit{forecasting}, we forecast future observations by first obtaining $\pi(\bm{\beta}_{s}|\bm{y}_{1:t})$ as an intermediate step to compute $\pi(\bm{y}_{s}|\bm{y}_{1:t})$ for $s > t$. A valuable feature of these methods is that all these densities can be calculated recursively. \cite{petris2009dynamic} show the recursive equations in Propositions 2.1 (filtering), 2.3 (smoothing) and 2.5 (forecasting).
+
+An important class of \textit{state-space models} is the \textit{Gaussian linear state-space model}, also know as, \textit{dynamic linear model}:
+\begin{align*}
+	\bm{Y}_t&=\bm{X}_t\bm{\beta}_t+\bm{\mu}_t& \text{(Observation equations)}\\
+	\bm{\beta}_t&=\bm{G}_t\bm{\beta}_{t-1}+\bm{w}_t & \text{(States equations)},
+\end{align*}
+where $\bm{\beta}_0\sim N(\bm{b}_0,\bm{B}_0)$, $\bm{\mu}_t\sim N(\bm{0}, \bm{\Sigma}_t)$, $\bm{w}_t\sim N(\bm{0}, \bm{\Omega}_t)$, $\bm{\beta}_0$, $\bm{\mu}_t$ and $\bm{w}_t$ are independent, $\bm{X}_t$ and $\bm{G}_t$ are $M\times K$ and $K\times K$ known matrices. Observe that this assumptions implies that $\bm{Y}_t|\bm{\beta}_t\sim N(\bm{X}_t\bm{\beta}_t,\bm{\Sigma}_t)$, and $\bm{\beta}_t|\bm{\beta}_{t-1}\sim N(\bm{G}_t\bm{\beta}_{t-1},\bm{\Omega}_t)$.
+
+\cite{petris2009dynamic} show in Propositions 2.2, 2.4 and 2.6 the recursive equations to perform filtering, smoothing and forecasting in \textit{dynamic linear models} (\textit{Gaussian linear state-space models}), respectively. Preposition 2.2 shows the well-known Kalman filter, which allows to compute the predictive and filtering distributions in a forward way starting from $\bm{\beta}_0\sim N(\bm{b}_0,\bm{B}_0)$, then $\bm{\beta}_1|\bm{y}_1$, and proceeding recursively as new data arrives. Proposition 2.4 in \cite{petris2009dynamic} shows the Kalman smoother, which allows calculating in a backward way $\pi(\bm{\beta}_t|\bm{y}_{1:T})$ starting from $t=T-1$.
+
+Let's see the \textit{state-space} representation of the $ARMA(p,q)$ model $y_t=\sum_{s=1}^{p}\phi_jy_{t-s}+\sum_{s=1}^{q}\theta_s e_{t-s}+e_t$. Setting $r=\max \left\{p,q+1\right\}$, $\phi_s=0$ for $s>p$ and $\theta_s=0$ for $s>q$, and defining the matrices $\bm{X}=[1 \ 0 \ \dots \ 0]$, $\bm{R}=[1 \ \psi_1 \ \dots \ \psi_{r-1}]^{\top}$, both are $r$-dimensional vectors, 
+\begin{align*}
+	\bm{G}=\begin{bmatrix}
+		\phi_1 & 1 & 0 & \dots & 0\\
+		\phi_2 & 0 & 1 & \dots & 0\\
+		\vdots & \vdots & \ddots &  &\\
+		\phi_{r-1} & 0 & 0 & \dots & 1\\
+		\phi_r & 0 & 0 & \dots & 0\\
+	\end{bmatrix} = \begin{bmatrix}
+		\phi_1 & \vdots &  &  & \\
+		\phi_2 & \vdots &  & \bm{I}_{r-1}  & \\
+		\vdots & \vdots &  &  &\\
+		\dots & \dots & \dots & \dots & \dots\\
+		\phi_r & 0 & 0 & \dots & 0\\
+	\end{bmatrix},
+\end{align*} 
+which is a $r\times r$ dimensional matrix, and give the \textit{state} vector $\bm{\beta}_t=[\beta_{1,t} \ \beta_{2,t} \ \dots \ \beta_{r,t}]^{\top}$, the $ARMA$ model has the following representation:
+\begin{align*}
+	y_t&=\bm{X}\bm{\beta}_t\\
+	\bm{\beta}_t &= \bm{G}\bm{\beta}_{t-1}+\bm{R}e_{t}.
+\end{align*}
+
+This is a model where $\bm{\Sigma}_t=0$, and $\bm{\Omega}_t=\sigma^2\bm{R}\bm{R}^{\top}$ (see \cite{petris2009dynamic,chib1994bayes}).
+
+A nice advantage of the \textit{state-space} representation of the $ARMA$ model is that the evaluation of the likelihood can be performed efficiently using the recursive laws. Extensions to $ARIMA(p,d,q)$ models can be seen in \cite[Chap.~3]{petris2009dynamic}.\\
+
+\textbf{Example: $AR(2)$ process}
+
+Let's see the \textit{state-space} representation of a stationary $AR(2)$ process with intercept, that is, $y_t=\mu+\phi_1y_{t-1}+\phi_2y_{t-2}+e_t$, where $e_t\sim N(0,\sigma^2)$. Thus, $\mathbb{E}[y_t]=\frac{\mu}{1-\phi_1-\phi_2}$, and variance $Var[y_t]=\frac{\sigma^2(1-\phi_2)}{1-\phi_2-\phi_1^2-\phi_1^2\phi_2-\phi_2^2+\phi_2^3}$. 
+
+Setting  $\bm{X}=[1 \ 0]$, $\bm{R}=[1 \ 0]^{\top}$, $\bm{G}=\begin{bmatrix}
+	\phi_1 & 1\\
+	\phi_2 & 0 \\
+\end{bmatrix}$, $\bm{\beta}_t=[\beta_{1,t} \ \beta_{2,t}]^{\top}$, $\bm{\Sigma}_t=0$ and $\bm{\Omega}_t=\sigma^2$. Thus, we have
+\begin{align*}
+	y_t&=\bm{X}_t\bm{\beta}_t+\bm{\mu}_t& \text{(Observation equations)}\\
+	\bm{\beta}_t&=\bm{G}_t\bm{\beta}_{t-1}+\bm{w}_t & \text{(States equations)},
+\end{align*}  
+
+
+
+In addition, we can proof that setting $z_t=y_t-\bar{\mu}$, we have $z_t=\phi_1z_{t-1}+\phi_2z_{t-2}+e_t$ where $\mathbb{E}[z_t]=0$, and these are equivalent representations (see Exercise 1). 
+
+ and simulate this process to perform inference using this representation.
+
+
+\section{Autoregressive models}\label{sec82}
 
 Let's start with the linear Gaussian model with autorregresive errors,
 
@@ -45,7 +109,7 @@ Thus, collecting all observations $t=p+1,p+2,\dots,T$, we have $\bm{y}^*=\bm{X}^
 
 Assuming that $\bm{\beta}|\sigma\sim N(\bm{\beta}_0,\sigma^2\bm{B}_0)$, $\sigma^2\sim IG(\alpha_0/2,\delta_0/2)$ and $\bm{\phi}\sim N(\phi_0,\bm{\Phi}_0)\mathbbm{1}[\bm{\phi}\in S_{\phi}]$, where $S_{\bm{\phi}}$ is the stationary region of $\bm{\phi}=[\phi_1 \ \dots \ \phi_p]^{\top}$. Then, Equation \ref{eq3} implies that $\bm{\beta}|\sigma^2,\bm{\phi},\bm{y},\bm{X}\sim N(\bm{\beta}_n, \sigma^2{\bf{B}}_n)$, where $\bm{B}_n = (\bm{B}_0^{-1} + \bm{X}^{*\top}\bm{X}^{*})^{-1}$ and $\bm{\beta}_n = \bm{B}_n(\bm{B}_0^{-1}\bm{\beta}_0 + \bm{X}^{*\top}\bm{y}^{*})$. In addition, $\sigma^2|\bm{\beta},\bm{\phi},\bm{y},\bm{X}\sim IG(\alpha_n/2,\delta_n/2)$ where $\alpha_n=\alpha_0+T-p$ and $\delta_n=\delta_0+(\bm{y}^*-\bm{X}^{*}\bm{\beta})^{\top}(\bm{y}^*-\bm{X}^{*}\bm{\beta})+(\bm{\beta}-\bm{\beta}_0)\bm{B}_0^{-1}(\bm{\beta}-\bm{\beta}_0)$. Thus, the previous conditional posterior distributions imply that we can use a Gibbs sampling algorithm to perform inference of these parameters \cite{chib1993bayes}.
 
-We know from Equation \ref{eq1} that $\mu_t=y_t-\bm{x}_t^{\top}\bm{\beta}$, from Equation \ref{eq2} that $\mu_t=\phi_1\mu_{t-1}+\dots+\phi_p\mu_{t-p}+e_t$, $t=p+1,\dots,T$. In matrix notation $\bm{\mu}=\bm{U}\bm{\phi}+\bm{e}$, where $\bm{\mu}$ is a $T-p$ dimensional vector, $\bm{U}$ is a $(T-p)\times p$ matrix whose $t$-th row is $[\mu_{t-1} \ \dots \ \mu_{t-p}]$. Thus, the posterior distribution of $\bm{\phi}|\bm{\beta},\sigma^2,\bm{y},\bm{X}$ is $N(\bm{\phi}_n, \bm{\Phi}_n)\mathbbm{1}[\bm{\phi}\in S_{\bm{\phi}}]$, where $\bm{\Phi}_n=(\bm{\Phi}_0^{-1}+\sigma^{-2}\bm{U}^{\top}\bm{U})$ and $\bm{\phi}_n=\bm{\Phi}_n(\bm{\Phi}_0^{-1}\bm{\phi}_0+\sigma^{-2}\bm{U}^{\top}\bm{\mu})$ (see Exercise 1).
+We know from Equation \ref{eq1} that $\mu_t=y_t-\bm{x}_t^{\top}\bm{\beta}$, from Equation \ref{eq2} that $\mu_t=\phi_1\mu_{t-1}+\dots+\phi_p\mu_{t-p}+e_t$, $t=p+1,\dots,T$. In matrix notation $\bm{\mu}=\bm{U}\bm{\phi}+\bm{e}$, where $\bm{\mu}$ is a $T-p$ dimensional vector, $\bm{U}$ is a $(T-p)\times p$ matrix whose $t$-th row is $[\mu_{t-1} \ \dots \ \mu_{t-p}]$. Thus, the posterior distribution of $\bm{\phi}|\bm{\beta},\sigma^2,\bm{y},\bm{X}$ is $N(\bm{\phi}_n, \bm{\Phi}_n)\mathbbm{1}[\bm{\phi}\in S_{\bm{\phi}}]$, where $\bm{\Phi}_n=(\bm{\Phi}_0^{-1}+\sigma^{-2}\bm{U}^{\top}\bm{U})$ and $\bm{\phi}_n=\bm{\Phi}_n(\bm{\Phi}_0^{-1}\bm{\phi}_0+\sigma^{-2}\bm{U}^{\top}\bm{\mu})$ (see Exercise 2).
 
 Drawing from the model restricted to stationarity is straightforward: we simply sample from the multivariate normal distribution and discard draws that do not meet the stationarity condition. The proportion of draws that satisfy this restriction represents the conditional probability that the process is stationary.
 
@@ -53,56 +117,15 @@ Observe that the previous setting encompasses the particular relevant case  $y_t
 
 \textbf{Example: Residential water demand I}
 
+
+
+Let's assume that the log average quarterly demand of residential water follows an $ARIMA(1,1,1)$ process, that is, $\Delta\log(y_t)\sim ARMA(1,1)$.
+
+
 Let's use the data set provided by \cite{hassan2018effects} to estimate the demand of residential water in Medellín (Colombia). This a set ....
 
 A nice feature of Bayesian inference is its modular nature. This means we can break down a complex inferential problem into smaller, more manageable parts, this is, a ``divide and conquer" approach. This is possible due to the structure of conditional posterior distributions.  
    
-\section{State-space representation}\label{sec82}
-A \textit{state-space model} is composed by of an \textit{unobservable state vector}  $\bm{\beta}_t \in \mathbb{R}^K$, and an \textit{observed} measure $\bm{Y}_t \in \mathbb{R}^M$, $t=1,2,\dots$ such that (i) $\bm{\beta}_t$ is a \textit{Markov process}, this is, $\pi(\bm{\beta}_t|\bm{\beta}_{1:t-1})=\pi(\bm{\beta}_t|\bm{\beta}_{t-1})$, all the information regarding $\bm{\beta}_t$ based on all its history up to $t-1$ is carried by $\bm{\beta}_{t-1}$, and (ii) $\bm{Y}_t$ is independent of $\bm{Y}_s$ conditional on $\bm{\beta}_t$, $t\neq s$ \cite[Chap.~2]{petris2009dynamic}.
-
-These assumptions imply that $\pi(\bm{\beta}_{0:t},\bm{y}_{1:t})=\pi(\bm{\beta}_0)\prod_{s=1}^{t}\pi(\bm{\beta}_s|\bm{\beta}_{s-1})\pi(\bm{y}_s|\bm{\beta}_s)$.\footnote{A \textit{state-space model} where the states are random variables taking discrete values is called \textit{hidden Markov model}.}
-
-There are three key aspects of \textit{state-space models}: \textit{filtering}, \textit{smoothing}, and \textit{forecasting}. In \textit{filtering}, we aim to estimate the current state given observations up to time $t$, specifically obtaining the density $\pi(\bm{\beta}_{s}|\bm{y}_{1:t})$ for $s = t$. In \textit{smoothing}, we conduct a retrospective analysis of the system, obtaining $\pi(\bm{\beta}_{s}|\bm{y}_{1:t})$ for $s < t$. In \textit{forecasting}, we forecast future observations by first obtaining $\pi(\bm{\beta}_{s}|\bm{y}_{1:t})$ as an intermediate step to compute $\pi(\bm{y}_{s}|\bm{y}_{1:t})$ for $s > t$. A valuable feature of these methods is that all these densities can be calculated recursively. \cite{petris2009dynamic} show the recursive equations in Propositions 2.1 (filtering), 2.3 (smoothing) and 2.5 (forecasting).
-
-An important class of \textit{state-space models} is the \textit{Gaussian linear state-space model}, also know as, \textit{dynamic linear model}:
-\begin{align*}
-	\bm{Y}_t&=\bm{X}_t\bm{\beta}_t+\bm{\mu}_t& \text{(Observation equations)}\\
-	\bm{\beta}_t&=\bm{G}_t\bm{\beta}_{t-1}+\bm{w}_t & \text{(States equations)},
-\end{align*}
-where $\bm{\beta}_0\sim N(\bm{b}_0,\bm{B}_0)$, $\bm{\mu}_t\sim N(\bm{0}, \bm{\Sigma}_t)$, $\bm{w}_t\sim N(\bm{0}, \bm{\Omega}_t)$, $\bm{\beta}_0$, $\bm{\mu}_t$ and $\bm{w}_t$ are independent, $\bm{X}_t$ and $\bm{G}_t$ are $M\times K$ and $K\times K$ known matrices. Observe that this assumptions implies that $\bm{Y}_t|\bm{\beta}_t\sim N(\bm{X}_t\bm{\beta}_t,\bm{\Sigma}_t)$, and $\bm{\beta}_t|\bm{\beta}_{t-1}\sim N(\bm{G}_t\bm{\beta}_{t-1},\bm{\Omega}_t)$.
-
-\cite{petris2009dynamic} show in Propositions 2.2, 2.4 and 2.6 the recursive equations to perform filtering, smoothing and forecasting in \textit{dynamic linear models} (\textit{Gaussian linear state-space models}), respectively. Preposition 2.2 shows the well-known Kalman filter, which allows to compute the predictive and filtering distributions in a forward way starting from $\bm{\beta}_0\sim N(\bm{b}_0,\bm{B}_0)$, then $\bm{\beta}_1|\bm{y}_1$, and proceeding recursively as new data arrives. Proposition 2.4 in \cite{petris2009dynamic} shows the Kalman smoother, which allows calculating in a backward way $\pi(\bm{\beta}_t|\bm{y}_{1:T})$ starting from $t=T-1$.
-
-Let's see the \textit{state-space} representation of the $ARMA(p,q)$ model $y_t=\sum_{s=1}^{p}\phi_jy_{t-s}+\sum_{s=1}^{q}\theta_s e_{t-s}+e_t$. Setting $r=\max \left\{p,q+1\right\}$, $\phi_s=0$ for $s>p$ and $\theta_s=0$ for $s>q$, and defining the matrices $\bm{X}=[1 \ 0 \ \dots \ 0]$, $\bm{R}=[1 \ \psi_1 \ \dots \ \psi_{r-1}]^{\top}$ 
-\begin{align*}
-	\bm{G}=\begin{bmatrix}
-		\phi_1 & 1 & 0 & \dots & 0\\
-		\phi_2 & 0 & 1 & \dots & 0\\
-		\vdots & \vdots & \ddots &  &\\
-		 \phi_{r-1} & 0 & 0 & \dots & 1\\
-		 \phi_r & 0 & 0 & \dots & 0\\
-	\end{bmatrix} = \begin{bmatrix}
-	\phi_1 & \vdots &  &  & \\
-	\phi_2 & \vdots &  & \bm{I}_{r-1}  & \\
-	\vdots & \vdots &  &  &\\
-	\dots & \dots & \dots & \dots & \dots\\
-	\phi_r & 0 & 0 & \dots & 0\\
-\end{bmatrix}.
-\end{align*} 
-and give the \textit{state} vector $\bm{\beta}_t=[\beta_{1,t} \ \beta_{2,t} \ \dots \ \beta_{r,t}]^{\top}$, the $ARMA$ model has the following representation:
-\begin{align*}
-	y_t&=\bm{F}\bm{\beta}_t\\
-	\bm{\beta}_t &= \bm{G}\bm{\beta}_{t-1}+\bm{R}e_{t}.
-\end{align*}
-
-This is a model where $\bm{\Sigma}_t=0$, and $\bm{\Omega}_t=\sigma^2\bm{R}\bm{R}^{\top}$ (see \cite{petris2009dynamic,chib1994bayes}).
-
-A nice advantage of the \textit{state-space} representation of the $ARMA$ model is that the evaluation of the likelihood can be performed efficiently using the recursive laws. Extensions to $ARIMA(p,d,q)$ models can be seen in \cite[Chap.~3]{petris2009dynamic}.\\
-
-\textbf{Example: Residential water demand II}
-
-Let's assume that the log average quarterly demand of residential water follows an $ARIMA(1,1,1)$ process, that is, $\Delta\log(y_t)\sim ARMA(1,1)$.
-
 \section{Time varying parameters models}\label{sec83}
 
 Another alternative to handle temporal dependence in a linear regression is to think that the relationship between $y_t$ and $\bm{x}_t$ evolves over times. Then, we can use the \textit{state-space} representation to perform inference in a dynamic linear regression model:
@@ -113,7 +136,9 @@ Another alternative to handle temporal dependence in a linear regression is to t
 \end{align*}
 where $\bm{\beta}_0\sim N(\bm{b}_0,\bm{B}_0)$, $\bm{\mu}_t\sim N(\bm{0}, \sigma_t^2)$, $\bm{w}_t\sim N(\bm{0}, \text{diag}\left\{\omega_t^2\right\})$, $\bm{\beta}_0$, $\mu_t$ and $\bm{w}_t$ are independent, $\bm{x}_t$ is a $K$-dimensional vector.
 
-\textbf{Example: Residential water demand III}        
+\textbf{Example: Residential water demand III}
+
+Page 167 in \cite{petris2009dynamic} and page 161 in \cite{greenberg2012introduction}.        
      
 
 \section{Stochastic volatility models}\label{sec84}  
@@ -127,6 +152,8 @@ where $\bm{\beta}_0\sim N(\bm{b}_0,\bm{B}_0)$, $\bm{\mu}_t\sim N(\bm{0}, \sigma_
 \section{Exercises}\label{sec87}
 
 \begin{enumerate}
+	\item Show that in the $AR(2)$ stationary process, $y_t=\mu+\phi_1y_{t-1}+\phi_2y_{t-2}+e_t$, where $e_t\sim N(0,\sigma^2)$, $\mathbb{E}[y_t]=\frac{\mu}{1-\phi_1-\phi_2}$, and $Var[y_t]=\frac{\sigma^2(1-\phi_2)}{1-\phi_2-\phi_1^2-\phi_1^2\phi_2-\phi_2^2+\phi_2^3}$.
+	
 	\item Show that the posterior distribution of $\bm{\phi}|\bm{\beta},\sigma^2,\bm{y},\bm{X}$ in the model $y_t=\bm{x}_t^{\top}\bm{\beta}+\mu_t$ where $\phi(L)\mu_t=e_t$ and $e_t\stackrel{iid}{\sim}N(0,\sigma^2)$ is $N(\bm{\phi}_n, \bm{\Phi}_n)\mathbbm{1}[\bm{\phi}\in S_{\bm{\phi}}]$, where $\bm{\Phi}_n=(\bm{\Phi}_0^{-1}+\sigma^{-2}\bm{U}^{\top}\bm{U})$, $\bm{\phi}_n=\bm{\Phi}_n(\bm{\Phi}_0^{-1}\bm{\phi}_0+\sigma^{-2}\bm{U}^{\top}\bm{\mu})$, and $S_{\phi}$ is the stationary region of $\bm{\phi}$.
 	
 	
