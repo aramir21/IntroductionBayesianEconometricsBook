@@ -21,9 +21,9 @@ in the \textbf{R} package console or any \textbf{R} code editor, and once our GU
 \section{State-space representation}\label{sec81}
 A \textit{state-space model} is composed by of an \textit{unobservable state vector}  $\bm{\beta}_t \in \mathbb{R}^K$, and an \textit{observed} measure $\bm{Y}_t \in \mathbb{R}^M$, $t=1,2,\dots$ such that (i) $\bm{\beta}_t$ is a \textit{Markov process}, this is, $\pi(\bm{\beta}_t|\bm{\beta}_{1:t-1})=\pi(\bm{\beta}_t|\bm{\beta}_{t-1})$, all the information regarding $\bm{\beta}_t$ based on all its history up to $t-1$ is carried by $\bm{\beta}_{t-1}$, and (ii) $\bm{Y}_t$ is independent of $\bm{Y}_s$ conditional on $\bm{\beta}_t$, $t\neq s$ \cite[Chap.~2]{petris2009dynamic}.
 
-These assumptions imply that $\pi(\bm{\beta}_{0:t},\bm{y}_{1:t})=\pi(\bm{\beta}_0)\prod_{s=1}^{t}\pi(\bm{\beta}_s|\bm{\beta}_{s-1})\pi(\bm{y}_s|\bm{\beta}_s)$.\footnote{A \textit{state-space model} where the states are random variables taking discrete values is called \textit{hidden Markov model}.}
+These assumptions imply that $\pi(\bm{\beta}_{0:t},\bm{Y}_{1:t})=\pi(\bm{\beta}_0)\prod_{s=1}^{t}\pi(\bm{\beta}_s|\bm{\beta}_{s-1})\pi(\bm{Y}_s|\bm{\beta}_s)$.\footnote{A \textit{state-space model} where the states are random variables taking discrete values is called \textit{hidden Markov model}.}
 
-There are three key aspects of \textit{state-space models}: \textit{filtering}, \textit{smoothing}, and \textit{forecasting}. In \textit{filtering}, we aim to estimate the current state given observations up to time $t$, specifically obtaining the density $\pi(\bm{\beta}_{s}|\bm{y}_{1:t})$ for $s = t$. In \textit{smoothing}, we conduct a retrospective analysis of the system, obtaining $\pi(\bm{\beta}_{s}|\bm{y}_{1:t})$ for $s < t$. In \textit{forecasting}, we forecast future observations by first obtaining $\pi(\bm{\beta}_{s}|\bm{y}_{1:t})$ as an intermediate step to compute $\pi(\bm{y}_{s}|\bm{y}_{1:t})$ for $s > t$. A valuable feature of these methods is that all these densities can be calculated recursively. \cite{petris2009dynamic} show the recursive equations in Propositions 2.1 (filtering), 2.3 (smoothing) and 2.5 (forecasting).
+There are three key aspects of \textit{state-space models}: \textit{filtering}, \textit{smoothing}, and \textit{forecasting}. In \textit{filtering}, we aim to estimate the current state given observations up to time $t$, specifically obtaining the density $\pi(\bm{\beta}_{s}|\bm{y}_{1:t})$ for $s = t$. In \textit{smoothing}, we conduct a retrospective analysis of the system, obtaining $\pi(\bm{\beta}_{s}|\bm{y}_{1:t})$ for $s < t$. In \textit{forecasting}, we forecast future observations by first obtaining $\pi(\bm{\beta}_{s}|\bm{y}_{1:t})$ as an intermediate step to compute $\pi(\bm{Y}_{s}|\bm{y}_{1:t})$ for $s > t$. A valuable feature of these methods is that all these densities can be calculated recursively. \cite{petris2009dynamic} show the recursive equations in Propositions 2.1 (filtering), 2.3 (smoothing) and 2.5 (forecasting).
 
 An important class of \textit{state-space models} is the \textit{Gaussian linear state-space model}, also know as, \textit{dynamic linear model}:
 \begin{align*}
@@ -32,7 +32,33 @@ An important class of \textit{state-space models} is the \textit{Gaussian linear
 \end{align*}
 where $\bm{\beta}_0\sim N(\bm{b}_0,\bm{B}_0)$, $\bm{\mu}_t\sim N(\bm{0}, \bm{\Sigma}_t)$, $\bm{w}_t\sim N(\bm{0}, \bm{\Omega}_t)$, $\bm{\beta}_0$, $\bm{\mu}_t$ and $\bm{w}_t$ are independent, $\bm{X}_t$ and $\bm{G}_t$ are $M\times K$ and $K\times K$ known matrices. Observe that this assumptions implies that $\bm{Y}_t|\bm{\beta}_t\sim N(\bm{X}_t\bm{\beta}_t,\bm{\Sigma}_t)$, and $\bm{\beta}_t|\bm{\beta}_{t-1}\sim N(\bm{G}_t\bm{\beta}_{t-1},\bm{\Omega}_t)$.
 
-\cite{petris2009dynamic} show in Propositions 2.2, 2.4 and 2.6 the recursive equations to perform filtering, smoothing and forecasting in \textit{dynamic linear models} (\textit{Gaussian linear state-space models}), respectively. Preposition 2.2 shows the well-known Kalman filter, which allows to compute the predictive and filtering distributions in a forward way starting from $\bm{\beta}_0\sim N(\bm{b}_0,\bm{B}_0)$, then $\bm{\beta}_1|\bm{y}_1$, and proceeding recursively as new data arrives. Proposition 2.4 in \cite{petris2009dynamic} shows the Kalman smoother, which allows calculating in a backward way $\pi(\bm{\beta}_t|\bm{y}_{1:T})$ starting from $t=T-1$.
+Let $\bm{\beta}_{t-1}|\bm{y}_{1:t-1}\sim N(\bm{b}_{t-1},\bm{B}_{t-1})$, then, we can get the \textit{Kalman filter} by getting
+\begin{enumerate}
+	\item The one-step-ahead predictive distribution of $\bm{\beta}_t$ given $\bm{y}_{1:t-1}$ is $\bm{\beta}_t|\bm{y}_{1:t-1}\sim N(\bm{a}_t, \bm{R}_t)$, where $\bm{a}_t=\bm{G}_t\bm{b}_{t-1}$ and $\bm{R}_t=\bm{G}_t\bm{B}_{t-1}\bm{G}_t^{\top}+\bm{\Omega}_t$.
+	\item  The one-step-ahead predictive distribution of $\bm{Y}_t$ given $\bm{y}_{1:t-1}$ is $\bm{Y}_t|\bm{y}_{1:t-1}\sim N(\bm{f}_t, \bm{Q}_t)$, where $\bm{f}_t=\bm{X}_t\bm{a}_t$ and $\bm{Q}_t=\bm{X}_t\bm{R}_t\bm{X}_t^{\top}+\bm{\Sigma}_t$. 
+	\item The filtering distribution of $\bm{\beta}_t$ given $\bm{y}_{1:t}$ is $\bm{\beta}_t|\bm{y}_{1:t}\sim N(\bm{b}_t, \bm{B}_t)$, where $\bm{b}_t=\bm{a}_t+\bm{R}_t\bm{X}_t^{\top}\bm{Q}_t^{-1}\bm{e}_t$, $\bm{e}_t=\bm{Y}_t-\bm{f}_t$ (forecast error), and $\bm{B}_t=\bm{R}_t-\bm{R}_t\bm{X}_t^{\top}\bm{Q}_t^{-1}\bm{X}_t\bm{R}_t$.   
+\end{enumerate}    
+
+The formal proofs of these results can be found in \cite[Chap~2]{petris2009dynamic}. Just take into account that the logic of these results follow the proofs in the Gaussian linear model with conjugate family from Section \ref{sec43}. Take into account that the posterior distribution using information up to $t-1$ becomes the prior in $t$ (see Equation \ref{equpdate}, $\pi(\bm{\theta}|\mathbf{y}_{1:t})\propto p(y_{t}|\mathbf{y}_{1:t-1},\bm{\theta})\times \pi(\bm{\theta}|\mathbf{y}_{1:t-1})$). This is the updating process from  $\bm{\beta}_t|\bm{y}_{1:t-1}\sim N(\bm{a}_t, \bm{R}_t)$ to $\bm{\beta}_t|\bm{y}_{1:t}\sim N(\bm{b}_t, \bm{B}_t)$. In addition, remember the posterior mean and variance of the Gaussian linear model with conjugate family, $\bm{\beta}_{0}+\bm{B}_{0}\bm{X}^{\top}(\bm{X}\bm{B}_{0}\bm{X}^{\top}+ \bm{I}_N)^{-1}(\bm{y}-\bm{X}\bm{\beta}_{0})$ and $\sigma^2(\bm{B}_{0}-\bm{B}_{0}\bm{X}^{\top}(\bm{X}\bm{B}_{0}\bm{X}^{\top}+\bm{I}_N)^{-1} \bm{X}\bm{B}_{0}^{\top})$, respectively. When we compare these expressions to the ones in the filtering distribution, there are similarities regarding the role of the prior means ($\bm{a}_t$ and $\bm{\beta}_0$), the prior variances ($\bm{R}_t$ and $\bm{B}_0$), the predictive errors ($\bm{Y}_t-\bm{f}_t$ and $\bm{y}-\bm{X}\bm{\beta}_{0}$), and the variance of the predictive distribution of the dependent variable ($\bm{Q}_t$ and $\bm{X}\bm{B}_{0}\bm{X}^{\top}+\bm{I}_N$).\footnote{Remember that in the filtering setting the variance of the error in the observation equations is $\bm{\Sigma}$, whereas in the Gaussian linear model of Section \ref{sec43} is $\sigma^2\bm{I}_N$.}
+
+The \textit{Kalman filter} allows calculating recursively in a forward way $\pi(\bm{\beta}_t|\bm{y}_{1:t})$ from $\pi(\bm{\beta}_{t-1}|\bm{y}_{1:t-1})$ starting from $\pi(\bm{\beta}_0)$.
+
+Let $\bm{\beta}_{t+1}|\bm{y}_{1:T}\sim N(\bm{s}_{t+1},\bm{S}_{t+1})$, then we can get the \textit{Kalman smoother} by $\bm{\beta}_{t}|\bm{y}_{1:T}\sim N(\bm{s}_{t},\bm{S}_{t})$, where $\bm{s}_t=\bm{b}_t+\bm{B}_t\bm{G}_{t+1}^{\top}\bm{R}_{t+1}^{-1}(\bm{s}_{t+1}-\bm{a}_{t+1})$ and $\bm{S}_t=\bm{B}_t-\bm{B}_t\bm{G}_{t+1}^{\top}\bm{R}_{t+1}^{-1}(\bm{R}_{t+1}-\bm{S}_{t+1})\bm{R}_{t+1}^{-1}\bm{G}_{t+1}\bm{B}_{t}$. The proof can be found in \cite[Chap~2]{petris2009dynamic}. 
+
+Thus, we can calculate the \textit{Kalman smoother} starting from $t=T-1$, that is, $\bm{\beta}_{T}|\bm{y}_{1:T}\sim N(\bm{s}_{T},\bm{S}_{T})$. However, this is the filtering distribution at $T$, which means $\bm{s}_{T}=\bm{b}_{T}$ and $\bm{S}_{T}=\bm{B}_{T}$, and then, we should proceed recursively in a backward way.
+
+Finally, the forecasting recursion in the \textit{dynamic linear model}, given $\bm{a}_t(0)=\bm{b}_t$ and $\bm{R}_t(0)=\bm{B}_t$, $h\geq 1$, is given by 
+\begin{enumerate}
+	\item The forecasting distribution of $\bm{\beta}_{t+h}|\bm{y}_{1:t}$ is $N(\bm{a}_t(h),\bm{R}_t(h))$, where $\bm{a}_t(h)=\bm{G}_{t+h}\bm{a}_{t}(h-1)$ and $\bm{R}_t(h)=\bm{G}_{t+h}\bm{R}_t(h-1)\bm{G}_{t+h}^{\top}+\bm{\Omega}_{t+h}$.
+	\item The forecasting distribution $\bm{Y}_{t+h}|\bm{y}_{1:t}$ is $N(\bm{f}_t(h),\bm{Q}_t(h))$, where $\bm{f}_t(h)=\bm{X}_{t+h}\bm{a}_t(h)$ and $\bm{Q}_t(h)=\bm{X}_{t+h}\bm{R}_t(h)\bm{X}_{t+h}^{\top}+\bm{\Sigma}_{t+h}$.  
+\end{enumerate}
+The proof can be found in \cite[Chap~2]{petris2009dynamic}.
+
+These recursive equations allows to perform probabilistic forecasting $h$-steps-ahead for the state and observation equations.
+
+%Propositions 2.2, 2.4 and 2.6 the recursive equations to perform filtering, smoothing and forecasting in \textit{dynamic linear models} (\textit{Gaussian linear state-space models}), respectively. Preposition 2.2 shows the well-known \textit{Kalman filter}, which allows to compute the predictive and filtering distributions in a forward way starting from $\bm{\beta}_0\sim N(\bm{b}_0,\bm{B}_0)$, then $\bm{\beta}_1|\bm{y}_1$, and proceeding recursively as new data arrives. Proposition 2.4 in \cite{petris2009dynamic} shows the Kalman smoother, which allows calculating in a backward way $\pi(\bm{\beta}_t|\bm{y}_{1:T})$ starting from $t=T-1$.
+
+\subsection{ARMA processes}
 
 Let's see the \textit{state-space} representation of the $ARMA(p,q)$ model $y_t=\sum_{s=1}^{p}\phi_jy_{t-s}+\sum_{s=1}^{q}\theta_s e_{t-s}+e_t$. Setting $r=\max \left\{p,q+1\right\}$, $\phi_s=0$ for $s>p$ and $\theta_s=0$ for $s>q$, and defining the matrices $\bm{X}=[1 \ 0 \ \dots \ 0]$, $\bm{R}=[1 \ \psi_1 \ \dots \ \psi_{r-1}]^{\top}$, both are $r$-dimensional vectors, 
 \begin{align*}
@@ -62,22 +88,16 @@ A nice advantage of the \textit{state-space} representation of the $ARMA$ model 
 
 \textbf{Example: $AR(2)$ process}
 
-Let's see the \textit{state-space} representation of a stationary $AR(2)$ process with intercept, that is, $y_t=\mu+\phi_1y_{t-1}+\phi_2y_{t-2}+e_t$, where $e_t\sim N(0,\sigma^2)$. Thus, $\mathbb{E}[y_t]=\frac{\mu}{1-\phi_1-\phi_2}$, and variance $Var[y_t]=\frac{\sigma^2(1-\phi_2)}{1-\phi_2-\phi_1^2-\phi_1^2\phi_2-\phi_2^2+\phi_2^3}$. 
+Let's see the \textit{state-space} representation of a stationary $AR(2)$ process with intercept, that is, $y_t=\mu+\phi_1y_{t-1}+\phi_2y_{t-2}+e_t$, where $e_t\sim N(0,\sigma^2)$. Thus, $\mathbb{E}[y_t]=\frac{\mu}{1-\phi_1-\phi_2}$, and variance $Var[y_t]=\frac{\sigma^2(1-\phi_2)}{1-\phi_2-\phi_1^2-\phi_1^2\phi_2-\phi_2^2+\phi_2^3}$.
 
-Setting  $\bm{X}=[1 \ 0]$, $\bm{R}=[1 \ 0]^{\top}$, $\bm{G}=\begin{bmatrix}
+In addition, we can proof that setting $z_t=y_t-\bar{\mu}$, we have $z_t=\phi_1z_{t-1}+\phi_2z_{t-2}+e_t$ where $\mathbb{E}[z_t]=0$, and these are equivalent representations (see Exercise 1). Then, setting  $\bm{X}=[1 \ 0]$, $\bm{R}=[1 \ 0]^{\top}$, $\bm{G}=\begin{bmatrix}
 	\phi_1 & 1\\
 	\phi_2 & 0 \\
-\end{bmatrix}$, $\bm{\beta}_t=[\beta_{1,t} \ \beta_{2,t}]^{\top}$, $\bm{\Sigma}_t=0$ and $\bm{\Omega}_t=\sigma^2$. Thus, we have
+\end{bmatrix}$, $\bm{\beta}_t=[\beta_{1,t} \ \beta_{2,t}]^{\top}$, $\bm{\Sigma}_t=0$ and $\bm{\Omega}_t=\sigma^2$ we have
 \begin{align*}
-	y_t&=\bm{X}_t\bm{\beta}_t+\bm{\mu}_t& \text{(Observation equations)}\\
-	\bm{\beta}_t&=\bm{G}_t\bm{\beta}_{t-1}+\bm{w}_t & \text{(States equations)},
+	z_t&=\bm{X}_t\bm{\beta}_t+\bm{\mu}_t& \text{(Observation equations)}\\
+	\bm{\beta}_t&=\bm{G}_t\bm{\beta}_{t-1}+\bm{w}_t & \text{(States equations)}.
 \end{align*}  
-
-
-
-In addition, we can proof that setting $z_t=y_t-\bar{\mu}$, we have $z_t=\phi_1z_{t-1}+\phi_2z_{t-2}+e_t$ where $\mathbb{E}[z_t]=0$, and these are equivalent representations (see Exercise 1). 
-
- and simulate this process to perform inference using this representation.
 
 
 \section{Autoregressive models}\label{sec82}
