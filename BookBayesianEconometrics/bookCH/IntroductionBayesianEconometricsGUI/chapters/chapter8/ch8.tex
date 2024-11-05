@@ -35,8 +35,9 @@ where $\bm{\beta}_0\sim N(\bm{b}_0,\bm{B}_0)$, $\bm{\mu}_t\sim N(\bm{0}, \bm{\Si
 Let $\bm{\beta}_{t-1}|\bm{y}_{1:t-1}\sim N(\bm{b}_{t-1},\bm{B}_{t-1})$, then, we can get the \textit{Kalman filter} by getting
 \begin{enumerate}
 	\item The one-step-ahead predictive distribution of $\bm{\beta}_t$ given $\bm{y}_{1:t-1}$ is $\bm{\beta}_t|\bm{y}_{1:t-1}\sim N(\bm{a}_t, \bm{R}_t)$, where $\bm{a}_t=\bm{G}_t\bm{b}_{t-1}$ and $\bm{R}_t=\bm{G}_t\bm{B}_{t-1}\bm{G}_t^{\top}+\bm{\Omega}_t$.
-	\item  The one-step-ahead predictive distribution of $\bm{Y}_t$ given $\bm{y}_{1:t-1}$ is $\bm{Y}_t|\bm{y}_{1:t-1}\sim N(\bm{f}_t, \bm{Q}_t)$, where $\bm{f}_t=\bm{X}_t\bm{a}_t$ and $\bm{Q}_t=\bm{X}_t\bm{R}_t\bm{X}_t^{\top}+\bm{\Sigma}_t$. 
-	\item The filtering distribution of $\bm{\beta}_t$ given $\bm{y}_{1:t}$ is $\bm{\beta}_t|\bm{y}_{1:t}\sim N(\bm{b}_t, \bm{B}_t)$, where $\bm{b}_t=\bm{a}_t+\bm{R}_t\bm{X}_t^{\top}\bm{Q}_t^{-1}\bm{e}_t$, $\bm{e}_t=\bm{Y}_t-\bm{f}_t$ (forecast error), and $\bm{B}_t=\bm{R}_t-\bm{R}_t\bm{X}_t^{\top}\bm{Q}_t^{-1}\bm{X}_t\bm{R}_t$.   
+	\item  The one-step-ahead predictive distribution of $\bm{Y}_t$ given $\bm{y}_{1:t-1}$ is $\bm{Y}_t|\bm{y}_{1:t-1}\sim N(\bm{f}_t, \bm{Q}_t)$, where $\bm{f}_t=\bm{X}_t\bm{a}_t$ and $\bm{Q}_t=\bm{X}_t\bm{R}_t\bm{X}_t^{\top}+\bm{\Sigma}_t$.
+	\item The distribution of the one-step-ahead prediction error  $\bm{e}_t=\bm{Y}_t-\mathbb{E}[\bm{Y}_t|\bm{y}_{1:t-1}]=\bm{Y}_t-\bm{f}_t$ is $N(\bm{0}, \bm{Q}_t)$ \cite[Chap.~6]{shumway2017time}. 
+	\item The filtering distribution of $\bm{\beta}_t$ given $\bm{y}_{1:t}$ is $\bm{\beta}_t|\bm{y}_{1:t}\sim N(\bm{b}_t, \bm{B}_t)$, where $\bm{b}_t=\bm{a}_t+\bm{K}_t\bm{e}_t$, $\bm{K}_t=\bm{R}_t\bm{X}_t^{\top}\bm{Q}_t^{-1}$ is the \textit{Kalman gain}, and $\bm{B}_t=\bm{R}_t-\bm{R}_t\bm{X}_t^{\top}\bm{Q}_t^{-1}\bm{X}_t\bm{R}_t$.   
 \end{enumerate}    
 
 The formal proofs of these results can be found in \cite[Chap~2]{petris2009dynamic}. Just take into account that the logic of these results follow the proofs in the Gaussian linear model with conjugate family from Section \ref{sec43}. Take into account that the posterior distribution using information up to $t-1$ becomes the prior in $t$ (see Equation \ref{equpdate}, $\pi(\bm{\theta}|\mathbf{y}_{1:t})\propto p(y_{t}|\mathbf{y}_{1:t-1},\bm{\theta})\times \pi(\bm{\theta}|\mathbf{y}_{1:t-1})$). This is the updating process from  $\bm{\beta}_t|\bm{y}_{1:t-1}\sim N(\bm{a}_t, \bm{R}_t)$ to $\bm{\beta}_t|\bm{y}_{1:t}\sim N(\bm{b}_t, \bm{B}_t)$. In addition, remember the posterior mean and variance of the Gaussian linear model with conjugate family, $\bm{\beta}_{0}+\bm{B}_{0}\bm{X}^{\top}(\bm{X}\bm{B}_{0}\bm{X}^{\top}+ \bm{I}_N)^{-1}(\bm{y}-\bm{X}\bm{\beta}_{0})$ and $\sigma^2(\bm{B}_{0}-\bm{B}_{0}\bm{X}^{\top}(\bm{X}\bm{B}_{0}\bm{X}^{\top}+\bm{I}_N)^{-1} \bm{X}\bm{B}_{0}^{\top})$, respectively. When we compare these expressions to the ones in the filtering distribution, there are similarities regarding the role of the prior means ($\bm{a}_t$ and $\bm{\beta}_0$), the prior variances ($\bm{R}_t$ and $\bm{B}_0$), the predictive errors ($\bm{Y}_t-\bm{f}_t$ and $\bm{y}-\bm{X}\bm{\beta}_{0}$), and the variance of the predictive distribution of the dependent variable ($\bm{Q}_t$ and $\bm{X}\bm{B}_{0}\bm{X}^{\top}+\bm{I}_N$).\footnote{Remember that in the filtering setting the variance of the error in the observation equations is $\bm{\Sigma}$, whereas in the Gaussian linear model of Section \ref{sec43} is $\sigma^2\bm{I}_N$.}
@@ -56,7 +57,7 @@ The proof can be found in \cite[Chap~2]{petris2009dynamic}.
 
 These recursive equations allows to perform probabilistic forecasting $h$-steps-ahead for the state and observation equations.
 
-%Propositions 2.2, 2.4 and 2.6 the recursive equations to perform filtering, smoothing and forecasting in \textit{dynamic linear models} (\textit{Gaussian linear state-space models}), respectively. Preposition 2.2 shows the well-known \textit{Kalman filter}, which allows to compute the predictive and filtering distributions in a forward way starting from $\bm{\beta}_0\sim N(\bm{b}_0,\bm{B}_0)$, then $\bm{\beta}_1|\bm{y}_1$, and proceeding recursively as new data arrives. Proposition 2.4 in \cite{petris2009dynamic} shows the Kalman smoother, which allows calculating in a backward way $\pi(\bm{\beta}_t|\bm{y}_{1:T})$ starting from $t=T-1$.
+These results show how to use these recursive equations to perform filtering, smoothing and forecasting in \textit{dynamic linear models} (\textit{Gaussian linear state-space models}). Despite that these algorithms look simple, they suffer from numerical instability that lead to nonsymmetric and negative definite calculated covariance matrices. Thus, special care should be put when working with them.
 
 \subsection{ARMA processes}
 
@@ -82,7 +83,7 @@ which is a $r\times r$ dimensional matrix, and give the \textit{state} vector $\
 	\bm{\beta}_t &= \bm{G}\bm{\beta}_{t-1}+\bm{R}e_{t}.
 \end{align*}
 
-This is a model where $\bm{\Sigma}_t=0$, and $\bm{\Omega}_t=\sigma^2\bm{R}\bm{R}^{\top}$ (see \cite{petris2009dynamic,chib1994bayes}).
+This is a \textit{dynamic linear model} where $\bm{\Sigma}_t=0$, and $\bm{\Omega}_t=\sigma^2\bm{R}\bm{R}^{\top}$ (see \cite{petris2009dynamic,chib1994bayes}).
 
 A nice advantage of the \textit{state-space} representation of the $ARMA$ model is that the evaluation of the likelihood can be performed efficiently using the recursive laws. Extensions to $ARIMA(p,d,q)$ models can be seen in \cite[Chap.~3]{petris2009dynamic}.\\
 

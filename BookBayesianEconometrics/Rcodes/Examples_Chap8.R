@@ -1,8 +1,46 @@
+########################## Simulation exercise: Linear regression model ########################## 
+rm(list = ls())
+set.seed(010101)
+T <- 150
+x <- rnorm(T) 
+X <- cbind(1, x)
+B <- c(1, 0.5); sig2 <- 0.5^2; phi1 <- 0.5
+K <- length(B)
+e <- rnorm(T, mean = 0, sd = sig2^0.5)
+mu <- rnorm(T, mean = 0, sd = (sig2/(1-phi1^2))^0.5)
+for(t in 2:T){
+  mu[t] <- phi1*mu[t-1] + e[t]
+}
+y <- X%*%B + mu
+plot(y, type = "l")
+OLSreg <- lm(y  ~ x)
+SumOLSreg <- summary(OLSreg)
+SumOLSreg; SumOLSreg$sigma
+acf(OLSreg$residuals) 
+pacf(OLSreg$residuals)
+SSreg <- dlm::dlmModReg(x, dV = SumOLSreg$sigma^2, dW = rep(0, K), m0 = rep(0, K),
+                   C0 = diag(K))
+RegFilter <- dlm::dlmFilter(y, SSreg)
+RegFilter[["m"]][T+1,] # Posterior means coefficients
+# State spece model
+ModelReg <- function(par){
+  Mod <- dlm::dlmModReg(x, dV = exp(par[1]), dW = exp(par[2:3]), m0 = rep(0, K),
+                 C0 = diag(K))
+  return(Mod)
+}
+outMLEReg <- dlm::dlmMLE(y, parm = rep(0, 3), ModelReg)
+exp(outMLEReg$par)
+RegSmoth <- dlm::dlmSmooth(y, ModelReg(outMLEReg$par))
+plot(ts(RegSmoth$s[-1,1]))
+plot(ts(RegSmoth$s[-1,2]))
+
+
 ########################## Simulation exercise: AR(2) model ########################## 
 rm(list = ls())
 set.seed(010101)
 T <- 150
-mu <- 0.007; phi1 <- 0.5; phi2 <- 0.3; sig <- 0.035
+mu <- 0 # 0.007; 
+phi1 <- 0.5; phi2 <- 0.3; sig <- 0.035
 Ey <- mu/(1-phi1-phi2); Sigy <- sig*((1-phi2)/(1-phi2-phi1^2-phi2*phi1^2-phi2^2+phi2^3))^0.5 
 y <- rnorm(T, mean = Ey, sd = Sigy)
 e <- rnorm(T, mean = 0, sd = sig)
@@ -24,3 +62,17 @@ Postphi2 <- sf1[["stanfit"]]@sim[["samples"]][[1]][["ar0[2]"]][-c(1:burnin)]
 Postdraws <- cbind(Postmu, Postsig, Postphi1, Postphi2)
 summary(coda::mcmc(Postdraws))
 # print(sf1)
+
+
+modelAR2 <- function(par){
+  AR2 <- dlm::dlmModARMA(ar = par[1:2], sigma2 = exp(par[3]))
+  return(AR2)
+}
+init <- c(0, 0, 1.1)
+parMLE <- dlm::dlmMLE(y, init, modelAR2)
+parMLE$par; (exp(parMLE$par[3]))^0.5
+dlmAR2 <- modelAR2(parMLE$par)
+AR2FilterAR2 <- dlm::dlmFilter(y, dlmAR2)
+AR2SmoothAR2 <- dlm::dlmSmooth(AR2FilterAR2)
+ts.plot(cbind(y, AR2SmoothAR2$s[-1, 1]), col = 1 : 2)
+cbind(y, AR2FilterAR2[["m"]])
