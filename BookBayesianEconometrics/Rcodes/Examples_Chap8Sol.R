@@ -1,77 +1,34 @@
-########################## Application: Dynamic linear model ########################## 
+########################## Simulation exercise: Dynamic linear model ########################## 
 rm(list = ls())
 set.seed(010101)
-DataWater <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/16Water.csv", sep = ",", header = TRUE, quote = "")
-DataWater <- read.csv("C:/Users/aramir21/Desktop/Phillips.csv")
-attach(DataWater)
-Xt <- Unemploy[-1]
-K <- 2
-yt <- diff(Inflation)
-T <- length(yt)
-plot(yt, type = "l")
-plot(Xt, type = "l")
-RegLS <- lm(yt ~ Xt)
-SumRegLS <- summary(RegLS)
-SumRegLS; SumRegLS$sigma^2  
-# Recursive OLS
-Bp <- matrix(RegLS$coefficients, T, K, byrow = TRUE)
-S <- 20
-for(t in S:T){
-  RegLSt <- lm(yt[1:t] ~ Xt[1:t])
-  Bp[t,] <- RegLSt$coefficients 
+T <- 200
+x <- rnorm(T) 
+X <- cbind(1, x)
+B0 <- c(1, 0.5); sig2 <- 0.5^2
+K <- length(B0)
+e <- rnorm(T, mean = 0, sd = sig2^0.5)
+Omega <- diag(c(0.2, 0.1))
+w <- MASS::mvrnorm(T, c(0, 0), Omega) 
+Bt <- matrix(NA, T, K)
+Bt[1,] <- B0
+yt <- rep(NA, T) 
+yt[1] <- X[1,]%*%B0 + e[1]
+for(t in 2:T){
+  Bt[t,] <- Bt[t-1,] + w[t,]
+  yt[t] <- X[t,]%*%Bt[t,] + e[t]
 }
-plot(Bp[S:T,2], type = "l")
-VarBp <- var(Bp)
 # State spece model
 ModelReg <- function(par){
-  Mod <- dlm::dlmModReg(Xt, dV = exp(par[1]), dW = exp(par[2:(K+1)]), m0 = RegLS$coefficients,
-                        C0 = diag(c(1.37, 0.23)))
+  Mod <- dlm::dlmModReg(x, dV = exp(par[1]), dW = exp(par[2:3]), m0 = rep(0, K),
+                        C0 = diag(K))
   return(Mod)
 }
-MCMC <- 2000
-gibbsOut <- dlm::dlmGibbsDIG(yt, mod = dlm::dlmModReg(Xt),
-                            shape.y = 0.1, rate.y = 0.1,
-                            shape.theta = 0.1, rate.theta = 0.1,
-                            n.sample = MCMC,
-                            thin = 1, save.states = TRUE)
-
-B2t <- matrix(0, MCMC, T + 1)
-for(t in 1:(T+1)){
-  B2t[,t] <- gibbsOut[["theta"]][t,2,] 
-}
-
-Lims <- apply(B2t, 2, function(x){quantile(x, c(0.025, 0.975))})
-# Figure
-require(latex2exp) # LaTeX equations in figures
-xx <- c(1:(T+1), (T+1):1)
-yy <- c(Lims[1,], rev(Lims[2,]))
-plot   (xx, yy, type = "n", xlab = "Time", ylab = TeX("$\\beta_{t1}$"))
-polygon(xx, yy, col = "lightblue", border = "red")
-lines(colMeans(B2t), col = "red", lw = 2)
-title("State vector: Unemployment rate coefficient")
-
-
-summary(coda::mcmc(gibbsOut[["dV"]]))
-summary(coda::mcmc(gibbsOut[["dW"]]))
-
-library(fanplot)
-df <- as.data.frame(B2t)
-plot(NULL, main="Percentiles", xlim = c(1, T+1), ylim = c(-4, 1))
-fan(data = df)
-
-
-
-
-
-
-
-par01 <- log(SumRegLS$sigma^2); par023 <- log(diag(VarBp))
-outMLEReg <- dlm::dlmMLE(yt, parm = c(par01, par023), ModelReg)
+outMLEReg <- dlm::dlmMLE(yt, parm = rep(0, 3), ModelReg)
 exp(outMLEReg$par)
 RegSmoth <- dlm::dlmSmooth(yt, ModelReg(outMLEReg$par))
 SmoothB2 <- RegSmoth$s[-1,2]
 VarSmooth <- dlm::dlmSvd2var(u = RegSmoth[["U.S"]], RegSmoth[["D.S"]])
-SDVarSmoothB2 <- sapply(2:(T+1), function(t){VarSmooth[[t]][2,2]^0.5}) 
+SDVarSmoothB2 <- sapply(2:(T+1), function(t){VarSmooth[[t]][K,K]^0.5}) 
 LimInfB2 <- SmoothB2 - qnorm(0.975)*SDVarSmoothB2
 LimSupB2 <- SmoothB2 + qnorm(0.975)*SDVarSmoothB2
 # Figure
@@ -80,6 +37,7 @@ xx <- c(1:T, T:1)
 yy <- c(LimInfB2, rev(LimSupB2))
 plot   (xx, yy, type = "n", xlab = "Time", ylab = TeX("$\\beta_{t1}$"))
 polygon(xx, yy, col = "blue", border = "red")
+lines(Bt[,2], col = "black", lw = 2)
 lines(SmoothB2, col = "red", lw = 2)
 title("State vector: Slope parameter")
 
