@@ -46,7 +46,7 @@ require(latex2exp) # LaTeX equations in figures
 xx <- c(1:(T+1), (T+1):1)
 yy <- c(Lims[1,], rev(Lims[2,]))
 plot   (xx, yy, type = "n", xlab = "Time", ylab = TeX("$\\beta_{t1}$"))
-polygon(xx, yy, col = "lightblue", border = "red")
+polygon(xx, yy, col = "lightblue", border = "lightblue")
 lines(colMeans(B2t), col = "red", lw = 2)
 title("State vector: Unemployment rate coefficient")
 
@@ -56,8 +56,10 @@ summary(coda::mcmc(gibbsOut[["dW"]]))
 
 library(fanplot)
 df <- as.data.frame(B2t)
-plot(NULL, main="Percentiles", xlim = c(1, T+1), ylim = c(-4, 1))
+plot(NULL, main="Percentiles", xlim = c(1, T+1), ylim = c(-4, 1), xlab = "Time", ylab = TeX("$\\beta_{t1}$"))
 fan(data = df)
+lines(colMeans(B2t), col = "black", lw = 2) 
+
 
 
 

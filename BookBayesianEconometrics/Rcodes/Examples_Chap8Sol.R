@@ -1,7 +1,7 @@
 ########################## Simulation exercise: Dynamic linear model ########################## 
 rm(list = ls())
 set.seed(010101)
-T <- 200
+T <- 500
 x <- rnorm(T) 
 X <- cbind(1, x)
 B0 <- c(1, 0.5); sig2 <- 0.5^2
@@ -36,18 +36,55 @@ require(latex2exp) # LaTeX equations in figures
 xx <- c(1:T, T:1)
 yy <- c(LimInfB2, rev(LimSupB2))
 plot   (xx, yy, type = "n", xlab = "Time", ylab = TeX("$\\beta_{t1}$"))
-polygon(xx, yy, col = "blue", border = "red")
+polygon(xx, yy, col = "lightblue", border = "lightblue")
 lines(Bt[,2], col = "black", lw = 2)
 lines(SmoothB2, col = "red", lw = 2)
 title("State vector: Slope parameter")
 
+MCMC <- 2000
+gibbsOut <- dlm::dlmGibbsDIG(yt, mod = dlm::dlmModReg(x),
+                             shape.y = 0.1, rate.y = 0.1,
+                             shape.theta = 0.1, rate.theta = 0.1,
+                             n.sample = MCMC,
+                             thin = 1, save.states = TRUE)
+
+B2t <- matrix(0, MCMC, T + 1)
+for(t in 1:(T+1)){
+  B2t[,t] <- gibbsOut[["theta"]][t,2,] 
+}
+
+Lims <- apply(B2t, 2, function(x){quantile(x, c(0.025, 0.975))})
+# Figure
+require(latex2exp) # LaTeX equations in figures
+xx <- c(1:(T+1), (T+1):1)
+yy <- c(Lims[1,], rev(Lims[2,]))
+plot   (xx, yy, type = "n", xlab = "Time", ylab = TeX("$\\beta_{t1}$"))
+polygon(xx, yy, col = "lightblue", border = "lightblue")
+lines(colMeans(B2t), col = "red", lw = 2)
+lines(Bt[,2], col = "black", lw = 2)
+title("State vector: Slope parameter")
+
+
+summary(coda::mcmc(gibbsOut[["dV"]]))
+summary(coda::mcmc(gibbsOut[["dW"]]))
+
+library(fanplot)
+df <- as.data.frame(B2t)
+plot(NULL, main="Percentiles", xlim = c(1, T+1), ylim = c(-4, 8), xlab = "Time", ylab = TeX("$\\beta_{t1}$"))
+fan(data = df)
+lines(Bt[,2], col = "black", lw = 2) 
+
 
 library(fanplot)
 # empty plot
-plot(NULL, main="Percentiles", xlim = c(1, T), ylim = c(-3, 7))
+plot(NULL, main="Percentiles", xlim = c(1, T), ylim = c(-1, 7), xlab = "Time", ylab = )
 df <- as.data.frame(cbind(Time, SmoothB2, LimInfB2, LimSupB2))
 # add fan
 fan(data = df)
+
+plot(net, xlim=c(1975,2020), ylim=c(-100,300))
+fan(mm, type="interval", start=2013, 
+    anchor=net[time(net)==2012])
 
 
 
