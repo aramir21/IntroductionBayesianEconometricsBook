@@ -1,15 +1,14 @@
 ########################## Application: Dynamic linear model ########################## 
 rm(list = ls())
 set.seed(010101)
-DataWater <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/16Water.csv", sep = ",", header = TRUE, quote = "")
-DataWater <- read.csv("C:/Users/aramir21/Desktop/Phillips.csv")
-attach(DataWater)
-Xt <- Unemploy[-1]
-K <- 2
-yt <- diff(Inflation)
+DataIntRate <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/16INTDEF.csv", sep = ",", header = TRUE, quote = "")
+attach(DataIntRate)
+Xt <- cbind(diff(inf), diff(def))
+K <- dim(Xt)[2] + 1
+yt <- diff(i3)
 T <- length(yt)
-plot(yt, type = "l")
-plot(Xt, type = "l")
+# plot(yt, type = "l")
+# plot(Xt[,2], type = "l")
 RegLS <- lm(yt ~ Xt)
 SumRegLS <- summary(RegLS)
 SumRegLS; SumRegLS$sigma^2  
@@ -17,27 +16,27 @@ SumRegLS; SumRegLS$sigma^2
 Bp <- matrix(RegLS$coefficients, T, K, byrow = TRUE)
 S <- 20
 for(t in S:T){
-  RegLSt <- lm(yt[1:t] ~ Xt[1:t])
+  RegLSt <- lm(yt[1:t] ~ Xt[1:t,])
   Bp[t,] <- RegLSt$coefficients 
 }
-plot(Bp[S:T,2], type = "l")
+# plot(Bp[S:T,2], type = "l")
 VarBp <- var(Bp)
 # State spece model
 ModelReg <- function(par){
   Mod <- dlm::dlmModReg(Xt, dV = exp(par[1]), dW = exp(par[2:(K+1)]), m0 = RegLS$coefficients,
-                        C0 = diag(c(1.37, 0.23)))
+                        C0 = diag(VarBp))
   return(Mod)
 }
-MCMC <- 2000
+MCMC <- 12000; burnin <- 2000; thin <- 10
 gibbsOut <- dlm::dlmGibbsDIG(yt, mod = dlm::dlmModReg(Xt),
                             shape.y = 0.1, rate.y = 0.1,
                             shape.theta = 0.1, rate.theta = 0.1,
                             n.sample = MCMC,
-                            thin = 1, save.states = TRUE)
+                            thin = thin, save.states = TRUE)
 
-B2t <- matrix(0, MCMC, T + 1)
+B2t <- matrix(0, MCMC - burnin, T + 1)
 for(t in 1:(T+1)){
-  B2t[,t] <- gibbsOut[["theta"]][t,2,] 
+  B2t[,t] <- gibbsOut[["theta"]][t,3,-c(1:burnin)] 
 }
 
 Lims <- apply(B2t, 2, function(x){quantile(x, c(0.025, 0.975))})
@@ -48,17 +47,21 @@ yy <- c(Lims[1,], rev(Lims[2,]))
 plot   (xx, yy, type = "n", xlab = "Time", ylab = TeX("$\\beta_{t1}$"))
 polygon(xx, yy, col = "lightblue", border = "lightblue")
 lines(colMeans(B2t), col = "red", lw = 2)
-title("State vector: Unemployment rate coefficient")
+title("State vector: Inflation rate coefficient")
 
-
-summary(coda::mcmc(gibbsOut[["dV"]]))
-summary(coda::mcmc(gibbsOut[["dW"]]))
+dV <- coda::mcmc(gibbsOut[["dV"]][-c(1:burnin)])
+dW <- coda::mcmc(gibbsOut[["dW"]][-c(1:burnin),])
+summary(dV)
+summary(dW)
+plot(dV)
+plot(dW)
 
 library(fanplot)
 df <- as.data.frame(B2t)
-plot(NULL, main="Percentiles", xlim = c(1, T+1), ylim = c(-4, 1), xlab = "Time", ylab = TeX("$\\beta_{t1}$"))
+plot(NULL, main="Percentiles", xlim = c(1, T+1), ylim = c(-2, 1), xlab = "Time", ylab = TeX("$\\beta_{t1}$"))
 fan(data = df)
-lines(colMeans(B2t), col = "black", lw = 2) 
+lines(colMeans(B2t), col = "black", lw = 2)
+abline(h=0, col = "blue")
 
 
 
