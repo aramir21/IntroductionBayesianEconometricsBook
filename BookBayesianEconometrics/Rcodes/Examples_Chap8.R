@@ -96,37 +96,21 @@ ModelReg <- function(par){
   return(Mod)
 }
 MCMC <- 12000; burnin <- 2000; thin <- 10
-gibbsOut <- dlm::dlmGibbsDIG(yt, mod = dlm::dlmModReg(Xt),
-                            shape.y = 0.1, rate.y = 0.1,
-                            shape.theta = 0.1, rate.theta = 0.1,
-                            n.sample = MCMC,
-                            thin = thin, save.states = TRUE)
-
+gibbsOut <- dlm::dlmGibbsDIG(yt, mod = dlm::dlmModReg(Xt), a.y = SumRegLS$sigma^2, b.y = 10*SumRegLS$sigma^2, a.theta = max(diag(VarBp)), b.theta = 10*max(diag(VarBp)), n.sample = MCMC, thin = 5, save.states = TRUE)
 B2t <- matrix(0, MCMC - burnin, T + 1)
 for(t in 1:(T+1)){
   B2t[,t] <- gibbsOut[["theta"]][t,2,-c(1:burnin)] 
 }
-
 Lims <- apply(B2t, 2, function(x){quantile(x, c(0.025, 0.975))})
-# Figure
-require(latex2exp) # LaTeX equations in figures
-xx <- c(1:(T+1), (T+1):1)
-yy <- c(Lims[1,], rev(Lims[2,]))
-plot   (xx, yy, type = "n", xlab = "Time", ylab = TeX("$\\beta_{t1}$"))
-polygon(xx, yy, col = "lightblue", border = "lightblue")
-lines(colMeans(B2t), col = "red", lw = 2)
-title("State vector: Inflation rate coefficient")
-
 dV <- coda::mcmc(gibbsOut[["dV"]][-c(1:burnin)])
 dW <- coda::mcmc(gibbsOut[["dW"]][-c(1:burnin),])
 summary(dV)
 summary(dW)
 plot(dV)
 plot(dW)
-
 library(fanplot)
 df <- as.data.frame(B2t)
-plot(NULL, main="Percentiles", xlim = c(1, T+1), ylim = c(-2, 1), xlab = "Time", ylab = TeX("$\\beta_{t1}$"))
+plot(NULL, main="Percentiles", xlim = c(1, T+1), ylim = c(-1, 2), xlab = "Time", ylab = TeX("$\\beta_{t1}$"))
 fan(data = df)
 lines(colMeans(B2t), col = "black", lw = 2)
 abline(h=0, col = "blue")
