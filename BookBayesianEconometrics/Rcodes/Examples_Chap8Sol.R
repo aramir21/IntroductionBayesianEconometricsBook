@@ -1,72 +1,36 @@
 ########################## Simulation exercise: Dynamic linear model ########################## 
-rm(list = ls())
-set.seed(010101)
-T <- 500
-x <- rnorm(T) 
-X <- cbind(1, x)
-B0 <- c(1, 0.5); sig2 <- 0.5^2
-K <- length(B0)
+rm(list = ls()); set.seed(010101)
+T <- 100; sig2 <- 0.5^2; r <- 0.5; sigW2 <- sig2*r
+x <- rnorm(T, mean = 1, sd = 0.1*sig2^0.5) 
 e <- rnorm(T, mean = 0, sd = sig2^0.5)
-Omega <- diag(c(0.2, 0.1))
-w <- MASS::mvrnorm(T, c(0, 0), Omega) 
-Bt <- matrix(NA, T, K)
-Bt[1,] <- B0
+w <- rnorm(T, mean = 0, sd = sigW2^0.5)
+K <- 1 
+Bt <- matrix(NA, T, K); Bt[1] <- 1
 yt <- rep(NA, T) 
-yt[1] <- X[1,]%*%B0 + e[1]
+yt[1] <- x[1]*Bt[1] + e[1]
 for(t in 2:T){
-  Bt[t,] <- Bt[t-1,] + w[t,]
-  yt[t] <- X[t,]%*%Bt[t,] + e[t]
+  Bt[t,] <- Bt[t-1,] + w[t]
+  yt[t] <- x[t]*Bt[t] + e[t]
 }
 # State spece model
 ModelReg <- function(par){
-  Mod <- dlm::dlmModReg(x, dV = exp(par[1]), dW = exp(par[2:3]), m0 = rep(0, K),
-                        C0 = diag(K))
+  Mod <- dlm::dlmModReg(x, dV = exp(par[1]), dW = exp(par[2]), m0 = rep(1, K),
+                        C0 = sigW2*diag(K), addInt = FALSE)
   return(Mod)
 }
-outMLEReg <- dlm::dlmMLE(yt, parm = rep(0, 3), ModelReg)
-exp(outMLEReg$par)
-RegSmoth <- dlm::dlmSmooth(yt, ModelReg(outMLEReg$par))
-SmoothB2 <- RegSmoth$s[-1,2]
-VarSmooth <- dlm::dlmSvd2var(u = RegSmoth[["U.S"]], RegSmoth[["D.S"]])
-SDVarSmoothB2 <- sapply(2:(T+1), function(t){VarSmooth[[t]][K,K]^0.5}) 
-LimInfB2 <- SmoothB2 - qnorm(0.975)*SDVarSmoothB2
-LimSupB2 <- SmoothB2 + qnorm(0.975)*SDVarSmoothB2
-# Figure
-require(latex2exp) # LaTeX equations in figures
-xx <- c(1:T, T:1)
-yy <- c(LimInfB2, rev(LimSupB2))
-plot   (xx, yy, type = "n", xlab = "Time", ylab = TeX("$\\beta_{t1}$"))
-polygon(xx, yy, col = "lightblue", border = "lightblue")
-lines(Bt[,2], col = "black", lw = 2)
-lines(SmoothB2, col = "red", lw = 2)
-title("State vector: Slope parameter")
+sig2New <- sig2*25
+RegFilter1 <- dlm::dlmFilter(yt, ModelReg(c(sig2New, sig2New*0.5)))
+ytfil1 <- RegFilter1[["m"]][-1]
+RegFilter2 <- dlm::dlmFilter(yt, ModelReg(c(sig2New, sig2New*0.1)))
+ytfil2 <- RegFilter2[["m"]][-1]
+Time <- 1:T
+df1 <- as.data.frame(cbind(Time,yt, ytfil1, ytfil2))
+library(ggplot2)
+ggplot(df1, aes(x=Time)) +
+  geom_line(aes(y=yt), colour="black", linewidth=1, linetype=1) +
+  geom_line(aes(y=ytfil1), colour="green", linewidth=1, alpha=0.9, linetype=2) +
+  geom_line(aes(y=ytfil2), color="blue", linewidth=1, alpha=0.9, linetype=3)
 
-MCMC <- 2000
-gibbsOut <- dlm::dlmGibbsDIG(yt, mod = dlm::dlmModReg(x),
-                             shape.y = 0.1, rate.y = 0.1,
-                             shape.theta = 0.1, rate.theta = 0.1,
-                             n.sample = MCMC,
-                             thin = 1, save.states = TRUE)
-
-B2t <- matrix(0, MCMC, T + 1)
-for(t in 1:(T+1)){
-  B2t[,t] <- gibbsOut[["theta"]][t,2,] 
-}
-
-Lims <- apply(B2t, 2, function(x){quantile(x, c(0.025, 0.975))})
-# Figure
-require(latex2exp) # LaTeX equations in figures
-xx <- c(1:(T+1), (T+1):1)
-yy <- c(Lims[1,], rev(Lims[2,]))
-plot   (xx, yy, type = "n", xlab = "Time", ylab = TeX("$\\beta_{t1}$"))
-polygon(xx, yy, col = "lightblue", border = "lightblue")
-lines(colMeans(B2t), col = "red", lw = 2)
-lines(Bt[,2], col = "black", lw = 2)
-title("State vector: Slope parameter")
-
-
-summary(coda::mcmc(gibbsOut[["dV"]]))
-summary(coda::mcmc(gibbsOut[["dW"]]))
 
 library(fanplot)
 df <- as.data.frame(B2t)

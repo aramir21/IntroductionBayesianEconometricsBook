@@ -1,3 +1,71 @@
+########################## Simulation exercise: Dynamic linear model ########################## 
+rm(list = ls()); set.seed(010101)
+T <- 200; sig2 <- 0.5^2
+x <- rnorm(T, mean = 1, sd = 1) 
+X <- cbind(1, x); B0 <- c(1, 0.5)
+K <- length(B0)
+e <- rnorm(T, mean = 0, sd = sig2^0.5)
+Omega <- diag(c(0.2, 0.1))
+w <- MASS::mvrnorm(T, c(0, 0), Omega)
+Bt <- matrix(NA, T, K); Bt[1,] <- B0
+yt <- rep(NA, T) 
+yt[1] <- X[1,]%*%B0 + e[1]
+yt[1] <- x[1]*Bt[1] + e[1]
+for(t in 2:T){
+  Bt[t,] <- Bt[t-1,] + w[t,]
+  yt[t] <- X[t,]%*%Bt[t,] + e[t]
+}
+RegLS <- lm(yt ~ x)
+SumRegLS <- summary(RegLS)
+SumRegLS; SumRegLS$sigma^2  
+Bp <- matrix(RegLS$coefficients, T, K, byrow = TRUE)
+S <- 20
+for(t in S:T){
+  RegLSt <- lm(yt[1:t] ~ x[1:t])
+  Bp[t,] <- RegLSt$coefficients 
+}
+# plot(Bp[S:T,2], type = "l")
+VarBp <- var(Bp)
+
+# State spece model
+ModelReg <- function(par){
+  Mod <- dlm::dlmModReg(x, dV = exp(par[1]), dW = exp(par[2:3]), m0 = RegLS$coefficients,
+                        C0 = VarBp)
+  return(Mod)
+}
+outMLEReg <- dlm::dlmMLE(yt, parm = rep(0, K+1), ModelReg)
+exp(outMLEReg$par)
+RegFilter <- dlm::dlmFilter(yt, ModelReg(outMLEReg$par))
+RegSmoth <- dlm::dlmSmooth(yt, ModelReg(outMLEReg$par))
+SmoothB2 <- RegSmoth$s[-1,2]
+VarSmooth <- dlm::dlmSvd2var(u = RegSmoth[["U.S"]], RegSmoth[["D.S"]])
+SDVarSmoothB2 <- sapply(2:(T+1), function(t){VarSmooth[[t]][K,K]^0.5}) 
+LimInfB2 <- SmoothB2 - qnorm(0.975)*SDVarSmoothB2
+LimSupB2 <- SmoothB2 + qnorm(0.975)*SDVarSmoothB2
+# Gibbs
+MCMC <- 2000; burnin <- 1000
+gibbsOut <- dlm::dlmGibbsDIG(yt, mod = dlm::dlmModReg(x), a.y = SumRegLS$sigma^2, b.y = 10*SumRegLS$sigma^2, a.theta = max(diag(VarBp)), b.theta = 10*max(diag(VarBp)), n.sample = MCMC, thin = 5, save.states = TRUE)
+B2t <- matrix(0, MCMC - burnin, T + 1)
+for(t in 1:(T+1)){
+  B2t[,t] <- gibbsOut[["theta"]][t,2,-c(1:burnin)] 
+}
+Lims <- apply(B2t, 2, function(x){quantile(x, c(0.025, 0.975))})
+summary(coda::mcmc(gibbsOut[["dV"]]))
+summary(coda::mcmc(gibbsOut[["dW"]]))
+# Figure
+require(latex2exp) # LaTeX equations in figures
+xx <- c(1:(T+1), (T+1):1)
+yy <- c(Lims[1,], rev(Lims[2,]))
+plot   (xx, yy, type = "n", xlab = "Time", ylab = TeX("$\\beta_{t2}$"))
+polygon(xx, yy, col = "lightblue", border = "lightblue")
+xxML <- c(1:T, T:1)
+yyML <- c(LimInfB2, rev(LimSupB2))
+polygon(xxML, yyML, col = "blue", border = "blue")
+lines(colMeans(B2t), col = "red", lw = 2)
+lines(Bt[,2], col = "black", lw = 2)
+lines(SmoothB2, col = "green", lw = 2)
+title("State vector: Slope parameter")
+
 ########################## Application: Dynamic linear model ########################## 
 rm(list = ls())
 set.seed(010101)
@@ -36,7 +104,7 @@ gibbsOut <- dlm::dlmGibbsDIG(yt, mod = dlm::dlmModReg(Xt),
 
 B2t <- matrix(0, MCMC - burnin, T + 1)
 for(t in 1:(T+1)){
-  B2t[,t] <- gibbsOut[["theta"]][t,3,-c(1:burnin)] 
+  B2t[,t] <- gibbsOut[["theta"]][t,2,-c(1:burnin)] 
 }
 
 Lims <- apply(B2t, 2, function(x){quantile(x, c(0.025, 0.975))})

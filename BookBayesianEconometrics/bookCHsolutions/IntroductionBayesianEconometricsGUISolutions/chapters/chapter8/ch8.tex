@@ -3,6 +3,58 @@
 \section{Solutions of Exercises}\label{sec81}
 \begin{enumerate}[leftmargin=*]
 	
+	\item Simulate the \textit{dynamic linear model} assuming $X_t\sim N(1, 0.1\sigma^2)$, $w_t\sim N(0, 0.5\sigma^2)$, $\mu_t\sim N(0, \sigma^2)$, $\beta_0=1$, ${B}_0=0.5\sigma^2$, $\sigma^2=0.25$, and ${G}_t=1$, $t=1,\dots,100$. Then, perform the filtering recursion fixing $\Sigma=25\times 0.25$, $\Omega_1=0.5\Sigma$ (high signal-to-noise ratio) and  $\Omega_2=0.1\Sigma$ (low signal-to-noise ratio). Plot and compare the results. 	
+	
+	\textbf{Answer}
+	
+	The following code shows how to perform this simulation and perform the filtering recursion using the \textit{dlm} package in \textbf{R}. 
+	
+	\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+		fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+		\textit{R code. Simulation: Scenarios signal-to-noise ratio}
+		\begin{VF}
+			\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+T <- 100; sig2 <- 0.5^2; r <- 0.5; sigW2 <- sig2*r
+x <- rnorm(T, mean = 1, sd = 0.1*sig2^0.5) 
+e <- rnorm(T, mean = 0, sd = sig2^0.5)
+w <- rnorm(T, mean = 0, sd = sigW2^0.5)
+K <- 1 
+Bt <- matrix(NA, T, K); Bt[1] <- 1
+yt <- rep(NA, T) 
+yt[1] <- x[1]*Bt[1] + e[1]
+for(t in 2:T){
+	Bt[t,] <- Bt[t-1,] + w[t]
+	yt[t] <- x[t]*Bt[t] + e[t]
+}
+# State spece model
+ModelReg <- function(par){
+	Mod <- dlm::dlmModReg(x, dV = exp(par[1]), dW = exp(par[2]), m0 = rep(1, K),
+	C0 = sigW2*diag(K), addInt = FALSE)
+	return(Mod)
+}
+sig2New <- sig2*25
+RegFilter1 <- dlm::dlmFilter(yt, ModelReg(c(sig2New, sig2New*0.5)))
+ytfil1 <- RegFilter1[["m"]][-1]
+RegFilter2 <- dlm::dlmFilter(yt, ModelReg(c(sig2New, sig2New*0.1)))
+ytfil2 <- RegFilter2[["m"]][-1]
+Time <- 1:T
+df1 <- as.data.frame(cbind(Time,yt, ytfil1, ytfil2))
+library(ggplot2)
+ggplot(df1, aes(x=Time)) +
+geom_line(aes(y=yt), colour="black", linewidth=1, linetype=1) +
+geom_line(aes(y=ytfil1), colour="green", linewidth=1, alpha=0.9, linetype=2) +
+geom_line(aes(y=ytfil2), color="blue", linewidth=1, alpha=0.9, linetype=3)\end{lstlisting}
+		\end{VF}
+	\end{tcolorbox}
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter8/figures/SignaToNoise.png}
+	\caption[List of figure caption goes here]{Signal-to-noise ratio: Dynamic linear model.}\label{fig1}
+\end{figure} 
+
+Figure \ref{fig1} shows the results of the filtering recursion. We see in this figure that the filtered recursion associated with the high signal-to-noise ratio (green dashed line) follows closer the data than the low signal-to-noise ratio scenario (blue dotted line). We see that the latter is smoother as it gives more weight to the prior mean, which takes into account historical information.
+
 	\item Show that in the $AR(2)$ stationary process, $y_t=\mu+\phi_1y_{t-1}+\phi_2y_{t-2}+e_t$, where $e_t\sim N(0,\sigma^2)$, $\mathbb{E}[y_t]=\frac{\mu}{1-\phi_1-\phi_2}$, and $Var[y_t]=\frac{\sigma^2(1-\phi_2)}{1-\phi_2-\phi_1^2-\phi_1^2\phi_2-\phi_2^2+\phi_2^3}$.
 	
 	\textbf{Answer}
@@ -42,14 +94,5 @@ The conditional posterior distribution can be got as follows:
 		&\propto\exp\left\{-\frac{1}{2}[(\bm{\phi}-\bm{\phi}_n)^{\top}\bm{\Phi}_n^{-1}(\bm{\phi}-\bm{\phi}_n)]\right\}, 
 	\end{align*}
 where $\bm{\Phi}_n=(\sigma^{-2}\bm{U}^{\top}\bm{U}+\bm{\Phi}_0^{-1})^{-1}$ and $\bm{\phi}_n=\bm{\Phi}_n(\sigma^{-2}\bm{U}^{\top}\bm{\mu}+\bm{\Phi}_0^{-1}\bm{\phi}_0)$. The last expression is the kernel of a multivariate normal distribution with mean $\bm{\phi}_n$ and variance matrix $\bm{\Phi}_n$.   
-	
-	\begin{tcolorbox}[enhanced,width=4.67in,center upper,
-		fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-		\textit{R code. Name}
-		\begin{VF}
-			\begin{lstlisting}[language=R]
-	shiny::runGitHub("besmarter/BSTApp", launch.browser = T)\end{lstlisting}
-		\end{VF}
-	\end{tcolorbox} 
 	
 \end{enumerate}
