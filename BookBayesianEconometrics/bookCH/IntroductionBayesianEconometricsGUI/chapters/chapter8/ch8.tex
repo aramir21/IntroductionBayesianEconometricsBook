@@ -282,16 +282,25 @@ abline(h=0, col = "blue")
 \end{figure}
 
 
-We can extend the \textit{dynamic linear model} to take into account time invariant location parameters. In particular, we follow \cite{de1995simulation}, who propose the \textit{simulation smoother}. This algorithm overcomes some shortcomings of the FFBS algorithm, such as slow convergence and computational overhead. We focus on the case $M=1$, 
+We can extend the \textit{dynamic linear model} with random walk states to take into account time invariant location parameters. In particular, we follow \cite{de1995simulation}, who propose the \textit{simulation smoother}. This algorithm overcomes some shortcomings of the FFBS algorithm, such as slow convergence and computational overhead. We focus on the case $M=1$, 
 \begin{align}
-	{Y}_t&=\bm{z}_t^{\top}\bm{\alpha}+\bm{x}_t^{\top}\bm{\beta}_t+\bm{T}_t\bm{\epsilon}_t,& t=1,2,\dots,T. & \text{   (Observation equation)}\nonumber\\
-	\bm{\beta}_t&=\bm{G}_t\bm{\beta}_{t-1}+\bm{H}_t\bm{\epsilon}_t, & t=0,1,\dots,T. & \text{   (States equations)}\label{DeJongSt},
+	{Y}_t&=\bm{z}_t^{\top}\bm{\alpha}+\bm{x}_t^{\top}\bm{\beta}_t+\bm{h}_t^{\top}\bm{\epsilon}_t,& t=1,2,\dots,T. & \text{   (Observation equation)}\label{DeJongObs}\\
+	\bm{\beta}_t&=\bm{\beta}_{t-1}+\bm{H}_t\bm{\epsilon}_t, & t=1,2,\dots,T. & \text{   (States equations)}\label{DeJongSt},
 \end{align}
-where $\bm{\beta}_0=\bm{0}$ and $\bm{\epsilon}_t\sim N(\bm{0}_{1+K},\sigma^2\bm{I}_{1+K})$.
+where $\bm{z}_t$ and $\bm{x}_t$ are $L$-dimensional and $K$-dimensional vectors of regressors associated with time-invariant and time-varying parameters, respectively, $\bm{h}_t$ is a vector of dimension $1+K$, $\bm{H}_t$ is a matrix of dimension $K\times 1+K$, $\bm{\beta}_0=\bm{0}$ and $\bm{\epsilon}_t\sim N(\bm{0}_{1+K},\sigma^2\bm{I}_{1+K})$.
 
-Observe that this specification encompasses Equations \ref{eq1Obs} and \ref{eq1St} setting $\bm{\epsilon}_t=[\mu_t \ \bm{\omega}_t^{\top}]^{\top}$, $\bm{T}_t=[1 \ 0 \ \dots \ 0]$, $\bm{H}_t=[\bm{0}_K \ \bm{U}_{K\times K}]$ such that $\text{diag}\left\{\omega_1^2 \ \dots \ \omega_K^2\right\}=\sigma^2\bm{U}\bm{U}^{\top}$, $\bm{\alpha}=\bm{0}$, $\bm{G}_t=\bm{I}_K$, and $\bm{T}_t\bm{H}_t^{\top}=\bm{0}_{K}$.
+Observe that this specification encompasses Equations \ref{eq1Obs} and \ref{eq1St} setting $\bm{\epsilon}_t=[\mu_t \ \bm{\omega}_t^{\top}]^{\top}$, $\bm{h}_t=[1 \ 0 \ \dots \ 0]$, $\bm{H}_t=[\bm{0}_K \ \bm{U}_{K\times K}]$ such that $\text{diag}\left\{\omega_1^2 \ \dots \ \omega_K^2\right\}=\sigma^2\bm{U}\bm{U}^{\top}$, $\bm{\alpha}=\bm{0}$, and $\bm{h}_t\bm{H}_t^{\top}=\bm{0}_{K}$.
 
-The nice idea of \cite{de1995simulation} was to propose an efficient algorithm to get draws from $\bm{\eta}_t=\bm{F}_t\bm{\epsilon}_t$, where the most common choice is $\bm{F}_t=\bm{H}_t$, which means drawing samples from the state perturbation, and then, recovering the states from Equation \ref{DeJongSt} and $\bm{\beta}_0=\bm{0}$.  
+The nice idea of \cite{de1995simulation} was to propose an efficient algorithm to get draws from $\bm{\eta}_t=\bm{F}_t\bm{\epsilon}_t$, where the most common choice is $\bm{F}_t=\bm{H}_t$, which means drawing samples from the perturbations of the states, and then, recovering the states from Equation \ref{DeJongSt} and $\bm{\beta}_0=\bm{0}$. In fact, \cite{de1995simulation} present a more general version of the \textit{state space model} that the one presented here. 
+
+Using the system given by Equations \ref{DeJongObs} and \ref{DeJongSt}, $\bm{F}_t=\bm{H}_t$ and $\bm{h}_t\bm{H}_t^{\top}=\bm{0}_{K}$, the \textit{filtering} recursions are given by $e_t=Y_t-\bm{z}_t^{\top}\bm{\alpha}-\bm{x}_t^{\top}\bm{b}_{t-1}$, ${q}_t=\bm{x}_t^{\top}\bm{B}_{t-1}\bm{x}_t+\bm{h}_t^{\top}\bm{h}_t$, $\bm{K}_t=\bm{B}_{t-1}\bm{x}_tq_t^{-1}$, $\bm{b}_t=\bm{b}_{t-1}+\bm{K}_t e_t$, and $\bm{B}_t=\bm{B}_{t-1}-\bm{B}_{t-1}\bm{x}_t\bm{K}_t^{\top}+\bm{H}_t\bm{H}_t^{\top}$. This is a particular case of the \textit{Kalman filter} given before (see system 2 in \cite{de1995simulation}).
+
+\begin{align*}
+	e_t=Y_t-\bm{z}_t^{\top}\bm{\alpha}-\bm{x}_t^{\top}\bm{b}_t, \ {q}_t=\bm{x}_t^{\top}\bm{R}_{t}\bm{x}_t+\bm{h}_t^{\top}\bm{h}_t, \ \bm{K}_t=\bm{G}_t\bm{R}_t\bm{x}_tq_t^{-1}, \\
+	\bm{b}_t=\bm{G}_t\bm{b}_{t-1}+\bm{K}_t e_t, \ \bm{B}_t=\bm{G}_t\bm{B}_{t-1}(\bm{G}_t-\bm{K}_t\bm{x}_t^{\top})^{\top}+\bm{H}_t\bm{H}_t^{\top},\\ 
+	\bm{\Lambda}_t=\bm{H}_t\bm{H}_t^{\top}, \ \bm{C}_t=\bm{\Lambda}_t-\bm{\Lambda}_t\bm{M}_t\bm{\Lambda}_t^{\top}, \ \bm{\xi}_t\sim N(\bm{0}_K,\sigma^2\bm{C}_t),\\
+	\bm{V}_t=\bm{\Lambda}_t\bm{M}_t(\bm{G}_t-\bm{K}_t\bm{X}_t), \ \bm{r}_{t-1}=\bm{X}_t^{\top}
+\end{align*}
 
      
 

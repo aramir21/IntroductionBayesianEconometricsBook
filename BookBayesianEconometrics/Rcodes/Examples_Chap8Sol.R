@@ -31,6 +31,59 @@ ggplot(df1, aes(x=Time)) +
   geom_line(aes(y=ytfil1), colour="green", linewidth=1, alpha=0.9, linetype=2) +
   geom_line(aes(y=ytfil2), color="blue", linewidth=1, alpha=0.9, linetype=3)
 
+########################## Kalman filter recursion ##########################
+rm(list = ls()); set.seed(010101)
+T <- 100; sig2 <- 1; r <- 0.5; sigW2 <- sig2*r
+xt <- rnorm(T, mean = 1, sd = 0.1*sig2^0.5) 
+e <- rnorm(T, mean = 0, sd = sig2^0.5)
+w <- rnorm(T, mean = 0, sd = sigW2^0.5)
+K <- 1 
+Bt <- matrix(NA, T, K); Bt[1] <- 0
+yt <- rep(NA, T) 
+yt[1] <- xt[1]*Bt[1] + e[1]
+for(t in 2:T){
+  Bt[t,] <- Bt[t-1,] + w[t]
+  yt[t] <- xt[t]*Bt[t] + e[t]
+}
+
+KFR <- function(y, x, b, B, Omega, sig2){
+  e <- as.numeric(y - t(x)%*%b) # Error
+  R <- B + Omega
+  q <- as.numeric(t(x)%*%R%*%x + sig2)
+  K <- (R%*%x)/q
+  bt <- b + K*e
+  Bt <- R - R%*%x%*%t(x)%*%R/q
+  Result <- list(bt = bt, Bt = Bt) 
+  return(Result)
+}
+t <- 1
+KFresb <- list(); KFresB <- list()
+b0 <- 0; B0 <- sigW2
+for(t in 1:T){
+  # y = yt[t]; x = xt[t]; b = b0; B = B0; Omega = sigW2; sig2 = sig2
+  KFrest <- KFR(y = yt[t], x = xt[t], b = b0, B = B0, Omega = sigW2, sig2 = sig2)
+  b0 <- KFrest[["bt"]]; B0 <- KFrest[["Bt"]]
+  KFresb[[t]] <- b0; KFresB[[t]] <- B0 
+}
+ModelReg <- function(par){
+  Mod <- dlm::dlmModReg(xt, dV = exp(par[1]), dW = exp(par[2]), m0 = rep(0, K),
+                        C0 = sigW2*diag(K), addInt = FALSE)
+  return(Mod)
+}
+RegFilter1 <- dlm::dlmFilter(yt, ModelReg(c(sig2, sigW2)))
+plot(Bt, type = "l")
+lines(unlist(KFresb), type = "l", col = "red")
+lines(RegFilter1[["m"]][-1], type = "l", col = "blue")
+
+
+
+
+
+
+
+
+
+
 
 library(fanplot)
 df <- as.data.frame(B2t)
