@@ -55,6 +55,91 @@ geom_line(aes(y=ytfil2), color="blue", linewidth=1, alpha=0.9, linetype=3)\end{l
 
 Figure \ref{fig1} shows the results of the filtering recursion. We see in this figure that the filtered recursion associated with the high signal-to-noise ratio (green dashed line) follows closer the data than the low signal-to-noise ratio scenario (blue dotted line). We see that the latter is smoother as it gives more weight to the prior mean, which takes into account historical information.
 
+\item Simulate the \textit{dynamic linear model} $y_t=\beta_t x_t + \mu_t$, $\beta_t=\beta_{t-1}+w_t$, where $x_t\sim N(1, 0.1\sigma^2)$, $w_t\sim N(0, 0.5\sigma^2)$, $\mu_t\sim N(0, \sigma^2)$, $\beta_0=0$, $B_0=0.5\sigma^2$, and $\sigma^2=1$, $t=1,\dots,100$. Perform the filtering and smoothing recursions from scratch. 	
+
+\textbf{Answer}
+
+The following code shows how to perform this simulation and perform the filtering recursion from scratch in \textbf{R}. 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation: Filtering and smoothing recursions from scratch}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+T <- 100; sig2 <- 1; r <- 0.5; sigW2 <- sig2*r
+xt <- rnorm(T, mean = 1, sd = 0.1*sig2^0.5) 
+e <- rnorm(T, mean = 0, sd = sig2^0.5)
+w <- rnorm(T, mean = 0, sd = sigW2^0.5)
+K <- 1; Bt <- matrix(NA, T, K); Bt[1] <- 0
+yt <- rep(NA, T); yt[1] <- xt[1]*Bt[1] + e[1]
+for(t in 2:T){
+	Bt[t,] <- Bt[t-1,] + w[t]
+	yt[t] <- xt[t]*Bt[t] + e[t]
+}
+# Filtering
+KFR <- function(y, x, b1, B1, Omega, sig2){
+	e <- as.numeric(y - t(x)%*%b1) # Error
+	R <- B1 + Omega
+	q <- as.numeric(t(x)%*%R%*%x + sig2)
+	K <- (R%*%x)/q
+	bt <- b1 + K*e
+	Bt <- R - R%*%x%*%t(x)%*%R/q
+	Result <- list(bt = bt, Bt = Bt) 
+	return(Result)
+}
+KFresb <- list(); KFresB <- list()
+b0 <- 0; B0 <- sigW2
+for(t in 1:T){
+	KFrest <- KFR(y = yt[t], x = xt[t], b1 = b0, B1 = B0, Omega = sigW2, sig2 = sig2)
+	b0 <- KFrest[["bt"]]; B0 <- KFrest[["Bt"]]
+	KFresb[[t]] <- b0; KFresB[[t]] <- B0 
+}
+ModelReg <- function(par){
+	Mod <- dlm::dlmModReg(xt, dV = exp(par[1]), dW = exp(par[2]), m0 = rep(0, K),
+	C0 = sigW2*diag(K), addInt = FALSE)
+	return(Mod)
+}
+RegFilter1 <- dlm::dlmFilter(yt, ModelReg(c(sig2, sigW2)))
+plot(Bt, type = "l")
+lines(unlist(KFresb), type = "l", col = "red")
+lines(RegFilter1[["m"]][-1], type = "l", col = "blue")
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation: Filtering and smoothing recursions from scratch}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+# Smoothing 
+BSR <- function(b, B, slead, Slead, Omega){
+	b = bfilter[t]; B = Bfilter[t]; slead = slead; Slead = slead; Omega = sigW2
+	R1 <- B + Omega
+	s <- b + B%*%solve(R1)%*%(slead - b)
+	S <- B - B%*%solve(R1)%*%(R1 - Slead)%*%solve(R1)%*%B
+	Result <- list(st = s, St = S) 
+	return(Result)
+}
+bfilter <- unlist(KFresb); Bfilter <- unlist(KFresB)
+slead <- bfilter[T]; Slead <- Bfilter[T]
+smooth <- rep(slead, T); Smooth <- rep(Slead, T);  
+for(t in (T-1):1){
+	BSRrest <- BSR(b = bfilter[t], B = Bfilter[t], slead = slead, Slead = Slead, Omega = sigW2)
+	slead <- BSRrest[["st"]]; Slead <- BSRrest[["st"]]
+	smooth[t] <- slead
+}
+RegSmoth <- dlm::dlmSmooth(yt, ModelReg(c(sig2, sigW2)))
+VarSmooth <- dlm::dlmSvd2var(u = RegSmoth[["U.S"]], RegSmoth[["D.S"]])
+SDVarSmoothB2 <- sapply(2:(T+1), function(t){VarSmooth[[t]][K,K]^0.5}) 
+plot(Bt, type = "l")
+lines(smooth, type = "l", col = "orange")
+lines(RegSmoth[["s"]][-1], type = "l", col = "green")
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
 	\item Show that in the $AR(2)$ stationary process, $y_t=\mu+\phi_1y_{t-1}+\phi_2y_{t-2}+e_t$, where $e_t\sim N(0,\sigma^2)$, $\mathbb{E}[y_t]=\frac{\mu}{1-\phi_1-\phi_2}$, and $Var[y_t]=\frac{\sigma^2(1-\phi_2)}{1-\phi_2-\phi_1^2-\phi_1^2\phi_2-\phi_2^2+\phi_2^3}$.
 	
 	\textbf{Answer}
