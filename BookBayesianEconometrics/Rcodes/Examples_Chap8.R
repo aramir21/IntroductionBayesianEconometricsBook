@@ -11,8 +11,12 @@ Bt <- matrix(NA, T, K); Bt[1,] <- B0
 yt <- rep(NA, T) 
 yt[1] <- X[1,]%*%B0 + e[1]
 yt[1] <- x[1]*Bt[1] + e[1]
-for(t in 2:T){
-  Bt[t,] <- Bt[t-1,] + w[t,]
+for(t in 1:T){
+  if(t == 1){
+    Bt[t,] <- w[t,]
+  }else{
+    Bt[t,] <- Bt[t-1,] + w[t,]
+  }
   yt[t] <- X[t,]%*%Bt[t,] + e[t]
 }
 RegLS <- lm(yt ~ x)
@@ -115,7 +119,130 @@ fan(data = df)
 lines(colMeans(B2t), col = "black", lw = 2)
 abline(h=0, col = "blue")
 
+########################## Kalman filter recursion DeJong-Shepard 1995 and Bayesian inference ##########################
+rm(list = ls()); set.seed(010101)
+T <- 200; sig2 <- 1; tau <- 2; sigW2 <- sig2/tau^2
+xt <- rnorm(T, mean = 1, sd = 2*sig2^0.5)
+zt <- rnorm(T, mean = 1, sd = 1*sig2^0.5)
+alpha <- 0.5
+e <- MASS::mvrnorm (T, mu = c(0, 0), Sigma = sig2*diag(2))
+K <- 1
+h1 <- matrix(c(1, 0), K + 1, 1); h2 <- matrix(c(0, 1/tau), K + 1, 1); t(h1)%*%h2
+e1 <- e%*%h1; e2 <- e%*%h2; var(e1); var(e2)
+Bt <- matrix(NA, T, K); Bt[1] <- 0
+yt <- rep(NA, T) 
+yt[1] <- zt[1]*alpha + xt[1]*Bt[1] + e1[1]
+for(t in 1:T){
+  if(t == 1){
+    Bt[t,] <- e2[t]
+  }else{
+    Bt[t,] <- Bt[t-1,] + e2[t] 
+  }
+  yt[t] <- zt[t]*alpha + xt[t]*Bt[t] + e1[t]
+}
+plot(Bt, type = "l")
+plot(yt, type = "l")
 
+KFRDS <- function(y, z, x, b, B, alpha){
+  e <- as.numeric(y - z*alpha - t(x)%*%b) # Error
+  q <- as.numeric(t(x)%*%B%*%x + t(h1)%*%h1)
+  K <- (B%*%x)/q
+  bt <- b + K*e
+  Bt <- B - B%*%x%*%t(K) + t(h2)%*%h2
+  Result <- list(bt = bt, Bt = Bt, et = e, Kt = K, qt = q) 
+  return(Result)
+}
+b0 <- 0; B0 <- sigW2
+# y = yt[t]; x = xt[t]; b = b0; B = B0; sig2 = sig2; z = zt[t]; alpha = alpha
+KFDSresb <- list(); KFDSresB <- list()
+KFDSresE <- list(); KFDSresK <- list(); KFDSresQ <- list() 
+for(t in 1:T){
+  KFDSrest <- KFRDS(y = yt[t], z = zt[t], x = xt[t], b = b0, B = B0, alpha = alpha)
+  b0 <- KFDSrest[["bt"]]; B0 <- KFDSrest[["Bt"]]
+  KFDSresb[[t]] <- b0; KFDSresB[[t]] <- B0 
+  KFDSresE[[t]] <- KFDSrest[["et"]]; KFDSresK[[t]] <- KFDSrest[["Kt"]]; KFDSresQ[[t]] <- KFDSrest[["qt"]]  
+}
+ModelReg <- function(par){
+  Mod <- dlm::dlmModReg(xt, dV = exp(par[1]), dW = exp(par[2]), m0 = rep(0, K),
+                        C0 = sigW2*diag(K), addInt = FALSE)
+  return(Mod)
+}
+RegFilter1 <- dlm::dlmFilter(yt - alpha*zt, ModelReg(c(sig2, sigW2)))
+
+KFR <- function(y, x, b, B, Omega, sig2){
+  e <- as.numeric(y - t(x)%*%b) # Error
+  R <- B + Omega
+  q <- as.numeric(t(x)%*%R%*%x + sig2)
+  K <- (R%*%x)/q
+  bt <- b + K*e
+  Bt <- R - R%*%x%*%t(x)%*%R/q
+  Result <- list(bt = bt, Bt = Bt) 
+  return(Result)
+}
+# t <- 1
+KFresb <- list(); KFresB <- list()
+b0 <- 0; B0 <- sigW2
+for(t in 1:T){
+  # y = yt[t]; x = xt[t]; b = b0; B = B0; Omega = sigW2; sig2 = sig2
+  KFrest <- KFR(y = yt[t] - zt[t]*alpha, x = xt[t], b = b0, B = B0, Omega = sigW2, sig2 = sig2)
+  b0 <- KFrest[["bt"]]; B0 <- KFrest[["Bt"]]
+  KFresb[[t]] <- b0; KFresB[[t]] <- B0 
+}
+
+plot(Bt, type = "l")
+lines(unlist(KFDSresb), type = "l", col = "red")
+lines(unlist(KFresb), type = "l", col = "green")
+lines(RegFilter1[["m"]][-1], type = "l", col = "blue")
+
+BSRDS <- function(r, M, Q, e, K, x){
+  Lambda <- t(h2)%*%h2 
+  C <- Lambda - Lambda%*%M%*%t(Lambda)
+  xi <- rnorm(1, 0, sd = (sig2*C)^0.5)
+  L <- 1 - K*x
+  V <- Lambda%*%M%*%L
+  rtl <- x*e/Q + t(L)*r - t(V)%*%solve(C)%*%xi
+  Mtl <- x%*%t(x)/Q + t(L)%*%M%*%L + t(V)%*%solve(C)%*%V
+  eta <- Lambda%*%r + xi
+  Result <- list(rtl = rtl, Mtl = Mtl, etat = eta)
+  return(Result)
+}
+et <- unlist(KFDSresE); Qt <- unlist(KFDSresQ); Kt <- unlist(KFDSresK)
+rT <- 0; MT <- 0
+BSRDSreseta <- rep(0, T); BSRDSresetaMean <- rep(0, T)  
+# t <- T - 1
+for(t in (T-1):1){
+  BSRDSrest <- BSRDS(r = rT, M = MT, Q = Qt[t+1], e = et[t+1], K = Kt[t+1], x = xt[t+1])
+  rT <- BSRDSrest[["rtl"]]; MT <- BSRDSrest[["Mtl"]]
+  BSRDSreseta[t+1] <- BSRDSrest[["etat"]] 
+}
+Bt1DS <- rep(0,T)
+for(t in 2:T){
+  Bt1DS[t] <- Bt1DS[t-1] + BSRDSreseta[t]
+}
+RegSmoth <- dlm::dlmSmooth(yt - alpha*zt, ModelReg(c(sig2, sigW2)))
+plot(Bt, type = "l")
+lines(RegSmoth[["s"]][-1], type = "l", col = "purple")
+lines(Bt1DS, type = "l", col = "orange")
+PostSig2 <- function(bbt, alpha, tau2){
+  an <- T*(K + 1) + alpha0
+  term1 <- diff(bbt)
+  term2 <- c(yt - alpha*zt - xt*bbt)
+  dn <- delta0 + sum(term1^2)*tau2  + sum(term2^2)
+  sig2 <- invgamma::rinvgamma(1, shape = an/2, rate = dn/2)
+  return(sig2)
+}
+PostSig2(bbt = Bt, alpha = alpha, tau2 = tau^2)
+PosAlpha <- function(bbt, sig2, tau2){
+  An <- solve(A0i + sig2^(-1)*t(zt)%*%zt)
+  term <- yt-xt*bbt
+  an <- An%*%(A0i%*%a0 + sig2^(-1)*t(zt)%*%term)
+  Alpha <- MASS::mvrnorm(1, an, An)
+  return(Alpha)
+}
+# Hyperparameter
+alpha0 <- 1; delta0 <- 1
+a0 <- 0; A0 <- 1; A0i <- 1/A0
+PosAlpha(bbt = Bt, sig2 = sig2, tau2 = tau^2)
 
 
 

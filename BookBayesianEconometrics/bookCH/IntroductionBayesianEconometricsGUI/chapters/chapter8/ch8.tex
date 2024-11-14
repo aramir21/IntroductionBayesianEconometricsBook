@@ -87,15 +87,15 @@ These results show how to use these recursive equations to perform filtering, sm
 
 In addition, this set up assumes that the $\bm{\Sigma}_t$ and $\bm{\Omega}_t$ are known. However, this is no the case in most situations. Thus, we should estimate them. One option is to perform maximum likelihood estimation. However, this approach does not take into account the uncertainty associated with the fact that $\bm{\Sigma}_t$ and $\bm{\Omega}_t$ are unknown when their estimates are \textit{plug in} the \textit{filtering} and \textit{smoothing} recursions. On the other hand, we can use a Bayesian approach, and perform the recursions associated with each posterior draw of the unknown parameters. Thus, we take into account their uncertainty.
 
-The posterior distribution of the system is
+The point of departure is the posterior distribution, such that
 \begin{align*}
-	\pi(\bm{\theta},\bm{\beta}_0,\dots,\bm{\beta}_T|\bm{y}, \bm{X}, \bm{G})&=\pi(\bm{\beta}_0|\bm{\theta})\pi(\bm{\theta})\prod_{s=1}^{t}\pi(\bm{\beta}_s|\bm{\beta}_{s-1},\bm{\theta})\pi(\bm{y}_s|\bm{\beta}_s,\bm{\theta}),
+	\pi(\bm{\theta},\bm{\beta}_0,\dots,\bm{\beta}_T|\bm{y}, \bm{X}, \bm{G})&\propto\pi(\bm{\beta}_0|\bm{\theta})\pi(\bm{\theta})\prod_{t=1}^{T}\pi(\bm{\beta}_t|\bm{\beta}_{t-1},\bm{\theta})\pi(\bm{y}_t|\bm{\beta}_t,\bm{\theta}),
 \end{align*} 
 where $\bm{\theta}$ is the vector of unknown parameters.
 
 We can compute $\pi(\bm{\beta}_s,\bm{\theta})=\pi(\bm{\beta}_s|\bm{y}_{1:t},\bm{\theta})\pi(\bm{\theta}|\bm{y}_{1:t})$, for $s=t$ (\textit{filtering}), $s<t$ (\textit{smoothing}), and $s>t$ (\textit{forecasting}). The marginal posterior distribution of the states is $\pi(\bm{\beta}_s|\bm{y}_{1:t})=\int_{\bm{\Theta}}\pi(\bm{\beta}_s|\bm{y}_{1:t},\bm{\theta})\pi(\bm{\theta}|\bm{y}_{1:t})d\bm{\theta}$.
 
-We can use the Gibbs sampling algorithm to get the posterior draws in the \textit{dynamic linear model} assuming conjugate families. In particular, let's see the univariate case with random walk states, 
+We can use the Gibbs sampling algorithm to get the posterior draws in the \textit{dynamic linear model} assuming conjugate families. In particular, let's see the univariate case with \textit{random walk states}, 
 \begin{align}
 	Y_t&=\bm{x}_t^{\top}\bm{\beta}_t+\mu_t\label{eq1Obs}\\
 	\bm{\beta}_t&=\bm{\beta}_{t-1}+\bm{\omega}_t \label{eq1St},
@@ -148,8 +148,12 @@ Bt <- matrix(NA, T, K); Bt[1,] <- B0
 yt <- rep(NA, T) 
 yt[1] <- X[1,]%*%B0 + e[1]
 yt[1] <- x[1]*Bt[1] + e[1]
-for(t in 2:T){
-	Bt[t,] <- Bt[t-1,] + w[t,]
+for(t in 1:T){
+	if(t == 1){
+		Bt[t,] <- w[t,]
+	}else{
+		Bt[t,] <- Bt[t-1,] + w[t,]
+	}
 	yt[t] <- X[t,]%*%Bt[t,] + e[t]
 }
 RegLS <- lm(yt ~ x)
@@ -181,10 +185,6 @@ LimSupB2 <- SmoothB2 + qnorm(0.975)*SDVarSmoothB2
 # Gibbs
 MCMC <- 2000; burnin <- 1000
 gibbsOut <- dlm::dlmGibbsDIG(yt, mod = dlm::dlmModReg(x), a.y = SumRegLS$sigma^2, b.y = 10*SumRegLS$sigma^2, a.theta = max(diag(VarBp)), b.theta = 10*max(diag(VarBp)), n.sample = MCMC, thin = 5, save.states = TRUE)
-B2t <- matrix(0, MCMC - burnin, T + 1)
-for(t in 1:(T+1)){
-	B2t[,t] <- gibbsOut[["theta"]][t,2,-c(1:burnin)] 
-}
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
@@ -194,6 +194,10 @@ for(t in 1:(T+1)){
 	\textit{R code. Simulation: Dynamic linear model}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
+B2t <- matrix(0, MCMC - burnin, T + 1)
+for(t in 1:(T+1)){
+	B2t[,t] <- gibbsOut[["theta"]][t,2,-c(1:burnin)] 
+}
 Lims <- apply(B2t, 2, function(x){quantile(x, c(0.025, 0.975))})
 summary(coda::mcmc(gibbsOut[["dV"]]))
 summary(coda::mcmc(gibbsOut[["dW"]]))
@@ -298,7 +302,7 @@ Using the system given by Equations \ref{DeJongObs} and \ref{DeJongSt}, $\bm{F}_
 Then, setting $\bm{r}_T=0$ and $\bm{M}_T=\bm{0}$, we run backwards from $t=T-1, T-2, \dots, 1$, the following recursions: $\bm{\Lambda}_{t+1}=\bm{H}_{t+1}\bm{H}_{t+1}^{\top}$, $\bm{C}_{t+1}=\bm{\Lambda}_{t+1}-\bm{\Lambda}_{t+1}\bm{M}_{t+1}\bm{\Lambda}_{t+1}^{\top}$, $\bm{\xi}_{t+1}\sim N(\bm{0}_K,\sigma^2\bm{C}_{t+1})$, $\bm{L}_{t+1}=\bm{I}_K-\bm{K}_{t+1}\bm{x}_{t+1}^{\top}$, $\bm{V}_{t+1}=\bm{\Lambda}_{t+1}\bm{M}_{t+1}\bm{L}_{t+1}$, $\bm{r}_{t}=\bm{x}_{t+1} e_{t+1}/q_{t+1} + \bm{L}_{t+1}^{\top}\bm{r}_{t+1}-\bm{V}_{t+1}^{\top}\bm{C}_{t+1}^{-1}\bm{\xi}_{t+1}$, $\bm{M}_{t}=\bm{x}_{t+1}\bm{x}_{t+1}^{\top}/q_{t+1}+\bm{L}_{t+1}^{\top}\bm{M}_{t+1}\bm{L}_{t+1}+\bm{V}_{t+1}^{\top}\bm{C}_{t+1}^{-1}\bm{V}_{t+1}$, and $\bm{\eta}_{t+1}=\bm{\Lambda}_{t+1}\bm{r}_{t+1}+\bm{\xi}_{t+1}$. \cite{de1995simulation} show that $\bm{\eta}=[\bm{\eta}_1^{\top} \ \dots \ \bm{\eta}_T^{\top}]^{\top}$ is drawn from $p(\bm{H}_t\bm{\epsilon}_t|y_t,\bm{x}_t,\bm{z}_t,\bm{h}_t,\bm{H}_t,\bm{\alpha},\sigma^2, t=1,2,\dots,T)$. Thus, we can recover $\bm{\beta}_t$ using \ref{DeJongSt} and $\bm{\beta}_0=\bm{0}_K$.
 
 We are going to perform Bayesian inference in the model given by Equations \ref{DeJongObs} and \ref{DeJongSt} assuming that $\bm{h}_t=[1 \ 0 \ \dots \ 0]^{
-\top}$ and $\bm{H}_t=[\bm{0}_K \ \text{diag}\left\{1/\tau_1\dots1/\tau_K\right\}]$, $\pi(\bm{\alpha},\sigma^2,\tau_1^2,\dots,\tau_K^2,\bm{\beta}_0)=\pi(\bm{\alpha})\pi(\sigma^2)\pi(\tau_1^2),\dots,\pi(\tau_K^2)\pi(\bm{\beta}_0)$ where $\sigma^2\sim IG(\alpha_0/2,\delta_0/2)$, $\tau_k^2\sim G(v_{0}/2,v_{0}/2)$, $k=1,\dots,K$, $\bm{\alpha}\sim N(\bm{a}_0,\bm{A}_0)$ and $\bm{\beta}_0\sim N(\bm{b}_0,\bm{B}_0)$. Thus, the conditional posterior distributions are $\sigma^2|\bm{y},\bm{X},\bm{Z},\bm{\beta}_{1:T},\bm{\alpha},\bm{\tau}\sim IG(\alpha_{n}/2,\delta_n/2)$, where $\alpha_{n}=T+\alpha_0$ and $\delta_n=\sum_{t=1}^T(y_t-\bm{z}_t^{\top}\bm{\alpha}-\bm{x}_t^{\top}\bm{\beta}_t)^2+\delta_0$, and $\tau_k^2|\bm{y},\bm{X},\bm{Z},\bm{\beta}_{0:T}\sigma^2\sim G(v_{1n}/2,v_{2kn}/2)$, where $v_{1n}=T+v_{0}$ and $v_{2kn}=\sigma^{-2}\sum_{t=1}^T(\bm{\beta}_{t,k}-\bm{\beta}_{t-1,k})^2+v_{0}$, and $\bm{\alpha}|\bm{y},\bm{X},\bm{Z},\sigma^2,\bm{\beta}_{0:T},\bm{\tau}\sim N(\bm{a}_n,\bm{A}_n)$, where $\bm{A}_n=(\bm{A}_0^{-1}+\sigma^{-2}\sum_{t=1}^T\bm{z}_t\bm{z}_t^{\top})^{-1}$ and $\bm{a}_n=\bm{A}_n(\bm{A}_0^{-1}\bm{a}_0+\sigma^{-2}\sum_{t=1}^T\bm{z}_t(y_t-\bm{x}_t^{\top}\bm{\beta}_t))$. The vector of the dependent variable is $\bm{y}$, and all regressors are in $\bm{X}$ and $\bm{Z}$.
+\top}$ and $\bm{H}_t=[\bm{0}_K \ \text{diag}\left\{1/\tau_1\dots1/\tau_K\right\}]$, $\pi(\bm{\beta}_0,\bm{\alpha},\sigma^2,\bm{\tau})=\pi(\bm{\beta}_0)\pi(\bm{\alpha})\pi(\sigma^2)\prod_{k=1}^K\pi(\tau_k^2)$ where $\sigma^2\sim IG(\alpha_0/2,\delta_0/2)$, $\tau_k^2\sim G(v_{0}/2,v_{0}/2)$, $k=1,\dots,K$, $\bm{\alpha}\sim N(\bm{a}_0,\bm{A}_0)$ and $\bm{\beta}_0\sim N(\bm{b}_0,\bm{B}_0)$. Thus, the conditional posterior distributions are $\sigma^2|\bm{y},\bm{X},\bm{Z},\bm{\beta}_{0:T},\bm{\alpha},\bm{\tau}\sim IG(\alpha_{n}/2,\delta_n/2)$, where $\alpha_{n}=T(K+1)+\alpha_0$ and $\delta_n=\sum_{t=1}^T\left[(\bm{\beta}_t-\bm{\beta}_{t-1})^{\top}\bm{\Psi}(\bm{\beta}_t-\bm{\beta}_{t-1})+(y_t-\bm{z}_t^{\top}\bm{\alpha}-\bm{x}_t^{\top}\bm{\beta}_t)^{\top}(y_t-\bm{z}_t^{\top}\bm{\alpha}-\bm{x}_t^{\top}\bm{\beta}_t)\right]+\delta_0$, $\bm{\tau}=[\tau_1 \ \dots \ \tau_K]$, $\bm{\Psi}=\text{diag}\left\{\tau_1^2,\dots,\tau_K^2\right\}$, and $\tau_k^2|\bm{y},\bm{X},\bm{Z},\bm{\beta}_{0:T},\sigma^2\sim G(v_{1n}/2,v_{2kn}/2)$, where $v_{1n}=T+v_{0}$ and $v_{2kn}=\sigma^{-2}\sum_{t=1}^T(\bm{\beta}_{t,k}-\bm{\beta}_{t-1,k})^2+v_{0}$, and $\bm{\alpha}|\bm{y},\bm{X},\bm{Z},\sigma^2,\bm{\beta}_{1:T},\bm{\tau}\sim N(\bm{a}_n,\bm{A}_n)$, where $\bm{A}_n=(\bm{A}_0^{-1}+\sigma^{-2}\sum_{t=1}^T\bm{z}_t\bm{z}_t^{\top})^{-1}$ and $\bm{a}_n=\bm{A}_n(\bm{A}_0^{-1}\bm{a}_0+\sigma^{-2}\sum_{t=1}^T\bm{z}_t(y_t-\bm{x}_t^{\top}\bm{\beta}_t))$. The vector of the dependent variable is $\bm{y}$, and all regressors are in $\bm{X}$ and $\bm{Z}$.
    
 
 \subsection{ARMA processes}

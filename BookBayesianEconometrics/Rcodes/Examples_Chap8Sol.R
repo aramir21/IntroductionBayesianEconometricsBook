@@ -8,9 +8,13 @@ K <- 1
 Bt <- matrix(NA, T, K); Bt[1] <- 1
 yt <- rep(NA, T) 
 yt[1] <- x[1]*Bt[1] + e[1]
-for(t in 2:T){
-  Bt[t,] <- Bt[t-1,] + w[t]
-  yt[t] <- x[t]*Bt[t] + e[t]
+for(t in 1:T){
+  if(t == 1){
+    Bt[t,] <- w[t]
+  }else{
+    Bt[t,] <- Bt[t-1,] + w[t]
+  }
+  yt[t] <- x[t]%*%Bt[t,] + e[t]
 }
 # State spece model
 ModelReg <- function(par){
@@ -40,10 +44,13 @@ w <- rnorm(T, mean = 0, sd = sigW2^0.5)
 K <- 1 
 Bt <- matrix(NA, T, K); Bt[1] <- 0
 yt <- rep(NA, T) 
-yt[1] <- xt[1]*Bt[1] + e[1]
-for(t in 2:T){
-  Bt[t,] <- Bt[t-1,] + w[t]
-  yt[t] <- xt[t]*Bt[t] + e[t]
+for(t in 1:T){
+  if(t == 1){
+    Bt[t,] <- w[t]
+  }else{
+    Bt[t,] <- Bt[t-1,] + w[t]
+  }
+  yt[t] <- xt[t]%*%Bt[t,] + e[t]
 }
 # Filtering
 KFR <- function(y, x, b1, B1, Omega, sig2){
