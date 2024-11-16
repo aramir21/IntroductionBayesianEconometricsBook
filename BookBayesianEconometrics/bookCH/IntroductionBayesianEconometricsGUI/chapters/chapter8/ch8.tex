@@ -490,7 +490,7 @@ which is a $r\times r$ dimensional matrix, and give the \textit{state} vector $\
 
 This is a \textit{dynamic linear model} where $\bm{\Sigma}_t=0$, and $\bm{\Omega}_t=\sigma^2\bm{H}\bm{H}^{\top}$ (see \cite{petris2009dynamic,chib1994bayes}).
 
-A nice advantage of the \textit{state-space} representation of the $ARMA$ model is that the evaluation of the likelihood can be performed efficiently using the recursive laws. Extensions to autoregressive integrated moving average $ARIMA(p,d,q)$ models can be seen in \cite[Chap.~3]{petris2009dynamic}.\\
+A nice advantage of the \textit{state-space} representation of the $ARMA$ model is that the evaluation of the likelihood can be performed efficiently using the recursive laws. Extensions to autoregressive integrated moving average $ARIMA(p,d,q)$ models can be seen in \cite[Chap.~3]{petris2009dynamic}. In $ARIMA(p,d,q)$ models, $d$ refers to the level of integration (difference) that is required to eliminate the stochastic trend in a time series (see \cite[Chap.~4]{enders_2014} for details).\\
 
 \textbf{Example: $AR(2)$ process}
 
@@ -502,10 +502,53 @@ In addition, we can proof that setting $z_t=Y_t-\bar{\mu}$, we have $z_t=\phi_1z
 \end{bmatrix}$, $\bm{\beta}_t=[\beta_{t1} \ \beta_{t2}]^{\top}$, $\bm{\Sigma}_t=0$ and $\bm{\Omega}_t=\sigma^2$ we have
 \begin{align*}
 	z_t&=\bm{x}^{\top}\bm{\beta}_t& \text{(Observation equations)}\\
-	\bm{\beta}_t&=\bm{G}_t\bm{\beta}_{t-1}+\bm{H}{\epsilon}_t & \text{(States equations)}.
+	\bm{\beta}_t&=\bm{G}\bm{\beta}_{t-1}+\bm{H}{\epsilon}_t & \text{(States equations)}.
 \end{align*}
 
-We use the function \textit{stan\_sarima} from the package \textit{bayesforecast} to perform Bayesian inference in $ARMA$ models in our GUI. Algorithm \ref{alg:ARMA} shows how to do it. See also Chapter \ref{chapGUI} for details regarding the dataset structure.
+We use the function \textit{stan\_sarima} from the package \textit{bayesforecast} to perform Bayesian inference in $ARMA$ models in our GUI. The following code shows how to simulate an $AR(2)$ process, and perform Bayesian inference using this function.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation and inference: AR(2) model}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+T <- 200; mu <- 0.5 
+phi1 <- 0.5; phi2 <- 0.3; sig <- 0.5
+Ey <- mu/(1-phi1-phi2); Sigy <- sig*((1-phi2)/(1-phi2-phi1^2-phi2*phi1^2-phi2^2+phi2^3))^0.5 
+y <- rnorm(T, mean = Ey, sd = Sigy)
+e <- rnorm(T, mean = 0, sd = sig)
+for(t in 3:T){
+	y[t] <- mu + phi1*y[t-1] + phi2*y[t-2] + e[t]
+}
+mean(y); sd(y)
+y <- ts(y, start=c(1820, 1), frequency=1)
+plot(y)
+iter <- 10000; burnin <- 5000; thin <- 1; tot <- iter + burnin
+library(bayesforecast)
+sf1 <- bayesforecast::stan_sarima(y, order = c(2, 0, 0), prior_mu0 = normal(0, 1),
+prior_ar = normal(0, 1), prior_sigma0 = inverse.gamma(0.01, 0.01),
+seasonal = c(0, 0, 0), iter = tot, warmup = burnin, chains = 1)
+keep <- seq(burnin+1, tot, thin)
+Postmu <- sf1[["stanfit"]]@sim[["samples"]][[1]][["mu0"]][keep]
+Postsig <- sf1[["stanfit"]]@sim[["samples"]][[1]][["sigma0"]][keep]
+Postphi1 <- sf1[["stanfit"]]@sim[["samples"]][[1]][["ar0[1]"]][keep]
+Postphi2 <- sf1[["stanfit"]]@sim[["samples"]][[1]][["ar0[2]"]][keep]
+Postdraws <- coda::mcmc(cbind(Postmu, Postsig, Postphi1, Postphi2))
+summary(Postdraws)
+Quantiles for each variable:
+				2.5%    25%    50%    75%  97.5%
+Postmu   0.38426 0.5688 0.6609 0.7513 0.9223
+Postsig  0.47696 0.5079 0.5248 0.5430 0.5813
+Postphi1 0.42867 0.5164 0.5632 0.6103 0.7000
+Postphi2 0.06145 0.1475 0.1916 0.2379 0.3234
+plot(Postdraws)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+We perform 10000 MCMC iterations plus a burn-in equal 5000. The trace plots look well, and all 95\% credible intervals encompass the population values.
+
+Algorithm \ref{alg:ARMA} shows how to do perform inference in $ARMA(p,q)$ models using our GUI. See also Chapter \ref{chapGUI} for details regarding the dataset structure. 
 
 \begin{algorithm}[h!]
 	\caption{Autoregressive Moving Average ($ARMA$) models}\label{alg:ARMA}
@@ -514,14 +557,26 @@ We use the function \textit{stan\_sarima} from the package \textit{bayesforecast
 		\State Select \textit{ARMA} using the left radio button
 		\State Upload the dataset selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend
 		\State Select MCMC iterations, burn-in and thinning parameters using the \textit{Range sliders}
-		\State Set the hyperparameters of the \textit{variance of the observation equation}: prior mean and variance. This step is not necessary as by default our GUI uses non-informative priors
-		\State Set the hyperparameters of the \textit{variance of the state equations}: just one set of prior mean and variance parameters. This step is not necessary as by default our GUI uses non-informative priors
+		\State Set the order of the $ARMA$ model, $p$ and $q$ parameters
+		\State Set the location and scale hyperparameters of the \textit{intercept}, autoregressive ($AR$), moving average ($MA$) and standard deviation. This step is not necessary as by default our GUI uses non-informative priors
 		\State Click the \textit{Go!} button
 		\State Analyze results
 		\State Download posterior chains and diagnostic plots using the \textit{Download Posterior Chains} and \textit{Download Posterior Graphs} buttons
 	\end{algorithmic} 
 \end{algorithm}
-  
+
+The function \textit{stan\_sarima} uses software \textit{Stan} \cite{Stan2024}, which in turn uses \textit{Hamiltonian Monte Carlo} (HMC) via no-U-turn sampler (NUTS) in the burn-in period. The following code shows how to perform Bayesian inference in the $AR(2)$ model programming the HMC from scratch. We should say that this is an illustration as HMC is less efficient than the Gibbs sampler in this example. However, HMC can outperform MCMC algorithms in more complicate models, particularly when dealing with complex, high-dimensional probability distributions where there is poor mixing of the posterior chains of MCMC algorithms due to posterior correlation.
+
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation and inference: AR(2) model using Hamiltonian Monte Carlo}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+			rm(list = ls()); set.seed(010101)
+		\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}     
 
   
 \section{Stochastic volatility models}\label{sec83}  
