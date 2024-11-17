@@ -348,6 +348,149 @@ Let's define $\gamma_s=Cov(z_t,z_{t-s})=\mathbb{E}[z_tz_{t-s}]$, then the Yule-W
 	\gamma_1&=\phi_1\gamma_0+\phi_2\gamma_1\\
 	\gamma_2&=\phi_1\gamma_1+\phi_2\gamma_0.
 \end{align*}  
-Solving this system of equations for $\gamma_0$, $\gamma_1$ and $\gamma_2$, we find that $\gamma_0=\frac{\sigma^2(1-\phi_2)}{1-\phi_2-\phi_1^2-\phi_1^2\phi_2-\phi_2^2+\phi_2^3}$. 
+Solving this system of equations for $\gamma_0$, $\gamma_1$ and $\gamma_2$, we find that $\gamma_0=\frac{\sigma^2(1-\phi_2)}{1-\phi_2-\phi_1^2-\phi_1^2\phi_2-\phi_2^2+\phi_2^3}$.
+
+\item Program a Hamiltonian Monte Carlo (HMC) taking into account the stationary restrictions on $\phi_1$ and $\phi_2$, and $\epsilon_0$ such that the acceptance rate is near 65\%.
+
+\textbf{Answer}
+
+We know from the previous exercise that $|\phi_2|<1$, $\phi_1+\phi_2<1$ and $\phi_2-\phi_1<1$ satisfied the stationary condition of the process. Thus, we should impose this restrictions in the HMC. The following code does this.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. AR(2) model:  Hamiltonian Monte Carlo with stationary restrictions}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+# Simulation AR(2)
+rm(list = ls()); set.seed(010101); T <- 1000; K <- 4 
+mu <- 0.5; phi1 <- 0.5; phi2 <- 0.3; sig <- 0.5 
+Ey <- mu/(1-phi1-phi2); Sigy <- sig*((1-phi2)/(1-phi2-phi1^2-phi2*phi1^2-phi2^2+phi2^3))^0.5 
+y <- rnorm(T, mean = Ey, sd = Sigy); e <- rnorm(T, mean = 0, sd = sig)
+for(t in 3:T){
+	y[t] <- mu + phi1*y[t-1] + phi2*y[t-2] + e[t]
+}
+# Hyperparameters
+d0 <- 0.01; a0 <- 0.01; mu0 <- 0; MU0 <- 1
+phi0 <- c(0, 0); Phi0 <- diag(2)
+# Log posterior multiply by -1 to use optim
+LogPost <- function(theta, y){
+	mu <- theta[1]; phi1 <- theta[2]; phi2 <- theta[3]
+	tau <- theta[4]; sig2 <- exp(tau); logLik <- NULL
+	for(t in 3:T){
+		logLikt <- dnorm(y[t], mean = mu + phi1*y[t-1] + phi2*y[t-2], sd = sig2^0.5, log = TRUE)
+		logLik <- c(logLik, logLikt)
+	}
+	logLik <- sum(logLik)
+	logPrior <- dnorm(mu, mean = mu0, sd = MU0^0.5, log = TRUE) + dnorm(phi1, mean = phi0[1], sd = Phi0[1,1]^0.5, log = TRUE) + dnorm(phi2, mean = phi0[2], sd = Phi0[2,2]^0.5, log = TRUE) + invgamma::dinvgamma(sig2, shape = a0/2, rate = d0/2, log = TRUE)
+	logPosterior <- logLik + logPrior + tau
+	return(-logPosterior) # Multiply by -1 to minimize using optim
+}
+theta0 <- c(mean(y), 0, 0, var(y))
+Opt <- optim(theta0, LogPost, y = y, hessian = TRUE)
+theta0 <- Opt$par; VarPost <- solve(Opt$hessian)
+# Gradient log posterior
+GradientTheta <- function(theta, y){
+	mu <- theta[1]; phi1 <- theta[2]; phi2 <- theta[3]
+	tau <- theta[4]; sig2 <- exp(tau); SumLik <- matrix(0, 3, 1)
+	SumLik2 <- NULL
+	for(t in 3:T){
+		xt <- matrix(c(1, y[t-1], y[t-2]), 3, 1)
+		SumLikt <- (y[t] - (mu + phi1*y[t-1] + phi2*y[t-2]))*xt
+		SumLik2t <- (y[t] - (mu + phi1*y[t-1] + phi2*y[t-2]))^2
+		SumLik <- rowSums(cbind(SumLik, SumLikt))
+		SumLik2 <- sum(SumLik2, SumLik2t)
+	}
+	Grad_mu <- SumLik[1]/sig2 - (1/MU0)*(mu - mu0)
+	Grad_phi1 <- SumLik[2]/exp(tau) - 1/Phi0[1,1]*(phi1 - phi0[1])
+	Grad_phi2 <- SumLik[3]/exp(tau) - 1/Phi0[2,2]*(phi2 - phi0[2])
+	Grad_tau <- -(T-2)/2 + SumLik2/(2*exp(tau)) - (a0/2 + 1) + d0/(2*exp(tau)) + 1 
+	Grad <- c(Grad_mu, Grad_phi1, Grad_phi2, Grad_tau)
+	return(Grad)
+}
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. AR(2) model:  Hamiltonian Monte Carlo with stationary restrictions}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+StatRest <- function(phi1, phi2){
+	if(abs(phi2) < 1 & phi1 + phi2 < 1 & phi2 - phi1 < 1){
+		check <- 1
+	}else{
+		check <- 0
+	}
+	return(check)
+}
+HMC <- function(theta, y, epsilon, M){
+	L <- ceiling(1/epsilon)
+	Minv <- solve(M)
+	thetat <- theta
+	K <- length(thetat)
+	mom <- t(mvtnorm::rmvnorm(1, rep(0, K), M))
+	logPost_Mom_t <- -LogPost(thetat, y) +  mvtnorm::dmvnorm(t(mom), rep(0, K), M, log = TRUE)  
+	for(l in 1:L){
+		if(l == L){
+			mom <- mom + 0.5*epsilon*GradientTheta(theta, y)
+			theta <- theta + epsilon*Minv%*%mom
+		}else{
+			mom <- mom + epsilon*GradientTheta(theta, y)
+			theta <- theta + epsilon*Minv%*%mom
+		}
+	}
+	logPost_Mom_star <- -LogPost(theta, y) +  mvtnorm::dmvnorm(t(mom), rep(0, K), M, log = TRUE)  
+	alpha <- min(1, exp(logPost_Mom_star-logPost_Mom_t))
+	u <- runif(1)
+	if(u <= alpha & StatRest(phi1 = theta[2], phi2 = theta[3]) == 1){
+		thetaNew <- c(theta)
+	}else{
+		thetaNew <- thetat
+	}
+	rest <- list(theta = thetaNew, Prob = alpha)
+	return(rest)
+}
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}     
+
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. AR(2) model:  Hamiltonian Monte Carlo with stationary restrictions}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+# Posterior draws
+S <- 1000; burnin <- 1000; thin <- 2; tot <- S + burnin
+thetaPost <- matrix(NA, tot, K)
+ProbAcept <- rep(NA, tot)
+# theta0 <- theta0
+theta0 <- c(mean(y), 0, 0, exp(var(y)))  
+M <- solve(VarPost); epsilon0 <- 0.4
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+	epsilon <- runif(1, 0, 2*epsilon0)
+	L <- ceiling(1/epsilon)
+	HMCs <- HMC(theta = theta0, y, epsilon, M) 
+	theta0 <- HMCs$theta 
+	thetaPost[s,] <- HMCs$theta
+	ProbAcept[s] <- HMCs$Prob
+	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0), "% done"))
+}
+close(pb)
+keep <- seq((burnin+1), tot, thin)
+thetaF <- coda::mcmc(thetaPost[keep,])
+summary(thetaF)
+plot(thetaF)
+summary(exp(thetaF[,K]))
+plot(exp(thetaF[,K]))
+ProbAceptF <- coda::mcmc(ProbAcept[keep])
+summary(ProbAceptF)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}  
+
+ 
 
 \end{enumerate}

@@ -340,13 +340,23 @@ GradientTheta <- function(theta, y){
   Grad <- c(Grad_mu, Grad_phi1, Grad_phi2, Grad_tau)
   return(Grad)
 }
--GradientThetaNum(theta = Opt$par, y)
 GradientTheta(theta = Opt$par, y)
+StatRest <- function(phi1, phi2){
+  if(abs(phi2) < 1 & phi1 + phi2 < 1 & phi2 - phi1 < 1){
+    check <- 1
+  }else{
+    check <- 0
+  }
+  return(check)
+}
+StatRest(phi1 = -1.5, phi2 = -0.3)
+# Hamiltonian Monte Carlo function
+
+
 # Hamiltonian Monte Carlo function
 HMC <- function(theta, y, epsilon, M){
   L <- ceiling(1/epsilon)
-  Minv <- solve(M)
-  thetat <- theta
+  Minv <- solve(M); thetat <- theta
   K <- length(thetat)
   mom <- t(mvtnorm::rmvnorm(1, rep(0, K), M))
   logPost_Mom_t <- -LogPost(thetat, y) +  mvtnorm::dmvnorm(t(mom), rep(0, K), M, log = TRUE)  
@@ -370,15 +380,17 @@ HMC <- function(theta, y, epsilon, M){
   rest <- list(theta = thetaNew, Prob = alpha)
   return(rest)
 }
-epsilon <- 0.1; M <- solve(VarPost); theta <- theta0
+epsilon <- 0.1; M <- solve(VarPost)
+theta <- theta0
 HMC(theta, y, epsilon, M)
 
 # Posterior draws
 S <- 1000; burnin <- 1000; thin <- 2; tot <- S + burnin
 thetaPost <- matrix(NA, tot, K)
 ProbAcept <- rep(NA, tot)
-theta0 <- theta0
-M <- solve(VarPost); epsilon0 <- 0.2
+# theta0 <- theta0
+theta0 <- c(mean(y), 0, 0, exp(var(y)))  
+M <- solve(VarPost); epsilon0 <- 0.1
 pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
 for(s in 1:tot){
   epsilon <- runif(1, 0, 2*epsilon0)
