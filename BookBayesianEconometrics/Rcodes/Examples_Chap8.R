@@ -244,7 +244,7 @@ plot(y)
 iter <- 10000; burnin <- 5000; thin <- 1; tot <- iter + burnin
 library(bayesforecast)
 sf1 <- bayesforecast::stan_sarima(y, order = c(2, 0, 0), prior_mu0 = normal(0, 1),
-                                  prior_ar = normal(0, 1), prior_sigma0 = inverse.gamma(0.01, 0.01),
+                                  prior_ar = normal(0, 1), prior_sigma0 = inverse.gamma(0.01/2, 0.01/2),
                                   seasonal = c(0, 0, 0), iter = tot, warmup = burnin, chains = 1)
 keep <- seq(burnin+1, tot, thin)
 Postmu <- sf1[["stanfit"]]@sim[["samples"]][[1]][["mu0"]][keep]
@@ -255,17 +255,146 @@ Postdraws <- coda::mcmc(cbind(Postmu, Postsig, Postphi1, Postphi2))
 summary(Postdraws)
 # par(mar=c(1,1,1,1))
 plot(Postdraws)
-flexi_53cst
+
 
 ########################## Hamiltonian Monte Carlo: AR(2) model ########################## 
 rm(list = ls())
 set.seed(010101)
-T <- 200
-mu <- 0.5 # 0.007; 
-phi1 <- 0.5; phi2 <- 0.3; sig <- 0.5 # 0.035
+T <- 1000; K <- 4
+mu <- 0.5 
+phi1 <- 0.5; phi2 <- 0.3; sig <- 0.5 
 Ey <- mu/(1-phi1-phi2); Sigy <- sig*((1-phi2)/(1-phi2-phi1^2-phi2*phi1^2-phi2^2+phi2^3))^0.5 
 y <- rnorm(T, mean = Ey, sd = Sigy)
 e <- rnorm(T, mean = 0, sd = sig)
 for(t in 3:T){
   y[t] <- mu + phi1*y[t-1] + phi2*y[t-2] + e[t]
 }
+# Hyperparameters
+d0 <- 0.01; a0 <- 0.01
+mu0 <- 0; MU0 <- 1
+phi0 <- c(0, 0); Phi0 <- diag(2)
+
+LogPost <- function(theta, y){
+  mu <- theta[1]
+  phi1 <- theta[2]
+  phi2 <- theta[3]
+  tau <- theta[4]
+  sig2 <- exp(tau)
+  logLik <- NULL
+  for(t in 3:T){
+    logLikt <- dnorm(y[t], mean = mu + phi1*y[t-1] + phi2*y[t-2], sd = sig2^0.5, log = TRUE)
+    logLik <- c(logLik, logLikt)
+  }
+  logLik <- sum(logLik)
+  # logPrior <- dnorm(mu, mean = mu0, sd = MU0^0.5, log = TRUE) + dnorm(phi1, mean = phi0[1], sd = Phi0[1,1]^0.5, log = TRUE) +
+  #   + dnorm(phi2, mean = phi0[2], sd = Phi0[2,2]^0.5, log = TRUE) + a0/2*log(d0/2)-lgamma(a0/2)-a0/2*tau-d0/2*exp(tau)
+  # logPosterior <- logLik + logPrior
+  logPrior <- dnorm(mu, mean = mu0, sd = MU0^0.5, log = TRUE) + dnorm(phi1, mean = phi0[1], sd = Phi0[1,1]^0.5, log = TRUE) +
+    + dnorm(phi2, mean = phi0[2], sd = Phi0[2,2]^0.5, log = TRUE) + invgamma::dinvgamma(sig2, shape = a0/2, rate = d0/2, log = TRUE)
+  logPosterior <- logLik + logPrior + tau
+  # return(logPosterior)
+  return(-logPosterior) # Multiply by -1 to minimize using optim
+  # return(-logLik)
+}
+theta0 <- c(mean(y), 0, 0, var(y))
+LogPost(theta = theta0, y)
+Opt <- optim(theta0, LogPost, y = y, hessian = TRUE)
+theta0 <- Opt$par
+VarPost <- solve(Opt$hessian)
+# Gradient log posterior
+GradientThetaNum <- function(theta, y){
+  e <- 0.0001
+  GradNum <- NULL
+  for(k in 1:length(theta)){
+    thetalow <- theta
+    thetahigh <- theta
+    thetalow[k] <- theta[k] - e
+    thetahigh[k] <- theta[k] + e
+    LogPostlow <- LogPost(theta = thetalow, y)
+    LogPosthigh <- LogPost(theta = thetahigh, y)
+    GradNumk <- (LogPosthigh - LogPostlow)/(2*e)
+    GradNum <- c(GradNum, GradNumk)
+  }
+  return(GradNum)
+}
+
+GradientTheta <- function(theta, y){
+  mu <- theta[1]
+  phi1 <- theta[2]
+  phi2 <- theta[3]
+  tau <- theta[4]
+  sig2 <- exp(tau)
+  SumLik <- matrix(0, 3, 1)
+  SumLik2 <- NULL
+  for(t in 3:T){
+    xt <- matrix(c(1, y[t-1], y[t-2]), 3, 1)
+    SumLikt <- (y[t] - (mu + phi1*y[t-1] + phi2*y[t-2]))*xt
+    SumLik2t <- (y[t] - (mu + phi1*y[t-1] + phi2*y[t-2]))^2
+    SumLik <- rowSums(cbind(SumLik, SumLikt))
+    SumLik2 <- sum(SumLik2, SumLik2t)
+  }
+  Grad_mu <- SumLik[1]/sig2 - (1/MU0)*(mu - mu0)
+  Grad_phi1 <- SumLik[2]/exp(tau) - 1/Phi0[1,1]*(phi1 - phi0[1])
+  Grad_phi2 <- SumLik[3]/exp(tau) - 1/Phi0[2,2]*(phi2 - phi0[2])
+  Grad_tau <- -(T-2)/2 + SumLik2/(2*exp(tau)) - (a0/2 + 1) + d0/(2*exp(tau)) + 1 
+  Grad <- c(Grad_mu, Grad_phi1, Grad_phi2, Grad_tau)
+  return(Grad)
+}
+-GradientThetaNum(theta = Opt$par, y)
+GradientTheta(theta = Opt$par, y)
+# Hamiltonian Monte Carlo function
+HMC <- function(theta, y, epsilon, M){
+  L <- ceiling(1/epsilon)
+  Minv <- solve(M)
+  thetat <- theta
+  K <- length(thetat)
+  mom <- t(mvtnorm::rmvnorm(1, rep(0, K), M))
+  logPost_Mom_t <- -LogPost(thetat, y) +  mvtnorm::dmvnorm(t(mom), rep(0, K), M, log = TRUE)  
+  for(l in 1:L){
+    if(l == L){
+      mom <- mom + 0.5*epsilon*GradientTheta(theta, y)
+      theta <- theta + epsilon*Minv%*%mom
+    }else{
+      mom <- mom + epsilon*GradientTheta(theta, y)
+      theta <- theta + epsilon*Minv%*%mom
+    }
+  }
+  logPost_Mom_star <- -LogPost(theta, y) +  mvtnorm::dmvnorm(t(mom), rep(0, K), M, log = TRUE)  
+  alpha <- min(1, exp(logPost_Mom_star-logPost_Mom_t))
+  u <- runif(1)
+  if(u <= alpha){
+    thetaNew <- c(theta)
+  }else{
+    thetaNew <- thetat
+  }
+  rest <- list(theta = thetaNew, Prob = alpha)
+  return(rest)
+}
+epsilon <- 0.1; M <- solve(VarPost); theta <- theta0
+HMC(theta, y, epsilon, M)
+
+# Posterior draws
+S <- 1000; burnin <- 1000; thin <- 2; tot <- S + burnin
+thetaPost <- matrix(NA, tot, K)
+ProbAcept <- rep(NA, tot)
+theta0 <- theta0
+M <- solve(VarPost); epsilon0 <- 0.2
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+  epsilon <- runif(1, 0, 2*epsilon0)
+  L <- ceiling(1/epsilon)
+  HMCs <- HMC(theta = theta0, y, epsilon, M) 
+  theta0 <- HMCs$theta 
+  thetaPost[s,] <- HMCs$theta
+  ProbAcept[s] <- HMCs$Prob
+  setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0), "% done"))
+}
+close(pb)
+keep <- seq((burnin+1), tot, thin)
+thetaF <- coda::mcmc(thetaPost[keep,])
+summary(thetaF)
+plot(thetaF)
+summary(exp(thetaF[,K]))
+plot(exp(thetaF[,K]))
+ProbAceptF <- coda::mcmc(ProbAcept[keep])
+summary(ProbAceptF)

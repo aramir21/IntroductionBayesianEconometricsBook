@@ -527,7 +527,7 @@ plot(y)
 iter <- 10000; burnin <- 5000; thin <- 1; tot <- iter + burnin
 library(bayesforecast)
 sf1 <- bayesforecast::stan_sarima(y, order = c(2, 0, 0), prior_mu0 = normal(0, 1),
-prior_ar = normal(0, 1), prior_sigma0 = inverse.gamma(0.01, 0.01),
+prior_ar = normal(0, 1), prior_sigma0 = inverse.gamma(0.01/2, 0.01/2),
 seasonal = c(0, 0, 0), iter = tot, warmup = burnin, chains = 1)
 keep <- seq(burnin+1, tot, thin)
 Postmu <- sf1[["stanfit"]]@sim[["samples"]][[1]][["mu0"]][keep]
@@ -537,16 +537,16 @@ Postphi2 <- sf1[["stanfit"]]@sim[["samples"]][[1]][["ar0[2]"]][keep]
 Postdraws <- coda::mcmc(cbind(Postmu, Postsig, Postphi1, Postphi2))
 summary(Postdraws)
 Quantiles for each variable:
-				2.5%    25%    50%    75%  97.5%
-Postmu   0.38426 0.5688 0.6609 0.7513 0.9223
-Postsig  0.47696 0.5079 0.5248 0.5430 0.5813
-Postphi1 0.42867 0.5164 0.5632 0.6103 0.7000
-Postphi2 0.06145 0.1475 0.1916 0.2379 0.3234
+            	2.5%    25%    50%    75%  97.5%
+Postmu   0.39914 0.5732 0.6625 0.7518 0.9346
+Postsig  0.47696 0.5071 0.5248 0.5439 0.5829
+Postphi1 0.42384 0.5159 0.5634 0.6089 0.6979
+Postphi2 0.06034 0.1456 0.1920 0.2361 0.3286
 plot(Postdraws)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
-We perform 10000 MCMC iterations plus a burn-in equal 5000. The trace plots look well, and all 95\% credible intervals encompass the population values.
+We perform 10000 MCMC iterations plus a burn-in equal 5000 assuming $\sigma^2\sim IG(0.01/2, 0.01/2)$, $\mu\sim N(0, 1)$ and $\phi_k\sim N(0, 1)$, $k=1,2$. The trace plots look well, and all 95\% credible intervals encompass the population values.
 
 Algorithm \ref{alg:ARMA} shows how to do perform inference in $ARMA(p,q)$ models using our GUI. See also Chapter \ref{chapGUI} for details regarding the dataset structure. 
 
@@ -565,18 +565,141 @@ Algorithm \ref{alg:ARMA} shows how to do perform inference in $ARMA(p,q)$ models
 	\end{algorithmic} 
 \end{algorithm}
 
-The function \textit{stan\_sarima} uses software \textit{Stan} \cite{Stan2024}, which in turn uses \textit{Hamiltonian Monte Carlo} (HMC) via no-U-turn sampler (NUTS) in the burn-in period. The following code shows how to perform Bayesian inference in the $AR(2)$ model programming the HMC from scratch. We should say that this is an illustration as HMC is less efficient than the Gibbs sampler in this example. However, HMC can outperform MCMC algorithms in more complicate models, particularly when dealing with complex, high-dimensional probability distributions where there is poor mixing of the posterior chains of MCMC algorithms due to posterior correlation.
+The function \textit{stan\_sarima} uses software \textit{Stan} \cite{Stan2024}, which in turn uses \textit{Hamiltonian Monte Carlo} (HMC) via no-U-turn sampler (NUTS) in the burn-in period. The following code shows how to perform Bayesian inference in the $AR(2)$ model programming the HMC from scratch. We should clarify that this is only an illustration, as HMC is less efficient than the Gibbs sampler in this example. However, HMC can outperform traditional MCMC algorithms in more complex models, especially when dealing with high-dimensional probability distributions or when MCMC struggles with poor mixing due to posterior correlation.
 
+We perform the simulation in the first block, and then set the hyperparameters, and the function to calculate the logarithm of the posterior distribution. We parametrize the model using $\tau = \log(\sigma^2)$ such that $\sigma^2=\exp\left\{\tau\right\}$, consequently, avoiding issues due to the restriction of non-negativity of $\sigma^2$. Thus, we must take into account the Jacobian due to the transformation, that is $d\sigma^2/d\tau=\exp(\tau)$. Then, we have the function to calculate the gradient vector of the log posterior distribution. We should calculate the gradient vector analytically because using finite difference can be computationally expensive. However, it can be a good idea to check the analytical calculations evaluation the function at the maximum posterior estimate, where this function should return values near 0.
+
+The posterior distribution is given by\footnote{Take into account that we do not consider the first two observations when present the likelihood, this is no an issue when there is a large sample size.}
+\begin{align*}
+	\pi(\mu,\phi_1,\phi_2,\tau|\bm{y})&\propto \prod_{t=3}^T(\exp(\tau))^{-1/2}\exp\left\{-\frac{1}{2\exp(\tau)}(y_t-\mu-\phi_1y_{t-1}-\phi_2y_{t-2})^2\right\}\\
+	&\times\exp\left\{-\frac{1}{2\sigma^2_{\mu}}(\mu-\mu_0)^2\right\}\times\exp\left\{-\frac{1}{2\sigma^2_{\phi_1}}(\phi_1-\phi_{10})^2\right\}\\
+	&\times\exp\left\{-\frac{1}{2\sigma^2_{\phi_2}}(\phi_2-\phi_{20})^2\right\}\times\exp\left\{-(\alpha_0/2+1)\tau\right\}\exp\left\{-\delta_0/(2\exp(\tau))\right\}\exp(\tau).
+\end{align*} 
+
+The components of the gradient vector of the log posterior distribution are given by
+\begin{align*}
+	\frac{\partial \log(\pi(\mu,\phi_1,\phi_2,\tau|\bm{y}))}{\partial\mu}&=\frac{\sum_{t=3}^T(y_t-\mu-\phi_1y_{t-1}-\phi_2y_{t-2})}{\exp(\tau)}-\frac{1}{\sigma_{\mu}^2}(\mu-\mu_0)\\
+	\frac{\partial\log(\pi(\mu,\phi_1,\phi_2,\tau|\bm{y}))}{\partial\phi_1}&=\frac{\sum_{t=3}^T(y_t-\mu-\phi_1y_{t-1}-\phi_2y_{t-2})y_{t-1}}{\exp(\tau)}-\frac{1}{\sigma_{\phi_1}^2}(\phi_1-\phi_{10})\\
+	\frac{\partial\log(\pi(\mu,\phi_1,\phi_2,\tau|\bm{y}))}{\partial\phi_2}&=\frac{\sum_{t=3}^T(y_t-\mu-\phi_1y_{t-1}-\phi_2y_{t-2})y_{t-2}}{\exp(\tau)}-\frac{1}{\sigma_{\phi_2}^2}(\phi_2-\phi_{20})\\	\frac{\partial\log(\pi(\mu,\phi_1,\phi_2,\tau|\bm{y}))}{\partial\tau}&=-\frac{(T-2)}{2}+\frac{\sum_{t=3}^T(y_t-\mu-\phi_1y_{t-1}-\phi_2y_{t-2})^2}{2\exp(\tau)}\\
+	&-(\alpha_0/2+1)+\delta_0/(2\exp(\tau))+1.\\
+\end{align*}
+
+Then, we have the code for the Hamiltonian Monte Carlo as given in Chapter \ref{chap5}. We set the initial values equal to the maximum a posterior estimates, and $M$ equal to the inverse covariance matrix of the posterior distribution evaluated at the maximum a posterior estimate. In addition, $\epsilon$ is randomly draw from a uniform distribution between 0 and 0.2, and $L$ is the highest integer near to $1/\epsilon$ to approximately satisfy $L\epsilon=1$. We can check that all 95\% credible intervals encompass the population values, and the posterior means are near the population values. The acceptance rate is higher than 65\% on average, thus we should increase the base step (initial $\epsilon$) from 0.1 to 0.2, and check. 
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 	\textit{R code. Simulation and inference: AR(2) model using Hamiltonian Monte Carlo}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-			rm(list = ls()); set.seed(010101)
-		\end{lstlisting}
+# Simulation AR(2)
+rm(list = ls()); set.seed(010101); T <- 1000; K <- 4 
+mu <- 0.5; phi1 <- 0.5; phi2 <- 0.3; sig <- 0.5 
+Ey <- mu/(1-phi1-phi2); Sigy <- sig*((1-phi2)/(1-phi2-phi1^2-phi2*phi1^2-phi2^2+phi2^3))^0.5 
+y <- rnorm(T, mean = Ey, sd = Sigy); e <- rnorm(T, mean = 0, sd = sig)
+for(t in 3:T){
+	y[t] <- mu + phi1*y[t-1] + phi2*y[t-2] + e[t]
+}
+# Hyperparameters
+d0 <- 0.01; a0 <- 0.01; mu0 <- 0; MU0 <- 1
+phi0 <- c(0, 0); Phi0 <- diag(2)
+# Log posterior multiply by -1 to use optim
+LogPost <- function(theta, y){
+	mu <- theta[1]; phi1 <- theta[2]; phi2 <- theta[3]
+	tau <- theta[4]; sig2 <- exp(tau); logLik <- NULL
+	for(t in 3:T){
+		logLikt <- dnorm(y[t], mean = mu + phi1*y[t-1] + phi2*y[t-2], sd = sig2^0.5, log = TRUE)
+		logLik <- c(logLik, logLikt)
+	}
+	logLik <- sum(logLik)
+	logPrior <- dnorm(mu, mean = mu0, sd = MU0^0.5, log = TRUE) + dnorm(phi1, mean = phi0[1], sd = Phi0[1,1]^0.5, log = TRUE) + dnorm(phi2, mean = phi0[2], sd = Phi0[2,2]^0.5, log = TRUE) + invgamma::dinvgamma(sig2, shape = a0/2, rate = d0/2, log = TRUE)
+	logPosterior <- logLik + logPrior + tau
+	return(-logPosterior) # Multiply by -1 to minimize using optim
+}
+theta0 <- c(mean(y), 0, 0, var(y))
+Opt <- optim(theta0, LogPost, y = y, hessian = TRUE)
+theta0 <- Opt$par; VarPost <- solve(Opt$hessian)
+# Gradient log posterior
+GradientTheta <- function(theta, y){
+	mu <- theta[1]; phi1 <- theta[2]; phi2 <- theta[3]
+	tau <- theta[4]; sig2 <- exp(tau); SumLik <- matrix(0, 3, 1)
+	SumLik2 <- NULL
+	for(t in 3:T){
+		xt <- matrix(c(1, y[t-1], y[t-2]), 3, 1)
+		SumLikt <- (y[t] - (mu + phi1*y[t-1] + phi2*y[t-2]))*xt
+		SumLik2t <- (y[t] - (mu + phi1*y[t-1] + phi2*y[t-2]))^2
+		SumLik <- rowSums(cbind(SumLik, SumLikt))
+		SumLik2 <- sum(SumLik2, SumLik2t)
+	}
+	Grad_mu <- SumLik[1]/sig2 - (1/MU0)*(mu - mu0)
+	Grad_phi1 <- SumLik[2]/exp(tau) - 1/Phi0[1,1]*(phi1 - phi0[1])
+	Grad_phi2 <- SumLik[3]/exp(tau) - 1/Phi0[2,2]*(phi2 - phi0[2])
+	Grad_tau <- -(T-2)/2 + SumLik2/(2*exp(tau)) - (a0/2 + 1) + d0/(2*exp(tau)) + 1 
+	Grad <- c(Grad_mu, Grad_phi1, Grad_phi2, Grad_tau)
+	return(Grad)
+}
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation and inference: AR(2) model using Hamiltonian Monte Carlo}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+# Hamiltonian Monte Carlo function
+HMC <- function(theta, y, epsilon, M){
+	L <- ceiling(1/epsilon)
+	Minv <- solve(M); thetat <- theta
+	K <- length(thetat)
+	mom <- t(mvtnorm::rmvnorm(1, rep(0, K), M))
+	logPost_Mom_t <- -LogPost(thetat, y) +  mvtnorm::dmvnorm(t(mom), rep(0, K), M, log = TRUE)  
+	for(l in 1:L){
+		if(l == L){
+			mom <- mom + 0.5*epsilon*GradientTheta(theta, y)
+			theta <- theta + epsilon*Minv%*%mom
+		}else{
+			mom <- mom + epsilon*GradientTheta(theta, y)
+			theta <- theta + epsilon*Minv%*%mom
+		}
+	}
+	logPost_Mom_star <- -LogPost(theta, y) +  mvtnorm::dmvnorm(t(mom), rep(0, K), M, log = TRUE)  
+	alpha <- min(1, exp(logPost_Mom_star-logPost_Mom_t))
+	u <- runif(1)
+	if(u <= alpha){
+		thetaNew <- c(theta)
+	}else{
+		thetaNew <- thetat
+	}
+	rest <- list(theta = thetaNew, Prob = alpha)
+	return(rest)
+}
+# Posterior draws
+S <- 1000; burnin <- 1000; thin <- 2; tot <- S + burnin
+thetaPost <- matrix(NA, tot, K)
+ProbAcept <- rep(NA, tot)
+theta0 <- theta0
+M <- solve(VarPost); epsilon0 <- 0.1
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+	epsilon <- runif(1, 0, 2*epsilon0)
+	L <- ceiling(1/epsilon)
+	HMCs <- HMC(theta = theta0, y, epsilon, M) 
+	theta0 <- HMCs$theta 
+	thetaPost[s,] <- HMCs$theta
+	ProbAcept[s] <- HMCs$Prob
+	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0), "% done"))
+}
+close(pb)
+keep <- seq((burnin+1), tot, thin)
+thetaF <- coda::mcmc(thetaPost[keep,])
+summary(thetaF)
+summary(exp(thetaF[,K]))
+ProbAceptF <- coda::mcmc(ProbAcept[keep])
+summary(ProbAceptF)
+\end{lstlisting}
 	\end{VF}
 \end{tcolorbox}     
+     
 
   
 \section{Stochastic volatility models}\label{sec83}  
