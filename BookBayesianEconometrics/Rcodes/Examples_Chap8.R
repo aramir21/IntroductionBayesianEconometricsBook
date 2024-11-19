@@ -112,6 +112,7 @@ summary(dW)
 plot(dV)
 plot(dW)
 library(fanplot)
+require(latex2exp)
 df <- as.data.frame(B2t)
 plot(NULL, main="Percentiles", xlim = c(1, T+1), ylim = c(-1, 2), xlab = "Time", ylab = TeX("$\\beta_{t2}$"))
 fan(data = df)
@@ -351,9 +352,6 @@ StatRest <- function(phi1, phi2){
 }
 StatRest(phi1 = -1.5, phi2 = -0.3)
 # Hamiltonian Monte Carlo function
-
-
-# Hamiltonian Monte Carlo function
 HMC <- function(theta, y, epsilon, M){
   L <- ceiling(1/epsilon)
   Minv <- solve(M); thetat <- theta
@@ -410,3 +408,66 @@ summary(exp(thetaF[,K]))
 plot(exp(thetaF[,K]))
 ProbAceptF <- coda::mcmc(ProbAcept[keep])
 summary(ProbAceptF)
+
+########################## Stochastic volatility models: MCMC approach ########################## 
+rm(list = ls())
+set.seed(010101)
+T <- 1250; K <- 2
+X <- matrix(rnorm(T*K), T, K)
+B <- c(0.5, 0.3); mu <- -10; phi <- 0.95; sigma <- 0.3
+h <- numeric(T)
+y <- numeric(T)
+h[1] <- rnorm(1, mu, sigma / sqrt(1 - phi^2))  # Initial state
+y[1] <- X[1,]%*%B + rnorm(1, 0, exp(h[1] / 2))           # Initial observation
+for (t in 2:T) {
+  h[t] <- mu + phi*(h[t-1]-mu) + rnorm(1, 0, sigma)
+  y[t] <- X[t,]%*%B + rnorm(1, 0, sd = exp(0.5*h[t]))
+}
+plot(y, type = "l") 
+plot(h, type = "l")
+df <- as.data.frame(cbind(y, X))
+colnames(df) <- c("y", "x1", "x2")
+MCMC <- 10000; burnin <- 10000; thin <- 5
+res <- stochvol::svsample(y, designmatrix = X, draws = MCMC, burnin = burnin, thin = thin, priormu = c(0, 100), priorsigma = c(1), priorphi = c(5, 1.5), priorbeta =  c(0, 10000))
+summary(res[["para"]][[1]][,-c(4,5)])
+summary(res[["beta"]])
+plot(res)
+ht <- res[["latent"]][[1]]
+library(fanplot)
+require(latex2exp)
+df <- as.data.frame(ht)
+plot(NULL, main="Percentiles", xlim = c(1, T+1), ylim = c(-12.5, -7.5), xlab = "Time", ylab = TeX("$h_{t}$"))
+fan(data = df)
+lines(colMeans(ht), col = "black", lw = 2)
+lines(h, col = "blue", lw = 2)
+
+########################## Stochastic volatility models: SMC approach ########################## 
+rm(list = ls())
+set.seed(010101)
+T <- 1250; K <- 2
+mu <- -10; phi <- 0.95; sigma <- 0.3
+h <- numeric(T)
+y <- numeric(T)
+h[1] <- rnorm(1, mu, sigma / sqrt(1 - phi^2))  # Initial state
+y[1] <- rnorm(1, 0, exp(h[1] / 2))           # Initial observation
+for (t in 2:T) {
+  h[t] <- mu + phi*(h[t-1]-mu) + rnorm(1, 0, sigma)
+  y[t] <- rnorm(1, 0, sd = exp(0.5*h[t]))
+}
+
+pmhOutput <- pmhtutorial::particleMetropolisHastingsSVmodel(y,
+                                               initialTheta = c(0, 0.9, 0.2),
+                                               noParticles=500,
+                                               noIterations=1000,
+                                               stepSize=diag(c(0.05, 0.0002, 0.002)))
+summary(coda::mcmc(pmhOutput[["theta"]]))
+mean(pmhOutput[["proposedThetaAccepted"]])
+ht <- pmhOutput[["xHatFiltered"]]
+library(fanplot)
+require(latex2exp)
+df <- as.data.frame(ht)
+plot(NULL, main="Percentiles", xlim = c(1, T+1), ylim = c(-13.5, -6.5), xlab = "Time", ylab = TeX("$h_{t}$"))
+fan(data = df)
+lines(colMeans(ht), col = "black", lw = 2)
+lines(h, col = "blue", lw = 2)
+

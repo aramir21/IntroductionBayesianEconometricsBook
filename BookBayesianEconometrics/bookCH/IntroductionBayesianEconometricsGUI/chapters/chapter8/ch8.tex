@@ -270,7 +270,7 @@ dV <- coda::mcmc(gibbsOut[["dV"]][-c(1:burnin)])
 dW <- coda::mcmc(gibbsOut[["dW"]][-c(1:burnin),])
 summary(dV); summary(dW)
 plot(dV); plot(dW)
-library(fanplot)
+library(fanplot); library(latex2exp)
 df <- as.data.frame(B2t)
 plot(NULL, main="Percentiles", xlim = c(1, T+1), ylim = c(-1, 2), xlab = "Time", ylab = TeX("$\\beta_{t1}$"))
 fan(data = df); lines(colMeans(B2t), col = "black", lw = 2)
@@ -558,16 +558,16 @@ Algorithm \ref{alg:ARMA} shows how to do perform inference in $ARMA(p,q)$ models
 		\State Upload the dataset selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend
 		\State Select MCMC iterations, burn-in and thinning parameters using the \textit{Range sliders}
 		\State Set the order of the $ARMA$ model, $p$ and $q$ parameters
-		\State Set the location and scale hyperparameters of the \textit{intercept}, autoregressive ($AR$), moving average ($MA$) and standard deviation. This step is not necessary as by default our GUI uses non-informative priors
+		\State Set the location and scale hyperparameters of the \textit{intercept}, autoregressive ($AR$), moving average ($MA$) and standard deviation. Take into account that there is just one set of hyperparameters for $AR$ and $MA$ coefficients. This step is not necessary as by default our GUI uses non-informative priors
 		\State Click the \textit{Go!} button
 		\State Analyze results
 		\State Download posterior chains and diagnostic plots using the \textit{Download Posterior Chains} and \textit{Download Posterior Graphs} buttons
 	\end{algorithmic} 
 \end{algorithm}
 
-The function \textit{stan\_sarima} uses software \textit{Stan} \cite{Stan2024}, which in turn uses \textit{Hamiltonian Monte Carlo} (HMC) via no-U-turn sampler (NUTS) in the burn-in period. The following code shows how to perform Bayesian inference in the $AR(2)$ model programming the HMC from scratch. We should clarify that this is only an illustration, as HMC is less efficient than the Gibbs sampler in this example. However, HMC can outperform traditional MCMC algorithms in more complex models, especially when dealing with high-dimensional probability distributions or when MCMC struggles with poor mixing due to posterior correlation.
+The function \textit{stan\_sarima} uses software \textit{Stan} \cite{Stan2024}, which in turn uses \textit{Hamiltonian Monte Carlo} (HMC). The following code shows how to perform Bayesian inference in the $AR(2)$ model programming the HMC from scratch. We should clarify that this is only an illustration as HMC is less efficient than the Gibbs sampler in this example. However, HMC can outperform traditional MCMC algorithms in more complex models, especially when dealing with high-dimensional probability distributions or when MCMC struggles with poor mixing due to posterior correlation.
 
-We perform the simulation in the first block, and then set the hyperparameters, and the function to calculate the logarithm of the posterior distribution. We parametrize the model using $\tau = \log(\sigma^2)$ such that $\sigma^2=\exp\left\{\tau\right\}$, consequently, avoiding issues due to the restriction of non-negativity of $\sigma^2$. Thus, we must take into account the Jacobian due to the transformation, that is $d\sigma^2/d\tau=\exp(\tau)$. Then, we have the function to calculate the gradient vector of the log posterior distribution. We should calculate the gradient vector analytically because using finite difference can be computationally expensive. However, it can be a good idea to check the analytical calculations evaluation the function at the maximum posterior estimate, where this function should return values near 0.
+We perform the simulation in the first block setting $\mu=0.5$, $\phi_1=0.5$, $\phi_2=0.3$ and $\sigma=0.25$, and the sample size equal 200. Then, we set the hyperparameters, and the function to calculate the logarithm of the posterior distribution. We parametrize the model using $\tau = \log(\sigma^2)$ such that $\sigma^2=\exp\left\{\tau\right\}$, consequently, avoiding issues due to the restriction of non-negativity of $\sigma^2$. Thus, we must take into account the Jacobian due to the transformation, that is $d\sigma^2/d\tau=\exp(\tau)$. Then, we have the function to calculate the gradient vector of the log posterior distribution. We should calculate the gradient vector analytically because using finite difference can be computationally expensive. However, it can be a good idea to check the analytical calculations evaluation the function at the maximum posterior estimate, where this function should return values near 0, or compare results with finite differences in a few evaluation points.
 
 The posterior distribution is given by\footnote{Take into account that we do not consider the first two observations when present the likelihood, this is no an issue when there is a large sample size.}
 \begin{align*}
@@ -586,7 +586,7 @@ The components of the gradient vector of the log posterior distribution are give
 
 Then, we have the code for the Hamiltonian Monte Carlo as given in Chapter \ref{chap5}. We set the initial values equal to $\mu=\bar{y}=1/(T-2)\sum_{t=3}^T y_t$, $\phi_1=\phi_2=0$ and $\exp((1/(T-2))\sum_{t=3}^T(y_t-\bar{y})^2)$, and $M$ equal to the inverse covariance matrix of the posterior distribution evaluated at the maximum a posterior estimate. In addition, $\epsilon$ is randomly draw from a uniform distribution between 0 and 2$\epsilon_0$, and $L$ is the highest integer near to $1/\epsilon$, this to approximately satisfy $L\epsilon=1$. 
 
-We can check that all 95\% credible intervals encompass the population values, and the posterior means are near the population values. The acceptance rate is higher than 65\% on average, thus we should increase the base step ($\epsilon_0$) from 0.1 to 0.2. In addition, we do not impose the stationary conditions on $\phi_1$ and $\phi_2$. Exercise 6 asks to program a HMC taking into account these requirements.
+We can check that all 95\% credible intervals encompass the population values, and the posterior means are near the population values. The acceptance rate is higher than 65\% on average, thus we should increase the base step ($\epsilon_0$). In addition, we do not impose the stationary conditions on $\phi_1$ and $\phi_2$. Exercise 6 asks to program a HMC taking into account these requirements.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -700,11 +700,68 @@ ProbAceptF <- coda::mcmc(ProbAcept[keep])
 summary(ProbAceptF)
 \end{lstlisting}
 	\end{VF}
+\end{tcolorbox} 
+
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation and inference: Stochastic volatility model}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+T <- 1250; K <- 2
+X <- matrix(rnorm(T*K), T, K)
+B <- c(0.5, 0.3); mu <- -10; phi <- 0.95; sigma <- 0.3
+h <- numeric(T); y <- numeric(T)
+h[1] <- rnorm(1, mu, sigma / sqrt(1 - phi^2))  # Initial state
+y[1] <- X[1,]%*%B + rnorm(1, 0, exp(h[1] / 2))           # Initial observation
+for (t in 2:T) {
+	h[t] <- mu + phi*(h[t-1]-mu) + rnorm(1, 0, sigma)
+	y[t] <- X[t,]%*%B + rnorm(1, 0, sd = exp(0.5*h[t]))
+}
+df <- as.data.frame(cbind(y, X))
+colnames(df) <- c("y", "x1", "x2")
+MCMC <- 10000; burnin <- 10000; thin <- 5
+res <- stochvol::svsample(y, designmatrix = X, draws = MCMC, burnin = burnin, thin = thin, priormu = c(0, 100), priorsigma = c(1), priorphi = c(5, 1.5), priorbeta =  c(0, 10000))
+summary(res[["para"]][[1]][,-c(4,5)])
+summary(res[["beta"]])
+ht <- res[["latent"]][[1]]
+library(fanplot)
+require(latex2exp)
+df <- as.data.frame(ht)
+plot(NULL, main="Percentiles", xlim = c(1, T+1), ylim = c(-12.5, -7.5), xlab = "Time", ylab = TeX("$h_{t}$"))
+fan(data = df)
+lines(colMeans(ht), col = "black", lw = 2)
+lines(h, col = "blue", lw = 2)
+\end{lstlisting}
+	\end{VF}
 \end{tcolorbox}     
      
+\section{Stochastic volatility models}\label{sec83}
+A notable example of non-linear and non-Gaussian \textit{state-space models} is stochastic volatility models (SVMs), which are widely used to model the volatility of financial returns. SVMs have gained significant attention due to their flexibility, ability to capture complex dynamics such as asymmetries, and ease of generalization to simultaneously model multiple returns, making them advantageous over generalized autoregressive conditional heteroskedasticity (GARCH) models proposed by \cite{bollerslev_1986}. However, estimating SVMs is more challenging than estimating GARCH models. This is because GARCH models determine variance in a deterministic manner, whereas SVMs do so stochastically. Consequently, GARCH models are typically estimated using maximum likelihood methods, while SVMs require Bayesian approaches, adding complexity to the estimation process.
 
-  
-\section{Stochastic volatility models}\label{sec83}  
+The specification of the stochastic volatility model is given by
+\begin{align}
+	y_t&=\bm{x}_t^{\top}\bm{\beta}+\exp\left\{0.5h_t\right\}\mu_t& \text{(Observation equation)}\label{eqsvobs}\\
+	h_t&=\mu+\phi(h_{t-1}-\mu)+\sigma w_t& \text{(State equation)}\label{eqsvst},
+\end{align}
+where $y_t$ are the log-returns, $\bm{x}_t$ are controls, $\bm{\beta}$ are time-invariant location parameters, $\mu_t\sim N(0,1)$, $w_t\sim N(0,1)$, $\mu_t\perp w_t$, the initial log-variance process $h_0\sim N(\mu, \sigma^2/(1-\phi^2))$, $\mu$, $\phi$ and $\sigma$ are the level, persistence and standard deviation of the log-variance, respectively.
+
+Given the specification in Equations \ref{eqsvobs} and \ref{eqsvst}, we can write down the observation equation as $\log\left\{(y_t-\bm{x}_t^{\top}\bm{\beta})^2\right\}=h_t+\log(\mu_t^2)$, thus there is now a linear, but non-Gaussian \textit{state-space model}. \cite{kastner2014ancillarity} approximate the distribution of $\log(\mu_t^2)$ by a mixture of normal distributions, that is, $\log(\mu_t^2)|l_t\sim N(m_{l_t},s_{l_t}^2)$, $l_r\in \left\{1,2,\dots,10\right\}$ defines the mixture component indicator at time $t$. Thus, $\log\left\{(y_t-\bm{x}_t^{\top}\bm{\beta})^2\right\}=h_t+\log(\mu_t^2)$ and $h_t=\mu+\phi(h_{t-1}-\mu)+\sigma w_t$ can be written as a linear and conditionally Gaussian \textit{state-space model}, where $\log\left\{(y_t-\bm{x}_t^{\top}\bm{\beta})^2\right\}=m_{l_t}+h_t+\mu_t^2$, $\mu_t\sim N(0, s_{l_t}^2)$.        
+
+We use the \textit{stochvol} package in our GUI to perform MCMC inference in the SVMs \cite{kastner2014ancillarity}, where the prior distributions are $\bm{\beta}\sim N(\bm{b}_0,\bm{B}_0)$, $\mu\sim N(\mu_0,\sigma_{\mu0}^2)$, $(\phi+1)/2\sim B(\alpha_0,\beta_0)$, and $\sigma^2\sim G(1/2,1/(2\sigma^2_{\sigma^2}))$. The prior distribution of $\phi$ is set to achieve stationarity of the process ($\phi\in(-1,1)$). Most of applications find $\phi\approx 1$, thus authors of the package recommend to set $\alpha_0 \gtrsim 5$ and $\beta_0\approx 1.5$. The prior distribution of $\sigma^2$ is equivalent to $\sigma\sim |N(0,\sigma^2_{\sigma^2})|$ (half-normal distribution); this is recommended by the authors as the convenient conjugate inverse-gamma distribution does not work well due to bounding $\sigma$ away from 0, which is no a good feature when modeling the log-variance of log-returns.
+
+The following code shows how to simulate and perform Bayesian inference in the stochastic volatility model using the function \textit{svsample} from the \textit{stochvol} package. We set the stochastic volatility parameters $\mu=-10$, $\phi=0.95$ and $\sigma=0.3$. We assume two regressors that distribute standard normal, $\bm{\beta}=[0.5 \ 0.3]^{\top}$, and the sample size is 1250, which is approximately having daily returns during 5 years. We use the default hyperparameters, 10000 MCMC iterations, a burn-in equal 5000 and a thin parameter equal 5.
+
+The summary statistics of the posterior draws show that all 95\% credible intervals encompass the population parameters, and posterior chains seem to achieve convergence. Figure \ref{fig4} displays the posterior results of the volatility ($h_t$). The posterior mean (black) follow the ``observed" series (blue), and the credible intervals (heat colors) encompass most of the time the ``observed" series.  
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter8/figures/SVsim.png}
+	\caption[List of figure caption goes here]{Stochastic volatility model.}\label{fig4}
+\end{figure} 
+
+So far, we have used MCMC algorithms to perform inference in \textit{state-space models}. These algorithms require all observations to estimate the unknown parameters, a process referred to as offline or batch inference. However, this approach has limitations when online inference is needed, as every new observation requires simulating a new posterior chain. This is because MCMC algorithms do not naturally adapt to sequential updates. In contrast, a family of algorithms known as sequential Monte Carlo (SMC) algorithms is specifically designed for sequential use, making them suitable for online inference.    
+     
 
 
 
