@@ -701,7 +701,24 @@ summary(ProbAceptF)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
+    
+\section{Stochastic volatility models}\label{sec83}
+A notable example of non-linear and non-Gaussian \textit{state-space models} is stochastic volatility models (SVMs), which are widely used to model the volatility of financial returns. SVMs have gained significant attention due to their flexibility, ability to capture complex dynamics such as asymmetries, and ease of generalization to simultaneously model multiple returns, making them advantageous over generalized autoregressive conditional heteroskedasticity (GARCH) models proposed by \cite{bollerslev_1986}. However, estimating SVMs is more challenging than estimating GARCH models. This is because GARCH models determine variance in a deterministic manner, whereas SVMs do so stochastically. Consequently, GARCH models are typically estimated using maximum likelihood methods, while SVMs require Bayesian approaches, adding complexity to the estimation process.
 
+The specification of the stochastic volatility model is given by
+\begin{align}
+	y_t&=\bm{x}_t^{\top}\bm{\beta}+\exp\left\{0.5h_t\right\}\mu_t& \text{(Observation equation)}\label{eqsvobs}\\
+	h_t&=\mu+\phi(h_{t-1}-\mu)+\sigma w_t& \text{(State equation)}\label{eqsvst},
+\end{align}
+where $y_t$ are the log-returns, $\bm{x}_t$ are controls, $\bm{\beta}$ are time-invariant location parameters, $\mu_t\sim N(0,1)$, $w_t\sim N(0,1)$, $\mu_t\perp w_t$, the initial log-variance process $h_0\sim N(\mu, \sigma^2/(1-\phi^2))$, $\mu$, $\phi$ and $\sigma$ are the level, persistence and standard deviation of the log-variance, respectively.
+
+Given the specification in Equations \ref{eqsvobs} and \ref{eqsvst}, we can write down the observation equation as $\log\left\{(y_t-\bm{x}_t^{\top}\bm{\beta})^2\right\}=h_t+\log(\mu_t^2)$, thus there is now a linear, but non-Gaussian \textit{state-space model}. \cite{kastner2014ancillarity} approximate the distribution of $\log(\mu_t^2)$ by a mixture of normal distributions, that is, $\log(\mu_t^2)|l_t\sim N(m_{l_t},s_{l_t}^2)$, $l_r\in \left\{1,2,\dots,10\right\}$ defines the mixture component indicator at time $t$. Thus, $\log\left\{(y_t-\bm{x}_t^{\top}\bm{\beta})^2\right\}=h_t+\log(\mu_t^2)$ and $h_t=\mu+\phi(h_{t-1}-\mu)+\sigma w_t$ can be written as a linear and conditionally Gaussian \textit{state-space model}, where $\log\left\{(y_t-\bm{x}_t^{\top}\bm{\beta})^2\right\}=m_{l_t}+h_t+\mu_t^2$, $\mu_t\sim N(0, s_{l_t}^2)$.        
+
+We use the \textit{stochvol} package in our GUI to perform MCMC inference in the SVMs \cite{hosszejni_kastner_2021}; this package in turn is based on the MCMC algorithms proposed by \cite{kastner2014ancillarity}. The default prior distributions in the \textit{stochvol} package are $\bm{\beta}\sim N(\bm{b}_0,\bm{B}_0)$, $\mu\sim N(\mu_0,\sigma_{\mu0}^2)$, $(\phi+1)/2\sim B(\alpha_0,\beta_0)$, and $\sigma^2\sim G(1/2,1/(2\sigma^2_{\sigma^2}))$. The prior distribution of $\phi$ is set to achieve stationarity of the process ($\phi\in(-1,1)$). Most of applications find $\phi\approx 1$, thus authors of the package recommend to set $\alpha_0 \gtrsim 5$ and $\beta_0\approx 1.5$. The prior distribution of $\sigma^2$ is equivalent to $\sigma\sim |N(0,\sigma^2_{\sigma^2})|$ (half-normal distribution); this is recommended by the authors as the convenient conjugate inverse-gamma distribution does not work well due to bounding $\sigma$ away from 0, which is no a good feature when modeling the log-variance of log-returns.
+
+The following code shows how to simulate and perform Bayesian inference in the stochastic volatility model using the function \textit{svsample} from the \textit{stochvol} package. We set the stochastic volatility parameters $\mu=-10$, $\phi=0.95$ and $\sigma=0.3$. We assume two regressors that distribute standard normal, $\bm{\beta}=[0.5 \ 0.3]^{\top}$, and the sample size is 1250, which is approximately having daily returns during 5 years. We use the default hyperparameters, 10000 MCMC iterations, a burn-in equal 5000 and a thin parameter equal 5.
+
+The summary statistics of the posterior draws show that all 95\% credible intervals encompass the population parameters, and posterior chains seem to achieve convergence. Figure \ref{fig4} displays the posterior results of the volatility ($h_t$). The posterior mean (blue) follow the ``observed" series (black), and the 95\% credible intervals (light blue) encompass most of the time the ``observed" series. 
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -726,43 +743,30 @@ res <- stochvol::svsample(y, designmatrix = X, draws = MCMC, burnin = burnin, th
 summary(res[["para"]][[1]][,-c(4,5)])
 summary(res[["beta"]])
 ht <- res[["latent"]][[1]]
-library(fanplot)
-require(latex2exp)
-df <- as.data.frame(ht)
-plot(NULL, main="Percentiles", xlim = c(1, T+1), ylim = c(-12.5, -7.5), xlab = "Time", ylab = TeX("$h_{t}$"))
-fan(data = df)
-lines(colMeans(ht), col = "black", lw = 2)
-lines(h, col = "blue", lw = 2)
+library(dplyr)
+library(ggplot2)
+library(latex2exp)
+ggplot2::theme_set(theme_bw())
+x_means <- colMeans(ht)
+x_quantiles <- apply(ht, 2, function(x) quantile(x, probs = c(0.025, 0.975)))
+df <- tibble(t = seq(1, T), mean = x_means, lower = x_quantiles[1, ], upper = x_quantiles[2, ], x_true = h, observations = y)
+plot_filtering_estimates <- function(df) {
+	p <- ggplot(data = df, aes(x = t)) + geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1, fill = "lightblue") + geom_line(aes(y = x_true), colour = "black", alpha = 1, size = 0.5) + geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) + 	ylab(TeX("$h_{t}$")) + xlab("Time")
+	print(p)
+}
+plot_filtering_estimates(df)
 \end{lstlisting}
 	\end{VF}
-\end{tcolorbox}     
-     
-\section{Stochastic volatility models}\label{sec83}
-A notable example of non-linear and non-Gaussian \textit{state-space models} is stochastic volatility models (SVMs), which are widely used to model the volatility of financial returns. SVMs have gained significant attention due to their flexibility, ability to capture complex dynamics such as asymmetries, and ease of generalization to simultaneously model multiple returns, making them advantageous over generalized autoregressive conditional heteroskedasticity (GARCH) models proposed by \cite{bollerslev_1986}. However, estimating SVMs is more challenging than estimating GARCH models. This is because GARCH models determine variance in a deterministic manner, whereas SVMs do so stochastically. Consequently, GARCH models are typically estimated using maximum likelihood methods, while SVMs require Bayesian approaches, adding complexity to the estimation process.
-
-The specification of the stochastic volatility model is given by
-\begin{align}
-	y_t&=\bm{x}_t^{\top}\bm{\beta}+\exp\left\{0.5h_t\right\}\mu_t& \text{(Observation equation)}\label{eqsvobs}\\
-	h_t&=\mu+\phi(h_{t-1}-\mu)+\sigma w_t& \text{(State equation)}\label{eqsvst},
-\end{align}
-where $y_t$ are the log-returns, $\bm{x}_t$ are controls, $\bm{\beta}$ are time-invariant location parameters, $\mu_t\sim N(0,1)$, $w_t\sim N(0,1)$, $\mu_t\perp w_t$, the initial log-variance process $h_0\sim N(\mu, \sigma^2/(1-\phi^2))$, $\mu$, $\phi$ and $\sigma$ are the level, persistence and standard deviation of the log-variance, respectively.
-
-Given the specification in Equations \ref{eqsvobs} and \ref{eqsvst}, we can write down the observation equation as $\log\left\{(y_t-\bm{x}_t^{\top}\bm{\beta})^2\right\}=h_t+\log(\mu_t^2)$, thus there is now a linear, but non-Gaussian \textit{state-space model}. \cite{kastner2014ancillarity} approximate the distribution of $\log(\mu_t^2)$ by a mixture of normal distributions, that is, $\log(\mu_t^2)|l_t\sim N(m_{l_t},s_{l_t}^2)$, $l_r\in \left\{1,2,\dots,10\right\}$ defines the mixture component indicator at time $t$. Thus, $\log\left\{(y_t-\bm{x}_t^{\top}\bm{\beta})^2\right\}=h_t+\log(\mu_t^2)$ and $h_t=\mu+\phi(h_{t-1}-\mu)+\sigma w_t$ can be written as a linear and conditionally Gaussian \textit{state-space model}, where $\log\left\{(y_t-\bm{x}_t^{\top}\bm{\beta})^2\right\}=m_{l_t}+h_t+\mu_t^2$, $\mu_t\sim N(0, s_{l_t}^2)$.        
-
-We use the \textit{stochvol} package in our GUI to perform MCMC inference in the SVMs \cite{kastner2014ancillarity}, where the prior distributions are $\bm{\beta}\sim N(\bm{b}_0,\bm{B}_0)$, $\mu\sim N(\mu_0,\sigma_{\mu0}^2)$, $(\phi+1)/2\sim B(\alpha_0,\beta_0)$, and $\sigma^2\sim G(1/2,1/(2\sigma^2_{\sigma^2}))$. The prior distribution of $\phi$ is set to achieve stationarity of the process ($\phi\in(-1,1)$). Most of applications find $\phi\approx 1$, thus authors of the package recommend to set $\alpha_0 \gtrsim 5$ and $\beta_0\approx 1.5$. The prior distribution of $\sigma^2$ is equivalent to $\sigma\sim |N(0,\sigma^2_{\sigma^2})|$ (half-normal distribution); this is recommended by the authors as the convenient conjugate inverse-gamma distribution does not work well due to bounding $\sigma$ away from 0, which is no a good feature when modeling the log-variance of log-returns.
-
-The following code shows how to simulate and perform Bayesian inference in the stochastic volatility model using the function \textit{svsample} from the \textit{stochvol} package. We set the stochastic volatility parameters $\mu=-10$, $\phi=0.95$ and $\sigma=0.3$. We assume two regressors that distribute standard normal, $\bm{\beta}=[0.5 \ 0.3]^{\top}$, and the sample size is 1250, which is approximately having daily returns during 5 years. We use the default hyperparameters, 10000 MCMC iterations, a burn-in equal 5000 and a thin parameter equal 5.
-
-The summary statistics of the posterior draws show that all 95\% credible intervals encompass the population parameters, and posterior chains seem to achieve convergence. Figure \ref{fig4} displays the posterior results of the volatility ($h_t$). The posterior mean (black) follow the ``observed" series (blue), and the credible intervals (heat colors) encompass most of the time the ``observed" series.  
+\end{tcolorbox} 
 
 \begin{figure}[!h]
-	\includegraphics[width=340pt, height=200pt]{Chapters/chapter8/figures/SVsim.png}
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter8/figures/SVmodel.png}
 	\caption[List of figure caption goes here]{Stochastic volatility model.}\label{fig4}
 \end{figure} 
 
-So far, we have used MCMC algorithms to perform inference in \textit{state-space models}. These algorithms require all observations to estimate the unknown parameters, a process referred to as offline or batch inference. However, this approach has limitations when online inference is needed, as every new observation requires simulating a new posterior chain. This is because MCMC algorithms do not naturally adapt to sequential updates. In contrast, a family of algorithms known as sequential Monte Carlo (SMC) algorithms is specifically designed for sequential use, making them suitable for online inference.    
+So far, we have used MCMC algorithms to perform inference in \textit{state-space models}. These algorithms require all observations to estimate the unknown parameters, a process referred to as offline or batch inference. However, this approach has limitations when online inference is needed, as every new observation requires simulating a new posterior chain. This is because MCMC algorithms do not naturally adapt to sequential updates. In contrast, particle filter algorithms, which are a subset of sequential Monte Carlo (SMC) methods, are specifically designed for sequential use, making them suitable for online inference.    
      
-
+Remember from Chapter \ref{chap5} that particle filters (sequential Monte Carlo) are algorithms that allow computing a numerical approximation to the filtering distribution $\pi(\bm{\theta}_{0:t}|\bm{y}_{1:t})$ sequentially in time. This is particularly relevant in non-linear and non-Gaussian models where there is no analytical solution for the filtering distribution, or when there are unknown parameters in the model. 
 
 
 \section{Vector Autoregressive models}\label{sec84}

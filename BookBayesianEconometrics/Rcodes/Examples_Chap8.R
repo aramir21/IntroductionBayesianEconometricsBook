@@ -433,13 +433,43 @@ summary(res[["para"]][[1]][,-c(4,5)])
 summary(res[["beta"]])
 plot(res)
 ht <- res[["latent"]][[1]]
-library(fanplot)
+# library(fanplot)
+# require(latex2exp)
+# df <- as.data.frame(ht)
+# plot(NULL, main="Percentiles", xlim = c(1, T+1), ylim = c(-12.5, -7.5), xlab = "Time", ylab = TeX("$h_{t}$"))
+# fan(data = df)
+# lines(colMeans(ht), col = "black", lw = 2)
+# lines(h, col = "blue", lw = 2)
+
+library(dplyr)
+library(ggplot2)
 require(latex2exp)
-df <- as.data.frame(ht)
-plot(NULL, main="Percentiles", xlim = c(1, T+1), ylim = c(-12.5, -7.5), xlab = "Time", ylab = TeX("$h_{t}$"))
-fan(data = df)
-lines(colMeans(ht), col = "black", lw = 2)
-lines(h, col = "blue", lw = 2)
+# cb_palette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442",
+#                 "#0072B2", "#D55E00", "#CC79A7", "grey80")
+ggplot2::theme_set(theme_bw())
+x_means <- colMeans(ht)
+x_quantiles <- apply(ht, 2, function(x) quantile(x, probs = c(0.025, 0.975)))
+
+df <- tibble(t = seq(1, T),
+             mean = x_means,
+             lower = x_quantiles[1, ],
+             upper = x_quantiles[2, ],
+             x_true = h,
+             observations = y)
+
+
+plot_filtering_estimates <- function(df) {
+  p <- ggplot(data = df, aes(x = t)) +
+    geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1,
+                fill = "lightblue") +
+    geom_line(aes(y = x_true), colour = "black", alpha = 1,
+              size = 0.5) +
+    geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) +
+    ylab(TeX("$h_{t}$")) + xlab("Time")
+  print(p)
+}
+
+plot_filtering_estimates(df)
 
 ########################## Stochastic volatility models: SMC approach ########################## 
 rm(list = ls())
@@ -454,6 +484,9 @@ for (t in 2:T) {
   h[t] <- mu + phi*(h[t-1]-mu) + rnorm(1, 0, sigma)
   y[t] <- rnorm(1, 0, sd = exp(0.5*h[t]))
 }
+
+
+
 
 pmhOutput <- pmhtutorial::particleMetropolisHastingsSVmodel(y,
                                                initialTheta = c(0, 0.9, 0.2),
