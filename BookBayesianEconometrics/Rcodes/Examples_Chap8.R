@@ -457,13 +457,12 @@ df <- tibble(t = seq(1, T),
              x_true = h,
              observations = y)
 
-
 plot_filtering_estimates <- function(df) {
   p <- ggplot(data = df, aes(x = t)) +
     geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1,
                 fill = "lightblue") +
     geom_line(aes(y = x_true), colour = "black", alpha = 1,
-              size = 0.5) +
+              linewidth = 0.5) +
     geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) +
     ylab(TeX("$h_{t}$")) + xlab("Time")
   print(p)
@@ -474,7 +473,7 @@ plot_filtering_estimates(df)
 ########################## Stochastic volatility models: SMC approach ########################## 
 rm(list = ls())
 set.seed(010101)
-T <- 1250; K <- 2
+T <- 250; K <- 2
 mu <- -10; phi <- 0.95; sigma <- 0.3
 h <- numeric(T)
 y <- numeric(T)
@@ -484,23 +483,74 @@ for (t in 2:T) {
   h[t] <- mu + phi*(h[t-1]-mu) + rnorm(1, 0, sigma)
   y[t] <- rnorm(1, 0, sd = exp(0.5*h[t]))
 }
-
-
-
-
-pmhOutput <- pmhtutorial::particleMetropolisHastingsSVmodel(y,
-                                               initialTheta = c(0, 0.9, 0.2),
-                                               noParticles=500,
-                                               noIterations=1000,
-                                               stepSize=diag(c(0.05, 0.0002, 0.002)))
-summary(coda::mcmc(pmhOutput[["theta"]]))
-mean(pmhOutput[["proposedThetaAccepted"]])
-ht <- pmhOutput[["xHatFiltered"]]
-library(fanplot)
+# Sequential Monte Carlo with Conditional Prior as Proposal. See SV example and SMC algorithm in https://www.cs.ubc.ca/~arnaud/doucet_johansen_tutorialPF.pdf
+N <- 10000
+log_Weights <- matrix(NA, N, T)  # Log weights
+Weights <- matrix(NA, N, T)  # Weights 
+WeightsST <- matrix(NA, N, T)  # Normalized weights 
+WeightsSTT <- matrix(NA, N, T)  # Normalized weights bar 
+particles <- matrix(NA, N, T)   # Particles
+particlesT <- matrix(NA, N, T)   # Particles bar
+logalphas <- matrix(NA, N, T)   # Incremental importance weights
+ESS <- rep(NA, T) # Efective sample size
+cutoff <- 0.66
+# Initialize particles
+particles[, 1] <- rnorm(N, mu, sigma / sqrt(1 - phi^2))  # Stationary prior
+log_Weights[, 1] <- dnorm(y[1], 0, sd = exp(0.5*particles[,1]), log = TRUE)  # Likelihood
+# Normalize weights
+# Weights[, 1] <- exp(log_weights[, 1] - max(log_weights[, 1]))
+Weights[, 1] <- exp(log_Weights[, 1])
+WeightsST[, 1] <- Weights[, 1] / sum(Weights[, 1])
+ESS[1] <- (sum(WeightsST[, 1]^2))^(-1)
+ind <- sample(1:N, size = N, replace = TRUE, prob = WeightsST[, 1]) # Resample 
+particles[, 1] <- particles[ind, 1] # Resampled particles
+WeightsST[, 1] <- rep(1/N, N) # Resampled weights
+pb <- winProgressBar(title = "progress bar", min = 0, max = T, width = 300)
+for (t in 2:T) {
+  particles[, t] <- rnorm(N, mu + phi*(particles[, t - 1] - mu), sigma)  # Sample from proposal
+  logalphas[, t] <- dnorm(y[t], 0, sd = exp(0.5*particles[,t]), log = TRUE) 
+  Weights[, t] <- exp(logalphas[, t])
+  WeightsST[, t] <- Weights[, t] / sum(Weights[, t])
+  if(t < T){
+    ind <- sample(1:N, size = N, replace = TRUE, prob = WeightsST[, t])
+    particles[, 1:t] <- particles[ind, 1:t]
+  }else{
+    ind <- sample(1:N, size = N, replace = TRUE, prob = WeightsST[, t])
+    particlesT[, 1:t] <- particles[ind, 1:t]
+    WeightsSTT <- 1/N
+  }
+  setWinProgressBar(pb, t, title=paste( round(t/T*100, 0), "% done"))
+}
+close(pb)
+FilterDist <- colSums(particles * WeightsST)
+SDFilterDist <- (colSums(particles^2 * WeightsST) - FilterDist^2)^0.5
+FilterDistT <- colSums(particlesT * WeightsSTT)
+SDFilterDistT <- (colSums(particlesT^2 * WeightsSTT) - FilterDistT^2)^0.5
+MargLik <- colMeans(Weights)
+plot(MargLik, type = "l")
+plot(ESS, type = "l")
+library(dplyr)
+library(ggplot2)
 require(latex2exp)
-df <- as.data.frame(ht)
-plot(NULL, main="Percentiles", xlim = c(1, T+1), ylim = c(-13.5, -6.5), xlab = "Time", ylab = TeX("$h_{t}$"))
-fan(data = df)
-lines(colMeans(ht), col = "black", lw = 2)
-lines(h, col = "blue", lw = 2)
+ggplot2::theme_set(theme_bw())
+df <- tibble(t = seq(1, T),
+             mean = FilterDist,
+             lower = FilterDist - 2*SDFilterDist,
+             upper = FilterDist + 2*SDFilterDist,
+             meanT = FilterDistT,
+             lowerT = FilterDistT - 2*SDFilterDistT,
+             upperT = FilterDistT + 2*SDFilterDistT,
+             x_true = h)
 
+plot_filtering_estimates <- function(df) {
+  p <- ggplot(data = df, aes(x = t)) +
+    geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1,
+                fill = "lightblue") +
+    geom_line(aes(y = x_true), colour = "black", alpha = 1,
+              linewidth = 0.5) +
+    geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) +
+    geom_line(aes(y = meanT), colour = "purple", linewidth = 0.5) +
+    ylab(TeX("$h_{t}$")) + xlab("Time")
+  print(p)
+}
+plot_filtering_estimates(df)

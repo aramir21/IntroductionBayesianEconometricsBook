@@ -491,6 +491,132 @@ summary(ProbAceptF)
 	\end{VF}
 \end{tcolorbox}  
 
+\item \textbf{Stochastic volatility model}
+\begin{itemize}
+	\item Program a sequential importance sampling (SIS) from scratch in the vanilla stochastic volatility model setting $\mu=-10$, $\phi = 0.95$, $\sigma=0.3$ and $T=250$. Check what happen with its performance.
+	\item Modify the sequential Monte Carlo (SMC) to perform multinomial resampling when the effective sample size is lower than 50\% the number of particles.  
+\end{itemize}
+
+\textbf{Answer}
+
+We observe that, initially, sequential importance sampling performs relatively well. However, particle degeneracy occurs around $(t=50)$, causing the algorithm's performance to deteriorate rapidly (see Figure \ref{figSIS}). We can see in Figure \ref{figESS} how the effective sample size (ESS) of the particles decreases rapidly.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Stochastic volatility model:  Sequential importance sampling}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+T <- 250; K <- 2; mu <- -10; phi <- 0.95; sigma <- 0.3
+h <- numeric(T); y <- numeric(T)
+h[1] <- rnorm(1, mu, sigma / sqrt(1 - phi^2))
+y[1] <- rnorm(1, 0, exp(h[1] / 2))
+for (t in 2:T) {
+	h[t] <- mu + phi*(h[t-1]-mu) + rnorm(1, 0, sigma)
+	y[t] <- rnorm(1, 0, sd = exp(0.5*h[t]))
+}
+N <- 10000
+log_Weights <- matrix(NA, N, T)  # Log weights
+Weights <- matrix(NA, N, T)  # Weights 
+WeightsST <- matrix(NA, N, T)  # Normalized weights 
+particles <- matrix(NA, N, T)   # Particles
+logalphas <- matrix(NA, N, T)   # Incremental importance weights
+ESS <- rep(NA, T) # Effective sample size
+particles[, 1] <- rnorm(N, mu, sigma / sqrt(1 - phi^2))
+log_Weights[, 1] <- dnorm(y[1], 0, sd = exp(0.5*particles[,1]), log = TRUE)  
+Weights[, 1] <- exp(log_Weights[, 1])
+WeightsST[, 1] <- Weights[, 1] / sum(Weights[, 1])
+ESS[1] <- (sum(WeightsST[, 1]^2))^(-1)
+for (t in 2:T) {
+	particles[, t] <- rnorm(N, mu + phi*(particles[, t - 1] - mu), sigma)  # Sample from proposal
+	logalphas[, t] <- dnorm(y[t], 0, sd = exp(0.5*particles[,t]), log = TRUE) 
+	log_Weights[, t] <- log_Weights[, t - 1] + logalphas[, t]
+	Weights[, t] <- exp(log_Weights[, t])
+	WeightsST[, t] <- Weights[, t] / sum(Weights[, t])
+	ESS[t] <- (sum(WeightsST[, t]^2))^(-1)
+}
+FilterDist <- colSums(particles * WeightsST)
+SDFilterDist <- (colSums(particles^2 * WeightsST) - FilterDist^2)^0.5
+MargLik <- colMeans(Weights)
+library(dplyr); library(ggplot2); require(latex2exp)
+ggplot2::theme_set(theme_bw())
+df <- tibble(t = seq(1, T), mean = FilterDist, lower = FilterDist - 1.96*SDFilterDist, upper = FilterDist + 1.96*SDFilterDist, x_true = h)
+plot_filtering_estimates <- function(df) {
+	p <- ggplot(data = df, aes(x = t)) + geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1, fill = "lightblue") + geom_line(aes(y = x_true), colour = "black", alpha = 1, linewidth = 0.5) + geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) +
+	ylab(TeX("$h_{t}$")) + xlab("Time")
+	print(p)
+}
+plot_filtering_estimates(df)
+plot(ESS, type = "l", ylab = "Effective sample size", xlab = "Time")
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter8/figures/SIS.png}
+	\caption[List of figure caption goes here]{Stochastic volatility model: Sequential importance sampling (SIS).}\label{figSIS}
+\end{figure}
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter8/figures/ESSsis.png}
+	\caption[List of figure caption goes here]{Stochastic volatility model: Effective sample size (ESS) of the particles.}\label{figESS}
+\end{figure} 
+
+This code shows how to program the SMC algorithm performing multinomial resampling when the effective sample size es lower than 50\% the initial number of particles. It seems that in this example is better to perform resampling every time period.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Stochastic volatility model:  Sequential Monte Carlo}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+T <- 250; mu <- -10; phi <- 0.95; sigma <- 0.3
+h <- numeric(T); y <- numeric(T)
+h[1] <- rnorm(1, mu, sigma / sqrt(1 - phi^2))  # Initial state
+y[1] <- rnorm(1, 0, exp(h[1] / 2))           # Initial observation
+for (t in 2:T) {
+	h[t] <- mu + phi*(h[t-1]-mu) + rnorm(1, 0, sigma)
+	y[t] <- rnorm(1, 0, sd = exp(0.5*h[t]))
+}
+N <- 10000
+log_Weights <- matrix(NA, N, T)  # Log weights
+Weights <- matrix(NA, N, T)  # Weights 
+WeightsST <- matrix(NA, N, T)  # Normalized weights 
+particles <- matrix(NA, N, T)   # Particles
+logalphas <- matrix(NA, N, T)   # Incremental importance weights
+ESS <- rep(NA, T); cutoff <- 0.5
+# Initialize particles
+particles[, 1] <- rnorm(N, mu, sigma / sqrt(1 - phi^2))  # Stationary prior
+log_Weights[, 1] <- dnorm(y[1], 0, sd = exp(0.5*particles[,1]), log = TRUE)  # Likelihood
+# Normalize weights
+Weights[, 1] <- exp(log_Weights[, 1])
+WeightsST[, 1] <- Weights[, 1] / sum(Weights[, 1])
+ESS[1] <- (sum(WeightsST[, 1]^2))^(-1)
+ind <- sample(1:N, size = N, replace = TRUE, prob = WeightsST[, 1]) # Resample 
+particles[, 1] <- particles[ind, 1] # Resampled particles
+WeightsST[, 1] <- rep(1/N, N) # Resampled weights
+pb <- winProgressBar(title = "progress bar", min = 0, max = T, width = 300)
+for (t in 2:T) {# Sample particles
+	particles[, t] <- rnorm(N, mu + phi*(particles[, t - 1] - mu), sigma)  # Sample from proposal
+	logalphas[, t] <- dnorm(y[t], 0, sd = exp(0.5*particles[,t]), log = TRUE) 
+	Weights[, t] <- exp(logalphas[, t])
+	WeightsST[, t] <- exp(logalphas[, t]) / sum(exp(logalphas[, t]))
+	ESS[t] <- (sum(WeightsST[, t]^2))^(-1)
+	if(ESS[t] < N*cutoff){
+		ind <- sample(1:N, size = N, replace = TRUE, prob = WeightsST[, t])
+		particles[, 1:t] <- particles[ind, 1:t]
+	}
+	setWinProgressBar(pb, t, title=paste( round(t/T*100, 0), "% done"))
+}
+close(pb)
+FilterDist <- colSums(particles * WeightsST)
+SDFilterDist <- (colSums(particles^2 * WeightsST) - FilterDist^2)^0.5
+MargLik <- colMeans(Weights)
+plot(MargLik, type = "l")
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
  
+
 
 \end{enumerate}
