@@ -473,7 +473,7 @@ plot_filtering_estimates(df)
 ########################## Stochastic volatility models: SMC approach ########################## 
 rm(list = ls())
 set.seed(010101)
-T <- 250; K <- 2
+T <- 1250
 mu <- -10; phi <- 0.95; sigma <- 0.3
 h <- numeric(T)
 y <- numeric(T)
@@ -488,7 +488,7 @@ N <- 10000
 log_Weights <- matrix(NA, N, T)  # Log weights
 Weights <- matrix(NA, N, T)  # Weights 
 WeightsST <- matrix(NA, N, T)  # Normalized weights 
-WeightsSTT <- matrix(NA, N, T)  # Normalized weights bar 
+WeightsSTT <- matrix(1/N, N, T)  # Normalized weights bar 
 particles <- matrix(NA, N, T)   # Particles
 particlesT <- matrix(NA, N, T)   # Particles bar
 logalphas <- matrix(NA, N, T)   # Incremental importance weights
@@ -504,6 +504,7 @@ WeightsST[, 1] <- Weights[, 1] / sum(Weights[, 1])
 ESS[1] <- (sum(WeightsST[, 1]^2))^(-1)
 ind <- sample(1:N, size = N, replace = TRUE, prob = WeightsST[, 1]) # Resample 
 particles[, 1] <- particles[ind, 1] # Resampled particles
+particlesT[, 1] <- particles[, 1] # Resampled particles
 WeightsST[, 1] <- rep(1/N, N) # Resampled weights
 pb <- winProgressBar(title = "progress bar", min = 0, max = T, width = 300)
 for (t in 2:T) {
@@ -517,7 +518,6 @@ for (t in 2:T) {
   }else{
     ind <- sample(1:N, size = N, replace = TRUE, prob = WeightsST[, t])
     particlesT[, 1:t] <- particles[ind, 1:t]
-    WeightsSTT <- 1/N
   }
   setWinProgressBar(pb, t, title=paste( round(t/T*100, 0), "% done"))
 }
@@ -528,19 +528,20 @@ FilterDistT <- colSums(particlesT * WeightsSTT)
 SDFilterDistT <- (colSums(particlesT^2 * WeightsSTT) - FilterDistT^2)^0.5
 MargLik <- colMeans(Weights)
 plot(MargLik, type = "l")
-plot(ESS, type = "l")
 library(dplyr)
 library(ggplot2)
 require(latex2exp)
 ggplot2::theme_set(theme_bw())
-df <- tibble(t = seq(1, T),
-             mean = FilterDist,
-             lower = FilterDist - 2*SDFilterDist,
-             upper = FilterDist + 2*SDFilterDist,
-             meanT = FilterDistT,
-             lowerT = FilterDistT - 2*SDFilterDistT,
-             upperT = FilterDistT + 2*SDFilterDistT,
-             x_true = h)
+Tfig <- 250
+keepFig <- 1:Tfig
+df <- tibble(t = keepFig,
+             mean = FilterDist[keepFig],
+             lower = FilterDist[keepFig] - 2*SDFilterDist[keepFig],
+             upper = FilterDist[keepFig] + 2*SDFilterDist[keepFig],
+             meanT = FilterDistT[keepFig],
+             lowerT = FilterDistT[keepFig] - 2*SDFilterDistT[keepFig],
+             upperT = FilterDistT[keepFig] + 2*SDFilterDistT[keepFig],
+             x_true = h[keepFig])
 
 plot_filtering_estimates <- function(df) {
   p <- ggplot(data = df, aes(x = t)) +
@@ -554,3 +555,7 @@ plot_filtering_estimates <- function(df) {
   print(p)
 }
 plot_filtering_estimates(df)
+
+# initialTheta <- c(mu, phi, sigma); stepSize <- diag(c(0.05, 0.01, 0.01))
+# Res <- pmhtutorial::particleMetropolisHastingsSVmodel(y, initialTheta = initialTheta, noParticles = N,
+#                                   noIterations = 1000, stepSize = stepSize)

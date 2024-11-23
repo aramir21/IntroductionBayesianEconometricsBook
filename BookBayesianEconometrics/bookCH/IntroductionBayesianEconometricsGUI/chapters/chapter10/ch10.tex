@@ -1,6 +1,10 @@
 \chapter{Bayesian model average}\label{chap10}
 
-We describe in this chapter how to introduce model uncertainty and average over different models in a probabilistic consistent way. We describe .... 
+We outline in this chapter a framework for addressing model uncertainty and averaging across different models in a probabilistically consistent manner. The discussion tackles two major computational challenges in Bayesian model averaging: the vast space of possible models and the absence of analytical solutions for the marginal likelihood.
+
+We begin by illustrating the approach within the Gaussian linear model, assuming exogeneity of the regressors, and extend the analysis to cases with endogenous regressors. Additionally, we adapt the framework to generalized linear models, including the logit, gamma, and Poisson families.
+
+For dynamic models, we demonstrate how Bayesian model averaging can be implemented in contexts requiring online predictions. Lastly, we explore alternative methods for computing marginal likelihoods, especially when the Bayesian information criterion's asymptotic approximation proves inadequate.  
 
 Remember that we can run our GUI typing
 
@@ -792,6 +796,131 @@ plot(BMAmeans/BMAsd)
 
 %The Gaussian linear model is an example of a generalized linear model. A GLM is characterized by a distribution function that is in the exponential family, that is, $p_i(y_i|\theta_i,\phi)=h(y_i,\phi)Exp\left\{(\theta_iy_i-b(\theta_i))/a(\phi)\right\}$ (canonical representation), $y_i\stackrel{i.n.d.} {\thicksim}p_i$, $i=1,2,\dots,n$. It also has a linear predictor $\theta_i=\bm{x}_i^{\top}\bm{\beta}$, and a link function $g$ such that $E(Y_i|x_i)\equiv \mu_i=b'(\theta_i)=g^{-1}(\bm{x}_i^{\top}\bm{\beta})$ ($g$ is monotonic and differentiable), and $V(Y_i)=b''(\theta_i)a(\phi)$ \cite{McCullagh1989}. The identity function $\mu_i=\bm{x}_i^{\top}\bm{\beta}$ is the canonical link function in the case of the Gaussian model.\footnote{A canonical link functions is characterized by the existence of a sufficient statistic ($\bm{X}^{\top}\bm{y}$) equal in dimension to $\bm{\beta}$.} This statistical framework can help us to characterize:
 
+\section{Dynamic model averaging}\label{sec10_3A}
+
+In this section we show how to perform Bayesian model average in state-space models. The point of departure is the univariate random walk state-space model (see Equations \ref{eq1Obs} and \ref{eq1Obs} in Chapter \ref{chap8}) conditional on model $\mathcal{M}_m$, $m=1,2\dots,M$. 
+\begin{align}
+	Y_t&=\bm{x}_{mt}^{\top}\bm{\beta}_{mt}+\mu_{mt}\\
+	\bm{\beta}_{mt}&=\bm{\beta}_{mt-1}+\bm{w}_{mt},
+\end{align}
+where $\mu_{mt}\sim N(0,\sigma^2)$ and $\bm{w}_{mt}\sim N(\bm{0},\bm{\Omega}_{mt})$.
+
+Given $\bm{\beta}_{mt-1}|\bm{y}_{1:t-1}\sim N(\bm{b}_{mt-1},\bm{B}_{mt-1})$, then, we know from Chapter \ref{chap8} that $\bm{\beta}_{mt}|\bm{y}_{1:t-1}\sim N(\bm{b}_{mt-1}, \bm{R}_{mt})$, $\bm{R}_{mt}=\bm{B}_{mt-1}+\bm{\Omega}_{mt}$. 
+
+Specification of $\bm{\Omega}_t$ can be highly demanding. Thus, a common approach is to express $\bm{\Omega}_{mt}=\frac{1-\lambda}{\lambda}\bm{B}_{mt-1}$, where $\lambda$ is called the \textit{forgetting parameter} or \textit{discount factor}, because it discounts the matrix $\bm{B}_{mt-1}$ that we would have with a deterministic state evolution into the matrix $\bm{R}_{mt}$ \cite[Chap.~4]{petris2009dynamic}. This parameter is typically slightly below 1, and implies that $\bm{R}_{mt}=\lambda^{-1}\bm{B}_{mt-1}$. ($\lambda^{-1}>1$).
+
+\cite{raftery2010online} assume that the model changes infrequently, and its evolution is given by the transition matrix $\bm{T}=[t_{ml}]$, where $t_{ml}=P(\mathcal{M}_t=\mathcal{M}_m|\mathcal{M}_{t-1}=\mathcal{M}_l)$.
+
+Then, the aim is to calculate filtering distribution $p(\bm{\beta}_{mt},\mathcal{M}_t|y_t)=\sum_{m=1}^Mp(\bm{\beta}_{mt}|\mathcal{M}_t=\mathcal{M}_m,y_t)p(\mathcal{M}_t=\mathcal{M}_m|y_t)$. Thus, given the conditional distribution of the state at time $t-1$, $p(\bm{\beta}_{mt-1},\mathcal{M}_{t-1}|{y}_{t-1})=\sum_{m=1}^Mp(\bm{\beta}_{mt-1}|\mathcal{M}_{t-1}=\mathcal{M}_m,{y}_{t-1})p(\mathcal{M}_{t-1}=\mathcal{M}_m|{y}_{t-1})$, where the conditional distribution of $\bm{\beta}_{mt-1}$ is approximated by a Gaussian distribution, $\bm{\beta}_{mt-1}|\mathcal{M}_{t-1}=\mathcal{M}_{m},y_{t-1}\sim N(\bm{b}_{mt-1},\bm{B}_{mt-1})$, then the first step is to get the one-step-ahead predictive distribution is getting the prediction of the model indicator, 
+\begin{align*}
+	p(\mathcal{M}_t=\mathcal{M}_l|y_{t-1})&=\sum_{m=1}^M p(\mathcal{M}_{t-1}=\mathcal{M}_m|y_{t-1})\times t_{lm}\\
+	&\approx \frac{p(\mathcal{M}_{t-1}=\mathcal{M}_l|y_{t-1})^{\delta}+c}{\sum_{m=1}^M p(\mathcal{M}_{t-1}=\mathcal{M}_m|y_{t-1})^{\delta}+c},  
+\end{align*}
+where the second equality is used to avoid dealing with the $M^2$ elements of the transition matrix $\bm{T}$ such that the forgetting parameter $\delta$ is used, this parameter is slightly less than 1, and $c=0.001/M$ is introduced to handle a model probability being brought to computational zero by outliers.
+
+Then, we get the one-step-ahead predictive distribution of the state vector, $\bm{\beta}_{mt}|\mathcal{M}_{t}=\mathcal{M}_{m},y_{t-1}\sim N(\bm{b}_{mt-1},\lambda^{-1}\bm{B}_{mt-1})$ 
+
+Now, we consider the filtering stage, where the model filtering equation is 
+\begin{align*}
+	p(\mathcal{M}_t=\mathcal{M}_l|y_{t})=\frac{p(\mathcal{M}_t=\mathcal{M}_l|y_{t-1})p_l(y_t|y_{t-1})}{\sum_{m=1}^M p(\mathcal{M}_t=\mathcal{M}_m|y_{t-1})p_m(y_t|y_{t-1})},
+\end{align*}
+where $p_m(y_t|y_{t-1})$ is the one-step-ahead predictive distribution of $Y_t|{y}_{t-1}$, which is $N(f_t,Q_t)$, where $f_t=\bm{x}_t^{\top}\bm{b}_{t-1}$ and $Q_t=\bm{x}_{mt}^{\top}\lambda^{-1}\bm{B}_{mt-1}\bm{x}_{mt}+\sigma^2$ (see Chapter \ref{chap8}).
+
+The states filtering equation is $\bm{\beta}_{mt}|\mathcal{M}_{t}=\mathcal{M}_{m},y_{t}\sim N(\bm{b}_{mt},\bm{B}_{mt})$ where $\bm{b}_{mt}$ and $\bm{B}_{mt}$ are given in the Kalman filtering recursion of Chapter \ref{chap8}.
+
+\cite{raftery2010online} initiate their algorithm assuming equal prior model probabilities, and $\sigma^2$ is estimated using a recursive method of moments estimator.
+
+We implement dynamic Bayesian model averaging in our GUI using the function \textit{dma} from the package \textit{dma}. Algorithm \ref{alg:DBMA} shows how to perform inference using our GUI.
+
+\begin{algorithm}[h!]
+	\caption{Dynamic Bayesian model average}\label{alg:DBMA}
+	\begin{algorithmic}[1]  		 			
+		\State Select \textit{Bayesian Model Averaging} on the top panel
+		\State Select \textit{Dynamic Bayesian model average}
+		\State Upload the dataset selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend
+		\State Upload the matrix of models selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend
+		\State Type the \textit{forgetting parameters} in the boxes under \textbf{Lambda: Number slightly below 1} and \textbf{Delta: Number slightly below 1}, this is not necessary as by default there is 0.99 in both cases  
+		\State Click the \textit{Go!} button
+		\State Analyze results: After a few seconds or minutes, a table appears showing, for each regressor in the dataset, the dynamic Bayesian average filtering recursions for each state (\textbf{Mean} and \textbf{Standard deviation}), the posterior model probability (\textbf{PMP}), and the Bayesian model average prediction (\textbf{Prediction})
+		\State Download posterior results using the \textit{Download results DBMA}. There are two files, the first has the dynamic Bayesian average filtering recursions for each state, and the second file has the PMP of each model, and the dynamic Bayesian model average prediction
+	\end{algorithmic} 
+\end{algorithm}
+
+\textbf{Example: Dynamic Bayesian model average}
+
+We perform a simulation exercises where there are 8 ($2^3$) competing models originated from 3 regressors, $x_{tk}\sim N(0.5,0.8^2)$, $k=2,3,4$, and $\beta_1=0.5$, $\beta_{2t}$ is a sequence from 1 to 2 in steps given by $1/T$, $\beta_{3t}=\begin{Bmatrix}
+	-1, & 1<t\leq 0.75T\\
+	0, & 0.75T< t \leq T
+\end{Bmatrix}$, and $\beta_4=1.2$. Then, $y_t=\beta_1+\beta_{2t}x_{2t}+\beta_{3t}x_{3t}+\beta_{4}x_{4t}+\mu_t$, where $\mu_t\sim N(0,1)$, $t=1,2,\dots,500$. This setting implies that during the first 75\% of the period the model including all 3 regressors is the data generating process, and after this, the model with regressors 2 and 4 is the data generating process.
+
+The following code shows the simulation exercise, and the results of the dynamic Bayesian model average.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Dynamic Bayesian model average}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+T <- 500; K <- 3
+X <- matrix(rnorm(T*K, mean = 0.5, sd = 0.8), T, K)
+combs <- expand.grid(c(0,1), c(0,1), c(0,1))
+B1 <- 0.5; B2t <- seq(1, 2, length.out=T )
+a <- 0.75; B3t <- c(rep(-1,round(a*T)), rep(0,round((1-a)*T)))
+B4 <- 1.2; sigma <- 1; mu <- rnorm(T, 0, sigma)
+y <- B1 + X[,1]*B2t + X[,2]*B3t + X[,3]*B4 + mu
+T0 <- 50
+dma.test <- dma::dma(X, y, combs, lambda=.99, gamma=.99, initialperiod = T0)
+plot(dma.test[["pmp"]][-c(1:T0),8], type = "l", col = "green", main = "Posterior model probability: Model all regressors vs model regressors 1 and 3", xlab = "Time", ylab = "PMP")
+lines(dma.test[["pmp"]][-c(1:T0),6], col = "red")
+legend(x = 0, y = 1, legend = c("Model: All regressors", "Model: Regressors 1 and 3"), col = c("green", "red"), lty=1:1, cex=0.8)
+require(latex2exp)
+plot(dma.test[["thetahat.ma"]][-c(1:T0),1], type = "l", col = "green", main = "Bayesian model average filtering recursion", xlab = "Time", ylab = TeX("$\\beta_{1}$"))
+abline(h = B1, col = "red")
+legend(x = 0, y = 0.4, legend = c("State filtering", "State population"), col = c("green", "red"), lty=1:1, cex=0.8)
+plot(dma.test[["thetahat.ma"]][-c(1:T0),2], type = "l", col = "green", main = "Bayesian model average filtering recursion", xlab = "Time", ylab = TeX("$\\beta_{2t}$"), ylim = c(0.5,2))
+lines(B2t[-c(1:T0)], col = "red")
+legend(x = 0, y = 0.8, legend = c("State filtering", "State population"), col = c("green", "red"), lty=1:1, cex=0.8)
+plot(dma.test[["thetahat.ma"]][-c(1:T0),3], type = "l", col = "green", main = "Bayesian model average filtering recursion", xlab = "Time", ylab = TeX("$\\beta_{3t}$"))
+lines(B3t[-c(1:T0)], col = "red")
+legend(x = 0, y = -0.4, legend = c("State filtering", "State population"), col = c("green", "red"), lty=1:1, cex=0.8)
+plot(dma.test[["thetahat.ma"]][-c(1:T0),4], type = "l", col = "green", main = "Bayesian model average filtering recursion", xlab = "Time", ylab = TeX("$\\beta_{4t}$"))
+abline(h = B4, col = "red")
+legend(x = 0, y = 1.3, legend = c("State filtering", "State population"), col = c("green", "red"), lty=1:1, cex=0.8)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+Figure \ref{figPMPdbma} shows the posterior model probabilities of the model with all the regressors (green line), and the model with regressors 2 and 4 (red line). In one hand, we see that the model with all regressors, which is the data generating process in the first period ($t\leq 0.75T$), gets a PMP near 1, and then its PMP decreases to values around 40\%. On the other hand, the model with regressors 2 and 4 gets a PMP near 0 in the first part of the period, and then, its PMP gets values higher than 60\%, when this model becomes the data generating process. These results suggest than in this particular simulation exercise the dynamic Bayesian model average works relatively well calculating the PMPs. 
+  
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter8/figures/figPMPdbma.png}
+	\caption[List of figure caption goes here]{Posterior model probability: Dynamic Bayesian model average.}\label{figPMPdbma}
+\end{figure}
+
+Figures \ref{figPMPdbma1}, \ref{figPMPdbma2}, \ref{figPMPdbma3} and \ref{figPMPdbma4} show a comparison between the Bayesian model average filtering recursion of the states (green lines), and their population values (red lines). We see that the filtering recursions follow the pattern of the population values. However, the values are far from being perfect. This is due to the PMPs of the models matching the data generating process being not equal to 1, this in turn affects the performance of the filtering recursions.  
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter8/figures/figPMPdbma1.png}
+	\caption[List of figure caption goes here]{States ($\beta_{1}$): Population versus dynamic Bayesian model average of the filtering recursion.}\label{figPMPdbma1}
+\end{figure}
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter8/figures/figPMPdbma2.png}
+	\caption[List of figure caption goes here]{States ($\beta_{2t}$): Population versus dynamic Bayesian model average of the filtering recursion.}\label{figPMPdbma2}
+\end{figure}
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter8/figures/figPMPdbma3.png}
+	\caption[List of figure caption goes here]{States ($\beta_{3t}$): Population versus dynamic Bayesian model average of the filtering recursion.}\label{figPMPdbma3}
+\end{figure}
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter8/figures/figPMPdbma4.png}
+	\caption[List of figure caption goes here]{States ($\beta_{4}$): Population versus dynamic Bayesian model average of the filtering recursion.}\label{figPMPdbma4}
+\end{figure}
+
+Dynamic Bayesian model average was extended to logit models by \cite{mccormick2012dynamic}. We ask in Exercise 11 to perform a simulation of this model, and perform BMA using the function \textit{logistic.dma} from the \textit{dma} package.
+
 \section{Calculating the marginal likelihood}\label{sec10_4}
 
 The BIC is an asymptotic shortcut to approximate the marginal likelihood, and consequently, obtain the Bayes factors. However, this has limitations in moderate and small sample size applications \cite{gelfand1994bayesian}. Thus, there are other methods to calculate the Bayes factors when there is no an analytical solution of the marginal likelihood.
@@ -851,7 +980,7 @@ Given a probability density function $p(\bm{\theta})$, whose support is in $\bm{
 	\mathbb{E}\left[\frac{p(\bm{\theta})}{\pi(\bm{\theta}|\mathcal{M}_m)p(\bm{y}|\bm{\theta}_m,\mathcal{M}_m)}\biggr\rvert \bm{y},\mathcal{M}_m\right]&=\frac{1}{p(\bm{y}|\mathcal{M}_m)},
 \end{align*} 
 
-where the expected value is with respect to the posterior distribution given the model $\mathcal{M}_m$ (see Exercise 11).
+where the expected value is with respect to the posterior distribution given the model $\mathcal{M}_m$ (see Exercise 12).
 
 The critical point is to select a good $p(\bm{\theta})$. \cite{geweke1999using} recommends to use $p(\bm{\theta})$ equal to a truncated multivariate normal density function with mean and variance equal to the posterior mean ($\hat{\bm{\theta}}$) and variance ($\hat{\bm{\Sigma}}$) of $\bm{\theta}$. The truncation region is $\hat{\bm{\Theta}}=\left\{\bm{\theta}:(\bm{\theta}-\hat{\bm{\theta}})^{\top}\hat{\bm{\Sigma}}^{-1}(\bm{\theta}-\hat{\bm{\theta}})\leq \chi_{1-\alpha}^2(K)\right\}$, where $\chi_{1-\alpha}^2(K)$ is the $(1-\alpha)$ percentile of the Chi-squared distribution with $K$ degrees of freedom, $K$ is the dimension of $\bm{\theta}$. We can pick small values of $\alpha$, for instance, $\alpha=0.01$.
 
@@ -1160,6 +1289,8 @@ Use the datasets \textit{11ExportDiversificationHHI.csv} and \textit{12ExportDiv
 \item Use the dataset \textit{15Fertile2.csv} from \cite[p.~547]{Wooldridge2012} to perform BMA using the Poisson model with the log link. This data set has information about 1,781 women from Botswana in 1988 (for details, see \textbf{https://rdrr.io/cran/wooldridge/man/fertil2.html}, and take into account that we deleted some variables and omitted observations with NA values). The dependent variable is the number of children ever born (ceb), which is a count variable, as a function of 19 potential determinants.
 
 \item Perform BMA in the logit model using MC3 and the BIC approximation using the simulation setting of Section \ref{sec10_3}.
+
+\item Use the function \textit{logistic.dma} from the \textit{dma} package to perform the following simulation exercise, and perform dynamic Bayesian model average.
 
 \item Show that 
 \begin{align*}

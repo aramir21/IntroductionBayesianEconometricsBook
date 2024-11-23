@@ -500,11 +500,10 @@ plot_filtering_estimates <- function(df) {
 plot_filtering_estimates(df)
 plot(ESS, type = "l", ylab = "Effective sample size", xlab = "Time")
 
-########################## Stochastic volatility models: Sequential Monte Carlo ########################## 
+########################## Stochastic volatility models: SMC approach ########################## 
 rm(list = ls())
 set.seed(010101)
-T <- 250
-mu <- -10; phi <- 0.95; sigma <- 0.3
+T <- 1250; mu <- -10; phi <- 0.95; sigma <- 0.3
 h <- numeric(T)
 y <- numeric(T)
 h[1] <- rnorm(1, mu, sigma / sqrt(1 - phi^2))  # Initial state
@@ -513,11 +512,14 @@ for (t in 2:T) {
   h[t] <- mu + phi*(h[t-1]-mu) + rnorm(1, 0, sigma)
   y[t] <- rnorm(1, 0, sd = exp(0.5*h[t]))
 }
+# Sequential Monte Carlo with Conditional Prior as Proposal. See SV example and SMC algorithm in https://www.cs.ubc.ca/~arnaud/doucet_johansen_tutorialPF.pdf
 N <- 10000
 log_Weights <- matrix(NA, N, T)  # Log weights
 Weights <- matrix(NA, N, T)  # Weights 
 WeightsST <- matrix(NA, N, T)  # Normalized weights 
+WeightsSTT <- matrix(1/N, N, T)  # Normalized weights bar 
 particles <- matrix(NA, N, T)   # Particles
+particlesT <- matrix(NA, N, T)   # Particles bar
 logalphas <- matrix(NA, N, T)   # Incremental importance weights
 ESS <- rep(NA, T) # Efective sample size
 cutoff <- 0.5
@@ -530,40 +532,49 @@ Weights[, 1] <- exp(log_Weights[, 1])
 WeightsST[, 1] <- Weights[, 1] / sum(Weights[, 1])
 ESS[1] <- (sum(WeightsST[, 1]^2))^(-1)
 ind <- sample(1:N, size = N, replace = TRUE, prob = WeightsST[, 1]) # Resample 
-particles[, 1] <- particles[ind, 1] # Resampled particles
+particles[, 1] <- particles[, 1] # Resampled particles
+particlesT[, 1] <- particles[ind, 1] # Resampled particles
 WeightsST[, 1] <- rep(1/N, N) # Resampled weights
 pb <- winProgressBar(title = "progress bar", min = 0, max = T, width = 300)
 for (t in 2:T) {
-  # Sample particles
   particles[, t] <- rnorm(N, mu + phi*(particles[, t - 1] - mu), sigma)  # Sample from proposal
   logalphas[, t] <- dnorm(y[t], 0, sd = exp(0.5*particles[,t]), log = TRUE) 
-  # log_Weights[, t] <- log_Weights[, t - 1] + logalphas[, t]
   Weights[, t] <- exp(logalphas[, t])
-  # WeightsST[, t] <- Weights[, t] / sum(Weights[, t])
-  WeightsST[, t] <- exp(logalphas[, t]) / sum(exp(logalphas[, t]))
+  WeightsST[, t] <- Weights[, t] / sum(Weights[, t])
   ESS[t] <- (sum(WeightsST[, t]^2))^(-1)
+  particlesT[, t] <- particles[, t]
   if(ESS[t] < N*cutoff){
-  ind <- sample(1:N, size = N, replace = TRUE, prob = WeightsST[, t])
-  particles[, 1:t] <- particles[ind, 1:t]
-  WeightsST[, t] <- rep(1/N, N) # Resampled weights
+    ind <- sample(1:N, size = N, replace = TRUE, prob = WeightsST[, t])
+    particles[, 1:t] <- particles[ind, 1:t]
+    WeightsST[, t] <- 1/N
+  }else{if(t == T & ESS[t] < N*cutoff)
+    ind <- sample(1:N, size = N, replace = TRUE, prob = WeightsST[, t])
+  particlesT[, 1:t] <- particles[ind, 1:t]
   }
   setWinProgressBar(pb, t, title=paste( round(t/T*100, 0), "% done"))
 }
 close(pb)
 FilterDist <- colSums(particles * WeightsST)
 SDFilterDist <- (colSums(particles^2 * WeightsST) - FilterDist^2)^0.5
+FilterDistT <- colSums(particlesT * WeightsSTT)
+SDFilterDistT <- (colSums(particlesT^2 * WeightsSTT) - FilterDistT^2)^0.5
 MargLik <- colMeans(Weights)
 plot(MargLik, type = "l")
-# Plot results
+plot(ESS, type = "l")
 library(dplyr)
 library(ggplot2)
 require(latex2exp)
 ggplot2::theme_set(theme_bw())
-df <- tibble(t = seq(1, T),
-             mean = FilterDist,
-             lower = FilterDist - 1.96*SDFilterDist,
-             upper = FilterDist + 1.96*SDFilterDist,
-             x_true = h)
+Tfig <- 250
+keepFig <- 1:Tfig
+df <- tibble(t = keepFig,
+             mean = FilterDist[keepFig],
+             lower = FilterDist[keepFig] - 2*SDFilterDist[keepFig],
+             upper = FilterDist[keepFig] + 2*SDFilterDist[keepFig],
+             meanT = FilterDistT[keepFig],
+             lowerT = FilterDistT[keepFig] - 2*SDFilterDistT[keepFig],
+             upperT = FilterDistT[keepFig] + 2*SDFilterDistT[keepFig],
+             x_true = h[keepFig])
 
 plot_filtering_estimates <- function(df) {
   p <- ggplot(data = df, aes(x = t)) +
@@ -572,28 +583,8 @@ plot_filtering_estimates <- function(df) {
     geom_line(aes(y = x_true), colour = "black", alpha = 1,
               linewidth = 0.5) +
     geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) +
+    geom_line(aes(y = meanT), colour = "purple", linewidth = 0.5) +
     ylab(TeX("$h_{t}$")) + xlab("Time")
   print(p)
 }
 plot_filtering_estimates(df)
-
-FilterDistNew <- colSums(particles * rep(1/N, N))
-SDFilterDistNew <- (colSums(particles^2 * rep(1/N, N)) - FilterDistNew^2)^0.5
-ggplot2::theme_set(theme_bw())
-df <- tibble(t = seq(1, T),
-             mean = FilterDistNew,
-             lower = FilterDist - 1.96*SDFilterDistNew,
-             upper = FilterDist + 1.96*SDFilterDistNew,
-             x_true = h)
-plot_filtering_estimates <- function(df) {
-  p <- ggplot(data = df, aes(x = t)) +
-    geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1,
-                fill = "lightblue") +
-    geom_line(aes(y = x_true), colour = "black", alpha = 1,
-              linewidth = 0.5) +
-    geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) +
-    ylab(TeX("$h_{t}$")) + xlab("Time")
-  print(p)
-}
-plot_filtering_estimates(df)
-

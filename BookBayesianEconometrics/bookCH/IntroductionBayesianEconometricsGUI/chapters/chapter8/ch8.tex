@@ -770,9 +770,9 @@ Remember from Chapter \ref{chap5} that particle filters (sequential Monte Carlo)
 
 The following code shows how to perform SMC in the vanilla stochastic volatility model assuming that the proposal distribution is the conditional prior distribution, that is, $q(h_t|h_{t-1},y_t)=\pi(h_t|h_{t-1})$, which is normal with mean $\mu+\phi(h_{t-1}-\mu)$ and variance $\sigma^2$. This choice implies that the incremental importance weights are equal to $p(y_t|h_t)$, which is $N(0,\exp(h_t))$. Therefore, the weights are proportional to the likelihood function. We perform multinomial resampling every time period in the code, and start the algorithm in the stationary distribution of $h_t$. Remember that there are other resampling approaches that are more efficient, for instance, residual resampling. See Chapter \ref{chap5} for details. We ask in Exercise 7 to modify this code to perform resampling when the effective sample size is lower than 50\% of the number of particles. In addition, we ask to program a sequential importance sampling, and check why is important to perform resampling in this simple example. 
 
-In this example we use the population parameters to perform the filtering recursion. However, this is no the case in practice, that is, we have to estimate the time invariant parameters. Therefore, there are more elaborate algorithms to achieve this (see Chapter \ref{chap5}). A simple strategy is to estimate the time invariant parameters using MCMC algorithms up to a specific time period, and then update sequentially the state vector during other time period. In general, algorithms that combine sequential algorithms with MCMC algorithms seem to work well \cite{andrieu2010pmcmc}. See \cite{dahlin2019getting} for a tutorial of particle Metropolis-Hastings in \textbf{R}. 
+Figure \ref{fig5} illustrates the filtering recursion using SMC with uneven weights (blue line), even weights (purple line), bands corresponding to plus/minus two standard deviations (light blue shading), and the true state (black line).\footnote{This standard deviation estimates the conditional posterior's standard deviation derived from the particles, not the estimator's standard deviation. The latter requires several independent particle runs on the same data.} The results indicate that SMC performs well even in a simple implementation, with no significant differences between using even and uneven weights (see Chapter \ref{chap5}).
 
-Figure \ref{fig5} shows the filtering recursion using SMC with uneven weights (blue line), even weights (purple), bands given by plus/minus two standard deviations (lightblue shadow),\footnote{This standard deviation estimates the conditional posterior's standard deviation obtained via particles, not the estimator's standard deviation. The latter requires multiple independent particle runs on the same data.} and the true state (black line). It seems that SMC performs well using a simple version, and there are not significant differences between using even and uneven weights (see Chapter \ref{chap5}).
+In this example we use the population parameters to perform the filtering recursion. However, this is no the case in practice, that is, we have to estimate the time invariant parameters. Therefore, there are more elaborate algorithms to achieve this (see Chapter \ref{chap5}). For instance, \cite{andrieu2010pmcmc} propose particle Markov chain Monte Carlo, this is a family of methods that combines MCMC and SMC. See \cite{dahlin2019getting} for a tutorial of particle Metropolis-Hastings in \textbf{R}. A potential practical solution, for applications that require a sequential updating of a posterior distribution over an unbounded time horizon, is to estimate offline the time invariant parameters using MCMC algorithms up to a specific time period, and then update sequentially online the state vector during subsequent time periods, and iterate this process. This is not optimal, but it can be practical.  
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -780,10 +780,10 @@ Figure \ref{fig5} shows the filtering recursion using SMC with uneven weights (b
 	\begin{VF}
 		\begin{lstlisting}[language=R]
 rm(list = ls()); set.seed(010101)
-T <- 250; mu <- -10; phi <- 0.95; sigma <- 0.3
+T <- 1250; mu <- -10; phi <- 0.95; sigma <- 0.3
 h <- numeric(T); y <- numeric(T)
-h[1] <- rnorm(1, mu, sigma / sqrt(1 - phi^2))  # Initial state
-y[1] <- rnorm(1, 0, exp(h[1] / 2))           # Initial observation
+h[1] <- rnorm(1, mu, sigma / sqrt(1 - phi^2))  
+y[1] <- rnorm(1, 0, exp(h[1] / 2))           
 for (t in 2:T) {
 	h[t] <- mu + phi*(h[t-1]-mu) + rnorm(1, 0, sigma)
 	y[t] <- rnorm(1, 0, sd = exp(0.5*h[t]))
@@ -792,18 +792,18 @@ N <- 10000
 log_Weights <- matrix(NA, N, T)  # Log weights
 Weights <- matrix(NA, N, T)  # Weights 
 WeightsST <- matrix(NA, N, T)  # Normalized weights 
-WeightsSTT <- matrix(NA, N, T)  # Normalized weights bar 
+WeightsSTT <- matrix(1/N, N, T)  # Normalized weights bar 
 particles <- matrix(NA, N, T)   # Particles
 particlesT <- matrix(NA, N, T)   # Particles bar
-logalphas <- matrix(NA, N, T)   # Incremental imp. weights
-cutoff <- 0.66
-# Initialize particles
-particles[, 1] <- rnorm(N, mu, sigma / sqrt(1 - phi^2)) 
-log_Weights[, 1] <- dnorm(y[1], 0, sd = exp(0.5*particles[,1]), log = TRUE) 
+logalphas <- matrix(NA, N, T)   # Incremental importance 
+particles[, 1] <- rnorm(N, mu, sigma / sqrt(1 - phi^2))  # Stationary prior
+log_Weights[, 1] <- dnorm(y[1], 0, sd = exp(0.5*particles[,1]), log = TRUE)  # Likelihood
 Weights[, 1] <- exp(log_Weights[, 1])
 WeightsST[, 1] <- Weights[, 1] / sum(Weights[, 1])
+ESS[1] <- (sum(WeightsST[, 1]^2))^(-1)
 ind <- sample(1:N, size = N, replace = TRUE, prob = WeightsST[, 1]) # Resample 
 particles[, 1] <- particles[ind, 1] # Resampled particles
+particlesT[, 1] <- particles[, 1] # Resampled particles
 WeightsST[, 1] <- rep(1/N, N) # Resampled weights
 pb <- winProgressBar(title = "progress bar", min = 0, max = T, width = 300)
 for (t in 2:T) {
@@ -817,7 +817,6 @@ for (t in 2:T) {
 	}else{
 		ind <- sample(1:N, size = N, replace = TRUE, prob = WeightsST[, t])
 		particlesT[, 1:t] <- particles[ind, 1:t]
-		WeightsSTT <- 1/N
 	}
 	setWinProgressBar(pb, t, title=paste( round(t/T*100, 0), "% done"))
 }
@@ -836,12 +835,30 @@ SDFilterDist <- (colSums(particles^2 * WeightsST) - FilterDist^2)^0.5
 FilterDistT <- colSums(particlesT * WeightsSTT)
 SDFilterDistT <- (colSums(particlesT^2 * WeightsSTT) - FilterDistT^2)^0.5
 MargLik <- colMeans(Weights)
-library(dplyr); library(ggplot2); require(latex2exp)
+plot(MargLik, type = "l")
+library(dplyr)
+library(ggplot2)
+require(latex2exp)
 ggplot2::theme_set(theme_bw())
-df <- tibble(t = seq(1, T), mean = FilterDist, lower = FilterDist - 2*SDFilterDist, upper = FilterDist + 2*SDFilterDist, meanT = FilterDistT, lowerT = FilterDistT - 2*SDFilterDistT, upperT = FilterDistT + 2*SDFilterDistT, x_true = h)
+Tfig <- 250
+keepFig <- 1:Tfig
+df <- tibble(t = keepFig,
+mean = FilterDist[keepFig],
+lower = FilterDist[keepFig] - 2*SDFilterDist[keepFig],
+upper = FilterDist[keepFig] + 2*SDFilterDist[keepFig],
+meanT = FilterDistT[keepFig],
+lowerT = FilterDistT[keepFig] - 2*SDFilterDistT[keepFig],
+upperT = FilterDistT[keepFig] + 2*SDFilterDistT[keepFig],
+x_true = h[keepFig])
 plot_filtering_estimates <- function(df) {
-	p <- ggplot(data = df, aes(x = t)) + geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1, fill = "lightblue") + geom_line(aes(y = x_true), colour = "black", alpha = 1, linewidth = 0.5) + geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) +
-	geom_line(aes(y = meanT), colour = "purple", linewidth = 0.5) +	ylab(TeX("$h_{t}$")) + xlab("Time")
+	p <- ggplot(data = df, aes(x = t)) +
+	geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1,
+	fill = "lightblue") +
+	geom_line(aes(y = x_true), colour = "black", alpha = 1,
+	linewidth = 0.5) +
+	geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) +
+	geom_line(aes(y = meanT), colour = "purple", linewidth = 0.5) +
+	ylab(TeX("$h_{t}$")) + xlab("Time")
 	print(p)
 }
 plot_filtering_estimates(df)
