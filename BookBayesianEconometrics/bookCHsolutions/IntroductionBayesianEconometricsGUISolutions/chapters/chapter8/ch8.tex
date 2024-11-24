@@ -665,8 +665,70 @@ plot_filtering_estimates(df)
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter8/figures/SMCsv_resam}
 	\caption[List of figure caption goes here]{Stochastic volatility model: Sequential Monte Carlo (SMC).}\label{fig5}
-\end{figure} 
+\end{figure}
 
+\item Estimate the vanilla stochastic volatility model using the dataset \textit{17ExcRate.csv} provided by \cite{ramirez2024testing} of the exchange rate log daily returns from USD/EUR, USD/GBP and GBP/EUR one year before and after the WHO declared the COVID-19 pandemic on 11 March 2020. 
 
+\textbf{Answer}
+
+The following code shows the results of modeling the exchange rate log daily returns from USD/EUR using a stochastic volatility model. Similar code can be used to estimate the other two models.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Stochastic volatility model: Exchange rate log daily returns from USD/EUR}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+DataExcRate <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/17ExcRate.csv", sep = ",", header = TRUE, quote = "")
+attach(DataExcRate)
+MCMC <- 10000; burnin <- 10000; thin <- 5
+y <- USDEUR - mean(USDEUR)
+plot(y, type = "l")
+res <- stochvol::svsample(y, draws = MCMC, burnin = burnin, thin = thin, priormu = c(0, 100), priorsigma = c(1), priorphi = c(5, 1.5), priorbeta =  c(0, 10000))
+summary(res[["para"]][[1]][,-c(4,5)])
+Iterations = 10005:20000
+Thinning interval = 5 
+Number of chains = 1 
+Sample size per chain = 2000 
+1. Empirical mean and standard deviation for each variable,
+plus standard error of the mean:
+Mean      SD  Naive SE Time-series SE
+mu    -11.2886 0.28916 0.0064657       0.006466
+phi     0.9618 0.02202 0.0004923       0.001421
+sigma   0.1664 0.04501 0.0010064       0.003722
+2. Quantiles for each variable:
+				2.5%      25%      50%      75%    97.5%
+mu    -11.81067 -11.4287 -11.2902 -11.1448 -10.7699
+phi     0.90719   0.9512   0.9657   0.9774   0.9913
+sigma   0.09615   0.1327   0.1607   0.1926   0.2666
+plot(res)
+ht <- res[["latent"]][[1]]
+library(dplyr)
+library(ggplot2)
+require(latex2exp)
+ggplot2::theme_set(theme_bw())
+x_means <- colMeans(ht)
+x_quantiles <- apply(ht, 2, function(x) quantile(x, probs = c(0.025, 0.975)))
+df <- tibble(t = 1:length(y),
+mean = x_means,
+lower = x_quantiles[1, ],
+upper = x_quantiles[2, ])
+plot_filtering_estimates <- function(df) {
+	p <- ggplot(data = df, aes(x = t)) +
+	geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1,
+	fill = "lightblue") +
+	geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) +
+	ylab(TeX("$h_{t}$")) + xlab("Time")
+	print(p)
+}
+plot_filtering_estimates(df)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter8/figures/SVUSD_EURO}
+	\caption[List of figure caption goes here]{Stochastic volatility model: Exchange rate log daily returns from USD/EUR.}\label{fig6}
+\end{figure}
 
 \end{enumerate}

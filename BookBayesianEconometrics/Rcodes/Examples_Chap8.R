@@ -559,3 +559,52 @@ plot_filtering_estimates(df)
 # initialTheta <- c(mu, phi, sigma); stepSize <- diag(c(0.05, 0.01, 0.01))
 # Res <- pmhtutorial::particleMetropolisHastingsSVmodel(y, initialTheta = initialTheta, noParticles = N,
 #                                   noIterations = 1000, stepSize = stepSize)
+
+########################## Vector Autoregressive models: Application ########################## 
+rm(list = ls())
+set.seed(010101)
+# Get data
+data("e1")
+e1 <- diff(log(e1)) * 100
+# Create model
+model <- gen_var(e1, p = 2, deterministic = "const",
+                 iterations = 5000, burnin = 1000)
+# Number of iterations and burnin should be much higher.
+# Add priors
+# Add priors
+model <- add_priors(data,
+                    coef = list(v_i = 0, v_i_det = 0),
+                    sigma = list(df = 0, scale = .00001))
+
+model <- add_priors(model)
+# Obtain posterior draws
+object <- bvarpost(model)
+summary.bvar(object)
+summary(object[["A"]])
+
+# Obtain posterior draws
+object <- draw_posterior(model)
+
+# Variance decomposition
+# Obtain FEVD
+vd <- fevd(object, response = "cons")
+# Plot FEVD
+plot(vd)
+
+# Impulse response
+# Calculate IR
+ir <- irf(object, impulse = "invest", response = "cons")
+# Plot IR
+plot(ir)
+
+# Calculate IR
+ir <- irf.bvar(object, impulse = "invest", response = "cons")
+# Plot IR
+plot(ir)
+
+### Forecasting
+# Generate forecasts
+bvar_pred <- predict(object, n.ahead = 10, new_d = rep(1, 10))
+# Plot forecasts
+plot(bvar_pred)
+plot(bvar_pred[["fcst"]][["invest"]])

@@ -779,6 +779,59 @@ plot(BMAmeans/BMAsd)
 
 The simulation setting implies $2^{27}$ models, which implies approximately 135 million models in the model space. We run our MC3 algorithm using the BIC approximation with 25000 iterations. This takes by far more time that the BIC approximation from the \textit{BMA} package, but it seems to do a good job finding the data generating process as the highest PMP is associated with it, the PIPs of $x_{i1}$ and $x_{i2}$ are 1, the posterior means are 0.85 and -1.1, which are very close to the population values (0.8 and -1.2), and the t-ratios are by far higher than 2. The PIPs of the other regressors are lower than 20\%, and the BMA means are close to 0.
 
+\item Perform a simulation of the dynamic logistic model, where there are 7 ($2^3-1$, the model without regressors is excluded) competing models originated from 3 regressors, $x_{tk}\sim N(0.5,0.8^2)$, $k=2,3,4$, and $\beta_1=0.5$, $\beta_{2t}$ is a sequence from 1 to 2 in steps given by $1/T$, $\beta_{3t}=\begin{Bmatrix}
+	-1, & 1<t\leq 0.5T\\
+	0, & 0.5T< t \leq T
+\end{Bmatrix}$, and $\beta_4=1.2$. Then, $\bm{x}_t^{\top}\bm{\beta}_t=\beta_1+\beta_{2t}x_{2t}+\beta_{3t}x_{3t}+\beta_{4}x_{4t}$, where $P[Y_t=1|\bm{x}_t,\bm{\beta}_t]=\exp(\bm{x}_t^{\top}\bm{\beta}_t)/(1+\exp(\bm{x}_t^{\top}\bm{\beta}_t))$, $t=1,2,\dots,1100$. Use the function \textit{logistic.dma} from the \textit{dma} package to get the posterior model probabilities setting the forgetting parameter of the models equal to 0.99, and then to 0.95. Compare the results. 
+
+\textbf{Answer}
+
+The following code shows the simulation exercise, and the results of the dynamic Bayesian model average of logistic models.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Dynamic Bayesian model average: Logit model}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+T <- 1100; K <- 3
+X <- matrix(rnorm(T*K, mean = 0.5, sd = 0.8), T, K)
+combs <- expand.grid(c(0,1), c(0,1), c(0,1))
+B1 <- 0.5; B2t <- seq(1, 2, length.out=T )
+a <- 0.5
+B3t <- c(rep(-1,round(a*T)), rep(0,round((1-a)*T)))
+B4 <- 1.2
+yl <- B1 + X[,1]*B2t + X[,2]*B3t + X[,3]*B4
+py <- exp(yl)/(1 + exp(yl))
+y <- rbinom(T, 1, prob = py)
+table(y)
+T0 <- 100
+dma.test <- dma::logistic.dma(X, y, combs[-1,], lambda = 0.99, alpha = 0.99, initialsamp = T0)
+plot(dma.test[["pmp"]][7, -c(1:T0)], type = "l", col = "green", main = "Posterior model probability: Model all regressors vs model regressors 1 and 3", xlab = "Time", ylab = "PMP", ylim = c(0, 1))
+lines(dma.test[["pmp"]][5,-c(1:T0)], col = "red")
+legend(x = 0, y = 0.9, legend = c("Model: All regressors", "Model: Regressors 1 and 3"), col = c("green", "red"), lty=1:1, cex=0.8)
+dma.test1 <- dma::logistic.dma(X, y, combs[-1,], lambda = 0.99, alpha = 0.95, initialsamp = T0)
+plot(dma.test1[["pmp"]][7, -c(1:T0)], type = "l", col = "green", main = "Posterior model probability: Model all regressors vs model regressors 1 and 3", xlab = "Time", ylab = "PMP", ylim = c(0, 1))
+lines(dma.test1[["pmp"]][5,-c(1:T0)], col = "red")
+legend(x = 0, y = 0.9, legend = c("Model: All regressors", "Model: Regressors 1 and 3"), col = c("green", "red"), lty=1:1, cex=0.8)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+Figure \ref{figPMPdbma} shows the posterior model probabilities of the model with all the regressors (green line), and the model with regressors 2 and 4 (red line), setting the forgetting parameter of the models equal to 0.99. In one hand, we see that the model with all regressors, which is the data generating process in the first period ($t\leq 0.5T$), gets high posterior model probabilities. We see that the PMPs decrease around $T=700$, whereas the change in the data generating process is at $T=550$. This means that there is a lack to identify the data generating process, which is a consequence of the high forgetting parameter of the models. Consequently, the PMPs of the model with regressors 2 and 4 increases around $T=700$, but it is lower than the PMPs of the model with all regressors, despite that in this time period the data generating process is given by the model with regressors 2 and 4. 
+
+Figure \ref{figPMPdbmaN} shows the posterior model probabilities using a forgetting parameter equal to 0.95. We can see that as the forgetting parameter decreases, the process of identifying the data generating process is faster, and consequently, the PMP of the model with regressors 2 and 4 increases around $T=550$, which is the turning point in the data generating process. This does not mean that we should set small forgetting parameters. These parameters should be set based on model performance, for instance, small mean squared error in a cross validation period.
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter10/figures/dbmalogit.png}
+	\caption[List of figure caption goes here]{Posterior model probability: Dynamic Bayesian model average, forgetting parameter equal to 0.99.}\label{figPMPdbma}
+\end{figure}
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter10/figures/dbmalogitN.png}
+	\caption[List of figure caption goes here]{Posterior model probability: Dynamic Bayesian model average, forgetting parameter equal to 0.95.}\label{figPMPdbmaN}
+\end{figure}
+
 \item Show that 
 \begin{align*}
 	\mathbb{E}\left[\frac{p(\bm{\theta})}{\pi(\bm{\theta}|\mathcal{M}_m)p(\bm{y}|\bm{\theta}_m,\mathcal{M}_m)}\biggr\rvert \bm{y},\mathcal{M}_m\right]&=\frac{1}{p(\bm{y}|\mathcal{M}_m)},

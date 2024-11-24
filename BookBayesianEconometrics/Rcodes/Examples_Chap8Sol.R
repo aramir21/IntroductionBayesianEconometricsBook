@@ -588,3 +588,88 @@ plot_filtering_estimates <- function(df) {
   print(p)
 }
 plot_filtering_estimates(df)
+
+########################## Application of stochastic volatility model: Exchange rate ########################## 
+rm(list = ls())
+set.seed(010101)
+DataExcRate <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/17ExcRate.csv", sep = ",", header = TRUE, quote = "")
+attach(DataExcRate)
+MCMC <- 10000; burnin <- 10000; thin <- 5
+y <- USDEUR - mean(USDEUR)
+plot(y, type = "l")
+res <- stochvol::svsample(y, draws = MCMC, burnin = burnin, thin = thin, priormu = c(0, 100), priorsigma = c(1), priorphi = c(5, 1.5), priorbeta =  c(0, 10000))
+summary(res[["para"]][[1]][,-c(4,5)])
+plot(res)
+ht <- res[["latent"]][[1]]
+library(dplyr)
+library(ggplot2)
+require(latex2exp)
+ggplot2::theme_set(theme_bw())
+x_means <- colMeans(ht)
+x_quantiles <- apply(ht, 2, function(x) quantile(x, probs = c(0.025, 0.975)))
+df <- tibble(t = 1:length(y),
+             mean = x_means,
+             lower = x_quantiles[1, ],
+             upper = x_quantiles[2, ])
+plot_filtering_estimates <- function(df) {
+  p <- ggplot(data = df, aes(x = t)) +
+    geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1,
+                fill = "lightblue") +
+    geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) +
+    ylab(TeX("$h_{t}$")) + xlab("Time")
+  print(p)
+}
+plot_filtering_estimates(df)
+
+y <- USDGBP - mean(USDGBP)
+plot(y, type = "l")
+res <- stochvol::svsample(y, draws = MCMC, burnin = burnin, thin = thin, priormu = c(0, 100), priorsigma = c(1), priorphi = c(5, 1.5), priorbeta =  c(0, 10000))
+summary(res[["para"]][[1]][,-c(4,5)])
+plot(res)
+ht <- res[["latent"]][[1]]
+library(dplyr)
+library(ggplot2)
+require(latex2exp)
+ggplot2::theme_set(theme_bw())
+x_means <- colMeans(ht)
+x_quantiles <- apply(ht, 2, function(x) quantile(x, probs = c(0.025, 0.975)))
+df <- tibble(t = 1:length(y),
+             mean = x_means,
+             lower = x_quantiles[1, ],
+             upper = x_quantiles[2, ])
+plot_filtering_estimates <- function(df) {
+  p <- ggplot(data = df, aes(x = t)) +
+    geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1,
+                fill = "lightblue") +
+    geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) +
+    ylab(TeX("$h_{t}$")) + xlab("Time")
+  print(p)
+}
+plot_filtering_estimates(df)
+
+y <- GBPEUR - mean(GBPEUR)
+plot(y, type = "l")
+res <- stochvol::svsample(y, draws = MCMC, burnin = burnin, thin = thin, priormu = c(0, 100), priorsigma = c(1), priorphi = c(5, 1.5), priorbeta =  c(0, 10000))
+summary(res[["para"]][[1]][,-c(4,5)])
+plot(res)
+ht <- res[["latent"]][[1]]
+library(dplyr)
+library(ggplot2)
+require(latex2exp)
+ggplot2::theme_set(theme_bw())
+x_means <- colMeans(ht)
+x_quantiles <- apply(ht, 2, function(x) quantile(x, probs = c(0.025, 0.975)))
+df <- tibble(t = 1:length(y),
+             mean = x_means,
+             lower = x_quantiles[1, ],
+             upper = x_quantiles[2, ])
+plot_filtering_estimates <- function(df) {
+  p <- ggplot(data = df, aes(x = t)) +
+    geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1,
+                fill = "lightblue") +
+    geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) +
+    ylab(TeX("$h_{t}$")) + xlab("Time")
+  print(p)
+}
+plot_filtering_estimates(df)
+

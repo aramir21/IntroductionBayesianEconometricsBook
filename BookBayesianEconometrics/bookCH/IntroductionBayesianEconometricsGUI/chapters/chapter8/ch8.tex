@@ -333,7 +333,7 @@ where $Y_t^*=\phi(L)Y_t$ and $\bm{x}_t^{*}=\phi(L)\bm{x}_t$.
 
 Thus, collecting all observations $t=p+1,p+2,\dots,T$, we have $\bm{y}^*=\bm{X}^*\bm{\beta}+\bm{\epsilon}$, where $\bm{\epsilon}\sim N(\bm{0},\sigma^2\bm{I}_{T-p})$, $\bm{y}^*$ is a $T-p$ dimensional vector, and $\bm{X}^*$ is a $(T-p)\times K$ dimensional matrix.
 
-Assuming that $\bm{\beta}|\sigma\sim N(\bm{\beta}_0,\sigma^2\bm{B}_0)$, $\sigma^2\sim IG(\alpha_0/2,\delta_0/2)$ and $\bm{\phi}\sim N(\bm{\phi}_0,\bm{\Phi}_0)\mathbbm{1}[\bm{\phi}\in S_{\bm{\phi}}]$, where $S_{\bm{\phi}}$ is the stationary region of $\bm{\phi}=[\phi_1 \ \dots \ \phi_p]^{\top}$. Then, Equation \ref{eq3} implies that $\bm{\beta}|\sigma^2,\bm{\phi},\bm{y},\bm{X}\sim N(\bm{\beta}_n, \sigma^2{\bf{B}}_n)$, where $\bm{B}_n = (\bm{B}_0^{-1} + \bm{X}^{*\top}\bm{X}^{*})^{-1}$ and $\bm{\beta}_n = \bm{B}_n(\bm{B}_0^{-1}\bm{\beta}_0 + \bm{X}^{*\top}\bm{y}^{*})$. In addition, $\sigma^2|\bm{\beta},\bm{\phi},\bm{y},\bm{X}\sim IG(\alpha_n/2,\delta_n/2)$ where $\alpha_n=\alpha_0+T-p$ and $\delta_n=\delta_0+(\bm{y}^*-\bm{X}^{*}\bm{\beta})^{\top}(\bm{y}^*-\bm{X}^{*}\bm{\beta})+(\bm{\beta}-\bm{\beta}_0)\bm{B}_0^{-1}(\bm{\beta}-\bm{\beta}_0)$. Thus, the previous conditional posterior distributions imply that we can use a Gibbs sampling algorithm to perform inference of these parameters \cite{chib1993bayes}.
+Assuming that $\bm{\beta}|\sigma\sim N(\bm{\beta}_0,\sigma^2\bm{B}_0)$, $\sigma^2\sim IG(\alpha_0/2,\delta_0/2)$ and $\bm{\phi}\sim N(\bm{\phi}_0,\bm{\Phi}_0)\mathbbm{1}[\bm{\phi}\in S_{\bm{\phi}}]$, where $S_{\bm{\phi}}$ is the stationary region of $\bm{\phi}=[\phi_1 \ \dots \ \phi_p]^{\top}$. Then, Equation \ref{eq3} implies that $\bm{\beta}|\sigma^2,\bm{\phi},\bm{y},\bm{X}\sim N(\bm{\beta}_n, \sigma^2{\bm{B}}_n)$, where $\bm{B}_n = (\bm{B}_0^{-1} + \bm{X}^{*\top}\bm{X}^{*})^{-1}$ and $\bm{\beta}_n = \bm{B}_n(\bm{B}_0^{-1}\bm{\beta}_0 + \bm{X}^{*\top}\bm{y}^{*})$. In addition, $\sigma^2|\bm{\beta},\bm{\phi},\bm{y},\bm{X}\sim IG(\alpha_n/2,\delta_n/2)$ where $\alpha_n=\alpha_0+T-p$ and $\delta_n=\delta_0+(\bm{y}^*-\bm{X}^{*}\bm{\beta})^{\top}(\bm{y}^*-\bm{X}^{*}\bm{\beta})+(\bm{\beta}-\bm{\beta}_0)\bm{B}_0^{-1}(\bm{\beta}-\bm{\beta}_0)$. Thus, the previous conditional posterior distributions imply that we can use a Gibbs sampling algorithm to perform inference of these parameters \cite{chib1993bayes}.
 
 We know from Equation \ref{eq1} that $\mu_t=Y_t-\bm{x}_t^{\top}\bm{\beta}$, from Equation \ref{eq2} that $\mu_t=\phi_1\mu_{t-1}+\dots+\phi_p\mu_{t-p}+\epsilon_t$, $t=p+1,\dots,T$. In matrix notation $\bm{\mu}=\bm{U}\bm{\phi}+\bm{\epsilon}$, where $\bm{\mu}$ is a $T-p$ dimensional vector, $\bm{U}$ is a $(T-p)\times p$ matrix whose $t$-th row is $[\mu_{t-1} \ \dots \ \mu_{t-p}]$. Thus, the posterior distribution of $\bm{\phi}|\bm{\beta},\sigma^2,\bm{y},\bm{X}$ is $N(\bm{\phi}_n, \bm{\Phi}_n)\mathbbm{1}[\bm{\phi}\in S_{\bm{\phi}}]$, where $\bm{\Phi}_n=(\bm{\Phi}_0^{-1}+\sigma^{-2}\bm{U}^{\top}\bm{U})$ and $\bm{\phi}_n=\bm{\Phi}_n(\bm{\Phi}_0^{-1}\bm{\phi}_0+\sigma^{-2}\bm{U}^{\top}\bm{\mu})$ (see Exercise 4).
 
@@ -872,9 +872,40 @@ plot_filtering_estimates(df)
 	\caption[List of figure caption goes here]{Stochastic volatility model: Sequential Monte Carlo (SMC).}\label{fig5}
 \end{figure} 
   
-
-
 \section{Vector Autoregressive models}\label{sec84}
+Another widely used methodological approach in time series analysis is the vector autoregressive (VAR) model, which extends AR(p) models to the multivariate case. Since the seminal work by Sims (1980) \cite{sims1980macroeconomics}, these models have become a cornerstone of macroeconomic research. This chapter provides an introduction to Bayesian inference in VAR models, with detailed discussions available in \cite{koop2010bayesian,DelNegro2011VAR,wozniak2016bayesian}.
+
+The $VAR (p)$ model can be written as
+\begin{align*}
+	\bm{Y}_t=\bm{a} + \sum_{l=1}^p\bm{A}_{l}\bm{Y}_{t-l}+\bm{\mu}_t,
+\end{align*}
+where $\bm{Y}_t$ is a $M$-dimensional vector having information of $M$ time series variables, $\bm{a}$ is a $M$-dimensional vector of intercepts, $\bm{A}_{l}$ are $M\times M$ matrices of coefficients, and $\bm{\mu}_t \stackrel{iid}{\sim} N_M(\bm{0}, \bm{\Sigma})$ stochastic errors, $t=1,2,\dots,T$ and $l=1,2,\dots,p$.
+
+Following the matrix-form notation of the multivariate regression model (see sections \ref{sec44} and \ref{sec71}), we can set $\bm{Y}=\left[{\bm{Y_{1}}},{\bm{Y_{2}}},\ldots,{\bm{Y_{M}}}\right]$, which is an $ T\times M$ matrix, $\bm{x}_t=[1 \ \bm{Y}_{t-l}^{\top} \ \dots \ \bm{Y}_{tpP}^{\top}]$ is a $(1+Mp)$-dimensional row vector, we set $K=1+Mp$ to facilitate notation, and set \begin{align*}
+\bm{X}=\begin{bmatrix}
+	\bm{x}_1\\
+	\bm{x}_2\\
+	\vdots \\
+	\bm{x}_T\\
+\end{bmatrix}
+\end{align*}
+is a $ T\times K$ matrix, $\bm{B}=\left[\bm{a} \ \bm{A}_{1} \ \bm{A}_{2} \ldots \bm{A}_{P}\right]^{\top}$ is a $ K \times M$ matrix of parameters, and $\bm{U}=\left[\bm{\mu}_{1} \ \bm{\mu}_{2}\ldots \bm{\mu}_{M}\right]$ is a $T\times M$-dimensional matrix of stochastic random errors such that each row of $\bm{U}\sim N_{T\times M}(\bm{0}_{T\times M},\bm{\Sigma}\otimes \bm{I}_T)$. Thus, we can express the VAR(p) model in the form of a multivariate regression model,
+\begin{align*}
+	\bm{Y}=\bm{X}\bm{B}+\bm{U}.
+\end{align*}
+We can assume conjugate priors to facilitate computation, that is, $\pi({\bm{B}},{\bm{\Sigma}})=\pi({\bm{B}}|{\bm{\Sigma}})\pi({\bm{\Sigma}})$ where $\pi({\bm{B}}|{\bm \Sigma})\sim N_{K\times M}({\bm{B}}_{0},{\bm{V}}_{0},{\bm{\Sigma}})$ and $\pi({\bm{\Sigma}})\sim IW({\bm{\Psi}}_{0},\alpha_{0})$. Thus, $\pi({\bm{B}},{\bm \Sigma}| {\bm{Y}}, {\bm{X}})=\pi ({\bm{B}}| {\bm \Sigma},{\bm{Y}},{\bm{X}})\pi({\bm \Sigma}| {\bm{Y}},{\bm{X}})$ where $\pi({\bm{B}}| {\bm \Sigma},{\bm{Y}}, {\bm{X}}) \sim N_{K\times M}({\bm{B}}_n,{\bm{V}}_n,{\bm \Sigma})$ and $\pi({\bm \Sigma}| {\bm{Y}},{\bm{X}}) \sim IW({\bm{\Psi}}_n,{\alpha}_n)$, $\alpha_n= T+\alpha_{0}$, 
+\begin{align*}
+	{\bm{B}}_n = &({\bm{V}}_{0}^{-1}+{\bm{X}}^{\top}{\bm{X}})^{-1}({\bm{V}}_{0}^{-1}{\bm{B}}_{0}+{\bm{X}}^{\top}{\bm{X}}\widehat{\bm{B}}),\\
+	{\bm{V}}_n = &({\bm{V}}_{0}^{-1}+{\bm{X}}^{\top}{\bm{X}})^{-1},\\
+	{\bm{\Psi}}_n= &{\bm{\Psi}}_{0}+{\bm{S}}+{\bm{B}}_{0}^{\top}{\bm{V}}_{0}^{-1}{\bm{B}}_{0}+\widehat{\bm{B}}^{\top}{\bm{X}}^{\top}{\bm{X}}\widehat{\bm{B}}-{\bm{B}}_n^{\top}{\bm{V}}_n^{-1}{\bm{B}}_n,
+\end{align*}
+${\bm{S}}= ({\bm{Y}}-{\bm{X}}\widehat{\bm{B}})^{\top}({\bm{Y}}-{\bm{X}}\widehat{\bm{B}})$, and $\widehat{\bm{B}}= ({\bm{X}}^{\top}{\bm{X}})^{-1}{\bm{X}}^{\top}{\bm{Y}}$.
+
+We also know from Section \ref{sec44} that the marginal distribution of $\bm{B}$ is $T_{K\times M}({\bm{B}}_n,{\bm{V}}_n,{\bm{\Psi}}_n)$ with $\alpha_n+1-M$ degrees of freedom.
+
+Thus, we see that once we write a VAR(p) model in the right way, we can perform Bayesian inference as we did in the multivariate regression model. However, assuming conjugate prior has some limitations. For instance, VAR(p) models have many parameters, this implies loss of precision due to macroeconomic data no having large sample sizes, thus, it is desirable to impose prior restrictions in the specification of the model. This cannot be done using conjugate priors. In addition, natural conjugate priors do not allow for flexible extensions such as having different regressors in different equations. Thus, it is better to propose independent priors, that is, $\pi({\bm{B}},{\bm{\Sigma}})=\pi({\bm{B}})\pi({\bm{\Sigma}})$ where $\pi({\bm{B}})\sim N_{K\times M}({\bm{B}}_{0},{\bm{V}}_{0},{\bm{\Sigma}})$ and $\pi({\bm{\Sigma}})\sim IW({\bm{\Psi}}_{0},\alpha_{0})$.     
+
+
 
 \section{Summary}\label{sec85}
 
@@ -898,6 +929,8 @@ plot_filtering_estimates(df)
 		\item Program a sequential importance sampling (SIS) from scratch in the vanilla stochastic volatility model setting $\mu=-10$, $\phi = 0.95$, $\sigma=0.3$ and $T=250$. Check what happen with its performance.
 		\item Modify the sequential Monte Carlo (SMC) to perform multinomial resampling when the effective sample size is lower than 50\% the number of particles.  
 	\end{itemize}
+
+	\item Estimate the vanilla stochastic volatility model using the dataset \textit{17ExcRate.csv} provided by \cite{ramirez2024testing} of the exchange rate log daily returns from USD/EUR, USD/GBP and GBP/EUR one year before and after the WHO declared the COVID-19 pandemic on 11 March 2020. 
 	
 	
 \end{enumerate}

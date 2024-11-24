@@ -541,3 +541,42 @@ BMAsd <- (colSums(PMP*Vars)  + colSums(PMP*(Means-matrix(rep(BMAmeans, each = nM
 plot(BMAmeans)
 plot(BMAsd)
 plot(BMAmeans/BMAsd)
+
+########################## Dynamic Bayesian model average in logistic model: Simulation exercise ########################## 
+rm(list = ls())
+set.seed(010101)
+T <- 1100; K <- 3
+X <- matrix(rnorm(T*K, mean = 0.5, sd = 0.8), T, K)
+combs <- expand.grid(c(0,1), c(0,1), c(0,1))
+B1 <- 0.5
+B2t <- seq(1, 2, length.out=T )
+a <- 0.5
+B3t <- c(rep(-1,round(a*T)), rep(0,round((1-a)*T)))
+B4 <- 1.2
+yl <- B1 + X[,1]*B2t + X[,2]*B3t + X[,3]*B4
+py <- exp(yl)/(1 + exp(yl))
+y <- rbinom(T, 1, prob = py)
+table(y)
+T0 <- 100
+dma.test <- dma::logistic.dma(X, y, combs[-1,], lambda = 0.99, alpha = 0.99, initialsamp = T0)
+plot(dma.test[["pmp"]][7, -c(1:T0)], type = "l", col = "green", main = "Posterior model probability: Model all regressors vs model regressors 1 and 3", xlab = "Time", ylab = "PMP", ylim = c(0, 1))
+lines(dma.test[["pmp"]][5,-c(1:T0)], col = "red")
+legend(x = 0, y = 0.9, legend = c("Model: All regressors", "Model: Regressors 1 and 3"), col = c("green", "red"), lty=1:1, cex=0.8)
+dma.test1 <- dma::logistic.dma(X, y, combs[-1,], lambda = 0.99, alpha = 0.95, initialsamp = T0)
+plot(dma.test1[["pmp"]][7, -c(1:T0)], type = "l", col = "green", main = "Posterior model probability: Model all regressors vs model regressors 1 and 3", xlab = "Time", ylab = "PMP", ylim = c(0, 1))
+lines(dma.test1[["pmp"]][5,-c(1:T0)], col = "red")
+legend(x = 0, y = 0.9, legend = c("Model: All regressors", "Model: Regressors 1 and 3"), col = c("green", "red"), lty=1:1, cex=0.8)
+require(latex2exp)
+plot(dma.test[["theta"]][7,-c(1:T0),1], type = "l", col = "green", main = "Bayesian model average filtering recursion", xlab = "Time", ylab = TeX("$\\beta_{1}$"))
+abline(h = B1, col = "red")
+legend(x = 0, y = 0.4, legend = c("State filtering", "State population"), col = c("green", "red"), lty=1:1, cex=0.8)
+plot(dma.test[["theta"]][7,-c(1:T0),2], type = "l", col = "green", main = "Bayesian model average filtering recursion", xlab = "Time", ylab = TeX("$\\beta_{2t}$"), ylim = c(0.5,2))
+lines(B2t[-c(1:T0)], col = "red")
+legend(x = 0, y = 0.8, legend = c("State filtering", "State population"), col = c("green", "red"), lty=1:1, cex=0.8)
+plot(dma.test[["theta"]][7,-c(1:T0),3], type = "l", col = "green", main = "Bayesian model average filtering recursion", xlab = "Time", ylab = TeX("$\\beta_{3t}$"), ylim = c(-1.4,0))
+lines(B3t[-c(1:T0)], col = "red")
+legend(x = 0, y = -0.4, legend = c("State filtering", "State population"), col = c("green", "red"), lty=1:1, cex=0.8)
+plot(dma.test[["theta"]][7,-c(1:T0),4], type = "l", col = "green", main = "Bayesian model average filtering recursion", xlab = "Time", ylab = TeX("$\\beta_{4t}$"))
+abline(h = B4, col = "red")
+legend(x = 0, y = 1.3, legend = c("State filtering", "State population"), col = c("green", "red"), lty=1:1, cex=0.8)
+
