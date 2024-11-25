@@ -593,7 +593,7 @@ plot(vd)
 
 # Impulse response
 # Calculate IR
-ir <- irf(object, impulse = "invest", response = "cons")
+ir <- irf(object, impulse = "invest", response = "income", cumulative = TRUE)
 # Plot IR
 plot(ir)
 
