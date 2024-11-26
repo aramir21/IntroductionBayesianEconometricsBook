@@ -560,6 +560,89 @@ plot_filtering_estimates(df)
 # Res <- pmhtutorial::particleMetropolisHastingsSVmodel(y, initialTheta = initialTheta, noParticles = N,
 #                                   noIterations = 1000, stepSize = stepSize)
 
+########################## Vector Autoregressive models: Simulation ########################## 
+rm(list = ls())
+set.seed(010101)
+T <- 300; M <- 3
+SIGMA <- matrix(c(2.25, 0, 0, 0, 1, 0.5, 0, 0.5, 0.74), M, M )
+U <- MASS::mvrnorm(T, rep(0, M), SIGMA)
+A <- matrix(c(0.5, 0.1, 0, 0, 0.1, 0.2, 0, 0.3, 0.3), M, M ) 
+v <- c(1.4, 1.9, 1.1)
+Y <- matrix(NA, T, M)
+Y[1, ] <- solve(diag(M)-A)%*%v + U[1,]
+for(t in 2:T){
+  Y[t, ] <- v + A%*%Y[t-1,] + U[t,]
+}
+plot(Y[,1], type = "l"); plot(Y[,2], type = "l"); plot(Y[,3], type = "l")
+y1 <- Y[-1,1]; y2 <- Y[-1,2]; y3 <- Y[-1,3]
+X1 <- cbind(1, lag(Y)); X1 <- X1[-1,]
+X2 <- cbind(1, lag(Y)); X2 <- X2[-1,]
+X3 <- cbind(1, lag(Y)); X3 <- X3[-1,]
+regdata <- NULL
+regdata[[1]] <- list(y = y1, X = X1); regdata[[2]] <- list(y = y2, X = X2); regdata[[3]] <- list(y = y3, X = X3)
+M <- length(regdata); K1 <- dim(X1)[2]; K2 <- dim(X2)[2]; K3 <- dim(X3)[2] 
+K <- K1 + K2 + K3
+# Hyperparameters
+b0 <- rep(0, K)
+c0 <- 100
+B0 <- c0*diag(K)
+V <- 5*diag(M)
+a0 <- M
+Prior <- list(betabar = b0, A = solve(B0), nu = a0, V = V)
+#Posterior draws
+S <- 10000 #Number of posterior draws
+keep <- 1
+Mcmc <- list(R = S, keep = keep)
+PosteriorDraws <- bayesm::rsurGibbs(Data = list(regdata = regdata), Mcmc = Mcmc, Prior = Prior)
+Bs <- PosteriorDraws[["betadraw"]]
+summary(coda::mcmc(Bs))
+summary(coda::mcmc(PosteriorDraws[["Sigmadraw"]]))
+As <- array(NA, c(M, M, S))
+for(s in 1:S){
+  As[,,s] <- matrix(Bs[s, -c(1, 5, 9)], M, M, byrow = TRUE)
+}
+# Impulse response functions
+H <- 10
+Phis <- list()
+for(h in 1:H){
+  Phis[[h]] <- As^h
+}
+library(dplyr)
+library(ggplot2)
+require(latex2exp)
+ggplot2::theme_set(theme_bw())
+plot_filtering_estimates <- function(df) {
+  p <- ggplot(data = df, aes(x = t)) +
+    geom_ribbon(aes(ymin = lower1, ymax = upper1), alpha = 1,
+                fill = "blue") +
+    geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1,
+                fill = "lightblue") +
+    geom_line(aes(y = x_true), colour = "black", alpha = 1,
+              linewidth = 0.5) +
+    geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) +
+    ylab("Impulse response") + xlab("Time")
+  print(p)
+}
+IR <- function(m, j){
+  Mean <- sapply(1:H, function(h){mean(Phis[[h]][m,j,])})
+  LimInf1 <- sapply(1:H, function(h){quantile(Phis[[h]][m,j,], 0.025)})
+  LimSup1 <- sapply(1:H, function(h){quantile(Phis[[h]][m,j,], 0.975)})
+  LimInf <- sapply(1:H, function(h){quantile(Phis[[h]][m,j,], 0.05)})
+  LimSup <- sapply(1:H, function(h){quantile(Phis[[h]][m,j,], 0.95)})
+  IRtrue <- sapply(1:H, function(h){A[m,j]^h})
+  df <- tibble(t = 1:H,
+               mean = Mean,
+               lower1 = LimInf1,
+               upper1 = LimSup1,
+               lower = LimInf,
+               upper = LimSup,
+               x_true = IRtrue)
+  Fig <- plot_filtering_estimates(df)
+  return(Fig)
+}
+IR(3,3)
+
+
 ########################## Vector Autoregressive models: Application ########################## 
 rm(list = ls())
 set.seed(010101)
