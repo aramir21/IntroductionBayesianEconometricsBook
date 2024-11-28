@@ -591,21 +591,63 @@ a0 <- M
 Prior <- list(betabar = b0, A = solve(B0), nu = a0, V = V)
 #Posterior draws
 S <- 10000 #Number of posterior draws
-keep <- 1
-Mcmc <- list(R = S, keep = keep)
+thin <- 5
+burnin <- 1000
+tot <- S + burnin
+Mcmc <- list(R = tot, keep = thin)
 PosteriorDraws <- bayesm::rsurGibbs(Data = list(regdata = regdata), Mcmc = Mcmc, Prior = Prior)
-Bs <- PosteriorDraws[["betadraw"]]
+keep <- seq(round(burnin/thin)+1, round(tot/thin))
+Bs <- PosteriorDraws[["betadraw"]][keep,]
+SIGMAs <- PosteriorDraws[["Sigmadraw"]][keep,] 
 summary(coda::mcmc(Bs))
-summary(coda::mcmc(PosteriorDraws[["Sigmadraw"]]))
+summary(coda::mcmc(SIGMAs))
+S <- dim(Bs)[1]
 As <- array(NA, c(M, M, S))
 for(s in 1:S){
   As[,,s] <- matrix(Bs[s, -c(1, 5, 9)], M, M, byrow = TRUE)
 }
 # Impulse response functions
 H <- 10
-Phis <- list()
-for(h in 1:H){
-  Phis[[h]] <- As^h
+Ptrue <- t(chol(SIGMA))
+Phistrue <-  array(NA, c(M, M, H))
+Phistrue[,,1] <- diag(M)
+PhistrueAccum <-  Phistrue
+PhistrueAccum[,,1] <- diag(M)
+Thetastrue <- Phistrue
+Thetastrue[,,1] <- Ptrue
+ThetastrueAccum <-  Thetastrue
+ThetastrueAccum[,,1] <- Ptrue
+for(h in 2:H){
+  Phistrue[,,h] <- Phistrue[,,h-1]%*%A
+  PhistrueAccum[,,h] <- PhistrueAccum[,,h-1] + Phistrue[,,h]
+  Thetastrue[,,h] <- Phistrue[,,h]%*%Ptrue
+  PhistrueAccum[,,h] <- ThetastrueAccum[,,h-1] + Thetastrue[,,h]
+}
+P <- array(NA, c(M, M, S))
+for(s in 1:S){
+  P[,,s] <- t(chol(matrix(SIGMAs[s,], M, M))) 
+}
+Phis <- list(); PhisAcum <- list() 
+Thetas <- list(); ThetasAcum <- list()
+for(h in 0:H){
+  if(h == 0){
+    Phis[[h+1]] <- array(diag(M), c(M,M,S))
+    Thetas <- Phis
+    for(s in 1:S){
+      Thetas[[h+1]][,,s] <- Phis[[h+1]][,,s]%*%P[,,s]
+    }
+    PhisAcum[[h+1]] <- Phis[[h+1]]
+    ThetasAcum[[h+1]] <- Thetas[[h+1]]
+  }else{
+    Phis[[h+1]] <- array(diag(M), c(M,M,S))
+    Thetas[[h+1]] <- Phis[[h+1]]
+    for(s in 1:S){
+      Phis[[h+1]][,,s] <- Phis[[h]][,,s]%*%As[,,s]
+      Thetas[[h+1]][,,s] <- Phis[[h+1]][,,s]%*%P[,,s]
+    }
+    PhisAcum[[h+1]] <- PhisAcum[[h]] + Phis[[h+1]]
+    ThetasAcum[[h+1]] <- ThetasAcum[[h]] + Thetas[[h+1]]
+  }
 }
 library(dplyr)
 library(ggplot2)
@@ -620,17 +662,40 @@ plot_filtering_estimates <- function(df) {
     geom_line(aes(y = x_true), colour = "black", alpha = 1,
               linewidth = 0.5) +
     geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) +
-    ylab("Impulse response") + xlab("Time")
+    ylab("Impulse response") + xlab("Time") + xlim(0,H-1)
   print(p)
 }
-IR <- function(m, j){
-  Mean <- sapply(1:H, function(h){mean(Phis[[h]][m,j,])})
-  LimInf1 <- sapply(1:H, function(h){quantile(Phis[[h]][m,j,], 0.025)})
-  LimSup1 <- sapply(1:H, function(h){quantile(Phis[[h]][m,j,], 0.975)})
-  LimInf <- sapply(1:H, function(h){quantile(Phis[[h]][m,j,], 0.05)})
-  LimSup <- sapply(1:H, function(h){quantile(Phis[[h]][m,j,], 0.95)})
-  IRtrue <- sapply(1:H, function(h){A[m,j]^h})
-  df <- tibble(t = 1:H,
+IR <- function(m, j, Accumulated = "FALSE", Type = "Ordinary"){
+  if(Type == "Cholesky"){
+    IRtrue <- Thetastrue[m,j,]
+    if(Accumulated == FALSE){
+      RES <- Thetas
+      IRtrue <- IRtrue
+    }else{
+      RES <- ThetasAcum
+      IRtrue <- cumsum(IRtrue)
+    }
+    Mean <- sapply(1:H, function(h){mean(RES[[h]][m,j,])})
+    LimInf1 <- sapply(1:H, function(h){quantile(RES[[h]][m,j,], 0.025)})
+    LimSup1 <- sapply(1:H, function(h){quantile(RES[[h]][m,j,], 0.975)})
+    LimInf <- sapply(1:H, function(h){quantile(RES[[h]][m,j,], 0.05)})
+    LimSup <- sapply(1:H, function(h){quantile(RES[[h]][m,j,], 0.95)})
+  }else{
+    IRtrue <- Phistrue[m,j,]
+    if(Accumulated == FALSE){
+      RES <- Phis
+      IRtrue <- IRtrue
+    }else{
+      RES <- PhisAcum
+      IRtrue <- cumsum(IRtrue)
+    }
+    Mean <- sapply(1:H, function(h){mean(RES[[h]][m,j,])})
+    LimInf1 <- sapply(1:H, function(h){quantile(RES[[h]][m,j,], 0.025)})
+    LimSup1 <- sapply(1:H, function(h){quantile(RES[[h]][m,j,], 0.975)})
+    LimInf <- sapply(1:H, function(h){quantile(RES[[h]][m,j,], 0.05)})
+    LimSup <- sapply(1:H, function(h){quantile(RES[[h]][m,j,], 0.95)})
+  }
+  df <- tibble(t = 0:(H-1),
                mean = Mean,
                lower1 = LimInf1,
                upper1 = LimSup1,
@@ -638,9 +703,33 @@ IR <- function(m, j){
                upper = LimSup,
                x_true = IRtrue)
   Fig <- plot_filtering_estimates(df)
+
   return(Fig)
 }
-IR(3,3)
+m <- 3; j <- 2
+IR(m,j, Accumulated = "TRUE", Type = "Ordinary")
+solve(diag(M) - A)
+
+# Create model
+Ynew <- ts(Y)
+model <- bvartools::gen_var(Ynew, p = 1, deterministic = "const", iterations = 10000, burnin = 1000)
+# Add priors
+model <- add_priors(model, coef = list(v_i = 0, v_i_det = 0), sigma = list(df = a0, scale = a0))
+
+# Obtain posterior draws
+object <- draw_posterior(model)
+# Calculate IR
+ir <- irf.bvar(object, impulse = "Series 1", response = "Series 1")
+# Plot IR
+plot(ir)
+
+### Forecasting
+# Generate forecasts
+bvar_pred <- predict(object, n.ahead = 10, new_d = rep(1, 10))
+# Plot forecasts
+plot(bvar_pred)
+plot(bvar_pred[["fcst"]][["invest"]])
+
 
 
 ########################## Vector Autoregressive models: Application ########################## 
