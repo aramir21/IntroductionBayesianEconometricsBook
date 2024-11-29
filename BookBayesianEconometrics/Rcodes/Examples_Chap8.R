@@ -590,10 +590,10 @@ V <- 5*diag(M)
 a0 <- M
 Prior <- list(betabar = b0, A = solve(B0), nu = a0, V = V)
 #Posterior draws
-S <- 10000 #Number of posterior draws
+MCMC <- 10000 #Number of posterior draws
 thin <- 5
 burnin <- 1000
-tot <- S + burnin
+tot <- MCMC + burnin
 Mcmc <- list(R = tot, keep = thin)
 PosteriorDraws <- bayesm::rsurGibbs(Data = list(regdata = regdata), Mcmc = Mcmc, Prior = Prior)
 keep <- seq(round(burnin/thin)+1, round(tot/thin))
@@ -706,77 +706,188 @@ IR <- function(m, j, Accumulated = "FALSE", Type = "Ordinary"){
 
   return(Fig)
 }
-m <- 3; j <- 2
-IR(m,j, Accumulated = "TRUE", Type = "Ordinary")
-solve(diag(M) - A)
+m <- 2; j <- 3
+IR(m,j, Accumulated = "FALSE", Type = "Cholesky")
+# solve(diag(M) - A)
+
+# Packages
+Ynew <- ts(Y)
+specification <- bsvars::specify_bsvar$new(data = Ynew, p = 1) # specify model
+burn_in <- bsvars::estimate(specification, burnin) # run the burn-in
+posterior <- bsvars::estimate(burn_in, MCMC, thin = thin) # estimate the model
+fitted <- bsvars::compute_impulse_responses(posterior, horizon = 10) # compute impulse responses
+plot(fitted) # plot
+forecast <- forecast(posterior, 4)
+summary(forecast)
+plot(forecast)
 
 # Create model
-Ynew <- ts(Y)
-model <- bvartools::gen_var(Ynew, p = 1, deterministic = "const", iterations = 10000, burnin = 1000)
+model <- bvartools::gen_var(Ynew, p = 1, deterministic = "const", iterations = MCMC, burnin = burnin)
 # Add priors
-model <- add_priors(model, coef = list(v_i = 0, v_i_det = 0), sigma = list(df = a0, scale = a0))
-
+model <- bvartools::add_priors(model, coef = list(v_i = 0, v_i_det = 0), sigma = list(df = a0, scale = a0))
 # Obtain posterior draws
-object <- draw_posterior(model)
+object <- bvartools::draw_posterior(model)
 # Calculate IR
-ir <- irf.bvar(object, impulse = "Series 1", response = "Series 1")
+ir <- bvartools::irf.bvar(object, impulse = "Series 1", response = "Series 1")
 # Plot IR
 plot(ir)
-
 ### Forecasting
 # Generate forecasts
-bvar_pred <- predict(object, n.ahead = 10, new_d = rep(1, 10))
+bvar_pred <- predict(object, n.ahead = 4, new_d = rep(1, 4))
 # Plot forecasts
 plot(bvar_pred)
 plot(bvar_pred[["fcst"]][["invest"]])
-
-
 
 ########################## Vector Autoregressive models: Application ########################## 
 rm(list = ls())
 set.seed(010101)
-# Get data
-data("e1")
-e1 <- diff(log(e1)) * 100
+DataUSfilcal <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/18USAfiscal.csv", sep = ",", header = TRUE, quote = "")
+attach(DataUSfilcal) # upload data
+T <- dim(DataUSfilcal)[1]; K <- dim(DataUSfilcal)[2]
+Y <- cbind(DataUSfilcal[,-c(1:2)])
+Ynew <- Y[-c((T-3):T), ]
+y1 <- Ynew[-1, 1]; y2 <- Ynew[-1, 2]; y3 <- Ynew[-1, 3]
+X1 <- cbind(1, lag(Ynew)); X1 <- as.matrix(X1[-1,])
+X2 <- cbind(1, lag(Ynew)); X2 <- as.matrix(X2[-1,])
+X3 <- cbind(1, lag(Ynew)); X3 <- as.matrix(X3[-1,])
+regdata <- NULL
+regdata[[1]] <- list(y = y1, X = X1); regdata[[2]] <- list(y = y2, X = X2); regdata[[3]] <- list(y = y3, X = X3)
+M <- length(regdata); K1 <- dim(X1)[2]; K2 <- dim(X2)[2]; K3 <- dim(X3)[2] 
+K <- K1 + K2 + K3
+# Hyperparameters
+b0 <- rep(0, K)
+c0 <- 100
+B0 <- c0*diag(K)
+V <- 5*diag(M)
+a0 <- M
+Prior <- list(betabar = b0, A = solve(B0), nu = a0, V = V)
+#Posterior draws
+MCMC <- 10000 #Number of posterior draws
+thin <- 5
+burnin <- 1000
+tot <- MCMC + burnin
+Mcmc <- list(R = tot, keep = thin)
+PosteriorDraws <- bayesm::rsurGibbs(Data = list(regdata = regdata), Mcmc = Mcmc, Prior = Prior)
+keep <- seq(round(burnin/thin)+1, round(tot/thin))
+Bs <- PosteriorDraws[["betadraw"]][keep,]
+SIGMAs <- PosteriorDraws[["Sigmadraw"]][keep,] 
+summary(coda::mcmc(Bs))
+summary(coda::mcmc(SIGMAs))
+S <- dim(Bs)[1]
+As <- array(NA, c(M, M, S))
+for(s in 1:S){
+  As[,,s] <- matrix(Bs[s, -c(1, 5, 9)], M, M, byrow = TRUE)
+}
+# Impulse response functions
+H <- 10
+P <- array(NA, c(M, M, S))
+for(s in 1:S){
+  P[,,s] <- t(chol(matrix(SIGMAs[s,], M, M))) 
+}
+Phis <- list(); PhisAcum <- list() 
+Thetas <- list(); ThetasAcum <- list()
+for(h in 0:H){
+  if(h == 0){
+    Phis[[h+1]] <- array(diag(M), c(M,M,S))
+    Thetas <- Phis
+    for(s in 1:S){
+      Thetas[[h+1]][,,s] <- Phis[[h+1]][,,s]%*%P[,,s]
+    }
+    PhisAcum[[h+1]] <- Phis[[h+1]]
+    ThetasAcum[[h+1]] <- Thetas[[h+1]]
+  }else{
+    Phis[[h+1]] <- array(diag(M), c(M,M,S))
+    Thetas[[h+1]] <- Phis[[h+1]]
+    for(s in 1:S){
+      Phis[[h+1]][,,s] <- Phis[[h]][,,s]%*%As[,,s]
+      Thetas[[h+1]][,,s] <- Phis[[h+1]][,,s]%*%P[,,s]
+    }
+    PhisAcum[[h+1]] <- PhisAcum[[h]] + Phis[[h+1]]
+    ThetasAcum[[h+1]] <- ThetasAcum[[h]] + Thetas[[h+1]]
+  }
+}
+library(dplyr)
+library(ggplot2)
+require(latex2exp)
+ggplot2::theme_set(theme_bw())
+plot_filtering_estimates <- function(df) {
+  p <- ggplot(data = df, aes(x = t)) +
+    geom_ribbon(aes(ymin = lower1, ymax = upper1), alpha = 1,
+                fill = "blue") +
+    geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1,
+                fill = "lightblue") +
+    geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) +
+    ylab("Impulse response") + xlab("Time") + xlim(0,H-1)
+  print(p)
+}
+IR <- function(m, j, Accumulated = "FALSE", Type = "Ordinary"){
+  if(Type == "Cholesky"){
+    if(Accumulated == FALSE){
+      RES <- Thetas
+    }else{
+      RES <- ThetasAcum
+    }
+    Mean <- sapply(1:H, function(h){mean(RES[[h]][m,j,])})
+    LimInf1 <- sapply(1:H, function(h){quantile(RES[[h]][m,j,], 0.025)})
+    LimSup1 <- sapply(1:H, function(h){quantile(RES[[h]][m,j,], 0.975)})
+    LimInf <- sapply(1:H, function(h){quantile(RES[[h]][m,j,], 0.05)})
+    LimSup <- sapply(1:H, function(h){quantile(RES[[h]][m,j,], 0.95)})
+  }else{
+    if(Accumulated == FALSE){
+      RES <- Phis
+    }else{
+      RES <- PhisAcum
+    }
+    Mean <- sapply(1:H, function(h){mean(RES[[h]][m,j,])})
+    LimInf1 <- sapply(1:H, function(h){quantile(RES[[h]][m,j,], 0.025)})
+    LimSup1 <- sapply(1:H, function(h){quantile(RES[[h]][m,j,], 0.975)})
+    LimInf <- sapply(1:H, function(h){quantile(RES[[h]][m,j,], 0.05)})
+    LimSup <- sapply(1:H, function(h){quantile(RES[[h]][m,j,], 0.95)})
+  }
+  df <- tibble(t = 0:(H-1),
+               mean = Mean,
+               lower1 = LimInf1,
+               upper1 = LimSup1,
+               lower = LimInf,
+               upper = LimSup)
+  Fig <- plot_filtering_estimates(df)
+  
+  return(Fig)
+}
+m <- 1; j <- 1
+IR(m,j, Accumulated = "FALSE", Type = "Ordinary")
+# solve(diag(M) - A)
+
+# Packages
+YnewPack <- ts(Ynew)
 # Create model
-model <- gen_var(e1, p = 2, deterministic = "const",
-                 iterations = 5000, burnin = 1000)
-# Number of iterations and burnin should be much higher.
+model <- bvartools::gen_var(YnewPack, p = 1, deterministic = "const", iterations = MCMC, burnin = burnin)
 # Add priors
-# Add priors
-model <- add_priors(data,
-                    coef = list(v_i = 0, v_i_det = 0),
-                    sigma = list(df = 0, scale = .00001))
-
-model <- add_priors(model)
-# Obtain posterior draws
-object <- bvarpost(model)
-summary.bvar(object)
-summary(object[["A"]])
-
-# Obtain posterior draws
-object <- draw_posterior(model)
-
-# Variance decomposition
-# Obtain FEVD
-vd <- fevd(object, response = "cons")
-# Plot FEVD
-plot(vd)
-
-# Impulse response
+model <- bvartools::add_priors(model, coef = list(v_i = c0^-1, v_i_det = c0^-1, const = b0[1]), sigma = list(df = a0, scale = V[1,1]), coint_var = FALSE)
+# Minnesota prior
+# model <- bvartools::add_priors(model, minnesota = list(kappa0 = 2, kappa1 = 0.5, kappa3 = 5), coint_var = FALSE)# Obtain posterior draws
+object <- bvartools::draw_posterior(model)
 # Calculate IR
-ir <- irf(object, impulse = "invest", response = "income", cumulative = TRUE)
+ir <- bvartools::irf.bvar(object, impulse = "ttr", response = "ttr", n.ahead = 10)
 # Plot IR
 plot(ir)
-
-# Calculate IR
-ir <- irf.bvar(object, impulse = "invest", response = "cons")
-# Plot IR
-plot(ir)
-
 ### Forecasting
 # Generate forecasts
-bvar_pred <- predict(object, n.ahead = 10, new_d = rep(1, 10))
+bvar_pred <- predict(object, n.ahead = 4, new_d = rep(1, 4))
 # Plot forecasts
 plot(bvar_pred)
-plot(bvar_pred[["fcst"]][["invest"]])
+plot(bvar_pred[["fcst"]][["ttr"]][,2])
+plot(bvar_pred[["fcst"]][["ttr"]][,1])
+plot(bvar_pred[["fcst"]][["ttr"]][,3])
+
+YnewPack <- ts(Ynew)
+specification <- bsvars::specify_bsvar$new(data = YnewPack, p = 1) # specify model
+burn_in <- bsvars::estimate(specification, burnin) # run the burn-in
+posterior <- bsvars::estimate(burn_in, MCMC, thin = thin) # estimate the model
+fitted <- bsvars::compute_impulse_responses(posterior, horizon = 10) # compute impulse responses
+plot(fitted) # plot
+forecast <- forecast(posterior, 4)
+summary(forecast)
+plot(forecast)
+
+
