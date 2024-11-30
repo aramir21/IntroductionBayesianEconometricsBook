@@ -548,7 +548,7 @@ plot(Postdraws)
 \end{tcolorbox}
 We perform 10000 MCMC iterations plus a burn-in equal 5000 assuming $\sigma^2\sim IG(0.01/2, 0.01/2)$, $\mu\sim N(0, 1)$ and $\phi_k\sim N(0, 1)$, $k=1,2$. The trace plots look well, and all 95\% credible intervals encompass the population values.
 
-Algorithm \ref{alg:ARMA} shows how to do perform inference in $ARMA(p,q)$ models using our GUI. See also Chapter \ref{chapGUI} for details regarding the dataset structure. 
+Algorithm \ref{alg:ARMA} shows how to perform inference in $ARMA(p,q)$ models using our GUI. See also Chapter \ref{chapGUI} for details regarding the dataset structure. 
 
 \begin{algorithm}[h!]
 	\caption{Autoregressive Moving Average ($ARMA$) models}\label{alg:ARMA}
@@ -715,6 +715,24 @@ where $y_t$ are the log-returns, $\bm{x}_t$ are controls, $\bm{\beta}$ are time-
 Given the specification in Equations \ref{eqsvobs} and \ref{eqsvst}, we can write down the observation equation as $\log\left\{(y_t-\bm{x}_t^{\top}\bm{\beta})^2\right\}=h_t+\log(\mu_t^2)$, thus there is now a linear, but non-Gaussian \textit{state-space model}. \cite{kastner2014ancillarity} approximate the distribution of $\log(\mu_t^2)$ by a mixture of normal distributions, that is, $\log(\mu_t^2)|l_t\sim N(m_{l_t},s_{l_t}^2)$, $l_r\in \left\{1,2,\dots,10\right\}$ defines the mixture component indicator at time $t$. Thus, $\log\left\{(y_t-\bm{x}_t^{\top}\bm{\beta})^2\right\}=h_t+\log(\mu_t^2)$ and $h_t=\mu+\phi(h_{t-1}-\mu)+\sigma w_t$ can be written as a linear and conditionally Gaussian \textit{state-space model}, where $\log\left\{(y_t-\bm{x}_t^{\top}\bm{\beta})^2\right\}=m_{l_t}+h_t+\mu_t^2$, $\mu_t\sim N(0, s_{l_t}^2)$.        
 
 We use the \textit{stochvol} package in our GUI to perform MCMC inference in the SVMs \cite{hosszejni_kastner_2021}; this package in turn is based on the MCMC algorithms proposed by \cite{kastner2014ancillarity}. The default prior distributions in the \textit{stochvol} package are $\bm{\beta}\sim N(\bm{b}_0,\bm{B}_0)$, $\mu\sim N(\mu_0,\sigma_{\mu0}^2)$, $(\phi+1)/2\sim B(\alpha_0,\beta_0)$, and $\sigma^2\sim G(1/2,1/(2\sigma^2_{\sigma^2}))$. The prior distribution of $\phi$ is set to achieve stationarity of the process ($\phi\in(-1,1)$). Most of applications find $\phi\approx 1$, thus authors of the package recommend to set $\alpha_0 \gtrsim 5$ and $\beta_0\approx 1.5$. The prior distribution of $\sigma^2$ is equivalent to $\sigma\sim |N(0,\sigma^2_{\sigma^2})|$ (half-normal distribution); this is recommended by the authors as the convenient conjugate inverse-gamma distribution does not work well due to bounding $\sigma$ away from 0, which is no a good feature when modeling the log-variance of log-returns.
+
+Algorithm \ref{alg:SV} shows how to perform inference in stochastic volatility models using our GUI. See also Chapter \ref{chapGUI} for details regarding the dataset structure. 
+
+\begin{algorithm}[h!]
+	\caption{Stochastic volatility models}\label{alg:SV}
+	\begin{algorithmic}[1]  		 			
+		\State Select \textit{Time series Model} on the top panel
+		\State Select \textit{Stochastic volatility} using the left radio button
+		\State Upload the dataset selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend
+		\State Select MCMC iterations, burn-in and thinning parameters using the \textit{Range sliders}
+		\State Set the hyperparameters: the mean and standard deviation of the Gaussian prior for the regression parameters, mean and standard deviation for the Gaussian prior distribution of the level of the log-volatility, shape parameters for the Beta prior distribution of the transformed persistence parameter, and the positive real number, which stands for the scaling of the transformed volatility of log-volatility. This step is not necessary as by default our GUI uses default values in \textit{stochvol} package
+		\State Click the \textit{Go!} button
+		\State Analyze results
+		\State Download posterior chains and diagnostic plots using the \textit{Download Posterior Chains} and \textit{Download Posterior Graphs} buttons
+	\end{algorithmic} 
+\end{algorithm}
+
+\textbf{Example: Simulation exercise of the stochastic volatility model}
 
 The following code shows how to simulate and perform Bayesian inference in the stochastic volatility model using the function \textit{svsample} from the \textit{stochvol} package. We set the stochastic volatility parameters $\mu=-10$, $\phi=0.95$ and $\sigma=0.3$. We assume two regressors that distribute standard normal, $\bm{\beta}=[0.5 \ 0.3]^{\top}$, and the sample size is 1250, which is approximately having daily returns during 5 years. We use the default hyperparameters, 10000 MCMC iterations, a burn-in equal 5000 and a thin parameter equal 5.
 
@@ -942,7 +960,7 @@ thus $\bm{A}(L)\bm{Y}_t=\bm{v}+\bm{\mu}_t$, where $\bm{A}(L)=\bm{I}_M-\bm{A}_{1}
 \begin{align}\label{eqMA}
 	\bm{Y}_t=\bm{\mu} + \sum_{s=0}^{\infty}\bm{\Phi}_s\bm{\mu}_{t-s},
 \end{align}
-where $\bm{\Phi}_0=\bm{I}_M$, and we can get the coefficients in $\bm{\Phi}_s$ by the recursion $\bm{\Phi}_s=\sum_{l=1}^s\bm{\Phi}_{s-l}\bm{A}_l$, $\bm{A}_l=\bm{0}$, $l>p$ and $s=1,2,..$ \cite[Chap.~2]{helmut2005new}.
+where $\bm{\Phi}_0=\bm{I}_M$, and we can get the coefficients in $\bm{\Phi}_s$ by the recursion $\bm{\Phi}_s=\sum_{l=1}^s\bm{\Phi}_{s-l}\bm{A}_l$, $\bm{A}_l=\bm{0}$, $l>p$ and $s=1,2,..$ \cite[Chap.~2]{helmut2005new}. This impulse response function is called \textit{forecast error impulse response function}.
 
 The MA coefficients contain the impulse responses of the system. In particular, $\phi_{mj,s}$, which is the $mj$-th element of the matrix $\bm{\Phi}_s$, represents the response of the $m$-th variable to a unit shock of the variable $j$ in the system, $s$ periods ago, provided that the effect is not contaminated by other shocks in the system. The long-term effects (total multipliers) are given by $\bm{\Psi}_{\infty}:=\sum_{s=1}^{\infty}\bm{\Phi}_s=(\bm{I}_M-\bm{A}_{1}-\bm{A}_{2}-\dots-\bm{A}_{p})^{-1}$.
 
@@ -952,44 +970,123 @@ In this representation is sensible to assume that each shock occurs independentl
 
 Beyond the fascinating macroeconomic implications embedded in the specification of VAR models, the key point for this section is that we can infer impulse response functions using the posterior draws.\\
 
-\textbf{Example: Simulation exercise}
+\textbf{Example: US fiscal system}
 
-Let's simulate the VAR(1) process
-\begin{align*}
-	\begin{bmatrix}
-		y_{1t}\\
-		y_{2t}\\
-		y_{3t}\\
-	\end{bmatrix} = \begin{bmatrix}
-	2.8\\
-	2.2\\
-	1.3\\
-\end{bmatrix} + \begin{bmatrix}
-0.5 & 0 & 0\\
-0.1 & 0.1 & 0.3\\
-0 & 0.2 & 0.3\\
-\end{bmatrix} \begin{bmatrix}
-y_{1t-1}\\
-y_{2t-1}\\
-y_{3t-1}\\
-\end{bmatrix} +\begin{bmatrix}
-\mu_{1t}\\
-\mu_{2t}\\
-\mu_{3t}\\
-\end{bmatrix},
-\end{align*}
-where $\bm{\Sigma}= \begin{bmatrix}
-	2.25 & 0 & 0\\
-	0 & 1 & 0.5\\
-	0 & 0.5 & 0.74\\
-\end{bmatrix}$.
+Let's use the dataset provided by \cite{Tomasz2024} of the US fiscal system, where \textit{ttr} is the quarterly total tax revenue, \textit{gs} is the quarterly total government spending, and \textit{gdp} is the quarterly gross domestic product, all expressed in log, real, per person terms, and the period is 1948q1 to 2024q2. This dataset is the \textit{18USAfiscal.csv} file. \cite{mertens2014reconciliation} analyze the US fiscal policy shocks using these variables.
 
-Using the recursion $\bm{\Phi}_s=\sum_{l=1}^s\bm{\Phi}_{s-l}\bm{A}_l$, $\bm{A}_l=\bm{0}$, $l>p$ and $s=1,2,..$, we get $\bm{\Phi}_s = \bm{A}_1^s$. 
+Let's estimate a VAR model where $\bm{y}_t=[\Delta(ttr_t) \ \Delta(gs_t) \ \Delta(gdp_t)]^{\top}$, that is, we work with the log differences (variation rates), and we set $p=1$. We use the package \textit{bvartools} to estimate the \textit{forecast error} and \textit{ortogonalized} impulse response functions. We use vague independent priors setting $\bm{\beta}_0=\bm{0}$, $\bm{B}_0=100\bm{I}$, $\bm{V}_0=5\bm{I}$ and $\alpha_0=3$, and the Minnesota prior setting $a_1=2$, $\kappa_2=0.5$ and $\kappa_3=5$ (default values).
 
-We present a brief review of how to perform Bayesian inference in time series models. However, this a very active research area with amazing methodological developments and applications. Interested readers can see excellent material in chapters 7 and 9 in \cite{geweke2011oxford}, chapters 17 to 20 in \cite{chan2019bayesian}, and references in there. In addition, there are good packages in \textbf{R} to perform Bayesian inference in VAR models. For instance, \textit{bayesianVARs} package implements inference of reduced-form VARs with stochastic volatility \cite{Gruber2024}, \textit{BVAR} package performs inference using hierarchical priors \cite{Kuschnig2024}, \textit{bvarsv} implements time-varying parameters models \cite{Krueger2022}, \textit{bsvars} performs estimation of structural VAR models \cite{Tomasz2024}, and \textit{bsvarSIGNs} to estimate structural VAR models with sign restrictions \cite{Wang2024}. 
-      
+
+The following code shows how to do this, take into account that we use the first 301 observations to estimate the model, and keep the last 4 observations to check the forecasting performance. Figures \ref{fig6} and \ref{fig7} show the impulse response functions of \textit{gs} with respect to \textit{gs}, the \textit{forecast error impulse response} using vague independent priors, and the \textit{ortogonalized impulse response} using the Minnesota prior, respectively. We see that there are big differences in these two impulse response functions, this means that prior and shock assumptions play a remarkable role in response analysis. 
+
+On the other hand, the forecasting exercise results indicate that these assumptions did not significantly affect the mean forecasts in this example. As shown in Figure \ref{fig8}, the mean forecasts using the vague prior (green line) and the Minnesota prior (red line) are indistinguishable from the true observations (black line). However, the Minnesota prior enhances forecast precision, as its 95\% predictive interval (blue shaded area) is narrower and fully contained within the 95\% predictive interval obtained using vague priors (light blue shaded area). This improvement is attributable to the shrinkage properties of the Minnesota prior.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. VAR model: US fiscal shocks}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+DataUSfilcal <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/18USAfiscal.csv", sep = ",", header = TRUE, quote = "")
+attach(DataUSfilcal) # upload data
+Y <- cbind(diff(as.matrix(DataUSfilcal[,-c(1:2)])))
+T <- dim(Y)[1]-1; K <- dim(Y)[2]
+Ynew <- Y[-c((T-2):(T+1)), ] # Use 4 last observations to check forecast
+y1 <- Ynew[-1, 1]; y2 <- Ynew[-1, 2]; y3 <- Ynew[-1, 3]
+X1 <- cbind(1, lag(Ynew)); X1 <- X1[-1,]
+X2 <- cbind(1, lag(Ynew)); X2 <- X2[-1,]
+X3 <- cbind(1, lag(Ynew)); X3 <- X3[-1,]
+M <- dim(Y)[2]; K1 <- dim(X1)[2]; K2 <- dim(X2)[2]; K3 <- dim(X3)[2] 
+K <- K1 + K2 + K3
+# Hyperparameters
+b0 <- 0; c0 <- 100
+V0 <- 5; a0 <- M
+#Posterior draws
+MCMC <- 10000; burnin <- 1000; H <- 10
+YnewPack <- ts(Ynew)
+model <- bvartools::gen_var(YnewPack, p = 1, deterministic = "const", iterations = MCMC, burnin = burnin) # Create model
+model <- bvartools::add_priors(model, coef = list(v_i = c0^-1, v_i_det = c0^-1, const = b0), sigma = list(df = a0, scale = V0), coint_var = FALSE) # Add priors
+object <- bvartools::draw_posterior(model) # Posterior draws
+ir <- bvartools::irf.bvar(object, impulse = "gs", response = "gs", n.ahead = H, type = "feir") # Calculate IR
+# Plot IR
+plot_IR <- function(df) {
+	p <- ggplot(data = df, aes(x = t)) + geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1, fill = "lightblue") + geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) + ylab("Impulse response") + xlab("Time") + xlim(0,H)
+	print(p)
+}
+dfNew <- tibble(t = 0:H, mean = as.numeric(ir[,2]), lower = as.numeric(ir[,1]), upper = as.numeric(ir[,3]))
+FigNew <- plot_IR(dfNew)
+# Using Minnesota prior
+modelMin <- bvartools::gen_var(YnewPack, p = 1, deterministic = "const", iterations = MCMC, burnin = burnin)
+modelMin <- bvartools::add_priors(modelMin, minnesota = list(kappa0 = 2, kappa1 = 0.5, kappa3 = 5), coint_var = FALSE) # Minnesota prior
+objectMin <- bvartools::draw_posterior(modelMin) # Posterior draws
+irMin <- bvartools::irf.bvar(objectMin, impulse = "gs", response = "gs", n.ahead = H, type = "oir") # Calculate IR
+dfNewMin <- tibble(t = 0:H, mean = as.numeric(irMin[,2]), lower = as.numeric(irMin[,1]), upper = as.numeric(irMin[,3]))
+FigNewMin <- plot_IR(dfNewMin)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. VAR model: US fiscal shocks}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+### Forecasting
+bvar_pred <- predict(object, n.ahead = 4, new_d = rep(1, 4))
+bvar_predOR <- predict(objectMin, n.ahead = 4, new_d = rep(1, 4))
+dfFore <- tibble(t = c((T-2):(T+1)), mean = as.numeric(bvar_pred[["fcst"]][["gs"]][,2]), lower = as.numeric(bvar_pred[["fcst"]][["gs"]][,1]), upper = as.numeric(bvar_pred[["fcst"]][["gs"]][,3]), mean1 = as.numeric(bvar_predOR[["fcst"]][["gs"]][,2]), lower1 = as.numeric(bvar_predOR[["fcst"]][["gs"]][,1]), upper1 = as.numeric(bvar_predOR[["fcst"]][["gs"]][,3]), true = as.numeric(Y[c((T-2):(T+1)),2]))
+plot_FORE <- function(df) {
+	p <- ggplot(data = dfFore, aes(x = t)) + geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1, fill = "lightblue") + geom_ribbon(aes(ymin = lower1, ymax = upper1), alpha = 1, fill = "blue") + geom_line(aes(y = mean), colour = "green", linewidth = 0.5) + geom_line(aes(y = mean1), colour = "red", linewidth = 0.5) + geom_line(aes(y = true), colour = "black", linewidth = 0.5) + ylab("Forecast") + xlab("Time") + xlim(c((T-2),(T+1)))
+	print(p)
+}
+FigFore <- plot_FORE(dfFore)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter8/figures/IRsgsgFE.png}
+	\caption[List of figure caption goes here]{Forecasting error impulse response: \textit{gs} with respect to \textit{gs}.}\label{fig6}
+\end{figure}
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter8/figures/IRsgsgO.png}
+	\caption[List of figure caption goes here]{Ortogonalized impulse response: \textit{gs} with respect to \textit{gs}.}\label{fig7}
+\end{figure}
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter8/figures/Forecastgs.png}
+	\caption[List of figure caption goes here]{Forecast performance: \textit{gs}.}\label{fig8}
+\end{figure}
+
+Algorithm \ref{alg:VAR} shows how to do perform inference in VAR models using our GUI. See also Chapter \ref{chapGUI} for details regarding the dataset structure. 
+
+\begin{algorithm}[h!]
+	\caption{Vector Autoregressive models}\label{alg:VAR}
+	\begin{algorithmic}[1]  		 			
+		\State Select \textit{Time series Model} on the top panel
+		\State Select \textit{VAR models} using the left radio button
+		\State Upload the dataset selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend
+		\State Select MCMC iterations, burn-in and thinning parameters using the \textit{Range sliders}
+		\State Set the number of lags ($p$)
+		\State Set the hyperparameters: the mean and standard deviation of the Gaussian prior for the regression parameters, mean and standard deviation for the Gaussian prior distribution of the level of the log-volatility, shape parameters for the Beta prior distribution of the transformed persistence parameter, and the positive real number, which stands for the scaling of the transformed volatility of log-volatility. This step is not necessary as by default our GUI uses default values in \textit{stochvol} package
+		\State Click the \textit{Go!} button
+		\State Analyze results
+		\State Download posterior chains and diagnostic plots using the \textit{Download Posterior Chains} and \textit{Download Posterior Graphs} buttons
+	\end{algorithmic} 
+\end{algorithm}
+
+
+
+There are other good packages in \textbf{R} to perform Bayesian inference in VAR models. For instance, \textit{bayesianVARs} package implements inference of reduced-form VARs with stochastic volatility \cite{Gruber2024}, \textit{BVAR} package performs inference using hierarchical priors \cite{Kuschnig2024}, \textit{bvarsv} implements time-varying parameters models \cite{Krueger2022}, \textit{bsvars} performs estimation of structural VAR models \cite{Tomasz2024}, and \textit{bsvarSIGNs} to estimating structural VAR models with sign restrictions \cite{Wang2024}. 
  
 \section{Summary}\label{sec85}
+We present a brief review of Bayesian inference in time series models. In particular, we introduce the \textit{state-space} representation and demonstrate how to perform inferential analysis for these models, focusing on the dynamic linear model and the stochastic volatility model. Additionally, we show that $ARMA(p,q)$ processes can be expressed in \textit{state-space} form and provide methods for estimating such models. 
+
+We include code for implementing computational inference algorithms such as sequential Monte Carlo (SMC), Hamiltonian Monte Carlo (HMC), and various Markov chain Monte Carlo (MCMC) methods. Finally, we introduce VAR(p) models, detailing how to perform impulse-response analysis and forecasting within this framework.
+
+Time series analysis is a very active research area with amazing methodological developments and applications. Interested readers can see excellent material in chapters 7 and 9 in \cite{geweke2011oxford}, chapters 17 to 20 in \cite{chan2019bayesian}, and references in there.
 
 \section{Exercises}\label{sec86}
 
@@ -1012,7 +1109,44 @@ We present a brief review of how to perform Bayesian inference in time series mo
 		\item Modify the sequential Monte Carlo (SMC) to perform multinomial resampling when the effective sample size is lower than 50\% the number of particles.  
 	\end{itemize}
 
-	\item Estimate the vanilla stochastic volatility model using the dataset \textit{17ExcRate.csv} provided by \cite{ramirez2024testing} of the exchange rate log daily returns from USD/EUR, USD/GBP and GBP/EUR one year before and after the WHO declared the COVID-19 pandemic on 11 March 2020. 
+	\item Estimate the vanilla stochastic volatility model using the dataset \textit{17ExcRate.csv} provided by \cite{ramirez2024testing} of the exchange rate log daily returns from USD/EUR, USD/GBP and GBP/EUR one year before and after the WHO declared the COVID-19 pandemic on 11 March 2020.
+	
+	\item Simulate the VAR(1) process
+	\begin{align*}
+		\begin{bmatrix}
+			y_{1t}\\
+			y_{2t}\\
+			y_{3t}\\
+		\end{bmatrix} = \begin{bmatrix}
+			2.8\\
+			2.2\\
+			1.3\\
+		\end{bmatrix} + \begin{bmatrix}
+			0.5 & 0 & 0\\
+			0.1 & 0.1 & 0.3\\
+			0 & 0.2 & 0.3\\
+		\end{bmatrix} \begin{bmatrix}
+			y_{1t-1}\\
+			y_{2t-1}\\
+			y_{3t-1}\\
+		\end{bmatrix} +\begin{bmatrix}
+			\mu_{1t}\\
+			\mu_{2t}\\
+			\mu_{3t}\\
+		\end{bmatrix},
+	\end{align*}
+	where $\bm{\Sigma}= \begin{bmatrix}
+		2.25 & 0 & 0\\
+		0 & 1 & 0.5\\
+		0 & 0.5 & 0.74\\
+	\end{bmatrix}$.
+
+\begin{itemize}
+	\item  Use vague independent priors setting $\bm{\beta}_0=\bm{0}$, $\bm{B}_0=100\bm{I}$, $\bm{V}_0=5\bm{I}$ and $\alpha_0=3$, and estimate a VAR(1) model using the \textit{rsurGibbs} function from the package \textit{bayesm}. Then, program from scratch algorithms to perform inference of the \textit{forecast error} and \textit{ortogonalized} impulse response functions, and compare with the population impulse response functions, that is, using the population parameters.
+	
+	\item Using the previous setting perform inference of the \textit{forecast error} and the \textit{ortogonalized} impulse responses using the package \textit{bvartools}.  
+\end{itemize}
+
 	
 	
 \end{enumerate}
