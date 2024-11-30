@@ -119,7 +119,7 @@ Algorithm \ref{alg:DLM} shows how to perform inference in univariate \textit{dyn
 		\State Set the hyperparameters of the \textit{variance of the state equations}: just one set of prior mean and variance parameters. This step is not necessary as by default our GUI uses non-informative priors
 		\State Click the \textit{Go!} button
 		\State Analyze results
-		\State Download posterior chains and diagnostic plots using the \textit{Download Posterior Chains} and \textit{Download Posterior Graphs} buttons
+		\State Download posterior chains of variances of observation and state equations, and posterior chains of states using the \textit{Download Posterior Chains of Variances} and \textit{Download Posterior Chains of States} buttons
 	\end{algorithmic} 
 \end{algorithm}
 
@@ -728,7 +728,7 @@ Algorithm \ref{alg:SV} shows how to perform inference in stochastic volatility m
 		\State Set the hyperparameters: the mean and standard deviation of the Gaussian prior for the regression parameters, mean and standard deviation for the Gaussian prior distribution of the level of the log-volatility, shape parameters for the Beta prior distribution of the transformed persistence parameter, and the positive real number, which stands for the scaling of the transformed volatility of log-volatility. This step is not necessary as by default our GUI uses default values in \textit{stochvol} package
 		\State Click the \textit{Go!} button
 		\State Analyze results
-		\State Download posterior chains and diagnostic plots using the \textit{Download Posterior Chains} and \textit{Download Posterior Graphs} buttons
+		\State Download posterior chains of the fixed coefficients, and the states using the \textit{Download Posterior Chains Fixed} and \textit{Download Posterior States} buttons
 	\end{algorithmic} 
 \end{algorithm}
 
@@ -950,7 +950,7 @@ Observe that we have standard conditional posteriors, thus, we can employ a Gibb
 \end{align*} 
 and using the posterior draws of $\bm{\beta}^{(s)}$ and $\bm{\Sigma}^{(s)}$, $s=1,2,\dots,S$. We can also perform inference of functions of the parameters that are of main interest when using VAR models.
 
-Note that the independent priors allow more flexibility regarding prior information. For instance, we can set $\bm{\Psi}_0 = \bm{S}^{-1}$, $\alpha_0=T$, $\bm{\beta}_0=\bm{0}$ and $\bm{B}_0$ as a diagonal matrix, where the variance of the components associated with the coefficients in the $m$-th equation are such that the prior variance of the coefficients of the own-lags are $a_1/l^2$, variances on lag l of variable $m\neq j$ are $a_2s_{m}^2/(l^2s_{j}^2)$, and variance of the intercepts are set $a_3s_{m}^2$, $l=1,2,\dots,p$, where $s_{m}$ is the estimated standard error of the residuals in an unrestricted univariate autoregression of variable $m$ versus a constant and its $p$ lags \cite{litterman1986forecasting,koop2010bayesian}. Note that setting $a_1>a_2$ implies that own lags are more important to be good predictors than lags of other variables, and dividing by $l^2$ implies that recent lags are more relevant than further past lags. The specific choice of $a_1$, $a_2$ and $a_3$ ($a_k>0,k=1,2,3$) depends on each application, but it is easier to elicit these parameters rather than the $K(K+1)/2$ different components of $\bm{B}_0$.\footnote{We use in our GUI the \textit{bvartools} package, where this package has a slightly different notation such $a_2=a_1\kappa_2$ and $a_3=a_1\kappa_3$. Thus, we should set $a_1$, $\kappa_2$ and $\kappa_3$.} This setting is named the \textit{Minnesota prior}, as is based on the seminal proposals of Bayesian VAR models by researchers at the University of Minnesota and the Federal Reserve Bank of Minneapolis \cite{doan1984forecasting,litterman1986forecasting}.\footnote{In the case that the variables are not stationary, which is more probable when using variables in levels, like gross domestic product, $\bm{\beta}_0=\bm{0}$, except in the elements associated with the first own lags of the dependent variable of each equation, where the prior mean equals 1.} 
+Note that the independent priors allow more flexibility regarding prior information. For instance, we can set $\bm{\Psi}_0 = \bm{S}^{-1}$, $\alpha_0=T$, $\bm{\beta}_0=\bm{0}$ and $\bm{B}_0$ as a diagonal matrix, where the variance of the components associated with the coefficients in the $m$-th equation are such that the prior variance of the coefficients of the own-lags are $a_1/l^2$, variances on lag l of variable $m\neq j$ are $a_2s_{m}^2/(l^2s_{j}^2)$, and variance of the intercepts are set $a_3s_{m}^2$, $l=1,2,\dots,p$, where $s_{m}$ is the estimated standard error of the residuals in an unrestricted univariate autoregression of variable $m$ versus a constant and its $p$ lags \cite{litterman1986forecasting,koop2010bayesian}. Note that setting $a_1>a_2$ implies that own lags are more important to be good predictors than lags of other variables, and dividing by $l^2$ implies that recent lags are more relevant than further past lags. The specific choice of $a_1$, $a_2$ and $a_3$ ($a_k>0,k=1,2,3$) depends on each application, but it is easier to elicit these parameters rather than the $K(K+1)/2$ different components of $\bm{B}_0$.\footnote{We use in our GUI the \textit{bvartools} package, where this package has a slightly different notation such $a_2=a_1\kappa_2$ and $a_3=a_1\kappa_3$. Thus, we should set $a_1$, $\kappa_2$ and $\kappa_3$.} This setting is named the \textit{Minnesota prior}, as is based on the seminal proposals of Bayesian VAR models by researchers at the University of Minnesota and the Federal Reserve Bank of Minneapolis \cite{doan1984forecasting,litterman1986forecasting}.\footnote{In the case that the variables are not stationary, which is more probable when using variables in levels, like gross domestic product, $\bm{\beta}_0=\bm{0}$, except in the elements associated with the first own lags of the dependent variables of each equation, where the prior mean equals 1. In addition, the original proposal of the Minnesota prior set $\bm{\Sigma} = \bm{S}/T$, thus it did not take into account uncertainty regarding $\bm{\Sigma}$.} 
 
 An important non-linear function of parameters when performing VAR analysis is the \textit{impulse response} function, which is, the response of one variable to an impulse in another variable in the model. The \textit{impulse response} function can be deduced using the $MA$ representation of the VAR model. In particular, we can write Equation \ref{eqVAR} using the lag operator (see Section \ref{sec82}),
 \begin{align}\label{eqVAR1}
@@ -974,12 +974,9 @@ Beyond the fascinating macroeconomic implications embedded in the specification 
 
 Let's use the dataset provided by \cite{Tomasz2024} of the US fiscal system, where \textit{ttr} is the quarterly total tax revenue, \textit{gs} is the quarterly total government spending, and \textit{gdp} is the quarterly gross domestic product, all expressed in log, real, per person terms, and the period is 1948q1 to 2024q2. This dataset is the \textit{18USAfiscal.csv} file. \cite{mertens2014reconciliation} analyze the US fiscal policy shocks using these variables.
 
-Let's estimate a VAR model where $\bm{y}_t=[\Delta(ttr_t) \ \Delta(gs_t) \ \Delta(gdp_t)]^{\top}$, that is, we work with the log differences (variation rates), and we set $p=1$. We use the package \textit{bvartools} to estimate the \textit{forecast error} and \textit{ortogonalized} impulse response functions. We use vague independent priors setting $\bm{\beta}_0=\bm{0}$, $\bm{B}_0=100\bm{I}$, $\bm{V}_0=5\bm{I}$ and $\alpha_0=3$, and the Minnesota prior setting $a_1=2$, $\kappa_2=0.5$ and $\kappa_3=5$ (default values).
+Let's estimate a VAR model where $\bm{y}_t=[\Delta(ttr_t) \ \Delta(gs_t) \ \Delta(gdp_t)]^{\top}$, that is, we work with the log differences (variation rates), and we set $p=1$. We use the package \textit{bvartools} to estimate the \textit{forecast error} and \textit{ortogonalized} impulse response functions. We use vague independent priors setting $\bm{\beta}_0=\bm{0}$, $\bm{B}_0=100\bm{I}$, $\bm{V}_0=5^{-1}\bm{I}$ and $\alpha_0=3$, and the Minnesota prior setting $a_1=2$, $\kappa_2=0.5$ and $\kappa_3=5$ (default values).\footnote{The \textit{bvartools} package uses the inverse Wishart distribution as prior for $\bm{\Sigma}$, where the hyperparameters are the degrees of freedom of the error term, and the prior error variance of endogenous variables.}
 
-
-The following code shows how to do this, take into account that we use the first 301 observations to estimate the model, and keep the last 4 observations to check the forecasting performance. Figures \ref{fig6} and \ref{fig7} show the impulse response functions of \textit{gs} with respect to \textit{gs}, the \textit{forecast error impulse response} using vague independent priors, and the \textit{ortogonalized impulse response} using the Minnesota prior, respectively. We see that there are big differences in these two impulse response functions, this means that prior and shock assumptions play a remarkable role in response analysis. 
-
-On the other hand, the forecasting exercise results indicate that these assumptions did not significantly affect the mean forecasts in this example. As shown in Figure \ref{fig8}, the mean forecasts using the vague prior (green line) and the Minnesota prior (red line) are indistinguishable from the true observations (black line). However, the Minnesota prior enhances forecast precision, as its 95\% predictive interval (blue shaded area) is narrower and fully contained within the 95\% predictive interval obtained using vague priors (light blue shaded area). This improvement is attributable to the shrinkage properties of the Minnesota prior.
+The following code shows how to do this, take into account that we use the first 301 observations to estimate the model, and keep the last 4 observations to check the forecasting performance. Figures \ref{fig6} and \ref{fig7} show the impulse response functions of \textit{gs} with respect to \textit{gs}, the \textit{forecast error impulse response} using vague independent priors, and the \textit{ortogonalized impulse response} using the Minnesota prior, respectively. We see that the effect of the Minnesota prior is to decrease uncertainty. In addition, the forecasting exercise results indicate that these assumptions have same effects in this example. In particular, Figure \ref{fig8} shows that the mean forecasts using the vague prior (green line) and the Minnesota prior (red line) are indistinguishable from the true observations (black line). However, the Minnesota prior enhances forecast precision, as its 95\% predictive interval (blue shaded area) is narrower and fully contained within the 95\% predictive interval obtained using vague priors (light blue shaded area). This improvement is attributable to the shrinkage properties of the Minnesota prior.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -999,15 +996,13 @@ X3 <- cbind(1, lag(Ynew)); X3 <- X3[-1,]
 M <- dim(Y)[2]; K1 <- dim(X1)[2]; K2 <- dim(X2)[2]; K3 <- dim(X3)[2] 
 K <- K1 + K2 + K3
 # Hyperparameters
-b0 <- 0; c0 <- 100
-V0 <- 5; a0 <- M
+b0 <- 0; c0 <- 100; V0 <- 5^(-1); a0 <- M
 #Posterior draws
-MCMC <- 10000; burnin <- 1000; H <- 10
-YnewPack <- ts(Ynew)
+MCMC <- 10000; burnin <- 1000; H <- 10; YnewPack <- ts(Ynew)
 model <- bvartools::gen_var(YnewPack, p = 1, deterministic = "const", iterations = MCMC, burnin = burnin) # Create model
-model <- bvartools::add_priors(model, coef = list(v_i = c0^-1, v_i_det = c0^-1, const = b0), sigma = list(df = a0, scale = V0), coint_var = FALSE) # Add priors
+model <- bvartools::add_priors(model, coef = list(v_i = c0^-1, v_i_det = c0^-1, const = b0), sigma = list(df = a0, scale = V0/a0), coint_var = FALSE) # Add priors
 object <- bvartools::draw_posterior(model) # Posterior draws
-ir <- bvartools::irf.bvar(object, impulse = "gs", response = "gs", n.ahead = H, type = "feir") # Calculate IR
+ir <- bvartools::irf.bvar(object, impulse = "gs", response = "gs", n.ahead = H, type = "feir", cumulative = FALSE) # Calculate IR
 # Plot IR
 plot_IR <- function(df) {
 	p <- ggplot(data = df, aes(x = t)) + geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1, fill = "lightblue") + geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) + ylab("Impulse response") + xlab("Time") + xlim(0,H)
@@ -1019,7 +1014,7 @@ FigNew <- plot_IR(dfNew)
 modelMin <- bvartools::gen_var(YnewPack, p = 1, deterministic = "const", iterations = MCMC, burnin = burnin)
 modelMin <- bvartools::add_priors(modelMin, minnesota = list(kappa0 = 2, kappa1 = 0.5, kappa3 = 5), coint_var = FALSE) # Minnesota prior
 objectMin <- bvartools::draw_posterior(modelMin) # Posterior draws
-irMin <- bvartools::irf.bvar(objectMin, impulse = "gs", response = "gs", n.ahead = H, type = "oir") # Calculate IR
+irMin <- bvartools::irf.bvar(objectMin, impulse = "gs", response = "gs", n.ahead = H, type = "feir", cumulative = FALSE) # Calculate IR
 dfNewMin <- tibble(t = 0:H, mean = as.numeric(irMin[,2]), lower = as.numeric(irMin[,1]), upper = as.numeric(irMin[,3]))
 FigNewMin <- plot_IR(dfNewMin)
 \end{lstlisting}
@@ -1070,16 +1065,14 @@ Algorithm \ref{alg:VAR} shows how to do perform inference in VAR models using ou
 		\State Upload the dataset selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend
 		\State Select MCMC iterations, burn-in and thinning parameters using the \textit{Range sliders}
 		\State Set the number of lags ($p$)
-		\State Set the hyperparameters: the mean and standard deviation of the Gaussian prior for the regression parameters, mean and standard deviation for the Gaussian prior distribution of the level of the log-volatility, shape parameters for the Beta prior distribution of the transformed persistence parameter, and the positive real number, which stands for the scaling of the transformed volatility of log-volatility. This step is not necessary as by default our GUI uses default values in \textit{stochvol} package
+		\State Set the hyperparameters for the Minnesota prior: $a_1$, $\kappa_2$ and $\kappa_2$. This step is not necessary as by default our GUI uses default values in \textit{bvartools} package
 		\State Click the \textit{Go!} button
 		\State Analyze results
-		\State Download posterior chains and diagnostic plots using the \textit{Download Posterior Chains} and \textit{Download Posterior Graphs} buttons
+		\State Download posterior chains, impulse responses and forecasts using the \textit{Download Posterior Chains}, \textit{Download Impulse Responses}, and \textit{Forecast} buttons
 	\end{algorithmic} 
 \end{algorithm}
 
-
-
-There are other good packages in \textbf{R} to perform Bayesian inference in VAR models. For instance, \textit{bayesianVARs} package implements inference of reduced-form VARs with stochastic volatility \cite{Gruber2024}, \textit{BVAR} package performs inference using hierarchical priors \cite{Kuschnig2024}, \textit{bvarsv} implements time-varying parameters models \cite{Krueger2022}, \textit{bsvars} performs estimation of structural VAR models \cite{Tomasz2024}, and \textit{bsvarSIGNs} to estimating structural VAR models with sign restrictions \cite{Wang2024}. 
+ There are other good packages in \textbf{R} to perform Bayesian inference in VAR models. For instance, \textit{bayesianVARs} package implements inference of reduced-form VARs with stochastic volatility \cite{Gruber2024}, \textit{BVAR} package performs inference using hierarchical priors \cite{Kuschnig2024}, \textit{bvarsv} implements time-varying parameters models \cite{Krueger2022}, \textit{bsvars} performs estimation of structural VAR models \cite{Tomasz2024}, and \textit{bsvarSIGNs} to estimating structural VAR models with sign restrictions \cite{Wang2024}. 
  
 \section{Summary}\label{sec85}
 We present a brief review of Bayesian inference in time series models. In particular, we introduce the \textit{state-space} representation and demonstrate how to perform inferential analysis for these models, focusing on the dynamic linear model and the stochastic volatility model. Additionally, we show that $ARMA(p,q)$ processes can be expressed in \textit{state-space} form and provide methods for estimating such models. 

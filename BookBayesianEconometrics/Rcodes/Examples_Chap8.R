@@ -580,9 +580,9 @@ V0 <- 5; a0 <- M
 MCMC <- 10000; burnin <- 1000; H <- 10
 YnewPack <- ts(Ynew)
 model <- bvartools::gen_var(YnewPack, p = 1, deterministic = "const", iterations = MCMC, burnin = burnin) # Create model
-model <- bvartools::add_priors(model, coef = list(v_i = c0^-1, v_i_det = c0^-1, const = b0), sigma = list(df = a0, scale = V0), coint_var = FALSE) # Add priors
+model <- bvartools::add_priors(model, coef = list(v_i = c0^-1, v_i_det = c0^-1, const = b0), sigma = list(df = a0, scale = V0/a0), coint_var = FALSE) # Add priors
 object <- bvartools::draw_posterior(model) # Posterior draws
-ir <- bvartools::irf.bvar(object, impulse = "gs", response = "gs", n.ahead = H, type = "feir") # Calculate IR
+ir <- bvartools::irf.bvar(object, impulse = "gs", response = "gs", n.ahead = H, type = "feir", cumulative = FALSE) # Calculate IR
 # Plot IR
 plot_IR <- function(df) {
   p <- ggplot(data = df, aes(x = t)) + geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1, fill = "lightblue") + geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) + ylab("Impulse response") + xlab("Time") + xlim(0,H)
@@ -594,7 +594,7 @@ FigNew <- plot_IR(dfNew)
 modelMin <- bvartools::gen_var(YnewPack, p = 1, deterministic = "const", iterations = MCMC, burnin = burnin)
 modelMin <- bvartools::add_priors(modelMin, minnesota = list(kappa0 = 2, kappa1 = 0.5, kappa3 = 5), coint_var = FALSE) # Minnesota prior
 objectMin <- bvartools::draw_posterior(modelMin) # Posterior draws
-irMin <- bvartools::irf.bvar(objectMin, impulse = "gs", response = "gs", n.ahead = H, type = "oir") # Calculate IR
+irMin <- bvartools::irf.bvar(objectMin, impulse = "gs", response = "gs", n.ahead = H, type = "feir", cumulative = FALSE) # Calculate IR
 dfNewMin <- tibble(t = 0:H, mean = as.numeric(irMin[,2]), lower = as.numeric(irMin[,1]), upper = as.numeric(irMin[,3]))
 FigNewMin <- plot_IR(dfNewMin)
 ### Forecasting
@@ -611,10 +611,10 @@ FigFore <- plot_FORE(dfFore)
 YnewPack <- ts(Ynew)
 specification <- bsvars::specify_bsvar$new(data = YnewPack, p = 1) # specify model
 burn_in <- bsvars::estimate(specification, burnin) # run the burn-in
-posterior <- bsvars::estimate(burn_in, MCMC, thin = thin) # estimate the model
+posterior <- bsvars::estimate(burn_in, MCMC, thin = 1) # estimate the model
 fitted <- bsvars::compute_impulse_responses(posterior, horizon = 10) # compute impulse responses
 plot(fitted) # plot
-forecast <- forecast(posterior, 4)
+forecast <- bsvars::forecast(posterior, 4)
 summary(forecast)
 plot(forecast)
 

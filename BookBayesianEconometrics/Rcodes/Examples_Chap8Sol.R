@@ -820,8 +820,20 @@ IR <- function(m, j, Accumulated = "FALSE", Type = "Ordinary"){
   return(Fig)
 }
 m <- 2; j <- 3
-IR(m,j, Accumulated = "FALSE", Type = "Cholesky")
+IR(m,j, Accumulated = "FALSE", Type = "Ordinary")
 # solve(diag(M) - A)
+
+# Create model
+Ynew <- ts(Y)
+model <- bvartools::gen_var(Ynew, p = 1, deterministic = "const", iterations = MCMC, burnin = burnin)
+# Add priors
+model <- bvartools::add_priors(model, coef = list(v_i = b0[1], v_i_det = b0[1]), sigma = list(df = a0, scale = V[1,1]/a0)) # Prior
+# Obtain posterior draws
+object <- bvartools::draw_posterior(model)
+# Calculate IR
+ir <- bvartools::irf.bvar(object, impulse = "Series 2", response = "Series 3") 
+# Plot IR
+plot(ir)
 
 # Packages
 Ynew <- ts(Y)
@@ -830,24 +842,7 @@ burn_in <- bsvars::estimate(specification, burnin) # run the burn-in
 posterior <- bsvars::estimate(burn_in, MCMC, thin = thin) # estimate the model
 fitted <- bsvars::compute_impulse_responses(posterior, horizon = 10) # compute impulse responses
 plot(fitted) # plot
-forecast <- forecast(posterior, 4)
+forecast <- bsvars::forecast(posterior, 4)
 summary(forecast)
 plot(forecast)
-
-# Create model
-model <- bvartools::gen_var(Ynew, p = 1, deterministic = "const", iterations = MCMC, burnin = burnin)
-# Add priors
-model <- bvartools::add_priors(model, coef = list(v_i = 0, v_i_det = 0), sigma = list(df = a0, scale = a0))
-# Obtain posterior draws
-object <- bvartools::draw_posterior(model)
-# Calculate IR
-ir <- bvartools::irf.bvar(object, impulse = "Series 1", response = "Series 1")
-# Plot IR
-plot(ir)
-### Forecasting
-# Generate forecasts
-bvar_pred <- predict(object, n.ahead = 4, new_d = rep(1, 4))
-# Plot forecasts
-plot(bvar_pred)
-plot(bvar_pred[["fcst"]][["invest"]])
 

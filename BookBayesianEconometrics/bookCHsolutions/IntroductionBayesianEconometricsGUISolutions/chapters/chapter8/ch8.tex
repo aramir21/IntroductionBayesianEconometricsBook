@@ -771,6 +771,166 @@ where $\bm{\Sigma}= \begin{bmatrix}
 
 Using the recursion $\bm{\Phi}_s=\sum_{l=1}^s\bm{\Phi}_{s-l}\bm{A}_l$, $\bm{A}_l=\bm{0}$, $l>p$ and $s=1,2,..$, we get $\bm{\Phi}_s = \bm{A}_1^s$. In addition, we know that $\bm{\Theta}_s=\bm{\Phi}_S\bm{P}$. Then, we can get these impulse response functions. 
 
+The following code shows how to perform from scratch the impulse response functions. Figure \ref{fig7} shows the \textit{forecast error impulse response} of $y_{2t}$ to shocks in $\mu_{3t}$. We see that the 95\% (blue shadow) and 90\% (light blue shadow) credible intervals of the impulse response functions embrace the true impulse response (black line); although the mean impulse response (blue line) overestimates the true impulse. In addition, we can see that the results from the \textit{bvartools} package have the same patterns compared to the ones that we get programming the algorithm from scratch. Remember that the \textit{bvartools} package uses the inverse Wishart distribution as prior for $\bm{\Sigma}$, where the hyperparameters are the degrees of freedom of the error term, and the prior error variance of endogenous variables.   
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Vector autoregressive model: Simulation}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+T <- 300; M <- 3
+SIGMA <- matrix(c(2.25, 0, 0, 0, 1, 0.5, 0, 0.5, 0.74), M, M )
+U <- MASS::mvrnorm(T, rep(0, M), SIGMA)
+A <- matrix(c(0.5, 0.1, 0, 0, 0.1, 0.2, 0, 0.3, 0.3), M, M ) 
+v <- c(1.4, 1.9, 1.1); Y <- matrix(NA, T, M)
+Y[1, ] <- solve(diag(M)-A)%*%v + U[1,]
+for(t in 2:T){
+	Y[t, ] <- v + A%*%Y[t-1,] + U[t,]
+}
+plot(Y[,1], type = "l"); plot(Y[,2], type = "l"); plot(Y[,3], type = "l")
+y1 <- Y[-1,1]; y2 <- Y[-1,2]; y3 <- Y[-1,3]
+X1 <- cbind(1, lag(Y)); X1 <- X1[-1,]
+X2 <- cbind(1, lag(Y)); X2 <- X2[-1,]
+X3 <- cbind(1, lag(Y)); X3 <- X3[-1,]
+regdata <- NULL
+regdata[[1]] <- list(y = y1, X = X1); regdata[[2]] <- list(y = y2, X = X2); regdata[[3]] <- list(y = y3, X = X3)
+M <- length(regdata); K1 <- dim(X1)[2]; K2 <- dim(X2)[2]; K3 <- dim(X3)[2] 
+K <- K1 + K2 + K3
+# Hyperparameters
+b0 <- rep(0, K); c0 <- 100
+B0 <- c0*diag(K); V <- 5*diag(M); a0 <- M
+Prior <- list(betabar = b0, A = solve(B0), nu = a0, V = V)
+#Posterior draws
+MCMC <- 10000; thin <- 5; burnin <- 1000; tot <- MCMC + burnin
+Mcmc <- list(R = tot, keep = thin)
+PosteriorDraws <- bayesm::rsurGibbs(Data = list(regdata = regdata), Mcmc = Mcmc, Prior = Prior)
+keep <- seq(round(burnin/thin)+1, round(tot/thin))
+Bs <- PosteriorDraws[["betadraw"]][keep,]
+SIGMAs <- PosteriorDraws[["Sigmadraw"]][keep,] 
+S <- dim(Bs)[1]
+As <- array(NA, c(M, M, S))
+for(s in 1:S){
+	As[,,s] <- matrix(Bs[s, -c(1, 5, 9)], M, M, byrow = TRUE)
+}
+# Impulse response functions
+H <- 10; Ptrue <- t(chol(SIGMA))
+Phistrue <-  array(NA, c(M, M, H))
+Phistrue[,,1] <- diag(M); PhistrueAccum <-  Phistrue
+PhistrueAccum[,,1] <- diag(M)
+Thetastrue <- Phistrue; Thetastrue[,,1] <- Ptrue
+ThetastrueAccum <-  Thetastrue; ThetastrueAccum[,,1] <- Ptrue
+for(h in 2:H){
+	Phistrue[,,h] <- Phistrue[,,h-1]%*%A
+	PhistrueAccum[,,h] <- PhistrueAccum[,,h-1] + Phistrue[,,h]
+	Thetastrue[,,h] <- Phistrue[,,h]%*%Ptrue
+	PhistrueAccum[,,h] <- ThetastrueAccum[,,h-1] + Thetastrue[,,h]
+}
+P <- array(NA, c(M, M, S))
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Vector autoregressive model: Simulation}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+for(s in 1:S){
+	P[,,s] <- t(chol(matrix(SIGMAs[s,], M, M))) 
+}
+Phis <- list(); PhisAcum <- list() 
+Thetas <- list(); ThetasAcum <- list()
+for(h in 0:H){
+	if(h == 0){
+		Phis[[h+1]] <- array(diag(M), c(M,M,S))
+		Thetas <- Phis
+		for(s in 1:S){
+			Thetas[[h+1]][,,s] <- Phis[[h+1]][,,s]%*%P[,,s]
+		}
+		PhisAcum[[h+1]] <- Phis[[h+1]]
+		ThetasAcum[[h+1]] <- Thetas[[h+1]]
+	}else{
+		Phis[[h+1]] <- array(diag(M), c(M,M,S))
+		Thetas[[h+1]] <- Phis[[h+1]]
+		for(s in 1:S){
+			Phis[[h+1]][,,s] <- Phis[[h]][,,s]%*%As[,,s]
+			Thetas[[h+1]][,,s] <- Phis[[h+1]][,,s]%*%P[,,s]
+		}
+		PhisAcum[[h+1]] <- PhisAcum[[h]] + Phis[[h+1]]
+		ThetasAcum[[h+1]] <- ThetasAcum[[h]] + Thetas[[h+1]]
+	}
+}
+library(dplyr); library(ggplot2); require(latex2exp)
+ggplot2::theme_set(theme_bw())
+plot_filtering_estimates <- function(df) {
+	p <- ggplot(data = df, aes(x = t)) +
+	geom_ribbon(aes(ymin = lower1, ymax = upper1), alpha = 1,
+	fill = "blue") +
+	geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1,
+	fill = "lightblue") +
+	geom_line(aes(y = x_true), colour = "black", alpha = 1,
+	linewidth = 0.5) +
+	geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) +
+	ylab("Impulse response") + xlab("Time") + xlim(0,H-1)
+	print(p)
+}
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Vector autoregressive model: Simulation}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+IR <- function(m, j, Accumulated = "FALSE", Type = "Ordinary"){
+	if(Type == "Cholesky"){
+		IRtrue <- Thetastrue[m,j,]
+		if(Accumulated == FALSE){
+			RES <- Thetas; IRtrue <- IRtrue
+		}else{
+			RES <- ThetasAcum; IRtrue <- cumsum(IRtrue)
+		}
+		Mean <- sapply(1:H, function(h){mean(RES[[h]][m,j,])})
+		LimInf1 <- sapply(1:H, function(h){quantile(RES[[h]][m,j,], 0.025)})
+		LimSup1 <- sapply(1:H, function(h){quantile(RES[[h]][m,j,], 0.975)})
+		LimInf <- sapply(1:H, function(h){quantile(RES[[h]][m,j,], 0.05)})
+		LimSup <- sapply(1:H, function(h){quantile(RES[[h]][m,j,], 0.95)})
+	}else{
+		IRtrue <- Phistrue[m,j,]
+		if(Accumulated == FALSE){
+			RES <- Phis; IRtrue <- IRtrue
+		}else{
+			RES <- PhisAcum; IRtrue <- cumsum(IRtrue)
+		}
+		Mean <- sapply(1:H, function(h){mean(RES[[h]][m,j,])})
+		LimInf1 <- sapply(1:H, function(h){quantile(RES[[h]][m,j,], 0.025)})
+		LimSup1 <- sapply(1:H, function(h){quantile(RES[[h]][m,j,], 0.975)})
+		LimInf <- sapply(1:H, function(h){quantile(RES[[h]][m,j,], 0.05)})
+		LimSup <- sapply(1:H, function(h){quantile(RES[[h]][m,j,], 0.95)})
+	}
+	df <- tibble(t = 0:(H-1), mean = Mean, lower1 = LimInf1, upper1 = LimSup1, lower = LimInf, upper = LimSup, x_true = IRtrue)
+	Fig <- plot_filtering_estimates(df)
+	return(Fig)
+}
+m <- 2; j <- 3
+IR(m,j, Accumulated = "FALSE", Type = "Cholesky")
+Ynew <- ts(Y)
+model <- bvartools::gen_var(Ynew, p = 1, deterministic = "const", iterations = MCMC, burnin = burnin) # Model
+model <- bvartools::add_priors(model, coef = list(v_i = b0[1], v_i_det = b0[1]), sigma = list(df = a0, scale = V[1,1]/a0)) # Prior
+object <- bvartools::draw_posterior(model) # Pposterior
+ir <- bvartools::irf.bvar(object, impulse = "Series 2", response = "Series 3") # Calculate IR
+plot(ir) # Plot IR
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter8/figures/IR23}
+	\caption[List of figure caption goes here]{Forecast error impulse response: Response in $y_{2t}$ to shock in $\mu_{3t}$.}\label{fig7}
+\end{figure}
 
 
 \end{enumerate}
