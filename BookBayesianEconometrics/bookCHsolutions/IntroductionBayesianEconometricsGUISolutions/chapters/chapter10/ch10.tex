@@ -779,6 +779,79 @@ plot(BMAmeans/BMAsd)
 
 The simulation setting implies $2^{27}$ models, which implies approximately 135 million models in the model space. We run our MC3 algorithm using the BIC approximation with 25000 iterations. This takes by far more time that the BIC approximation from the \textit{BMA} package, but it seems to do a good job finding the data generating process as the highest PMP is associated with it, the PIPs of $x_{i1}$ and $x_{i2}$ are 1, the posterior means are 0.85 and -1.1, which are very close to the population values (0.8 and -1.2), and the t-ratios are by far higher than 2. The PIPs of the other regressors are lower than 20\%, and the BMA means are close to 0.
 
+
+\item Use the dataset \textit{19ExchangeRateCOPUSD.csv} to estimate four different \textit{state-space models} to explain the annual variation of the COP to USD exchange rate: 
+\begin{itemize}
+	\item Interest rate parity
+	
+	$\Delta e_t = \beta_{1t}^{IRP} + \beta_{2t}^{IRP} (i_{t-1}^{Col}-i_{t-1}^{USA})+\mu_{t}^{IRP}$ 
+	\item Purchasing power parity
+	
+	$\Delta e_t = \beta_{1t}^{PPP} + \beta_{2t}^{PPP} (\pi_{t-1}^{Col}-\pi_{t-1}^{USA})+\mu_{t}^{PPP}$
+	\item Taylor rule
+	
+	$\Delta e_t = \beta_{1t}^{Taylor} + \beta_{2t}^{Taylor} (\pi_{t-1}^{Col}-\pi_{t-1}^{USA})+\beta_{2t}^{Taylor} (g_{t-1}^{Col}-g_{t-1}^{USA})+\mu_{t}^{IRP}$
+	\item Money supply
+	
+	$\Delta e_t = \beta_{1t}^{Money} + \beta_{2t}^{Money} (g_{t-1}^{Col}-g_{t-1}^{USA})+\beta_{2t}^{Money} (m_{t-1}^{Col}-m_{t-1}^{USA})+\mu_{t}^{Money}$   
+\end{itemize}
+where \textit{varTRM} ($\Delta e_t$) is the annual variation rate of the exchange rate COP to USD, \textit{TES\_COL10} ($i_{t}^{Col}$) and \textit{TES\_USA10} ($i_{t}^{USA}$) are the annual return rates of Colombian and USA public debts in 10 years, \textit{inflation\_COL} ($\pi_{t}^{Col}$) and \textit{inflation\_USA} ($\pi_{t}^{USA}$) are the annual inflation rates, \textit{varISE\_COL} ($g_{t}^{Col}$) and \textit{varISE\_USA} ($g_{t}^{USA}$) are annual variation of economic activity indices, and \textit{varCOL\_M3} ($m_{t}^{Col}$) and \textit{varUSA\_M3} ($m_{t}^{USA}$) are annual variations of money supply. We have monthly variations between January 2006 and November 2023.
+
+Perform Bayesian model averaging using these four models to explain the annual variation of the exchange rate, get the posterior model probabilities, and plot the posterior mean and credible interval of $\beta_{2t}^{Money}$.  
+
+\textbf{Answer}
+
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Dynamic Bayesian model average: Theories to explain (forecast) exchange rate}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+DataMain <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/19ExchangeRateCOPUSD.csv", sep = ",", header = TRUE, quote = "")
+X <- DataMain[-c(1:12,227),c(4, 5, 7, 9, 11, 13, 14, 15)]
+DifIntRat <- X[,8] - X[,7]; DifInf <- X[,1] - X[,2]
+DifGrowth <- X[,3] - X[,4]; DifM3 <- X[,6] - X[,5]
+XDif <- cbind(DifIntRat, DifInf, DifGrowth, DifM3)
+matplot(XDif, type = "l")
+y <- DataMain[-c(1:13),17] # Var exchange rate depends on lag of other variables
+plot(y, type = "l")
+IRP <- c(1, 0, 0, 0); PPP <- c(0, 1, 0, 0)
+Taylor <- c(0, 1, 1, 0); Money <- c(0, 0, 1, 1)
+Models <- rbind(IRP, PPP, Taylor, Money)
+T0 <- 50
+dma.test <- dma::dma(XDif, y, Models, lambda=.99, gamma=.99, initialperiod = T0)
+plot(ts(dma.test[["pmp"]][,1], start = 2006, end = 2023, frequency = 12), type = "l", main = "Exchange rate models", ylab = "Posterior model probability", ylim = c(0,1)) lines(ts(dma.test[["pmp"]][,2], start = 2006, end = 2023, frequency = 12), col = "red") lines(ts(dma.test[["pmp"]][,3], start = 2006, end = 2023, frequency = 12), col = "green") lines(ts(dma.test[["pmp"]][,4], start = 2006, end = 2023, frequency = 12), col = "blue") legend(x = 2009, y = 0.6, legend = c("IRP", "PPP", "Taylor rule", "Money supply"), col = c("black", "red", "green", "blue"), lty=1:1, cex=0.8)
+require(latex2exp)
+plot_filtering_estimates <- function(df) {
+	p <- ggplot(data = df, aes(x = t)) + geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.5, fill = "blue") + geom_line(aes(y = mean), colour = "black", linewidth = 0.8) + geom_hline(yintercept=0, colour = "red") + ylab(TeX("$\\beta_{Growth_t}^{Money}$")) + xlab("Time") 
+	print(p)
+}
+menathetaIRP <- dma.test[["thetahat"]][4,,4]
+SDthetaIRP <- (dma.test[["Vtheta"]][4,,4])^0.5
+LimInf <- menathetaIRP - 2*SDthetaIRP
+LimSup <- menathetaIRP + 2*SDthetaIRP
+library(ggplot2,tibble,dplyr)
+df <- tibble(t = 1:214, mean = menathetaIRP, lower = LimInf, upper = LimSup)
+Fig <- plot_filtering_estimates(df)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+Figure \ref{DBMAexcrate} shows the posterior model probabilities. We see that at the beginning, between 2006 and 2007, the purchasing power parity theory (PPP) had the highest PMP (70\% on average) to explain the annual variations of the COP/USD exchange rate. Then, the money supply theory (Money) got the highest PMP (80\% on average) between 2008 and 2017. Finally, the interest rate parity got the highest PMP (80\% on average) between 2018 and 2023.
+ 
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter10/figures/DBMAexcrate.png}
+	\caption[List of figure caption goes here]{Dynamic posterior model probability: Models to explain variations of the COP to USD exchange rate.}\label{DBMAexcrate}
+\end{figure}
+
+Figure \ref{GrowthMS} shows the dynamic posterior mean (black line) and credible interval (blue shadow) of the coefficient related to the differential of economic growths (Colombia vs the USA) in the money supply equation to explain the annual variations of the exchange rate. We observe that increasing this economic growth differential implies appreciation of the COP relatively to USD.
+  
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter10/figures/GrowthMS.png}
+	\caption[List of figure caption goes here]{State coefficient money supply theory: Differential of economic growths (Colombia vs the USA).}\label{GrowthMS}
+\end{figure}
+
 \item Perform a simulation of the dynamic logistic model, where there are 7 ($2^3-1$, the model without regressors is excluded) competing models originated from 3 regressors, $x_{tk}\sim N(0.5,0.8^2)$, $k=2,3,4$, and $\beta_1=0.5$, $\beta_{2t}$ is a sequence from 1 to 2 in steps given by $1/T$, $\beta_{3t}=\begin{Bmatrix}
 	-1, & 1<t\leq 0.5T\\
 	0, & 0.5T< t \leq T

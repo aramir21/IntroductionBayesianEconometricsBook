@@ -542,6 +542,51 @@ plot(BMAmeans)
 plot(BMAsd)
 plot(BMAmeans/BMAsd)
 
+########################## Dynamic Bayesian model average: Application Exchange rate COP USD ########################## 
+rm(list = ls())
+set.seed(010101)
+DataMain <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/19ExchangeRateCOPUSD.csv", sep = ",", header = TRUE, quote = "")
+X <- DataMain[-c(1:12,227),c(4, 5, 7, 9, 11, 13, 14, 15)]
+DifIntRat <- X[,8] - X[,7]
+DifInf <- X[,1] - X[,2]
+DifGrowth <- X[,3] - X[,4]
+DifM3 <- X[,6] - X[,5]
+XDif <- cbind(DifIntRat, DifInf, DifGrowth, DifM3)
+matplot(XDif, type = "l")
+y <- DataMain[-c(1:13),17] # Var exchange rate depends on lag of other variables
+plot(y, type = "l")
+IRP <- c(1, 0, 0, 0); PPP <- c(0, 1, 0, 0)
+Taylor <- c(0, 1, 1, 0); Money <- c(0, 0, 1, 1)
+Models <- rbind(IRP, PPP, Taylor, Money)
+T0 <- 50
+dma.test <- dma::dma(XDif, y, Models, lambda=.99, gamma=.99, initialperiod = T0)
+plot(ts(dma.test[["pmp"]][,1], start = 2006, end = 2023, frequency = 12), type = "l", main = "Exchange rate models", ylab = "Posterior model probability", ylim = c(0,1))
+lines(ts(dma.test[["pmp"]][,2], start = 2006, end = 2023, frequency = 12), col = "red")
+lines(ts(dma.test[["pmp"]][,3], start = 2006, end = 2023, frequency = 12), col = "green")
+lines(ts(dma.test[["pmp"]][,4], start = 2006, end = 2023, frequency = 12), col = "blue")
+legend(x = 2009, y = 0.6, legend = c("IRP", "PPP", "Taylor rule", "Money supply"), col = c("black", "red", "green", "blue"), lty=1:1, cex=0.8)
+require(latex2exp)
+plot_filtering_estimates <- function(df) {
+  p <- ggplot(data = df, aes(x = t)) +
+    geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.5,
+                fill = "blue") +
+    geom_line(aes(y = mean), colour = "black", linewidth = 0.8) +
+    geom_hline(yintercept=0, colour = "red") +
+    ylab(TeX("$\\beta_{Growth_t}^{Money}$")) + xlab("Time") 
+  print(p)
+}
+menathetaIRP <- dma.test[["thetahat"]][4,,4]
+SDthetaIRP <- (dma.test[["Vtheta"]][4,,4])^0.5
+LimInf <- menathetaIRP - 2*SDthetaIRP
+LimSup <- menathetaIRP + 2*SDthetaIRP
+# Time <- DataMain$date[-c(1:12,215)] 
+library(ggplot2,tibble,dplyr)
+df <- tibble(t = 1:214,
+             mean = menathetaIRP,
+             lower = LimInf,
+             upper = LimSup)
+Fig <- plot_filtering_estimates(df)
+
 ########################## Dynamic Bayesian model average in logistic model: Simulation exercise ########################## 
 rm(list = ls())
 set.seed(010101)
