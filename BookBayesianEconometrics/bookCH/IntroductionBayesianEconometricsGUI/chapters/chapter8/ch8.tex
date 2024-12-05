@@ -104,7 +104,7 @@ where $\mu_t\sim N(0,\sigma^2)$ and $\bm{w}_t\sim N(\bm{0},\text{diag}\left\{\om
 
 We also need to sample the states from $\pi(\bm{\beta}_{1:T}|\bm{y},\bm{X},\sigma^2,\omega_1^2,\dots,\omega_K^2)$. This can be done using the forward filtering backward sampling (FFBS) algorithm \cite{carter1994gibbs,fruhwirth1994data,shephard1994partial}. This algorithm is basically a simulation version of the \textit{smoothing} recursion, which allows getting draws of the states, even if we do not have analytical solutions, for instance, in non-linear settings. See below and \cite[Chap.~3]{petris2009dynamic} for details. A word of caution here, users should be careful to set non-informative priors in this setting, and in general, settings where there are a large number of parameters (see \cite[Chap.~8]{koop2003bayesian} for details). Thus, it is useful to use empirical Bayes methods focusing on relevant hyperparameters, for instance, the hyperparameters of the inverse-gamma distributions which define the signal-to-noise ratio.   
 
-We use the command \textit{dlmGibbsDIG} from the \textit{dlm} package in our GUI to perform Bayesian inference in the univariate \textit{dynamic linear model} with \textit{random walk states}. This function uses the FFBS algorithm, and assumes independent inverse-gamma priors for the scale parameters. In addition, this package uses the singular value decomposition to calculate the covariance matrices to avoid numerical instability.
+We use the command \textit{dlmGibbsDIG} from the \textit{dlm} package in our GUI to perform Bayesian inference in the univariate \textit{dynamic linear model} with \textit{random walk states}. This function uses the FFBS algorithm, and assumes independent gamma priors for the precision (inverse of variance) parameters. In addition, this package uses the singular value decomposition to calculate the covariance matrices to avoid numerical instability.
 
 Algorithm \ref{alg:DLM} shows how to perform inference in univariate \textit{dynamic linear model} with random walk states in our GUI. See also Chapter \ref{chapGUI} for details regarding the dataset structure.
 
@@ -115,8 +115,9 @@ Algorithm \ref{alg:DLM} shows how to perform inference in univariate \textit{dyn
 		\State Select \textit{Dynamic linear model} using the left radio button
 		\State Upload the dataset selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend
 		\State Select MCMC iterations, burn-in and thinning parameters using the \textit{Range sliders}
-		\State Set the hyperparameters of the \textit{variance of the observation equation}: prior mean and variance. This step is not necessary as by default our GUI uses non-informative priors
-		\State Set the hyperparameters of the \textit{variance of the state equations}: just one set of prior mean and variance parameters. This step is not necessary as by default our GUI uses non-informative priors
+		\State Set the hyperparameters of the \textit{initial states}: prior mean and variance. This step is not necessary as by default our GUI uses non-informative priors.
+		\State Set the hyperparameters of the \textit{precision of the observation equation}: prior mean and variance. This step is not necessary as by default our GUI uses non-informative priors. However, we advise to use informative hyperparameters
+		\State Set the hyperparameters of the \textit{pricision of the state equations}: just one set of prior mean and variance parameters. This step is not necessary as by default our GUI uses non-informative priors. However, we advise to use informative hyperparameters
 		\State Click the \textit{Go!} button
 		\State Analyze results
 		\State Download posterior chains of variances of observation and state equations, and posterior chains of states using the \textit{Download Posterior Chains of Variances} and \textit{Download Posterior Chains of States} buttons
@@ -129,7 +130,7 @@ We simulate the process $y_t=\beta_{t1}+{x}_t{\beta}_{t2}+\mu_t$ and $\bm{\beta}
 
 The following algorithm shows how to perform inference using \textit{dlmGibbsDIG}, and compares the results to the maximum likelihood estimator. The latter is based on \textit{dlmMLE} function. We also use the \textit{dlmSvd2var} function, that is based on the singular value decomposition, to calculate the variance of the smoothing states.
 
-Users can observe that we employ a straightforward strategy for setting the hyperparameters. First, we recursively estimate the model using ordinary least squares (OLS), progressively increasing the sample size, and save the location parameters. Next, we compute the covariance matrix of this sequence and use it to set the priors: the prior mean of the state vector variance is set to the maximum element of the main diagonal of this covariance matrix (\textit{a.theta}), and the prior variance is set to ten times this value (\textit{b.theta}). For the observation equation, the prior mean of the variance is set to the OLS estimate (\textit{a.y}), and the prior variance is set to ten times this value (\textit{b.y}). We perform some sensitivity analysis of the results regarding the hyperparameters, and it seems that the results are robust. However, we encourage to give more consideration to empirical Bayes methods for setting hyperparameters in \textit{state-space models}.
+Users can observe that we employ a straightforward strategy for setting the hyperparameters. First, we recursively estimate the model using ordinary least squares (OLS), progressively increasing the sample size, and save the location parameters. Next, we compute the covariance matrix of this sequence and use it to set the priors: the prior mean of the precision of the state vector is set equal to the inverse of the maximum element of the main diagonal of this covariance matrix (\textit{a.theta}), and the prior variance is set equal to ten times this value (\textit{b.theta}). For the observation equation, the prior mean of the precision is set equal to the inverse the OLS variance estimate (\textit{a.y}), and the prior variance is set equal to ten times this value (\textit{b.y}). We perform some sensitivity analysis of the results regarding the hyperparameters, and it seems that the results are robust. However, we encourage to give more consideration to empirical Bayes methods for setting hyperparameters in \textit{state-space models}.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -147,7 +148,6 @@ w <- MASS::mvrnorm(T, c(0, 0), Omega)
 Bt <- matrix(NA, T, K); Bt[1,] <- B0
 yt <- rep(NA, T) 
 yt[1] <- X[1,]%*%B0 + e[1]
-yt[1] <- x[1]*Bt[1] + e[1]
 for(t in 1:T){
 	if(t == 1){
 		Bt[t,] <- w[t,]
@@ -167,7 +167,7 @@ for(t in S:T){
 }
 # plot(Bp[S:T,2], type = "l")
 VarBp <- var(Bp)
-# State spece model
+# State space model
 ModelReg <- function(par){
 	Mod <- dlm::dlmModReg(x, dV = exp(par[1]), dW = exp(par[2:3]), m0 = RegLS$coefficients,	C0 = VarBp)
 	return(Mod)
@@ -183,7 +183,8 @@ LimInfB2 <- SmoothB2 - qnorm(0.975)*SDVarSmoothB2
 LimSupB2 <- SmoothB2 + qnorm(0.975)*SDVarSmoothB2
 # Gibbs
 MCMC <- 2000; burnin <- 1000
-gibbsOut <- dlm::dlmGibbsDIG(yt, mod = dlm::dlmModReg(x), a.y = SumRegLS$sigma^2, b.y = 10*SumRegLS$sigma^2, a.theta = max(diag(VarBp)), b.theta = 10*max(diag(VarBp)), n.sample = MCMC, thin = 5, save.states = TRUE)
+a.y <- (SumRegLS$sigma^2)^(-1); b.y <- 10*a.y; a.theta <- (max(diag(VarBp)))^(-1); b.theta <- 10*a.theta 
+gibbsOut <- dlm::dlmGibbsDIG(yt, mod = dlm::dlmModReg(x), a.y = a.y, b.y = b.y, a.theta = a.theta, b.theta = b.theta, n.sample = MCMC, thin = 5, save.states = TRUE)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
@@ -228,7 +229,7 @@ Figure \ref{fig1} shows the comparison between maximum likelihood (ML) and Bayes
 
 We use the dataset \textit{16INTDEF.csv} provided by \cite[Chaps.~10]{wooldridge2016introductory} to study the effects of inflation on interest rate. The specification is $\Delta i_t=\beta_{t1}+\beta_{t2}\Delta inf_t+\beta_{t3}\Delta def_t+\mu_t$ and $\bm{\beta}_t=\bm{\beta}_{t-1}+\bm{w}_t$, where $\Delta z_t=z_{t}-z_{t-1}$ is the difference operator, $i_t$ is the three-month T-bill rate, $inf_t$ is the annual inflation rate based on the consumer price index (CPI), and $def_t$ is the federal budget deficit as percentage of gross domestic product (GDP) from 1948 to 2003 in the USA. In addition, $\mu_t\sim N(0,\sigma^2)$, $\bm{w}_t\sim N(\bm{0},\text{diag}\left\{\omega_1^2,\omega_1^2\right\})$. We assume inverse-gamma distributions for the priors of scale parameters, and set 12000 MCMC iterations, 2000 as burn-in, and 10 the thinning parameter.
 
-The following code shows how to perform this application. We use the variance of the recursive estimation of the OLS to set the hyperparameters of the inverse-gamma distribution for the variance of $\bm{w}_t$, and the OLS estimate of the variance of the model to set the hyperparameters of the distribution of $\sigma^2$.
+The following code shows how to perform this application. We use the variance of the recursive estimation of the OLS to set the hyperparameters of the inverse-gamma distribution for the variance of $\bm{w}_t$, and the OLS estimate of the variance of the model to set the hyperparameters of the distribution of $\sigma^2$. Note that as we are using the function \textit{dlmGibbsDIG} from the package \textit{dlm}, the hyperparameters are set in terms of precision parameters.
 
 Figure \ref{fig2} shows the posterior results of the effect of the inflation on the interest rate. This is a fan chart indicating deciles from 10\% to 90\%, the red shadow area shows around the median value, and the black line is the mean value of the state associated with the annual change in inflation. We see that the annual changes in interest rate are weakly positive related to annual changes in inflation. 
 
@@ -251,17 +252,15 @@ for(t in S:T){
 	Bp[t,] <- RegLSt$coefficients 
 }
 VarBp <- var(Bp)
-# State spece model
+# State space model
 ModelReg <- function(par){
 	Mod <- dlm::dlmModReg(Xt, dV = exp(par[1]), dW = exp(par[2:(K+1)]), m0 = RegLS$coefficients,
 	C0 = diag(VarBp))
 	return(Mod)
 }
 MCMC <- 12000; burnin <- 2000; thin <- 10
-gibbsOut <- dlm::dlmGibbsDIG(yt, mod = dlm::dlmModReg(Xt), a.y = 0.1, rate.y = 0.1,
-shape.theta = 0.1, rate.theta = 0.1,
-n.sample = MCMC,
-thin = thin, save.states = TRUE)
+a.y <- (SumRegLS$sigma^2)^(-1); b.y <- 10*a.y; a.theta <- (max(diag(VarBp)))^(-1); b.theta <- 10*a.theta 
+gibbsOut <- dlm::dlmGibbsDIG(yt, mod = dlm::dlmModReg(Xt), a.y = a.y, b.y = b.y, a.theta = a.theta, b.theta = b.theta, n.sample = MCMC, thin = 5, save.states = TRUE)
 B2t <- matrix(0, MCMC - burnin, T + 1)
 for(t in 1:(T+1)){
 	B2t[,t] <- gibbsOut[["theta"]][t,2,-c(1:burnin)] 
@@ -558,6 +557,7 @@ Algorithm \ref{alg:ARMA} shows how to perform inference in $ARMA(p,q)$ models us
 		\State Upload the dataset selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend
 		\State Select MCMC iterations, burn-in and thinning parameters using the \textit{Range sliders}
 		\State Set the order of the $ARMA$ model, $p$ and $q$ parameters
+		\State Set the frequency: annual (1), quarterly (4), monthly (12), etc
 		\State Set the location and scale hyperparameters of the \textit{intercept}, autoregressive ($AR$), moving average ($MA$) and standard deviation. Take into account that there is just one set of hyperparameters for $AR$ and $MA$ coefficients. This step is not necessary as by default our GUI uses non-informative priors
 		\State Click the \textit{Go!} button
 		\State Analyze results

@@ -30,7 +30,7 @@ for(t in S:T){
 }
 # plot(Bp[S:T,2], type = "l")
 VarBp <- var(Bp)
-# State spece model
+# State space model
 ModelReg <- function(par){
   Mod <- dlm::dlmModReg(x, dV = exp(par[1]), dW = exp(par[2:3]), m0 = RegLS$coefficients,
                         C0 = VarBp)
@@ -47,7 +47,8 @@ LimInfB2 <- SmoothB2 - qnorm(0.975)*SDVarSmoothB2
 LimSupB2 <- SmoothB2 + qnorm(0.975)*SDVarSmoothB2
 # Gibbs
 MCMC <- 2000; burnin <- 1000
-gibbsOut <- dlm::dlmGibbsDIG(yt, mod = dlm::dlmModReg(x), a.y = SumRegLS$sigma^2, b.y = 10*SumRegLS$sigma^2, a.theta = max(diag(VarBp)), b.theta = 10*max(diag(VarBp)), n.sample = MCMC, thin = 5, save.states = TRUE)
+a.y <- (SumRegLS$sigma^2)^(-1); b.y <- 10*a.y; a.theta <- (max(diag(VarBp)))^(-1); b.theta <- 10*a.theta 
+gibbsOut <- dlm::dlmGibbsDIG(yt, mod = dlm::dlmModReg(x), a.y = a.y, b.y = b.y, a.theta = a.theta, b.theta = b.theta, n.sample = MCMC, thin = 5, save.states = TRUE)
 B2t <- matrix(0, MCMC - burnin, T + 1)
 for(t in 1:(T+1)){
   B2t[,t] <- gibbsOut[["theta"]][t,2,-c(1:burnin)] 
@@ -99,7 +100,8 @@ ModelReg <- function(par){
   return(Mod)
 }
 MCMC <- 12000; burnin <- 2000; thin <- 10
-gibbsOut <- dlm::dlmGibbsDIG(yt, mod = dlm::dlmModReg(Xt), a.y = SumRegLS$sigma^2, b.y = 10*SumRegLS$sigma^2, a.theta = max(diag(VarBp)), b.theta = 10*max(diag(VarBp)), n.sample = MCMC, thin = 5, save.states = TRUE)
+a.y <- (SumRegLS$sigma^2)^(-1); b.y <- 10*a.y; a.theta <- (max(diag(VarBp)))^(-1); b.theta <- 10*a.theta 
+gibbsOut <- dlm::dlmGibbsDIG(yt, mod = dlm::dlmModReg(Xt), a.y = a.y, b.y = b.y, a.theta = a.theta, b.theta = b.theta, n.sample = MCMC, thin = 5, save.states = TRUE)
 B2t <- matrix(0, MCMC - burnin, T + 1)
 for(t in 1:(T+1)){
   B2t[,t] <- gibbsOut[["theta"]][t,2,-c(1:burnin)] 
