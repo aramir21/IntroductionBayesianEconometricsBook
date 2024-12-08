@@ -115,9 +115,9 @@ Algorithm \ref{alg:DLM} shows how to perform inference in univariate \textit{dyn
 		\State Select \textit{Dynamic linear model} using the left radio button
 		\State Upload the dataset selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend
 		\State Select MCMC iterations, burn-in and thinning parameters using the \textit{Range sliders}
-		\State Set the hyperparameters of the \textit{initial states}: prior mean and variance. This step is not necessary as by default our GUI uses non-informative priors.
-		\State Set the hyperparameters of the \textit{precision of the observation equation}: prior mean and variance. This step is not necessary as by default our GUI uses non-informative priors. However, we advise to use informative hyperparameters
-		\State Set the hyperparameters of the \textit{pricision of the state equations}: just one set of prior mean and variance parameters. This step is not necessary as by default our GUI uses non-informative priors. However, we advise to use informative hyperparameters
+		%\State Set the hyperparameters of the \textit{initial states}: prior mean and variance. This step is not necessary as by default our GUI uses non-informative priors.
+		\State Set the hyperparameters of the \textit{precision of the observation equation}: prior mean and variance.
+		\State Set the hyperparameters of the \textit{pricision of the state equations}: just one set of prior mean and variance parameters.
 		\State Click the \textit{Go!} button
 		\State Analyze results
 		\State Download posterior chains of variances of observation and state equations, and posterior chains of states using the \textit{Download Posterior Chains of Variances} and \textit{Download Posterior Chains of States} buttons
@@ -231,7 +231,7 @@ We use the dataset \textit{16INTDEF.csv} provided by \cite[Chaps.~10]{wooldridge
 
 The following code shows how to perform this application. We use the variance of the recursive estimation of the OLS to set the hyperparameters of the inverse-gamma distribution for the variance of $\bm{w}_t$, and the OLS estimate of the variance of the model to set the hyperparameters of the distribution of $\sigma^2$. Note that as we are using the function \textit{dlmGibbsDIG} from the package \textit{dlm}, the hyperparameters are set in terms of precision parameters.
 
-Figure \ref{fig2} shows the posterior results of the effect of the inflation on the interest rate. This is a fan chart indicating deciles from 10\% to 90\%, the red shadow area shows around the median value, and the black line is the mean value of the state associated with the annual change in inflation. We see that the annual changes in interest rate are weakly positive related to annual changes in inflation. 
+Figure \ref{fig2} shows the posterior results of the effect of the inflation on the interest rate. This is a fan chart indicating deciles from 10\% to 90\%, the red shaded area shows around the median value, and the black line is the mean value of the state associated with the annual change in inflation. We see that the annual changes in interest rate are weakly positive related to annual changes in inflation. 
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -561,7 +561,7 @@ Algorithm \ref{alg:ARMA} shows how to perform inference in $ARMA(p,q)$ models us
 		\State Set the location and scale hyperparameters of the \textit{intercept}, autoregressive ($AR$), moving average ($MA$) and standard deviation. Take into account that there is just one set of hyperparameters for $AR$ and $MA$ coefficients. This step is not necessary as by default our GUI uses non-informative priors
 		\State Click the \textit{Go!} button
 		\State Analyze results
-		\State Download posterior chains and diagnostic plots using the \textit{Download Posterior Chains} and \textit{Download Posterior Graphs} buttons
+		\State Download posterior chains using the \textit{Download Posterior Chains} button
 	\end{algorithmic} 
 \end{algorithm}
 
@@ -788,7 +788,7 @@ Remember from Chapter \ref{chap5} that particle filters (sequential Monte Carlo)
 
 The following code shows how to perform SMC in the vanilla stochastic volatility model assuming that the proposal distribution is the conditional prior distribution, that is, $q(h_t|h_{t-1},y_t)=\pi(h_t|h_{t-1})$, which is normal with mean $\mu+\phi(h_{t-1}-\mu)$ and variance $\sigma^2$. This choice implies that the incremental importance weights are equal to $p(y_t|h_t)$, which is $N(0,\exp(h_t))$. Therefore, the weights are proportional to the likelihood function. We perform multinomial resampling every time period in the code, and start the algorithm in the stationary distribution of $h_t$. Remember that there are other resampling approaches that are more efficient, for instance, residual resampling. See Chapter \ref{chap5} for details. We ask in Exercise 7 to modify this code to perform resampling when the effective sample size is lower than 50\% of the number of particles. In addition, we ask to program a sequential importance sampling, and check why is important to perform resampling in this simple example. 
 
-Figure \ref{fig5} illustrates the filtering recursion using SMC with uneven weights (blue line), even weights (purple line), bands corresponding to plus/minus two standard deviations (light blue shading), and the true state (black line).\footnote{This standard deviation estimates the conditional posterior's standard deviation derived from the particles, not the estimator's standard deviation. The latter requires several independent particle runs on the same data.} The results indicate that SMC performs well even in a simple implementation, with no significant differences between using even and uneven weights (see Chapter \ref{chap5}).
+Figure \ref{fig5} illustrates the filtering recursion using SMC with uneven weights (blue line), even weights (purple line), bands corresponding to plus/minus two standard deviations (light blue shaded area), and the true state (black line).\footnote{This standard deviation estimates the conditional posterior's standard deviation derived from the particles, not the estimator's standard deviation. The latter requires several independent particle runs on the same data.} The results indicate that SMC performs well even in a simple implementation, with no significant differences between using even and uneven weights (see Chapter \ref{chap5}).
 
 In this example we use the population parameters to perform the filtering recursion. However, this is no the case in practice, that is, we have to estimate the time invariant parameters. Therefore, there are more elaborate algorithms to achieve this (see Chapter \ref{chap5}). For instance, \cite{andrieu2010pmcmc} propose particle Markov chain Monte Carlo, this is a family of methods that combines MCMC and SMC. See \cite{dahlin2019getting} for a tutorial of particle Metropolis-Hastings in \textbf{R}. A potential practical solution, for applications that require a sequential updating of a posterior distribution over an unbounded time horizon, is to estimate offline the time invariant parameters using MCMC algorithms up to a specific time period, and then update sequentially online the state vector during subsequent time periods, and iterate this process. This is not optimal, but it can be practical.  
 
@@ -976,7 +976,7 @@ Let's use the dataset provided by \cite{Tomasz2024} of the US fiscal system, whe
 
 Let's estimate a VAR model where $\bm{y}_t=[\Delta(ttr_t) \ \Delta(gs_t) \ \Delta(gdp_t)]^{\top}$, that is, we work with the log differences (variation rates), and we set $p=1$. We use the package \textit{bvartools} to estimate the \textit{forecast error} and \textit{ortogonalized} impulse response functions. We use vague independent priors setting $\bm{\beta}_0=\bm{0}$, $\bm{B}_0=100\bm{I}$, $\bm{V}_0=5^{-1}\bm{I}$ and $\alpha_0=3$, and the Minnesota prior setting $a_1=2$, $\kappa_2=0.5$ and $\kappa_3=5$ (default values).\footnote{The \textit{bvartools} package uses the inverse Wishart distribution as prior for $\bm{\Sigma}$, where the hyperparameters are the degrees of freedom of the error term, and the prior error variance of endogenous variables.}
 
-The following code shows how to do this, take into account that we use the first 301 observations to estimate the model, and keep the last 4 observations to check the forecasting performance. Figures \ref{fig6} and \ref{fig7} show the impulse response functions of \textit{gs} with respect to \textit{gs}, the \textit{forecast error impulse response} using vague independent priors, and the \textit{ortogonalized impulse response} using the Minnesota prior, respectively. We see that the effect of the Minnesota prior is to decrease uncertainty. In addition, the forecasting exercise results indicate that these assumptions have same effects in this example. In particular, Figure \ref{fig8} shows that the mean forecasts using the vague prior (green line) and the Minnesota prior (red line) are indistinguishable from the true observations (black line). However, the Minnesota prior enhances forecast precision, as its 95\% predictive interval (blue shaded area) is narrower and fully contained within the 95\% predictive interval obtained using vague priors (light blue shaded area). This improvement is attributable to the shrinkage properties of the Minnesota prior.
+The following code shows how to do this, take into account that we use the first 301 observations to estimate the model, and keep the last 4 observations to check the forecasting performance. Figures \ref{fig6} and \ref{fig7} show the impulse response functions of \textit{gs} with respect to \textit{gs}, the \textit{forecast error impulse response} using vague independent priors, and the \textit{orthogonalized impulse response} using the Minnesota prior, respectively. We see that the effect of the Minnesota prior is to decrease uncertainty. In addition, the forecasting exercise results indicate that these assumptions have same effects in this example. In particular, Figure \ref{fig8} shows that the mean forecasts using the vague prior (green line) and the Minnesota prior (red line) are indistinguishable from the true observations (black line). However, the Minnesota prior enhances forecast precision, as its 95\% predictive interval (blue shaded area) is narrower and fully contained within the 95\% predictive interval obtained using vague priors (light blue shaded area). This improvement is attributable to the shrinkage properties of the Minnesota prior.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -1066,9 +1066,11 @@ Algorithm \ref{alg:VAR} shows how to do perform inference in VAR models using ou
 		\State Select MCMC iterations, burn-in and thinning parameters using the \textit{Range sliders}
 		\State Set the number of lags ($p$)
 		\State Set the hyperparameters for the Minnesota prior: $a_1$, $\kappa_2$ and $\kappa_2$. This step is not necessary as by default our GUI uses default values in \textit{bvartools} package
+		\State Select the type of \textit{impulse response functions}: forecast error or orthogonalized, and ordinary or cumulative.
+		\State Set the time horizon for the impulse response functions and the forecasts 
 		\State Click the \textit{Go!} button
 		\State Analyze results
-		\State Download posterior chains, impulse responses and forecasts using the \textit{Download Posterior Chains}, \textit{Download Impulse Responses}, and \textit{Forecast} buttons
+		\State Download impulse responses and forecasts using the \textit{Download Impulse Responses}, and \textit{Forecast} buttons
 	\end{algorithmic} 
 \end{algorithm}
 
