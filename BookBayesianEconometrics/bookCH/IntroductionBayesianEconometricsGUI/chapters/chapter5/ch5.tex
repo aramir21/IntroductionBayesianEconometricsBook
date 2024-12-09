@@ -1,26 +1,47 @@
 \chapter{Simulation methods}\label{chap5}
 
-\section{The inverse transform method}\label{sec51}
+In the previous chapters, we focused on conjugate families, where posterior and predictive distributions have standard analytical forms (e.g., normal, Student's t, gamma, binomial, Poisson, etc.), and where the marginal likelihood has a closed-form analytical solution. However, realistic models are often complex and lack such closed forms. To address this, we rely on simulation methods to draw samples from posterior and predictive distributions. This chapter introduces posterior simulation, a cornerstone of Bayesian inference, discussing Markov Chain Monte Carlo methods such as Gibbs sampling, Metropolis-Hastings, and Hamiltonian Monte Carlo, as well as importance sampling and sequential Monte Carlo, for effective exploration of these distributions.
 
-\section{Method of composition}\label{sec52}
+%\section{The inverse transform method}\label{sec51}
 
-\section{Accept and reject algorithm}\label{sec53}
+%\section{Method of composition}\label{sec52}
 
-\section{Importance sampling}\label{sec54}
+%\section{Accept and reject algorithm}\label{sec53}
 
-\section{Markov chain Monte Carlo methods}\label{sec55}
+\section{Markov chain Monte Carlo methods}\label{sec51}
 
-\subsection{Some theory}\label{sec551}
+Markov Chain Monte Carlo (MCMC) methods are algorithms used to approximate complex probability distributions by constructing a Markov chain. This chain is a sequence of random samples where each sample depends only on the previous one. The goal of MCMC methods is to obtain draws from the posterior distribution as the equilibrium distribution. The key point in MCMC methods is the transition kernel or density, $\pi(\bm{\theta}^{(s)}|\bm{\theta}^{(s-1)})$, which generates a draw $\bm{\theta}^{(s)}$ at stage $s$ that depends solely on $\bm{\theta}^{(s-1)}$. This transition distribution must be designed such that the Markov chain converges to a unique stationary distribution, which, in our case, is the posterior distribution, that is, $\pi(\bm{\theta}^{(s)}|\bm{y})=\int_{\bm{\Theta}}\pi(\bm{\theta}^{(s)}|\bm{\theta}^{(s-1)})\pi(\bm{\theta}^{(s-1)}|\bm{y})d\bm{\theta}^{(s-1)}$.
 
-\subsection{Gibbs sampler}\label{sec552}
+Given that we start at an arbitrary point, $\bm{\theta}^{(0)}$, the algorithm requires that the Markov chain be \textit{irreducible}, meaning that the process can reach any other state with positive probability. Additionally, the process must be \textit{aperiodic}, meaning that for each state, the greatest common divisor of the number of steps it takes to return to the state is 1, ensuring that there are no cycles forcing the system to return to a state only after a fixed number of steps. Furthermore, the process must be \textit{recurrent}, meaning that it will return to any state an infinite number of times with probability one. However, to ensure convergence to the stationary distribution, a stronger condition is required: the process must be \textit{positive recurrent}, meaning that the expected return time to a state is finite. Given an \textit{irreducible}, \textit{aperiodic}, and \textit{positive recurrent} transition density, the Markov chain algorithm will asymptotically converge to the stationary posterior distribution we are seeking. For more details, see \cite[chap.~6]{robert2011monte}.
+   
 
-\subsection{Metropolis-Hastings}\label{sec553}
+%\subsection{Some theory}\label{sec551}
 
-\section{Sequential Monte Carlo}\label{sec56}
+\subsection{Gibbs sampler}\label{sec511}
 
-\section{Hamiltonian Monte Carlo}\label{sec57}
+This Gibbs sampler algorithm is one of the most widely used MCMC methods for sampling from non-standard distributions in Bayesian analysis. While it is a special case of the Metropolis-Hastings (MH) algorithm, it originated from a different theoretical background. The key requirement for implementing the Gibbs sampling algorithm is the availability of conditional posterior distributions. The algorithm works by cycling through the conditional posterior distributions corresponding to different blocks of the parameter space under inference.
 
-\section{Convergence diagnostics}\label{sec58}
+Two simplify concepts let's focus on a parameter space composed by two blocks, $\bm{\theta} = [\bm{\theta}_1 \ \bm{\theta}_2]^{\top}$, the Gibbs sampling algorithm uses as transition kernel $\pi(\bm{\theta}_1^{(s)},\bm{\theta}_2^{(s)}|\bm{\theta}_1^{(s-1)},\bm{\theta}_2^{(s-1)},\bm{y})=\pi(\bm{\theta}_1^{(s)}|\bm{\theta}_2^{(s-1)},\bm{y})\pi(\bm{\theta}_2^{(s)}|\bm{\theta}_1^{(s)},\bm{y})$. Thus,
+\begin{align*}
+	\pi(\bm{\theta}^{(s)}|\bm{y})&=\int_{\bm{\Theta}}\pi(\bm{\theta}^{(s)}|\bm{\theta}^{(s-1)},\bm{y})\pi(\bm{\theta}^{(s-1)}|\bm{y})d\bm{\theta}^{(s-1)}\\
+	&=\int_{\bm{\Theta}_2}\int_{\bm{\Theta}_1}\pi(\bm{\theta}_1^{(s)}|\bm{\theta}_2^{(s-1)},\bm{y})\pi(\bm{\theta}_2^{(s)}|\bm{\theta}_1^{(s)},\bm{y})\pi(\bm{\theta}^{(s-1)}_1,\bm{\theta}^{(s-1)}_2|\bm{y})d\bm{\theta}^{(s-1)}_1d\bm{\theta}^{(s-1)}_2\\
+	&=\pi(\bm{\theta}_2^{(s)}|\bm{\theta}_1^{(s)},\bm{y})\int_{\bm{\Theta}_2}\int_{\bm{\Theta}_1}\pi(\bm{\theta}_1^{(s)}|\bm{\theta}_2^{(s-1)},\bm{y})\pi(\bm{\theta}^{(s-1)}_1,\bm{\theta}^{(s-1)}_2|\bm{y})d\bm{\theta}^{(s-1)}_1d\bm{\theta}^{(s-1)}_2\\
+	&=\pi(\bm{\theta}_2^{(s)}|\bm{\theta}_1^{(s)},\bm{y})\int_{\bm{\Theta}_2}\pi(\bm{\theta}_1^{(s)}|\bm{\theta}_2^{(s-1)},\bm{y})\pi(\bm{\theta}^{(s-1)}_2|\bm{y})d\bm{\theta}^{(s-1)}_2\\
+	&=\pi(\bm{\theta}_2^{(s)}|\bm{\theta}_1^{(s)},\bm{y})\int_{\bm{\Theta}_2}\pi(\bm{\theta}_1^{(s)},\bm{\theta}_2^{(s-1)}|\bm{y})d\bm{\theta}^{(s-1)}_2\\
+	&=\pi(\bm{\theta}_2^{(s)}|\bm{\theta}_1^{(s)},\bm{y})\pi(\bm{\theta}_1^{(s)}|\bm{y})\\
+	&=\pi(\bm{\theta}_1^{(s)},\bm{\theta}_2^{(s)}|\bm{y}).\\
+\end{align*}
+Thus, the transition kernel in the Gibbs sampling gets the draws from the stationary distribution.
+
+\subsection{Metropolis-Hastings}\label{sec512}
+
+\section{Importance sampling}\label{sec52}
+
+\section{Sequential Monte Carlo}\label{sec53}
+
+\section{Hamiltonian Monte Carlo}\label{sec54}
+
+\section{Convergence diagnostics}\label{sec55}
 \subsection{Numerical standard error}
 \subsection{Effective sample size}
 \subsection{Checking for errors in the posterior simulator}
