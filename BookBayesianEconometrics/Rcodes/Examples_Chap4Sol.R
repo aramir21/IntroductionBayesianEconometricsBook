@@ -42,6 +42,7 @@ PredY0 <- function(y0){
 PredY0(y0)
 
 ########################## Math test example ########################## 
+rm(list =)
 set.seed(010101)
 N <- 50
 # Sample size
@@ -64,20 +65,21 @@ sig2Post <- invgamma::rinvgamma(S, shape = alphan, rate = deltan)
 summary(sig2Post)
 betan <- beta0 + N
 mun <- (beta0*mu0 + N*muhat)/betan
-muPost <- sapply(sig2Post, function(s2){rnorm(1, mun, sd = (s2/betan)^0.5)})
-
-muPostq <- quantile(muPost, c(0.025, 0.5, 0.975))
-muPostq
-cutoff <- 103
-PmuPostcutoff <- mean(muPost > cutoff)
-PmuPostcutoff
+# muPost <- sapply(sig2Post, function(s2){rnorm(1, mun, sd = (s2/betan)^0.5)})
+# 
+# muPostq <- quantile(muPost, c(0.025, 0.5, 0.975))
+# muPostq
+# cutoff <- 103
+# PmuPostcutoff <- mean(muPost > cutoff)
+# PmuPostcutoff
 
 # Using Student's t
 muPost_t <- ((deltan/(alphan*betan))^0.5)*rt(S, alphan) + mun
 c1 <- rgb(173,216,230,max = 255, alpha = 50, names = "lt.blue")
 c2 <- rgb(255,192,203, max = 255, alpha = 50, names = "lt.pink")
-hist(muPost, main = "Histogram: Posterior mean", xlab = "Posterior mean", col = c2)
-hist(muPost_t, main = "Histogram: Posterior mean", xlab = "Posterior mean", add = T, col = c1)
+# hist(muPost, main = "Histogram: Posterior mean", xlab = "Posterior mean", col = c2)
+# hist(muPost_t, main = "Histogram: Posterior mean", xlab = "Posterior mean", add = T, col = c1)
+hist(muPost_t, main = "Histogram: Posterior mean", xlab = "Posterior mean", col = c1)
 muPost_tq <- quantile(muPost_t, c(0.025, 0.5, 0.975))
 muPost_tq
 PmuPost_tcutoff <- mean(muPost_t > cutoff)
@@ -161,13 +163,13 @@ an <- a0 + N
 #Posterior draws
 s <- 10000 #Number of posterior draws
 SIGs <- replicate(s, LaplacesDemon::rinvwishart(an, Psin))
-BsCond <- sapply(1:s, function(s) {MixMatrix::rmatrixnorm(n = 1, mean=Bn, U = Vn,V = SIGs[,,s])})
-summary(coda::mcmc(t(BsCond)))
+# BsCond <- sapply(1:s, function(s) {MixMatrix::rmatrixnorm(n = 1, mean=Bn, U = Vn,V = SIGs[,,s])})
+# summary(coda::mcmc(t(BsCond)))
 Bs <- sapply(1:s, function(s) {MixMatrix::rmatrixt(n = 1, mean=Bn, U = Vn,V = Psin, df = an + 1 - M)})
 summary(coda::mcmc(t(Bs)))
 SIGMs <- t(sapply(1:s, function(l) {gdata::lowerTriangle(SIGs[,,l], diag=TRUE, byrow=FALSE)}))
 summary(coda::mcmc(SIGMs))
-hdiBs <- HDInterval::hdi(t(BsCond), credMass = 0.95) # Highest posterior density credible interval
+hdiBs <- HDInterval::hdi(t(Bs), credMass = 0.95) # Highest posterior density credible interval
 hdiBs
 hdiSIG <- HDInterval::hdi(SIGMs, credMass = 0.95) # Highest posterior density credible interval
 hdiSIG

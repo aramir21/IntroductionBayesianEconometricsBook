@@ -429,7 +429,7 @@ The probability that from one hundred random selected people 44 support Hillary,
 
 \item \textbf{Math test example continues}
 
-You have a random sample of math scores of size $N=50$ from a normal distribution, $Y_i\sim \mathcal{N}(\mu, \sigma)$. The sample mean and variance are equal to $102$ and $10$, respectively. Using the normal-normal/inverse-gamma model where $\mu_0=100$, $\beta_0=1$, $\alpha_0=\delta_0=0.001$
+You have a random sample of math scores of size $N=50$ from a normal distribution, $Y_i\sim N(\mu, \sigma^2)$. The sample mean and variance are equal to $102$ and $10$, respectively. Using the normal-normal/inverse-gamma model where $\mu_0=100$, $\beta_0=1$, $\alpha_0=\delta_0=0.001$
 
 \begin{itemize}
 	\item Get 95\% confidence and credible intervals for $\mu$.
@@ -463,21 +463,10 @@ sig2Post <- invgamma::rinvgamma(S, shape = alphan, rate = deltan)
 summary(sig2Post)
 betan <- beta0 + N
 mun <- (beta0*mu0 + N*muhat)/betan
-muPost <- sapply(sig2Post, function(s2){rnorm(1, mun, sd = (s2/betan)^0.5)})
-muPostq <- quantile(muPost, c(0.025, 0.5, 0.975))
-muPostq
-   2.5%      50%    97.5% 
-101.0929 101.9625 102.8311
-cutoff <- 103
-PmuPostcutoff <- mean(muPost > cutoff)
-PmuPostcutoff
-0.00994
-# Using Student's t
 muPost_t <- ((deltan/(alphan*betan))^0.5)*rt(S, alphan) + mun
 c1 <- rgb(173,216,230,max = 255, alpha = 50, names = "lt.blue")
 c2 <- rgb(255,192,203, max = 255, alpha = 50, names = "lt.pink")
-hist(muPost, main = "Histogram: Posterior mean", xlab = "Posterior mean", col = c2)
-hist(muPost_t, main = "Histogram: Posterior mean", xlab = "Posterior mean", add = T, col = c1)
+hist(muPost_t, main = "Histogram: Posterior mean", xlab = "Posterior mean", col = c1)
 muPost_tq <- quantile(muPost_t, c(0.025, 0.5, 0.975))
 muPost_tq
 2.5%      50%    97.5% 
@@ -489,12 +478,12 @@ PmuPost_tcutoff
 \end{VF}
 \end{tcolorbox} 
 
-We perform our calculations using the  conditional posterior distribution, and the marginal posterior distribution. Both procedures give similar results as we can observe from Figure \ref{fig42}.
+Figure \ref{fig42} shows the posterior distribution of the mean.
 
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter4/figures/conditionalVSmarginal.png}
 	%%\centerline{\epsfig{/Chapters/chapter1/figures/cat.eps,width=.8\textheight,height=.4\textwidth}}
-	\caption[List of figure caption goes here]{Histogram using the conditional posterior distribution and the marginal posterior distribution}\label{fig42}
+	\caption[List of figure caption goes here]{Histogram of the posterior distribution of the mean}\label{fig42}
 \end{figure}
 
 
@@ -571,14 +560,14 @@ Use the file \textit{Utilities.csv} to estimate a multivariate linear regression
 Set a non-informative prior framework, $\mathbf{B}_0=\left[0\right]_{11\times 3}$, $\mathbf{V}_0=1000 \mathbf{I}_{11}$, $\mathbf{\Psi}_0=1000 \mathbf{I}_{3}$ and $\alpha_0=3$, where we have $K=11$ (regressors plus intercept) and $M=3$ (equations) in this exercise.
 
 \begin{enumerate}
-	\item Find the posterior mean estimates and the highest posterior density intervals at 95\% of $\mathbf{B}$ and $\mathbf{\Sigma}$. Use the marginal distribution and the conditional distribution to obtain the posterior estimates of  $\mathbf{B}$, and compare the results.
+	\item Find the posterior mean estimates and the highest posterior density intervals at 95\% of $\mathbf{B}$ and $\mathbf{\Sigma}$.
 	\item Find the Bayes factor comparing the baseline model in this exercise with the same specification but using the income in dollars. Now, calculate the Bayes factor using the income in thousand dollars. Is there any difference?
 	\item Find the predictive distribution for the monthly demand of electricity, water and gas in the baseline specification of a household located in the lowest socioeconomic condition in a municipality located below 1000 meters above the sea level, 2 rooms, 3 members with children, a monthly income equal to USD 500, an electricity price equal to USD/kWh 0.15, a water price equal to USD/M$^3$ 0.70, and a gas price equal to USD/M$^3$ 0.75. 
 \end{enumerate}   
 
 {\textbf{Answer}} 
 
-We see that the posterior estimates of the location parameters based on the marginal distribution and the conditional distribution are very similar (conditional on $\mathbf{\Sigma}$). This is important as many times there is no analytical solutions in well-known forms of marginal posterior distributions, and consequently, we should get draws of the posterior distributions based on conditional distributions of block of parameters (See Chapter \ref{chap5}).
+%We see that the posterior estimates of the location parameters based on the marginal distribution and the conditional distribution are very similar (conditional on $\mathbf{\Sigma}$). This is important as many times there is no analytical solutions in well-known forms of marginal posterior distributions, and consequently, we should get draws of the posterior distributions based on conditional distributions of block of parameters (See Chapter \ref{chap5}).
 
 We find that the Bayes factor of the baseline model ($\log(\text{Income})$) versus the two alternative models using income in dollars and thousand dollars are 108925764 and 0.1089261. The former gives strong evidence in favor of the baseline model, whereas the latter gives positive evidence for the model using the income in thousand dollars. This result despite that the location coefficients are the same in the two alternative specifications, except for the change in scale of the coefficients associated with income. This example shows that Bayes factors are sensitive to units of measure, and consequently, it is relevant to think carefully about the priors when performing hypothesis testing using a Bayesian framework. Observe that a nice feature in Bayesian inference is that we followed the same conceptual framework (Bayes factor) in the previous exercise and this exercise. In one hand, the previous exercise is an example of nested models, that is, one model is a restricted version of a more general model. On the other hand, this exercise is an example of non-nested models. This is not the case in the Frequentist approach. The statistical framework is not the same when testing nested and non-nested models.
 
@@ -616,13 +605,11 @@ an <- a0 + N
 #Posterior draws
 s <- 10000 #Number of posterior draws
 SIGs <- replicate(s, LaplacesDemon::rinvwishart(an, Psin))
-BsCond <- sapply(1:s, function(s) {MixMatrix::rmatrixnorm(n = 1, mean=Bn, U = Vn,V = SIGs[,,s])})
-summary(coda::mcmc(t(BsCond)))
 Bs <- sapply(1:s, function(s) {MixMatrix::rmatrixt(n = 1, mean=Bn, U = Vn,V = Psin, df = an + 1 - M)})
 summary(coda::mcmc(t(Bs)))
 SIGMs <- t(sapply(1:s, function(l) {gdata::lowerTriangle(SIGs[,,l], diag=TRUE, byrow=FALSE)}))
 summary(coda::mcmc(SIGMs))
-hdiBs <- HDInterval::hdi(t(BsCond), credMass = 0.95) # Highest posterior density credible interval
+hdiBs <- HDInterval::hdi(t(Bs), credMass = 0.95) # Highest posterior density credible interval
 hdiBs
 hdiSIG <- HDInterval::hdi(SIGMs, credMass = 0.95) # Highest posterior density credible interval
 hdiSIG
