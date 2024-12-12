@@ -718,7 +718,7 @@ Figures \ref{fig13}, \ref{fig14} and \ref{fig15} show the marginal predictive di
 
 \item \textbf{Ph.D. students sleeping hours \cite[Chap.~2]{albert2009bayesian}}
 
-We are interested in learning about the proportion of Ph.D. students who sleep at least 6 hours per day. We have a sample of 52 students, where 15 report sleeping at least 6 hours, and the remaining 37 report not sleeping at least 6 hours. The prior distribution is a Beta distribution, with hyperparameters calibrated so that the prior probabilities of this parameter being less than 0.4 and 0.75 are 0.6 and 0.95, respectively. Estimate the 95\% posterior credible interval for this parameter. Then, assume there is a group of experts whose beliefs about the proportion of Ph.D. students sleeping at least 6 hours are represented in the following table:
+We are interested in learning about the proportion of Ph.D. students who sleep at least 6 hours per day. We have a sample of 52 students, where 15 report sleeping at least 6 hours, and the remaining 37 report not sleeping at least 6 hours. The prior distribution is a Beta distribution, with hyperparameters calibrated so that the prior probabilities of the proportion of students who sleep least than 6 hours being less than 0.4 and 0.75 are 0.6 and 0.95, respectively. Estimate the 95\% posterior credible interval for the proportion of Ph.D. students. Then, assume there is a group of experts whose beliefs about the proportion of Ph.D. students sleeping at least 6 hours are represented in the following table:
 
 \begin{table}[!htbp]%1
 	%\noautomaticrules
@@ -739,15 +739,14 @@ Use Table \ref{tab:sleep} as prior information, and find the posterior distribut
 
 We know from the Bernoulli-beta model that the posterior distribution of the proportion of Ph.D. students that sleep at least 6 hours is beta, $\theta|\bm{y}\sim B(\alpha_n,\beta_n)$, $\alpha_n=\alpha_0+15$ and $\beta_n=\beta_0+37$, where $\alpha_0=1.44$ and $\beta_0=2.57$. 
 
-The following code how to get the posterior distribution in this exercise.
+The following code shows how to get the posterior distribution in this exercise.
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 	\textit{R code. Ph.D. students sleeping hours: Posterior distribution}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-rm(list = ls())
-set.seed(010101)
-# Function to calibrate the hyperparameters of the beta prior distribution
+rm(list = ls()); set.seed(010101)
+# Function to calibrate the hyperparameters
 elec <- function(theta, perc, q){
 	E1 <- perc[1] - pbeta(q[1], theta[1], theta[2])
 	E2 <- perc[2] - pbeta(q[2], theta[1], theta[2])
@@ -759,14 +758,11 @@ p1e <- 0.6; p2e <- 0.95; perc <- c(p1e, p2e) # Cumulate probability from experts
 theta0 <- c(1, 1) # Parameters
 elec(theta0, perc, q)
 Res <- optim(theta0, elec, perc = perc, q = q)
-Res$par
 p <- seq(0, 1, length = 500)
-a <- Res$par[1]
-b <- Res$par[2]
+a <- Res$par[1]; b <- Res$par[2]
 pbeta(q1, a, b) # P(p <= q1) = p1e
 pbeta(q2, a, b) # P(p <= q2) = p2e
-s <- 15 # Success
-f <- 37 # Failures
+s <- 15 # Success; f <- 37 # Failures
 prior <- dbeta(p,a,b)
 likelihood <- dbeta(p, s + 1, f + 1) #Seeing the binomial distribution as a likelihood is a beta distribution!!!
 post <- dbeta(p, a+s, b+f)
@@ -774,18 +770,39 @@ plot(p,post,type="l",ylab="Density", main = "Proportion of students who sleep at
 lines(p,likelihood,lty=1,lwd=3,col=gray.colors(1,start=0.4))
 lines(p,prior,lty=3,lwd=3,col=gray.colors(1,start=0.6))
 legend(.7,4,c("Prior","Likelihood","Posterior"), lty=c(3,1,2),lwd=c(3,3,3),col=c(col=gray.colors(1,start=0.6),col=gray.colors(1,start=0.4),col=gray.colors(1,start=0.1)))
+S <- 10000; postdraws1 <- rbeta(S, a+s, b+f)
+mean(postdraws1); quantile(postdraws1, c(0.025, 0.975))
+# Experts
+p <- c(seq(0.05, 0.55, by = 0.05)) # Probabilities
+prior <- c(0.05, 0.07, 0.1, 0.12, 0.15, 0.17, 0.15, 0.11, 0.06, 0.01, 0.01) # Expert assessment
+llikelihood <- s * log(p) + f * log(1 - p) # Log likelihood
+likelihood2 <- exp(llikelihood -max(llikelihood)) # Scale the likelihood for plotting
+product <- likelihood2 * prior # Proportional to posterior
+posterior  <- product/sum(product) # Posterior
+# Figure
+plot(p, prior, type = "l", ylab="Probability", lwd=2, lty=2, ylim=c(0,0.99), xlim = c(0, 0.6), col=gray.colors(1,start=0.1), main = "Posterior distribution: Proportion sleep hours")
+lines(p, posterior,type = "l",lwd=2,col=gray.colors(1,start=0.6))
+lines(p,likelihood2,type = "l",lwd=4,col=gray.colors(1,start=0.3))
+legend(0.45,0.85,c('Prior','Likelihood','Posterior'),lty=c(2,1,1), col=c(gray.colors(1,start=0.1),gray.colors(1,start=0.3),gray.colors(1,start=0.6)),lwd=2)
+postdraws2 <- sample(p, S, replace = TRUE, prob = posterior)
+mean(postdraws2); quantile(postdraws2, c(0.025, 0.975))
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
 
-Figure \ref{fig16} shows the prior, likelihood, and posterior distributions of the proportion of sleeping hours.
+Figures \ref{fig16} and \ref{fig17} show the prior, likelihood, and posterior distributions of the proportion of Ph.D. students who sleep at least 6 hours per day based on the binomial-beta and binomial-discrete models. The mean under both models is 29\%, and the 95\% credible intervals are (18\%,42\%) and (20\%,40\%), respectively.
  
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter4/figures/Sleep.png}
 	%%\centerline{\epsfig{/Chapters/chapter1/figures/cat.eps,width=.8\textheight,height=.4\textwidth}}
-	\caption[List of figure caption goes here]{Posterior distribution: Sleeping hours Ph.D. students}\label{fig16}
+	\caption[List of figure caption goes here]{Posterior distribution binomial-beta model: Proportion Ph.D. students that sleep at least 6 hours per day}\label{fig16}
 \end{figure}
 
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter4/figures/sleepExp.png}
+	%%\centerline{\epsfig{/Chapters/chapter1/figures/cat.eps,width=.8\textheight,height=.4\textwidth}}
+	\caption[List of figure caption goes here]{Posterior distribution binomial-discrete model: Proportion Ph.D. students that sleep at least 6 hours per day}\label{fig17}
+\end{figure}
 
     
 \end{enumerate}

@@ -282,42 +282,28 @@ a <- Res$par[1]
 b <- Res$par[2]
 pbeta(q1, a, b) # P(p <= q1) = p1e
 pbeta(q2, a, b) # P(p <= q2) = p2e
-s = 11
-f = 16
-
-prior=dbeta(p,a,b)
-like=dbeta(p,s+1,f+1) #Seeing the binomial distribution as a likelihood is like a beta distribution!!!
-post=dbeta(p,a+s,b+f)
-plot(p,post,type="l",ylab="Density",lty=2,lwd=3,col=gray.colors(1,start=0.1))
-lines(p,like,lty=1,lwd=3,col=gray.colors(1,start=0.4))
+s <- 15 # Success
+f <- 37 # Failures
+prior <- dbeta(p,a,b)
+likelihood <- dbeta(p, s + 1, f + 1) #Seeing the binomial distribution as a likelihood is a beta distribution!!!
+post <- dbeta(p, a+s, b+f)
+plot(p,post,type="l",ylab="Density", main = "Proportion of students who sleep at least 6 hours per day",lty=2,lwd=3,col=gray.colors(1,start=0.1))
+lines(p,likelihood,lty=1,lwd=3,col=gray.colors(1,start=0.4))
 lines(p,prior,lty=3,lwd=3,col=gray.colors(1,start=0.6))
-legend(.7,4,c("Prior","Likelihood","Posterior"),
-       lty=c(3,1,2),lwd=c(3,3,3),col=c(col=gray.colors(1,start=0.6),col=gray.colors(1,start=0.4),col=gray.colors(1,start=0.1)))
-
-
-
-p = c(seq(0.05, 0.95, by = 0.1))
-prior = c(2, 4, 8, 8, 4, 2, 1, 1, 1, 1)
-prior = prior/sum(prior)
-data = c(11, 16)
-####### Verosimilitu #################
-s=11;f=16
-#p1 = p + 0.5 * (p == 0) - 0.5 * (p == 1)
-llike = s * log(p) + f * log(1 - p)
-#like = p^s*(1-p)^f
-#like1 = like * (p > 0) * (p < 1) - 999 * ((p == 0) * (s > 0) + (p == 1) * (f > 0))
-like2 = exp(llike -max(llike)) #Escalar la likelihood para que se vea bien!!
-product = like2 * prior
-post = product/sum(product)
-
-#pdisc(p,prior,data)
-
-##############################################3
-#post = pdisc(p, prior, data)
-plot(p, prior, type = "l", ylab="Probability",lwd=2,lty=2,ylim=c(0,0.99),
-     col=gray.colors(1,start=0.1))
-lines(p,post,type = "l",lwd=2,col=gray.colors(1,start=0.6))
-lines(p,like2,type = "l",lwd=4,col=gray.colors(1,start=0.3))
-legend(0.7,0.85,c('Prior','Likelihood','Post'),lty=c(2,1,1),
-       col=c(gray.colors(1,start=0.1),gray.colors(1,start=0.3),gray.colors(1,start=0.6)),lwd=2)
-
+legend(.7,4,c("Prior","Likelihood","Posterior"), lty=c(3,1,2),lwd=c(3,3,3),col=c(col=gray.colors(1,start=0.6),col=gray.colors(1,start=0.4),col=gray.colors(1,start=0.1)))
+S <- 10000; postdraws1 <- rbeta(S, a+s, b+f)
+mean(postdraws1); quantile(postdraws1, c(0.025, 0.975))
+# Experts
+p <- c(seq(0.05, 0.55, by = 0.05)) # Probabilities
+prior <- c(0.05, 0.07, 0.1, 0.12, 0.15, 0.17, 0.15, 0.11, 0.06, 0.01, 0.01) # Expert assessment
+llikelihood <- s * log(p) + f * log(1 - p) # Log likelihood
+likelihood2 <- exp(llikelihood -max(llikelihood)) # Scale the likelihood for plotting
+product <- likelihood2 * prior # Proportional to posterior
+posterior  <- product/sum(product) # Posterior
+# Figure
+plot(p, prior, type = "l", ylab="Probability", lwd=2, lty=2, ylim=c(0,0.99), xlim = c(0, 0.6), col=gray.colors(1,start=0.1), main = "Proportion of students who sleep at least 6 hours per day")
+lines(p, posterior,type = "l",lwd=2,col=gray.colors(1,start=0.6))
+lines(p,likelihood2,type = "l",lwd=4,col=gray.colors(1,start=0.3))
+legend(0.45,0.85,c('Prior','Likelihood','Posterior'),lty=c(2,1,1), col=c(gray.colors(1,start=0.1),gray.colors(1,start=0.3),gray.colors(1,start=0.6)),lwd=2)
+postdraws2 <- sample(p, S, replace = TRUE, prob = posterior)
+mean(postdraws2); quantile(postdraws2, c(0.025, 0.975))
