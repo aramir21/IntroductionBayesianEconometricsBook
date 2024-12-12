@@ -41,6 +41,8 @@ Two simplify concepts let's focus on a parameter space composed by two blocks, $
 }
 Then, $\pi(\bm{\theta}|\bm{y})$ is the stationary distribution for the Gibbs transition kernel.
 
+A word of caution! Even if we have well-defined conditional posterior distributions $\pi(\bm{\theta}_1^{(s)} \mid \bm{\theta}_2^{(s-1)}, \bm{y})$ and $\pi(\bm{\theta}_2^{(s)} \mid \bm{\theta}_1^{(s)}, \bm{y})$, and we can simulate from them, the joint posterior distribution $\pi(\bm{\theta}_1^{(s)}, \bm{\theta}_2^{(s)} \mid \bm{y})$ may not correspond to any proper distribution. We should be mindful of this situation, especially when dealing with improper prior distributions (see \cite[Chap.~10]{robert2011monte} for details).
+
 Algorithm \ref{Alg:Gibbs} shows how to implement a Gibbs sampler with $d$ blocks. 
 
 \begin{algorithm}[h!]
@@ -57,7 +59,96 @@ Algorithm \ref{Alg:Gibbs} shows how to implement a Gibbs sampler with $d$ blocks
 \end{algorithm}
 
 \textbf{Example: The normal model with independent priors}
-Let's recap the math test exercise in Chapter \ref{chap4}, but assuming independent priors, that is, $Y_i\sim N(\mu,\sigma^2)$ where $\mu\sim N(\mu_0,\sigma_0^2)$ and $\sigma^2\sim IG(\alpha_0/2,\delta_0/2)$. The sample size is 50, and the mean and standard deviation of math scores are 102 and 10.
+
+Let's recap the math test exercise in Chapter \ref{chap4}, this time assuming independent priors. Specifically, let $Y_i \sim N(\mu, \sigma^2)$, where $\mu \sim N(\mu_0, \sigma_0^2)$ and $\sigma^2 \sim IG(\alpha_0 / 2, \delta_0 / 2)$. The sample size is 50, and the mean and standard deviation of the math scores are 102 and 10, respectively. We set $\mu_0 = 100$, $\sigma_0^2 = 100$, and $\alpha_0 = \delta_0 = 0.001$.
+
+The posterior distribution is
+\begin{align*}
+	\pi(\mu,\sigma^2|\bm{y})&\propto (\sigma^2)^{-N/2}\exp\left\{-\frac{1}{2\sigma^2}\sum_{i=1}^N(y_i-\mu)^2\right\}\\
+	&\times \exp\left\{-\frac{1}{2\sigma^2_0}(\mu-\mu_0)^2\right\}\times \left(\frac{1}{\sigma^2}\right)^{\alpha_0/2+1}\exp\left\{-\frac{\delta_0}{2\sigma^2}\right\}.
+\end{align*}
+Thus, the conditional posterior distribution of $\mu$ is
+\begin{align*}
+	\pi(\mu,\sigma^2|\bm{y})&\propto \exp\left\{-\frac{1}{2}\left[\frac{1}{\sigma^2}\sum_{i=1}^N(y_i-\mu)^2+\frac{1}{\sigma^2_0}(\mu-\mu_0)^2\right]\right\}\\
+	&\propto \exp\left\{-\frac{1}{2}\left[\mu^2\left(\frac{1}{\sigma^2/N}+\frac{1}{\sigma^2_0}\right)-2\mu\left(\frac{\bar{y}}{\sigma^2/N}+\frac{\mu_0}{\sigma_0^2}\right)\right]\right\}.  
+\end{align*} 
+We set $\mu_n=\sigma^{2}_n\left(\frac{\bar{y}}{\sigma^2/N}+\frac{\mu_0}{\sigma_0^2}\right)$ and $\sigma^{2}_n=\left(\frac{1}{\sigma^2/N}+\frac{1}{\sigma_0^2}\right)^{-1}$. Thus,
+\begin{align*}
+	\pi(\mu,\sigma^2|\bm{y})&\propto \exp\left\{-\frac{1}{2\sigma_n^2}\left[\mu^2-2\mu\mu_n+\mu_n^2-\mu_n^2\right]\right\}\\
+	&\propto \exp\left\{-\frac{1}{2\sigma_n^2}(\mu-\mu_n)^2\right\}.\\  
+\end{align*} 
+This is the kernel of a normal distribution, that is, $\mu|\sigma^2,\bm{y}\sim N(\mu_n,\sigma_n^2)$.
+
+The conditional posterior distribution of $\sigma^2$ is given by
+\begin{align*}
+	\pi(\sigma^2|\mu,\bm{y})&\propto (\sigma^2)^{-N/2}\exp\left\{-\frac{1}{2\sigma^2}\sum_{i=1}^N(y_i-\mu)^2\right\}\\
+	&\times \left(\frac{1}{\sigma^2}\right)^{\alpha_0/2+1}\exp\left\{-\frac{\delta_0}{2\sigma^2}\right\}\\
+	&\propto (\sigma^2)^{-N/2-\alpha_0/2-1} \exp\left\{-\frac{1}{2\sigma^2}\left[\sum_{i=1}^N(y_i-\mu)^2+\delta_0\right]\right\}.
+\end{align*} 
+Thus, $\sigma^2|\mu,\bm{y}\sim IG(\alpha_n/2,\delta_n/2)$, where $\alpha_n=N+\alpha_0$ and $\delta_n=\sum_{i=1}^N(y_i-\mu)^2+\delta_0=N\hat{\sigma}^2+N(\bar{y}-\mu)^2+\delta_0$ given that $\sum_{i=1}^N(y_i-\bar{y})=0$, where $\bar{y}$ and $\hat{\sigma}$ are the mean and standard deviation estimates.
+
+As we have the conditional posterior distributions, we can use the Gibbs sampling algorithm to perform inference in this model. The following code shows how to do it.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Gibbs sampler: The math example}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+N <- 50 # Sample size
+muhat <- 102 # Sample mean
+sig2hat <- 100 # Sample variance
+# Hyperparameters
+mu0 <- 100; sig20 <- 100; delta0 <- 0.001; alpha0 <- 0.001
+# MCMC parameters
+MCMC <- 10000; burnin <- 1000; S <- MCMC + burnin
+keep <- (burnin+1):S
+# Posterior draws
+sig2Post <- rep(NA, S)
+muPost <- rep(NA, S)
+alphan <- alpha0 + N; sig2 <- sig20
+# Gibbs sampler
+for(s in 1:S){
+	sig2n <- (1/(sig2/N)+1/sig20)^(-1)
+	mun <- sig2n*(muhat/(sig2/N)+mu0/sig20)
+	mu <- rnorm(1, mun, sig2n^0.5)
+	deltan <- N*(sig2hat + (muhat - mu)^2)
+	sig2 <- invgamma::rinvgamma(1, shape = alphan, rate = deltan)
+	muPost[s] <- mu;sig2Post[s] <- sig2
+}
+sig2s <- coda::mcmc(sig2Post[keep]) 
+mus <- coda::mcmc(muPost[keep]) 
+summary(sig2s); summary(mus)
+hist(mus, main = "Histogram: Posterior mean", xlab = "Posterior mean", col = "blue", breaks = 50)
+muPost_tq <- quantile(mus, c(0.025, 0.5, 0.975)); muPost_tq
+PmuPost_tcutoff <- mean(mus > 102); PmuPost_tcutoff
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter5/figures/PostMeanMathTest.png}
+	%%\centerline{\epsfig{/Chapters/chapter1/figures/cat.eps,width=.8\textheight,height=.4\textwidth}}
+	\caption[List of figure caption goes here]{Histogram of posterior draws of mean: Math test}\label{fig51}
+\end{figure}
+
+Figure \ref{fig51} shows the histogram of the draws of the posterior mean of the math test results. The posterior mean and median are 101.94 and 101.95, and the 95\% credible interval is (99.14, 104.79).\\
+
+
+\textbf{Example: Mining disaster change point}
+
+Let's use the dataset \textit{Mining.csv} provided by \cite{carlin1992hierarchical}.This dataset counts mining disasters per year from 1851 to 1962 in British coal mines. 
+
+We assume that there is an unknown structural change point in the amount of mining disasters where the parameters of the Poisson distributions describing change. In particular,
+\begin{align*}
+	p(y_t)=\begin{Bmatrix}
+		\frac{\exp(-\lambda_1)\lambda_1^{y_t}}{y_t!}, & t=1,2,\dots,H\\
+		\frac{\exp(-\lambda_2)\lambda_2^{y_t}}{y_t!}, & t=H+1,\dots,T\\
+	\end{Bmatrix},
+\end{align*}  
+where $H$ is the changing point.
+
+We use conjugate families for $\lambda_l$, $l=1,2$, that is, $\lambda_l\sim G(\alpha_{l0},\delta_{l0})$, and set $\pi(H)=1/T$, that is, an discrete uniform distribution for the changing point. 
 
 \textbf{Example: Linear regression electricity demand}
 Let's recap the electricity demand example in Chapter \ref{chap4}.  
