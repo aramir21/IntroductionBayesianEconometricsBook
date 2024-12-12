@@ -260,3 +260,64 @@ fig3 <- ggplot(data = data, aes(GasPred)) + geom_histogram(bins = 40, color = "#
 # FIG
 # annotate_figure(FIG, top = text_grob("Utilities: Predictive distribution", color = "black", face = "bold", size = 14))
 
+########################## Sleep in PhD students ########################## 
+##### Beta as prior #########################
+rm(list = ls())
+set.seed(010101)
+# Function to calibrate the hyperparameters of the beta prior distribution
+elec <- function(theta, perc, q){
+  E1 <- perc[1] - pbeta(q[1], theta[1], theta[2])
+  E2 <- perc[2] - pbeta(q[2], theta[1], theta[2])
+  loss <- E1^2 + E2^2
+  return(loss)
+}
+q1 <- 0.4; q2 <- 0.75; q <- c(q1, q2) # Quantiles
+p1e <- 0.6; p2e <- 0.95; perc <- c(p1e, p2e) # Cumulate probability from experts 
+theta0 <- c(1, 1) # Parameters
+elec(theta0, perc, q)
+Res <- optim(theta0, elec, perc = perc, q = q)
+Res$par
+p <- seq(0, 1, length = 500)
+a <- Res$par[1]
+b <- Res$par[2]
+pbeta(q1, a, b) # P(p <= q1) = p1e
+pbeta(q2, a, b) # P(p <= q2) = p2e
+s = 11
+f = 16
+
+prior=dbeta(p,a,b)
+like=dbeta(p,s+1,f+1) #Seeing the binomial distribution as a likelihood is like a beta distribution!!!
+post=dbeta(p,a+s,b+f)
+plot(p,post,type="l",ylab="Density",lty=2,lwd=3,col=gray.colors(1,start=0.1))
+lines(p,like,lty=1,lwd=3,col=gray.colors(1,start=0.4))
+lines(p,prior,lty=3,lwd=3,col=gray.colors(1,start=0.6))
+legend(.7,4,c("Prior","Likelihood","Posterior"),
+       lty=c(3,1,2),lwd=c(3,3,3),col=c(col=gray.colors(1,start=0.6),col=gray.colors(1,start=0.4),col=gray.colors(1,start=0.1)))
+
+
+
+p = c(seq(0.05, 0.95, by = 0.1))
+prior = c(2, 4, 8, 8, 4, 2, 1, 1, 1, 1)
+prior = prior/sum(prior)
+data = c(11, 16)
+####### Verosimilitu #################
+s=11;f=16
+#p1 = p + 0.5 * (p == 0) - 0.5 * (p == 1)
+llike = s * log(p) + f * log(1 - p)
+#like = p^s*(1-p)^f
+#like1 = like * (p > 0) * (p < 1) - 999 * ((p == 0) * (s > 0) + (p == 1) * (f > 0))
+like2 = exp(llike -max(llike)) #Escalar la likelihood para que se vea bien!!
+product = like2 * prior
+post = product/sum(product)
+
+#pdisc(p,prior,data)
+
+##############################################3
+#post = pdisc(p, prior, data)
+plot(p, prior, type = "l", ylab="Probability",lwd=2,lty=2,ylim=c(0,0.99),
+     col=gray.colors(1,start=0.1))
+lines(p,post,type = "l",lwd=2,col=gray.colors(1,start=0.6))
+lines(p,like2,type = "l",lwd=4,col=gray.colors(1,start=0.3))
+legend(0.7,0.85,c('Prior','Likelihood','Post'),lty=c(2,1,1),
+       col=c(gray.colors(1,start=0.1),gray.colors(1,start=0.3),gray.colors(1,start=0.6)),lwd=2)
+

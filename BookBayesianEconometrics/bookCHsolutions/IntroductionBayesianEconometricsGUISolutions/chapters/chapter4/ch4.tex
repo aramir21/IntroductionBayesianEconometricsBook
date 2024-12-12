@@ -581,8 +581,7 @@ set.seed(010101)
 library(dplyr)
 # Electricity demand
 DataUt <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/Utilities.csv", sep = ",", header = TRUE, quote = "")
-DataUtEst <- DataUt %>%  
-filter(Electricity != 0 & Water !=0 & Gas != 0)
+DataUtEst <- DataUt %>% filter(Electricity != 0 & Water !=0 & Gas != 0)
 attach(DataUtEst)
 Y <- cbind(log(Electricity), log(Water), log(Gas))
 X <- cbind(LnPriceElect, LnPriceWater, LnPriceGas, IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem, Children, Lnincome, 1)
@@ -697,7 +696,6 @@ fig3 <- ggplot(data = data, aes(GasPred)) + geom_histogram(bins = 40, color = "#
 	\end{VF}
 \end{tcolorbox} 
 
-
 Figures \ref{fig13}, \ref{fig14} and \ref{fig15} show the marginal predictive distributions of electricity, water and gas for the reference household. The median predictive values are kWh 168.8, M$^3$ 12.3 and M$^3$ 10.1, respectively. In addition, the 95\% credible intervals are (27.7, 1028.9), (1.5, 98.7) and (1.5, 67.5) for electricity, water and gas.  
 
 \begin{figure}[!h]
@@ -716,7 +714,80 @@ Figures \ref{fig13}, \ref{fig14} and \ref{fig15} show the marginal predictive di
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter4/figures/GasMulti.png}
 	%%\centerline{\epsfig{/Chapters/chapter1/figures/cat.eps,width=.8\textheight,height=.4\textwidth}}
 	\caption[List of figure caption goes here]{Histogram using the posterior predictive distribution of gas demand}\label{fig15}
-\end{figure}    
+\end{figure}
+
+\item \textbf{Ph.D. students sleeping hours \cite[Chap.~2]{albert2009bayesian}}
+
+We are interested in learning about the proportion of Ph.D. students who sleep at least 6 hours per day. We have a sample of 52 students, where 15 report sleeping at least 6 hours, and the remaining 37 report not sleeping at least 6 hours. The prior distribution is a Beta distribution, with hyperparameters calibrated so that the prior probabilities of this parameter being less than 0.4 and 0.75 are 0.6 and 0.95, respectively. Estimate the 95\% posterior credible interval for this parameter. Then, assume there is a group of experts whose beliefs about the proportion of Ph.D. students sleeping at least 6 hours are represented in the following table:
+
+\begin{table}[!htbp]%1
+	%\noautomaticrules
+	\tabletitle{Probability distribution: Ph.D students that sleep at least 6 hours per day.}\label{tab:sleep}%
+	\begin{tabular}{cccccccccccc}
+		$h$   & 0.05 & 0.10 & 0.15 & 0.20 & 0.25 & 0.30 & 0.35 & 0.40 & 0.45 & 0.50 & 0.55  \\
+		\hline
+		$P(p=h)$ & 0.05 & 0.07 & 0.10 & 0.12 & 0.15 & 0.17 & 0.15 & 0.11 & 0.06 & 0.01 & 0.01 \\ 
+		
+	\end{tabular}
+	%	\begin{tablenotes}[para,flushleft]
+		%		\footnotesize \textit{Notes}: Hypothetical distribution of Ph.D. students that sleep at least 6 hours per day.\\
+		%	\end{tablenotes}
+\end{table}
+Use Table \ref{tab:sleep} as prior information, and find the posterior distribution of the proportion of students that sleep at least 6 hours.
+
+\textbf{Answer}
+
+We know from the Bernoulli-beta model that the posterior distribution of the proportion of Ph.D. students that sleep at least 6 hours is beta, $\theta|\bm{y}\sim B(\alpha_n,\beta_n)$, $\alpha_n=\alpha_0+15$ and $\beta_n=\beta_0+37$, where $\alpha_0=1.44$ and $\beta_0=2.57$. 
+
+The following code how to get the posterior distribution in this exercise.
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Ph.D. students sleeping hours: Posterior distribution}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls())
+set.seed(010101)
+# Function to calibrate the hyperparameters of the beta prior distribution
+elec <- function(theta, perc, q){
+	E1 <- perc[1] - pbeta(q[1], theta[1], theta[2])
+	E2 <- perc[2] - pbeta(q[2], theta[1], theta[2])
+	loss <- E1^2 + E2^2
+	return(loss)
+}
+q1 <- 0.4; q2 <- 0.75; q <- c(q1, q2) # Quantiles
+p1e <- 0.6; p2e <- 0.95; perc <- c(p1e, p2e) # Cumulate probability from experts 
+theta0 <- c(1, 1) # Parameters
+elec(theta0, perc, q)
+Res <- optim(theta0, elec, perc = perc, q = q)
+Res$par
+p <- seq(0, 1, length = 500)
+a <- Res$par[1]
+b <- Res$par[2]
+pbeta(q1, a, b) # P(p <= q1) = p1e
+pbeta(q2, a, b) # P(p <= q2) = p2e
+s <- 15 # Success
+f <- 37 # Failures
+prior <- dbeta(p,a,b)
+likelihood <- dbeta(p, s + 1, f + 1) #Seeing the binomial distribution as a likelihood is a beta distribution!!!
+post <- dbeta(p, a+s, b+f)
+plot(p,post,type="l",ylab="Density", main = "Proportion of students who sleep at least 6 hours per day",lty=2,lwd=3,col=gray.colors(1,start=0.1))
+lines(p,likelihood,lty=1,lwd=3,col=gray.colors(1,start=0.4))
+lines(p,prior,lty=3,lwd=3,col=gray.colors(1,start=0.6))
+legend(.7,4,c("Prior","Likelihood","Posterior"), lty=c(3,1,2),lwd=c(3,3,3),col=c(col=gray.colors(1,start=0.6),col=gray.colors(1,start=0.4),col=gray.colors(1,start=0.1)))
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+Figure \ref{fig16} shows the prior, likelihood, and posterior distributions of the proportion of sleeping hours.
+ 
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter4/figures/Sleep.png}
+	%%\centerline{\epsfig{/Chapters/chapter1/figures/cat.eps,width=.8\textheight,height=.4\textwidth}}
+	\caption[List of figure caption goes here]{Posterior distribution: Sleeping hours Ph.D. students}\label{fig16}
+\end{figure}
+
+
+    
 \end{enumerate}
 
 
