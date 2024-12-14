@@ -115,4 +115,70 @@ For Gibbs sampling, the candidate $\bm{\theta}^c_1$ is drawn directly from the \
 \end{align*}
 due to $\bm{\theta}^{(s-1)}_2=\bm{\theta}^{c}_2$. Thus, the Gibbs sampling algorithm is implicitly a M-H algorithm where the acceptance probability is 1.
 
+\item Implement a Metropolis-Hastings (M-H) to sample from the Cauchy distribution, $C(0,1)$, using as proposal a standard normal distribution and a Student's t distribution with 5 degree of freedom. 
+
+\textbf{Answer}
+
+The following code shows to program the M-H to get draws from the Cauchy distribution, $C(0,1)$, using as proposal a standard normal distribution and a Student's t distribution with 5 degree of freedom.
+
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Metropolis-Hastings algorithm: Cauchy distribution}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+S <- 100000; df <- 5
+theta1 <- runif(S); acept1 <- rep(0, S)
+theta2 <- runif(S); acept2 <- rep(0, S)
+for (s in 2:S){
+	thetac1 <- rnorm(1) # Candidate normal standard
+	thetac2 <- rt(1, df = df) # Candidate Students' t
+	#Acceptance rate
+	a1 <- (dcauchy(thetac1)*dnorm(theta1[s-1]))/(dcauchy(theta1[s-1])*dnorm(thetac1)) 
+	a2 <- (dcauchy(thetac2)*dt(theta2[s-1], df = df))/(dcauchy(theta2[s-1])*dt(thetac2, df = df))
+	U1 <- runif(1)
+	if(U1 <= a1){
+		theta1[s] <- thetac1; acept1[s] <- 1
+	}else{
+		theta1[s] <- theta1[s-1]; acept1[s] <- 0
+	}
+	if(U1 <= a2){
+		theta2[s] <- thetac2; acept2[s] <- 1
+	}else{		
+		theta2[s] <- theta2[s-1]; acept2[s] <- 0
+	}
+}
+mean(acept1); mean(acept2)
+plot(coda::mcmc(theta1)); plot(coda::mcmc(theta2))
+h <- hist(theta1, breaks=50, col="blue", xlab="x", main="Cauchy draws from a Metropolis-Hastings algorithm: Normal standard proposal")
+pfit <- seq(min(theta1),max(theta1),length=50)
+yfit<-dcauchy(pfit)
+yfit <- yfit*diff(h$mids[1:2])*length(theta1)
+lines(pfit, yfit, col="red", lwd=2)
+h <- hist(theta2, breaks=50, col="blue", xlab="x", main="Cauchy draws from a Metropolis-Hastings algorithm: Student's t proposal")
+pfit <- seq(min(theta2),max(theta2),length=50)
+yfit<-dcauchy(pfit)
+yfit <- yfit*diff(h$mids[1:2])*length(theta2)
+lines(pfit, yfit, col="red", lwd=2)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+Figures \ref{fig52} and \ref{fig53} show the histograms of the posterior draws using the normal and Student's t distributions, along with the density of the Cauchy distribution. The spike in the posterior draws from the standard normal proposal is due to the algorithm being stuck for many iterations at a particular value, as the normal distribution has lighter tails compared to the Cauchy distribution. The convergence using the normal proposal is slower than when using the Student's t proposal, owing to the lighter tails of the former.
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter5/figures/MHnormal.png}
+	%%\centerline{\epsfig{/Chapters/chapter1/figures/cat.eps,width=.8\textheight,height=.4\textwidth}}
+	\caption[List of figure caption goes here]{Histogram of posterior draws of beta distribution and the density of the beta distribution.}\label{fig52}
+\end{figure} 
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter5/figures/MHt.png}
+	%%\centerline{\epsfig{/Chapters/chapter1/figures/cat.eps,width=.8\textheight,height=.4\textwidth}}
+	\caption[List of figure caption goes here]{Histogram of posterior draws of beta distribution and the density of the beta distribution.}\label{fig53}
+\end{figure} 
+
+  
+
 \end{enumerate}

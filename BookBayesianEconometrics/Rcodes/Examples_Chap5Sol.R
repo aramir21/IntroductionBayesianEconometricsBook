@@ -40,3 +40,51 @@ muPost_tq
 cutoff <- 103
 PmuPost_tcutoff <- mean(mus > cutoff)
 PmuPost_tcutoff
+
+########################## Metropolis-Hastings: Cauchy distribution ########################## 
+rm(list = ls())
+set.seed(010101)
+S <- 100000
+df <- 5
+theta1 <- runif(S)
+acept1 <- rep(0, S)
+theta2 <- runif(S)
+acept2 <- rep(0, S)
+for (s in 2:S){
+  thetac1 <- rnorm(1)
+  thetac2 <- rt(1, df = df)
+  a1 <- (dcauchy(thetac1)*dnorm(theta1[s-1]))/(dcauchy(theta1[s-1])*dnorm(thetac1))
+  a2 <- (dcauchy(thetac2)*dt(theta2[s-1], df = df))/(dcauchy(theta2[s-1])*dt(thetac2, df = df))
+  U1 <- runif(1)
+  if(U1 <= a1){
+    theta1[s] <- thetac1
+    acept1[s] <- 1
+  }else{
+    theta1[s] <- theta1[s-1]
+    acept1[s] <- 0
+  }
+  if(U1 <= a2){
+    theta2[s] <- thetac2
+    acept2[s] <- 1
+  }else{
+
+    theta2[s] <- theta2[s-1]
+    acept2[s] <- 0
+  }
+}
+mean(acept1); mean(acept2)
+mean(theta1); sd(theta1)
+mean(theta2); sd(theta2)
+plot(coda::mcmc(theta1)); coda::autocorr.plot(coda::mcmc(theta1))
+plot(coda::mcmc(theta2)); coda::autocorr.plot(coda::mcmc(theta2))
+h <- hist(theta1, breaks=50, col="blue", xlab="x", main="Cauchy draws from a Metropolis-Hastings algorithm: Normal standard proposal")
+pfit <- seq(min(theta1),max(theta1),length=50)
+yfit<-dcauchy(pfit)
+yfit <- yfit*diff(h$mids[1:2])*length(theta1)
+lines(pfit, yfit, col="red", lwd=2)
+
+h <- hist(theta2, breaks=50, col="blue", xlab="x", main="Cauchy draws from a Metropolis-Hastings algorithm: Student's t proposal")
+pfit <- seq(min(theta2),max(theta2),length=50)
+yfit<-dcauchy(pfit)
+yfit <- yfit*diff(h$mids[1:2])*length(theta2)
+lines(pfit, yfit, col="red", lwd=2)
