@@ -361,7 +361,7 @@ HMC <- function(theta, y, epsilon, M){
   mom <- t(mvtnorm::rmvnorm(1, rep(0, K), M))
   logPost_Mom_t <- -LogPost(thetat, y) +  mvtnorm::dmvnorm(t(mom), rep(0, K), M, log = TRUE)  
   for(l in 1:L){
-    if(l == L){
+    if(l == 1 | l == L){
       mom <- mom + 0.5*epsilon*GradientTheta(theta, y)
       theta <- theta + epsilon*Minv%*%mom
     }else{

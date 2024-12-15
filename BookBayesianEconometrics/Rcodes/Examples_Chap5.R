@@ -122,3 +122,64 @@ for (iter in (1:Niter)){
   the=rbind(the,prop)}
 plot(density(the))
 dim(the)
+
+
+
+# Load necessary libraries
+library(MASS)
+library(ggplot2)
+
+# Step 1: Simulate data from a mixture of two normal distributions
+set.seed(42)
+n <- 500
+mu1 <- 1    # Mean of the first population
+mu2 <- 3    # Mean of the second population
+sigma <- 1  # Common standard deviation
+p <- 0.5    # Proportion of each sub-population
+
+# Generate data
+z <- rbinom(n, 1, p)  # Latent variable indicating which component
+data <- z * rnorm(n, mean = mu1, sd = sigma) +
+  (1 - z) * rnorm(n, mean = mu2, sd = sigma)
+
+plot(density(data))
+abline(v=mu1); abline(v=mu2); abline(v=(mu1+mu2)/2, col = "red")
+
+# Step 2: Define the Bayesian model
+prior_mean <- 0
+prior_sd <- 10
+
+# Log-posterior function to avoid underflow
+log_posterior <- function(mean) {
+  log_likelihood <- sum(dnorm(data, mean = mean, sd = sigma, log = TRUE))
+  log_prior <- dnorm(mean, mean = prior_mean, sd = prior_sd, log = TRUE)
+  return(log_likelihood + log_prior)
+}
+
+# Step 3: Evaluate the posterior distribution
+grid <- seq(-1, 11, length.out = 1000)  # Grid of potential mean values
+log_posterior_values <- sapply(grid, log_posterior)
+
+# Convert log-posterior to posterior density
+posterior_values <- exp(log_posterior_values - max(log_posterior_values))  # Scale to avoid overflow
+posterior_values <- posterior_values / sum(posterior_values * diff(grid)[1])  # Normalize
+
+# Step 4: Plot the posterior distribution
+posterior_df <- data.frame(mean = grid, density = posterior_values)
+
+ggplot(posterior_df, aes(x = mean, y = density)) +
+  geom_line(color = "blue", size = 1) +
+  labs(title = "Posterior Distribution of the Mean",
+       x = "Mean",
+       y = "Density") +
+  theme_minimal()
+
+# Step 5: Overlay the histogram of data for visualization
+ggplot() +
+  geom_histogram(aes(x = data, y = ..density..), bins = 30, fill = "gray", alpha = 0.6) +
+  geom_line(data = posterior_df, aes(x = mean, y = density), color = "blue", size = 1) +
+  labs(title = "Histogram of Data and Posterior Distribution",
+       x = "Value",
+       y = "Density") +
+  theme_minimal()
+

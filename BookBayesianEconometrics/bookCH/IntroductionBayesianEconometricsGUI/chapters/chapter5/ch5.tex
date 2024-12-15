@@ -35,7 +35,7 @@ Then, $\pi(\bm{\theta}|\bm{y})$ is the stationary distribution for the Gibbs tra
 
 A word of caution! Even if we have well-defined conditional posterior distributions $\pi(\bm{\theta}_1^{(s)} | \bm{\theta}_2^{(s-1)}, \bm{y})$ and $\pi(\bm{\theta}_2^{(s)} | \bm{\theta}_1^{(s)}, \bm{y})$, and we can simulate from them, the joint posterior distribution $\pi(\bm{\theta}_1^{(s)}, \bm{\theta}_2^{(s)} | \bm{y})$ may not correspond to any proper distribution. We should be mindful of this situation, especially when dealing with improper prior distributions (see \cite[Chap.~10]{robert2011monte} for details).
 
-Algorithm \ref{Alg:Gibbs} shows how to implement a Gibbs sampler with $d$ blocks. 
+Algorithm \ref{Alg:Gibbs} demonstrates the implementation of a Gibbs sampler with $d$ blocks. The number of iterations ($S$) is chosen to ensure convergence to the stationary distribution. In Section \ref{sec54}, we review several convergence diagnostics to assess whether the posterior draws have reached convergence.
 
 \begin{algorithm}[h!]
 	\caption{Gibbs sampling}\label{Alg:Gibbs}
@@ -165,7 +165,7 @@ Thus, the acceptance probability is given by:
 
 where $q(\bm{\theta}^{c} | \bm{\theta}^{(s-1)})$ and $\pi(\bm{\theta}^{(s-1)} | \bm{y})$ must be nonzero, as transitioning from $\bm{\theta}^{(s-1)}$ to $\bm{\theta}^{c}$ is only possible under these conditions.
 
-Algorithm \ref{Alg:MH} shows how to implement a Metropolis-Hastings algorithm. 
+Algorithm \ref{Alg:MH} shows how to implement a Metropolis-Hastings algorithm.  The number of iterations ($S$) is chosen to ensure convergence to the stationary distribution. 
 
 \begin{algorithm}[h!]
 	\caption{Metropolis-Hastings algorithm}\label{Alg:MH}
@@ -199,7 +199,7 @@ In the independent proposal, $q(\bm{\theta}^{c} | \bm{\theta}^{(s-1)}) = q(\bm{\
 
 In this case, a move from $\bm{\theta}^{(s-1)}$ to $\bm{\theta}^{c}$ is always accepted if $q(\bm{\theta}^{(s-1)}) \pi(\bm{\theta}^{c} | \bm{y}) \geq q(\bm{\theta}^{c}) \pi(\bm{\theta}^{(s-1)} | \bm{y})$.
 
-In the random walk proposal, $\bm{\theta}^{c} = \bm{\theta}^{(s-1)} + \bm{\epsilon}$, where $\bm{\epsilon}$ is a random perturbation. If $p(\bm{\epsilon}) = p(-\bm{\epsilon})$, meaning the distribution of $p(\bm{\epsilon})$ is symmetric around zero, then $q(\bm{\theta}^{c} | \bm{\theta}^{(s-1)}) = q(\bm{\theta}^{(s-1)} | \bm{\theta}^{c})$. Consequently, 
+In the random walk proposal, $\bm{\theta}^{c} = \bm{\theta}^{(s-1)} + \bm{\epsilon}$, where $\bm{\epsilon}$ is a random perturbation. If $p(\bm{\epsilon}) = p(-\bm{\epsilon})$, meaning the distribution of $p(\bm{\epsilon})$ is symmetric around zero, then $q(\bm{\theta}^{c} | \bm{\theta}^{(s-1)}) = q(\bm{\theta}^{(s-1)} | \bm{\theta}^{c})$. This was the original Metropolis algorithm \cite{metropolis53}. Thus, the acceptance rate is 
 
 \[
 \alpha(\bm{\theta}^{(s-1)}, \bm{\theta}^{c}) = 
@@ -260,8 +260,46 @@ The results indicate that the mean and standard deviation obtained from the post
 
 \subsection{Hamiltonian Monte Carlo}\label{sec523}
 
-Hamiltonian Monte Carlo (HMC) is an extension of the Metropolis algorithm designed to efficiently explore the parameter space by introducing \textit{momentum variables}. It is particularly advantageous for high-dimensional posterior distributions, as it reduces the risk of getting stuck in local modes and significantly improves mixing. HMC leverages concepts from physics, specifically Hamiltonian mechanics, to propose transitions in the Markov chain.
+Hamiltonian Monte Carlo (HMC) is an extension of the Metropolis algorithm designed to efficiently explore the parameter space by introducing \textit{momentum variables}. This feature helps to overcome the random walk behavior of the Gibbs sampling and the M-H algorithm. HMC, also known as hybrid Monte Carlo, is particularly advantageous for high-dimensional posterior distributions, as it reduces the risk of getting stuck in local modes and significantly improves mixing. HMC leverages concepts from physics, specifically Hamiltonian mechanics, to propose transitions in the Markov chain.
 
+In particular, HMC uses a \textit{momentum variable} ($\delta_k$) that accompanies each $\theta_k$, such that the transition kernel of $\bm{\theta}$ is determined largely by the variables in $\bm{\delta}$. Both vectors are updated using a Metropolis algorithm at each stage.
+
+HMC involves the joint density $p(\bm{\theta}, \bm{\delta} | \bm{y}) = \pi(\bm{\theta} | \bm{y}) \times p(\bm{\delta})$, where typically $\bm{\delta} \sim N(\bm{0}, \bm{M})$, and $\bm{M}$ is a diagonal matrix such that $\delta_k \sim N(0, M_{kk})$. $\bm{M}$ is scaled to approximate the inverse of the posterior covariance matrix evaluated at the maximum a posterior estimate.
+
+Algorithm \ref{Alg:HMC} outlines the implementation of the HMC algorithm. Note that the gradient vector $\frac{d\log(\pi(\bm{\theta}|\bm{y}))}{d\bm{\theta}}$ must be computed analytically, as using finite differences can be computationally expensive. However, it is advisable to verify the analytical calculations by evaluating the gradient at the maximum posterior estimate, where the function should return values close to 0, or by comparing results with finite differences at a few evaluation points. Additionally, observe that we do not retain $\bm{\delta}$ since it is updated at the beginning of each iteration and is not required subsequently.
+
+The number of leapfrog steps ($L$) and the step size ($\epsilon$) are chosen such that $\epsilon \times L \approx 1$. For instance, $\epsilon$ is randomly drawn from a uniform distribution between 0 and $2\epsilon_0$, and $L$ is the largest integer near $1/\epsilon$. Start with $\epsilon_0 = 0.1$. While these parameters can be fine-tuned to achieve the optimal acceptance rate of approximately 65\% \cite[Chap.~12]{gelman2021bayesian}—for instance, increasing $\epsilon_0$ if the acceptance probability is much higher than 65\% or decreasing it if it is much lower—the final analysis should be based on posterior draws where these parameters remain fixed. Lastly, the number of iterations ($S$) is selected to ensure convergence to the stationary distribution.
+
+\begin{algorithm}[h!]
+	\caption{Hamiltonian Monte Carlo}\label{Alg:HMC}
+	\begin{algorithmic}[1]
+		\State Initiate at $\bm{\theta}^{(0)}$ in the support of $\pi(\bm{\theta}|\bm{y})$, and set step size $\epsilon$, number of leapfrog steps $L$, and total iterations $S$ 
+		\State Draw $\bm{\delta}^{(0)}$ from $N(\bm{0}, \bm{M})$  		 			
+		\For{\texttt{$s=1,\dots,S$}}
+			\For{\texttt{$l=1,\dots,L$}}
+				\If{l = 1}
+					\State $\bm{\delta}^{c} \leftarrow \bm{\delta}^{(s-1)} + \frac{1}{2}\epsilon \frac{d\log(\pi(\bm{\theta}|\bm{y}))}{d\bm{\theta}}$
+					\State $\bm{\theta}^c\leftarrow \bm{\theta}^{(s-1)}+\epsilon \bm{M}^{-1}\bm{\delta}^{c}$
+				\Else
+					\If{l=2,\dots,L-1}
+						\State $\bm{\delta}^{c} \leftarrow \bm{\delta}^{c} + \epsilon \frac{d\log(\pi(\bm{\theta}|\bm{y}))}{d\bm{\theta}}$
+						\State $\bm{\theta}^c\leftarrow \bm{\theta}^c+\epsilon \bm{M}^{-1}\bm{\delta}^{c}$
+					\Else
+					 	\State $\bm{\delta}^{c} \leftarrow \bm{\delta}^{c} + \frac{1}{2}\epsilon \frac{d\log(\pi(\bm{\theta}|\bm{y}))}{d\bm{\theta}}$
+					 	\State $\bm{\theta}^c\leftarrow \bm{\theta}^{c}+\epsilon \bm{M}^{-1}\bm{\delta}^{c}$
+					\EndIf
+				\EndIf
+			\EndFor
+		\State Calculate $\alpha([\bm{\theta} \ \bm{\delta}]^{(s-1)}, [\bm{\theta} \ \bm{\delta}]^{c}) = 
+		\min\left\{\frac{p(\bm{\delta}^{c}) \pi(\bm{\theta}^{c} | \bm{y})}{p(\bm{\delta}^{(s-1)}) \pi(\bm{\theta}^{(s-1)} | \bm{y})}, 1\right\}$
+		\State Draw $U$ from $U(0,1)$
+		\State $\bm{\theta}^{(s)}=\begin{Bmatrix}
+			\bm{\theta}^{c} & \text{if } U\leq \alpha(\cdot, \cdot)\\
+			\bm{\theta}^{(s-1)} & \text{otherwise}\\
+		\end{Bmatrix}$
+		\EndFor 
+	\end{algorithmic} 
+\end{algorithm}
 \section{Importance sampling}\label{sec52}
 
 \section{Sequential Monte Carlo}\label{sec53}

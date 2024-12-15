@@ -584,7 +584,7 @@ The components of the gradient vector of the log posterior distribution are give
 	&-(\alpha_0/2+1)+\delta_0/(2\exp(\tau))+1.\\
 \end{align*}
 
-Then, we have the code for the Hamiltonian Monte Carlo as given in Chapter \ref{chap5}. We set the initial values equal to $\mu=\bar{y}=1/(T-2)\sum_{t=3}^T y_t$, $\phi_1=\phi_2=0$ and $\exp((1/(T-2))\sum_{t=3}^T(y_t-\bar{y})^2)$, and $M$ equal to the inverse covariance matrix of the posterior distribution evaluated at the maximum a posterior estimate. In addition, $\epsilon$ is randomly draw from a uniform distribution between 0 and 2$\epsilon_0$, and $L$ is the highest integer near to $1/\epsilon$, this to approximately satisfy $L\epsilon=1$. 
+Then, we have the code for the Hamiltonian Monte Carlo as given in Chapter \ref{chap5}. We set the initial values equal to $\mu=\bar{y}=1/(T-2)\sum_{t=3}^T y_t$, $\phi_1=\phi_2=0$ and $\exp((1/(T-2))\sum_{t=3}^T(y_t-\bar{y})^2)$, and $M$ equal to the inverse covariance matrix of the posterior distribution evaluated at the maximum a posterior estimate. In addition, $\epsilon$ is randomly draw from a uniform distribution between 0 and 2$\epsilon_0$, and $L$ is the highest integer near $1/\epsilon$, this to approximately satisfy $L\epsilon=1$. 
 
 We can check that all 95\% credible intervals encompass the population values, and the posterior means are near the population values. The acceptance rate is higher than 65\% on average, thus we should increase the base step ($\epsilon_0$). In addition, we do not impose the stationary conditions on $\phi_1$ and $\phi_2$. Exercise 6 asks to program a HMC taking into account these requirements.
 
@@ -656,7 +656,7 @@ HMC <- function(theta, y, epsilon, M){
 	mom <- t(mvtnorm::rmvnorm(1, rep(0, K), M))
 	logPost_Mom_t <- -LogPost(thetat, y) +  mvtnorm::dmvnorm(t(mom), rep(0, K), M, log = TRUE)  
 	for(l in 1:L){
-		if(l == L){
+		if(l == 1 | l == L){
 			mom <- mom + 0.5*epsilon*GradientTheta(theta, y)
 			theta <- theta + epsilon*Minv%*%mom
 		}else{
