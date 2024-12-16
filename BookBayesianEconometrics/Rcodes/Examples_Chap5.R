@@ -46,20 +46,20 @@ set.seed(010101)
 an <- 16.55; bn <- 39.57
 S <- 100000
 p <- runif(S)
-acept <- rep(0, S)
+accept <- rep(0, S)
 for (s in 2:S){
   pc <- runif(1)
   a <- dbeta(pc, an, bn)/dbeta(p[s-1], an, bn)
   U <- runif(1)
   if(U <= a){
     p[s] <- pc
-    acept[s] <- 1
+    accept[s] <- 1
   }else{
     p[s] <- p[s-1]
-    acept[s] <- 0
+    accept[s] <- 0
   }
 }
-mean(acept)
+mean(accept)
 mean(p); sd(p)
 an/(an + bn); (an*bn/((an+bn)^2*(an+bn+1)))^0.5
 h <- hist(p, breaks=50, col="blue", xlab="Proportion Ph.D. students sleeping at least 6 hours", main="Beta draws from a Metropolis-Hastings algorithm")
@@ -68,6 +68,114 @@ yfit<-dbeta(pfit, an, bn)
 yfit <- yfit*diff(h$mids[1:2])*length(p)
 lines(pfit, yfit, col="red", lwd=2)
 
+########################## Hamiltonian Monte Carlo: Bi-variate normal distribution ########################## 
+rm(list = ls()); set.seed(010101)
+# Gibbs sampler
+Gibbs <- function(theta, rho){
+  thetal <- rnorm(1, mean = rho*theta, sd = (1- rho^2)^0.5)
+  return(thetal)
+}
+# Metropolis-Hastings
+MH <- function(theta, rho, sig2){
+  SIGMA <- matrix(c(1, rho, rho, 1), 2, 2)
+  SIGMAc <- matrix(c(1, sig2, sig2, 1), 2, 2)
+  thetac <- MASS::mvrnorm(1, mu = theta, Sigma = SIGMAc)
+  a <- mvtnorm::dmvnorm(thetac, c(0, 0), SIGMA)/mvtnorm::dmvnorm(theta, c(0, 0), SIGMA)
+  U <- runif(1)
+  if(U <= a){
+    theta <- thetac
+    accept <- 1
+  }else{
+    theta <- theta
+    accept <- 0
+  }
+  return(list(theta = theta, accept = accept))
+}
+# Hamiltonian Monte Carlo
+HMC <- function(theta, rho, epsilon, M){
+  SIGMA <- matrix(c(1, rho, rho, 1), 2, 2) 
+  L <- ceiling(1/epsilon)
+  Minv <- solve(M); thetat <- theta
+  K <- length(thetat)
+  mom <- t(mvtnorm::rmvnorm(1, rep(0, K), M))
+  logPost_Mom_t <- mvtnorm::dmvnorm(t(theta), rep(0, K), SIGMA, log = TRUE) +  mvtnorm::dmvnorm(t(mom), rep(0, K), M, log = TRUE)  
+  for(l in 1:L){
+    if(l == 1 | l == L){
+      mom <- mom + 0.5*epsilon*(-solve(SIGMA)%*%theta)
+      theta <- theta + epsilon*Minv%*%mom
+    }else{
+      mom <- mom + epsilon*(-solve(SIGMA)%*%theta)
+      theta <- theta + epsilon*Minv%*%mom
+    }
+  }
+  logPost_Mom_star <- mvtnorm::dmvnorm(t(theta), rep(0, K), SIGMA, log = TRUE) +  mvtnorm::dmvnorm(t(mom), rep(0, K), M, log = TRUE)  
+  alpha <- min(1, exp(logPost_Mom_star-logPost_Mom_t))
+  u <- runif(1)
+  if(u <= alpha){
+    thetaNew <- c(theta)
+  }else{
+    thetaNew <- thetat
+  }
+  rest <- list(theta = thetaNew, Prob = alpha)
+  return(rest)
+}
+# Hyperparameters
+rho <- 0.98; sig2 <- 0.18^2
+# Posterior draws Gibbs and M-H
+S <- 8000; thin <- 20; K <- 2
+thetaPostGibbs <- matrix(NA, S, K)
+thetaPostMH <- matrix(NA, S, K)
+AcceptMH <- rep(NA, S)
+thetaGibbs <- c(-2, 3); thetaMH <- c(-2, 3)
+for(s in 1:S){
+  theta1 <- Gibbs(thetaGibbs[2], rho)
+  theta2 <- Gibbs(theta1, rho)
+  thetaGibbs <- c(theta1, theta2)
+  ResMH <- MH(thetaMH, rho, sig2)
+  thetaMH <- ResMH$theta
+  thetaPostGibbs[s,] <- thetaGibbs
+  thetaPostMH[s,] <- thetaMH
+  AcceptMH[s] <- ResMH$accept
+}
+keep <- seq(0, S, thin)
+mean(AcceptMH[keep[-1]])
+thetaPostGibbsMCMC <- coda::mcmc(thetaPostGibbs[keep[-1],])
+summary(thetaPostGibbsMCMC)
+coda::autocorr.plot(thetaPostGibbsMCMC)
+thetaPostMHMCMC <- coda::mcmc(thetaPostMH[keep[-1],])
+plot(thetaPostMHMCMC)
+coda::autocorr.plot(thetaPostMHMCMC)
+# Posterior draws HMC
+S <- 400;epsilon <- 0.05;  L <- ceiling(1/epsilon); M <- diag(2)
+thetaPostHMC <- matrix(NA, S, K)
+ProbAcceptHMC  <- rep(NA, S)
+thetaHMC <- c(-2, 3)
+for(s in 1:S){
+  ResHMC <- HMC(theta = thetaHMC, rho, epsilon, M)
+  thetaHMC <- ResHMC$theta
+  thetaPostHMC[s,] <- thetaHMC
+  ProbAcceptHMC[s] <- ResHMC$Prob
+}
+thetaPostHMCMCMC <- coda::mcmc(thetaPostHMC)
+plot(thetaPostHMCMCMC); coda::autocorr.plot(thetaPostHMCMCMC)
+summary(ProbAcceptHMC)
+
+sd(thetaPostHMC[,1]); sd(thetaPostMH[keep[-1],1]); sd(thetaPostGibbs[keep[-1],1])
+#Figure
+df <- as.data.frame(cbind(1:S, thetaPostHMC[,1], thetaPostMH[keep[-1],1], thetaPostGibbs[keep[-1],1]))
+colnames(df) <- c("Iter", "HMC", "MH", "Gibbs")
+require(latex2exp)
+g1 <- ggplot(df, aes(x= Iter)) + 
+  geom_point(aes(y=HMC), colour="black") +
+  labs(x = "Iteration", y = TeX("$\\theta_{1}$"), title = "HMC algorithm")
+g2 <- ggplot(df, aes(x= Iter)) + 
+  geom_point(aes(y=MH), colour="black") +
+  labs(x = "Iteration", y = TeX("$\\theta_{1}$"), title = "M-H algorithm")
+g3 <- ggplot(df, aes(x= Iter)) + 
+  geom_point(aes(y=Gibbs), colour="black") +
+  labs(x = "Iteration", y = TeX("$\\theta_{1}$"), title = "Gibbs sampling")
+library(ggpubr)
+ggarrange(g3, g2, g1 + rremove("x.text"), labels = c("A", "B", "C"), ncol = 3, nrow = 1)
 ########################## Hamiltonian Monte Carlo: Mixture distribution ########################## 
 rm(list = ls())
 set.seed(010101)

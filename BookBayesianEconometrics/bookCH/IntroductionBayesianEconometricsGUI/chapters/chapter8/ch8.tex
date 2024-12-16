@@ -678,7 +678,7 @@ HMC <- function(theta, y, epsilon, M){
 # Posterior draws
 S <- 1000; burnin <- 1000; thin <- 2; tot <- S + burnin
 thetaPost <- matrix(NA, tot, K)
-ProbAcept <- rep(NA, tot)
+ProbAccept <- rep(NA, tot)
 theta0 <- c(mean(y), 0, 0, exp(var(y))) 
 M <- solve(VarPost); epsilon0 <- 0.1
 pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
@@ -688,7 +688,7 @@ for(s in 1:tot){
 	HMCs <- HMC(theta = theta0, y, epsilon, M) 
 	theta0 <- HMCs$theta 
 	thetaPost[s,] <- HMCs$theta
-	ProbAcept[s] <- HMCs$Prob
+	ProbAccept[s] <- HMCs$Prob
 	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0), "% done"))
 }
 close(pb)
@@ -696,8 +696,8 @@ keep <- seq((burnin+1), tot, thin)
 thetaF <- coda::mcmc(thetaPost[keep,])
 summary(thetaF)
 summary(exp(thetaF[,K]))
-ProbAceptF <- coda::mcmc(ProbAcept[keep])
-summary(ProbAceptF)
+ProbAcceptF <- coda::mcmc(ProbAccept[keep])
+summary(ProbAcceptF)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 

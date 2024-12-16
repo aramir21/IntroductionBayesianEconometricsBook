@@ -226,20 +226,20 @@ The following code shows how to do a M-H algorithm to sample from the beta distr
 		\begin{lstlisting}[language=R]
 rm(list = ls()); set.seed(010101)
 an <- 16.55; bn <- 39.57
-S <- 100000; p <- runif(S); acept <- rep(0, S)
+S <- 100000; p <- runif(S); accept <- rep(0, S)
 for (s in 2:S){
 	pc <- runif(1) # Candidate
 	a <- dbeta(pc, an, bn)/dbeta(p[s-1], an, bn) # Acceptance rate
 	U <- runif(1)
 	if(U <= a){
 		p[s] <- pc
-		acept[s] <- 1
+		accept[s] <- 1
 	}else{
 		p[s] <- p[s-1]
-		acept[s] <- 0
+		accept[s] <- 0
 	}
 }
-mean(acept); mean(p); sd(p)
+mean(accept); mean(p); sd(p)
 an/(an + bn); (an*bn/((an+bn)^2*(an+bn+1)))^0.5 # Population values
 h <- hist(p, breaks=50, col="blue", xlab="Proportion Ph.D. students sleeping at least 6 hours", main="Beta draws from a Metropolis-Hastings algorithm")
 pfit <- seq(min(p),max(p),length=50)
@@ -260,15 +260,19 @@ The results indicate that the mean and standard deviation obtained from the post
 
 \subsection{Hamiltonian Monte Carlo}\label{sec523}
 
-Hamiltonian Monte Carlo (HMC) is an extension of the Metropolis algorithm designed to efficiently explore the parameter space by introducing \textit{momentum variables}. This feature helps to overcome the random walk behavior of the Gibbs sampling and the M-H algorithm. HMC, also known as hybrid Monte Carlo, is particularly advantageous for high-dimensional posterior distributions, as it reduces the risk of getting stuck in local modes and significantly improves mixing. HMC leverages concepts from physics, specifically Hamiltonian mechanics, to propose transitions in the Markov chain.
+Hamiltonian Monte Carlo (HMC) was proposed by \cite{duane1987hybrid} and later introduced to the statistical community by \cite{neal1996bayesian}. HMC is an extension of the Metropolis algorithm designed to efficiently explore the parameter space by introducing \textit{momentum variables}. This feature helps overcome the random walk behavior of Gibbs sampling and the M-H algorithm. HMC, also known as hybrid Monte Carlo, is particularly advantageous for high-dimensional posterior distributions, as it reduces the risk of getting stuck in local modes and significantly improves mixing \cite{neal2011mcmc}. 
 
-In particular, HMC uses a \textit{momentum variable} ($\delta_k$) that accompanies each $\theta_k$, such that the transition kernel of $\bm{\theta}$ is determined largely by the variables in $\bm{\delta}$. Both vectors are updated using a Metropolis algorithm at each stage.
+However, HMC is designed to work with strictly positive target densities. Therefore, transformations are required to handle bounded parameters, such as variances and proportions. For instance, logarithmic and logit transformations can be applied in these cases, respectively. This requires the use of the change-of-variable theorem to compute the log posterior density and its gradient, which are necessary to implement the HMC algorithm.
 
-HMC involves the joint density $p(\bm{\theta}, \bm{\delta} | \bm{y}) = \pi(\bm{\theta} | \bm{y}) \times p(\bm{\delta})$, where typically $\bm{\delta} \sim N(\bm{0}, \bm{M})$, and $\bm{M}$ is a diagonal matrix such that $\delta_k \sim N(0, M_{kk})$. $\bm{M}$ is scaled to approximate the inverse of the posterior covariance matrix evaluated at the maximum a posterior estimate.
+HMC leverages concepts from physics, specifically Hamiltonian mechanics, to propose transitions in the Markov chain. In Hamiltonian mechanics, two key variables define the total energy of the system along a particular trajectory: the \textit{position} ($\bm{\theta}$) and the \textit{momentum} ($\bm{\delta}$). The Hamiltonian represents the total energy of the system, which is the sum of \textit{potential energy} (energy stored in the system due to position) and \textit{kinetic energy} (energy associated with motion). The goal is to identify trajectories that preserve the total energy of the system, meaning the system's evolution keeps the Hamiltonian invariant, while avoiding trajectories that fail to do so. This approach enhances the acceptance rate of proposed transitions.
+
+To implement HMC, we solve the differential equations derived from the Hamiltonian, which are based on the derivatives with respect to position and momentum. However, these equations rarely have analytical solutions, requiring the use of numerical methods. This necessitates discretization of Hamilton’s equations, which introduces errors. To mitigate these errors, HMC employs the \textit{leapfrog integrator}, a numerical method with lower errors compared to simpler approaches like the Euler method.
+
+In particular, HMC uses a \textit{momentum variable} ($\delta_k$) that accompanies each $\theta_k$, such that the transition kernel of $\bm{\theta}$ is determined largely by the variables in $\bm{\delta}$. Both vectors are updated using a Metropolis algorithm at each stage such that HMC updates leaves the distribution invariant \cite{neal2011mcmc}.
+
+HMC involves the joint density $p(\bm{\theta}, \bm{\delta} | \bm{y}) = \pi(\bm{\theta} | \bm{y}) \times p(\bm{\delta})$, where $\bm{\delta} \sim N(\bm{0}, \bm{M})$, and $\bm{M}$ is a diagonal matrix such that $\delta_k \sim N(0, M_{kk})$. In easy situations $\bm{M}=\bm{I}$, in more complex problems, $\bm{M}$ is scaled to approximate the inverse of the posterior covariance matrix evaluated at the maximum a posterior estimate.
 
 Algorithm \ref{Alg:HMC} outlines the implementation of the HMC algorithm. Note that the gradient vector $\frac{d\log(\pi(\bm{\theta}|\bm{y}))}{d\bm{\theta}}$ must be computed analytically, as using finite differences can be computationally expensive. However, it is advisable to verify the analytical calculations by evaluating the gradient at the maximum posterior estimate, where the function should return values close to 0, or by comparing results with finite differences at a few evaluation points. Additionally, observe that we do not retain $\bm{\delta}$ since it is updated at the beginning of each iteration and is not required subsequently.
-
-The number of leapfrog steps ($L$) and the step size ($\epsilon$) are chosen such that $\epsilon \times L \approx 1$. For instance, $\epsilon$ is randomly drawn from a uniform distribution between 0 and $2\epsilon_0$, and $L$ is the largest integer near $1/\epsilon$. Start with $\epsilon_0 = 0.1$. While these parameters can be fine-tuned to achieve the optimal acceptance rate of approximately 65\% \cite[Chap.~12]{gelman2021bayesian}—for instance, increasing $\epsilon_0$ if the acceptance probability is much higher than 65\% or decreasing it if it is much lower—the final analysis should be based on posterior draws where these parameters remain fixed. Lastly, the number of iterations ($S$) is selected to ensure convergence to the stationary distribution.
 
 \begin{algorithm}[h!]
 	\caption{Hamiltonian Monte Carlo}\label{Alg:HMC}
@@ -300,15 +304,170 @@ The number of leapfrog steps ($L$) and the step size ($\epsilon$) are chosen suc
 		\EndFor 
 	\end{algorithmic} 
 \end{algorithm}
+
+The number of Leapfrog steps ($L$) and the step size ($\epsilon$) are chosen such that $\epsilon \times L \approx 1$. For instance, $\epsilon$ is randomly drawn from a uniform distribution between 0 and $2\epsilon_0$, and $L$ is the largest integer near $1/\epsilon$. Start with $\epsilon_0 = 0.1$. While these parameters can be fine-tuned to achieve the optimal acceptance rate of approximately 65\% \cite[Chap.~12]{gelman2021bayesian}—for instance, increasing $\epsilon_0$ if the acceptance probability is much higher than 65\% or decreasing it if it is much lower—the final analysis should be based on posterior draws where these parameters remain fixed. Lastly, the number of iterations ($S$) is selected to ensure convergence to the stationary distribution.\\
+
+\textbf{Example: Sampling from a bi-variate Gaussian distribution}
+
+As a toy example, let's compare the Gibbs sampling, M-H and HMC algorithms when the posterior distribuion is a bi-variate Gaussian distribution with mean $\bm{0}$ and covariance matrix $\bm{\Sigma}=\begin{bmatrix}
+	1 & \rho \\
+	\rho & 1
+\end{bmatrix}$. Let's set $\rho= 0.98$.
+
+The Gibbs sampler requires the conditional posterior distributions, which in this case are $\theta_1|\theta_2\sim N(\rho\theta_2,1-\rho^2)$ and $\theta_2|\theta_1\sim N(\rho\theta_1,1-\rho^2)$. We use the random walk proposal distribution for the M-H algorithm, where $\bm{\theta}^c\sim N(\bm{\theta}^{(s-1)}, \text{diag}\left\{0.18^2\right\})$. We set $\epsilon=0.05$, $L=20$ and $\bm{M}=\bm{I}_2$ for the HMC algorithm, and given that $\pi(\bm{\theta}|\bm{y})\propto \exp\left\{-\frac{1}{2}\bm{\theta}^{\top}\bm{\Sigma}^{-1}\bm{\theta}\right\}$, then $\frac{d\log(\pi(\bm{\theta}|\bm{y}))}{d\bm{\theta}}=-\bm{\Sigma}^{-1}\bm{\theta}$.
+
+The following code shows how to implement the Gibbs sampler, the random walk M-H algorithm, and the HMC in this example such that the effective number of posterior draws is 400.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Gibbs, M-H and HMC: Bi-variate normal distribution}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+# Gibbs sampler
+Gibbs <- function(theta, rho){
+	thetal <- rnorm(1, mean = rho*theta, sd = (1- rho^2)^0.5)
+	return(thetal)
+}
+# Metropolis-Hastings
+MH <- function(theta, rho, sig2){
+	SIGMA <- matrix(c(1, rho, rho, 1), 2, 2)
+	SIGMAc <- matrix(c(1, sig2, sig2, 1), 2, 2)
+	thetac <- MASS::mvrnorm(1, mu = theta, Sigma = SIGMAc)
+	a <- mvtnorm::dmvnorm(thetac, c(0, 0), SIGMA)/mvtnorm::dmvnorm(theta, c(0, 0), SIGMA)
+	U <- runif(1)
+	if(U <= a){
+		theta <- thetac
+		accept <- 1
+	}else{
+		theta <- theta
+		accept <- 0
+	}
+	return(list(theta = theta, accept = accept))
+}
+# Hamiltonian Monte Carlo
+HMC <- function(theta, rho, epsilon, M){
+	SIGMA <- matrix(c(1, rho, rho, 1), 2, 2) 
+	L <- ceiling(1/epsilon)
+	Minv <- solve(M); thetat <- theta
+	K <- length(thetat)
+	mom <- t(mvtnorm::rmvnorm(1, rep(0, K), M))
+	logPost_Mom_t <- mvtnorm::dmvnorm(t(theta), rep(0, K), SIGMA, log = TRUE) +  mvtnorm::dmvnorm(t(mom), rep(0, K), M, log = TRUE)  
+	for(l in 1:L){
+		if(l == 1 | l == L){
+			mom <- mom + 0.5*epsilon*(-solve(SIGMA)%*%theta)
+			theta <- theta + epsilon*Minv%*%mom
+		}else{
+			mom <- mom + epsilon*(-solve(SIGMA)%*%theta)
+			theta <- theta + epsilon*Minv%*%mom
+		}
+	}
+	logPost_Mom_star <- mvtnorm::dmvnorm(t(theta), rep(0, K), SIGMA, log = TRUE) +  mvtnorm::dmvnorm(t(mom), rep(0, K), M, log = TRUE)  
+	alpha <- min(1, exp(logPost_Mom_star-logPost_Mom_t))
+	u <- runif(1)
+	if(u <= alpha){
+		thetaNew <- c(theta)
+	}else{
+		thetaNew <- thetat
+	}
+	rest <- list(theta = thetaNew, Prob = alpha)
+	return(rest)
+}
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Gibbs, M-H and HMC: Bi-variate normal distribution}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+# Hyperparameters
+rho <- 0.98; sig2 <- 0.18^2
+# Posterior draws Gibbs and M-H
+S <- 8000; thin <- 20; K <- 2
+thetaPostGibbs <- matrix(NA, S, K)
+thetaPostMH <- matrix(NA, S, K)
+AcceptMH <- rep(NA, S)
+thetaGibbs <- c(-2, 3); thetaMH <- c(-2, 3)
+for(s in 1:S){
+	theta1 <- Gibbs(thetaGibbs[2], rho)
+	theta2 <- Gibbs(theta1, rho)
+	thetaGibbs <- c(theta1, theta2)
+	ResMH <- MH(thetaMH, rho, sig2)
+	thetaMH <- ResMH$theta
+	thetaPostGibbs[s,] <- thetaGibbs
+	thetaPostMH[s,] <- thetaMH
+	AcceptMH[s] <- ResMH$accept
+}
+keep <- seq(0, S, thin)
+mean(AcceptMH[keep[-1]])
+thetaPostGibbsMCMC <- coda::mcmc(thetaPostGibbs[keep[-1],])
+summary(thetaPostGibbsMCMC)
+coda::autocorr.plot(thetaPostGibbsMCMC)
+thetaPostMHMCMC <- coda::mcmc(thetaPostMH[keep[-1],])
+plot(thetaPostMHMCMC)
+coda::autocorr.plot(thetaPostMHMCMC)
+# Posterior draws HMC
+S <- 400;epsilon <- 0.05;  L <- ceiling(1/epsilon); M <- diag(2)
+thetaPostHMC <- matrix(NA, S, K)
+ProbAcceptHMC  <- rep(NA, S)
+thetaHMC <- c(-2, 3)
+for(s in 1:S){
+	ResHMC <- HMC(theta = thetaHMC, rho, epsilon, M)
+	thetaHMC <- ResHMC$theta
+	thetaPostHMC[s,] <- thetaHMC
+	ProbAcceptHMC[s] <- ResHMC$Prob
+}
+thetaPostHMCMCMC <- coda::mcmc(thetaPostHMC)
+plot(thetaPostHMCMCMC); coda::autocorr.plot(thetaPostHMCMCMC)
+summary(ProbAcceptHMC)
+#Figure
+df <- as.data.frame(cbind(1:S, thetaPostHMC[,1], thetaPostMH[keep[-1],1], thetaPostGibbs[keep[-1],1]))
+colnames(df) <- c("Iter", "HMC", "MH", "Gibbs")
+library(latex2exp); library(ggpubr)
+g1 <- ggplot(df, aes(x= Iter)) + geom_point(aes(y=HMC), colour="black") + labs(x = "Iteration", y = TeX("$\\theta_{1}$"), title = "HMC algorithm")
+g2 <- ggplot(df, aes(x= Iter)) + geom_point(aes(y=MH), colour="black") + labs(x = "Iteration", y = TeX("$\\theta_{1}$"), title = "M-H algorithm")
+g3 <- ggplot(df, aes(x= Iter)) + geom_point(aes(y=Gibbs), colour="black") + labs(x = "Iteration", y = TeX("$\\theta_{1}$"), title = "Gibbs sampling")
+ggarrange(g3, g2, g1, labels = c("A", "B", "C"), ncol = 3, nrow = 1)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+Figure \ref{fig54} shows the posterior draws of $\theta_1$ using the Gibbs sampler (Panel A, left), the Metropolis-Hastings algorithm (Panel B, middle), and the Hamiltonian Monte Carlo (Panel C, right). The convergence diagnostic plots (no shown) suggests that the three algorithms perform a good job. Although, the acceptance rate in HMC is higher than the M-H due to the HMC producing larger changes in $\bm{\theta}$ than a corresponding number of random-walk M-H iterations \cite{neal2011mcmc}.
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter5/figures/BivariateNormal.98}
+	%%\centerline{\epsfig{/Chapters/chapter1/figures/cat.eps,width=.8\textheight,height=.4\textwidth}}
+	\caption[List of figure caption goes here]{Posterior draws: Gibbs sampler (A), Metropolis-Hastings (B) and Hamiltonian Monte Carlo (C) in the bivariate normal example, $\rho=0.98$.}\label{fig54}
+\end{figure}       
+
+
 \section{Importance sampling}\label{sec52}
 
 \section{Sequential Monte Carlo}\label{sec53}
 
 \section{Convergence diagnostics}\label{sec54}
+
 \subsection{Numerical standard error}
 \subsection{Effective sample size}
 \subsection{Checking for errors in the posterior simulator}
+
 \cite{geweke2004getting}
+
+\subsection{Tests of convergence}
+
+Regarding convergence issues, we implement several diagnostics to assess the adequacy of the posterior chains \cite{Plummer2016} in our Graphical User Interface (GUI). In particular, we should see that trace plots should appear stable, and autocorrelation plots should decrease rapidly. 
+
+Additionally, we apply Geweke's test \cite{Geweke1992}, which is a simple two-sample test of means. If the mean of the first window (10\% of the chain) is not significantly different from the mean of the second window (50\% of the chain), we conclude that the target distribution has converged.
+
+The Raftery and Lewis test \cite{Raftery1992} is designed to calculate the approximate number of iterations ($S$), burn-in ($b$), and thinning parameter ($d$) required to estimate $p\left[H(\bm{\theta}) \leq h\right]$, where $H(\bm{\theta}): \mathcal{R}^k \rightarrow \mathcal{R}$, given a specific quantile of interest ($q$), precision ($r$), and probability ($p$). Their diagnostic is based on the dependence factor, $I = \frac{S + b}{S_{\text{Min}}}$, where $S_{\text{Min}} = \Phi^{-1}\left(\frac{1}{2}(p+1)\right)^2 q(1-q) / r^2$ and $\Phi(\cdot)$ is the standard normal cumulative distribution function. Values of $I$ much greater than 5 indicate a high level of dependence.
+
+Heidelberger and Welch's test \cite{Heidelberger1983} uses a Cramér-von Mises statistic to test the null hypothesis that the sampled values, $\bm{\theta}^{(s)}$, are drawn from a stationary distribution. The statistic is given by $\text{CVM}(B_S) = \int_0^1 B_S(t)^2 dt$, where $B_S(t) = \frac{S_{\left[St\right]} - \left[St\right] \bar{\bm{\theta}}^S}{\sqrt{S p(0)}}$, $S_S = \sum_{s=1}^S \bm{\theta}^{(s)}$, $\bar{\bm{\theta}}^S = S_S / S$, and $p(0)$ is the spectral density at 0, with $0 \leq t \leq 1$. Under the null hypothesis, $B_S(t)$ converges in distribution to the Brownian bridge. 
+
+This test is recursively applied until either the null hypothesis is not rejected, or $t = 50\%$ of the chain has been discarded. Subsequently, the half-width test calculates a 95\% confidence interval for the mean using the portion of the chain that passed the stationarity test. If the ratio of the half-width of this interval to the mean is less than 0.1, the test is considered passed.\\
+
 
 \section{Summary}\label{sec55}
 

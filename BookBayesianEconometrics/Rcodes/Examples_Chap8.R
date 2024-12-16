@@ -387,7 +387,7 @@ HMC(theta, y, epsilon, M)
 # Posterior draws
 S <- 1000; burnin <- 1000; thin <- 2; tot <- S + burnin
 thetaPost <- matrix(NA, tot, K)
-ProbAcept <- rep(NA, tot)
+ProbAccept <- rep(NA, tot)
 # theta0 <- theta0
 theta0 <- c(mean(y), 0, 0, exp(var(y)))  
 M <- solve(VarPost); epsilon0 <- 0.1
@@ -398,7 +398,7 @@ for(s in 1:tot){
   HMCs <- HMC(theta = theta0, y, epsilon, M) 
   theta0 <- HMCs$theta 
   thetaPost[s,] <- HMCs$theta
-  ProbAcept[s] <- HMCs$Prob
+  ProbAccept[s] <- HMCs$Prob
   setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0), "% done"))
 }
 close(pb)
@@ -408,8 +408,8 @@ summary(thetaF)
 plot(thetaF)
 summary(exp(thetaF[,K]))
 plot(exp(thetaF[,K]))
-ProbAceptF <- coda::mcmc(ProbAcept[keep])
-summary(ProbAceptF)
+ProbAcceptF <- coda::mcmc(ProbAccept[keep])
+summary(ProbAcceptF)
 
 ########################## Stochastic volatility models: MCMC approach ########################## 
 rm(list = ls())
