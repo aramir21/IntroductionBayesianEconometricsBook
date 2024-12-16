@@ -88,3 +88,116 @@ pfit <- seq(min(theta2),max(theta2),length=50)
 yfit<-dcauchy(pfit)
 yfit <- yfit*diff(h$mids[1:2])*length(theta2)
 lines(pfit, yfit, col="red", lwd=2)
+
+
+########################## Hamiltonian Monte Carlo: Bimodal distribution ########################## 
+# https://hedibert.org/wp-content/uploads/2021/02/hmc-example.html
+rm(list = ls()); set.seed(010101)
+# Posterior distribution
+PostDist <- function(theta){
+  theta1 <- theta[1]; theta2 <- theta[2]
+  post <- exp(-0.5*(theta1^2*theta2^2+theta1^2+theta2^2-8*theta1-8*theta2))
+  return(post)
+}
+# Negative of the posterior to calculate the covariance matrix
+LogPostDistNeg <- function(theta){
+  theta1 <- theta[1]; theta2 <- theta[2]
+  post <- -0.5*(theta1^2*theta2^2+theta1^2+theta2^2-8*theta1-8*theta2)
+  return(-post)
+}
+theta0 <- c(0,0)
+ResOpt <- optim(theta0, LogPostDistNeg, hessian = TRUE)
+VarPost <- solve(ResOpt$hessian)
+# Metropolis-Hastings
+MH <- function(theta, c2){
+  thetac <- MASS::mvrnorm(1, mu = theta, Sigma = c2*diag(2))
+  a <- PostDist(thetac)/PostDist(theta)
+  U <- runif(1)
+  if(U <= a){
+    theta <- thetac
+    accept <- 1
+  }else{
+    theta <- theta
+    accept <- 0
+  }
+  return(list(theta = theta, accept = accept))
+}
+# Posterior draws M-H
+S <- 20000; burnin <- 1000; thin <- 20; tot <- S + burnin
+K <- 2; c2 <- 1.5
+thetaPostMH <- matrix(NA, tot, K)
+AcceptMH <- rep(NA, tot)
+thetaMH <- c(0, 0)
+for(s in 1:tot){
+  ResMH <- MH(thetaMH, c2 = c2)
+  thetaMH <- ResMH$theta
+  thetaPostMH[s,] <- thetaMH
+  AcceptMH[s] <- ResMH$accept
+}
+keep <- seq((burnin), tot, thin)
+mean(AcceptMH[keep])
+thetaPostMHMCMC <- coda::mcmc(thetaPostMH[keep,])
+plot(thetaPostMHMCMC)
+coda::autocorr.plot(thetaPostMHMCMC)
+# Contour plot
+ngrid <- 400
+theta1 <- seq(-1, 6, length = ngrid)
+theta2 <- seq(-1, 6, length = ngrid)
+f <- matrix(0, ngrid, ngrid)
+for (i in 1:ngrid){
+  for (j in 1:ngrid){
+    f[i,j] = PostDist(c(theta1[i],theta2[j]))
+  }
+}
+plot(thetaPostMH[keep,], xlim=range(theta1), ylim=range(theta2), pch=16, col=grey(0.8), xlab=expression(theta[1]), ylab=expression(theta[2]))
+contour(theta1,theta2,f, drawlabels=FALSE, add=TRUE, col = "blue", lwd = 1.2)
+title("Random walk Metropolis-Hastings")
+# Hamiltonian Monte Carlo
+HMC <- function(theta, epsilon, L, M){
+  # L <- ceiling(1/epsilon)
+  Minv <- solve(M); thetat <- theta
+  K <- length(thetat)
+  mom <- t(mvtnorm::rmvnorm(1, rep(0, K), M))
+  logPost_Mom_t <- log(PostDist(thetat)) +  mvtnorm::dmvnorm(t(mom), rep(0, K), M, log = TRUE)  
+  theta1 <- theta[1]; theta2 <- theta[2] 
+  for(l in 1:L){
+    if(l == 1 | l == L){
+      mom <- mom + 0.5*epsilon*(-0.5*c(2*theta1*theta2^2+2*theta1-8, 2*theta2*theta1^2+2*theta2-8))
+      theta <- theta + epsilon*Minv%*%mom
+    }else{
+      mom <- mom + epsilon*(-0.5*c(2*theta1*theta2^2+2*theta1-8, 2*theta2*theta1^2+2*theta2-8))
+      theta <- theta + epsilon*Minv%*%mom
+    }
+  }
+  logPost_Mom_star <- log(PostDist(theta)) +  mvtnorm::dmvnorm(t(mom), rep(0, K), M, log = TRUE)  
+  alpha <- min(1, exp(logPost_Mom_star-logPost_Mom_t))
+  u <- runif(1)
+  if(u <= alpha){
+    thetaNew <- c(theta)
+  }else{
+    thetaNew <- thetat
+  }
+  rest <- list(theta = thetaNew, Prob = alpha)
+  return(rest)
+}
+# Posterior draws HMC
+S <- 5000; burnin <- 500; tot <- S + burnin
+epsilon <- 0.0025;  L <- 100; M <- diag(2)
+# epsilon <- 0.0032;  L <- 100; M <- solve(VarPost)
+thetaPostHMC <- matrix(NA, tot, K)
+ProbAcceptHMC  <- rep(NA, tot)
+thetaHMC <- c(0, 0)
+for(s in 1:tot){
+  ResHMC <- HMC(theta = thetaHMC, epsilon = epsilon, L = L, M = M)
+  thetaHMC <- ResHMC$theta
+  thetaPostHMC[s,] <- thetaHMC
+  ProbAcceptHMC[s] <- ResHMC$Prob
+}
+keep <- burnin:S
+summary(ProbAcceptHMC[keep])
+thetaPostHMCMCMC <- coda::mcmc(thetaPostHMC[keep,])
+plot(thetaPostHMCMCMC); coda::autocorr.plot(thetaPostHMCMCMC)
+plot(thetaPostHMC[keep,], xlim=range(theta1), ylim=range(theta2), pch=16, col=grey(0.8),
+     xlab=expression(theta[1]), ylab=expression(theta[2]))
+contour(theta1,theta2,f, drawlabels=FALSE, add=TRUE, col = "blue", lwd = 1.2)
+title("Hamiltonian Monte Carlo")

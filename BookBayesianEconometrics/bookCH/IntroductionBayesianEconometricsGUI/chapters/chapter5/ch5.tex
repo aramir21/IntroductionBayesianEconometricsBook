@@ -260,19 +260,17 @@ The results indicate that the mean and standard deviation obtained from the post
 
 \subsection{Hamiltonian Monte Carlo}\label{sec523}
 
-Hamiltonian Monte Carlo (HMC) was proposed by \cite{duane1987hybrid} and later introduced to the statistical community by \cite{neal1996bayesian}. HMC is an extension of the Metropolis algorithm designed to efficiently explore the parameter space by introducing \textit{momentum variables}. This feature helps overcome the random walk behavior of Gibbs sampling and the M-H algorithm. HMC, also known as hybrid Monte Carlo, is particularly advantageous for high-dimensional posterior distributions, as it reduces the risk of getting stuck in local modes and significantly improves mixing \cite{neal2011mcmc}. 
+Hamiltonian Monte Carlo (HMC) was proposed by \cite{duane1987hybrid} and later introduced to the statistical community by \cite{neal1996bayesian}. HMC extends the Metropolis algorithm to efficiently explore the parameter space by introducing \textit{momentum variables}, which help overcome the random walk behavior of Gibbs sampling and the Metropolis-Hastings algorithm. Known also as hybrid Monte Carlo, HMC is particularly advantageous for high-dimensional posterior distributions, as it reduces the risk of getting stuck in local modes and significantly improves mixing \cite{neal2011mcmc}. 
 
-However, HMC is designed to work with strictly positive target densities. Therefore, transformations are required to handle bounded parameters, such as variances and proportions. For instance, logarithmic and logit transformations can be applied in these cases, respectively. This requires the use of the change-of-variable theorem to compute the log posterior density and its gradient, which are necessary to implement the HMC algorithm.
+However, HMC is designed to work with strictly positive target densities. Therefore, transformations are required to handle bounded parameters, such as variances and proportions. For example, logarithmic and logit transformations can be applied. These transformations necessitate the use of the change-of-variable theorem to compute the log posterior density and its gradient, which are essential for implementing the HMC algorithm.
 
-HMC leverages concepts from physics, specifically Hamiltonian mechanics, to propose transitions in the Markov chain. In Hamiltonian mechanics, two key variables define the total energy of the system along a particular trajectory: the \textit{position} ($\bm{\theta}$) and the \textit{momentum} ($\bm{\delta}$). The Hamiltonian represents the total energy of the system, which is the sum of \textit{potential energy} (energy stored in the system due to position) and \textit{kinetic energy} (energy associated with motion). The goal is to identify trajectories that preserve the total energy of the system, meaning the system's evolution keeps the Hamiltonian invariant, while avoiding trajectories that fail to do so. This approach enhances the acceptance rate of proposed transitions.
+HMC leverages concepts from physics, specifically Hamiltonian mechanics, to propose transitions in the Markov chain. In Hamiltonian mechanics, two key variables define the total energy of the system: the \textit{position} (\(\bm{\theta}\)) and the \textit{momentum} (\(\bm{\delta}\)). The Hamiltonian represents the total energy of the system, consisting of \textit{potential energy} (energy due to position) and \textit{kinetic energy} (energy associated with motion). The objective is to identify trajectories that preserve the system's total energy, meaning the Hamiltonian remains invariant, while avoiding trajectories that do not. This approach enhances the acceptance rate of proposed transitions.
 
-To implement HMC, we solve the differential equations derived from the Hamiltonian, which are based on the derivatives with respect to position and momentum. However, these equations rarely have analytical solutions, requiring the use of numerical methods. This necessitates discretization of Hamilton’s equations, which introduces errors. To mitigate these errors, HMC employs the \textit{leapfrog integrator}, a numerical method with lower errors compared to simpler approaches like the Euler method.
+To implement HMC, we solve the differential equations derived from the Hamiltonian, which involve derivatives with respect to position and momentum. However, these equations rarely have analytical solutions, requiring numerical methods for approximation. This necessitates discretizing Hamilton’s equations, which introduces errors. To mitigate these errors, HMC uses the \textit{leapfrog integrator}, a numerical method with smaller errors compared to simpler approaches like the Euler method.
 
-In particular, HMC uses a \textit{momentum variable} ($\delta_k$) that accompanies each $\theta_k$, such that the transition kernel of $\bm{\theta}$ is determined largely by the variables in $\bm{\delta}$. Both vectors are updated using a Metropolis algorithm at each stage such that HMC updates leaves the distribution invariant \cite{neal2011mcmc}.
+HMC uses a \textit{momentum variable} (\(\delta_k\)) for each \(\theta_k\), so that the transition kernel of \(\bm{\theta}\) is determined by \(\bm{\delta}\). Both vectors are updated using a Metropolis algorithm at each stage such that the distribution of \(\bm{\theta}\) remains invariant \cite{neal2011mcmc}. The joint density in HMC is given by \( p(\bm{\theta}, \bm{\delta} | \bm{y}) = \pi(\bm{\theta} | \bm{y}) \times p(\bm{\delta}) \), where \(\bm{\delta} \sim N(\bm{0}, \bm{M})\), and \(\bm{M}\) is a diagonal matrix such that \(\delta_k \sim N(0, M_{kk})\). 
 
-HMC involves the joint density $p(\bm{\theta}, \bm{\delta} | \bm{y}) = \pi(\bm{\theta} | \bm{y}) \times p(\bm{\delta})$, where $\bm{\delta} \sim N(\bm{0}, \bm{M})$, and $\bm{M}$ is a diagonal matrix such that $\delta_k \sim N(0, M_{kk})$. In easy situations $\bm{M}=\bm{I}$, in more complex problems, $\bm{M}$ is scaled to approximate the inverse of the posterior covariance matrix evaluated at the maximum a posterior estimate.
-
-Algorithm \ref{Alg:HMC} outlines the implementation of the HMC algorithm. Note that the gradient vector $\frac{d\log(\pi(\bm{\theta}|\bm{y}))}{d\bm{\theta}}$ must be computed analytically, as using finite differences can be computationally expensive. However, it is advisable to verify the analytical calculations by evaluating the gradient at the maximum posterior estimate, where the function should return values close to 0, or by comparing results with finite differences at a few evaluation points. Additionally, observe that we do not retain $\bm{\delta}$ since it is updated at the beginning of each iteration and is not required subsequently.
+Algorithm \ref{Alg:HMC} outlines the HMC implementation. The gradient vector \(\frac{d\log(\pi(\bm{\theta}|\bm{y}))}{d\bm{\theta}}\) must be computed analytically, as using finite differences can be computationally expensive. However, it is advisable to verify the analytical calculations by evaluating the gradient at the maximum posterior estimate, where the function should return values close to 0, or by comparing results with finite differences at a few points. 
 
 \begin{algorithm}[h!]
 	\caption{Hamiltonian Monte Carlo}\label{Alg:HMC}
@@ -305,7 +303,9 @@ Algorithm \ref{Alg:HMC} outlines the implementation of the HMC algorithm. Note t
 	\end{algorithmic} 
 \end{algorithm}
 
-The number of Leapfrog steps ($L$) and the step size ($\epsilon$) are chosen such that $\epsilon \times L \approx 1$. For instance, $\epsilon$ is randomly drawn from a uniform distribution between 0 and $2\epsilon_0$, and $L$ is the largest integer near $1/\epsilon$. Start with $\epsilon_0 = 0.1$. While these parameters can be fine-tuned to achieve the optimal acceptance rate of approximately 65\% \cite[Chap.~12]{gelman2021bayesian}—for instance, increasing $\epsilon_0$ if the acceptance probability is much higher than 65\% or decreasing it if it is much lower—the final analysis should be based on posterior draws where these parameters remain fixed. Lastly, the number of iterations ($S$) is selected to ensure convergence to the stationary distribution.\\
+Note that we do not retain \(\bm{\delta}\) after it is updated at the beginning of each iteration, as it is not required subsequently. To begin, the step size (\(\epsilon\)) can be drawn randomly from a uniform distribution between 0 and \(2\epsilon_0\), and the number of leapfrog steps (\(L\)) is set as the largest integer near \(1/\epsilon\), ensuring \(\epsilon \times L \approx 1\). We need to set \(\bm{M}\) to be the inverse of the posterior covariance matrix evaluated at the maximum a posteriori estimate under this setting. 
+
+The acceptance rate should be checked, with the optimal rate around 65\% \cite[Chap.~12]{gelman2021bayesian}. If the acceptance rate is much higher than 65\%, increase \(\epsilon_0\); if it is much lower, decrease it. This strategy may not always work, and alternative strategies can be tested, such as setting \(\bm{M} = \bm{I}\) and fine-tuning \(\epsilon\) and \(L\) to achieve an acceptance rate near 65\%. Finally, the number of iterations (\(S\)) is chosen to ensure convergence to the stationary distribution.\\
 
 \textbf{Example: Sampling from a bi-variate Gaussian distribution}
 
@@ -443,7 +443,6 @@ Figure \ref{fig54} shows the posterior draws of $\theta_1$ using the Gibbs sampl
 	\caption[List of figure caption goes here]{Posterior draws: Gibbs sampler (A), Metropolis-Hastings (B) and Hamiltonian Monte Carlo (C) in the bivariate normal example, $\rho=0.98$.}\label{fig54}
 \end{figure}       
 
-
 \section{Importance sampling}\label{sec52}
 
 \section{Sequential Monte Carlo}\label{sec53}
@@ -486,7 +485,9 @@ This test is recursively applied until either the null hypothesis is not rejecte
 
 	\item Show that the Gibbs sampler is a particular case of the Metropolis-Hastings where the acceptance probability is equal to 1.
 	
-	\item Implement a Metropolis-Hastings to sample from the Cauchy distribution, $C(0,1)$, using as proposal a standard normal distribution and a Student's t distribution with 5 degree of freedom.  
+	\item Implement a Metropolis-Hastings to sample from the Cauchy distribution, $C(0,1)$, using as proposal a standard normal distribution and a Student's t distribution with 5 degree of freedom.
+	
+	\item This exercise is proposed by Professor Hedibert Freitas Lopes. Get the posterior draws using the Metropolis-Hastings and Hamiltonian Monte Carlo algorithms of the posterior distribution given by $\pi(\theta_1,\theta_2|\bm{y})\propto \exp\left\{-\frac{1}{2}(\theta_1^2\theta_2^2+\theta_1^2+\theta_2^2-8\theta_1-8\theta_2)\right\}$.   
 	
 \end{enumerate}
 

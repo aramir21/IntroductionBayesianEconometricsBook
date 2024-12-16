@@ -121,7 +121,6 @@ due to $\bm{\theta}^{(s-1)}_2=\bm{\theta}^{c}_2$. Thus, the Gibbs sampling algor
 
 The following code shows to program the M-H to get draws from the Cauchy distribution, $C(0,1)$, using as proposal a standard normal distribution and a Student's t distribution with 5 degree of freedom.
 
-
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 	\textit{R code. Metropolis-Hastings algorithm: Cauchy distribution}
@@ -179,6 +178,145 @@ Figures \ref{fig52} and \ref{fig53} show the histograms of the posterior draws u
 	\caption[List of figure caption goes here]{Histogram of posterior draws of beta distribution and the density of the beta distribution.}\label{fig53}
 \end{figure} 
 
+  \item This exercise is proposed by Professor Hedibert Freitas Lopes. Get the posterior draws using the Metropolis-Hastings (M-H) and Hamiltonian Monte Carlo (HMC) algorithms of the posterior distribution given by $\pi(\theta_1,\theta_2|\bm{y})\propto \exp\left\{-\frac{1}{2}(\theta_1^2\theta_2^2+\theta_1^2+\theta_2^2-8\theta_1-8\theta_2)\right\}$.
+  
+  \textbf{Answer}
+  
+  The following code demonstrates the implementation of the M-H and HMC algorithms for this exercise. For the M-H algorithm, the number of MCMC iterations, burn-in period, and thinning parameters are set to 20,000, 1,000, and 20, respectively. The variance of the proposal distribution is tuned to achieve an acceptance rate close to 25\%. 
+  
+  For the HMC algorithm, the number of iterations and burn-in period are set to 5,000 and 500, respectively. The step size and number of leapfrog iterations are set to 0.001 and 100, and the mass matrix is defined as \(\bm{M} = \bm{I}_2\). These parameters yield an acceptance rate near 65\%.
+  
+  Figures \ref{fig54} and \ref{fig55} present the contour plots and posterior draws from the M-H and HMC algorithms for the joint posterior distribution. It can be observed that this distribution is bimodal, and both algorithms successfully capture this feature.
+  
+ \begin{tcolorbox}[enhanced,width=4.67in,center upper,
+ 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+ 	\textit{R code. Metropolis-Hastings and Hamiltonian Monte Carlo algorithms}
+ 	\begin{VF}
+ 		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+# Posterior distribution
+PostDist <- function(theta){
+	theta1 <- theta[1]; theta2 <- theta[2]
+	post <- exp(-0.5*(theta1^2*theta2^2+theta1^2+theta2^2-8*theta1-8*theta2))
+	return(post)
+}
+# Metropolis-Hastings
+MH <- function(theta, c2){
+	thetac <- MASS::mvrnorm(1, mu = theta, Sigma = c2*diag(2))
+	a <- PostDist(thetac)/PostDist(theta)
+	U <- runif(1)
+	if(U <= a){
+		theta <- thetac
+		accept <- 1
+	}else{
+		theta <- theta
+		accept <- 0
+	}
+	return(list(theta = theta, accept = accept))
+}
+# Posterior draws M-H
+S <- 20000; burnin <- 1000; thin <- 20; tot <- S + burnin
+K <- 2; c2 <- 1.5
+thetaPostMH <- matrix(NA, tot, K)
+AcceptMH <- rep(NA, tot)
+thetaMH <- c(0, 0)
+for(s in 1:tot){
+	ResMH <- MH(thetaMH, c2 = c2)
+	thetaMH <- ResMH$theta
+	thetaPostMH[s,] <- thetaMH
+	AcceptMH[s] <- ResMH$accept
+}
+keep <- seq((burnin), tot, thin)
+mean(AcceptMH[keep])
+thetaPostMHMCMC <- coda::mcmc(thetaPostMH[keep,])
+plot(thetaPostMHMCMC)
+coda::autocorr.plot(thetaPostMHMCMC)
+# Contour plot
+ngrid <- 400
+theta1 <- seq(-1, 6, length = ngrid)
+theta2 <- seq(-1, 6, length = ngrid)
+f <- matrix(0, ngrid, ngrid)
+for (i in 1:ngrid){
+	for (j in 1:ngrid){
+		f[i,j] = PostDist(c(theta1[i],theta2[j]))
+	}
+}
+plot(thetaPostMH[keep,], xlim=range(theta1), ylim=range(theta2), pch=16, col=grey(0.8), xlab=expression(theta[1]), ylab=expression(theta[2]))
+contour(theta1,theta2,f, drawlabels=FALSE, add=TRUE, col = "blue", lwd = 1.2)
+title("Random walk Metropolis-Hastings")
+\end{lstlisting}
+ 	\end{VF}
+ \end{tcolorbox} 
+
+ \begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Metropolis-Hastings and Hamiltonian Monte Carlo algorithms}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+HMC <- function(theta, epsilon, L, M){
+	Minv <- solve(M); thetat <- theta
+	K <- length(thetat)
+	mom <- t(mvtnorm::rmvnorm(1, rep(0, K), M))
+	logPost_Mom_t <- log(PostDist(thetat)) +  mvtnorm::dmvnorm(t(mom), rep(0, K), M, log = TRUE)  
+	theta1 <- theta[1]; theta2 <- theta[2] 
+	for(l in 1:L){
+		if(l == 1 | l == L){
+			mom <- mom + 0.5*epsilon*(-0.5*c(2*theta1*theta2^2+2*theta1-8, 2*theta2*theta1^2+2*theta2-8))
+			theta <- theta + epsilon*Minv%*%mom
+		}else{
+			mom <- mom + epsilon*(-0.5*c(2*theta1*theta2^2+2*theta1-8, 2*theta2*theta1^2+2*theta2-8))
+			theta <- theta + epsilon*Minv%*%mom
+		}
+	}
+	logPost_Mom_star <- log(PostDist(theta)) +  mvtnorm::dmvnorm(t(mom), rep(0, K), M, log = TRUE)  
+	alpha <- min(1, exp(logPost_Mom_star-logPost_Mom_t))
+	u <- runif(1)
+	if(u <= alpha){
+		thetaNew <- c(theta)
+	}else{
+		thetaNew <- thetat
+	}
+	rest <- list(theta = thetaNew, Prob = alpha)
+	return(rest)
+}
+# Posterior draws HMC
+S <- 5000; burnin <- 500; tot <- S + burnin
+epsilon <- 0.0025;  L <- 100; M <- diag(2)
+thetaPostHMC <- matrix(NA, tot, K)
+ProbAcceptHMC  <- rep(NA, tot)
+thetaHMC <- c(0, 0)
+for(s in 1:tot){
+	ResHMC <- HMC(theta = thetaHMC, epsilon = epsilon, L = L, M = M)
+	thetaHMC <- ResHMC$theta
+	thetaPostHMC[s,] <- thetaHMC
+	ProbAcceptHMC[s] <- ResHMC$Prob
+}
+keep <- burnin:S
+summary(ProbAcceptHMC[keep])
+thetaPostHMCMCMC <- coda::mcmc(thetaPostHMC[keep,])
+plot(thetaPostHMCMCMC); coda::autocorr.plot(thetaPostHMCMCMC)
+plot(thetaPostHMC[keep,], xlim=range(theta1), ylim=range(theta2), pch=16, col=grey(0.8),
+xlab=expression(theta[1]), ylab=expression(theta[2]))
+contour(theta1,theta2,f, drawlabels=FALSE, add=TRUE, col = "blue", lwd = 1.2)
+title("Hamiltonian Monte Carlo")
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+ 
+ \begin{figure}[!h]
+ 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter5/figures/M-Hexample.png}
+ 	%%\centerline{\epsfig{/Chapters/chapter1/figures/cat.eps,width=.8\textheight,height=.4\textwidth}}
+ 	\caption[List of figure caption goes here]{Contour plot: Metropolis-Hastings posterior draws.}\label{fig54}
+ \end{figure} 
+ 
+ \begin{figure}[!h]
+ 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter5/figures/HMCexample1.png}
+ 	%%\centerline{\epsfig{/Chapters/chapter1/figures/cat.eps,width=.8\textheight,height=.4\textwidth}}
+ 	\caption[List of figure caption goes here]{Contour plot: Hamiltonian Monte Carlo posterior drwas.}\label{fig55}
+ \end{figure} 
+ 
+  
   
 
 \end{enumerate}
