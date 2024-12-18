@@ -170,3 +170,34 @@ g2 <- ggplot(df, aes(x= Iter)) + geom_point(aes(y=MH), colour="black") + labs(x 
 g3 <- ggplot(df, aes(x= Iter)) + geom_point(aes(y=Gibbs), colour="black") + labs(x = "Iteration", y = TeX("$\\theta_{1}$"), title = "Gibbs sampling")
 library(ggpubr)
 ggarrange(g3, g2, g1, labels = c("A", "B", "C"), ncol = 3, nrow = 1)
+
+########################## Importance sampling: Cauchy distribution ########################## 
+rm(list = ls())
+set.seed(010101)
+S <- 100
+# Importance sampling from standard normal proposal 
+thetaNs <- rnorm(S)
+wNs <- dcauchy(thetaNs)/dnorm(thetaNs)
+wNstars <- wNs/sum(wNs)
+thetaCauchyN <- sample(thetaNs, S, replace = TRUE, prob = wNstars)
+h <- hist(thetaCauchyN, breaks=50, col="blue", xlab="x", main="Cauchy draws from importance sampling: Normal standard proposal")
+pfit <- seq(min(thetaCauchyN),max(thetaCauchyN),length=50)
+yfit<-dcauchy(pfit)
+yfit <- yfit*diff(h$mids[1:2])*length(thetaCauchyN)
+lines(pfit, yfit, col="red", lwd=2)
+plot(wNstars)
+# Importance sampling from Student's t proposal 
+df <- 5
+thetaTs <- rt(S, df = df)
+wTs <- dcauchy(thetaTs)/dt(thetaTs, df = df)
+wTstars <- wTs/sum(wTs)
+thetaCauchyT <- sample(thetaTs, S, replace = TRUE, prob = wTstars)
+h <- hist(thetaCauchyT, breaks=50, col="blue", xlab="x", main="Cauchy draws from importance sampling: Student's t proposal")
+pfit <- seq(min(thetaCauchyT),max(thetaCauchyT),length=50)
+yfit<-dcauchy(pfit)
+yfit <- yfit*diff(h$mids[1:2])*length(thetaCauchyT)
+lines(pfit, yfit, col="red", lwd=2)
+plot(wTstars)
+
+# df <- as.data.frame(cbind(c(1:S,1:S),c(rep("Normal", S), rep("Student's", S)),c(wNstars, wTstars)))
+# colnames(df) <- c("Iteration", "Proposal", "Weights")

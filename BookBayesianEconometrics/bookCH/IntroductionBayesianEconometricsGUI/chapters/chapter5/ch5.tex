@@ -449,42 +449,64 @@ Up to this section, we have introduced MCMC methods for sampling from the poster
 
 Thus, in this section, we introduce \textit{importance sampling} (IS), a simulation method for drawing samples from the posterior distribution that avoids these limitations. Unlike MCMC, IS does not require satisfying the balancing condition, making it conceptually and mathematically simpler to implement in certain situations. Moreover, importance weights can be reused to analyze posterior quantities, compute marginal likelihoods, compare models, approximate new target distributions, and allow for straightforward parallelization in large-scale problems.
 
-However, the critical challenge in IS lies in selecting an appropriate proposal distribution. This requires satisfying support and stability conditions, which can be difficult to meet, particularly in high-dimensional problems. In such cases, MCMC methods may be more suitable.
+However, the critical challenge in IS lies in selecting an appropriate proposal distribution. This involves satisfying both support and stability conditions, which can be difficult to achieve, particularly in high-dimensional problems. In such cases, MCMC methods may be more suitable.
 
-The point of departure is evaluating the integral
+The starting point is evaluating the integral:
 \begin{align}\label{eq5_1}
-	\mathbb{E}_{\pi}[h(\bm{\theta})]=\int_{\bm{\Theta}} h(\bm{\theta}) \pi(\bm{\theta}|\bm{y})d\bm{\theta}.
+	\mathbb{E}_{\pi}[h(\bm{\theta})]=\int_{\bm{\Theta}} h(\bm{\theta}) \pi(\bm{\theta}|\bm{y})d\bm{\theta},
 \end{align}
+where $\mathbb{E}_{\pi}$ denotes expected value under the posterior distribution.
 Thus, we can approximate Equation \ref{eq5_1} by
 \begin{align}\label{eq5_2}
 	\bar{h}(\bm{\theta})_S=\frac{1}{S}\sum_{s=1}^S h(\bm{\theta}^{(s)}), 
 \end{align}
-where $\bm{\theta}^{(s)}$ are draws from $\pi(\bm{\theta}|\bm{y})$. The \textit{strong law of large number} shows that $\bar{h}(\bm{\theta})_S$ converges (almost surely) to $\mathbb{E}_{\pi}[h(\bm{\theta})]$ as $S\rightarrow\infty$.
+where $\bm{\theta}^{(s)}$ are draws from $\pi(\bm{\theta}|\bm{y})$. The \textit{strong law of large numbers} shows that $\bar{h}(\bm{\theta})S$ converges (almost surely) to $\mathbb{E}{\pi}[h(\bm{\theta})]$ as $S \rightarrow \infty$.
 
-The situation is that do not know how get samples from $\pi(\bm{\theta}|\bm{y})$. The genius idea is to express Equation \ref{eq5_1} in a different way (the \textit{importance sampling fundamental identity} \cite[Chap.~3]{robert2011monte})
+The challenge arises when we do not know how to obtain samples from $\pi(\bm{\theta}|\bm{y})$. The ingenious idea is to express Equation~\ref{eq5_1} in a different way using the \textit{importance sampling fundamental identity} \cite[Chap.~3]{robert2011monte}:
 \begin{align}\label{eq5_3}
 	\mathbb{E}_{\pi}[h(\bm{\theta})]&=\int_{\bm{\Theta}} h(\bm{\theta}) \pi(\bm{\theta}|\bm{y})\frac{q(\bm{\theta})}{q(\bm{\theta})}d\bm{\theta}\\
 	&=\mathbb{E}_{q}\left[\frac{h(\bm{\theta})\pi(\bm{\theta}|\bm{y})}{q(\bm{\theta})}\right],
 \end{align}   
 where $q(\bm{\theta})$ is the proposal distribution.
 
-Thus, we have $\frac{1}{S}\sum_{s=1}^S \left[\frac{h(\bm{\theta}^{(s)})\pi(\bm{\theta}^{(s)}|\bm{y})}{q(\bm{\theta}^{(s)})}\right]= \frac{1}{S}\sum_{s=1}^S h(\bm{\theta}^{(s)})w(\bm{\theta}^{(s)})$, where $w(\bm{\theta}^{(s)})= \left[\frac{\pi(\bm{\theta}^{(s)}|\bm{y})}{q(\bm{\theta}^{(s)})}\right]$ are called the \textit{importance weights}, and $\bm{\theta}^{(s)}$ are samples from the proposal distribution. This expression converges to $\mathbb{E}_{\pi}[h(\bm{\theta})]$ given that the support of $q(\bm{\theta})$ includes the support of $\pi(\bm{\theta}^{(s)}|\bm{y})$.
+Thus, we have $$\frac{1}{S}\sum_{s=1}^S \left[\frac{h(\bm{\theta}^{(s)})\pi(\bm{\theta}^{(s)}|\bm{y})}{q(\bm{\theta}^{(s)})}\right]= \frac{1}{S}\sum_{s=1}^S h(\bm{\theta}^{(s)})w(\bm{\theta}^{(s)}),$$ where $w(\bm{\theta}^{(s)})= \left[\frac{\pi(\bm{\theta}^{(s)}|\bm{y})}{q(\bm{\theta}^{(s)})}\right]$ are called the \textit{importance weights}, and $\bm{\theta}^{(s)}$ are samples from the proposal distribution. This expression converges to $\mathbb{E}_{\pi}[h(\bm{\theta})]$ given that the support of $q(\bm{\theta})$ includes the support of $\pi(\bm{\theta}^{(s)}|\bm{y})$.
 
-There are many proposal distributions that satisfy the support condition. However, the stability of the method depends heavily on the stability of the importance weights. In particular, the variance of $\frac{1}{S}\sum_{s=1}^S h(\bm{\theta}^{(s)})w(\bm{\theta}^{(s)})$ can be huge if the proposal distribution has lighter tails than the posterior distribution. In this case, the weights $w(\bm{\theta}^{(s)})$ will vary widely, given to much importance to a few values of $\bm{\theta}^{(s)}$.
+There are many proposal distributions that satisfy the support condition. However, the stability of the method depends heavily on the variability of the importance weights. In particular, the variance of  
+\[
+\frac{1}{S}\sum_{s=1}^S h(\bm{\theta}^{(s)})w(\bm{\theta}^{(s)})
+\]  
+can be large if the proposal distribution has lighter tails than the posterior distribution. In this case, the weights \( w(\bm{\theta}^{(s)}) \) will vary widely, assigning too much importance to a few values of \( \bm{\theta}^{(s)} \). Thus, it is important to use proposals that have thicker tails than the posterior distribution. In any case, we should check the adequacy of the proposal distribution by analyzing the behavior of the importance weights. If they are distributed more or less uniformly over the support, it is a good sign. Consider, for instance, the extreme case where $q(\bm{\theta}) = \pi(\bm{\theta}|\bm{y})$, then $w(\bm{\theta}^{(s)}) = 1$ everywhere. A natural choice in Bayesian inference is to use the prior distribution as the proposal, given that it is a proper density function. The prior distribution typically has heavier tails than the posterior by construction, and it is usually a distribution that allows for easy sampling.
 
-An alternative that gives more stable weights is to use the following representation
+The most relevant point is that importance sampling provides a way to simulate from the posterior distribution when there is no closed-form solution. The method generates samples $\bm{\theta}^{(s)}$ from $q(\bm{\theta})$ and computes the importance weights $w(\bm{\theta}^{(s)})$. Thus, if we sample with replacement from $\bm{\theta}^{(1)},\bm{\theta}^{(2)},\dots,\bm{\theta}^{(S)}$, selecting $\bm{\theta}^{(s)}$ with probability $\pi(\bm{\theta}^{(s)}|\bm{y})/(Sq(\bm{\theta}^{(s)}))$, we would get a sample $\bm{\theta}^{*(1)},\bm{\theta}^{*(2)},\dots,\bm{\theta}^{*(S)}$ from $\pi(\bm{\theta}|\bm{y})$. 
 
-\begin{align}\label{eq5_4}
+However, the weights $\pi(\bm{\theta}^{(s)}|\bm{y})/(Sq(\bm{\theta}^{(s)}))$ do not sum up to 1, and we need to standardize them, 
+$$w^*(\bm{\theta}^{(s)})=\frac{\frac{1}{S} w(\bm{\theta}^{(s)})}{\frac{1}{S}\sum_{s=1}^Sw(\bm{\theta}^{(s)})}.$$
+Note that we could alternatively arrive to these weights as follow 
+\begin{align*}\label{eq5_4}
 	\mathbb{E}_{\pi}[h(\bm{\theta})]&=\int_{\bm{\Theta}} \left[\frac{h(\bm{\theta}) \pi(\bm{\theta}|\bm{y})}{q(\bm{\theta})}\right]q(\bm{\theta})d\bm{\theta}\\
-	=&\frac{\int_{\bm{\Theta}}\left[\frac{h(\bm{\theta}) \pi(\bm{\theta}|\bm{y})}{q(\bm{\theta})}\right] q(\bm{\theta})d\bm{\theta}}{\int_{\bm{\Theta}}\left[\frac{ \pi(\bm{\theta}|\bm{y})}{q(\bm{\theta})}\right] q(\bm{\theta})d\bm{\theta}}.
-\end{align}
-Then, $\frac{\frac{1}{S}\sum_{s=1}^Sh(\bm{\theta}^{(s)})w(\bm{\theta}^{(s)})}{\frac{1}{S}\sum_{s=1}^Sw(\bm{\theta})^{(s)}}= \sum_{s=1}^S h(\bm{\theta}^{(s)})w^*(\bm{\theta}^{(s)})$, where $w^*(\bm{\theta}^{(s)})=\frac{w(\bm{\theta}^{(s)})}{\sum_{s=1}^Sw(\bm{\theta}^{(s)})}$ also converges (almost surely) to $\mathbb{E}_{\pi}[h(\bm{\theta})]$. This estimator is biased, but the bias is small, and the gains in variance reduction is significant \cite[Chap.~3]{robert2011monte}.
+	&=\frac{\int_{\bm{\Theta}}\left[\frac{h(\bm{\theta}) \pi(\bm{\theta}|\bm{y})}{q(\bm{\theta})}\right] q(\bm{\theta})d\bm{\theta}}{\int_{\bm{\Theta}}\left[\frac{ \pi(\bm{\theta}|\bm{y})}{q(\bm{\theta})}\right] q(\bm{\theta})d\bm{\theta}}.
+\end{align*}
+Then, $$\frac{\frac{1}{S}\sum_{s=1}^Sh(\bm{\theta}^{(s)})w(\bm{\theta}^{(s)})}{\frac{1}{S}\sum_{s=1}^Sw(\bm{\theta})^{(s)}}= \sum_{s=1}^S h(\bm{\theta}^{(s)})w^*(\bm{\theta}^{(s)}).$$ This alternative expression also converges (almost surely) to $\mathbb{E}_{\pi}[h(\bm{\theta})]$.  In addition, this expression is very useful because if we do not have the marginal likelihood in the posterior distribution, this constant cancels out in $w^*(\bm{\theta}^{(s)})$. And, although this estimator is biased, the bias is small, and provides good gains in variance reduction compared with the non-standardized option \cite[Chap.~3]{robert2011monte}.  
 
-The relevant point is that importance sampling provides a way to simulate from the posterior distribution when there is no closed form solution. The method produces samples $\bm{\theta}^{(s)}$ simulated from $q(\bm{\theta})$, and the importance weights $w^*(\bm{\theta}^{(s)})$. This sample can be used in multinomial resampling to get a sample that is (almost) from $\pi(\bm{\theta}|\bm{y})$.
+We know from the Bayes' rule that $$p(\bm{y})^{-1}=\frac{\pi(\bm{\theta}|\bm{y})}{p(\bm{y}|\bm{\theta})\times \pi(\bm{\theta})},$$
+then, 
+\begin{align*}
+	\int_{\bm{\Theta}}p(\bm{y})^{-1}q(\bm{\theta})d\bm{\theta}&=\int_{{\Theta}}\frac{q(\bm{\theta})}{p(\bm{y}|\bm{\theta})\times \pi(\bm{\theta})}\pi(\bm{\theta}|\bm{y})d\bm{\theta}\\
+	&=\mathbb{E}_{\pi}\left[\frac{q(\bm{\theta})}{p(\bm{y}|\bm{\theta})\times \pi(\bm{\theta})}\right].
+\end{align*}
+Thus, an estimate of the marginal likelihood is $\left[\frac{1}{S}\sum_{s=1}^S\frac{q(\bm{\theta}^{*(s)})}{p(\bm{y}|\bm{\theta}^{*(s)})\times\pi(\bm{\theta}^{*(s)})}\right]^{-1}$. This is Gelfand-Dey method to calculate the marginal likelihood \cite{gelfand1994bayesian} (see subsection \ref{sec10_4_3}).\\
 
-\section{Sequential Monte Carlo}\label{sec53}
+\textbf{Example: Cauchy distribution}
 
-\section{Convergence diagnostics}\label{sec54}
+Let's sample from a Cauchy distribution, $C(0,1)$, using as proposal a standard normal distribution and a Student's t distribution with 5 degree of freedom.
+ 
+
+
+\section{Sequential importance sampling}\label{sec53}
+
+\section{Sequential Monte Carlo}\label{sec54}
+
+\section{Convergence diagnostics}\label{sec55}
 
 \subsection{Numerical standard error}
 \subsection{Effective sample size}
@@ -505,10 +527,10 @@ Heidelberger and Welch's test \cite{Heidelberger1983} uses a Cramér-von Mises s
 This test is recursively applied until either the null hypothesis is not rejected, or $t = 50\%$ of the chain has been discarded. Subsequently, the half-width test calculates a 95\% confidence interval for the mean using the portion of the chain that passed the stationarity test. If the ratio of the half-width of this interval to the mean is less than 0.1, the test is considered passed.\\
 
 
-\section{Summary}\label{sec55}
+\section{Summary}\label{sec56}
 
 
-\section{Exercises}\label{sec56}
+\section{Exercises}\label{sec57}
 
 \begin{enumerate}
 	\item \textbf{Example: The normal model with independent priors}
