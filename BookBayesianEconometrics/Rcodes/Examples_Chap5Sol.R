@@ -209,12 +209,13 @@ an <- 16.55; bn <- 39.57 # Posterior parameters
 theta <- runif(S) # Proposal
 ws <- dbeta(theta, an, bn) # Weights
 wstars <- ws/sum(ws) # Standardized weights
-thetaBeta <- sample(theta, S, replace = TRUE, prob = wstars) # Posterior draws
+L <- 20000 # Size of posterior sample
+thetaBeta <- sample(theta, L, replace = TRUE, prob = wstars) # Posterior draws
 # Figure
 h <- hist(thetaBeta, breaks=50, col="blue", xlab="x", main="Beta draws from importance sampling: Uniform (0,1) proposal")
-pfit <- seq(min(theta),max(theta),length=50)
+pfit <- seq(min(thetaBeta),max(thetaBeta),length=50)
 yfit<-dbeta(pfit, an, bn)
-yfit <- yfit*diff(h$mids[1:2])*length(theta)
+yfit <- yfit*diff(h$mids[1:2])*length(thetaBeta)
 lines(pfit, yfit, col="red", lwd=2)
 a0 <- 1.44; b0 <- 2.57 # Hyperparameters
 s <- 15; n <- 52 # Data

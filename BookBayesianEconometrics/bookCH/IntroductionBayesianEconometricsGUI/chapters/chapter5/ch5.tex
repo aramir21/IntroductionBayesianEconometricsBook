@@ -2,7 +2,7 @@
 
 In the previous chapters, we focused on conjugate families, where the posterior and predictive distributions have standard analytical forms (e.g., normal, Student's t, gamma, binomial, Poisson, etc.) and where the marginal likelihood has a closed-form analytical solution. However, realistic models are often more complex and lack such closed-form solutions.
 
-To address this complexity, we rely on simulation (stochastic) methods to draw samples from posterior and predictive distributions. This chapter introduces posterior simulation, a cornerstone of Bayesian inference. We discuss Markov Chain Monte Carlo (MCMC) methods, including Gibbs sampling, Metropolis-Hastings, and Hamiltonian Monte Carlo, as well as other techniques like importance sampling and sequential Monte Carlo.
+To address this complexity, we rely on simulation (stochastic) methods to draw samples from posterior and predictive distributions. This chapter introduces posterior simulation, a cornerstone of Bayesian inference. We discuss Markov Chain Monte Carlo (MCMC) methods, including Gibbs sampling, Metropolis-Hastings, and Hamiltonian Monte Carlo, as well as other techniques like importance sampling and particle filtering (sequential Monte Carlo).
 
 The simulation methods discussed in this chapter are specifically applied throughout this book. However, we do not delve into deterministic methods, such as numerical integration (quadrature), or other simulation methods, including discrete approximation, the probability integral transform, the method of composition, accept-reject sampling, and slice sampling algorithms. While these methods are also widely used, they are not as common as the approaches explicitly employed in this book.
 
@@ -479,7 +479,8 @@ can be large if the proposal distribution has lighter tails than the posterior d
 
 A natural choice in Bayesian inference is to use the prior distribution as the proposal, given that it is a proper density function. The prior distribution typically has heavier tails than the posterior by construction, and it is usually a distribution that allows for easy sampling.
 
-The most relevant point for us is that importance sampling provides a way to simulate from the posterior distribution when there is no closed-form solution. The method generates samples $\bm{\theta}^{(s)}$ from $q(\bm{\theta})$ and computes the importance weights $w(\bm{\theta}^{(s)})$. Thus, if we sample with replacement from $\bm{\theta}^{(1)},\bm{\theta}^{(2)},\dots,\bm{\theta}^{(S)}$, selecting $\bm{\theta}^{(s)}$ with probability $\pi(\bm{\theta}^{(s)}|\bm{y})/(Sq(\bm{\theta}^{(s)}))$, we would get a sample $\bm{\theta}^{*(1)},\bm{\theta}^{*(2)},\dots,\bm{\theta}^{*(S)}$ from $\pi(\bm{\theta}|\bm{y})$. The intuition is that importance weights are scaling factors that correct for the bias introduced by drawing from $q(\bm{\theta}^{(s)})$ instead of $\pi(\bm{\theta}^{(s)}|\bm{y})$; thus, when combined, the samples and weights effectively recreate the posterior distribution, ensuring the resampled data set reflects the posterior.  
+The most relevant point for us is that importance sampling provides a way to simulate from the posterior distribution when there is no closed-form solution. The method generates samples $\bm{\theta}^{(s)}$ from $q(\bm{\theta})$ and computes the importance weights $w(\bm{\theta}^{(s)})$. Thus, if we \textit{resample} with replacement from $\bm{\theta}^{(1)},\bm{\theta}^{(2)},\dots,\bm{\theta}^{(S)}$, selecting $\bm{\theta}^{(s)}$ with probability proportional to  $w(\bm{\theta}^{(s)})$, we would get a sample $\bm{\theta}^{*(1)},\bm{\theta}^{*(2)},\dots,\bm{\theta}^{*(L)}$ of size $L$ from $\pi(\bm{\theta}|\bm{y})$. The intuition is that importance weights are scaling factors that correct for the bias introduced by drawing from $q(\bm{\theta}^{(s)})$ instead of $\pi(\bm{\theta}^{(s)}|\bm{y})$; thus, when combined, the samples and weights effectively recreate the posterior distribution, ensuring the resampled data set reflects the posterior. 
+%Observe that this is equivalent to associating a number of offspring $S_{\bm{\theta}^s}$ with each $\bm{\theta}^{(s)}$ such that $S_{\bm{\theta}}=\left\{S_{\bm{\theta}^1},S_{\bm{\theta}^2},\dots,S_{\bm{\theta}^S}\right\}$ follow a multinomial distribution with number of trials $S$ and probabilities proportional to $w(\bm{\theta}^{(s)})$. 
 
 However, the weights $\pi(\bm{\theta}^{(s)}|\bm{y})/(Sq(\bm{\theta}^{(s)}))$ do not sum up to 1, and we need to standardize them, 
 $$w^*(\bm{\theta}^{(s)})=\frac{\frac{1}{S} w(\bm{\theta}^{(s)})}{\frac{1}{S}\sum_{s=1}^Sw(\bm{\theta}^{(s)})}.$$
@@ -508,13 +509,14 @@ Let's assume that the posterior distribution is Cauchy with parameters 0 and 1. 
 	\textit{R code. Importance sampling: Cauchy distribution}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-rm(list = ls()); set.seed(010101); S <- 10000
+rm(list = ls()); set.seed(010101)
+S <- 20000 # Size proposal
 # Importance sampling from standard normal proposal 
-thetaNs <- rnorm(S) # Draws from proposal
-wNs <- dcauchy(thetaNs)/dnorm(thetaNs) # Weights
-wNstars <- wNs/sum(wNs) # Standardized weights
-thetaCauchyN <- sample(thetaNs, S, replace = TRUE, prob = wNstars) # Resampling
-# Figure
+thetaNs <- rnorm(S)
+wNs <- dcauchy(thetaNs)/dnorm(thetaNs)
+wNstars <- wNs/sum(wNs)
+L <- 10000 # Size posterior
+thetaCauchyN <- sample(thetaNs, L, replace = TRUE, prob = wNstars)
 h <- hist(thetaCauchyN, breaks=50, col="blue", xlab="x", main="Cauchy draws from importance sampling: Normal standard proposal")
 pfit <- seq(min(thetaCauchyN),max(thetaCauchyN),length=50)
 yfit<-dcauchy(pfit)
@@ -522,17 +524,15 @@ yfit <- yfit*diff(h$mids[1:2])*length(thetaCauchyN)
 lines(pfit, yfit, col="red", lwd=2)
 # Importance sampling from Student's t proposal 
 df <- 3
-thetaTs <- rt(S, df = df) # Draws from proposal
-wTs <- dcauchy(thetaTs)/dt(thetaTs, df = df) # Weights
-wTstars <- wTs/sum(wTs) # Standardized weights
-thetaCauchyT <- sample(thetaTs, S, replace = TRUE, prob = wTstars) # Resampling
-# Figure
+thetaTs <- rt(S, df = df)
+wTs <- dcauchy(thetaTs)/dt(thetaTs, df = df)
+wTstars <- wTs/sum(wTs)
+thetaCauchyT <- sample(thetaTs, L, replace = TRUE, prob = wTstars)
 h <- hist(thetaCauchyT, breaks=50, col="blue", xlab="x", main="Cauchy draws from importance sampling: Student's t proposal")
 pfit <- seq(min(thetaCauchyT),max(thetaCauchyT),length=50)
 yfit<-dcauchy(pfit)
 yfit <- yfit*diff(h$mids[1:2])*length(thetaCauchyT)
 lines(pfit, yfit, col="red", lwd=2)
-# Figure points
 plot(wNstars, main = "Importance sampling: Cauchy distribution", ylab = "Weights", xlab = "Iterations")
 points(wTstars, col = "blue")
 legend("topright", legend = c("Normal", "Student's t"), col = c("black", "blue"), pch = c(1, 1))
@@ -562,12 +562,32 @@ Figures \ref{fig56} and \ref{fig57} show the histograms of the posterior draws u
 	\caption[List of figure caption goes here]{Importance sampling: Draws of a Cauchy distribution using the Student's t with 3 degrees of freedom as proposal.}\label{fig57}
 \end{figure}       
 
-\section{Sequential importance sampling}\label{sec53}
+\section{Particle filtering}\label{sec53}
+In this section, we present \textit{particle filtering}, a specific case of \textit{sequential Monte Carlo} (SMC), which is one of the most commonly used algorithms for scenarios requiring sequential updates of the posterior distribution, such as in certain time series models. Specifically, we consider the scenario where we need to sample from a posterior distribution whose dimension increases over time, $\pi(\bm{\theta}_{1:t}|\bm{y})$, for $t = 1, 2, \dots$. The challenge arises from the fact that, even if this posterior distribution is known, the computational complexity of implementing a sampling scheme in this context increases linearly with $t$. This makes MCMC methods, which operate in batch mode and require a complete re-run whenever new information becomes available, less optimal. Consequently, sequential algorithms, which operate incrementally as new data becomes available, are often a better alternative. These algorithms are typically faster and are well-suited for scenarios requiring real-time updates, commonly referred to as online mode.
+
+First, we introduce \textit{sequential importance sampling} (SIS), an algorithm based on IS, where the proposal density takes the form 
+\begin{align*}
+	q(\bm{\theta}_{1:t}) &= q(\bm{\theta}_{1:t-1})q(\bm{\theta}_t|\bm{\theta}_{1:t-1}) \\
+	&= q(\bm{\theta}_1)\prod_{h=2}^{t}q(\bm{\theta}_h|\bm{\theta}_{1:h-1}).
+\end{align*}
+This algorithm has the desirable property of maintaining fixed computational complexity. Therefore, we obtain draws $\bm{\theta}_t^{(s)}$, known as particles, sequentially, that is, $\bm{\theta}_1^{(s)}$ from $q(\bm{\theta}_1)$ at $t=1$, and then $\bm{\theta}_h^{(s)}$ from $q(\bm{\theta}_h|\bm{\theta}_{1:h-1})$ at $t=h$.
+
+The standardized weights in SIS can be calculated sequentially, 
+\begin{align*}
+	content...
+\end{align*} 
+
+However, SIS has some drawbacks. First, the variance of the weights increases exponentially with $t$ \cite{kong1994sequential} 
 
 
-\section{Sequential Monte Carlo}\label{sec54}
+ 
 
-\section{Convergence diagnostics}\label{sec55}
+
+Sequential Monte Carlo (SMC) is a class of algorithms that sample sequentially from a sequence of target probability densities (posterior densities) of increasing dimension, that is, it can operate in an online mode, rather than a batch mode, as MCMC methods, that require to redo all the process as new data is available. In addition, SCM does not require the normalizing constant (marginal likelihood), a feature that share with the previous shown methods.
+
+ 
+
+\section{Convergence diagnostics}\label{sec54}
 
 \subsection{Numerical standard error}
 \subsection{Effective sample size}
@@ -588,10 +608,10 @@ Heidelberger and Welch's test \cite{Heidelberger1983} uses a Cramér-von Mises s
 This test is recursively applied until either the null hypothesis is not rejected, or $t = 50\%$ of the chain has been discarded. Subsequently, the half-width test calculates a 95\% confidence interval for the mean using the portion of the chain that passed the stationarity test. If the ratio of the half-width of this interval to the mean is less than 0.1, the test is considered passed.\\
 
 
-\section{Summary}\label{sec56}
+\section{Summary}\label{sec55}
 
 
-\section{Exercises}\label{sec57}
+\section{Exercises}\label{sec56}
 
 \begin{enumerate}
 	\item \textbf{Example: The normal model with independent priors}

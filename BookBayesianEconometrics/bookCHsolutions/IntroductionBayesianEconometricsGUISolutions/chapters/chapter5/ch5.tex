@@ -327,6 +327,19 @@ title("Hamiltonian Monte Carlo")
 
 \textbf{Answer}
 
+The posterior distribution of the Bernoulli-beta model is
+\begin{align*}
+	p(\theta|\bm{y})&=\frac{\prod_{i=1}^N \theta^{y_i}(1-\theta)^{1-y_i}\theta^{\alpha_0-1}(1-\theta)^{\beta_0-1}\Gamma(\alpha_0+\beta_0)}{\Gamma(\alpha_0)\Gamma(\beta_0)p(\bm{y})},
+\end{align*}
+where 
+\begin{align*}
+p(\bm{y})&=\int_{\bm{\Theta}}\frac{\prod_{i=1}^N \theta^{y_i}(1-\theta)^{1-y_i}\theta^{\alpha_0-1}(1-\theta)^{\beta_0-1}\Gamma(\alpha_0+\beta_0)}{\Gamma(\alpha_0)\Gamma(\beta_0)}d\theta\\
+&=\int_{\bm{\Theta}}\frac{\theta^{\sum _{i=1}^Ny_i+\alpha_0-1}(1-\theta)^{N-\sum_{i=1}^N y_i+\beta_0-1}\Gamma(\alpha_0+\beta_0)}{\Gamma(\alpha_0)\Gamma(\beta_0)}d\theta\\
+&=\frac{B(\alpha_n,\beta_n)}{B(\alpha_0,\beta_0)}\int_{\bm{\Theta}}\frac{\theta^{\sum _{i=1}^Ny_i+\alpha_0-1}(1-\theta)^{N-\sum_{i=1}^N y_i+\beta_0-1}}{B(\alpha_n,\beta_n)}d\theta\\
+&=\frac{B(\alpha_n,\beta_n)}{B(\alpha_0,\beta_0)}.
+\end{align*}
+The integral is equal to 1 due to being over the support of $B(\alpha_n,\beta_n)$ distribution.
+
  \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 	\textit{R code. Importance sampling: Bernoulli-Beta model}
@@ -338,12 +351,13 @@ an <- 16.55; bn <- 39.57 # Posterior parameters
 theta <- runif(S) # Proposal
 ws <- dbeta(theta, an, bn) # Weights
 wstars <- ws/sum(ws) # Standardized weights
-thetaBeta <- sample(theta, S, replace = TRUE, prob = wstars) # Posterior draws
+L <- 20000 # Size of posterior sample
+thetaBeta <- sample(theta, L, replace = TRUE, prob = wstars) # Posterior draws
 # Figure
 h <- hist(thetaBeta, breaks=50, col="blue", xlab="x", main="Beta draws from importance sampling: Uniform (0,1) proposal")
-pfit <- seq(min(theta),max(theta),length=50)
+pfit <- seq(min(thetaBeta),max(thetaBeta),length=50)
 yfit<-dbeta(pfit, an, bn)
-yfit <- yfit*diff(h$mids[1:2])*length(theta)
+yfit <- yfit*diff(h$mids[1:2])*length(thetaBeta)
 lines(pfit, yfit, col="red", lwd=2)
 a0 <- 1.44; b0 <- 2.57 # Hyperparameters
 s <- 15; n <- 52 # Data
@@ -362,7 +376,7 @@ LogMarLikGD
 	\end{VF}
 \end{tcolorbox} 
 
-Figure \ref{fig55} shows the histogram of the posterior draws obtained using the importance sampling algorithm with a uniform proposal. The algorithm performs well. Additionally, the analytic solution for the log marginal likelihood is -32.75, while the Gelfand-Dey method yields -33.37.
+Figure \ref{fig55} shows the histogram of the posterior draws obtained using the importance sampling algorithm with a uniform proposal. The algorithm performs well. Additionally, the analytic solution for the log marginal likelihood is -32.75, while the Gelfand-Dey method yields -32.76.
 
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter5/figures/ISbeta.png}
