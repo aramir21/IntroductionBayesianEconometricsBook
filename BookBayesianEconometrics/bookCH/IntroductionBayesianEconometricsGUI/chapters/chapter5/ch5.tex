@@ -460,7 +460,7 @@ Thus, we can approximate Equation \ref{eq5_1} by
 \begin{align}\label{eq5_2}
 	\bar{h}(\bm{\theta})_S=\frac{1}{S}\sum_{s=1}^S h(\bm{\theta}^{(s)}), 
 \end{align}
-where $\bm{\theta}^{(s)}$ are draws from $\pi(\bm{\theta}|\bm{y})$. The \textit{strong law of large numbers} shows that $\bar{h}(\bm{\theta})S$ converges (almost surely) to $\mathbb{E}{\pi}[h(\bm{\theta})]$ as $S \rightarrow \infty$.
+where $\bm{\theta}^{(s)}$ are draws from $\pi(\bm{\theta}|\bm{y})$. The \textit{strong law of large numbers} shows that $\bar{h}(\bm{\theta})_S$ converges (almost surely) to $\mathbb{E}{\pi}[h(\bm{\theta})]$ as $S \rightarrow \infty$.
 
 The challenge arises when we do not know how to obtain samples from $\pi(\bm{\theta}|\bm{y})$. The ingenious idea is to express Equation~\ref{eq5_1} in a different way using the \textit{importance sampling fundamental identity} \cite[Chap.~3]{robert2011monte}:
 \begin{align}\label{eq5_3}
@@ -475,9 +475,11 @@ There are many proposal distributions that satisfy the support condition. Howeve
 \[
 \frac{1}{S}\sum_{s=1}^S h(\bm{\theta}^{(s)})w(\bm{\theta}^{(s)})
 \]  
-can be large if the proposal distribution has lighter tails than the posterior distribution. In this case, the weights \( w(\bm{\theta}^{(s)}) \) will vary widely, assigning too much importance to a few values of \( \bm{\theta}^{(s)} \). Thus, it is important to use proposals that have thicker tails than the posterior distribution. In any case, we should check the adequacy of the proposal distribution by analyzing the behavior of the importance weights. If they are distributed more or less uniformly over the support, it is a good sign. Consider, for instance, the extreme case where $q(\bm{\theta}) = \pi(\bm{\theta}|\bm{y})$, then $w(\bm{\theta}^{(s)}) = 1$ everywhere. A natural choice in Bayesian inference is to use the prior distribution as the proposal, given that it is a proper density function. The prior distribution typically has heavier tails than the posterior by construction, and it is usually a distribution that allows for easy sampling.
+can be large if the proposal distribution has lighter tails than the posterior distribution. In this case, the weights \( w(\bm{\theta}^{(s)}) \) will vary widely, assigning too much importance to a few values of \( \bm{\theta}^{(s)} \). Thus, it is important to use proposals that have thicker tails than the posterior distribution. In any case, we should check the adequacy of the proposal distribution by analyzing the behavior of the importance weights. If they are distributed more or less uniformly over the support, it is a good sign. Consider, for instance, the extreme case where $q(\bm{\theta}) = \pi(\bm{\theta}|\bm{y})$, then $w(\bm{\theta}^{(s)}) = 1$ everywhere. 
 
-The most relevant point is that importance sampling provides a way to simulate from the posterior distribution when there is no closed-form solution. The method generates samples $\bm{\theta}^{(s)}$ from $q(\bm{\theta})$ and computes the importance weights $w(\bm{\theta}^{(s)})$. Thus, if we sample with replacement from $\bm{\theta}^{(1)},\bm{\theta}^{(2)},\dots,\bm{\theta}^{(S)}$, selecting $\bm{\theta}^{(s)}$ with probability $\pi(\bm{\theta}^{(s)}|\bm{y})/(Sq(\bm{\theta}^{(s)}))$, we would get a sample $\bm{\theta}^{*(1)},\bm{\theta}^{*(2)},\dots,\bm{\theta}^{*(S)}$ from $\pi(\bm{\theta}|\bm{y})$. 
+A natural choice in Bayesian inference is to use the prior distribution as the proposal, given that it is a proper density function. The prior distribution typically has heavier tails than the posterior by construction, and it is usually a distribution that allows for easy sampling.
+
+The most relevant point for us is that importance sampling provides a way to simulate from the posterior distribution when there is no closed-form solution. The method generates samples $\bm{\theta}^{(s)}$ from $q(\bm{\theta})$ and computes the importance weights $w(\bm{\theta}^{(s)})$. Thus, if we sample with replacement from $\bm{\theta}^{(1)},\bm{\theta}^{(2)},\dots,\bm{\theta}^{(S)}$, selecting $\bm{\theta}^{(s)}$ with probability $\pi(\bm{\theta}^{(s)}|\bm{y})/(Sq(\bm{\theta}^{(s)}))$, we would get a sample $\bm{\theta}^{*(1)},\bm{\theta}^{*(2)},\dots,\bm{\theta}^{*(S)}$ from $\pi(\bm{\theta}|\bm{y})$. The intuition is that importance weights are scaling factors that correct for the bias introduced by drawing from $q(\bm{\theta}^{(s)})$ instead of $\pi(\bm{\theta}^{(s)}|\bm{y})$; thus, when combined, the samples and weights effectively recreate the posterior distribution, ensuring the resampled data set reflects the posterior.  
 
 However, the weights $\pi(\bm{\theta}^{(s)}|\bm{y})/(Sq(\bm{\theta}^{(s)}))$ do not sum up to 1, and we need to standardize them, 
 $$w^*(\bm{\theta}^{(s)})=\frac{\frac{1}{S} w(\bm{\theta}^{(s)})}{\frac{1}{S}\sum_{s=1}^Sw(\bm{\theta}^{(s)})}.$$
@@ -486,23 +488,82 @@ Note that we could alternatively arrive to these weights as follow
 	\mathbb{E}_{\pi}[h(\bm{\theta})]&=\int_{\bm{\Theta}} \left[\frac{h(\bm{\theta}) \pi(\bm{\theta}|\bm{y})}{q(\bm{\theta})}\right]q(\bm{\theta})d\bm{\theta}\\
 	&=\frac{\int_{\bm{\Theta}}\left[\frac{h(\bm{\theta}) \pi(\bm{\theta}|\bm{y})}{q(\bm{\theta})}\right] q(\bm{\theta})d\bm{\theta}}{\int_{\bm{\Theta}}\left[\frac{ \pi(\bm{\theta}|\bm{y})}{q(\bm{\theta})}\right] q(\bm{\theta})d\bm{\theta}}.
 \end{align*}
-Then, $$\frac{\frac{1}{S}\sum_{s=1}^Sh(\bm{\theta}^{(s)})w(\bm{\theta}^{(s)})}{\frac{1}{S}\sum_{s=1}^Sw(\bm{\theta})^{(s)}}= \sum_{s=1}^S h(\bm{\theta}^{(s)})w^*(\bm{\theta}^{(s)}).$$ This alternative expression also converges (almost surely) to $\mathbb{E}_{\pi}[h(\bm{\theta})]$.  In addition, this expression is very useful because if we do not have the marginal likelihood in the posterior distribution, this constant cancels out in $w^*(\bm{\theta}^{(s)})$. And, although this estimator is biased, the bias is small, and provides good gains in variance reduction compared with the non-standardized option \cite[Chap.~3]{robert2011monte}.  
+Then, $$\frac{\frac{1}{S}\sum_{s=1}^Sh(\bm{\theta}^{(s)})w(\bm{\theta}^{(s)})}{\frac{1}{S}\sum_{s=1}^Sw(\bm{\theta})^{(s)}}= \sum_{s=1}^S h(\bm{\theta}^{(s)})w^*(\bm{\theta}^{(s)}).$$ This alternative expression also converges (almost surely) to $\mathbb{E}_{\pi}[h(\bm{\theta})]$.  In addition, this expression is very useful because if we do not have the marginal likelihood in the posterior distribution, this constant cancels out in $w^*(\bm{\theta}^{(s)})$. And, although this estimator is biased, the bias is small, and provides good gains in variance reduction compared with the non-standardized option \cite[Chap.~3]{robert2011monte}.
 
-We know from the Bayes' rule that $$p(\bm{y})^{-1}=\frac{\pi(\bm{\theta}|\bm{y})}{p(\bm{y}|\bm{\theta})\times \pi(\bm{\theta})},$$
+A nice by-product of implementing IS is that it easily allows the calculation of the marginal likelihood. In particular, we know from Bayes' rule that
+$$p(\bm{y})^{-1}=\frac{\pi(\bm{\theta}|\bm{y})}{p(\bm{y}|\bm{\theta})\times \pi(\bm{\theta})},$$
 then, 
 \begin{align*}
 	\int_{\bm{\Theta}}p(\bm{y})^{-1}q(\bm{\theta})d\bm{\theta}&=\int_{{\Theta}}\frac{q(\bm{\theta})}{p(\bm{y}|\bm{\theta})\times \pi(\bm{\theta})}\pi(\bm{\theta}|\bm{y})d\bm{\theta}\\
 	&=\mathbb{E}_{\pi}\left[\frac{q(\bm{\theta})}{p(\bm{y}|\bm{\theta})\times \pi(\bm{\theta})}\right].
 \end{align*}
-Thus, an estimate of the marginal likelihood is $\left[\frac{1}{S}\sum_{s=1}^S\frac{q(\bm{\theta}^{*(s)})}{p(\bm{y}|\bm{\theta}^{*(s)})\times\pi(\bm{\theta}^{*(s)})}\right]^{-1}$. This is Gelfand-Dey method to calculate the marginal likelihood \cite{gelfand1994bayesian} (see subsection \ref{sec10_4_3}).\\
+Thus, an estimate of the marginal likelihood is $\left[\frac{1}{S}\sum_{s=1}^S\frac{q(\bm{\theta}^{*(s)})}{p(\bm{y}|\bm{\theta}^{*(s)})\times\pi(\bm{\theta}^{*(s)})}\right]^{-1}$. This is the Gelfand-Dey method to calculate the marginal likelihood \cite{gelfand1994bayesian} (see subsection \ref{sec10_4_3}).\\
 
 \textbf{Example: Cauchy distribution}
 
-Let's sample from a Cauchy distribution, $C(0,1)$, using as proposal a standard normal distribution and a Student's t distribution with 5 degree of freedom.
- 
+Let's assume that the posterior distribution is Cauchy with parameters 0 and 1. We perform an importance sampling algorithm using as proposals a standard normal distribution and a Student's t distribution with 3 degrees of freedom. The following code shows how to do this.
 
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Importance sampling: Cauchy distribution}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101); S <- 10000
+# Importance sampling from standard normal proposal 
+thetaNs <- rnorm(S) # Draws from proposal
+wNs <- dcauchy(thetaNs)/dnorm(thetaNs) # Weights
+wNstars <- wNs/sum(wNs) # Standardized weights
+thetaCauchyN <- sample(thetaNs, S, replace = TRUE, prob = wNstars) # Resampling
+# Figure
+h <- hist(thetaCauchyN, breaks=50, col="blue", xlab="x", main="Cauchy draws from importance sampling: Normal standard proposal")
+pfit <- seq(min(thetaCauchyN),max(thetaCauchyN),length=50)
+yfit<-dcauchy(pfit)
+yfit <- yfit*diff(h$mids[1:2])*length(thetaCauchyN)
+lines(pfit, yfit, col="red", lwd=2)
+# Importance sampling from Student's t proposal 
+df <- 3
+thetaTs <- rt(S, df = df) # Draws from proposal
+wTs <- dcauchy(thetaTs)/dt(thetaTs, df = df) # Weights
+wTstars <- wTs/sum(wTs) # Standardized weights
+thetaCauchyT <- sample(thetaTs, S, replace = TRUE, prob = wTstars) # Resampling
+# Figure
+h <- hist(thetaCauchyT, breaks=50, col="blue", xlab="x", main="Cauchy draws from importance sampling: Student's t proposal")
+pfit <- seq(min(thetaCauchyT),max(thetaCauchyT),length=50)
+yfit<-dcauchy(pfit)
+yfit <- yfit*diff(h$mids[1:2])*length(thetaCauchyT)
+lines(pfit, yfit, col="red", lwd=2)
+# Figure points
+plot(wNstars, main = "Importance sampling: Cauchy distribution", ylab = "Weights", xlab = "Iterations")
+points(wTstars, col = "blue")
+legend("topright", legend = c("Normal", "Student's t"), col = c("black", "blue"), pch = c(1, 1))
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+Figure \ref{fig55} shows the posterior draws of a Cauchy distribution using the standard normal distribution (black dots) and the Student's t-distribution with 3 degrees of freedom (blue dots) as proposals. We observe that a few draws carry too much weight when using the normal proposal; this occurs because the normal distribution has much lighter tails compared to the Cauchy distribution. In contrast, using the Student's t-distribution with 3 degrees of freedom improves this situation significantly.
+
+Figures \ref{fig56} and \ref{fig57} show the histograms of the posterior draws using the normal and Student's t-distributions, respectively, along with the density of the Cauchy distribution. The spike in the posterior draws from the standard normal proposal arises due to the lighter tails of the standard normal compared to the Cauchy distribution, consequently assigning too much weight to a specific draw from the normal distribution.
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter5/figures/ISexampleCauchy.png}
+	%%\centerline{\epsfig{/Chapters/chapter1/figures/cat.eps,width=.8\textheight,height=.4\textwidth}}
+	\caption[List of figure caption goes here]{Importance sampling: 1000 draws of a Cauchy distribution using the standard normal and student's t with 3 degrees of freedom as proposals.}\label{fig55}
+\end{figure} 
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter5/figures/IScauchyNormal.png}
+	%%\centerline{\epsfig{/Chapters/chapter1/figures/cat.eps,width=.8\textheight,height=.4\textwidth}}
+	\caption[List of figure caption goes here]{Importance sampling: Draws from a Cauchy distribution using the standard normal as proposal.}\label{fig56}
+\end{figure} 
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter5/figures/IScauchyStudent.png}
+	%%\centerline{\epsfig{/Chapters/chapter1/figures/cat.eps,width=.8\textheight,height=.4\textwidth}}
+	\caption[List of figure caption goes here]{Importance sampling: Draws of a Cauchy distribution using the Student's t with 3 degrees of freedom as proposal.}\label{fig57}
+\end{figure}       
 
 \section{Sequential importance sampling}\label{sec53}
+
 
 \section{Sequential Monte Carlo}\label{sec54}
 
@@ -544,12 +605,19 @@ This test is recursively applied until either the null hypothesis is not rejecte
 
 	\item Show that the Gibbs sampler is a particular case of the Metropolis-Hastings where the acceptance probability is equal to 1.
 	
-	\item Implement a Metropolis-Hastings to sample from the Cauchy distribution, $C(0,1)$, using as proposal a standard normal distribution and a Student's t distribution with 5 degree of freedom.
+	\item Implement a Metropolis-Hastings to sample from the Cauchy distribution, $C(0,1)$, using as proposals a standard normal distribution and a Student's t distribution with 5 degrees of freedom.
 	
 	\item This exercise was proposed by Professor Hedibert Freitas Lopes, who cites \cite{thomas2021learning} as a useful reference for an introduction to Hamiltonian Monte Carlo in \textbf{R} and the \textit{hmclearn} package. The task is to obtain posterior draws using the Metropolis-Hastings and Hamiltonian Monte Carlo algorithms for the posterior distribution given by 
 	\[
 	\pi(\theta_1,\theta_2|\bm{y}) \propto \exp\left\{-\frac{1}{2}(\theta_1^2\theta_2^2 + \theta_1^2 + \theta_2^2 - 8\theta_1 - 8\theta_2)\right\}.
-	\]   
+	\]
+	
+ \item \textbf{Ph.D. students sleeping hours continues}
+\begin{enumerate}
+	\item Use importance sampling based on a $U(0,1)$ proposal to obtain draws of $\bm{\theta}|\bm{y} \sim B(16.55,39.57)$ in the Ph.D. students' sleeping hours example in Chapter \ref{chap4}. Note that, based on Exercise 15 in Chapter \ref{chap4}, $\alpha_0 = 1.44$ and $\beta_0 = 2.57$.
+	\item Compute the marginal likelihood in this context (Bernoulli-Beta model) and compare it to the result obtained using the Gelfand-Dey method.
+\end{enumerate}
+    
 	
 \end{enumerate}
 

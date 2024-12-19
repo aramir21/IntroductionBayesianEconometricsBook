@@ -115,7 +115,7 @@ For Gibbs sampling, the candidate $\bm{\theta}^c_1$ is drawn directly from the \
 \end{align*}
 due to $\bm{\theta}^{(s-1)}_2=\bm{\theta}^{c}_2$. Thus, the Gibbs sampling algorithm is implicitly a M-H algorithm where the acceptance probability is 1.
 
-\item Implement a Metropolis-Hastings (M-H) to sample from the Cauchy distribution, $C(0,1)$, using as proposal a standard normal distribution and a Student's t distribution with 5 degree of freedom. 
+\item Implement a Metropolis-Hastings (M-H) to sample from the Cauchy distribution, $C(0,1)$, using as proposals a standard normal distribution and a Student's t distribution with 5 degrees of freedom. 
 
 \textbf{Answer}
 
@@ -319,7 +319,56 @@ title("Hamiltonian Monte Carlo")
  	\caption[List of figure caption goes here]{Contour plot: Hamiltonian Monte Carlo posterior drwas.}\label{fig55}
  \end{figure} 
  
-  
+ \item \textbf{Ph.D. students sleeping hours continues}
+ \begin{enumerate}
+ 	\item Use importance sampling based on a $U(0,1)$ proposal to obtain draws of $\bm{\theta}|\bm{y} \sim B(16.55,39.57)$ in the Ph.D. students' sleeping hours example in Chapter \ref{chap4}. Note that, based on Exercise 15 in Chapter \ref{chap4}, $\alpha_0 = 1.44$ and $\beta_0 = 2.57$.
+ 	\item Compute the marginal likelihood in this context (Bernoulli-Beta model) and compare it to the result obtained using the Gelfand-Dey method.
+ \end{enumerate}
+
+\textbf{Answer}
+
+ \begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Importance sampling: Bernoulli-Beta model}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101); S <- 50000
+# Importance sampling from standard normal proposal 
+an <- 16.55; bn <- 39.57 # Posterior parameters
+theta <- runif(S) # Proposal
+ws <- dbeta(theta, an, bn) # Weights
+wstars <- ws/sum(ws) # Standardized weights
+thetaBeta <- sample(theta, S, replace = TRUE, prob = wstars) # Posterior draws
+# Figure
+h <- hist(thetaBeta, breaks=50, col="blue", xlab="x", main="Beta draws from importance sampling: Uniform (0,1) proposal")
+pfit <- seq(min(theta),max(theta),length=50)
+yfit<-dbeta(pfit, an, bn)
+yfit <- yfit*diff(h$mids[1:2])*length(theta)
+lines(pfit, yfit, col="red", lwd=2)
+a0 <- 1.44; b0 <- 2.57 # Hyperparameters
+s <- 15; n <- 52 # Data
+LogMarLik <- lbeta(an, bn)-lbeta(a0, b0) # Marginal likelihood
+LogMarLik
+# Gelfand-Day method
+LikPrior <- function(theta){
+	Liki <- theta^s*(1-theta)^(n-s)
+	Priori <- dbeta(theta, a0, b0)
+	LikPriori <- 1 / Liki * Priori 
+	return(LikPriori)
+}
+LogMarLikGD <- log(1/mean(sapply(thetaBeta, LikPrior)))
+LogMarLikGD
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+Figure \ref{fig55} shows the histogram of the posterior draws obtained using the importance sampling algorithm with a uniform proposal. The algorithm performs well. Additionally, the analytic solution for the log marginal likelihood is -32.75, while the Gelfand-Dey method yields -33.37.
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter5/figures/ISbeta.png}
+	%%\centerline{\epsfig{/Chapters/chapter1/figures/cat.eps,width=.8\textheight,height=.4\textwidth}}
+	\caption[List of figure caption goes here]{Importance sampling: Beta distribution.}\label{fig55}
+\end{figure}  
   
 
 \end{enumerate}

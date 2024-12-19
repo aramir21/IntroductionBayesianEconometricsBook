@@ -174,7 +174,7 @@ ggarrange(g3, g2, g1, labels = c("A", "B", "C"), ncol = 3, nrow = 1)
 ########################## Importance sampling: Cauchy distribution ########################## 
 rm(list = ls())
 set.seed(010101)
-S <- 100
+S <- 10000
 # Importance sampling from standard normal proposal 
 thetaNs <- rnorm(S)
 wNs <- dcauchy(thetaNs)/dnorm(thetaNs)
@@ -185,9 +185,8 @@ pfit <- seq(min(thetaCauchyN),max(thetaCauchyN),length=50)
 yfit<-dcauchy(pfit)
 yfit <- yfit*diff(h$mids[1:2])*length(thetaCauchyN)
 lines(pfit, yfit, col="red", lwd=2)
-plot(wNstars)
 # Importance sampling from Student's t proposal 
-df <- 5
+df <- 3
 thetaTs <- rt(S, df = df)
 wTs <- dcauchy(thetaTs)/dt(thetaTs, df = df)
 wTstars <- wTs/sum(wTs)
@@ -197,7 +196,7 @@ pfit <- seq(min(thetaCauchyT),max(thetaCauchyT),length=50)
 yfit<-dcauchy(pfit)
 yfit <- yfit*diff(h$mids[1:2])*length(thetaCauchyT)
 lines(pfit, yfit, col="red", lwd=2)
-plot(wTstars)
-
-# df <- as.data.frame(cbind(c(1:S,1:S),c(rep("Normal", S), rep("Student's", S)),c(wNstars, wTstars)))
-# colnames(df) <- c("Iteration", "Proposal", "Weights")
+plot(wNstars, main = "Importance sampling: Cauchy distribution", ylab = "Weights", xlab = "Iterations")
+points(wTstars, col = "blue")
+# Add a legend
+legend("topright", legend = c("Normal", "Student's t"), col = c("black", "blue"), pch = c(1, 1))

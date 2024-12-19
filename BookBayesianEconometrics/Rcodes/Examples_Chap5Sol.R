@@ -201,3 +201,31 @@ plot(thetaPostHMC[keep,], xlim=range(theta1), ylim=range(theta2), pch=16, col=gr
      xlab=expression(theta[1]), ylab=expression(theta[2]))
 contour(theta1,theta2,f, drawlabels=FALSE, add=TRUE, col = "blue", lwd = 1.2)
 title("Hamiltonian Monte Carlo")
+
+########################## Importance sampling: Beta distribution ########################## 
+rm(list = ls()); set.seed(010101); S <- 50000
+# Importance sampling from standard normal proposal 
+an <- 16.55; bn <- 39.57 # Posterior parameters
+theta <- runif(S) # Proposal
+ws <- dbeta(theta, an, bn) # Weights
+wstars <- ws/sum(ws) # Standardized weights
+thetaBeta <- sample(theta, S, replace = TRUE, prob = wstars) # Posterior draws
+# Figure
+h <- hist(thetaBeta, breaks=50, col="blue", xlab="x", main="Beta draws from importance sampling: Uniform (0,1) proposal")
+pfit <- seq(min(theta),max(theta),length=50)
+yfit<-dbeta(pfit, an, bn)
+yfit <- yfit*diff(h$mids[1:2])*length(theta)
+lines(pfit, yfit, col="red", lwd=2)
+a0 <- 1.44; b0 <- 2.57 # Hyperparameters
+s <- 15; n <- 52 # Data
+LogMarLik <- lbeta(an, bn)-lbeta(a0, b0) # Marginal likelihood
+LogMarLik
+# Gelfand-Day method
+LikPrior <- function(theta){
+  Liki <- theta^s*(1-theta)^(n-s)
+  Priori <- dbeta(theta, a0, b0)
+  LikPriori <- 1 / Liki * Priori 
+  return(LikPriori)
+}
+LogMarLikGD <- log(1/mean(sapply(thetaBeta, LikPrior)))
+LogMarLikGD
