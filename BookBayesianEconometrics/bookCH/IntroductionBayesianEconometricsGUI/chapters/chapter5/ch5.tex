@@ -464,7 +464,7 @@ where $\bm{\theta}^{(s)}$ are draws from $\pi(\bm{\theta}|\bm{y})$. The \textit{
 
 The challenge arises when we do not know how to obtain samples from $\pi(\bm{\theta}|\bm{y})$. The ingenious idea is to express Equation~\ref{eq5_1} in a different way using the \textit{importance sampling fundamental identity} \cite[Chap.~3]{robert2011monte}:
 \begin{align}\label{eq5_3}
-	\mathbb{E}_{\pi}[h(\bm{\theta})]&=\int_{\bm{\Theta}} h(\bm{\theta}) \pi(\bm{\theta}|\bm{y})\frac{q(\bm{\theta})}{q(\bm{\theta})}d\bm{\theta}\\
+	\mathbb{E}_{\pi}[h(\bm{\theta})]&=\int_{\bm{\Theta}} h(\bm{\theta}) \pi(\bm{\theta}|\bm{y})\frac{q(\bm{\theta})}{q(\bm{\theta})}d\bm{\theta}\nonumber\\
 	&=\mathbb{E}_{q}\left[\frac{h(\bm{\theta})\pi(\bm{\theta}|\bm{y})}{q(\bm{\theta})}\right],
 \end{align}   
 where $q(\bm{\theta})$ is the proposal distribution.
@@ -479,8 +479,18 @@ can be large if the proposal distribution has lighter tails than the posterior d
 
 A natural choice in Bayesian inference is to use the prior distribution as the proposal, given that it is a proper density function. The prior distribution typically has heavier tails than the posterior by construction, and it is usually a distribution that allows for easy sampling.
 
-The most relevant point for us is that importance sampling provides a way to simulate from the posterior distribution when there is no closed-form solution. The method generates samples $\bm{\theta}^{(s)}$ from $q(\bm{\theta})$ and computes the importance weights $w(\bm{\theta}^{(s)})$. Thus, if we \textit{resample} with replacement from $\bm{\theta}^{(1)},\bm{\theta}^{(2)},\dots,\bm{\theta}^{(S)}$, selecting $\bm{\theta}^{(s)}$ with probability proportional to  $w(\bm{\theta}^{(s)})$, we would get a sample $\bm{\theta}^{*(1)},\bm{\theta}^{*(2)},\dots,\bm{\theta}^{*(L)}$ of size $L$ from $\pi(\bm{\theta}|\bm{y})$. The intuition is that importance weights are scaling factors that correct for the bias introduced by drawing from $q(\bm{\theta}^{(s)})$ instead of $\pi(\bm{\theta}^{(s)}|\bm{y})$; thus, when combined, the samples and weights effectively recreate the posterior distribution, ensuring the resampled data set reflects the posterior. 
-%Observe that this is equivalent to associating a number of offspring $S_{\bm{\theta}^s}$ with each $\bm{\theta}^{(s)}$ such that $S_{\bm{\theta}}=\left\{S_{\bm{\theta}^1},S_{\bm{\theta}^2},\dots,S_{\bm{\theta}^S}\right\}$ follow a multinomial distribution with number of trials $S$ and probabilities proportional to $w(\bm{\theta}^{(s)})$. 
+The most relevant point for us is that importance sampling provides a way to simulate from the posterior distribution when there is no closed-form solution. The method generates samples $\bm{\theta}^{(s)}$ from $q(\bm{\theta})$ and computes the importance weights $w(\bm{\theta}^{(s)})$. Thus, if we \textit{resample} with replacement from $\bm{\theta}^{(1)},\bm{\theta}^{(2)},\dots,\bm{\theta}^{(S)}$, selecting $\bm{\theta}^{(s)}$ with probability proportional to  $w(\bm{\theta}^{(s)})$, we would get a sample $\bm{\theta}^{*(1)},\bm{\theta}^{*(2)},\dots,\bm{\theta}^{*(L)}$ of size $L$ from $\pi(\bm{\theta}|\bm{y})$ \cite{smith1992bayesian,rubin1988sir}. This is named \textit{sampling/importance resampling} (SIR) algorithm. Observe that the number of times $L^{(s)}$ each particular point $\bm{\theta}^{(s)}$ is selected follows a binomial distribution with size $L$, and probabilities proportional to $w^{(s)}$. Consequently, the vector $L_{\bm{\theta}} = \left\{L_{\bm{\theta}^1}, L_{\bm{\theta}^2}, \dots, L_{\bm{\theta}^S}\right\}$ follows a multinomial distribution with $L$ trials and probabilities proportional to $w(\bm{\theta}^{(s)})$, $s = 1, 2, \dots, S$ \cite{cappe2007overview}. Therefore, the resampling step ensures that points in the first-stage sample with small importance weights are more likely to be discarded, while points with high weights are replicated in proportion to their importance weights. In most applications, it is typical to have $S \gg L$.
+
+The intuition is that importance weights are scaling factors that correct for the bias introduced by drawing from $q(\bm{\theta}^{(s)})$ instead of $\pi(\bm{\theta}^{(s)}|\bm{y})$; thus, when combined, the samples and weights effectively recreate the posterior distribution, ensuring the resampled data set reflects the posterior. Let's proof this 
+\begin{align*}
+	P(\bm{\theta}^*\in A)
+	&=\frac{1}{S}\sum_{s=1}^S{w}^{(s)}\mathbbm{1}_{A}(\bm{\theta}^{(s)})\\
+	&\rightarrow \mathbb{E}_q\left[\mathbbm{1}_{\in A}(\bm{\theta})\frac{\pi(\bm{\theta}|\bm{y})}{q(\bm{\theta})}\right]\\
+	&=\int_{A}\left[\frac{\pi(\bm{\theta}|\bm{y})}{q(\bm{\theta})}\right]q(\bm{\theta})d\bm{\theta}\\
+	&=\int_{A}\pi(\bm{\theta}|\bm{y})d\bm{\theta}. 
+\end{align*}
+Thus, $\bm{\theta}^*$ is approximately distributed as an observation from $\pi(\bm{\theta}|\bm{y})$.   
+
 
 However, the weights $\pi(\bm{\theta}^{(s)}|\bm{y})/(Sq(\bm{\theta}^{(s)}))$ do not sum up to 1, and we need to standardize them, 
 $$w^*(\bm{\theta}^{(s)})=\frac{\frac{1}{S} w(\bm{\theta}^{(s)})}{\frac{1}{S}\sum_{s=1}^Sw(\bm{\theta}^{(s)})}.$$
@@ -563,22 +573,176 @@ Figures \ref{fig56} and \ref{fig57} show the histograms of the posterior draws u
 \end{figure}       
 
 \section{Particle filtering}\label{sec53}
-In this section, we present \textit{particle filtering}, a specific case of \textit{sequential Monte Carlo} (SMC), which is one of the most commonly used algorithms for scenarios requiring sequential updates of the posterior distribution, such as in certain time series models. Specifically, we consider the scenario where we need to sample from a posterior distribution whose dimension increases over time, $\pi(\bm{\theta}_{1:t}|\bm{y})$, for $t = 1, 2, \dots$. The challenge arises from the fact that, even if this posterior distribution is known, the computational complexity of implementing a sampling scheme in this context increases linearly with $t$. This makes MCMC methods, which operate in batch mode and require a complete re-run whenever new information becomes available, less optimal. Consequently, sequential algorithms, which operate incrementally as new data becomes available, are often a better alternative. These algorithms are typically faster and are well-suited for scenarios requiring real-time updates, commonly referred to as online mode.
 
-First, we introduce \textit{sequential importance sampling} (SIS), an algorithm based on IS, where the proposal density takes the form 
+Now, we consider the scenario where we need to sample from a posterior distribution whose dimension increases over time, $\pi(\bm{\theta}_{0:t}|\bm{y}_{0:t})$, for $t = 0, 1, \dots$. The challenge arises from the fact that, even if this posterior distribution is known, the computational complexity of implementing a sampling scheme in this context increases linearly with $t$. This makes MCMC methods, which operate in batch mode and require a complete re-run whenever new information becomes available, less optimal. Consequently, we present sequential algorithms, which operate incrementally as new data becomes available, and are often a better alternative. These algorithms are typically faster and are well-suited for scenarios requiring real-time updates, commonly referred to as online mode.
+
+Specifically, we consider the dynamic system in the \textit{state-space} representation. This is a system where there is an \textit{unobservable state vector} $\bm{\theta}_t\in\mathbb{R}^K$, and an observed variable $\bm{Y}_t$, $t=0,1,\dots$ such that (i) $\bm{\theta}_t$ is a \textit{Markov process}, this is, $\pi(\bm{\theta}_{t}|\bm{\theta}_{1:t-1})=\pi(\bm{\theta}_{t}|\bm{\theta}_{t-1})$, $t=1,2,\dots$, all the relevant information to define $\bm{\theta}_{t}$ is in $\bm{\theta}_{t-1}$,\footnote{$\bm{\theta}_{0}$ comes from the given distribution $\pi(\bm{\theta}_{0})$.} and ii) $\bm{Y}_t\perp \bm{Y}_s|\bm{\theta}_{t}$, $s<t$, there is independence between observable variables regarding their history conditional on the actual state vector. We can see in Figure \ref{fig:state_space} a graphical representation of the dynamic system.
+\begin{figure}[h!]
+\centering
+%\resizebox{1\textwidth}{!}{%
+%	\begin{threeparttable}
+%		\includegraphics[width = \linewidth, page = 1]
+\begin{tikzpicture}[
+	every node/.style={font=\small},
+	obs/.style={rectangle, draw=black, fill=gray!20, minimum size=12mm},
+	state/.style={circle, draw=black, fill=gray!20, minimum size=12mm},
+	arrow/.style={-Latex, thick},
+	node distance=1.5cm and 2.5cm
+	]
+	
+	% Nodes
+	\node[state] (x_t-1) {$\bm{\theta}_{t-1}$};
+	\node[state, right=of x_t-1] (x_t) {$\bm{\theta}_{t}$};
+	\node[state, right=of x_t] (x_t+1) {$\bm{\theta}_{t+1}$};
+	
+	\node[obs, above=of x_t-1] (y_t-1) {$Y_{t-1}$};
+	\node[obs, above=of x_t] (y_t) {$Y_t$};
+	\node[obs, above=of x_t+1] (y_t+1) {$Y_{t+1}$};
+	
+	% Arrows
+	\draw[arrow] (x_t-1) -- (x_t);
+	\draw[arrow] (x_t) -- (x_t+1);
+	
+	\draw[arrow] (x_t-1) -- (y_t-1);
+	\draw[arrow] (x_t) -- (y_t);
+	\draw[arrow] (x_t+1) -- (y_t+1);
+	
+	% Text
+	\node[align=center, below=0.5cm of x_t] (text1) {$\bm{\theta}_{t} \sim \pi(\bm{\theta}_{t} | \bm{\theta}_{t-1})$};
+	\node[align=center, above=0.5cm of y_t] (text2) {$Y_t \sim p(Y_t | \bm{\theta}_{t})$};
+%\node[align=center, below=2.5cm of x_t, font=\small] (note) 
+%{};
+\end{tikzpicture}
+%\end{threeparttable}%
+%}
+\begin{tablenotes}
+	\item \small{\textbf{Notes:} The figure illustrates the structure of a \textit{state-space} model where the latent states $\bm{\theta}_t$ evolve according to $\pi(\bm{\theta}_t | \bm{\theta}_{t-1})$, and the observations $Y_t$ depend on the states via $p(Y_t | \bm{\theta})$.}
+\end{tablenotes}
+\caption{\textit{State-space} model representation.}
+\label{fig:state_space}
+\end{figure}
+Formally,
 \begin{align*}
-	q(\bm{\theta}_{1:t}) &= q(\bm{\theta}_{1:t-1})q(\bm{\theta}_t|\bm{\theta}_{1:t-1}) \\
-	&= q(\bm{\theta}_1)\prod_{h=2}^{t}q(\bm{\theta}_h|\bm{\theta}_{1:h-1}).
+	\bm{\theta}_t &= h(\bm{\theta}_{t-1}, \bm{w}_t) & \text{(State equations)}\nonumber\\
+	Y_t & = f(\bm{\theta}_t, \mu_t)& \text{(Observation equation)},
 \end{align*}
-This algorithm has the desirable property of maintaining fixed computational complexity. Therefore, we obtain draws $\bm{\theta}_t^{(s)}$, known as particles, sequentially, that is, $\bm{\theta}_1^{(s)}$ from $q(\bm{\theta}_1)$ at $t=1$, and then $\bm{\theta}_h^{(s)}$ from $q(\bm{\theta}_h|\bm{\theta}_{1:h-1})$ at $t=h$.
+where $\bm{w}_t$ and $\mu_t$ are stochastic errors such that their probability distributions define the transition density $\pi(\bm{\theta}_t|\bm{\theta}_{t-1})$ and observation density $p(Y_t|\bm{\theta}_t)$. 
 
-The standardized weights in SIS can be calculated sequentially, 
+We present \textit{particle filtering}, a specific case of \textit{sequential Monte Carlo} (SMC), which is one of the most commonly used algorithms for scenarios requiring sequential updates of the posterior distribution as describe by the \textit{state-space} model. 
+
+The point of departure is \textit{sequential importance sampling} (SIS), originally proposed by \cite{handschin1969monte}, which is a modification of IS to compute an estimate of $\pi(\bm{\theta}_{0:t}|\bm{y}_{0:t})$ without modification of the past trajectories $\left\{\bm{\theta}^{(s)}_{1:t-1}, s=1,2,\dots,S\right\}$. The trick is to have a proposal density that takes the form 
 \begin{align*}
-	content...
+	q(\bm{\theta}_{0:t}|\bm{y}_{0:t}) &= q(\bm{\theta}_{0:t-1}|\bm{y}_{1:t-1})q(\bm{\theta}_t|\bm{\theta}_{0:t-1},\bm{y}_{0:t}) \\
+	&= q(\bm{\theta}_0)\prod_{h=1}^{t}q(\bm{\theta}_h|\bm{\theta}_{0:h-1},\bm{y}_{0:h}).
+\end{align*}
+
+This proposal density allows calculating the weights sequentially,
+\begin{align*}
+	w_{t}(\bm{\theta}^{(s)})&=\frac{\pi(\bm{\theta}_{0:t}^{(s)}|\bm{y}_{0:t})}{q(\bm{\theta}_{0:t}^{(s)}|\bm{y}_{0:t})}\\
+	&=\frac{p(\bm{y}_{0:t}|\bm{\theta}_{0:t}^{(s)})\pi(\bm{\theta}_{0:t}^{(s)})}{p(\bm{y}_{0:t})q(\bm{\theta}_{0:t}^{(s)}|\bm{y}_{0:t})}\\
+	&=\frac{p(\bm{y}_{t}|\bm{\theta}_{t}^{(s)})p(\bm{y}_{1:t-1}|\bm{\theta}_{0:t-1}^{(s)})\pi(\bm{\theta}_{t}^{(s)}|\bm{\theta}_{t-1}^{(s)})\pi(\bm{\theta}_{0:t-1}^{(s)})}{p(\bm{y}_{0:t})q(\bm{\theta}_{t}^{(s)}|\bm{\theta}_{0:t-1}^{(s)},\bm{y}_{0:t})q(\bm{\theta}_{0:t-1}^{(s)}|\bm{y}_{1:t-1})}\\
+	&\propto\frac{p(\bm{y}_{1:t-1}|\bm{\theta}_{0:t-1}^{(s)})\pi(\bm{\theta}_{0:t-1}^{(s)})}{q(\bm{\theta}_{0:t-1}^{(s)}|\bm{y}_{1:t-1})}\frac{p(\bm{y}_{t}|\bm{\theta}_{t}^{(s)})\pi(\bm{\theta}_{t}^{(s)}|\bm{\theta}_{t-1}^{(s)})}{q(\bm{\theta}_{t}^{(s)}|\bm{\theta}_{0:t-1},\bm{y}_{0:t}^{(s)})}\\
+	&\propto w_{t-1}(\bm{\theta}^{(s)})\frac{p(\bm{y}_{t}|\bm{\theta}_{t}^{(s)})\pi(\bm{\theta}_{t}|\bm{\theta}_{t-1}^{(s)})}{q(\bm{\theta}_t^{(s)}|\bm{\theta}_{0:t-1}^{(s)},\bm{y}_{0:t})}\\
+	&\propto w_{t-1}^*(\bm{\theta}^{(s)})\frac{p(\bm{y}_{t}|\bm{\theta}_{t}^{(s)})\pi(\bm{\theta}_{t}|\bm{\theta}_{t-1}^{(s)})}{q(\bm{\theta}_t^{(s)}|\bm{\theta}_{0:t-1}^{(s)},\bm{y}_{0:t})}.
+\end{align*} 
+Take into account that $p(\bm{y}_{0:t})$ does not depend on $\bm{\theta}^{(s)}$.
+
+This algorithm has the desirable property of maintaining fixed computational complexity. Therefore, we obtain draws $\bm{\theta}_t^{(s)}$, known as particles, sequentially, that is, $\bm{\theta}_0^{(s)}$ from $q(\bm{\theta}_0)$ at $t=0$, and then $\bm{\theta}_h^{(s)}$ from $q(\bm{\theta}_h|\bm{\theta}_{0:h-1},\bm{y}_{0:h})$ at $t=h$ \cite{doucet2001introduction,cappe2007overview}.
+
+A relevant case is when the proposal distribution takes the form of the prior distribution, that is, $q(\bm{\theta}_{0:t}|\bm{y}_{0:t}) = \pi(\bm{\theta}_{0:t}) = \pi(\bm{\theta}_0)\prod_{h=1}^{t}\pi(\bm{\theta}_h|\bm{\theta}_{h-1})$. This implies that
+\begin{align*}
+	w_{t}(\bm{\theta}^{(s)})&\propto w_{t-1}^*(\bm{\theta}^{(s)})p(\bm{y}_{t}|\bm{\theta}_{t}^{(s)}).
 \end{align*} 
 
-However, SIS has some drawbacks. First, the variance of the weights increases exponentially with $t$ \cite{kong1994sequential} 
+Algorithm \ref{Alg:SIS} shows how to perform SIS.\\
+\begin{algorithm}[h!]
+	\caption{Sequential importance sampling algorithm}\label{Alg:SIS}
+	\begin{algorithmic}[1]
+		\For{\texttt{$s=1,\dots,S$}}
+		\State Sample $\bm{\theta}_0^{(s)}$ from $q(\bm{\theta}_0|y_0)$
+		\State Calculate the importance weights $w_0(\bm{\theta}^{(s)})\propto\frac{p(y_0|\bm{\theta}_0^{(s)})\pi(\bm{\theta}_0^{(s)})}{q(\bm{\theta}_0^{(s)}|y_0)}$ 
+		\EndFor 
+		\For{\texttt{$t=1,\dots,T$}}  		 			
+			\For{\texttt{$s=1,\dots,S$}}
+				\State Draw particles $\bm{\theta}_t^{(s)}$ from $q_t(\bm{\theta}_t^{(s)}|\bm{\theta}_{t-1}^{(s)}, \bm{y}_t)$
+				\State Compute the weights $w_t^{(s)}=w_{t-1}^{*(s)}\frac{p(\bm{y}_{t}|\bm{\theta}_{t}^{(s)})\pi(\bm{\theta}_{t}|\bm{\theta}_{t-1}^{(s)})}{q(\bm{\theta}_t^{(s)}|\bm{\theta}_{0:t-1}^{(s)},\bm{y}_{0:t})}$
+			\EndFor
+			\State Standardize the weights $w_t^{*(s)}=\frac{w_t^{(s)}}{\sum_{l=1}^Sw_t^{(s)}}$, $s=1,2,\dots,S$  
+		\EndFor
+	\end{algorithmic} 
+\end{algorithm}
 
+\textbf{Example: Dynamic linear model}
+
+Let's assume that the state-space representation is
+\begin{align*}
+	{\theta}_t &= {\theta}_{t-1} + {w}_t & \text{(State equations)}\nonumber\\
+	Y_t & = \phi {\theta}_t + \mu_t& \text{(Observation equation)},
+\end{align*}
+where ${w}_t\sim N(0, \sigma_w^2)$ and $\mu_y\sim N(0,\sigma^2_{\mu})$. In addition, we use as proposal distribution $q(\theta_t|y_t)=\pi(\theta_t)$, which is normal with mean $\theta_{t-1}$ and variance $\sigma_w^2$. Then, the weights are given by the recursion $w_t^{(s)}\propto w_{t-1}^{*(s)}p(y_t|\theta_t,\sigma_{\mu}^2)$, where $p(y_t|\theta_t,\sigma_{\mu}^2)$ is $N(\theta_t,\sigma_{\mu}^2)$.
+
+We can have the mean of the state, and standard deviation at each $t$ using $\hat{\theta}_t=\sum_{s=1}^S w_t^{*(s)} \theta_t^{(s)}$ and $\hat{\sigma}_{\theta}=\left(\sum_{s=1}^S w_t^{*(s)} \theta_t^{2(s)}-\hat{\theta}_t^2\right)^{1/2}$.
+
+The following code shows to implement this algorithm setting $\sigma_w^2=\sigma_{mu}^2=1$ and $\phi=0.5$. First, we simulate the process, and then implement the SIS algorithm.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Sequential importance sampling: Dynamic linear model}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+S <- 50000 # Number of particles
+sigma_w <- 1  # State noise
+sigma_mu <- 1  # Observation noise
+phi <- 0.5 # Coefficient in observation equation
+T <- 50 # Sample size
+# Simulate true states and observations
+theta_true <- numeric(T); y_obs <- numeric(T)
+theta_true[1] <- rnorm(1, mean = 0, sd = sigma_w)  # Initial state
+for (t in 2:T) {
+	theta_true[t] <- rnorm(1, mean = theta_true[t-1], sd = sigma_w)
+}
+y_obs <- rnorm(T, mean = phi*theta_true, sd = sigma_mu)
+# Sequential Importance Sampling (SIS)
+particles <- matrix(0, nrow = S, ncol = T) 
+weights <- matrix(0, nrow = S, ncol = T) 
+weightsSt <- matrix(0, nrow = S, ncol = T) 
+# Initialization
+particles[, 1] <- rnorm(S, mean = 0, sd = sigma_w)  # Sample initial particles
+weights[, 1] <- dnorm(y_obs[1], mean = phi*particles[, 1], sd = sigma_mu)  # Importance weights
+weightsSt[, 1] <- weights[, 1] / sum(weights[, 1])  # Normalize weights
+# Sequential updating
+for (t in 2:T) {
+	# Propagate particles
+	particles[, t] <- rnorm(S, mean = particles[, t-1], sd = sigma_w)
+	# Compute weights
+	weights[, t] <- weightsSt[, t-1] * dnorm(y_obs[t], mean = phi*particles[, t], sd = sigma_mu) # Recursive weight update
+	weightsSt[, t] <- weights[, t] / sum(weights[, t])  # Normalize weights
+}
+# Estimate the states (weighted mean)
+FilterDist <- colSums(particles * weightsSt)
+SDFilterDist <- (colSums(particles^2 * weightsSt) - FilterDist^2)^0.5
+library(dplyr); library(ggplot2); library(latex2exp)
+ggplot2::theme_set(theme_bw())
+df <- tibble(t = 1:T, mean = FilterDist, lower = FilterDist - 2*SDFilterDist, upper = FilterDist + 2*SDFilterDist, theta_true = theta_true)
+# Function to plot
+plot_filtering_estimates <- function(df) {
+	p <- ggplot(data = df, aes(x = t)) + geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1, fill = "lightblue") + geom_line(aes(y = theta_true), colour = "black", alpha = 1, linewidth = 0.5) + geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) + ylab(TeX("$\\theta_{t}$")) + xlab("Time")
+	print(p)
+}
+plot_filtering_estimates(df)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+Figure \ref{fig58} shows the trajectory of the true state vector (black line), the posterior mean (blue line) and area given by $\pm2\hat{\sigma}_{\theta}$ (light blue shading area).
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter5/figures/SIS.png}
+	\caption[List of figure caption goes here]{State in linear state-space model: True and mean estimate using sequential importance sampling.}\label{fig58}
+\end{figure} 
+
+Sequential importance sampling is successful to sample from the posterior distribution in the short term. However, we should take into account that SIS is a particular case of IS, and consequently, inherits the drawbacks of importance sampling. In particular, the variance of the weights increases exponentially with $t$ \cite{kong1994sequential}, this implies that as $t$ increases, the importance weights tend to degenerate in the long run, that is, all probability mass concentrates on a few weights, a phenomenon known as sample impoverishment or weight degeneracy. Check this for instance in the Dynamic linear model example.
 
  
 
