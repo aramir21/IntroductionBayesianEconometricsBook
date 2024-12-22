@@ -218,7 +218,7 @@ y_obs <- rnorm(T, mean = phi*theta_true, sd = sigma_mu)
 # Sequential Importance Sampling (SIS)
 particles <- matrix(0, nrow = S, ncol = T)  # Store particles
 weights <- matrix(0, nrow = S, ncol = T)   # Store weights
-weightsSt <- matrix(0, nrow = S, ncol = T)   # Store standarized weights
+weightsSt <- matrix(0, nrow = S, ncol = T)   # Store standardized weights
 # Initialization
 particles[, 1] <- rnorm(S, mean = 0, sd = sigma_w)  # Sample initial particles
 weights[, 1] <- dnorm(y_obs[1], mean = phi*particles[, 1], sd = sigma_mu)  # Importance weights
@@ -274,26 +274,43 @@ for (t in 2:T) {
   theta_true[t] <- rnorm(1, mean = theta_true[t-1], sd = sigma_w)
 }
 y_obs <- rnorm(T, mean = phi*theta_true, sd = sigma_mu)
-# Sequential Importance Sampling (SIS)
+# Particle filtering
 particles <- matrix(0, nrow = S, ncol = T)  # Store particles
+particlesT <- matrix(0, nrow = S, ncol = T)  # Store resampling particles
 weights <- matrix(0, nrow = S, ncol = T)   # Store weights
-weightsSt <- matrix(0, nrow = S, ncol = T)   # Store standarized weights
+weightsSt <- matrix(0, nrow = S, ncol = T)   # Store standardized weights
+weightsSTT <- matrix(1/S, nrow = S, ncol = T)   # Store standardized weights
+logalphas <- matrix(0, nrow = S, ncol = T)   # Store log incremental weights
 # Initialization
 particles[, 1] <- rnorm(S, mean = 0, sd = sigma_w)  # Sample initial particles
 weights[, 1] <- dnorm(y_obs[1], mean = phi*particles[, 1], sd = sigma_mu)  # Importance weights
 weightsSt[, 1] <- weights[, 1] / sum(weights[, 1])  # Normalize weights
+ind <- sample(1:S, size = S, replace = TRUE, prob = weightsSt[, 1]) # Resample 
+particles[, 1] <- particles[ind, 1] # Resampled particles
+particlesT[, 1] <- particles[, 1] # Resampled particles
 # Sequential updating
+pb <- winProgressBar(title = "progress bar", min = 0, max = T, width = 300)
 for (t in 2:T) {
   # Propagate particles
   particles[, t] <- rnorm(S, mean = particles[, t-1], sd = sigma_w)
   # Compute weights
-  weights[, t] <- weightsSt[, t-1] * dnorm(y_obs[t], mean = phi*particles[, t], sd = sigma_mu) # Recursive weight update
-  weightsSt[, t] <- weights[, t] / sum(weights[, t])  # Normalize weights
+  logalphas[, t] <- dnorm(y_obs[t], mean = phi*particles[, t], sd = sigma_mu, log = TRUE) 
+  weights[, t] <- exp(logalphas[, t])
+  weightsSt[, t] <- weights[, t] / sum(weights[, t])
+  if(t < T){
+    ind <- sample(1:S, size = S, replace = TRUE, prob = weightsSt[, t])
+    particles[, 1:t] <- particles[ind, 1:t]
+  }else{
+    ind <- sample(1:S, size = S, replace = TRUE, prob = weightsSt[, t])
+    particlesT[, 1:t] <- particles[ind, 1:t]
+  }
+  setWinProgressBar(pb, t, title=paste( round(t/T*100, 0), "% done"))
 }
-# Estimate the states (weighted mean)
+close(pb)
 FilterDist <- colSums(particles * weightsSt)
 SDFilterDist <- (colSums(particles^2 * weightsSt) - FilterDist^2)^0.5
-MargLik <- colMeans(weights)
+FilterDistT <- colSums(particlesT * weightsSTT)
+SDFilterDistT <- (colSums(particlesT^2 * weightsSTT) - FilterDistT^2)^0.5
 library(dplyr)
 library(ggplot2)
 require(latex2exp)
@@ -301,20 +318,25 @@ ggplot2::theme_set(theme_bw())
 df <- tibble(t = 1:T,
              mean = FilterDist,
              lower = FilterDist - 2*SDFilterDist,
-             upper = FilterDist + 2*SDFilterDist,
-             theta_true = theta_true)
-# Function to plot
+             upper = FilterDist+ 2*SDFilterDist,
+             meanT = FilterDistT,
+             lowerT = FilterDistT - 2*SDFilterDistT,
+             upperT = FilterDistT + 2*SDFilterDistT,
+             x_true = theta_true)
+
 plot_filtering_estimates <- function(df) {
   p <- ggplot(data = df, aes(x = t)) +
     geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1,
                 fill = "lightblue") +
-    geom_line(aes(y = theta_true), colour = "black", alpha = 1,
+    geom_line(aes(y = x_true), colour = "black", alpha = 1,
               linewidth = 0.5) +
     geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) +
+    geom_line(aes(y = meanT), colour = "purple", linewidth = 0.5) +
     ylab(TeX("$\\theta_{t}$")) + xlab("Time")
   print(p)
 }
 plot_filtering_estimates(df)
-
+MargLik <- colMeans(weights)
+plot(MargLik, type = "l")
 matplot(1:T, t(weights), type = "l", lty = 1, col = rgb(0, 0, 0, 0.1), main = "Particle Weights Over Time", ylab = "Weight", xlab = "Time")
 

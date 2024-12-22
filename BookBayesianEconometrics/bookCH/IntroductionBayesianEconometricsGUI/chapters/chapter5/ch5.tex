@@ -658,13 +658,13 @@ A relevant case is when the proposal distribution takes the form of the prior di
 \end{align*}
 this means that the \textit{incremental importance weight} is given by $p(\bm{y}_{t}|\bm{\theta}_{t}^{(s)})$. 
 
-Algorithm \ref{Alg:SIS} shows how to perform SIS \cite{cappe2007overview}.\\
+Algorithm \ref{Alg:SIS} shows how to perform SIS \cite{cappe2007overview}. We set $w_t^{(s)}:=w_t(\bm{\theta}_{0:t}^{(s)}$ to simplify notation.\\
 \begin{algorithm}[h!]
 	\caption{Sequential importance sampling algorithm}\label{Alg:SIS}
 	\begin{algorithmic}[1]
 		\For{\texttt{$s=1,\dots,S$}}
 		\State Sample $\bm{\theta}_0^{(s)}$ from $q(\bm{\theta}_0|y_0)$
-		\State Calculate the importance weights $w_0(\bm{\theta}^{(s)})\propto\frac{p(y_0|\bm{\theta}_0^{(s)})\pi(\bm{\theta}_0^{(s)})}{q(\bm{\theta}_0^{(s)}|y_0)}$ 
+		\State Calculate the importance weights $w_0^{(s)}\propto\frac{p(y_0|\bm{\theta}_0^{(s)})\pi(\bm{\theta}_0^{(s)})}{q(\bm{\theta}_0^{(s)}|y_0)}$ 
 		\EndFor 
 		\For{\texttt{$t=1,\dots,T$}}  		 			
 			\For{\texttt{$s=1,\dots,S$}}
@@ -725,7 +725,7 @@ weightsSt <- matrix(0, nrow = S, ncol = T)
 # Initialization
 particles[, 1] <- rnorm(S, mean = 0, sd = sigma_w)  # Sample initial particles
 weights[, 1] <- dnorm(y_obs[1], mean = phi*particles[, 1], sd = sigma_mu)  # Importance weights
-weightsSt[, 1] <- weights[, 1] / sum(weights[, 1])  # Normalize weights
+weightsSt[, 1] <- weights[, 1] / sum(weights[, 1])  # Standardized weights
 # Sequential updating
 for (t in 2:T) {
 	# Propagate particles
@@ -757,17 +757,18 @@ Figure \ref{fig58} shows the trajectory of the true state vector (black line), t
 	\caption[List of figure caption goes here]{State in linear state-space model: True and mean estimate using sequential importance sampling, $T=50$.}\label{fig58}
 \end{figure} 
 
-Sequential importance sampling is effective for sampling from the posterior distribution in the short term. However, it is important to note that SIS is a particular case of IS and, consequently, inherits the drawbacks of importance sampling. In particular, the variance of the weights increases exponentially with $t$ \cite{kong1994sequential}. This implies that, as $t$ increases, the importance weights tend to degenerate in the long run; that is, all probability mass concentrates on a few weights, a phenomenon known as sample impoverishment or weight degeneracy. This phenomenon can be observed, for instance, in the dynamic linear model example, where the highest standardized weight at $t=50$ is 53\%, and 7 out of 50,000 particles account for 87\% of the total probability.
+Sequential importance sampling is effective for sampling from the posterior distribution in the short term. However, it is important to note that SIS is a particular case of IS and, consequently, inherits the drawbacks of importance sampling. In particular, the variance of the weights increases exponentially with $t$ \cite{kong1994sequential}. This implies that, as $t$ increases, the importance weights tend to degenerate in the long run; that is, all probability mass concentrates on a few weights, a phenomenon known as sample impoverishment or weight degeneracy. This is because is impossible to accurately
+represent a distribution on a space of arbitrarily high dimension with a sample of fixed, finite size. This phenomenon can be observed, for instance, in the dynamic linear model example, where the highest standardized weight at $t=50$ is 53\%, and 7 out of 50,000 particles account for 87\% of the total probability.
 
-Given that, in practice, we are often interested in lower-dimensional marginal distributions, ideas from sampling/importance resampling can be employed. This strategy avoids the accumulation of errors, although resampling introduces some additional Monte Carlo variation. \cite{Gordon1993} proposed the \textit{Bootstrap filter}, where, at each time step, resampling is performed by drawing $S$ particles from the current set using the standardized weights as probabilities of selection. This ensures that particles with small weights have a low probability of being selected. After resampling, the standardized weights are set equal to $1/S$. Note that the \textit{Bootstrap filter} involves multiple iterations of the SIR algorithm, which implies that the resampled trajectories are no longer independent. This multinomial resampling provides an unbiased approximation to the posterior distribution obtained by SIS \cite{doucet2009tutorial}. Additionally, other resampling approaches preserve the unbiasedness property while offering a reduction in variance, such as residual resampling \cite{Liu1995} and systematic resampling \cite{Carpenter1999}. 
+Given that, in practice, we are often interested in lower-dimensional marginal distributions, ideas from sampling/importance resampling can be employed. This strategy avoids the accumulation of errors due to resetting the system, although resampling introduces some additional Monte Carlo variation. \cite{Gordon1993} proposed the \textit{Bootstrap filter}, where, at each time step, resampling is performed by drawing $S$ particles from the current set using the standardized weights as probabilities of selection. This ensures that particles with small weights have a low probability of being selected. After resampling, the standardized weights are set equal to $1/S$. Note that the \textit{Bootstrap filter} involves multiple iterations of the SIR algorithm, which implies that the resampled trajectories are no longer independent. This multinomial resampling provides an unbiased approximation to the posterior distribution obtained by SIS \cite{doucet2009tutorial}. Additionally, other resampling approaches preserve the unbiasedness property while offering a reduction in variance, such as residual resampling \cite{Liu1995} and systematic resampling \cite{Carpenter1999}. 
 
-Algorithm \ref{Alg:PF} shows how to perform the \textit{particle filter} \cite{doucet2009tutorial}.\\
+Algorithm \ref{Alg:PF} shows how to perform the \textit{particle filter}. We set $w_t^{(s)}:=w_t(\bm{\theta}_{0:t}^{(s)}$ to simplify notation. \cite{doucet2009tutorial}.\\
 \begin{algorithm}[h!]
 	\caption{The \textit{particle filter} algorithm}\label{Alg:PF}
 	\begin{algorithmic}[1]
 		\For{\texttt{$s=1,\dots,S$}}
 		\State Sample $\bm{\theta}_0^{(s)}$ from $q(\bm{\theta}_0|y_0)$
-		\State Calculate the importance weights $w_0(\bm{\theta}^{(s)})\propto\frac{p(y_0|\bm{\theta}_0^{(s)})\pi(\bm{\theta}_0^{(s)})}{q(\bm{\theta}_0^{(s)}|y_0)}$
+		\State Calculate the importance weights $w_0^{(s)}\propto\frac{p(y_0|\bm{\theta}_0^{(s)})\pi(\bm{\theta}_0^{(s)})}{q(\bm{\theta}_0^{(s)}|y_0)}$
 		\EndFor
 		\State Standardize the weights $w_0^{*(s)}=\frac{w_0^{(s)}}{\sum_{h=1}^Sw_0^{(h)}}$, $s=1,2,\dots,S$
 		\State Select $S$ particles from $\left\{\bm{\theta}_0^{(s)},w_0^{*(s)}\right\}$ to obtain $\left\{\bm{\theta}_0^{r(s)},1/S\right\}$  
@@ -794,57 +795,94 @@ Let's apply the SIS algorithm to the dynamic linear model with a sample size of 
 
 Let's perform particle filtering in this example. The following code illustrate the procedure.
 
+Figure \ref{fig510} show the performance of particle filtering in this example. There is the true state vector (black line), the means based on $\left\{\bm{\theta}_{1:t}^{(s)},w_t^{*(s)}\right\}$ (blue line) and  $\left\{\bm{\theta}_{1:t}^{r(s)},1/S\right\}$ (purple line), and the area defined by $\pm2\hat{\sigma}_{\theta}$ based on the former (light blue shaded area). Note that the particle filtering algorithm has better performance than the SIS algorithm.   
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter5/figures/PF.png}
+	\caption[List of figure caption goes here]{State in linear state-space model: True and mean estimate using particle filtering, $T=200$.}\label{fig510}
+\end{figure} 
+
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 	\textit{R code. Particle filtering: Dynamic linear model}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-			rm(list = ls()); set.seed(010101)
-			S <- 50000 # Number of particles
-			sigma_w <- 1  # State noise
-			sigma_mu <- 1  # Observation noise
-			phi <- 0.5 # Coefficient in observation equation
-			T <- 50 # Sample size
-			# Simulate true states and observations
-			theta_true <- numeric(T); y_obs <- numeric(T)
-			theta_true[1] <- rnorm(1, mean = 0, sd = sigma_w)  # Initial state
-			for (t in 2:T) {
-				theta_true[t] <- rnorm(1, mean = theta_true[t-1], sd = sigma_w)
-			}
-			y_obs <- rnorm(T, mean = phi*theta_true, sd = sigma_mu)
-			# Sequential Importance Sampling (SIS)
-			particles <- matrix(0, nrow = S, ncol = T) 
-			weights <- matrix(0, nrow = S, ncol = T) 
-			weightsSt <- matrix(0, nrow = S, ncol = T) 
-			# Initialization
-			particles[, 1] <- rnorm(S, mean = 0, sd = sigma_w)  # Sample initial particles
-			weights[, 1] <- dnorm(y_obs[1], mean = phi*particles[, 1], sd = sigma_mu)  # Importance weights
-			weightsSt[, 1] <- weights[, 1] / sum(weights[, 1])  # Normalize weights
-			# Sequential updating
-			for (t in 2:T) {
-				# Propagate particles
-				particles[, t] <- rnorm(S, mean = particles[, t-1], sd = sigma_w)
-				# Compute weights
-				weights[, t] <- weightsSt[, t-1] * dnorm(y_obs[t], mean = phi*particles[, t], sd = sigma_mu) # Recursive weight update
-				weightsSt[, t] <- weights[, t] / sum(weights[, t])  # Normalize weights
-			}
-			# Estimate the states (weighted mean)
-			FilterDist <- colSums(particles * weightsSt)
-			SDFilterDist <- (colSums(particles^2 * weightsSt) - FilterDist^2)^0.5
-			library(dplyr); library(ggplot2); library(latex2exp)
-			ggplot2::theme_set(theme_bw())
-			df <- tibble(t = 1:T, mean = FilterDist, lower = FilterDist - 2*SDFilterDist, upper = FilterDist + 2*SDFilterDist, theta_true = theta_true)
-			# Function to plot
-			plot_filtering_estimates <- function(df) {
-				p <- ggplot(data = df, aes(x = t)) + geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1, fill = "lightblue") + geom_line(aes(y = theta_true), colour = "black", alpha = 1, linewidth = 0.5) + geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) + ylab(TeX("$\\theta_{t}$")) + xlab("Time")
-				print(p)
-			}
-			plot_filtering_estimates(df)
-		\end{lstlisting}
+rm(list = ls()); set.seed(010101)
+S <- 50000 # Number of particles
+sigma_w <- 1; sigma_mu <- 1  #  # State and observation noises
+phi <- 0.5 # Coefficient in observation equation
+T <- 200 # Sample size
+# Simulate true states and observations
+theta_true <- numeric(T); y_obs <- numeric(T)
+theta_true[1] <- rnorm(1, mean = 0, sd = sigma_w) 
+for (t in 2:T) {
+	theta_true[t] <- rnorm(1, mean = theta_true[t-1], sd = sigma_w)
+}
+y_obs <- rnorm(T, mean = phi*theta_true, sd = sigma_mu)
+# Particle filtering
+particles <- matrix(0, nrow = S, ncol = T)  # Store particles
+particlesT <- matrix(0, nrow = S, ncol = T)  # Store resampling particles
+weights <- matrix(0, nrow = S, ncol = T)   # Store weights
+weightsSt <- matrix(0, nrow = S, ncol = T)   # Store standardized weights
+weightsSTT <- matrix(1/S, nrow = S, ncol = T)   # Store standardized weights
+logalphas <- matrix(0, nrow = S, ncol = T)   # Store log incremental weights
+particles[, 1] <- rnorm(S, mean = 0, sd = sigma_w) 
+weights[, 1] <- dnorm(y_obs[1], mean = phi*particles[, 1], sd = sigma_mu)  # Importance weights
+weightsSt[, 1] <- weights[, 1] / sum(weights[, 1])  # Normalize weights
+ind <- sample(1:S, size = S, replace = TRUE, prob = weightsSt[, 1]) # Resample 
+particles[, 1] <- particles[ind, 1] # Resampled particles
+particlesT[, 1] <- particles[, 1] # Resampled particles
+# Sequential updating
+pb <- winProgressBar(title = "progress bar", min = 0, max = T, width = 300)
+for (t in 2:T) {
+	particles[, t] <- rnorm(S, mean = particles[, t-1], sd = sigma_w)
+	logalphas[, t] <- dnorm(y_obs[t], mean = phi*particles[, t], sd = sigma_mu, log = TRUE) 
+	weights[, t] <- exp(logalphas[, t])
+	weightsSt[, t] <- weights[, t] / sum(weights[, t])
+	if(t < T){
+		ind <- sample(1:S, size = S, replace = TRUE, prob = weightsSt[, t])
+		particles[, 1:t] <- particles[ind, 1:t]
+	}else{
+		ind <- sample(1:S, size = S, replace = TRUE, prob = weightsSt[, t])
+		particlesT[, 1:t] <- particles[ind, 1:t]
+	}
+	setWinProgressBar(pb, t, title=paste( round(t/T*100, 0), "% done"))
+}
+close(pb)
+\end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
 
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Particle filtering: Dynamic linear model}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+FilterDist <- colSums(particles * weightsSt)
+SDFilterDist <- (colSums(particles^2 * weightsSt) - FilterDist^2)^0.5
+FilterDistT <- colSums(particlesT * weightsSTT)
+SDFilterDistT <- (colSums(particlesT^2 * weightsSTT) - FilterDistT^2)^0.5
+MargLik <- colMeans(weights)
+plot(MargLik, type = "l")
+library(dplyr)
+library(ggplot2)
+require(latex2exp)
+ggplot2::theme_set(theme_bw())
+df <- tibble(t = 1:T, mean = FilterDist, lower = FilterDist - 2*SDFilterDist, upper = FilterDist+ 2*SDFilterDist, meanT = FilterDistT, lowerT = FilterDistT - 2*SDFilterDistT,
+upperT = FilterDistT + 2*SDFilterDistT, x_true = theta_true)
+plot_filtering_estimates <- function(df) {
+	p <- ggplot(data = df, aes(x = t)) + geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1, fill = "lightblue") + geom_line(aes(y = x_true), colour = "black", alpha = 1, linewidth = 0.5) + geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) +
+	geom_line(aes(y = meanT), colour = "purple", linewidth = 0.5) + 	ylab(TeX("$\\theta_{t}$")) + xlab("Time")
+	print(p)
+}
+plot_filtering_estimates(df)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
 
+Algorithm \ref{Alg:PF} performs resampling at every time step. However, it is common to perform resampling only when the effective sample size of the particles ($ESS = (\sum_{s=1}^S (w_t^{*(s)})^{2})^{-1}$) falls below a specific threshold, such as 50\% of the initial number of particles. Note that when $w_t^{*(s)} = 1/S$, the effective sample size is equal to $S$, the total number of particles. Additionally, we should use $\left\{\bm{\theta}_{1:t}^{(s)},w_t^{*(s)}\right\}$ to estimate the posterior distribution, as it results in lower Monte Carlo error compared to calculations based on $\left\{\bm{\theta}_{1:t}^{r(s)},1/S\right\}$ \cite{cappe2007overview}. Finally, an estimate of the marginal likelihood can be obtained using $\hat{p}(y_t) = \frac{1}{S}\sum_{s=1}^S w_t^{(s)}$.
+
+\textit{Particle filtering} has good advantages such as It is very quick and easy to implement, It is modular, that is, when changing the problem one need only change the expressions for the importance distribution and the importance weights, It can be straightforwardly implemented on a parallel algorithm. Allows easily carrying out sequential inference for very complex models. However, it also suffers from The resampling step introduces extra MC variability. The use of the state transition density as importance distribution can often lead to poor performance, which is manifested in a lack of robustness with respect to the values taken by the observed sequence, for example when outliers occur in the data or on the contrary when the variance of the observation noise is small. This procedure is not well suited to sample from $\pi(\bm{\theta}_{0:t}|y_{1:t})$. This is because most of the particles come from the same ancestor.
 
 
 
