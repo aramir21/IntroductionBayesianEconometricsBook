@@ -340,7 +340,7 @@ p(\bm{y})&=\int_{\bm{\Theta}}\frac{\prod_{i=1}^N \theta^{y_i}(1-\theta)^{1-y_i}\
 \end{align*}
 The integral is equal to 1 due to being over the support of $B(\alpha_n,\beta_n)$ distribution.
 
- \begin{tcolorbox}[enhanced,width=4.67in,center upper,
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 	\textit{R code. Importance sampling: Bernoulli-Beta model}
 	\begin{VF}
@@ -382,7 +382,161 @@ Figure \ref{fig55} shows the histogram of the posterior draws obtained using the
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter5/figures/ISbeta.png}
 	%%\centerline{\epsfig{/Chapters/chapter1/figures/cat.eps,width=.8\textheight,height=.4\textwidth}}
 	\caption[List of figure caption goes here]{Importance sampling: Beta distribution.}\label{fig55}
+\end{figure}
+
+\item Example 4.1 in \cite{Gordon1993} is 
+\begin{align*}
+	\theta_t&=0.5\theta_{t-1}+25\frac{\theta_{t-1}}{1+\theta_{t-1}^2}+8cos(1.2t)+w_t\\
+	y_t&=\frac{\theta_{t}^2}{20}+\mu_t,
+\end{align*}
+where $\theta_0\sim{N}(0,\sqrt{10})$, $w_t\sim\mathcal{N}(0,\sqrt{10})$ and $\mu_t\sim{N}(0,\sqrt{1})$.
+\begin{itemize}
+	\item Perform sequential importance sampling in this example
+	\item Perform particle (Bootstrap) filtering in this example
+	\item Estimate the marginal likelihood in this example  
+\end{itemize} 
+
+\textbf{Answer}
+
+The following code shows to perform sequential importance sampling and particle (Bootstrap) filtering in the Example 1 in \cite{Gordon1993}. Take into account that we use same strategy as in the dynamic linear model example in the book to calculate the mean and standard deviation of the posterior distribution.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Sequential importance sampling and particle (Bootstrap) filtering: Gordon (1993) Example 1.}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+S <- 50000 # Number of particles
+sigma_w <- 10^0.5  # State noise
+sigma_mu <- 1  # Observation noise
+T <- 200 # Sample size
+# Simulate true states and observations
+theta_true <- numeric(T)
+y_obs <- numeric(T)
+theta_true[1] <- rnorm(1, mean = 0, sd = sigma_w)  # Initial state
+y_obs[1] <- rnorm(1, mean = theta_true[1]^2/20, sd = sigma_mu) 
+for (t in 2:T) {
+	meant <- 0.5*theta_true[t-1] + 25*(theta_true[t-1]/(1+theta_true[t-1]^2)) + 8*cos(1.2*t)
+	theta_true[t] <-  rnorm(1, mean = meant, sd = sigma_w)
+	y_obs[t] <- rnorm(1, mean = theta_true[t]^2/20, sd = sigma_mu)  
+}
+plot(theta_true, type = "l"); plot(y_obs, type = "l")
+# Sequential Importance Sampling (SIS)
+particles <- matrix(0, nrow = S, ncol = T) 
+weights <- matrix(0, nrow = S, ncol = T) 
+weightsSt <- matrix(0, nrow = S, ncol = T) 
+# Initialization
+particles[, 1] <- rnorm(S, mean = 0, sd = sigma_w)
+weights[, 1] <- dnorm(y_obs[1], mean = particles[, 1]^2/20, sd = sigma_mu)
+weightsSt[, 1] <- weights[, 1] / sum(weights[, 1])
+# Sequential updating
+for (t in 2:T) {
+	particles[, t] <- rnorm(S, mean = 0.5*particles[, t-1] + 25*(particles[, t-1]/(1+particles[, t-1]^2)) + 8*cos(1.2*t), sd = sigma_w)  # Compute weights
+	weights[, t] <- weightsSt[, t-1] * dnorm(y_obs[t], mean = particles[, t]^2/20, sd = sigma_mu)
+	weightsSt[, t] <- weights[, t] / sum(weights[, t])
+}
+FilterDist <- colSums(particles * weightsSt)
+SDFilterDist <- (colSums(particles^2 * weightsSt) - FilterDist^2)^0.5
+library(dplyr); library(ggplot2); library(latex2exp)
+ggplot2::theme_set(theme_bw())
+df <- tibble(t = 1:T, mean = FilterDist, lower = FilterDist - 2*SDFilterDist, upper = FilterDist + 2*SDFilterDist, theta_true = theta_true)
+plot_filtering_estimates <- function(df) {
+	p <- ggplot(data = df, aes(x = t)) + geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1, fill = "lightblue") + geom_line(aes(y = theta_true), colour = "black", alpha = 1, linewidth = 0.5) + geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) + ylab(TeX("$\\theta_{t}$")) + xlab("Time")
+	print(p)
+}
+plot_filtering_estimates(df)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Sequential importance sampling and particle (Bootstrap) filtering: Gordon (1993) Example 1.}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+# Particle filtering
+particles <- matrix(0, nrow = S, ncol = T) 
+particlesT <- matrix(0, nrow = S, ncol = T)
+weights <- matrix(0, nrow = S, ncol = T) 
+weightsSt <- matrix(0, nrow = S, ncol = T) 
+weightsSTT <- matrix(1/S, nrow = S, ncol = T) 
+logalphas <- matrix(0, nrow = S, ncol = T) 
+# Initialization
+particles[, 1] <- rnorm(S, mean = 0, sd = sigma_w)  # Sample initial particles
+weights[, 1] <- dnorm(y_obs[1], mean = particles[, 1]^2/20, sd = sigma_mu)  # Importance weights
+weightsSt[, 1] <- weights[, 1] / sum(weights[, 1])  # Normalize weights
+ind <- sample(1:S, size = S, replace = TRUE, prob = weightsSt[, 1]) # Resample 
+particles[, 1] <- particles[ind, 1] # Resampled particles
+particlesT[, 1] <- particles[, 1] # Resampled particles
+# Sequential updating
+pb <- winProgressBar(title = "progress bar", min = 0, max = T, width = 300)
+for (t in 2:T) {
+	# Propagate particles
+	particles[, t] <- rnorm(S, mean = 0.5*particles[, t-1] + 25*(particles[, t-1]/(1+particles[, t-1]^2)) + 8*cos(1.2*t), sd = sigma_w)
+	# Compute weights
+	logalphas[, t] <- dnorm(y_obs[t], mean = particles[, t]^2/20, sd = sigma_mu, log = TRUE) 
+	weights[, t] <- exp(logalphas[, t])
+	weightsSt[, t] <- weights[, t] / sum(weights[, t])
+	if(t < T){
+		ind <- sample(1:S, size = S, replace = TRUE, prob = weightsSt[, t])
+		particles[, 1:t] <- particles[ind, 1:t]
+	}else{
+		ind <- sample(1:S, size = S, replace = TRUE, prob = weightsSt[, t])
+		particlesT[, 1:t] <- particles[ind, 1:t]
+	}
+	setWinProgressBar(pb, t, title=paste( round(t/T*100, 0), "% done"))
+}
+close(pb)
+FilterDist <- colSums(particles * weightsSt)
+SDFilterDist <- (colSums(particles^2 * weightsSt) - FilterDist^2)^0.5
+FilterDistT <- colSums(particlesT * weightsSTT)
+SDFilterDistT <- (colSums(particlesT^2 * weightsSTT) - FilterDistT^2)^0.5
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}  
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Sequential importance sampling and particle (Bootstrap) filtering: Gordon (1993) Example 1.}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+library(dplyr); library(ggplot2); library(latex2exp)
+ggplot2::theme_set(theme_bw())
+df <- tibble(t = 1:T, mean = FilterDist, lower = FilterDist - 2*SDFilterDist, upper = FilterDist+ 2*SDFilterDist, meanT = FilterDistT, lowerT = FilterDistT - 2*SDFilterDistT,
+upperT = FilterDistT + 2*SDFilterDistT, x_true = theta_true)
+plot_filtering_estimates <- function(df) {
+	p <- ggplot(data = df, aes(x = t)) + geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1, fill = "lightblue") + geom_line(aes(y = x_true), colour = "black", alpha = 1, linewidth = 0.5) + geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) +
+	geom_line(aes(y = meanT), colour = "purple", linewidth = 0.5) + ylab(TeX("$\\theta_{t}$")) + xlab("Time")
+	print(p)
+}
+plot_filtering_estimates(df)
+MargLik <- colMeans(weights)
+plot(MargLik, type = "l", xlab = "Time", ylab = "Marginal likelihood", main = "Marginal likelihood")
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+Figure \ref{fig56} shows the true trajectory of the state vector (black line), the posterior mean (blue line), and the $\pm2\hat{\sigma}_{\theta}$ posterior estimate (light blue shaded area) from the sequential importance sampling algorithm. We observe that there is no light blue shaded area after time period 40, and the algorithm exhibits poor performance after $t=75$. This is due to weight degeneracy.
+
+Figure \ref{fig57} shows the performance of particle filtering (see Figure 3 in \cite{Gordon1993}). There is the true state vector (black line), the means based on $\left\{\bm{\theta}_{1:t}^{(s)},w_t^{*(s)}\right\}$ (blue line) and  $\left\{\bm{\theta}_{1:t}^{r(s)},1/S\right\}$ (purple line), and the area defined by $\pm2\hat{\sigma}_{\theta}$ based on the former (light blue shaded area). Note that the particle filtering algorithm has better performance than the SIS algorithm. This is due to restarting the system every stage by resampling, which in turn mitigates the weight degeneracy issue.
+
+Finally, Figure \ref{fig58} shows the posterior estimate of marginal likelihood based on the particle filtering algorithm.
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter5/figures/SISGordon.png}
+	%%\centerline{\epsfig{/Chapters/chapter1/figures/cat.eps,width=.8\textheight,height=.4\textwidth}}
+	\caption[List of figure caption goes here]{Sequential importance sampling: Example 1, \cite{Gordon1993}.}\label{fig56}
+\end{figure} 
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter5/figures/PFGordon.png}
+	%%\centerline{\epsfig{/Chapters/chapter1/figures/cat.eps,width=.8\textheight,height=.4\textwidth}}
+	\caption[List of figure caption goes here]{Particle (Bootstrap) filtering: Example 1, \cite{Gordon1993}.}\label{fig57}
+\end{figure}
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter5/figures/MarLikGordon.png}
+	%%\centerline{\epsfig{/Chapters/chapter1/figures/cat.eps,width=.8\textheight,height=.4\textwidth}}
+	\caption[List of figure caption goes here]{Marginal likelihood: Example 1, \cite{Gordon1993}.}\label{fig58}
 \end{figure}  
-  
 
 \end{enumerate}

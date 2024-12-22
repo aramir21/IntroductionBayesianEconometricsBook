@@ -760,7 +760,7 @@ Figure \ref{fig58} shows the trajectory of the true state vector (black line), t
 Sequential importance sampling is effective for sampling from the posterior distribution in the short term. However, it is important to note that SIS is a particular case of IS and, consequently, inherits the drawbacks of importance sampling. In particular, the variance of the weights increases exponentially with $t$ \cite{kong1994sequential}. This implies that, as $t$ increases, the importance weights tend to degenerate in the long run; that is, all probability mass concentrates on a few weights, a phenomenon known as sample impoverishment or weight degeneracy. This is because is impossible to accurately
 represent a distribution on a space of arbitrarily high dimension with a sample of fixed, finite size. This phenomenon can be observed, for instance, in the dynamic linear model example, where the highest standardized weight at $t=50$ is 53\%, and 7 out of 50,000 particles account for 87\% of the total probability.
 
-Given that, in practice, we are often interested in lower-dimensional marginal distributions, ideas from sampling/importance resampling can be employed. This strategy avoids the accumulation of errors due to resetting the system, although resampling introduces some additional Monte Carlo variation. \cite{Gordon1993} proposed the \textit{Bootstrap filter}, where, at each time step, resampling is performed by drawing $S$ particles from the current set using the standardized weights as probabilities of selection. This ensures that particles with small weights have a low probability of being selected. After resampling, the standardized weights are set equal to $1/S$. Note that the \textit{Bootstrap filter} involves multiple iterations of the SIR algorithm, which implies that the resampled trajectories are no longer independent. This multinomial resampling provides an unbiased approximation to the posterior distribution obtained by SIS \cite{doucet2009tutorial}. Additionally, other resampling approaches preserve the unbiasedness property while offering a reduction in variance, such as residual resampling \cite{Liu1995} and systematic resampling \cite{Carpenter1999}. 
+Given that, in practice, we are often interested in lower-dimensional marginal distributions, ideas from sampling/importance resampling can be employed. This strategy avoids the accumulation of errors due to resetting the system, although resampling introduces some additional Monte Carlo variation. \cite{Gordon1993} proposed the \textit{Bootstrap filter}, where, at each time step, resampling is performed by drawing $S$ particles from the current set using the standardized weights as probabilities of selection. This ensures that particles with small weights have a low probability of being selected. After resampling, the standardized weights are set equal to $1/S$. Note that the \textit{Bootstrap filter} involves multiple iterations of the SIR algorithm, which implies that the resampled trajectories are no longer independent. This multinomial resampling provides an unbiased approximation to the posterior distribution obtained by SIS \cite{doucet2009tutorial}.  
 
 Algorithm \ref{Alg:PF} shows how to perform the \textit{particle filter}. We set $w_t^{(s)}:=w_t(\bm{\theta}_{0:t}^{(s)}$ to simplify notation. \cite{doucet2009tutorial}.\\
 \begin{algorithm}[h!]
@@ -793,9 +793,7 @@ Let's apply the SIS algorithm to the dynamic linear model with a sample size of 
 	\caption[List of figure caption goes here]{State in linear state-space model: True and mean estimate using sequential importance sampling, $T=200$.}\label{fig59}
 \end{figure} 
 
-Let's perform particle filtering in this example. The following code illustrate the procedure.
-
-Figure \ref{fig510} show the performance of particle filtering in this example. There is the true state vector (black line), the means based on $\left\{\bm{\theta}_{1:t}^{(s)},w_t^{*(s)}\right\}$ (blue line) and  $\left\{\bm{\theta}_{1:t}^{r(s)},1/S\right\}$ (purple line), and the area defined by $\pm2\hat{\sigma}_{\theta}$ based on the former (light blue shaded area). Note that the particle filtering algorithm has better performance than the SIS algorithm.   
+Let's perform particle filtering in this example. The following code illustrate the procedure. Figure \ref{fig510} show the performance of particle filtering in this example. There is the true state vector (black line), the means based on $\left\{\bm{\theta}_{1:t}^{(s)},w_t^{*(s)}\right\}$ (blue line) and  $\left\{\bm{\theta}_{1:t}^{r(s)},1/S\right\}$ (purple line), and the area defined by $\pm2\hat{\sigma}_{\theta}$ based on the former (light blue shaded area). Note that the particle filtering algorithm has better performance than the SIS algorithm.   
 
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter5/figures/PF.png}
@@ -880,25 +878,27 @@ plot_filtering_estimates(df)
 	\end{VF}
 \end{tcolorbox} 
 
-Algorithm \ref{Alg:PF} performs resampling at every time step. However, it is common to perform resampling only when the effective sample size of the particles ($ESS = (\sum_{s=1}^S (w_t^{*(s)})^{2})^{-1}$) falls below a specific threshold, such as 50\% of the initial number of particles. Note that when $w_t^{*(s)} = 1/S$, the effective sample size is equal to $S$, the total number of particles. Additionally, we should use $\left\{\bm{\theta}_{1:t}^{(s)},w_t^{*(s)}\right\}$ to estimate the posterior distribution, as it results in lower Monte Carlo error compared to calculations based on $\left\{\bm{\theta}_{1:t}^{r(s)},1/S\right\}$ \cite{cappe2007overview}. Finally, an estimate of the marginal likelihood can be obtained using $\hat{p}(y_t) = \frac{1}{S}\sum_{s=1}^S w_t^{(s)}$.
+Algorithm \ref{Alg:PF} performs resampling at every time step. However, it is common to perform resampling only when the effective sample size of the particles ($ESS = (\sum_{s=1}^S (w_t^{*(s)})^{2})^{-1}$) falls below a specific threshold, such as 50\% of the initial number of particles. Note that when $w_t^{*(s)} = 1/S$, the effective sample size is $S$, the total number of particles. Additionally, we should use $\left\{\bm{\theta}_{1:t}^{(s)},w_t^{*(s)}\right\}$ to estimate the posterior distribution, as it results in lower Monte Carlo error compared to calculations based on $\left\{\bm{\theta}_{1:t}^{r(s)},1/S\right\}$ \cite{cappe2007overview}. Finally, an estimate of the marginal likelihood can be obtained using 
+\[
+\hat{p}(y_t) = \frac{1}{S}\sum_{s=1}^S w_t^{(s)}.
+\]
 
-\textit{Particle filtering} has good advantages such as It is very quick and easy to implement, It is modular, that is, when changing the problem one need only change the expressions for the importance distribution and the importance weights, It can be straightforwardly implemented on a parallel algorithm. Allows easily carrying out sequential inference for very complex models. However, it also suffers from The resampling step introduces extra MC variability. The use of the state transition density as importance distribution can often lead to poor performance, which is manifested in a lack of robustness with respect to the values taken by the observed sequence, for example when outliers occur in the data or on the contrary when the variance of the observation noise is small. This procedure is not well suited to sample from $\pi(\bm{\theta}_{0:t}|y_{1:t})$. This is because most of the particles come from the same ancestor.
+\textit{Particle filtering} offers several advantages, such as being quick and easy to implement, its modularity—allowing one to simply adjust the expressions for the importance distribution and weights when changing the problem—and its suitability for parallel algorithms. Moreover, it enables straightforward sequential inference for very complex models.
 
+However, there are also disadvantages. The resampling step introduces extra Monte Carlo variability. Using the state transition (prior) density as the importance distribution often leads to poor performance, manifested in a lack of robustness with respect to the observed sequence. For instance, performance deteriorates when outliers occur in the data or when the variance of the observation noise is small. Furthermore, the procedure is not well suited for sampling from $\pi(\bm{\theta}_{0:t}|y_{1:t})$ because most particles originate from the same ancestor.
 
+Alternative resampling approaches, such as residual resampling \cite{Liu1995} and systematic resampling \cite{Carpenter1999}, preserve unbiasedness while reducing variance. Additionally, auxiliary particle filtering \cite{Cappe2007} can help decrease Monte Carlo variability.
 
- 
+Lastly, estimating fixed parameters such as $\sigma_w^2$, $\sigma_{\mu}^2$, and $\phi$ in the dynamic linear model poses a challenge. Various methods exist to address this issue; see \cite{Kantas2009,kantas2015particle} for a comprehensive review and \cite{Andrieu2010} for a seminal work in \textit{particle MCMC} methods.
 
 \section{Convergence diagnostics}\label{sec54}
+MCMC methods rely on \textit{irreducibility}, \textit{positive recurrence}, and \textit{aperiodicity}, ensuring that after a sufficient burn-in period, the posterior draws are sampled from the invariant stationary posterior distribution. In this section, we present diagnostics to assess this property. First, we calculate the numerical standard error associated with the MCMC algorithm. Next, we review the effective sample size and some convergence tests. Finally, we examine potential errors in the posterior simulator.
 
 \subsection{Numerical standard error}
 \subsection{Effective sample size}
-\subsection{Checking for errors in the posterior simulator}
-
-\cite{geweke2004getting}
-
 \subsection{Tests of convergence}
 
-Regarding convergence issues, we implement several diagnostics to assess the adequacy of the posterior chains \cite{Plummer2016} in our Graphical User Interface (GUI). In particular, we should see that trace plots should appear stable, and autocorrelation plots should decrease rapidly. 
+Regarding convergence issues, there are different diagnostics to assess the adequacy of the posterior chains. In particular, there are graphical approaches such as the trace plots, which should lock stable, and autocorrelation plots, that should decrease rapidly. 
 
 Additionally, we apply Geweke's test \cite{Geweke1992}, which is a simple two-sample test of means. If the mean of the first window (10\% of the chain) is not significantly different from the mean of the second window (50\% of the chain), we conclude that the target distribution has converged.
 
@@ -908,6 +908,9 @@ Heidelberger and Welch's test \cite{Heidelberger1983} uses a Cramér-von Mises s
 
 This test is recursively applied until either the null hypothesis is not rejected, or $t = 50\%$ of the chain has been discarded. Subsequently, the half-width test calculates a 95\% confidence interval for the mean using the portion of the chain that passed the stationarity test. If the ratio of the half-width of this interval to the mean is less than 0.1, the test is considered passed.\\
 
+\subsection{Checking for errors in the posterior simulator}
+
+\cite{geweke2004getting}
 
 \section{Summary}\label{sec55}
 
@@ -938,6 +941,18 @@ This test is recursively applied until either the null hypothesis is not rejecte
 	\item Use importance sampling based on a $U(0,1)$ proposal to obtain draws of $\bm{\theta}|\bm{y} \sim B(16.55,39.57)$ in the Ph.D. students' sleeping hours example in Chapter \ref{chap4}. Note that, based on Exercise 15 in Chapter \ref{chap4}, $\alpha_0 = 1.44$ and $\beta_0 = 2.57$.
 	\item Compute the marginal likelihood in this context (Bernoulli-Beta model) and compare it to the result obtained using the Gelfand-Dey method.
 \end{enumerate}
+
+\item Example 4.1 in \cite{Gordon1993} is 
+\begin{align*}
+	\theta_t&=0.5\theta_{t-1}+25\frac{\theta_{t-1}}{1+\theta_{t-1}^2}+8cos(1.2t)+w_t\\
+	y_t&=\frac{\theta_{t}^2}{20}+\mu_t,
+\end{align*}
+where $\theta_0\sim{N}(0,\sqrt{10})$, $w_t\sim\mathcal{N}(0,\sqrt{10})$ and $\mu_t\sim{N}(0,\sqrt{1})$.
+\begin{itemize}
+	\item Perform sequential importance sampling in this example
+	\item Perform particle (Bootstrap) filtering in this example
+	\item Estimate the marginal likelihood in this example  
+\end{itemize}
     
 	
 \end{enumerate}
