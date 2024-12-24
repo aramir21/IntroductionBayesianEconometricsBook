@@ -979,7 +979,7 @@ where $\bar{h}_L=L^{-1}\sum_{l=1}^L h(\bm{y}^{(l)},\bm{\theta}^{(l)})$ converges
 \begin{align*}
 	\frac{\bar{h}_S-\bar{h}_L}{\left(S^{-1}\hat{\sigma}^2_{Sh}(\bm{\theta})+L^{-1}\hat{\sigma}^{*2}_{Lh}(\bm{\theta})\right)^{1/2}} &\stackrel{d}{\rightarrow} N(0,1).
 \end{align*}
-Thus, we can test $H_0.\bar{h}_S-\bar{h}_L=0$ versus $H_1.\bar{h}_S-\bar{h}_L\neq 0$. Rejection of the null indicates potential errors in implementing the posterior simulator.\\
+Thus, we can test $H_0. \ \bar{h}_S-\bar{h}_L=0$ versus $H_1. \ \bar{h}_S-\bar{h}_L\neq 0$. Rejection of the null indicates potential errors in implementing the posterior simulator.\\
 
 \textbf{Example: Mining disaster change point continues}
 
@@ -993,7 +993,9 @@ The Geweke test statistic is 1.43, which implies no statistical evidence to reje
 
 In summary, all posterior diagnostics indicate that the posterior draws originate from an invariant stationary distribution.
 
-The second part of the code implements \cite{geweke2004getting} proposal to assess the reliability of the posterior simulator. 
+The second part of the code implements the proposal by \cite{geweke2004getting} to assess the reliability of the posterior simulator. The parameter vector is defined as $\bm{\theta} = [\lambda_1 \ \lambda_2 \ H]$, and the first moments of these parameters are used as test functions. We fail to reject the null hypothesis of equal means across the three test functions, indicating that the posterior simulator is functioning correctly.
+
+To evaluate the effectiveness of the test, we run the \textit{marginal-conditional simulator} with prior parameters $\alpha_{l0} = 0.5$ and $\beta_{l0} = 1$, $l = 1, 2$. In contrast, for the \textit{successive-conditional simulator}, we use prior parameters $\alpha_{l0} = 1$ and $\beta_{l0} = 0.5$, $l = 1, 2$. In this case, we reject the null hypothesis in two out of three test functions, suggesting that the test performs well in this example.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -1055,11 +1057,69 @@ effectiveSize(theta2Post)
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter5/figures/AutocorrelationPlot.png}
 	\caption[List of figure caption goes here]{ Mining disaster change point: Autocorrelation plot of $\lambda_2$.}\label{fig512}
-\end{figure}  
+\end{figure}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Posterior diagnostics: The mining disaster changepoint}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+# Marginal-conditional simulator
+Theta1Prior <- rgamma(MCMC,a10,b10); Theta2Prior <- rgamma(MCMC,a20,b20) 
+kPrior <- sample(1:T, MCMC, replace = TRUE, prob = rep(1/T,T))
+ytPrior <- function(par){
+	y1t <- rpois(par[3], par[1])
+	if(par[3] == T){y2t <- NULL
+	}else{y2t <- rpois(T-par[3], par[2])
+	}
+	yt <- c(y1t, y2t)
+	return(yt)
+}
+pars1 <- cbind(Theta1Prior, Theta2Prior, kPrior); Yt <- apply(pars1, 1, ytPrior)
+parsmcmc1 <- coda::mcmc(pars1); Summ1 <- summary(parsmcmc1)
+# Successive-conditional simulator
+SucConSim <- function(a10, b10, a20, b20, par){
+	y <- ytPrior(par) 
+	theta1 <- par[1]; theta2 <- par[2]; H <- par[3]
+	a1 <- a10 + sum(y[1:H]); 	b1 <- b10+H
+	theta11 <- rgamma(1,a1,b1)
+	if(H == T){ a2 <- a20
+	}else{ a2 <- a20 + sum(y[(1+H):T])
+	}
+	b2 <- b20 + T-H; theta22 <- rgamma(1,a2,b2); pp<-NULL
+	for(l in 1:T){
+		p <- l*(theta22-theta11) + (sum(y[1:l]))*log(theta11/theta22)
+		pp <- c(pp,p)
+	}
+	pps <- exp(pp - max(pp)); prob <- pps/sum(pps)
+	H <- sample(1:T, 1, prob=prob)
+	parNew <- list(y = y, pars = c(theta11, theta22, H))
+	return(parNew)
+}
+a10 <- 0.5; b10 <- 1; a20 <- 0.5; b20 <- 1
+# a10 <- 1; b10 <- 0.5; a20 <- 1; b20 <- 0.5
+par1 <- rgamma(1,a10,b10); par2 <- rgamma(1,a20,b20) 
+par3 <- sample(1:T, 1, replace = TRUE, prob = rep(1/T,T))
+pars2 <- matrix(NA, MCMC, 3); pars2[1,] <- c(par1, par2, par3)
+for(s in 2:MCMC){
+	Res <- SucConSim(a10 = a10, b10 = b10, a20 = a20, b20 = b20, par = pars2[s-1,])
+	pars2[s, ] <- Res$pars
+}
+parsmcmc2 <- coda::mcmc(pars2); Summ2 <- summary(parsmcmc2)
+TestGeweke <- function(j){
+	Test <- (Summ1[["statistics"]][j,1] - Summ2[["statistics"]][j,1])/(Summ1[["statistics"]][j,4]+Summ2[["statistics"]][j,4])^0.5
+	Reject <- abs(Test) > qnorm(0.975)
+	return(list(Test = Test, Reject = Reject))
+}
+TestGeweke(1); TestGeweke(2); TestGeweke(3)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
   
-
 \section{Summary}\label{sec55}
+In this chapter, we present the most popular methods for obtaining posterior draws when the posterior distribution does not have a standard closed-form solution. In particular, Markov chain Monte Carlo (MCMC) methods, such as Gibbs sampling and the Metropolis-Hastings algorithm, are the most commonly used approaches in this book. However, Hamiltonian Monte Carlo is gaining particular relevance in high-dimensional problems, while particle filtering (Sequential Monte Carlo) is widely applied in time series models.
 
+Each problem requires careful consideration to determine the most appropriate method, and in many cases, a combination of methods is necessary. For instance, estimating fixed parameters in \textit{state-space} models typically requires MCMC methods, while recursion of the state vector requires particle filtering. Additionally, convergence diagnostics are crucial because MCMC methods rely on technical assumptions that must be verified.
 
 \section{Exercises}\label{sec56}
 
@@ -1095,11 +1155,17 @@ effectiveSize(theta2Post)
 \end{align*}
 where $\theta_0\sim{N}(0,\sqrt{10})$, $w_t\sim\mathcal{N}(0,\sqrt{10})$ and $\mu_t\sim{N}(0,\sqrt{1})$.
 \begin{itemize}
-	\item Perform sequential importance sampling in this example
-	\item Perform particle (Bootstrap) filtering in this example
-	\item Estimate the marginal likelihood in this example  
+	\item Perform sequential importance sampling in this example.
+	\item Perform particle (Bootstrap) filtering in this example.
+	\item Estimate the marginal likelihood in this example.  
 \end{itemize}
-    
+
+\item \textbf{Ph.D. students sleeping hours continues}
+
+\begin{itemize}
+	\item Perform the diagnostics of Section \ref{sec54} in this example
+	\item Check if there are errors in the posterior simulator of the Metropolis-Hastings algorithm in this example.
+\end{itemize} 
 	
 \end{enumerate}
 

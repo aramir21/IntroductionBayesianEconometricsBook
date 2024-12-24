@@ -384,5 +384,69 @@ summary(theta2Post); effectiveSize(theta2Post)
 geweke.diag(theta2Post, frac1 = 0.1, frac2 = 0.5)
 raftery.diag(theta2Post, q = 0.025, r = 0.005, s = 0.95)
 heidel.diag(theta2Post, eps = 0.1, pvalue = 0.05)
+# Geweke 2004
+# Marginal-conditional simulator
+Theta1Prior <- rgamma(MCMC,a10,b10) 
+Theta2Prior <- rgamma(MCMC,a20,b20) 
+kPrior <- sample(1:T, MCMC, replace = TRUE, prob = rep(1/T,T))
+ytPrior <- function(par){
+  y1t <- rpois(par[3], par[1])
+  if(par[3] == T){
+    y2t <- NULL
+  }else{
+    y2t <- rpois(T-par[3], par[2])
+  }
+  yt <- c(y1t, y2t)
+  return(yt)
+}
+pars1 <- cbind(Theta1Prior, Theta2Prior, kPrior)
+Yt <- apply(pars1, 1, ytPrior)
+parsmcmc1 <- coda::mcmc(pars1)
+Summ1 <- summary(parsmcmc1)
+# Successive-conditional simulator
 
-
+SucConSim <- function(a10, b10, a20, b20, par){
+  y <- ytPrior(par) 
+  theta1 <- par[1]; theta2 <- par[2]; H <- par[3]
+  a1 <- a10 + sum(y[1:H])
+  b1 <- b10+H
+  theta11 <- rgamma(1,a1,b1)
+  if(H == T){
+    a2 <- a20
+  }else{
+    a2 <- a20 + sum(y[(1+H):T])
+  }
+  b2 <- b20 + T-H
+  theta22 <- rgamma(1,a2,b2)
+  pp<-NULL
+  for(l in 1:T){
+    # p <- exp(l*(theta22-theta11))*(theta11/theta22)^(sum(y[1:l]))
+    p <- l*(theta22-theta11) + (sum(y[1:l]))*log(theta11/theta22)
+    pp <- c(pp,p)
+  }
+  pps <- exp(pp - max(pp))
+  prob <- pps/sum(pps)
+  # prob[is.na(prob)] <- 0
+  H <- sample(1:T, 1, prob=prob)
+  parNew <- list(y = y, pars = c(theta11, theta22, H))
+  return(parNew)
+}
+# a10 <- 0.5; b10 <- 1; a20 <- 0.5; b20 <- 1 # Example
+a10 <- 2.5; b10 <- 2; a20 <- 2.5; b20 <- 2
+par1 <- rgamma(1,a10,b10) 
+par2 <- rgamma(1,a20,b20) 
+par3 <- sample(1:T, 1, replace = TRUE, prob = rep(1/T,T))
+pars2 <- matrix(NA, MCMC, 3)
+pars2[1,] <- c(par1, par2, par3)
+for(s in 2:MCMC){
+  Res <- SucConSim(a10 = a10, b10 = b10, a20 = a20, b20 = b20, par = pars2[s-1,])
+  pars2[s, ] <- Res$pars
+}
+parsmcmc2 <- coda::mcmc(pars2)
+Summ2 <- summary(parsmcmc2)
+TestGeweke <- function(j){
+  Test <- (Summ1[["statistics"]][j,1] - Summ2[["statistics"]][j,1])/(Summ1[["statistics"]][j,4]+Summ2[["statistics"]][j,4])^0.5
+  Reject <- abs(Test) > qnorm(0.975)
+  return(list(Test = Test, Reject = Reject))
+}
+TestGeweke(1); TestGeweke(2); TestGeweke(3)
