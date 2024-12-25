@@ -432,7 +432,7 @@ SucConSim <- function(a10, b10, a20, b20, par){
   return(parNew)
 }
 # a10 <- 0.5; b10 <- 1; a20 <- 0.5; b20 <- 1 # Example
-a10 <- 2.5; b10 <- 2; a20 <- 2.5; b20 <- 2
+a10 <- 1; b10 <- 0.5; a20 <- 1; b20 <- 0.5
 par1 <- rgamma(1,a10,b10) 
 par2 <- rgamma(1,a20,b20) 
 par3 <- sample(1:T, 1, replace = TRUE, prob = rep(1/T,T))

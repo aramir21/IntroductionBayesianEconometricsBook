@@ -355,3 +355,87 @@ MargLik <- colMeans(weights)
 plot(MargLik, type = "l", xlab = "Time", ylab = "Marginal likelihood", main = "Marginal likelihood")
 matplot(1:T, t(weights), type = "l", lty = 1, col = rgb(0, 0, 0, 0.1), main = "Particle Weights Over Time", ylab = "Weight", xlab = "Time")
 max(weightsSt[,T])
+
+########################## Metropolis-Hastings: Beta posterior########################## 
+rm(list = ls())
+set.seed(010101)
+an <- 16.55; bn <- 39.57
+S <- 100000
+p <- runif(S)
+accept <- rep(0, S)
+for (s in 2:S){
+  pc <- runif(1)
+  a <- dbeta(pc, an, bn)/dbeta(p[s-1], an, bn)
+  U <- runif(1)
+  if(U <= a){
+    p[s] <- pc
+    accept[s] <- 1
+  }else{
+    p[s] <- p[s-1]
+    accept[s] <- 0
+  }
+}
+mean(accept)
+mean(p); sd(p)
+an/(an + bn); (an*bn/((an+bn)^2*(an+bn+1)))^0.5
+h <- hist(p, breaks=50, col="blue", xlab="Proportion Ph.D. students sleeping at least 6 hours", main="Beta draws from a Metropolis-Hastings algorithm")
+pfit <- seq(min(p),max(p),length=50)
+yfit<-dbeta(pfit, an, bn)
+yfit <- yfit*diff(h$mids[1:2])*length(p)
+lines(pfit, yfit, col="red", lwd=2)
+library(coda); library(latex2exp)
+thetaPost <- mcmc(p)
+plot(thetaPost, density = FALSE, main = "Trace plot", ylab = "Proportion")
+autocorr.plot(thetaPost, main = "Autocorrelation plot")
+summary(thetaPost); effectiveSize(thetaPost) 
+geweke.diag(thetaPost, frac1 = 0.1, frac2 = 0.5)
+raftery.diag(thetaPost, q = 0.025, r = 0.005, s = 0.95)
+heidel.diag(thetaPost, eps = 0.1, pvalue = 0.05)
+burnin <- 20000; thin <- 10
+keep <- seq(burnin, S, thin)
+thetaPostNew <- mcmc(p[keep])
+plot(thetaPostNew, density = FALSE, main = "Trace plot", ylab = "Proportion")
+autocorr.plot(thetaPostNew, main = "Autocorrelation plot")
+summary(thetaPostNew); effectiveSize(thetaPostNew) 
+geweke.diag(thetaPostNew, frac1 = 0.1, frac2 = 0.5)
+raftery.diag(thetaPostNew, q = 0.025, r = 0.005, s = 0.95)
+heidel.diag(thetaPostNew, eps = 0.1, pvalue = 0.05)
+# Geweke 2004
+# Marginal-conditional simulator
+a0 <- 1.22; b0 <- 2.57
+ThetaPrior <- rbeta(S,a0,b0) 
+yPrior <- rbinom(S, 1, prob = ThetaPrior)
+parsmcmc1 <- coda::mcmc(cbind(ThetaPrior, ThetaPrior^2))
+Summ1 <- summary(parsmcmc1)
+# Successive-conditional simulator
+N <- 52
+SucConSim <- function(a0, b0, par){
+  y <- rbinom(N, 1, prob = par)
+  an <- a0 + sum(y); bn <- b0 + N - sum(y) 
+  pc <- runif(1)
+  a <- dbeta(pc, an, bn)/dbeta(par, an, bn)
+  U <- runif(1)
+  if(U <= a){
+    par <- pc
+  }else{
+    par <- par
+  }
+  return(par)
+}
+# a0 <- 1.22; b0 <- 2.57
+a0 <- 2.57; b0 <- 1.22
+par2 <- rbeta(1, a0, b0)
+pars2 <- rep(NA, S)
+pars2[1] <- par2
+for(s in 2:S){
+  Res <- SucConSim(a0 = a0, b0 = b0, par = pars2[s-1])
+  pars2[s] <- Res
+}
+parsmcmc2 <- coda::mcmc(cbind(pars2, pars2^2))
+Summ2 <- summary(parsmcmc2)
+TestGeweke <- function(j){
+  Test <- (Summ1[["statistics"]][j,1] - Summ2[["statistics"]][j,1])/(Summ1[["statistics"]][j,4]+Summ2[["statistics"]][j,4])^0.5
+  Reject <- abs(Test) > qnorm(0.975)
+  return(list(Test = Test, Reject = Reject))
+}
+TestGeweke(1); TestGeweke(2)

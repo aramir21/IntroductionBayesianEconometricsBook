@@ -537,6 +537,98 @@ Finally, Figure \ref{fig58} shows the posterior estimate of marginal likelihood 
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter5/figures/MarLikGordon.png}
 	%%\centerline{\epsfig{/Chapters/chapter1/figures/cat.eps,width=.8\textheight,height=.4\textwidth}}
 	\caption[List of figure caption goes here]{Marginal likelihood: Example 1, \cite{Gordon1993}.}\label{fig58}
-\end{figure}  
+\end{figure}
+
+\item \textbf{Ph.D. students sleeping hours continues}
+
+\begin{itemize}
+	\item Perform the diagnostics of Section 4.4 in this example.
+	\item Check if there are errors in the posterior simulator of the Metropolis-Hastings algorithm in this example using the Geweke approach using as test functions the first moments of $p$ and $p^2$. Remember from Exercise 15 in Chapter \ref{chap4} that the sample size is 52, and $\alpha_0=1.22$ and $\beta_0=2.57$.
+	\item Run the Geweke test using $\alpha_0=2.57$ and $\beta_0=1.22$, and check the results.
+\end{itemize}
+
+\textbf{Answer}
+
+We initially run the Metropolis-Hastings (M-H) algorithm for 100,000 iterations and obtain an effective sample size of 13,606. The naive and time-series standard errors are 0.00019 and 0.00052, respectively, indicating correlation—a feature also observed in the autocorrelation plot (not shown). However, the trace plot appears satisfactory. The Geweke test statistic is 1.97, marginally rejecting the null hypothesis that the means of the first 10\% and the last 50\% of the posterior draws are equal. Additionally, the dependence factor is 6.1, which exceeds the rule-of-thumb threshold of 5. The posterior draws pass both stages of Heidelberger and Welch's convergence diagnostic.
+
+Given the autocorrelation issues, we set a burn-in period of 20,000 iterations and apply a thinning parameter of 10. Figures \ref{fig59} and \ref{fig510} display the trace and autocorrelation plots of the posterior draws. We observe that the draws appear stationary around their mean, and the autocorrelation decreases rapidly to zero.
+
+The naive and time-series standard errors are 0.00068 and 0.00072, respectively. The similarity between these values indicates a low level of autocorrelation, consistent with the results in Figure \ref{fig510}. The effective sample size of the posterior draws is 7,066, while the total number of posterior draws is 8,000.
+
+The Geweke test statistic is 0.23, providing no statistical evidence to reject the null hypothesis of equal means in the two segments of the posterior draws. The Raftery and Lewis test yields a dependence factor close to 1, indicating minimal dependence. The Heidelberger and Welch test does not reject the null hypothesis of stationarity for the posterior draws and confirms that the mean is both accurate and stable.
+
+Then, we implement the proposal by \cite{geweke2004getting} to assess the reliability of the posterior simulator. We use as test functions the first moments of $p$ and $p^2$. We fail to reject the null hypothesis of equal means across the two test functions, indicating that the posterior simulator is functioning correctly. To evaluate the effectiveness of the test, we run the \textit{marginal-conditional simulator} with prior parameters $\alpha_{0} = 1.22$ and $\beta_{0} = 2.57$. In contrast, for the \textit{successive-conditional simulator}, we use prior parameters $\alpha_{0} = 2.57$ and $\beta_{0} = 1.22$. In this case, we reject the null hypothesis in the two test functions, suggesting that the test performs well in this example.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Metropolis-Hastings algorithm: Ph.D. students sleeping hours.}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101); an <- 16.55; bn <- 39.57
+S <- 100000; p <- runif(S); accept <- rep(0, S)
+for (s in 2:S){
+	pc <- runif(1)
+	a <- dbeta(pc, an, bn)/dbeta(p[s-1], an, bn)
+	U <- runif(1)
+	if(U <= a){	p[s] <- pc; accept[s] <- 1
+	}else{p[s] <- p[s-1]; accept[s] <- 0}
+}
+library(coda); library(latex2exp)
+thetaPost <- mcmc(p)
+plot(thetaPost, density = FALSE, main = "Trace plot", ylab = "Proportion")
+autocorr.plot(thetaPost, main = "Autocorrelation plot")
+summary(thetaPost); effectiveSize(thetaPost) 
+geweke.diag(thetaPost, frac1 = 0.1, frac2 = 0.5)
+raftery.diag(thetaPost, q = 0.025, r = 0.005, s = 0.95)
+heidel.diag(thetaPost, eps = 0.1, pvalue = 0.05)
+burnin <- 20000; thin <- 10; keep <- seq(burnin, S, thin)
+thetaPostNew <- mcmc(p[keep])
+plot(thetaPostNew, density = FALSE, main = "Trace plot", ylab = "Proportion")
+autocorr.plot(thetaPostNew, main = "Autocorrelation plot")
+summary(thetaPostNew); effectiveSize(thetaPostNew) 
+geweke.diag(thetaPostNew, frac1 = 0.1, frac2 = 0.5)
+raftery.diag(thetaPostNew, q = 0.025, r = 0.005, s = 0.95)
+heidel.diag(thetaPostNew, eps = 0.1, pvalue = 0.05)
+# Marginal-conditional simulator
+a0 <- 1.22; b0 <- 2.57; ThetaPrior <- rbeta(S,a0,b0) 
+yPrior <- rbinom(S, 1, prob = ThetaPrior)
+parsmcmc1 <- coda::mcmc(cbind(ThetaPrior, ThetaPrior^2))
+Summ1 <- summary(parsmcmc1)
+# Successive-conditional simulator
+N <- 52
+SucConSim <- function(a0, b0, par){
+	y <- rbinom(N, 1, prob = par)
+	an <- a0 + sum(y); bn <- b0 + N - sum(y); pc <- runif(1)
+	a <- dbeta(pc, an, bn)/dbeta(par, an, bn); U <- runif(1)
+	if(U <= a){par <- pc}else{par <- par}
+	return(par)
+}
+a0 <- 1.22; b0 <- 2.57 # a0 <- 2.57; b0 <- 1.22
+par2 <- rbeta(1, a0, b0); pars2 <- rep(NA, S); pars2[1] <- par2
+for(s in 2:S){
+	Res <- SucConSim(a0 = a0, b0 = b0, par = pars2[s-1])
+	pars2[s] <- Res
+}
+parsmcmc2 <- coda::mcmc(cbind(pars2, pars2^2))
+Summ2 <- summary(parsmcmc2)
+TestGeweke <- function(j){
+	Test <- (Summ1[["statistics"]][j,1] - Summ2[["statistics"]][j,1])/(Summ1[["statistics"]][j,4]+Summ2[["statistics"]][j,4])^0.5
+	Reject <- abs(Test) > qnorm(0.975); return(list(Test = Test, Reject = Reject))
+}
+TestGeweke(1); TestGeweke(2)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter5/figures/TracePlotProp}
+	\caption[List of figure caption goes here]{Trace plot of posterior draws: Proportion of students that sleep at least 6 hours.}\label{fig59}
+\end{figure}
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter5/figures/AutocorrPlotProp.png}
+	\caption[List of figure caption goes here]{Autocorrelation plot of posterior draws: Proportion of students that sleep at least 6 hours.}\label{fig510}
+\end{figure}
+  
 
 \end{enumerate}
