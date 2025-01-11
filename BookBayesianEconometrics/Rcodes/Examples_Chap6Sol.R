@@ -246,7 +246,7 @@ LogLikOP <- function(param){
   return(-logLik)
 }
 # ML Estimation
-param0 <- rep(0, ncol(X) + n_distinct(y)-2)
+param0 <- rep(0, ncol(X) + dplyr::n_distinct(y)-2)
 mle <- optim(param0, LogLikOP, hessian = T, method = "BFGS")
 mle$par
 exp(mle$par[length(beta)+1])
@@ -296,7 +296,7 @@ mhop <- function(param0, G){
       betasamples[g,] <- betasamples[g-1,]
     }else{
       b1 <- B1%*%(t(X)%*%yl + solve(B0)%*%b0)
-      betasamples[g,] <- mvrnorm(1, mu = b1, Sigma = B1)
+      betasamples[g,] <- MASS::mvrnorm(1, mu = b1, Sigma = B1)
     }
     setWinProgressBar(pb, g, title=paste( round(g/G*100, 0),"% done"))
   }
