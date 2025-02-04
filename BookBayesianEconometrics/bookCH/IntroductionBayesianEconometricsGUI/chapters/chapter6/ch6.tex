@@ -1,6 +1,6 @@
 \chapter{Univariate models}\label{chap6}
 
-We describe how to perform Bayesian inference in some of the most common univariate models: normal-inverse gamma, logit, probit, multinomial probit and logit, ordered probit, negative binomial, tobit, quantile regression, and Bayesian bootstrap in linear models. The point of departure is assuming a random sample of cross-sectional units. Then, we show the posterior distributions of the parameters and some applications. In addition, we show how to perform inference in various models using three levels of programming skills: our graphical user interface (GUI), packages from \textbf{R}, and programming the posterior distributions. The first requires no programming skills, the second requires an intermediate level, and the third demands more advanced skills. We also include mathematical and computational exercises.
+We describe how to perform Bayesian inference in some of the most common univariate models: normal-inverse gamma, logit, probit, multinomial probit and logit, ordered probit, negative binomial, tobit, quantile regression, and Bayesian bootstrap in linear models. The point of departure is assuming a random sample of cross-sectional units. We then show the posterior distributions of the parameters and some applications. In addition, we show how to perform inference in various models using three levels of programming skills: our graphical user interface (GUI), packages from \textbf{R}, and programming the posterior distributions. The first requires no programming skills, the second requires an intermediate level, and the third demands more advanced skills. We also include mathematical and computational exercises.
 
 We can run our GUI typing
 
@@ -18,26 +18,25 @@ in the \textbf{R} package console or any \textbf{R} code editor. However, users 
 
 \section{The Gaussian linear model}\label{sec61}
 
-The Gaussian linear model specifies ${\bm{y}}={\bm{X}}\bm{\bm{\beta}}+\bm{\mu}$ such that $\bm{\mu}\sim N(\bm{0},\sigma^2\bm{I}_N)$ is an stochastic error, ${\bm{X}}$ is a $N \times K$ matrix of regressors, $\bm{\bm{\beta}}$ is a $K$-dimensional vector of location coefficients, $\sigma^2$ is the variance of the model (scale parameter), ${\bm{y}}$ is a $N$-dimensional vector of a dependent variable, and $N$ is the sample size. We describe this model using the conjugate family in Section \ref{sec43}, that is, $\pi(\bm{\bm{\beta}},\sigma^2)=\pi(\bm{\bm{\beta}}|\sigma^2)\times\pi(\sigma^2)$, and this allowed to get the posterior marginal distribution for $\bm{\bm{\beta}}$ and $\sigma^2$.
+The Gaussian linear model specifies ${\bm{y}}={\bm{X}}\bm{\bm{\beta}}+\bm{\mu}$ such that $\bm{\mu}\sim N(\bm{0},\sigma^2\bm{I}_N)$ is an stochastic error, ${\bm{X}}$ is a $N \times K$ matrix of regressors, $\bm{\bm{\beta}}$ is a $K$-dimensional vector of location coefficients, $\sigma^2$ is the variance of the model (scale parameter), ${\bm{y}}$ is a $N$-dimensional vector of a dependent variable, and $N$ is the sample size. We describe this model using the conjugate family in Section \ref{sec43}, that is, $\pi(\bm{\bm{\beta}},\sigma^2)=\pi(\bm{\bm{\beta}}\mid \sigma^2)\times\pi(\sigma^2)$, and this allowed to get the posterior marginal distribution for $\bm{\bm{\beta}}$ and $\sigma^2$.
 
-We assume independent prior in this section, that is, $\pi(\bm{\beta},\sigma^2)=\pi(\bm{\beta})\times\pi(\sigma^2)$, where $\bm{\beta} \sim N(\bm{\beta}_0, {\bm{B}}_0)$ and $\sigma^2 \sim IG(\alpha_0/2, \delta_0/2)$, $\alpha_0/2$ and $\delta_0/2$ are the shape and rate parameters. This setting allows getting the posterior conditional distributions, that is, $\pi(\bm{\beta}|\sigma^2,{\bm{y}}, {\bm{X}})$ and $\pi(\sigma^2|\bm{\beta},{\bm{y}}, {\bm{X}})$, which in turn allows to use the Gibbs sampler algorithm to perform posterior inference of $\bm{\beta}$ and $\sigma^2$.
+We assume independent prior in this section, that is, $\pi(\bm{\beta},\sigma^2)=\pi(\bm{\beta})\times\pi(\sigma^2)$, where $\bm{\beta} \sim N(\bm{\beta}_0, {\bm{B}}_0)$ and $\sigma^2 \sim IG(\alpha_0/2, \delta_0/2)$, $\alpha_0/2$ and $\delta_0/2$ are the shape and rate parameters. This setting allows getting the posterior conditional distributions, that is, $\pi(\bm{\beta}\mid \sigma^2,{\bm{y}}, {\bm{X}})$ and $\pi(\sigma^2\mid \bm{\beta},{\bm{y}}, {\bm{X}})$, which in turn allows to use the Gibbs sampler algorithm to perform posterior inference of $\bm{\beta}$ and $\sigma^2$.
 
 The likelihood function in this model is
 \begin{align*}
-	p({\bm{y}}| \bm{\beta}, \sigma^2, {\bm{X}}) = (2\pi\sigma^2)^{-\frac{N}{2}} \exp \left\{-\frac{1}{2\sigma^2} ({\bm{y}} - \bm{X\bm{\beta}})^{\top}({\bm{y}} - \bm{X\bm{\beta}}) \right\}.
+	p({\bm{y}}\mid  \bm{\beta}, \sigma^2, {\bm{X}}) = (2\pi\sigma^2)^{-\frac{N}{2}} \exp \left\{-\frac{1}{2\sigma^2} ({\bm{y}} - \bm{X\bm{\beta}})^{\top}({\bm{y}} - \bm{X\bm{\beta}}) \right\}.
 \end{align*}
 
 Then, the conditional posterior distributions are
-
 \begin{align*}
-	\bm{\beta}|\sigma^2, {\bm{y}}, {\bm{X}} \sim N(\bm{\beta}_n, {\bm{B}}_n),
+	\bm{\beta}\mid \sigma^2, {\bm{y}}, {\bm{X}} \sim N(\bm{\beta}_n, {\bm{B}}_n),
 \end{align*}
 and
 \begin{align*}
-	\sigma^2|\bm{\beta}, {\bm{y}}, {\bm{X}} \sim IG(\alpha_n/2, \delta_n/2),
+	\sigma^2\mid \bm{\beta}, {\bm{y}}, {\bm{X}} \sim IG(\alpha_n/2, \delta_n/2),
 \end{align*}
 
- where ${\bm{B}}_n = ({\bm{B}}_0^{-1} + \sigma^{-2} {\bm{X}}^{\top}{\bm{X}})^{-1}$, $\bm{\beta}_n= {\bm{B}}_n({\bm{B}}_0^{-1}\bm{\beta}_0 + \sigma^{-2} {\bm{X}}^{\top}{\bm{y}})$, $\alpha_n = \alpha_0 + N$ and $\delta_n = \delta_0 + ({\bm{y}}-{\bm{X}}\bm{\beta})^{\top}({\bm{y}}-{\bm{X}}\bm{\beta})$ (see Exercise 1 in this chapter).\footnote{This model can be extended to consider heteroskedasticity such that $y_i\sim N({\bm{x}}_i^{\top}\bm{\beta}, \sigma^2/\tau_i)$, where $\tau_i\sim G(v/2,v/2)$. See exercise 2 for details.}\\
+ where ${\bm{B}}_n = ({\bm{B}}_0^{-1} + \sigma^{-2} {\bm{X}}^{\top}{\bm{X}})^{-1}$, $\bm{\beta}_n= {\bm{B}}_n({\bm{B}}_0^{-1}\bm{\beta}_0 + \sigma^{-2} {\bm{X}}^{\top}{\bm{y}})$, $\alpha_n = \alpha_0 + N$ and $\delta_n = \delta_0 + ({\bm{y}}-{\bm{X}}\bm{\beta})^{\top}({\bm{y}}-{\bm{X}}\bm{\beta})$ (see Exercise 1 in this chapter).\footnote{This model can be extended to consider heteroskedasticity such that $y_i\sim N({\bm{x}}_i^{\top}\bm{\beta}, \sigma^2/\tau_i)$, where $\tau_i\sim G(v/2,v/2)$. See Exercise 2 for details.}\\
 
 \textbf{Example: The market value of soccer players in Europe}
 
@@ -70,8 +69,7 @@ Once our GUI is displayed (see beginning of this chapter), we should follow Algo
 	\end{algorithmic} 
 \end{algorithm}
 
-We can see in the next \textbf{R} codes how to perform the linear Gaussian model using the command \textit{MCMCregress} of the \textit{MCMCpack} package, and programming the Gibbs sampler ourselves. We should get similar results using the three approaches: GUI, package and our function. In fact, our GUI relies on the \textit{MCMCregress} command. For instance, the value of a top soccer player in Europe increases 134\% ($\exp(0.85)-1)$) on average when he has played in the national team, the credible interval at 95\% is (86\%, 197\%).  
-
+We can see in the following \textbf{R} code examples how to perform the linear Gaussian model using the \textit{MCMCregress} command from the \textit{MCMCpack} package, as well as how to program the Gibbs sampler ourselves. We should obtain similar results using all three approaches: GUI, package, and our function. In fact, our GUI relies on the \textit{MCMCregress} command. For instance, the value of a top soccer player in Europe increases by 134\% ($\exp(0.85)-1$) on average when he has played for the national team, with a 95\% credible interval of (86\%, 197\%).
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]\label{code1}
@@ -197,23 +195,28 @@ In the logit model the dependent variable is binary, $Y_i=\left\{1,0\right\}$, t
 
 The likelihood function of the logit model is
 \begin{align*}
-	p({\bm{y}}|\bm{\beta},{\bm{X}})&=\prod_{i=1}^N \pi_i^{y_i}(1-\pi_i)^{1-y_i}\\
+	p({\bm{y}}\mid \bm{\beta},{\bm{X}})&=\prod_{i=1}^N \pi_i^{y_i}(1-\pi_i)^{1-y_i}\\
 	&=\prod_{i=1}^N\left(\frac{\exp\left\{{\bm{x}}_i^{\top}\bm{\beta}\right\}}{1+\exp\left\{{\bm{x}}_i^{\top}\bm{\beta}\right\}}\right)^{y_i}\left(\frac{1}{1+\exp\left\{{\bm{x}}_i^{\top}\bm{\beta}\right\}}\right)^{1-y_i}.
 \end{align*}
 
 We can specify a Normal distribution as prior, $\bm{\beta}\sim N({\bm{\beta}}_0,{\bm{B}}_0)$. Then, the posterior distribution is
 
 \begin{align*}
-	\pi(\bm{\beta}|{\bm{y}},{\bm{X}})&\propto\prod_{i=1}^N\left(\frac{\exp\left\{{\bm{x}}_i^{\top}\bm{\beta}\right\}}{1+\exp\left\{{\bm{x}}_i^{\top}\bm{\beta}\right\}}\right)^{y_i}\left(\frac{1}{1+\exp\left\{{\bm{x}}_i^{\top}\bm{\beta}\right\}}\right)^{1-y_i}\\
+	\pi(\bm{\beta}\mid {\bm{y}},{\bm{X}})&\propto\prod_{i=1}^N\left(\frac{\exp\left\{{\bm{x}}_i^{\top}\bm{\beta}\right\}}{1+\exp\left\{{\bm{x}}_i^{\top}\bm{\beta}\right\}}\right)^{y_i}\left(\frac{1}{1+\exp\left\{{\bm{x}}_i^{\top}\bm{\beta}\right\}}\right)^{1-y_i}\\
 	&\times\exp\left\{-\frac{1}{2}(\bm{\beta}-\bm{\beta}_0)^{\top}\bm{B}_0^{-1}(\bm{\beta}-\bm{\beta}_0)\right\}.
 \end{align*}
 
-The logit model does not have a standard posterior distribution. Then, a random walk Metropolis--Hastings algorithm can be used to obtain draws from the posterior distribution. A potential proposal is a multivariate Normal centered at the current value, with covariance matrix $\tau^2({\bm{B}}_0^{-1}+\widehat{{\bm{\Sigma}}}^{-1})^{-1}$, where $\tau>0$ is a tuning parameter and $\widehat{\bm{\Sigma}}$ is the sample covariance matrix from the maximum likelihood estimation \cite{Martin2011}.\footnote{Tuning parameters should be set in a way such that one obtains reasonable diagnostic criteria and acceptation rates.}
+The logit model does not have a standard posterior distribution. Therefore, a random walk Metropolis--Hastings algorithm can be used to obtain draws from the posterior distribution. A potential proposal distribution is a multivariate normal, centered at the current value, with covariance matrix $\tau^2({\bm{B}}_0^{-1} + \widehat{{\bm{\Sigma}}}^{-1})^{-1}$, where $\tau > 0$ is a tuning parameter and $\widehat{\bm{\Sigma}}$ is the sample covariance matrix obtained from the maximum likelihood estimation \cite{Martin2011}.\footnote{Tuning parameters should be set in a way that ensures reasonable diagnostic criteria and acceptance rates.}
 
-Observe that $\log(p({\bm{y}}|\bm{\beta},{\bm{X}}))=\sum_{i=1}^Ny_i{\bm{x}}_i^{\top}\bm{\beta}-\log(1+\exp({\bm{x}}_i^{\top}\bm{\beta}))$. We can use this expression when calculating the acceptance parameter in the computational implementation of the Metropolis-Hastings algorithm. In particular, the acceptance parameter is \begin{equation*}
-	\alpha=\min\left\{1, \exp(\log(p({\bm{y}}|\bm{\beta}^{c},{\bm{X}}))+\log(\pi(\bm{\beta}^c))-(\log(p({\bm{y}}|\bm{\beta}^{(s-1)},{\bm{X}}))+\log(\pi(\bm{\beta}^{(s-1)}))))\right\},
-\end{equation*}
-where $\bm{\beta}^c$ and $\bm{\beta}^{(s-1)}$ are the draws from the proposal distribution and the previous iteration of the Markov chain, respectively.\footnote{Formulating the acceptance rate using $\log$ helps to mitigate computational problems.}\\
+Observe that 
+\[
+\log(p({\bm{y}} \mid \bm{\beta}, {\bm{X}})) = \sum_{i=1}^N y_i {\bm{x}}_i^{\top} \bm{\beta} - \log(1 + \exp({\bm{x}}_i^{\top} \bm{\beta})).
+\]
+We can use this expression when calculating the acceptance parameter in the computational implementation of the Metropolis-Hastings algorithm. In particular, the acceptance parameter is
+\[
+\alpha = \min\left\{1, \exp\left(\log(p({\bm{y}} \mid \bm{\beta}^{c}, {\bm{X}})) + \log(\pi(\bm{\beta}^c)) - \left(\log(p({\bm{y}} \mid \bm{\beta}^{(s-1)}, {\bm{X}})) + \log(\pi(\bm{\beta}^{(s-1)}))\right)\right)\right\},
+\]
+where $\bm{\beta}^c$ and $\bm{\beta}^{(s-1)}$ are the draws from the proposal distribution and the previous iteration of the Markov chain, respectively.\footnote{Formulating the acceptance rate using $\log$ helps mitigate computational problems.}
 
 \textbf{Example: Simulation exercise}
 
@@ -239,9 +242,9 @@ Once our GUI is displayed (see beginning of this chapter), we should follow Algo
 	\end{algorithmic} 
 \end{algorithm}
 
-We can see in the next \textbf{R} codes how to perform the logit model using the command \textit{MCMClogit} of the \textit{MCMCpack} package, and programming the Metropolis-Hastings algorithm ourselves. 
+We can see in the following \textbf{R} code how to perform the logit model using the \textit{MCMClogit} command from the \textit{MCMCpack} package, as well as by programming the Metropolis-Hastings algorithm ourselves. 
 
-We should get similar results using the three approaches: GUI, package and our function. Our GUI relies on the \textit{MCMClogit} command. In particular, we obtain an acceptance rate of 0.46, and the diagnostics suggest that the posterior chains behave well. In general, the 95\% credible intervals encompass the population values, and the mean and median are very close to these values.  
+We should obtain similar results using the three approaches: GUI, package, and our function. Our GUI relies on the \textit{MCMClogit} command. In particular, we achieve an acceptance rate of 0.46, and the diagnostics suggest that the posterior chains behave well. In general, the 95\% credible intervals encompass the population values, and both the mean and median are very close to these values.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -399,37 +402,45 @@ x2  passed    -1.211 0.00279
 
 \section{The probit model}\label{sec63}
 
-The probit model also has as dependent variable a binary outcome.
-In this case, there is a latent variable ($y_i^*$, unobserved) that defines the structure of the estimation problem.
+The probit model also has a binary dependent variable. In this case, there is a latent variable ($y_i^*$, which is unobserved) that defines the structure of the estimation problem.
+
 In particular,
 \begin{equation*}
-Y_i=\begin{Bmatrix}
-	0, \ Y_i^*\leq 0 \\ 
-	1, \ Y_i^*> 0 \\ 
+y_i=\begin{Bmatrix}
+	0, \ y_i^*\leq 0 \\ 
+	1, \ y_i^*> 0 \\ 
 \end{Bmatrix},
 \end{equation*}
 
-such that $Y_i^*=\bm{x}_i^{\top}\bm{\beta}+\mu_i$, $\mu_i\stackrel{i.i.d.} {\thicksim}N(0,1)$.\footnote{The variance in this model is set to 1 due to identification restrictions.	Observe that $P(Y_i=1|\bm{x}_i)=P(Y_i^*>0|\bm{x}_i)=P(\bm{x}_i^{\top}\bm{\beta}+\mu_i>0|\bm{x}_i)=P(\mu_i>-\bm{x}_i^{\top}\bm{\beta}|\bm{x}_i)=P(c\times\mu_i>-c\times\bm{x}_i^{\top}\bm{\beta}|\bm{x}_i)$ $\forall c>0$. Multiplying for a positive constant does not affect the probability of $Y_i=1$.} This implies $P(Y_i=1)=\pi_i=\Phi(\bm{x}_i^{\top}\bm{\beta})$.\\
+such that $y_i^*=\bm{x}_i^{\top}\bm{\beta}+\mu_i$, $\mu_i\stackrel{i.i.d.} {\thicksim}N(0,1)$.\footnote{The variance in this model is set to 1 due to identification restrictions.	Observe that $P(y_i=1\mid \bm{x}_i)=P(y_i^*>0\mid \bm{x}_i)=P(\bm{x}_i^{\top}\bm{\beta}+\mu_i>0\mid \bm{x}_i)=P(\mu_i>-\bm{x}_i^{\top}\bm{\beta}\mid \bm{x}_i)=P(c\times\mu_i>-c\times\bm{x}_i^{\top}\bm{\beta}\mid \bm{x}_i)$ $\forall c>0$. Multiplying for a positive constant does not affect the probability of $y_i=1$.} This implies $P(y_i=1)=\pi_i=\Phi(\bm{x}_i^{\top}\bm{\beta})$.\\
 
-\cite{Albert1993} implemented data augmentation \cite{Tanner1987} to apply a Gibbs sampling algorithm in this model.
-Augmenting this model with $Y_i^*$, we can have the likelihood contribution from observation $i$, $p(y_i|y_i^*)=\mathbbm{1}_{y_i=0}\mathbbm{1}_{y_i^*\leq 0}+\mathbbm{1}_{y_i=1}\mathbbm{1}_{y_i^*> 0}$, where $\mathbbm{1}_A$ is an indicator function that takes the value of 1 when condition $A$ is satisfied.\\
+\cite{Albert1993} implemented data augmentation \cite{Tanner1987} to apply a Gibbs sampling algorithm to this model. Augmenting this model with $y_i^*$, we can express the likelihood contribution from observation $i$ as:
+\[
+p(y_i \mid y_i^*) = \mathbbm{1}({y_i = 0}) \mathbbm{1}({y_i^* \leq 0}) + \mathbbm{1}({y_i = 1}) \mathbbm{1}({y_i^* > 0}),
+\]
+where $\mathbbm{1}(A)$ is an indicator function that takes the value of 1 when the condition $A$ is satisfied.
 
-The posterior distribution is $\pi(\bm{\beta},\bm{y^*}|\bm{y},\bm{X})\propto\prod_{i=1}^N\left[\mathbbm{1}_{y_i=0}\mathbbm{1}_{y_i^*\leq 0}+\mathbbm{1}_{y_i=1}\mathbbm{1}_{y_i^*> 0}\right] \times {N}_N(\bm{y}^*|\bm{X\bm{\beta}},\bm{I}_n)\times {N}_K(\bm{\beta}|\bm{\beta}_0,\bm{B}_0)$ when taking a Gaussian distribution as prior $\bm{\beta}\sim{N}_k(\bm{\beta}_0,\bm{B}_0)$.
+The posterior distribution is:
+\begin{align*}
+\pi(\bm{\beta}, \bm{y^*} \mid \bm{y}, \bm{X}) &\propto \prod_{i=1}^N \left[\mathbbm{1}({y_i = 0}) \mathbbm{1}({y_i^* \leq 0}) + \mathbbm{1}({y_i = 1}) \mathbbm{1}({y_i^* > 0}) \right]\\
+& \times {N}_N(\bm{y^*} \mid \bm{X\bm{\beta}}, \bm{I}_n) \times {N}_K(\bm{\beta} \mid \bm{\beta}_0, \bm{B}_0),
+\end{align*}
+where we assume a Gaussian prior for $\bm{\beta}$: $\bm{\beta} \sim {N}_K(\bm{\beta}_0, \bm{B}_0)$.
 This implies
 \begin{equation*}
-	y_i^*|\bm{\beta},\bm{y},\bm{X}\sim\begin{Bmatrix}
+	y_i^*\mid \bm{\beta},\bm{y},\bm{X}\sim\begin{Bmatrix}
 		TN_{(-\infty,0]}(\bm{x}_i^{\top}\bm{\beta},1) \ , \ y_i= 0 \\ 
 		TN_{(0,\infty)}(\bm{x}_i^{\top}\bm{\beta},1) \ \ \ , \ y_i= 1
 	\end{Bmatrix},\footnote{$TN$ denotes a truncated normal density.}
 \end{equation*}
 \begin{equation*}
-	\bm{\beta}|\bm{y}^*, \bm{X} \sim N(\bm{\beta}_n,\bm{B}_n), 
+	\bm{\beta}\mid \bm{y}^*, \bm{X} \sim N(\bm{\beta}_n,\bm{B}_n), 
 \end{equation*}
 \noindent where $\bm{B}_n = (\bm{B}_0^{-1} + \bm{X}^{\top}\bm{X})^{-1}$, and $\bm{\beta}_n= \bm{B}_n(\bm{B}_0^{-1}\bm{\beta}_0 + \bm{X}^{\top}\bm{y}^*)$.\\
 
 \textbf{Example: Determinants of hospitalization}
 
-We use the dataset named \textbf{2HealthMed.csv}, which is in folder \textbf{DataApp} in our github repository \textbf{(https://github.com/besmarter/BSTApp} and was used by \cite{Ramirez2013}. Our dependent variable is a binary indicator with a value equal to 1 if an individual was hospitalized in 2007, and 0 otherwise.
+We use the dataset named \textbf{2HealthMed.csv}, which is located in the \textbf{DataApp} folder of our GitHub repository \textbf{(https://github.com/besmarter/BSTApp)}, and was used by \cite{Ramirez2013}. The dependent variable is a binary indicator, taking the value 1 if an individual was hospitalized in 2007, and 0 otherwise.
 
 The specification of the model is
 \begin{align*}
@@ -437,11 +448,11 @@ The specification of the model is
 	&+{\beta}_8\text{Fair}_i+{\beta}_9\text{Good}_i+{\beta}_{10}\text{Excellent}_i,
 \end{align*}
 
-where \textit{SHI} is a binary variable equal to 1 if the individual is in a subsidized health care program and 0 otherwise, \textit{Female} is an indicator of gender, \textit{Age} in years, \textit{Est2} and \textit{Est3} are indicators of socioeconomic status, the reference is \textit{Est1}, which is the lowest, and self perception of health status where \textit{bad} is the reference.
+where \textit{SHI} is a binary variable equal to 1 if the individual is enrolled in a subsidized health care program and 0 otherwise, \textit{Female} is an indicator of gender, \textit{Age} is in years, \textit{Est2} and \textit{Est3} are indicators of socioeconomic status, with \textit{Est1} being the reference category (the lowest status), and \textit{HealthStatus} is a self-perception of health status, where \textit{bad} is the reference category.
 
-Let's set $\bm{\beta}_0={\bm{0}}_{10}$, ${\bm{B}}_0={\bm{I}}_{10}$, iterations, burn-in and thinning parameters equal to 10000, 1000 and 1, respectively. We can use the Algorithm \ref{alg:Gaussian} to run the probit model in our GUI. We should select \textit{Probit} model in stage 2. Our GUI relies in the command \textit{rbprobitGibbs} from the package \textit{bayesm} to perform inference in the Probit model. The following \textbf{R} code shows how to run this example using the command \textit{rbprobitGibbs}. We asked to program a Gibbs sampler algorithm to perform inference in the probit model in the exercises.
+We set $\bm{\beta}_0 = {\bm{0}}_{10}$, ${\bm{B}}_0 = {\bm{I}}_{10}$, with iterations, burn-in, and thinning parameters equal to 10000, 1000, and 1, respectively. We can use Algorithm \ref{alg:Gaussian} to run the probit model in our GUI. In stage 2, select the \textit{Probit} model. Our GUI relies on the \textit{rbprobitGibbs} command from the \textit{bayesm} package to perform inference in the probit model. The following \textbf{R} code shows how to run this example using the \textit{rbprobitGibbs} command. We also asked you to implement a Gibbs sampler algorithm to perform inference in the probit model in the exercises.
 
-We find evidence that gender and self-perceived health status affect the probability of hospitalization. Women have a higher probability of being hospitalized than men, and a better perception of health status decreases this probability.
+Our analysis finds evidence that gender and self-perceived health status significantly affect the probability of hospitalization. Women have a higher probability of being hospitalized than men, and individuals with a better perception of their health status have a lower probability of hospitalization.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -484,35 +495,44 @@ Excellent -1.33e+00 -1.15e+00 -1.06e+00 -9.74e-01 -0.795881
 \end{tcolorbox} 
 
 \section{The multinomial probit model}\label{sec64}
-The multinomial probit model is used to model the choice of the $l$-th alternative over a set $L$ mutually exclusive options.
-We observe 
+The multinomial probit model is used to model the choice of the $l$-th alternative over a set of $L$ mutually exclusive options. We observe the following:
+
 \begin{equation*}
-y_{il}=
-\begin{Bmatrix}
-	1, & y_{il}^*\geq \max\left\{\bm{y}_i^*\right\}  \\
-	0, & \text{otherwise}
-\end{Bmatrix},
+	y_{il} =
+	\begin{cases}
+		1, & \text{if } y_{il}^* \geq \max\left\{\bm{y}_i^*\right\}, \\
+		0, & \text{otherwise,}
+	\end{cases}
 \end{equation*}
 
-such that $\bm{y}_i^*=\bm{X}_{i}\bm{\delta}+\bm\mu_i$, $\bm\mu_i\stackrel{i.i.d.} {\thicksim}N(\bm 0,\bm{\Sigma})$, $\bm{y}_i^*$ is an unobserved latent $L$ dimensional vector, $\bm{X}_{i}=\left[(1 \ \bm{c}_i^{\top})\otimes \bm{I}_L \ \bm{A}_i\right]$ is an $L\times j$ matrix of regressors for each alternative, $l=1,2,\dots,L$, $j=L\times (1+dim\left\{\bm{c}_i\right\})+a$, $\bm{c}_i$ is a vector of the individuals' specific characteristics, $\bm{A}_i$ is an $L\times a$ matrix of alternative-varying regressors, $a$ is the number of alternative-varying regressors, and $\bm{\delta}$ is a $j$ dimensional vector of parameters.
+where $\bm{y}_i^* = \bm{X}_{i} \bm{\delta} + \bm{\mu}_i$, with $\bm{\mu}_i \stackrel{i.i.d.}{\sim} N(\bm{0}, \bm{\Sigma})$. The vector $\bm{y}_i^*$ is an unobserved latent vector of dimension $L$. The matrix $\bm{X}_i = \left[(1 \ \bm{c}_i^{\top}) \otimes \bm{I}_L \ \bm{A}_i\right]$ is an $L \times j$ matrix of regressors for each alternative, where $l = 1, 2, \dots, L$, and $j = L \times (1 + \text{dim}(\bm{c}_i)) + a$. Here, $\bm{c}_i$ is a vector of individual-specific characteristics, $\bm{A}_i$ is an $L \times a$ matrix of alternative-varying regressors, $a$ is the number of alternative-varying regressors, and $\bm{\delta}$ is a $j$-dimensional vector of parameters.
 
-We take into account simultaneously the alternative-varying regressors (alternative attributes) and alternative-invariant regressors (individual characteristics).\footnote{Note that this model is not identified if $\bm{\Sigma}$ is unrestricted. The likelihood function is the same if a scalar random variable is added to each of the $L$ latent regressions.} $\bm{y}_i^*$ can be stacked up into a multiple regression with correlated stochastic errors, $\bm{y}^*=\bm{X}\bm\delta+\bm{\mu}$, where $\bm{y}^*=\left[\bm{y}_1^{*\top} \ \bm{y}_2^{*\top} \ \dots \ \bm{y}_N^{*\top}\right]$, $\bm{X}=\left[\bm{X}_1^{\top} \ \bm{X}_2^{\top} \ \dots \ \bm{X}_N^{\top}\right]^{\top}$, and $\bm{\mu}=\left[\bm{\mu}_1^{\top} \ \bm{\mu}_2^{\top} \ \dots \ \bm{\mu}_N^{\top}\right]^{\top}$.
+We take into account simultaneously the alternative-varying regressors (alternative attributes) and alternative-invariant regressors (individual characteristics).\footnote{Note that this model is not identified if $\bm{\Sigma}$ is unrestricted. The likelihood function remains the same if a scalar random variable is added to each of the $L$ latent regressions.} The vector $\bm{y}_i^*$ can be stacked into a multiple regression model with correlated stochastic errors, i.e., $\bm{y}^* = \bm{X} \bm{\delta} + \bm{\mu}$, where $\bm{y}^* = \left[\bm{y}_1^{*\top} \ \bm{y}_2^{*\top} \ \dots \ \bm{y}_N^{*\top}\right]$, $\bm{X} = \left[\bm{X}_1^{\top} \ \bm{X}_2^{\top} \ \dots \ \bm{X}_N^{\top}\right]^{\top}$, and $\bm{\mu} = \left[\bm{\mu}_1^{\top} \ \bm{\mu}_2^{\top} \ \dots \ \bm{\mu}_N^{\top}\right]^{\top}$.
 
-Following the practice of expressing $y_{il}^*$ relative to $y_{iL}^*$ by letting $\bm{w}_i=\left[w_{i1} \ w_{i2} \ \dots \ w_{iL-1}\right]^{\top}$, $w_{il}=y_{il}^*-y_{iL}^*$, we can write $\bm{w}_i=\bm{R}_i\bm{\beta}+\bm{\epsilon}_i$, $\bm{\epsilon_i}\sim{N}(\bm 0,\bm{\Omega})$, where $\bm{R}_i=\left[(1 \ \bm{c}_i^{\top})\otimes \bm{I}_{L-1} \ \bm{\Delta A}_i\right]$ is an $L-1\times k$ matrix where $\Delta \bm{A}_i=\bm{A}_{li}-\bm{A}_{Li}$, $l=1,2, \dots, L-1$, that is, the last row of $\bm{A}_i$ is subtracted from each row of $\bm{A}_i$, and ${\bm{\beta}}$ is a $k$ dimensional vector, $k=(L-1)\times(1+dim\left\{\bm{c}_i\right\})+a$.
+Following the practice of expressing $y_{il}^*$ relative to $y_{iL}^*$ by letting $\bm{w}_i = \left[w_{i1} \ w_{i2} \ \dots \ w_{iL-1}\right]^{\top}$, where $w_{il} = y_{il}^* - y_{iL}^*$, we can write $\bm{w}_i = \bm{R}_i \bm{\beta} + \bm{\epsilon}_i$, with $\bm{\epsilon}_i \sim N(\bm{0}, \bm{\Omega})$, where $\bm{R}_i = \left[(1 \ \bm{c}_i^{\top}) \otimes \bm{I}_{L-1} \ \bm{\Delta A}_i\right]$ is an $(L-1) \times k$ matrix, with $\Delta \bm{A}_i = \bm{A}_{li} - \bm{A}_{Li}$, for $l = 1, 2, \dots, L-1$. That is, the last row of $\bm{A}_i$ is subtracted from each row of $\bm{A}_i$, and $\bm{\beta}$ is a $k$-dimensional vector, where $k = (L-1) \times (1 + \text{dim}(\bm{c}_i)) + a$.
 
-Observe that $\bm{\beta}$ contains the same last $a$ elements as $\bm{\delta}$, that is, alternative specific attributes coefficients, but the first $(L-1)\times(1+dim\left\{\bm{c}_i\right\})$-th elements are $\delta_{jl}-\delta_{jL}$, $j=1+dim\left\{\bm{c}_i\right\}$, $l=1,2,\dots,L-1$, that is, the difference between the coefficients of each qualitative response and the $L$-th alternative for the individuals' characteristics.This makes it difficult to interpret the multinomial probit coefficients.
+Observe that $\bm{\beta}$ contains the same last $a$ elements as $\bm{\delta}$, that is, the alternative-specific attribute coefficients. However, the first $(L-1) \times (1 + \text{dim}(\bm{c}_i))$ elements of $\bm{\beta}$ are the differences $\delta_{jl} - \delta_{jL}$, for $j = 1, \dots, \text{dim}(\bm{c}_i)$ and $l = 1, 2, \dots, L-1$. That is, these elements represent the difference between the coefficients of each qualitative response and the $L$-th alternative for the individuals' characteristics. This makes it difficult to interpret the multinomial probit coefficients.
 
-Note that in multinomial models, for each alternative specific attribute, it is only required to estimate one coefficient for all alternatives, whereas for individuals' characteristics (non-alternative specific regressors), it is necessary to estimate $L-1$ coefficients (the coefficient of the base alternative is set equal to 0).
+Note that in multinomial models, for each alternative-specific attribute, it is only necessary to estimate one coefficient for all alternatives. However, for individuals' characteristics (non-alternative-specific regressors), it is required to estimate $L-1$ coefficients, since the coefficient for the base alternative is set equal to 0.
 
-The likelihood function in this model is $p(\bm{\beta},\bm{\Omega}|\bm{y},\bm{R})=\prod_{i=1}^N\prod_{l=1}^L p_{il}^{y_{il}}$ where $p_{il}=p(y_{il}^*\geq \max(\bm{y}_i^*))$.
+The likelihood function in this model is given by 
+\[
+p(\bm{\beta}, \bm{\Omega} \mid \bm{y}, \bm{R}) = \prod_{i=1}^N \prod_{l=1}^L p_{il}^{y_{il}},
+\]
+where \( p_{il} = p(y_{il}^* \geq \max(\bm{y}_i^*)) \).
 
-We assume independent priors, $\bm{\beta}\sim N(\bm{\beta}_0,\bm{B}_0)$ and $\bm{\Omega}^{-1}\sim W(\alpha_0,\bm{\Sigma}_0)$.\footnote{$W$ denotes the Wishart density.} We can employ Gibbs sampling in this model because this is a standard Bayesian linear regression model when data augmentation in $\bm{w}$ is used.
-The posterior conditional distributions are
+We assume independent priors for the parameters: 
+\[
+\bm{\beta} \sim N(\bm{\beta}_0, \bm{B}_0) \quad \text{and} \quad \bm{\Omega}^{-1} \sim W(\alpha_0, \bm{\Sigma}_0).\footnote{The \( W \) denotes the Wishart density.} 
+\]
+
+We can employ Gibbs sampling in this model, as it is a standard Bayesian linear regression model when data augmentation is used for \( \bm{w} \). The posterior conditional distributions are given by
+
 \begin{equation*}
-	\bm{\beta}|\bm{\Omega},\bm{w}\sim{N}(\bm{\beta}_n,\bm{B}_n),
+	\bm{\beta}\mid \bm{\Omega},\bm{w}\sim{N}(\bm{\beta}_n,\bm{B}_n),
 \end{equation*}
 \begin{equation*}
-	\bm{\Omega}^{-1}|\bm{\beta},\bm{w}\sim{W}(\alpha_n,\bm{\Sigma}_n),
+	\bm{\Omega}^{-1}\mid \bm{\beta},\bm{w}\sim{W}(\alpha_n,\bm{\Sigma}_n),
 \end{equation*}
 
 where $\bm{B}_n=(\bm{B}_0^{-1}+\bm{X}^{*\top}\bm{X}^*)^{-1}$, $\bm{\beta}_n=\bm{B}_n(\bm{B}_0^{-1}\bm{\beta}_0+\bm{X}^{*\top}\bm{w}^*)$, $\bm{\Omega}^{-1}=\bm{C}^{\top}\bm{C}$, $\bm{X}_i^{*\top}=\bm{C}^{\top}\bm{R}_i$, $\bm{w}_i^*=\bm{C}^{\top}\bm{w}_i$, $\bm{X}^*=\begin{bmatrix}\bm{X}_1^*\\
@@ -521,9 +541,8 @@ where $\bm{B}_n=(\bm{B}_0^{-1}+\bm{X}^{*\top}\bm{X}^*)^{-1}$, $\bm{\beta}_n=\bm{
 	\bm{X}_N^*
 \end{bmatrix}$, $\alpha_n=\alpha_0+N$, $\bm{\Sigma}_n=(\bm{\Sigma}_0+\sum_{i=1}^N (\bm{w}_i-\bm{R}_i\bm{\beta})^{\top}(\bm{w}_i-\bm{R}_i\bm{\beta}))^{-1}$.
 
-We can collapse the multinomial vector $\bm{y}_i$ into the indicator variable $d_i=\sum_{l=1}^{L-1}l\times \mathbbm{1}_{\max(\bm{w}_{l})=w_{il}}$.\footnote{Observe that the identification issue in this model is due to scaling $w_{il}$ by a positive constant does not change the value of $d_i$.} Then the distribution of $\bm{w}_i|\bm{\beta},\bm{\Omega}^{-1},d_i$ is an $L-1$ dimensional Gaussian distribution truncated over the appropriate cone in $\mathcal{R}^{L-1}$.
-\cite{McCulloch1994} propose drawing from the univariate conditional distributions $w_{il}|\bm{w}_{i,-l},\bm{\beta},\bm{\Omega}^{-1},d_i\sim TN_{I_{il}}(m_{il},\tau_{ll}^2)$, where 
-
+We can collapse the multinomial vector $\bm{y}_i$ into the indicator variable $d_i=\sum_{l=1}^{L-1}l\times \mathbbm{1}({\max(\bm{w}_{l})=w_{il}})$.\footnote{Observe that the identification issue in this model is due to scaling $w_{il}$ by a positive constant does not change the value of $d_i$.} Then the distribution of $\bm{w}_i\mid \bm{\beta},\bm{\Omega}^{-1},d_i$ is an $L-1$ dimensional Gaussian distribution truncated over the appropriate cone in $\mathcal{R}^{L-1}$.
+\cite{McCulloch1994} propose drawing from the univariate conditional distributions $w_{il}\mid \bm{w}_{i,-l},\bm{\beta},\bm{\Omega}^{-1},d_i\sim TN_{I_{il}}(m_{il},\tau_{ll}^2)$, where 
 \begin{equation*}
 I_{il}=\begin{Bmatrix} w_{il}>\max(\bm{w}_{i,-l},0), & d_i=l\\
 	w_{il}<\max(\bm{w}_{i,-l},0), & d_i\neq l\\
@@ -544,25 +563,25 @@ and permuting the columns and rows of $\bm{\Omega}^{-1}$ so that the $l$-th colu
 
 The identified parameters are obtained by normalizing with respect to one of the diagonal elements $\frac{1}{\omega_{1,1}^{0.5}}\bm{\beta}$ and $\frac{1}{\omega_{1,1}}\bm{\Omega}$.\footnote{Our GUI is based on the \textit{bayesm} package that takes into account this identification restriction to display the outcomes of the posterior chains.}
 
-A warning is required here! This model is an example where we have to make decisions about setting the model in an identified parameter space or unidentified space. The mixing properties of the posterior draws can be better in the latter case \cite{mcculloch2000bayesian}, this means less computational burden. However, we should to recover the identified space in a final stage. In addition, we should take into account that defining priors in the unidentified space may have unintended consequences on the posterior distributions of the identified space \cite{nobile2000comment}. The multinomial probit model that is presented in this section is set in the unidentified space \cite{McCulloch1994}. A version of the multinomial probit in the identified space is presented by \cite{mcculloch2000bayesian}.\\ 
+\textbf{Warning:} This model is an example where decisions must be made about setting the model in an identified parameter space versus an unidentified parameter space. The mixing properties of the posterior draws can be better in the latter case \cite{mcculloch2000bayesian}, which typically results in less computational burden. However, it is important to recover the identified space in a final stage. Additionally, defining priors in the unidentified space may have unintended consequences on the posterior distributions in the identified space \cite{nobile2000comment}. The multinomial probit model presented in this section is set in the unidentified space \cite{McCulloch1994}, while a version of the multinomial probit in the identified space is presented by \cite{mcculloch2000bayesian}.\\
 
 \textbf{Example: Choice of fishing mode}
 
 We used in this application the dataset \textit{3Fishing.csv} from \cite[p.~491]{cameron05}. The dependent variable is mutually exclusive alternatives regarding fishing modes (mode), where beach is equal to 1, pier is equal to 2, private boat is equal to 3, and chartered boat (baseline alternative) is equal to 4. In this model, we have
 {\small{
 \begin{align*}
-	\bm{X}_i & = \begin{Bmatrix}
+	\bm{X}_i & = \begin{bmatrix}
 		1 & 0 & 0 & 0 & \text{Income}_i & 0 & 0 & 0 & \text{Price}_{i,1} & \text{Catch rate}_{i,1}\\ 
 		0 & 1 & 0 & 0 & 0 & \text{Income}_i & 0 & 0 & \text{Price}_{i,2} & \text{Catch rate}_{i,2}\\
 		0 & 0 & 1 & 0 & 0 & 0 & \text{Income}_i & 0 & \text{Price}_{i,3} & \text{Catch rate}_{i,3}\\
 		0 & 0 & 0 & 1 & 0 & 0 & 0 & \text{Income}_i & \text{Price}_{i,4} & \text{Catch rate}_{i,4}\\
-	\end{Bmatrix}.
+	\end{bmatrix}.
 \end{align*}
 }}
 
-In this example chartered boat is the base category, the number of choice categories is four, there are two alternative-specific regressors (price and catch rate), and one non alternative-specific regressor (income). This setting involves the estimation of eight location parameters ($\bm\beta$): three intercepts, three for income, one for price, and one for catch rate. This is the order of the posterior chains in our GUI. Note that the location coefficients are set equal to 0 for the baseline category. For multinomial models, we strongly recommend using the last category as the baseline.
+In this example, chartered boat is the base category, the number of choice categories is four, there are two alternative-specific regressors (price and catch rate), and one non-alternative-specific regressor (income). This setting involves the estimation of eight location parameters ($\bm\beta$): three intercepts, three for income, one for price, and one for catch rate. This is the order of the posterior chains in our GUI. Note that the location coefficients are set equal to 0 for the baseline category. For multinomial models, we strongly recommend using the last category as the baseline.
 
-We also get posterior estimates for a $3\times 3$ covariance matrix (four alternatives minus one), where the element (1,1) is equal to 1 due to identification restrictions, and elements 2 and 4 are the same, as well as 3 and 7, and 6 and 8, due to symmetry.\footnote{This is the order in the pdf, eps and csv files that can be downloaded from our GUI.} Observe that this identification restriction implies \textit{NaN} values in \cite{Geweke1992} and \cite{Heidelberger1983} tests for element (1,1) of the covariance matrix, and just eight dependence factors associated with the remaining elements of the covariance matrix. 
+We also get posterior estimates for a $3\times 3$ covariance matrix (four alternatives minus one), where the element (1,1) is equal to 1 due to identification restrictions, and elements 2 and 4 are the same, as well as 3 and 7, and 6 and 8, due to symmetry.\footnote{This is the order in the pdf, eps and csv files that can be downloaded from our GUI.} Observe that this identification restriction implies \textit{NaN} values in \cite{Geweke1992} and \cite{Heidelberger1983} tests for element (1,1) of the covariance matrix, and just eight dependence factors associated with the remaining elements of the covariance matrix.
 
 Once our GUI is displayed (see beginning of this chapter), we should follow Algorithm \ref{alg:MultinomialProbit} to run multinomial probit models in our GUI (see Chapter \ref{chapGUI} for details), which in turn uses the command \textit{rmnpGibbs} from the \textit{bayesm} package.
 
@@ -587,11 +606,11 @@ Once our GUI is displayed (see beginning of this chapter), we should follow Algo
 \end{algorithm}
 
 
-We ran 100,000 MCMC iterations plus 10,000 as burn-in with a thinning parameter equal to 5, where all priors use default values for the hyperparameters in our GUI. We found that the 95\% credible intervals of the coefficient associated with income for beach and private boat alternatives are equal to  (8.58e-06, 8.88e-05) and (3.36e-05, 1.45e-04). This suggests that the probability of choosing these alternatives increases compared to a chartered boat when income increases. In addition, an increase in the price or a decrease in the catch rate for specific fishing alternatives imply lower probabilities of choosing them as the 95\% credible intervals are (-9.91e-03, -3.83e-03) and (1.40e-01, 4.62e-01), respectively. However, the posterior chain diagnostics suggest there are convergence issues with the posterior draws (see exercise 5). 
+We ran 100,000 MCMC iterations plus 10,000 as burn-in with a thinning parameter equal to 5, where all priors use default values for the hyperparameters in our GUI. We found that the 95\% credible intervals of the coefficient associated with income for beach and private boat alternatives are equal to  (8.58e-06, 8.88e-05) and (3.36e-05, 1.45e-04). This suggests that the probability of choosing these alternatives increases compared to a chartered boat when income increases. In addition, an increase in the price or a decrease in the catch rate for specific fishing alternatives imply lower probabilities of choosing them as the 95\% credible intervals are (-9.91e-03, -3.83e-03) and (1.40e-01, 4.62e-01), respectively. However, the posterior chain diagnostics suggest there are convergence issues with the posterior draws (see Exercise 5).
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R. code. Choice of fishing mode, results}
+	\textit{Results. Choice of fishing mode}
 	\begin{VF}
 		\begin{lstlisting}[language=R]	
 Iterations = 10005:110000
@@ -616,13 +635,25 @@ AS_2     1.40e-01  2.25e-01  2.72e-01  3.28e-01  4.62e-01		\end{lstlisting}
 
 The multinomial logit model is used to model mutually exclusive discrete outcomes or qualitative response variables. However, this model assumes the independence of irrelevant alternatives (IIA), meaning that the choice between two alternatives does not depend on a third alternative. We consider the multinomial mixed logit model (not to be confused with the random parameters logit model), which accounts for both alternative-varying regressors (conditional) and alternative-invariant regressors (multinomial) simultaneously.\footnote{The multinomial mixed logit model can be implemented as a conditional logit model.}
 
-In this setting there are $L$ mutually exclusive alternatives, and the dependent variable $y_{il}$ is equal to 1 if the $l$th alternative is chosen by individual $i$, and 0 otherwise, $l=\left\{1,2,\dots,L\right\}$. The likelihood function is $p(\bm{\beta}|\bm{y},\bm{X})=\prod_{i=1}^{N}\prod_{l=1}^{L}p_{il}^{y_{il}}$, where the probability that individual $i$ chooses the alternative $l$ is given by $p_{il}:=p(y_i=l|\bm{\beta},\bm{X})=\frac{\exp\left\{\bm{x}_{il}^{\top}\bm{\beta}_l\right\}}{\sum_{j=1}^{L}\exp\left\{\bm{x}_{ij}^{\top}\bm{\beta}_j\right\}}$, $\bm{y}$ and $\bm{X}$ are the vector and matrix of the dependent variable and regressors, and $\bm{\beta}$ is the vector containing all the coefficients. Remember that coefficients associated with alternative-invariant regressors are set to 0 for the baseline category, and the coefficients associated with the alternative-varying regressors are the same for all the categories. In addition, we assume $\bm{\beta}\sim N(\bm{\beta}_0,\bm{B}_0)$ as prior distribution. Thus, the posterior distribution is $\pi(\bm{\beta}|\bm{y},\bm{X})\propto p(\bm{\beta}|\bm{y},\bm{X})\times \pi(\bm{\beta})$.
+In this setting, there are $L$ mutually exclusive alternatives, and the dependent variable $y_{il}$ is equal to 1 if the $l$th alternative is chosen by individual $i$, and 0 otherwise, where $l=\left\{1,2,\dots,L\right\}$. The likelihood function is 
+\[
+p(\bm{\beta} \mid \bm{y}, \bm{X}) = \prod_{i=1}^{N} \prod_{l=1}^{L} p_{il}^{y_{il}},
+\]
+where the probability that individual $i$ chooses the alternative $l$ is given by
+\[
+p_{il} := p(y_i = l \mid \bm{\beta}, \bm{X}) = \frac{\exp\left\{\bm{x}_{il}^{\top} \bm{\beta}_l\right\}}{\sum_{j=1}^{L} \exp\left\{\bm{x}_{ij}^{\top} \bm{\beta}_j\right\}},
+\]
+$\bm{y}$ and $\bm{X}$ are the vector and matrix of the dependent variable and regressors, respectively, and $\bm{\beta}$ is the vector containing all the coefficients. 
 
+Remember that coefficients associated with alternative-invariant regressors are set to 0 for the baseline category, and the coefficients associated with the alternative-varying regressors are the same for all the categories. In addition, we assume $\bm{\beta} \sim N(\bm{\beta}_0, \bm{B}_0)$ as the prior distribution. Thus, the posterior distribution is 
+\[
+\pi(\bm{\beta} \mid \bm{y}, \bm{X}) \propto p(\bm{\beta} \mid \bm{y}, \bm{X}) \times \pi(\bm{\beta}).
+\]
 As the multinomial logit model does not have a standard posterior distribution, \cite{rossi2012bayesian} propose a ``tailored'' independent Metropolis--Hastings algorithm where the proposal distribution is a multivariate Student's $t$ distribution with $v$ degrees of freedom (tuning parameter), mean equal to the maximum likelihood estimator, and scale equal to the inverse of the Hessian matrix.\\
 
 \textbf{Example: Simulation exercise}
 
-Let's do a simulation exercise to check the performance of the Metropolis-Hastings algorithm to perform inference in the multinomial logit model. Assume a situation where there are three alternatives, one alternative-invariant regressor plus the intercept, and three alternative-varying regressors. The population parameters are $\bm{\beta}_1=[1 \ -2.5 \ 0.5 \ 0.8 \ -3]^{\top}$, $\bm{\beta}_2=[1 \ -3.5 \ 0.5 \ 0.8 \ -3]^{\top}$ and $\bm{\beta}_3=[0 \ 0 \ 0.5 \ 0.8 \ -3]^{\top}$, the first two elements of the vectors are associated with the intercept and the alternative-invariant regressor, and the last three elements with the alternative-varying regressors. The sample size is 1000, and all regressors are simulated from standard normal distributions.
+Let's conduct a simulation exercise to evaluate the performance of the Metropolis-Hastings algorithm for inference in the multinomial logit model. We consider a scenario with three alternatives, one alternative-invariant regressor (plus the intercept), and three alternative-varying regressors. The population parameters are given by $\bm{\beta}_1 = [1 \ -2.5 \ 0.5 \ 0.8 \ -3]^{\top}$, $\bm{\beta}_2 = [1 \ -3.5 \ 0.5 \ 0.8 \ -3]^{\top}$, and $\bm{\beta}_3 = [0 \ 0 \ 0.5 \ 0.8 \ -3]^{\top}$, where the first two elements of each vector correspond to the intercept and the alternative-invariant regressor, while the last three elements correspond to the alternative-varying regressors. The sample size is 1000, and all regressors are simulated from standard normal distributions.
 
 We can deploy our GUI using the command line at the beginning of this chapter. We should follow Algorithm \ref{alg:MultinomialLogit} to run multinomial logit models in our GUI (see Chapter \ref{chapGUI} for details):
 
@@ -647,7 +678,7 @@ We can deploy our GUI using the command line at the beginning of this chapter. W
 	\end{algorithmic} 
 \end{algorithm}
 
-The following code in \textbf{R} shows how to implement the M-H algorithm from scratch. The first part simulates the dataset, the second part builds the loglikelihood function, and the third part implements the M-H algorithm. We use vague priors centered on zero, and covariance matrix $1000\bm{I}_{7}$. We observe that the posterior estimates closely match the population parameters, and all 95\% credible intervals contain the population parameters.  
+The following code in \textbf{R} demonstrates how to implement the M-H algorithm from scratch. The first part simulates the dataset, the second part constructs the log-likelihood function, and the third part implements the M-H algorithm. We use vague priors centered at zero, with a covariance matrix of $1000\bm{I}_7$. We observe that the posterior estimates closely match the population parameters, and all 95\% credible intervals contain the population parameters.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -767,27 +798,44 @@ var7 -3.4476 -3.1991 -3.0777 -2.9641 -2.7500
 
 \section{Ordered probit model}\label{sec66}
 
-The ordered probit model is used when there is a natural order in the categorical response variable. In this case, there is a latent variable $y_i^*=\bm{x}_i^{\top}\bm{\beta}+\mu_i$, $\mu_i\stackrel{i.i.d.} {\thicksim} N(0,1)$ such that $y_i=l$ if and only if $\alpha_{l-1}<y_i^*\leq\alpha_l$, $l=\left\{1,2,\dots,L\right\}$, where $\alpha_0=-\infty$, $\alpha_1=0$ and $\alpha_L=\infty$.\footnote{Identification issues necessitate setting the variance in this model equal to 1 and $\alpha_1=0$. Observe that multiplying $y_i^*$ by a positive constant or adding a constant to all of the cut-offs and subtracting the same constant from the intercept does not affect $y_i$.} Then, $p(y_i=l)=\Phi(\alpha_l-\bm{x}_i^{\top}\bm{\beta})-\Phi(\alpha_{l-1}-\bm{x}_i^{\top}\bm{\beta})$, and the likelihood function is $p(\bm{\beta},\bm{\alpha}|\bm{y},\bm{X})=\prod_{i=1}^{N}p(y_i=l|\bm{\beta},\bm{\alpha},\bm{X})$.
+The ordered probit model is used when there is a natural order in the categorical response variable. In this case, there is a latent variable $y_i^* = \bm{x}_i^{\top}\bm{\beta} + \mu_i$, where $\mu_i \stackrel{i.i.d.}{\sim} N(0,1)$, such that $y_i = l$ if and only if $\alpha_{l-1} < y_i^* \leq \alpha_l$, for $l \in \{1, 2, \dots, L\}$, where $\alpha_0 = -\infty$, $\alpha_1 = 0$, and $\alpha_L = \infty$.\footnote{Identification issues necessitate setting the variance in this model equal to 1 and $\alpha_1 = 0$. Observe that multiplying $y_i^*$ by a positive constant or adding a constant to all of the cut-offs and subtracting the same constant from the intercept does not affect $y_i$.} Then, the probability of observing $y_i = l$ is given by:
+\[
+p(y_i = l) = \Phi(\alpha_l - \bm{x}_i^{\top}\bm{\beta}) - \Phi(\alpha_{l-1} - \bm{x}_i^{\top}\bm{\beta}),
+\]
 
-There are independent priors of this model, $\pi(\bm{\beta},\bm{\gamma})=\pi(\bm{\beta})\times \pi(\bm{\gamma})$, where $\bm{\beta}\sim N(\bm{\beta}_0,\bm{B}_0)$ and $\bm{\gamma}\sim N(\bm{\gamma}_0,\bm{\Gamma}_0)$, $\bm{\gamma}=\left[\gamma_2 \ \gamma_3 \ \dots \ \gamma_{L-1}\right]^{\top}$, such that $\bm{\alpha}=\left[\exp\left\{\gamma_2\right\} \ \sum_{l=2}^3\exp\left\{\gamma_l\right\} \ \dots \ \sum_{l=2}^{L-1}\exp\left\{\gamma_l\right\}\right]^{\top}$. The latter structure imposes the ordinal condition in the cut-offs.
+and the likelihood function is:
+\[
+p(\bm{\beta}, \bm{\alpha} \mid \bm{y}, \bm{X}) = \prod_{i=1}^{N} p(y_i = l \mid \bm{\beta}, \bm{\alpha}, \bm{X}).
+\]
 
-This model does not have a standard conditional posterior distribution for $\bm{\gamma}$ ($\bm{\alpha}$), but it does have a standard conditional distribution for $\bm{\beta}$ once data augmentation is used. Then, we can use a Metropolis-within-Gibbs sampling algorithm. In particular, we use Gibbs sampling algorithms to draw $\bm{\beta}$ and $\bm{y}^*$,
-\begin{equation*}
-	\bm{\beta}|\bm{y}^*, \bm{\alpha}, \bm{X} \sim N(\bm{\beta}_n,\bm{B}_n), 
-\end{equation*}
-where $\bm{B}_n = (\bm{B}_0^{-1} + \bm{X}^{\top}\bm{X})^{-1}$, $\bm{\beta}_n= \bm{B}_n(\bm{B}_0^{-1}\bm{\beta}_0 + \bm{X}^{\top}\bm{y}^*)$, and $y_i^*|\bm{\beta},\bm{\alpha},\bm{y},\bm{X}\sim TN_{(\alpha_{y_i-1},\alpha_{y_i})}(\bm{x}_i^{\top}\bm{\beta},1)$.
+The priors in this model are independent, i.e., $\pi(\bm{\beta}, \bm{\gamma}) = \pi(\bm{\beta}) \times \pi(\bm{\gamma})$, where $\bm{\beta} \sim N(\bm{\beta}_0, \bm{B}_0)$ and $\bm{\gamma} \sim N(\bm{\gamma}_0, \bm{\Gamma}_0)$, and $\bm{\gamma} = \left[ \gamma_2 \ \gamma_3 \ \dots \ \gamma_{L-1} \right]^{\top}$, such that:
+\[
+\bm{\alpha} = \left[ \exp\left\{\gamma_2\right\} \ \sum_{l=2}^{3} \exp\left\{\gamma_l\right\} \ \dots \ \sum_{l=2}^{L-1} \exp\left\{\gamma_l\right\} \right]^{\top}.
+\]
 
-We use a random-walk Metropolis--Hastings algorithm for $\bm{\gamma}$ that has as proposal a Gaussian distribution with mean equal to the current value, and covariance matrix $s^2(\bm{\Gamma}_0^{-1}+\hat{\bm{\Sigma}}_{\gamma}^{-1})^{-1}$, where $s>0$ is a tuning parameter, and $\hat{\bm{\Sigma}}_{\gamma}$ is the sample covariance matrix associated with $\gamma$ from the maximum likelihood estimation.\\
+This structure imposes the ordinal condition on the cut-offs.
+
+This model does not have a standard conditional posterior distribution for $\bm{\gamma}$ ($\bm{\alpha}$), but it does have a standard conditional distribution for $\bm{\beta}$ once data augmentation is used. We can then use a Metropolis-within-Gibbs sampling algorithm. In particular, we use Gibbs sampling to draw $\bm{\beta}$ and $\bm{y}^*$, where:
+\[
+\bm{\beta} \mid \bm{y}^*, \bm{\alpha}, \bm{X} \sim N(\bm{\beta}_n, \bm{B}_n),
+\]
+
+with $\bm{B}_n = (\bm{B}_0^{-1} + \bm{X}^{\top}\bm{X})^{-1}$, $\bm{\beta}_n = \bm{B}_n(\bm{B}_0^{-1}\bm{\beta}_0 + \bm{X}^{\top}\bm{y}^*)$, and:
+\[
+y_i^* \mid \bm{\beta}, \bm{\alpha}, \bm{y}, \bm{X} \sim TN_{(\alpha_{y_i-1}, \alpha_{y_i})}(\bm{x}_i^{\top}\bm{\beta}, 1).
+\]
+
+We use a random-walk Metropolis--Hastings algorithm for $\bm{\gamma}$ with a proposal distribution that is Gaussian with mean equal to the current value and covariance matrix $s^2(\bm{\Gamma}_0^{-1} + \hat{\bm{\Sigma}}_{\gamma}^{-1})^{-1}$, where $s > 0$ is a tuning parameter and $\hat{\bm{\Sigma}}_{\gamma}$ is the sample covariance matrix associated with $\gamma$ from the maximum likelihood estimation.\\
 
 \textbf{Example: Determinants of preventive health care visits}
 
-We used the file named \textit{2HealthMed.csv} in this applications. In particular, the dependent variable is \textit{MedVisPrevOr}, which is an ordered variable equal to 1 if the individual did not visit a physician for preventive reasons, 2 if the individual visited once in that year, and so on, until it is equal to 6 for visiting five or more times. The latter category is 1.6\% of the sample. Observe that the dependent variable has six categories.
+We used the file named \textit{2HealthMed.csv} in this application. In particular, the dependent variable is \textit{MedVisPrevOr}, which is an ordered variable equal to 1 if the individual did not visit a physician for preventive reasons, 2 if the individual visited once in that year, and so on, until it is equal to 6 for visiting five or more times. The latter category represents 1.6\% of the sample. Observe that the dependent variable has six categories.
 
-In this example, the set of regressors is given by \textit{SHI}, which an indicator of being in the subsidized health care system (1 means being in the system), sex (\textit{Female}), age (linear and squared), socioeconomic conditions indicator (\textit{Est2} and \textit{Est3}), the lowest is tha baseline category, self perception of health status (\textit{Fair}, \textit{Good} and \textit{Excellent}), where \textit{Bad} is the baseline, and education level, primary (\textit{PriEd}), high school (\textit{HighEd}), vocational (\textit{VocEd}), and university (\textit{UnivEd}), \textit{no education} is the baseline category.
+In this example, the set of regressors is given by \textit{SHI}, which is an indicator of being in the subsidized health care system (1 means being in the system), sex (\textit{Female}), age (both linear and squared), socioeconomic conditions indicator (\textit{Est2} and \textit{Est3}), with the lowest being the baseline category, self-perception of health status (\textit{Fair}, \textit{Good}, and \textit{Excellent}), where \textit{Bad} is the baseline, and education level (\textit{PriEd}, \textit{HighEd}, \textit{VocEd}, \textit{UnivEd}), with \textit{no education} as the baseline category.
 
-We ran this application with 50,000 MCMC iterations plus 10,000 as burn-in, and thinning parameter equal to 5. This setting means 10,000 effective posterior draws. We set $\bm{\beta}_0=\bm{0}_{11}$, $\bm{B}_0=1000\bm{I}_{11}$, $\bm{\gamma}_0=\bm{0}_4$, $\bm{\Gamma}_0=\bm{I}_4$, and the tuning parameter is 1.
+We ran this application with 50,000 MCMC iterations plus 10,000 as burn-in, and a thinning parameter equal to 5. This setting means 10,000 effective posterior draws. We set $\bm{\beta}_0 = \bm{0}_{11}$, $\bm{B}_0 = 1000\bm{I}_{11}$, $\bm{\gamma}_0 = \bm{0}_4$, $\bm{\Gamma}_0 = \bm{I}_4$, and the tuning parameter is 1.
 
-We can run the ordered probit models in our GUI following the steps in the Algorithm \ref{alg:OrderedProbit}.
+We can run the ordered probit models in our GUI following the steps in Algorithm \ref{alg:OrderedProbit}.
  
 \begin{algorithm}[h!]
 	\caption{Ordered probit models}\label{alg:OrderedProbit}
@@ -892,26 +940,27 @@ coda::raftery.diag(Cutoffs[,-1],q=0.5,r=0.05,s = 0.95)
 	\end{VF}
 \end{tcolorbox} 
 
-The results suggest that older individuals (at decreasing rate) in the subsidized health program, characterized in the second socioeconomic status with increasing good self perception of health condition, and not having high school as their highest education degree, have a higher probability of visiting a physician for preventive health aims. Convergence diagnostics look well, except for the self health perception draws.
+The results suggest that older individuals (at a decreasing rate) in the subsidized health program, characterized by being in the second socioeconomic status, with an increasing self-perception of good health, and not having high school as their highest education degree, have a higher probability of visiting a physician for preventive health purposes. Convergence diagnostics look well, except for the self-health perception draws.
 
-We also got the posterior estimates of the cutoffs in the ordered probit model.
-These estimates are necessary to calculate the probability that an individual is in a specific category of visiting physicians. Due to identification restrictions, the first cutoff is set equal to 0. That is why we have \textit{NaN} values in \cite{Geweke1992} and \cite{Heidelberger1983} tests, and we observe only four values in the \cite{Raftery1992} test, which correspond to the remaining free cutoffs. It seems that these cutoff estimates have some convergence issues when taking as diagnostic tool the \cite{Raftery1992} test.
-Their dependence factors are also very high.
+We also obtained the posterior estimates of the cutoffs in the ordered probit model. These estimates are necessary to calculate the probability that an individual is in a specific category of physician visits. Due to identification restrictions, the first cutoff is set equal to 0. This is why we observe \textit{NaN} values in \cite{Geweke1992} and \cite{Heidelberger1983} tests, and only four values in the \cite{Raftery1992} test, which correspond to the remaining free cutoffs. It seems that these cutoff estimates have some convergence issues when using the \cite{Raftery1992} test as a diagnostic tool. Furthermore, their dependence factors are also very high.
 
 \section{Negative binomial model}\label{sec67}
 
-The dependent variable in the negative binomial model is a nonnegative integer or count. In contrast to the Poisson model, the negative binomial model takes into account over-dispersion. The Poisson model has equal mean and variance (equi-dispersion).
+The dependent variable in the negative binomial model is a nonnegative integer or count. In contrast to the Poisson model, the negative binomial model accounts for over-dispersion. The Poisson model assumes equi-dispersion, meaning the mean and variance are equal.
 
-We assume that $y_i\stackrel{i.n.d.} {\thicksim}NB(\gamma,\theta_i)$, that is, the density function for individual $i$ is $\frac{\Gamma(y_i+\gamma)}{\Gamma(\gamma)y_i!}(1-\theta_i)^{y_i}\theta_i^{\gamma}$, where the success probability is $\theta_i=\frac{\gamma}{\lambda_i+\gamma}$, $\lambda_i=\exp\left\{\bm{x}_i^{\top}\bm{\beta}\right\}$ is the mean, and $\gamma=\exp\left\{\alpha \right\}$ is the target for number of successful trials, or dispersion parameter.
+We assume that $y_i \stackrel{i.i.d.} {\sim} \text{NB}(\gamma, \theta_i)$, where the density function for individual $i$ is 
+\[
+\frac{\Gamma(y_i + \gamma)}{\Gamma(\gamma) y_i!} (1 - \theta_i)^{y_i} \theta_i^{\gamma},
+\]
+with the success probability $\theta_i = \frac{\gamma}{\lambda_i + \gamma}$, where $\lambda_i = \exp\left\{\bm{x}_i^{\top} \bm{\beta}\right\}$ is the mean, and $\gamma = \exp\left\{\alpha \right\}$ is the target for the number of successful trials, or the dispersion parameter.
 
-We assume independent priors for this model are $\bm{\beta} \sim N(\bm{\beta}_0,\bm{B}_0)$ and 
-$\alpha \sim G(\alpha_0, \delta_0)$.\footnote{$G$ denotes a gamma density.}
+We assume independent priors for this model: $\bm{\beta} \sim N(\bm{\beta}_0, \bm{B}_0)$ and $\alpha \sim G(\alpha_0, \delta_0)$.
 
-This model does not have standard conditional posterior distributions, so \cite{rossi2012bayesian} use a random-walk Metropolis--Hastings algorithm where the proposal distribution for $\bm{\beta}$ is Gaussian centered at the current stage with covariance matrix $s_{\bm{\beta}}^2\hat{\bm{\Sigma}}_{\bm{\beta}}$ where $s_{\bm{\beta}}$ is a tuning parameter and $\hat{\bm{\Sigma}}_{\bm{\beta}}$ is the maximum likelihood covariance estimator. In addition, the proposal for $\alpha$ is normal centered at the current value, with variance $s_{\alpha}^2\hat{\sigma}_{\alpha}^2$ where $s_{\alpha}$ is a tuning parameter and $\hat{\sigma}_{\alpha}^2$ is the maximum likelihood variance estimator.\\
+This model does not have standard conditional posterior distributions. Therefore, \cite{rossi2012bayesian} propose using a random-walk Metropolis–Hastings algorithm where the proposal distribution for $\bm{\beta}$ is Gaussian, centered at the current stage, with covariance matrix $s_{\bm{\beta}}^2 \hat{\bm{\Sigma}}_{\bm{\beta}}$, where $s_{\bm{\beta}}$ is a tuning parameter and $\hat{\bm{\Sigma}}_{\bm{\beta}}$ is the maximum likelihood covariance estimator. Additionally, the proposal for $\alpha$ is normal, centered at the current value, with variance $s_{\alpha}^2 \hat{\sigma}_{\alpha}^2$, where $s_{\alpha}$ is a tuning parameter and $\hat{\sigma}_{\alpha}^2$ is the maximum likelihood variance estimator.\\
 
 \textbf{Example: Simulation exercise}
 
-Let's do a simulation exercise to check the performance of the M-H algorithms in the negative binomial model. There are two regressors, $x_{i1}\sim U(0,1)$ and $x_{i1}\sim N(0,1)$, and the intercept. The dispersion parameter is $\gamma=\exp\left\{1.2\right\})$, and $\bm{\beta}=\left[1 \ 1 \ 1\right]^{\top}$. The sample size is 1,000.
+Let's do a simulation exercise to check the performance of the M-H algorithms in the negative binomial model. There are two regressors, $x_{i1}\sim U(0,1)$ and $x_{i1}\sim N(0,1)$, and the intercept. The dispersion parameter is $\gamma=\exp\left\{1.2\right\}$, and $\bm{\beta}=\left[1 \ 1 \ 1\right]^{\top}$. The sample size is 1,000.
 
 We run this simulation using 10,000 MCMC iterations, a burn-in  equal to 1,000, and a thinning parameter equal to 5. We set vague priors for the location parameters, particularly,  $\bm{\beta}_0=\bm{0}_{3}$ and $\bm{B}_0=1000\bm{I}_{3}$, and $\alpha_0=0.5$ and $\delta_0=0.1$, which are the default values in the \textit{rnegbinRw} command from \textit{bayesm} package in \textbf{R}. In addition, the tuning parameters of the Metropolis--Hastings algorithms are $s_{\beta}=2.93/k^{1/2}$ and $s_{\alpha}=2.93$, which are also the default parameters in \textit{rnegbinRw}, $k$ is the number of location parameters.
 
@@ -934,7 +983,7 @@ We can run the negative binomial models in our GUI following the steps in the Al
 	\end{algorithmic} 
 \end{algorithm}
 
-The following \textbf{R} code shows how to perform inference in the negative binomial model programming the M-H algorithms from scratch. We ask to estimate this example using the \textit{rnegbinRw} command in exercise 8.
+The following \textbf{R} code shows how to perform inference in the negative binomial model programming the M-H algorithms from scratch. We ask to estimate this example using the \textit{rnegbinRw} command in Exercise 8.
 
 We observe from the results that all 95\% credible intervals encompass the population parameters, and the posterior means are very close to the population parameters.
 
@@ -1070,44 +1119,45 @@ plus standard error of the mean:
 The dependent variable is partially observed in Tobit models due to sampling schemes, whereas the regressors are completely observed. In particular,
 
 \begin{equation*}
-	y_i=\begin{Bmatrix}
-		L \ , \ \ \ y_i^*<L\\
-		y_i^* \ , \ L\leq y_i^* < U \\ 
-		U \ , \ \ \ y_i^*\geq U
-	\end{Bmatrix},
+	y_i = \begin{Bmatrix}
+		L, & \quad y_i^* < L, \\
+		y_i^*, & \quad L \leq y_i^* < U, \\
+		U, & \quad y_i^* \geq U,
+	\end{Bmatrix}
 \end{equation*}
 
-where $y_i^*\stackrel{i.n.d.} {\thicksim}{N}(\bm{x}_i^{\top}\bm{\beta},\sigma^2)$.\footnote{We can set $L$ or $U$ equal to $-\infty$ or $\infty$ to model data censored in just one side.}\\
+where $y_i^* \stackrel{i.i.d.}{\sim} N(\bm{x}_i^{\top} \bm{\beta}, \sigma^2)$.\footnote{We can set $L$ or $U$ equal to $-\infty$ or $\infty$ to model data censored on just one side.}
 
 We use conjugate independent priors $\bm{\beta}\sim N(\bm{\beta}_0,\bm{B}_0)$ and 
 $\sigma^2 \sim IG(\alpha_0/2, \delta_0/2)$, and data augmentation using $\bm{y}^*_C$ such that $y_{C_i}^*\stackrel{i.n.d.} {\thicksim}N(\bm{x}_i^{\top}\bm{\beta},\sigma^2)$, $y_{C_i}=\left\{y_{C_i^L}^*\cup y_{C_i^U}^*\right\}$ are lower and upper censored data. This allows implementing the Gibbs sampling algorithm \cite{Chib1992}.
 Then, \begin{align*}
-\pi(\bm{\beta},\sigma^2,\bm{y^*}|\bm{y},\bm{X})&\propto\prod_{i=1}^N\left[\mathbbm{1}_{y_i=L}\mathbbm{1}_{y_{C_i^L}^* < L}+\mathbbm{1}_{L\leq y_i < U}+\mathbbm{1}_{y_i=U}\mathbbm{1}_{y_{C_i^U}^* \geq U}\right]\\
-&\times{N}(y_i^*|\bm{x}_i^{\top}\bm{\beta},\sigma^2)\times N(\bm{\beta}|\bm{\beta}_0,\bm{B}_0)\times IG(\sigma^2|\alpha_0/2, \delta_0/2)
+\pi(\bm{\beta},\sigma^2,\bm{y^*}\mid \bm{y},\bm{X})&\propto\prod_{i=1}^N\left[\mathbbm{1}({y_i=L})\mathbbm{1}({y_{C_i^L}^* < L})+\mathbbm{1}({L\leq y_i < U})+\mathbbm{1}({y_i=U})\mathbbm{1}({y_{C_i^U}^* \geq U})\right]\\
+&\times{N}(y_i^*\mid \bm{x}_i^{\top}\bm{\beta},\sigma^2)\times N(\bm{\beta}\mid \bm{\beta}_0,\bm{B}_0)\times IG(\sigma^2\mid \alpha_0/2, \delta_0/2)
 \end{align*}
 
 The posterior distributions are
 \begin{equation*}
-	y_{C_i}^*|\bm{\beta},\sigma^2,\bm{y},\bm{X}\sim\begin{Bmatrix}
+	y_{C_i}^*\mid \bm{\beta},\sigma^2,\bm{y},\bm{X}\sim\begin{Bmatrix}
 		TN_{(-\infty,L)}(\bm{x}_i^{\top}\bm{\beta},\sigma^2) \ , \ y_i= L \\ 
 		TN_{[U,\infty)}(\bm{x}_i^{\top}\bm{\beta},\sigma^2) \ \ \ , \ y_i= U
 	\end{Bmatrix},
 \end{equation*}
 \begin{equation*}
-	\bm{\beta}|\sigma^2, \bm{y}, \bm{X} \sim \mathcal{N}(\bm{\beta}_n, \sigma^2\bm{B}_n), 
+	\bm{\beta}\mid \sigma^2, \bm{y}, \bm{X} \sim {N}(\bm{\beta}_n, \sigma^2\bm{B}_n), 
 \end{equation*}
 \begin{equation*}
-	\sigma^2|\bm{\beta}, \bm{y}, \bm{X} \sim IG(\alpha_n/2, \delta_n/2),
+	\sigma^2\mid \bm{\beta}, \bm{y}, \bm{X} \sim IG(\alpha_n/2, \delta_n/2),
 \end{equation*}
 
 where $\bm{B}_n = (\bm{B}_0^{-1} + \sigma^{-2}\bm{X}^{\top}\bm{X})^{-1}$, $\bm{\beta}_n= \bm{B}_n(\bm{B}_0^{-1}\bm{\beta}_0 + \sigma^{-2}\bm{X}^{\top}\bm{y}^*)$, $\alpha_n = \alpha_0 + N$ and $\delta_n = \delta_0 + (\bm{y}^*-\bm{X}\bm{\beta})^{\top}(\bm{y}^*-\bm{X}\bm{\beta})$.\\
 
 \textbf{Example: The market value of soccer players in Europe continues}
 
-We continue the example of the market value of soccer players from Section \ref{sec61}. We specify the same equation, but assume the sample is censored from below, and have just information of soccer players whose market value is higher than one million euros. The dependent variable is \textit{log(ValueCens)}, and the left censoring point is 13.82.
+We continue with the example of the market value of soccer players from Section \ref{sec61}. We specify the same equation but assume that the sample is censored from below, such that we only have information for soccer players whose market value is higher than one million euros. The dependent variable is \textit{log(ValueCens)}, and the left censoring point is 13.82.
 
-The Algorithm \ref{alg:Tobit} shows how to estimate Tobit models in our GUI. Our GUI uses the command \textit{MCMCtobit} from the package \textit{MCMCpack}. 
+Algorithm \ref{alg:Tobit} illustrates how to estimate Tobit models in our GUI. Our GUI utilizes the \textit{MCMCtobit} command from the \textit{MCMCpack} package.
 
+\clearpage 
 \begin{algorithm}[h!]
 	\caption{Tobit models}\label{alg:Tobit}
 	\begin{algorithmic}[1]  		 			
@@ -1126,7 +1176,8 @@ The Algorithm \ref{alg:Tobit} shows how to estimate Tobit models in our GUI. Our
 \end{algorithm}
 
 We run this application using the same hyperparameters that we set in the example of Section \ref{sec61}. All results seem similar to those in the example of linear models. In addition, the posterior chains seem to achieve good diagnostics.
- 
+
+
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 	\textit{R. code. The value of soccer player with left censoring}
@@ -1209,6 +1260,7 @@ PostYl <- function(Beta, L, U, i){
 	return(Yli)
 }
 PostSig2 <- function(Beta, Yl){
+	an <- a0 + length(y)
 	dn <- d0 + t(Yl - X%*%Beta)%*%(Yl - X%*%Beta)
 	sig2 <- invgamma::rinvgamma(1, shape = an/2, rate = dn/2)
 	return(sig2)
@@ -1236,40 +1288,48 @@ summary(coda::mcmc(PostSigma2[keep]))
 \end{tcolorbox} 
 
 \section{Quantile regression}\label{sec69}
-In quantile regression the location parameters vary according to the quantile of the dependent variable. Let $q_{\tau}(\bm{x}_i)=\bm{x}_i^{\top}\bm{\beta}_{\tau}$ denote the $\tau$-th $(0<\tau<1)$ quantile regression function of $y_i$ given $\bm{x}_i$ such that $y_i=\bm{x}_i^{\top}\bm{\beta}_{\tau}+\mu_i$ where $\int_{-\infty}^{0}f_{\tau}(\mu_i)d\mu_i=\tau$, that is, the $\tau$-th quantile of $\mu_i$ is 0.
 
-In particular, \cite{Kozumi2011} propose $f_{\tau}(\mu_i)=\tau(1-\tau)\exp\left\{-\mu_i(\tau-\mathbbm{1}_{\mu_i<0})\right\}$ (asymmetric Laplace distribution), where $\mu_i(\tau-\mathbbm{1}_{\mu_i<0})$ is the check (loss) function. These authors propose the location-scale mixture of normals with a representation given by $\mu_i=\theta e_i+\psi \sqrt{e_i}z_i$ where $\theta=\frac{1-2\tau}{\tau(1-\tau)}$, $\psi^2=\frac{2}{\tau(1-\tau)}$, $e_i\sim E(1)$ and $z_i\sim N(0,1)$, $e_i\perp z_i$.\footnote{$E$ denotes an exponential density.} As a consequence of this representation and the fact that the sample is i.i.d., $p(\bm{y}|\bm{\beta}_{\tau},\bm{e},\bm{X})\propto \left(\prod_{i=1}^{n}e_i^{-1/2}\right)\exp\left\{-\sum_{i=1}^{N}\frac{(y_i-\bm{x}_i^{\top}\bm{\beta}_{\tau}-\theta e_i)^2}{2\psi^2 e_i}\right\}$.
+In quantile regression, the location parameters vary according to the quantile of the dependent variable. Let $q_{\tau}(\bm{x}_i) = \bm{x}_i^{\top} \bm{\beta}_{\tau}$ denote the $\tau$-th quantile regression function of $y_i$ given $\bm{x}_i$, where $0 < \tau < 1$. Specifically, we have the model $y_i = \bm{x}_i^{\top} \bm{\beta}_{\tau} + \mu_i$, with the condition $\int_{-\infty}^{0} f_{\tau}(\mu_i) \, d\mu_i = \tau$, meaning that the $\tau$-th quantile of $\mu_i$ is 0.
 
-Taking as prior a normal distribution for $\bm{\beta}_{\tau}$, that is, $\bm{\beta}_{\tau}\sim N(\bm{\beta}_{\tau 0},\bm{B}_{\tau 0})$, and using data augmentation for $\bm{e}$, we can implement a Gibbs sampling algorithm in this model. The posterior distributions are
+In particular, \cite{Kozumi2011} propose the asymmetric Laplace distribution for $f_{\tau}(\mu_i)$, given by 
+$$ f_{\tau}(\mu_i) = \tau(1 - \tau) \exp\left\{- \mu_i(\tau - \mathbbm{1}({\mu_i < 0})) \right\}, $$
+where $\mu_i(\tau - \mathbbm{1}({\mu_i < 0}))$ is the check (loss) function. These authors also propose a location-scale mixture of normals representation, given by
+$$ \mu_i = \theta e_i + \psi \sqrt{e_i} z_i, $$
+where $\theta = \frac{1 - 2\tau}{\tau(1 - \tau)}$, $\psi^2 = \frac{2}{\tau(1 - \tau)}$, $e_i \sim E(1)$, and $z_i \sim N(0,1)$, with $e_i \perp z_i$.\footnote{$E$ denotes an exponential density.} As a result of this representation and the fact that the sample is i.i.d., the likelihood function is
+$$ p(\bm{y} \mid \bm{\beta}_{\tau}, \bm{e}, \bm{X}) \propto \left( \prod_{i=1}^{N} e_i^{-1/2} \right) \exp\left\{- \sum_{i=1}^{N} \frac{(y_i - \bm{x}_i^{\top} \bm{\beta}_{\tau} - \theta e_i)^2}{2 \psi^2 e_i} \right\}. $$
 
+Assuming a normal prior for $\bm{\beta}_{\tau}$, i.e., $\bm{\beta}_{\tau} \sim N(\bm{\beta}_{\tau 0}, \bm{B}_{\tau 0})$, and using data augmentation for $\bm{e}$, we can implement a Gibbs sampling algorithm for this model. The posterior distributions are as follows:
 \begin{equation*}
-	\bm{\beta}_{\tau}|\bm{e}, \bm{y}, \bm{X} \sim N(\bm{\beta}_{n\tau},\bm{B}_{n\tau}), 
+	\bm{\beta}_{\tau} \mid \bm{e}, \bm{y}, \bm{X} \sim N(\bm{\beta}_{n\tau}, \bm{B}_{n\tau}),
 \end{equation*}
 \begin{equation*}
-	e_i|\bm{\beta}_{\tau}, \bm{y}, \bm{X} \sim GIG(1/2,\alpha_{ni}, \delta_{ni}),\footnote{$GIG$ denotes a  generalized inverse Gaussian density.}
+	e_i \mid \bm{\beta}_{\tau}, \bm{y}, \bm{X} \sim \text{GIG}\left( \frac{1}{2}, \alpha_{ni}, \delta_{ni} \right),\footnote{GIG denotes a generalized inverse Gaussian density.}
 \end{equation*}
 
-where $\bm{B}_{n\tau} = \left(\bm{B}_{\tau 0}^{-1} + \sum_{i=1}^{N}\frac{\bm{x}_i\bm{x}_i^{\top}}{\psi^2 e_i}\right)^{-1}$, $\bm{\beta}_{n\tau}= \bm{B}_{n\tau}\left(\bm{B}_{\tau 0}^{-1}\bm{\beta}_{\tau 0}+\sum_{i=1}^{N}\frac{\bm{x}_i(y_i-\theta e_i)}{\psi^2 e_i}\right)$, $\alpha_{ni} = (y_i-\bm{x}_i^{\top}\bm{\beta}_{\tau})^2/\psi^2$ and $\delta_{ni} = 2+\theta^2/\psi^2$.\\
+where 
+$$ \bm{B}_{n\tau} = \left( \bm{B}_{\tau 0}^{-1} + \sum_{i=1}^{N} \frac{\bm{x}_i \bm{x}_i^{\top}}{\psi^2 e_i} \right)^{-1}, $$
+$$ \bm{\beta}_{n\tau} = \bm{B}_{n\tau} \left( \bm{B}_{\tau 0}^{-1} \bm{\beta}_{\tau 0} + \sum_{i=1}^{N} \frac{\bm{x}_i (y_i - \theta e_i)}{\psi^2 e_i} \right), $$
+$$ \alpha_{ni} = \frac{(y_i - \bm{x}_i^{\top} \bm{\beta}_{\tau})^2}{\psi^2}, \quad \delta_{ni} = 2 + \frac{\theta^2}{\psi^2}. $$\\
 
 \textbf{Example: The market value of soccer players in Europe continues}
 
-We continue the example of the market value of soccer players from Section \ref{sec61}. Now, we wan to know if the marginal effect of having been in the national team changes with the quantile of the market value of top soccer players in Europe. Thus, we have same regressors as in the example in the previous section, but analyze the effects in the 0.5-th an d0.9-th quantiles of the \textit{NatTeam}.
+We continue the example of the market value of soccer players from Section \ref{sec61}. Now, we want to examine whether the marginal effect of having been on the national team varies with the quantile of the market value of top soccer players in Europe. Thus, we use the same regressors as in the previous example, but analyze the effects at the 0.5-th and 0.9-th quantiles of \textit{NatTeam}.
 
-The Algorithm \ref{alg:Quantile} shows how to estimate Tobit models in our GUI. Our GUI uses the command \textit{MCMCquantreg} from the package \textit{MCMCpack}. The next are code shows to perform this using this package.
+Algorithm \ref{alg:Quantile} shows how to estimate quantile regression models in our GUI. Our GUI uses the command \textit{MCMCquantreg} from the package \textit{MCMCpack}. The following code demonstrates how to perform this analysis using the package.
 
-The results show that at the median market value, the 95\% credible interval for the coefficient associated with \textit{national team} is (0.34, 1.02), with a posterior mean of 0.69. At the 0.9 quantile, these values are (0.44, 1.59) and 1.03, respectively. It appears that being on the national team increases the market value of more expensive players more significantly on average, although there is some overlap in the credible intervals.
+The results show that at the median market value (0.5-th quantile), the 95\% credible interval for the coefficient associated with \textit{national team} is (0.34, 1.02), with a posterior mean of 0.69. At the 0.9-th quantile, these values are (0.44, 1.59) and 1.03, respectively. It appears that being on the national team increases the market value of more expensive players more significantly on average, although there is some overlap in the credible intervals.
 
 \begin{algorithm}[h!]
 	\caption{Quantile regression}\label{alg:Quantile}
 	\begin{algorithmic}[1]  		 			
 		\State Select \textit{Univariate Models} on the top panel
-		\State Select \textit{Tobit} model using the left radio button
+		\State Select \textit{Quantile} model using the left radio button
 		\State Upload the dataset selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend. You should see a preview of the dataset
 		\State Select MCMC iterations, burn-in and thinning parameters using the \textit{Range sliders}
 		\State Select dependent and independent variables using the \textit{Formula builder} table
 		\State Click the \textit{Build formula} button to generate the formula in \textbf{R} syntax. You can modify the formula in the \textbf{Main equation} box using valid arguments of the \textit{formula} command structure in \textbf{R}
-		\State Set the left and right censoring points. To censor above only, specify \textit{-Inf} in the left censoring box, and to censor below only, specify \textit{Inf} in the right censoring box
-		\State Set the hyperparameters: mean vector, covariance matrix, shape and scale parameters. This step is not necessary as by default our GUI uses non-informative priors
+		\State Set the quantile to be analyzed, by default is 0.5
+		\State Set the hyperparameters: mean vector and covariance matrix. This step is not necessary as by default our GUI uses non-informative priors
 		\State Click the \textit{Go!} button
 		\State Analyze results
 		\State Download posterior chains and diagnostic plots using the \textit{Download Posterior Chains} and \textit{Download Posterior Graphs} buttons
@@ -1292,22 +1352,13 @@ b0 <- rep(0, k); c0 <- 1000; B0 <- c0*diag(k); B0i <- solve(B0)
 # MCMC parameters
 mcmc <- 50000; burnin <- 10000
 tot <- mcmc + burnin; thin <- 1
-\end{lstlisting}
-	\end{VF}
-\end{tcolorbox} 
-
-\begin{tcolorbox}[enhanced,width=4.67in,center upper,
-	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R. code. The value of soccer player, quantile regression}
-	\begin{VF}
-		\begin{lstlisting}[language=R]
 # Quantile
 q <- 0.5
 posterior05  <- MCMCpack::MCMCquantreg(y~X-1, tau = q, b0=b0, B0 = B0i, burnin = burnin, mcmc = mcmc, thin = thin, below = 13.82, above = Inf)
 summary(coda::mcmc(posterior05))
 1. Empirical mean and standard deviation for each variable,
 plus standard error of the mean:
-					Mean       SD  Naive SE Time-series SE
+Mean       SD  Naive SE Time-series SE
 X         7.374348 2.916758 1.304e-02      2.291e-02
 XPerf     0.029325 0.005938 2.655e-05      5.241e-05
 XAge      0.550633 0.241596 1.080e-03      1.903e-03
@@ -1317,7 +1368,7 @@ XGoals    0.010608 0.002425 1.085e-05      1.951e-05
 XExp      0.092561 0.085499 3.824e-04      6.799e-04
 XExp2    -0.002979 0.003877 1.734e-05      2.941e-05
 2. Quantiles for each variable:
-					2.5%       25%       50%        75%     97.5%
+2.5%       25%       50%        75%     97.5%
 X         1.74594  5.405772  7.351090  9.2994982 13.216024
 XPerf     0.01753  0.025340  0.029354  0.0333155  0.040906
 XAge      0.06845  0.390780  0.553187  0.7139430  1.016664
@@ -1326,6 +1377,15 @@ XNatTeam  0.34645  0.572081  0.686735  0.7996086  1.016189
 XGoals    0.00578  0.009055  0.010562  0.0121751  0.015403
 XExp     -0.06761  0.034149  0.089632  0.1482128  0.267536
 XExp2    -0.01094 -0.005456 -0.002891 -0.0004099  0.004466
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R. code. The value of soccer player, quantile regression}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 q <- 0.9
 posterior09  <- MCMCpack::MCMCquantreg(y~X-1, tau = q, b0=b0, B0 = B0i, burnin = burnin, mcmc = mcmc, thin = thin, below = 13.82, above = Inf)
 summary(coda::mcmc(posterior09))
@@ -1356,9 +1416,9 @@ XExp2    -0.0162717 -0.007954 -0.003198  0.002031  0.01385
 
 \section{Bayesian bootstrap regression}\label{sec610}
 
-We implement the Bayesian bootstrap \cite{Rubin1981} for linear regression models. In particular, the Bayesian bootstrap simulates the posterior distributions assuming that the sample cumulative distribution function (cdf) is the population cdf (this assumption is also implicit in the frequentist bootstrap \cite{Efron1979}).
+We implement the Bayesian bootstrap \cite{Rubin1981} for linear regression models. In particular, the Bayesian bootstrap simulates the posterior distributions by assuming that the sample cumulative distribution function (CDF) is the population CDF (this assumption is also implicit in the frequentist bootstrap \cite{Efron1979}).
 
-Given $y_i\stackrel{i.n.d.} {\thicksim}\mathcal{F}$ where $\mathcal{F}$ does not define a particular parametric family of distributions, $i=1,2,\dots,N$, but sets $E(Y_i|\bm{x}_i)=\bm{x}_i^{\top}\bm{\beta}$, such that $\bm{x}_i$ is a $K$ dimensional vector of regressors and $\bm{\beta}$ is a $K$ dimensional vector of parameters, the Bayesian bootstrap generates posterior probabilities for each $y_i$ where the values of $Y$ that are not observed have zero posterior probability.
+Given $y_i \stackrel{i.i.d.}{\sim} \mathcal{F}$, where $\mathcal{F}$ does not specify a particular parametric family of distributions, but instead sets $E(Y_i \mid \bm{x}_i) = \bm{x}_i^{\top} \bm{\beta}$, with $\bm{x}_i$ being a $K$-dimensional vector of regressors and $\bm{\beta}$ a $K$-dimensional vector of parameters, the Bayesian bootstrap generates posterior probabilities for each $y_i$, where the values of $Y$ that are not observed have zero posterior probability.
 
 The algorithm to implement the Bayesian bootstrap is the following:
 \begin{algorithm}[!h]
@@ -1368,7 +1428,7 @@ The algorithm to implement the Bayesian bootstrap is the following:
 		\State Draw $\bm{g}\sim Dir(\alpha_1,\alpha_2,\dots,\alpha_N)$ such that $\alpha_i=1 \ \forall i$.
 		\State $\bm{g}=(g_1,g_2,\dots,g_N)$ is the vector of probabilities to attach to $(y_1,\bm{x}_1^{\top}),(y_2,\bm{x}_2^{\top}),\dots,(y_n,\bm{x}_N^{\top})$ for each Bayesian bootstrap replication.
 		\State Sample $(y_i,\bm{x}_i^{\top})$ $N$ times with replacement and probabilities $g_i$, $i=1,2,\dots,N$.
-		\State Estimate $\bm{\beta}$ using ordinary least squares in the model $E(\bm{Y}|\bm{X})=\bm{X}\bm{\beta}$, $\bm{y}$ being an $S_1$ dimensional vector of realizations of $\bm{Y}$, and $\bm{X}$ an $S_1\times k$ matrix from the previous stage.$^*$ 
+		\State Estimate $\bm{\beta}$ using ordinary least squares in the model $E(\bm{Y}\mid \bm{X})=\bm{X}\bm{\beta}$, $\bm{y}$ being an $S_1$ dimensional vector of realizations of $\bm{Y}$, and $\bm{X}$ an $S_1\times K$ matrix from the previous stage.$^*$ 
 		\State Repeat this process $S$ times.
 		\State The distribution of $\bm{\beta}^{(s_2)}$ is the Bayesian distribution of $\bm{\beta}$.		
 	\end{algorithmic}
@@ -1377,9 +1437,9 @@ The algorithm to implement the Bayesian bootstrap is the following:
 
 \textbf{Example: Simulation exercise}
 
-Let's do a simulation exercise to check the performance of the Algorithm \ref{Alg:BB} to perform inference using the Bayesian bootstrap. The data generating process is given by two regressors that distribute normal standard. The location vector is $\bm{\beta}=\left[1 \ 1 \ 1\right]^{\top}$, and variance $\sigma^2=1$, the sample size is 1,000.
+Let's perform a simulation exercise to evaluate the performance of the Algorithm \ref{Alg:BB} for inference using the Bayesian bootstrap. The data-generating process is defined by two regressors, each distributed as standard normal. The location vector is $\bm{\beta} = \left[1 \ 1 \ 1\right]^{\top}$, with a variance of $\sigma^2 = 1$, and the sample size is 1,000.
 
-Algorithm \ref{alg:BayBootstrap} shows how to use our GUI to run the Bayesian bootstrap. Our GUI is based on the \textit{bayesboot} command from \textit{bayesboot} package in \textbf{R}. Exercise 11 asks about using this package to perform inference in this simulation, and compared the results with the ones that we get using our GUI setting $S=10000$.
+Algorithm \ref{alg:BayBootstrap} illustrates how to use our GUI to run the Bayesian bootstrap. Our GUI is based on the \textit{bayesboot} command from the \textit{bayesboot} package in \textbf{R}. Exercise 11 asks about using this package to perform inference in this simulation and compares the results with those obtained using our GUI with $S = 10000$.
 
 \begin{algorithm}[h!]
 	\caption{Bayesian bootstrap in linear regression}\label{alg:BayBootstrap}
@@ -1464,14 +1524,14 @@ var3 0.9473 0.9910 1.0136 1.0365 1.079
 
 
 \section{Summary}\label{sec611}
-In this chapter, we present the core univariate regression models and demonstrate how to perform Bayesian inference using Markov Chain Monte Carlo methods. Specifically, we cover a mix of algorithms: Gibbs sampling, Metropolis-Hastings, nested M-H, and M-H-within-Gibbs. These algorithms form the foundation to perform Bayesian inference in more complex settings using cross-sectional data sets.
+In this chapter, we present the core univariate regression models and demonstrate how to perform Bayesian inference using Markov Chain Monte Carlo (MCMC) methods. Specifically, we cover a range of algorithms: Gibbs sampling, Metropolis-Hastings, nested Metropolis-Hastings, and Metropolis-Hastings-within-Gibbs. These algorithms form the foundation for performing Bayesian inference in more complex settings using cross-sectional datasets.
 
 \section{Exercises}\label{sec612}
 
 \begin{enumerate}
 	\item Get the posterior conditional distributions of the Gaussian linear model assuming independent priors $\pi(\bm{\beta},\sigma^2)=\pi(\bm{\beta})\times\pi(\sigma^2)$, where $\bm{\beta} \sim N(\bm{\beta}_0, {\bm{B}}_0)$ and $\sigma^2 \sim IG(\alpha_0/2, \delta_0/2)$.
 	
-	\item Given the model $y_i\sim N({\bm{x}}_i^{\top}\bm{\beta}, \sigma^2/\tau_i)$ (Gaussian linear model with heteroskedasticity) with independent priors,  $\pi(\bm{\beta},\sigma^2,\bm{\tau})=\pi(\bm{\beta})\times\pi(\sigma^2)\times\prod_{i=1}^N\pi(\tau_i)$, where $\bm{\beta} \sim N(\bm{\beta}_0, {\bm{B}}_0)$, $\sigma^2 \sim IG(\alpha_0/2, \delta_0/2)$ and $\tau_i\sim G(v/2,v/2)$. Show that $\bm{\beta}|\sigma^2,\bm{\tau},{\bm{y}},{\bm{X}}\sim N(\bm{\beta}_n,{\bm{B}}_n)$, $\sigma^2|\bm{\beta},\bm{\tau},{\bm{y}},{\bm{X}}\sim IG(\alpha_n/2,\delta_n/2)$ and $\tau_i|\bm{\beta},\sigma^2,{\bm{y}},{\bm{X}}\sim G(v_{1n}/2,v_{2in}/2)$, where $\bm{\tau}=[\tau_1 \ \dots \ \tau_n]^{\top}$, ${\bm{B}}_n=({\bm{B}}_0^{-1}+\sigma^{-2}{{\bm{X}}}^{\top}\Psi{{\bm{X}}})^{-1}$, $\bm{\beta}_n={\bm{B}}_n({\bm{B}}_0^{-1}\bm{\beta}_0+\sigma^{-2}{\bm{X}}^{\top}\Psi{\bm{y}})$, $\alpha_n=\alpha_0+N$, $\delta_n=\delta_0+({\bm{y}}-{\bm{X}}\bm{\beta})^{\top}\Psi({\bm{y}}-{\bm{X}}\bm{\beta})$, $v_{1n}=v+1$, $v_{2in}=v+\sigma^{-2}(y_i-{\bm{x}}_i^{\top}\bm{\beta})^2$, and $\Psi=\text{diagonal}\left\{\tau_i\right\}$.
+	\item Given the model $y_i\sim N({\bm{x}}_i^{\top}\bm{\beta}, \sigma^2/\tau_i)$ (Gaussian linear model with heteroskedasticity) with independent priors,  $\pi(\bm{\beta},\sigma^2,\bm{\tau})=\pi(\bm{\beta})\times\pi(\sigma^2)\times\prod_{i=1}^N\pi(\tau_i)$, where $\bm{\beta} \sim N(\bm{\beta}_0, {\bm{B}}_0)$, $\sigma^2 \sim IG(\alpha_0/2, \delta_0/2)$ and $\tau_i\sim G(v/2,v/2)$. Show that $\bm{\beta}\mid \sigma^2,\bm{\tau},{\bm{y}},{\bm{X}}\sim N(\bm{\beta}_n,{\bm{B}}_n)$, $\sigma^2\mid \bm{\beta},\bm{\tau},{\bm{y}},{\bm{X}}\sim IG(\alpha_n/2,\delta_n/2)$ and $\tau_i\mid \bm{\beta},\sigma^2,{\bm{y}},{\bm{X}}\sim G(v_{1n}/2,v_{2in}/2)$, where $\bm{\tau}=[\tau_1 \ \dots \ \tau_n]^{\top}$, ${\bm{B}}_n=({\bm{B}}_0^{-1}+\sigma^{-2}{{\bm{X}}}^{\top}\Psi{{\bm{X}}})^{-1}$, $\bm{\beta}_n={\bm{B}}_n({\bm{B}}_0^{-1}\bm{\beta}_0+\sigma^{-2}{\bm{X}}^{\top}\Psi{\bm{y}})$, $\alpha_n=\alpha_0+N$, $\delta_n=\delta_0+({\bm{y}}-{\bm{X}}\bm{\beta})^{\top}\Psi({\bm{y}}-{\bm{X}}\bm{\beta})$, $v_{1n}=v+1$, $v_{2in}=v+\sigma^{-2}(y_i-{\bm{x}}_i^{\top}\bm{\beta})^2$, and $\Psi=\text{diagonal}\left\{\tau_i\right\}$.
 		
 	\item \textbf{The market value of soccer players in Europe continues}
 	
@@ -1495,7 +1555,7 @@ In this chapter, we present the core univariate regression models and demonstrat
 	
 	\item \textbf{Simulation of the ordered probit model}
 	
-	Simulate an ordered probit model where the first regressor distributes $N(6, 5)$ and the second distributes $G(1,1)$, the location parameter is $\bm{\beta}=\left[0.5 \ -0.25 \ 0.5\right]^{\top}$, and the cutoffs is the vector $\bm{\alpha}=\left[0 \ 1 \ 2.5\right]^{\top}$. Program from scratch a Metropolis-within-Gibbs sampling algorithm to perform inference in this simulation.
+	Simulate an ordered probit model where the first regressor distributes $N(6, 5)$ and the second distributes $G(1,1)$, the location vector is $\bm{\beta}=\left[0.5 \ -0.25 \ 0.5\right]^{\top}$, and the cutoffs are in the vector $\bm{\alpha}=\left[0 \ 1 \ 2.5\right]^{\top}$. Program from scratch a Metropolis-within-Gibbs sampling algorithm to perform inference in this simulation.
 	
 	\item \textbf{Simulation of the negative binomial model continues}
 	
