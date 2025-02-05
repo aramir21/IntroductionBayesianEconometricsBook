@@ -519,12 +519,18 @@ B <- c(0.7, 0.3, 0.7, -0.2, 0.2)
 X1 <- rbinom(N, 1, 0.3)
 X2 <- matrix(rnorm(K2*N), N, K2)
 X <- cbind(1, X1, X2)
-Y <- X%*%B + rnorm(N, 0, sd = 2)
+Y <- X%*%B + rnorm(N, 0, sd = 1)
 # Hyperparameters
 d0 <- 4
 a0 <- 4
 b0 <- rep(0, K)
 cOpt <- 0.5
+an <- N + a0; B0 <- cOpt*diag(K)
+Bn <- solve(solve(B0)+t(X)%*%X); bhat <- solve(t(X)%*%X)%*%t(X)%*%Y
+bn <- Bn%*%(solve(B0)%*%b0+t(X)%*%X%*%bhat)
+dn <- as.numeric(d0 + t(Y-X%*%bhat)%*%(Y-X%*%bhat)+t(bhat - b0)%*%solve(solve(t(X)%*%X)+B0)%*%(bhat - b0))
+Hn <- as.matrix(Matrix::forceSymmetric(dn*Bn/an))
+S <- 10000
 LogMarLikLM <- function(X, c0){
   K <- dim(X)[2]
   N <- dim(X)[1]	
@@ -550,7 +556,7 @@ LogMarM1 <- -LogMarLikLM(X = X[,1:4], c0 = cOpt)
 BF12 <- exp(LogMarM1-LogMarM2) 
 BF12; 1/BF12
 2*log(1/BF12)
-# Savage-Dickey density ration
+# Savage-Dickey density ratio
 # Posterior evaluation
 Brest <- 0
 an <- N + a0
@@ -561,26 +567,23 @@ bn <- Bn%*%(solve(B0)%*%b0+t(X)%*%X%*%bhat)
 dn <- as.numeric(d0 + t(Y-X%*%bhat)%*%(Y-X%*%bhat)+t(bhat - b0)%*%solve(solve(t(X)%*%X)+B0)%*%(bhat - b0))
 Hn <- as.matrix(Matrix::forceSymmetric(dn*Bn/an))
 # VarBeta5 <- Hn[5,5] - Hn[5,1:4]%*%solve(Hn[1:4,1:4])%*%Hn[1:4,5] 
-S <- 100000
 sig2P <- invgamma::rinvgamma(S, shape = an/2, rate = dn/2)
 PostRestCom <- mean(sapply(sig2P, function(x){dnorm(Brest, mean = bn[5], sd = (x*Bn[5,5])^0.5, log = FALSE)})) 
-
 PostRest <- LaplacesDemon::dmvt(x = Brest, mu = bn[5], S = Hn[5,5], df = an, log = TRUE)
+PostRest; log(PostRestCom)
 # PostRestNew <- LaplacesDemon::dmvt(x = Brest, mu = bn[5], S = dn/an*Bn[5,5], df = an, log=TRUE)
 # Prior evaluation
 # Analytic
 PriorRestNew <- LaplacesDemon::dmvt(x = Brest, mu = 0, S = cOpt*d0/a0, df = a0, log=TRUE)
-PriorRestAn <- log(gamma((a0+1)/2)/((pi*cOpt*d0)^(1/2)*gamma(a0/2)))
+PriorRestAn <- log(exp(lgamma((a0+1)/2))/((pi*cOpt*d0)^(1/2)*(exp(lgamma(a0/2)))))
 # Computational
-S <- 100000
 sig2 <- invgamma::rinvgamma(S, shape = a0/2, rate = d0/2)
 PriorRestCom <- mean(sapply(sig2, function(x){dnorm(Brest, mean = 0, sd = (x*cOpt)^0.5, log = FALSE)})) 
 PriorRestNew; PriorRestAn; log(PriorRestCom)
 PriorRestAn/log(PriorRestCom)
 PriorRestCom <- mean(sapply(sig2, function(x){dnorm(Brest, mean = 0, sd = (x*cOpt)^0.5, log = TRUE)})) 
 BF12SD <- exp(PostRest - PriorRestNew)
-BF12SD; 1/BF12SD
-2*(PostRest - PriorRestNew)
+2*log(1/BF12SD)
 # Chib's method
 sig2Post <- MCMCpack::rinvgamma(S,an/2,dn/2)
 BetasGibbs <- sapply(1:S, function(s){MASS::mvrnorm(n = 1, mu = bn, Sigma = sig2Post[s]*Bn)})
