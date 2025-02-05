@@ -1052,7 +1052,7 @@ Assume that the data generating process is given by
 \[
 y_{i} = 0.7 + 0.3x_{i1} + 0.7x_{i2} - 0.2x_{i3} + 0.2x_{i4} + \mu_i,
 \]
-where \(x_{i1} \sim B(0.3)\), \(x_{ik} \sim N(0,1)\), for \(k = 2, \dots, 4\), and \(\mu_i \sim N(0, 1)\), for \(i = 1, 2, \dots, 500\). Let us set \(H_0: \beta_4 = 0\) (model \(\mathcal{M}_1\), where \(x_4\) is not relevant) versus \(H_1: \beta_4 \neq 0\) (model \(\mathcal{M}_2\)).
+where \(x_{i1} \sim B(0.3)\), \(x_{ik} \sim N(0,1)\), for \(k = 2, \dots, 4\), and \(\mu_i \sim N(0, 1)\), for \(i = 1, 2, \dots, 500\). Let us set \(H_0: \beta_5 = 0\) (model \(\mathcal{M}_1\)) versus \(H_1: \beta_5 \neq 0\) (model \(\mathcal{M}_2\)).
 
 We assume that \(\bm{\beta}_{m0} = \bm{0}_{m0}\), \(\bm{B}_{m0} = 0.5 \bm{I}_{m}\), \(\alpha_0 = \delta_0 = 4\). The dimensions of \(\bm{0}_{m0}\) and \(\bm{I}_m\) are 4 for model \(\mathcal{M}_1\) and 5 for model \(\mathcal{M}_2\). In addition, we assume equal prior probabilities for both models.
 
@@ -1062,9 +1062,22 @@ We know from Section \ref{sec43} that the marginal likelihood is
 \end{align*}
 where  ${{\bm{B}}}_{mn} = ({\bm{B}}_{m0}^{-1} + {\bm{X}}_m^{\top}{\bm{X}}_m)^{-1}$, $\bm{\beta}_{mn} = {{\bf{B}}}_{mn}({\bm{B}}_{m0}^{-1}\bm{\beta}_{m0} + {\bm{X}}_m^{\top}{\bm{X}}_m\hat{\bm{\beta}}_m)$, $\alpha_{mn}=\alpha_{m0}+N$, and $\delta_{mn}=\delta_{m0}+({\bm{y}}-{\bm{X}}_m\hat{\bm{\beta}}_m)^{\top}({\bm{y}}-{\bm{X}}_m\hat{\bm{\beta}}_m)+(\hat{\bm{\beta}}_m-\bm{\beta}_{m0})^{\top}(({\bm{X}_m}^{\top}{\bm{X}_m})^{-1}+{\bm{B}}_{m0})^{-1}(\hat{\bm{\beta}}_m-\bm{\beta}_{m0})$, $m=1,2$ are the indices of the models.
 
-The log marginal likelihoods for models $\mathcal{M}_1$ and $\mathcal{M}_2$ are -1089.82 and -1087.94, respectively. This implies a $2\times\log(BF_{21})=3.75$ which means positive evidence against model $\mathcal{M}_1$ (see Table \ref{tab:guide}).
+The log marginal likelihoods for models $\mathcal{M}_1$ and $\mathcal{M}_2$ are -751.72 and -740.79, respectively. This implies a $2\times\log(BF_{21})=21.85$ which means positive evidence against model $\mathcal{M}_1$ (see Table \ref{tab:guide}).
 
-We have different ways to calculate the Bayes factor using the Savage-Dickey density ratio in this example because we know that the marginal prior and posterior distributions of $\beta_4$ have analytical solutions. In addition, we can use the posterior draws of $\sigma^2$ to evaluate these distributions at $\beta_4=0$. We show in the following code this approach as is more general than the approach using analytical solutions.
+We have different ways to calculate the Bayes factor using the Savage-Dickey density ratio in this example because we know that the marginal prior and marginal posterior distributions of $\beta_5$ have analytical solutions. In addition, we can use the posterior draws of $\sigma^2$ to evaluate the conditional prior and conditional posterior distributions at $\beta_5=0$. We show in the following code the latter approach, as it is more general than using analytical solutions, which are not always available.
+
+We know that the conditional posterior distribution of $\beta_5$ is $N(\beta_{5n}, \sigma \bm{B}_{55n})$, where $\beta_{5n}$ is the 5th element of $\bm{\beta}_n$, and $\bm{B}_{55n}$ is the element 5,5 of $\bm{B}_n$. Then,
+\begin{align*}
+	\pi(\beta_5=0|\bm{y}, \mathcal{M}_2) &= \int_{\mathcal{R}^+} \pi(\beta_5=0|\bm{y}, \sigma^2) \pi(\sigma^2|\bm{y}) \, d\sigma^2 \\
+	&\approx \frac{1}{S} \sum_{s=1}^S \pi(\beta_5=0|\bm{y}, \sigma^{2(s)}),
+\end{align*}
+
+where $\sigma^{2(s)}$ are draws from the posterior distribution of $\sigma^2$.
+
+We can follow the same logic to obtain an approximation to $\pi(\beta_5=0|\mathcal{M}_2)$ by sampling draws from the prior distribution of $\sigma^2$.
+
+We obtain $2 \times \log(BF_{21}) = 21.85$ using the Savage-Dickey density ratio, which is the same value as the analytic solution using the marginal likelihoods.
+  
 
 We calculate the log marginal likelihood using the Chib's method taking into account that 
 \begin{align*}
@@ -1072,7 +1085,7 @@ We calculate the log marginal likelihood using the Chib's method taking into acc
 \end{align*}
 where $p(\bm{y}|\bm{\theta}^*,\mathcal{M}_m)$ is the value of a normal density with mean $\bm{X}_m\bm{\beta}_{m}^*$ and variance $\sigma^{2*}_m\bm{I}_N$ evaluated at $\bm{y}$. In addition, $\log(\pi(\bm{\theta}^*|\mathcal{M}_m))=\log(\pi(\bm{\beta}_m^*|\sigma^{2*}_m))+\log(\pi(\sigma^{2*}_m))$, where the first term is the density of a normal with mean $\bm{\beta}_{m0}$ and variance matrix $\sigma^{2*}\bm{B}_{m0}$ evaluated at $\bm{\beta}_m^*$, and the second term is the density of an inverse-gamma with parameters $\alpha_{m0}/2$ and $\delta_{m0}/2$ evaluated at $\sigma^{2*}_m$. Finally, the third term in the right hand of the previous expression is $\log(\pi(\bm{\theta}^*|\bm{y},\mathcal{M}_m))=\log(\pi(\bm{\beta}_m^*|\sigma^{2*}_m,\bm{y}))+\log(\pi(\sigma^{2*}_m|\bm{y}))$, where the first term is the density of a normal with mean $\bm{\beta}_{mn}$ and variance matrix $\sigma^{2*}_m\bm{B}_{mn}$ evaluated at $\bm{\beta}_m^*$, and the second term is the density of an inverse-gamma with parameters $\alpha_{mn}/2$ and $\delta_{mn}/2$ evaluated at $\sigma^{2*}_m$. We use the modes of the posterior draws of $\bm{\beta}_m$ and $\sigma^2_m$ as reference values. 
 
-We get the same value, up to two decimals, for the log marginal likelihood of the restricted and unrestricted models using the Chib's method and the analytical expression. Thus, $2\times\log(BF_{21})=3.75$, that is, positive evidence against model $\mathcal{M}_1$ (see Table \ref{tab:guide}).
+We get the same value, up to two decimals, for the log marginal likelihood of the restricted and unrestricted models using the Chib's method and the analytical expression. Thus, $2\times\log(BF_{21})=21.85$, that is, positive evidence against model $\mathcal{M}_1$ (see Table \ref{tab:guide}).
 
 We calculate the log marginal likelihood using the Gelfand-Dey method taking into account that
 \begin{align*}
@@ -1080,11 +1093,11 @@ We calculate the log marginal likelihood using the Gelfand-Dey method taking int
 \end{align*}
 where $q(\bm{\theta}^{(s)})$ is the truncated multivariate normal density of Subsection \ref{sec10_4_3} evaluated at $\bm{\theta}^{(s)}=[\bm{\beta}^{(s)\top} \ \sigma^{2(s)}]^{\top}$, which is the $s$-th posterior draw of the Gibbs sampling algorithm, such that $\bm{\theta}^{(s)}$ satisfies the truncation restriction. $\log(\pi(\bm{\theta}^{(s)}|\mathcal{M}_m))=\log(\pi(\bm{\beta}_m^{(s)}|\sigma^{2(s)}_m))+\log(\pi(\sigma^{2(s)}_m))$, where the first term is the density of a normal with mean $\bm{\beta}_{m0}$ and variance matrix $\sigma^{2(s)}\bm{B}_{m0}$ evaluated at $\bm{\beta}_m^{(s)}$, and the second term is the density of an inverse-gamma with parameters $\alpha_{m0}/2$ and $\delta_{m0}/2$ evaluated at $\sigma^{2(s)}_m$. The third term $p(\bm{y}|\bm{\theta}^{(s)},\mathcal{M}_m)$ is the value of a normal density with mean $\bm{X}_m\bm{\beta}_{m}^{(s)}$ and variance $\sigma^{2(s)}_m\bm{I}_N$ evaluated at $\bm{y}$.
 
-The log marginal likelihoods of the restricted and unrestricted models using the Gelfand-Dey method are -1087.43 and -1084.53, respectively. This implies $2\times \log(BF_{21})=5.80$, which is positive evidence in favor of the unrestricted model.
+The log marginal likelihoods of the restricted and unrestricted models using the Gelfand-Dey method are -751.79 and -740.89, respectively. This implies $2\times \log(BF_{21})=21.81$, which is positive evidence in favor of the unrestricted model.
 
-We see in this example that these methods give good approximations to the true marginal likelihoods. However, the Chib's method did a better job than the Gelfand-Dey method. In addition, the computational demand in the Gelfand-Dey method is by far larger than the Chib's method. We can see this because the Chib's method requires just evaluation at the modes given that we have the marginal posterior of $\sigma^2$ in this example, whereas the Gelfand-Dey method requires many evaluations based on the posterior draws. However, we should take in mind that the Gelfand-Dey method is more general.
+We see in this example that these methods give very good approximations to the true marginal likelihoods. However, the Savage-Dickey density ratio and Chib's method performed slightly better than the Gelfand-Dey method. In addition, the computational demand of the Gelfand-Dey method is by far the largest. This is because the Gelfand-Dey method requires many evaluations based on the posterior draws. However, we should keep in mind that the Gelfand-Dey method is more general.
 
-The following code shows how to do this calculations.
+The following code shows how to do all these calculations.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -1094,11 +1107,14 @@ The following code shows how to do this calculations.
 rm(list = ls()); set.seed(010101)
 N <- 500; K <- 5; K2 <- 3 
 B <- c(0.7, 0.3, 0.7, -0.2, 0.2) 
-X1 <- rbinom(N, 1, 0.3); X2 <- matrix(rnorm(K2*N), N, K2)
-X <- cbind(1, X1, X2); Y <- X%*%B + rnorm(N, 0, sd = 1)
+X1 <- rbinom(N, 1, 0.3)
+X2 <- matrix(rnorm(K2*N), N, K2)
+X <- cbind(1, X1, X2)
+Y <- X%*%B + rnorm(N, 0, sd = 1)
 # Hyperparameters
-d0 <- 4; a0 <- 4; b0 <- rep(0, K)
-cOpt <- 0.5; an <- N + a0; B0 <- cOpt*diag(K)
+d0 <- 4; a0 <- 4
+b0 <- rep(0, K); cOpt <- 0.5
+an <- N + a0; B0 <- cOpt*diag(K)
 Bn <- solve(solve(B0)+t(X)%*%X); bhat <- solve(t(X)%*%X)%*%t(X)%*%Y
 bn <- Bn%*%(solve(B0)%*%b0+t(X)%*%X%*%bhat)
 dn <- as.numeric(d0 + t(Y-X%*%bhat)%*%(Y-X%*%bhat)+t(bhat - b0)%*%solve(solve(t(X)%*%X)+B0)%*%(bhat - b0))
@@ -1134,7 +1150,8 @@ PostRestCom <- mean(sapply(sig2P, function(x){dnorm(Brest, mean = bn[5], sd = (x
 # Prior evaluation
 sig2 <- invgamma::rinvgamma(S, shape = a0/2, rate = d0/2)
 PriorRestCom <- mean(sapply(sig2, function(x){dnorm(Brest, mean = 0, sd = (x*cOpt)^0.5, log = FALSE)})) 
-BF12SD <- exp(PostRestCom - PriorRestCom)
+# Bayes factor
+BF12SD <- PostRestCom/PriorRestCom
 2*log(1/BF12SD)
 \end{lstlisting}
 	\end{VF}

@@ -559,13 +559,13 @@ BF12; 1/BF12
 # Savage-Dickey density ratio
 # Posterior evaluation
 Brest <- 0
-an <- N + a0
-B0 <- cOpt*diag(K) 
-Bn <- solve(solve(B0)+t(X)%*%X)
-bhat <- solve(t(X)%*%X)%*%t(X)%*%Y
-bn <- Bn%*%(solve(B0)%*%b0+t(X)%*%X%*%bhat)
-dn <- as.numeric(d0 + t(Y-X%*%bhat)%*%(Y-X%*%bhat)+t(bhat - b0)%*%solve(solve(t(X)%*%X)+B0)%*%(bhat - b0))
-Hn <- as.matrix(Matrix::forceSymmetric(dn*Bn/an))
+# an <- N + a0
+# B0 <- cOpt*diag(K) 
+# Bn <- solve(solve(B0)+t(X)%*%X)
+# bhat <- solve(t(X)%*%X)%*%t(X)%*%Y
+# bn <- Bn%*%(solve(B0)%*%b0+t(X)%*%X%*%bhat)
+# dn <- as.numeric(d0 + t(Y-X%*%bhat)%*%(Y-X%*%bhat)+t(bhat - b0)%*%solve(solve(t(X)%*%X)+B0)%*%(bhat - b0))
+# Hn <- as.matrix(Matrix::forceSymmetric(dn*Bn/an))
 # VarBeta5 <- Hn[5,5] - Hn[5,1:4]%*%solve(Hn[1:4,1:4])%*%Hn[1:4,5] 
 sig2P <- invgamma::rinvgamma(S, shape = an/2, rate = dn/2)
 PostRestCom <- mean(sapply(sig2P, function(x){dnorm(Brest, mean = bn[5], sd = (x*Bn[5,5])^0.5, log = FALSE)})) 
