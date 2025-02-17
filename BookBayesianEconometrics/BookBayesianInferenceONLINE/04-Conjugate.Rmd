@@ -1,0 +1,734 @@
+# Cornerstone models: Conjugate families {#Chap3}
+
+We will introduce conjugate families in basic statistical models with examples, solving them analytically and computationally using R. We will have some mathematical, and computational exercises in R.
+
+## Motivation of conjugate families {#sec41}
+
+Observing three fundamental pieces of Bayesian analysis: the posterior distribution (parameter inference), the marginal likelihood (hypothesis testing), and the predictive distribution (prediction), equations \@ref(eq:411), \@ref(eq:412) and \@ref(eq:413), respectively, 
+
+\begin{align}
+  \pi(\mathbf{\theta}|\mathbf{y})&=\frac{p(\mathbf{y}|\mathbf{\theta}) \times \pi(\mathbf{\theta})}{p(\mathbf{y})},
+  (\#eq:411)
+\end{align}
+
+\begin{equation}
+p(\mathbf{y})=\int_{\mathbf{\Theta}}p(\mathbf{y}|\mathbf{\theta})\pi(\mathbf{\theta})d\mathbf{\theta},
+(\#eq:412)
+\end{equation}
+
+and 
+
+\begin{equation}
+p(\mathbf{Y}_0|\mathbf{y})=\int_{\mathbf{\Theta}}p(\mathbf{Y}_0|\mathbf{\theta})\pi(\mathbf{\theta}|\mathbf{y})d\mathbf{\theta},
+(\#eq:413)
+\end{equation}
+
+we can understand that some of the initial limitations of the application of the Bayesian analysis were associated with the ausence of algorithms to draw from non-standard posterior distributions (equation \@ref(eq:411)), and the lack of analytical solutions of the marginal likelihood (equation \@ref(eq:412)) and the predictive distribution (equation \@ref(eq:413)). Both issues requiring computational power.
+
+Although there were algorithms to sample from non-standard posterior distributions since the second half of the last century [@metropolis53][@hastings70],[@Geman1984], their particular application in the Bayesian framework emerged later [@Gelfand1990],[@tierney1994markov], maybe until increasing computational power of desktop computers. However, it is also common practice nowadays to use models that have standard conditional posterior distributions to mitigate computational requirements. In addition, nice mathematical tricks plus computational algorithms [@gelfand1994bayesian], [@chib1995marginal],[@chib2001marginal] and approximations [@Tierney1986][@Jordan1999] are used to obtain the marginal likelihood (prior predictive).
+
+Despite these advances, there are two potentially conflicting desirable model specification features that we can see from equations \@ref(eq:411), \@ref(eq:412) and \@ref(eq:413): analytical solutions and the posterior distribution in the same family as the prior distribution for a given likelihood. The latter is called *conjugate priors*, a family of priors that is closed under sampling [@schlaifer1961applied, p.~ 43-57].
+
+These features are desirable as the former implies facility to perform hypothesis testing and predictive analysis, and the latter means invariance of the prior-to-posterior updating. Both feautures imply less computational burden.
+
+We can easily achieve each of these features independenly, for instance using improper priors for analytical tractability, and defining in a broad sense the family of prior distributions for prior conjugacy. However, these are in conflict. 
+
+
+Fortunately, we can achieve these two nice features if we assume that the data generating process is given by a distribution function in the *exponential family*. That is, given a random sample $\mathbf{y}=[y_1,y_2,\dots,y_N]^{\top}$, a probability density function $p(\mathbf{y}|\mathbf{\theta})$ belongs to the exponential family if it has the form
+
+\begin{align}
+  p(\mathbf{y}|\mathbf{\theta})&=\prod_{i=1}^N h(y_i) C(\mathbf{\theta}) \exp\left\{\eta(\mathbf{\theta})^{\top}\mathbf{T}(y_i)\right\}\\ 
+  &=h(\mathbf{y}) C(\mathbf{\theta})^N\exp\left\{\eta(\mathbf{\theta})^{\top}\mathbf{T}(\mathbf{y})\right\} (\#eq:414)\\
+  &=h(\mathbf{y})\exp\left\{\eta(\mathbf{\theta})^{\top}\mathbf{T}(\mathbf{y})-A(\mathbf{\theta})\right\},
+\end{align}
+
+where $h(\mathbf{y})=\prod_{i=1}^N h(y_i)$ is a non-negative function, $\eta(\mathbf{\theta})$ is a known function of the parameters, $A(\mathbf{\theta})=\log\left\{\int_{\mathbf{Y}}h(\mathbf{y})\exp\left\{\eta(\mathbf{\theta})^{\top}\mathbf{T}(\mathbf{y})\right\}d\mathbf{y}\right\}=-N\log(C(\mathbf{\theta}))$ is a normalization factor, and $\mathbf{T}(\mathbf{y})=\sum_{i=1}^N\mathbf{T}(y_i)$ is the vector of sufficient statistics of the distribution (by the factorization theorem).  
+
+If the support of $\mathbf{y}$ is independent of $\mathbf{\theta}$, then the family is said to be *regular*, otherwise it is *irregular*. In addition, if we set $\eta=\eta(\mathbf{\theta})$, then the exponential family is said to be in the *canonical form* 
+
+\begin{align}
+  p(\mathbf{y}|\mathbf{\theta})&=h(\mathbf{y})D(\mathbf{\eta})^N\exp\left\{\eta^{\top}\mathbf{T}(\mathbf{y})\right\}\\
+  &=h(\mathbf{y})\exp\left\{\eta^{\top}\mathbf{T}(\mathbf{y})-B(\mathbf{\eta})\right\}.
+\end{align}
+
+A nice feature of this representation is that $\mathbb{E}[\mathbf{T}(\mathbf{y})|\mathbf{\eta}]=\nabla B(\mathbf{\eta})$ and $Var[\mathbf{T}(\mathbf{y})|\mathbf{\eta}]=\nabla^2 B(\mathbf{\eta})$. 
+
+**Examples of exponential family distributions**
+
+1. Discrete distributions
+
+* Given a random sample $\mathbf{y}=[y_1,y_2,\dots,y_N]^{\top}$ from a **Poisson distribution** let's show that $p(\mathbf{y}|\lambda)$ is in the exponential family.
+
+\begin{align}
+  p(\mathbf{y}|\lambda)&=\prod_{i=1}^N \frac{\lambda^{y_i} \exp(-\lambda)}{y_i!}\\
+  &=\frac{\lambda^{\sum_{i=1}^N y_i}\exp(-N\lambda)}{\prod_{i=1}^N y_i!}\\
+  &=\frac{\exp(-N\lambda)\exp(\sum_{i=1}^Ny_i\log(\lambda))}{\prod_{i=1}^N y_i!},
+\end{align}
+
+then $h(\mathbf{y})=\left[\prod_{i=1}^N y_i!\right]^{-1}$, $\eta(\lambda)=\log(\lambda)$, $T(\mathbf{y})=\sum_{i=1}^N y_i$ (sufficient statistic) and $C(\lambda)=\exp(-\lambda)$.
+
+If we set $\eta=\log(\lambda)$, then 
+
+\begin{align}
+  p(\mathbf{y}|\eta)&=\frac{\exp(\eta\sum_{i=1}^Ny_i-N\exp(\eta))}{\prod_{i=1}^N y_i!},
+\end{align}
+
+such that $B(\eta)=N\exp(\eta)$, then $\nabla(B(\eta))=N\exp(\eta)=N\lambda=\mathbb{E}\left[\sum_{i=1}^N y_i\biggr\rvert\lambda\right]$, that is, $\mathbb{E}\left[\frac{\sum_{i=1}^N y_i}{N}\biggr\rvert\lambda\right]=\mathbb{E}[\bar{y}|\lambda]=\lambda$, and $\nabla^2(B(\eta))=N\exp(\eta)=N\lambda=Var\left[\sum_{i=1}^N y_i\biggr\rvert\lambda\right]=N^2 \times Var\left[\bar{y}\rvert\lambda\right]$, then $Var\left[\bar{y}\rvert\lambda\right]=\frac{\lambda}{N}$. 
+
+* Given a random sample $\mathbf{y}=[y_1,y_2,\dots,y_N]^{\top}$ from a **Bernoulli distribution** let's show that $p(\mathbf{y}|\theta)$ is in the exponential family.
+
+
+\begin{align}
+  p(\mathbf{y}|\theta)&=\prod_{i=1}^N \theta^{y_i}(1-\theta)^{1-y_i}\\
+  &=\theta^{\sum_{i=1}^N y_i}(1-\theta)^{N-\sum_{i=1}^N y_i}\\
+  &=(1-\theta)^N\exp\left\{\sum_{i=1}^N y_i\log\left(\frac{\theta}{1-\theta}\right)\right\},
+\end{align}
+
+then $h(\mathbf{y})=\mathbb{I}[y_i\in\left\{0,1\right\}]$, $\eta(\theta)=\log\left(\frac{\theta}{1-\theta}\right)$, $T(\mathbf{y})=\sum_{i=1}^N y_i$ and $C(\theta)=1-\theta$.
+
+Write this distribution in the canonical form, and find the mean and variance of the sufficient statistic (exercise 1). 
+
+* Given a random sample $\mathbf{y}=[\mathbf{y}_1,\mathbf{y}_2,\dots,\mathbf{y}_N]$ from a **m-dimensional multinomial distribution**, where $\mathbf{y}_i=\left[y_{i1},\dots,y_{im}\right]$, $\sum_{l=1}^m y_{il}=n$, $n$ independent trials each of which leads to a success for exactly one of $m$ categories with probabilities $\mathbf{\theta}=[\theta_1,\theta_2,\dots,\theta_m]$, $\sum_{l=1}^m \theta_l=1$. Let's show that $p(\mathbf{y}|\mathbf{\theta})$ is in the exponential family.
+
+
+\begin{align}
+  p(\mathbf{y}|\mathbf{\theta})&=\prod_{i=1}^N \frac{n!}{\prod_{l=1}^m y_{il}!} \prod_{l=1}^m\theta_l^{y_{il}}\\
+  &=\frac{(n!)^N}{\prod_{i=1}^N\prod_{l=1}^m y_{il}!}\exp\left\{\sum_{i=1}^N\sum_{l=1}^m y_{il}\log(\theta_l)\right\}\\
+  &=\frac{(n!)^N}{\prod_{i=1}^N\prod_{l=1}^m y_{il}!}\exp\left\{\left(N\times n-\sum_{i=1}^N\sum_{l=1}^{m-1}y_{il}\right)\log(\theta_m)+\sum_{i=1}^N\sum_{l=1}^{m-1}y_{il}\log(\theta_l)\right\}\\
+  &=\frac{(n!)^N}{\prod_{i=1}^N\prod_{l=1}^m y_{il}!}\theta_m^{N\times n}\exp\left\{\sum_{i=1}^N\sum_{l=1}^{m-1}y_{il}\log(\theta_l/\theta_m)\right\},
+\end{align}
+
+then $h(\mathbf{y})=\frac{(n!)^N}{\prod_{i=1}^N\prod_{l=1}^m y_{il}!}$, $\eta(\mathbf{\theta})=\left[\log\left(\frac{\theta_1}{\theta_m}\right)\dots \log\left(\frac{\theta_{m-1}}{\theta_m}\right)\right]$, $T(\mathbf{y})=\left[\sum_{i=1}^N y_{i1}\dots \sum_{i=1}^N y_{im-1}\right]$ and $C(\mathbf{\theta})=\theta_m^n$.
+
+2. Continuous distributions
+
+* Given a random sample $\mathbf{y}=[y_1,y_2,\dots,y_N]^{\top}$ from a **normal distribution** let's show that $p(\mathbf{y}|\mu,\sigma^2)$ is in the exponential family.
+
+\begin{align}
+  p(\mathbf{y}|\mu,\sigma^2)&=\prod_{i=1}^N \frac{1}{2\pi\sigma^2}\exp\left\{-\frac{1}{2\sigma^2}\left(y_i-\mu\right)^2\right\}\\
+  &= (2\pi)^{-N/2}(\sigma^2)^{-N/2}\exp\left\{-\frac{1}{2\sigma^2}\sum_{i=1}^N\left(y_i-\mu\right)^2\right\}\\
+  &= (2\pi)^{-N/2}\exp\left\{-\frac{1}{2\sigma^2}\sum_{i=1}^Ny_i^2+\frac{\mu}{\sigma^2}\sum_{i=1}^N y_i-N\frac{\mu^2}{2\sigma^2}-\frac{N}{2}\log(\sigma^2)\right\}
+
+\end{align}
+
+then $h(\mathbf{y})=(2\pi)^{-N/2}$, $\eta(\mu,\sigma^2)=\left[\frac{\mu}{\sigma^2} \ \frac{-1}{2\sigma^2}\right]$, $T(\mathbf{y})=\left[\sum_{i=1}^N y_i \ \sum_{i=1}^N y_i^2\right]$ and $C(\mu,\sigma^2)=\exp\left\{-\frac{\mu^2}{2\sigma^2}-\frac{\log(\sigma^2)}{2}\right\}$.
+
+Observe that 
+
+\begin{align}
+  p(\mathbf{y}|\mu,\sigma^2)&= (2\pi)^{-N/2}\exp\left\{\eta_1\sum_{i=1}^N y_i+\eta_2\sum_{i=1}^Ny_i^2-\frac{N}{2}\log(-2\eta_2)+\frac{N}{4}\frac{\eta_1^2}{\eta_2}\right\},
+\end{align}
+
+where $B(\mathbf{\eta})=\frac{N}{2}\log(-2\eta_2)-\frac{N}{4}\frac{\eta_1^2}{\eta_2}$. Then,
+
+\begin{align}
+  \nabla B(\mathbf{\eta}) & = \begin{bmatrix}
+    -\frac{N}{2}\frac{\eta_1}{\eta_2}\\
+    -\frac{N}{2}\frac{1}{\eta_2}+\frac{N}{4}\frac{\eta_1^2}{\eta_2^2}
+  \end{bmatrix}
+   =
+  \begin{bmatrix}
+    N\times\mu\\
+    N\times(\mu^2+\sigma^2)
+  \end{bmatrix}  = \begin{bmatrix}
+    \mathbb{E}\left[\sum_{i=1}^N y_i\bigr\rvert \mu,\sigma^2\right]\\
+    \mathbb{E}\left[\sum_{i=1}^N y_i^2\bigr\rvert \mu,\sigma^2\right]
+  \end{bmatrix}. 
+\end{align}
+
+
+<!-- * Given $\mathbf{y}\sim N_N(\mathbf{\mu},\mathbf{\Sigma})$, that is, a **multivariate normal distribution** show that $p(\mathbf{y}|\mathbf{\mu},\mathbf{\Sigma})$ is in the exponential family. -->
+
+<!-- \begin{align} -->
+<!--   p(\mathbf{y}|\mathbf{\mu},\mathbf{\Sigma})&= (2\pi)^{-N/2}|\Sigma|^{-1/2}\exp\left\{-\frac{1}{2}\left(\mathbf{y}-\mathbf{\mu}\right)^{\top}\mathbf{\Sigma}^{-1}\left(\mathbf{y}-\mathbf{\mu}\right)\right\}\\ -->
+<!--   &= (2\pi)^{-N/2}\exp\left\{-\frac{1}{2}\left(\mathbf{y}^{\top}\mathbf{\Sigma}^{-1}\mathbf{y}-2\mathbf{y}^{\top}\mathbf{\Sigma}^{-1}\mathbf{\mu}+\mathbf{\mu}^{\top}\mathbf{\Sigma}^{-1}\mathbf{\mu}+\log(|\Sigma|)\right)\right\}\\ -->
+<!--   &= (2\pi)^{-N/2}\exp\left\{-\frac{1}{2}\left(tr\left\{\mathbf{y}^{\top}\mathbf{\Sigma}^{-1}\mathbf{y}\right\}-2\mathbf{y}^{\top}\mathbf{\Sigma}^{-1}\mathbf{\mu}+\mathbf{\mu}^{\top}\mathbf{\Sigma}^{-1}\mathbf{\mu}+\log(|\Sigma|)\right)\right\}\\ -->
+<!--   &= (2\pi)^{-N/2}\exp\left\{-\frac{1}{2}\left(vec\left(\mathbf{y}\mathbf{y}^{\top}\right)^{\top}vec\left(\mathbf{\Sigma}^{-1}\right)-2\mathbf{y}^{\top}\mathbf{\Sigma}^{-1}\mathbf{\mu}+\mathbf{\mu}^{\top}\mathbf{\Sigma}^{-1}\mathbf{\mu}+\log(|\Sigma|)\right)\right\}, -->
+
+<!-- \end{align} -->
+
+<!-- where $tr$ and $vec$ are the trace and vectorization operators, respectively. -->
+
+<!-- Then $h(\mathbf{y})=(2\pi)^{-N/2}$, $\eta(\mathbf{\mu},\mathbf{\Sigma})=\left[\mathbf{\Sigma}^{-1}\mathbf{\mu} \ \ vec\left(\mathbf{\Sigma}^{-1}\right)\right]$, $T(\mathbf{y})=\left[\mathbf{y} \ \ -\frac{1}{2}vec(\mathbf{y}\mathbf{y}^{\top})\right]$ and $C(\mathbf{\mu},\mathbf{\Sigma})=\exp\left\{-\frac{1}{2N}\left(\mathbf{\mu}^{\top}\mathbf{\Sigma}^{-1}\mathbf{\mu}+\log(|\Sigma|)\right)\right\}$. -->
+
+
+* Given $\mathbf{Y}=[\mathbf{y}_1 \ \mathbf{y}_2 \ \dots \ \mathbf{y}_p]$ a $N\times p$ matrix such that $\mathbf{y}_i\sim N_p(\mathbf{\mu},\mathbf{\Sigma})$, $i=1,2,\dots,N$, that is, each $i$-th row of $\mathbf{Y}$ follows a **multivariate normal distribution**. Then, assuming independence between rows, let's show that $p(\mathbf{y}_1,\mathbf{y}_2,\dots,\mathbf{y}_N|\mathbf{\mu},\mathbf{\Sigma})$ is in the exponential family.
+
+\begin{align}
+  p(\mathbf{y}_1,\mathbf{y}_2,\dots,\mathbf{y}_N|\mathbf{\mu},\mathbf{\Sigma})&=\prod_{i=1}^N (2\pi)^{-p/2}|\Sigma|^{-1/2}\exp\left\{-\frac{1}{2}\left(\mathbf{y}_i-\mathbf{\mu}\right)^{\top}\mathbf{\Sigma}^{-1}\left(\mathbf{y}_i-\mathbf{\mu}\right)\right\}\\
+  &= (2\pi)^{-pN/2}|\Sigma|^{-N/2}\exp\left\{-\frac{1}{2}tr\left[\sum_{i=1}^N\left(\mathbf{y}_i-\mathbf{\mu}\right)^{\top}\mathbf{\Sigma}^{-1}\left(\mathbf{y}_i-\mathbf{\mu}\right)\right]\right\}\\
+  &= (2\pi)^{-p N/2}|\Sigma|^{-N/2}\exp\left\{-\frac{1}{2}tr\left[\left(\mathbf{S}+N\left(\mathbf{\mu}-\hat{\mathbf{\mu}}\right)\left(\mathbf{\mu}-\hat{\mathbf{\mu}}\right)^{\top}\right)\mathbf{\Sigma}^{-1}\right]\right\}\\
+  &= (2\pi)^{-p N/2}\exp\left\{-\frac{1}{2}\left[\left(vec\left(\mathbf{S}\right)^{\top}+N vec\left(\hat{\mathbf{\mu}}\hat{\mathbf{\mu}}^{\top}\right)^{\top}\right)vec \left(\mathbf{\Sigma}^{-1}\right)\right.\right.\\
+  &\left.\left.-2N\hat{\mathbf{\mu}}^{\top}vec\left(\mathbf{\mu}^{\top}\mathbf{\Sigma}^{-1}\right)+N tr\left(\mathbf{\mu}\mathbf{\mu}^{\top}\mathbf{\Sigma}^{-1}\right)+N\log (|\mathbf{\Sigma}|)\right]\right\}\\
+
+\end{align}
+
+where the second line uses the trace operator ($tr$), and its invariability under cyclic permutation is used in the third line. In addition, we add and subtract $\hat{\mathbf{\mu}}=\frac{1}{N}\sum_{i=1}^N\mathbf{y}_i$ in each parenthesis such that we get $\mathbf{S}=\sum_{i=1}^N\left(\mathbf{y}_i-\hat{\mathbf{\mu}}\right)\left(\mathbf{y}_i-\hat{\mathbf{\mu}}\right)^{\top}$. We get the fourth line after using some properties of the trace operator to introduce the vectorization operator ($vec$), and collecting terms.
+
+Then $h(\mathbf{y})=(2\pi)^{-pN/2}$, $\eta(\mathbf{\mu},\mathbf{\Sigma})^{\top}=\left[\left(vec\left(\mathbf{\Sigma}^{-1}\right)\right)^{\top} \ \ \left(vec\left(\mathbf{\mu}^{\top}\mathbf{\Sigma}^{-1}\right)\right)^{\top}\right]$, $T(\mathbf{y})=\left[-\frac{1}{2}\left(vec\left(\mathbf{S}\right)^{\top}+N vec\left(\hat{\mathbf{\mu}}\hat{\mathbf{\mu}}^{\top}\right)^{\top}\right) \ \ -N\hat{\mathbf{\mu}}^{\top}\right]^{\top}$ and $C(\mathbf{\mu},\mathbf{\Sigma})=\exp\left\{-\frac{1}{2}\left(tr\left(\mathbf{\mu}\mathbf{\mu}^{\top}\mathbf{\Sigma}^{-1}\right)+\log(|\Sigma|)\right)\right\}$.
+
+## Conjugate prior to exponential family {#sec42}
+
+**Theorem 4.2.1**
+
+The prior distribution $\pi(\mathbf{\theta})\propto C(\mathbf{\theta})^{b_0}\exp\left\{\eta(\mathbf{\theta})^{\top}\mathbf{a}_0\right\}$ is conjugate to the exponential family (equation \@ref(eq:414)).
+
+**Proof**
+
+\begin{align}
+  \pi(\mathbf{\theta}|\mathbf{y})& \propto C(\mathbf{\theta})^{b_0}\exp\left\{\eta(\mathbf{\theta})^{\top}\mathbf{a}_0\right\} \times h(\mathbf{y}) C(\mathbf{\theta})^N\exp\left\{\eta(\mathbf{\theta})^{\top}\mathbf{T}(\mathbf{y})\right\}\\
+  & \propto C(\mathbf{\theta})^{N+b_0} \exp\left\{\eta(\mathbf{\theta})^{\top}(\mathbf{T}(\mathbf{y})+\mathbf{a}_0\right\}. 
+\end{align}
+
+Observe that the posterior is in the exponential family, $\pi(\mathbf{\theta}|\mathbf{y})\propto C(\mathbf{\theta})^{\beta_n} \exp\left\{\eta(\mathbf{\theta})^{\top}\mathbf{\alpha}_n\right\}$, $\beta_n=N+b_0$ and $\mathbf{\alpha}_n=\mathbf{T}(\mathbf{y})+\mathbf{a}_0$.
+
+*Remarks*
+
+We see comparing the prior and the likelihood that $b_0$ plays the role of a hypothetical sample size, and $\mathbf{a}_0$ plays the role of hypothetical sufficient statistics. This view helps the elicitation process.
+
+In addition, we stablished the result in the *standard form* of the exponential family. We can also stablish this result in the *canonical form* of the exponential family. Observe that given $\mathbf{\eta}=\mathbf{\eta}(\mathbf{\theta})$ another way to get a prior for $\mathbf{\eta}$ is to use the change of variables theorem given a bijective function.
+
+In the setting where there is a prior regular conjugate prior [@diaconis1979conjugate] show that we obtain a posterior expectation of the sufficient statistics that is a weighted average between the prior expectation and the likelihood estimate. 
+
+**Examples: Theorem 4.2.1**
+
+1. Likelihood functions from discrete distributions
+
+* **The Poisson-gamma model**
+
+Given a random sample $\mathbf{y}=[y_1,y_2,\dots,y_N]^{\top}$ from a **Poisson distribution** then a conjugate prior density for $\lambda$ has the form 
+
+\begin{align}
+  \pi(\lambda)&\propto \left(\exp(-\lambda)\right)^{b_0} \exp\left\{a_0\log(\lambda)\right\}\\
+ & = \exp(-\lambda b_0) \lambda^{a_0}\\
+ & = \exp(-\lambda \beta_0) \lambda^{\alpha_0-1}.
+\end{align}
+
+This is the kernel of a gamma density in the *rate parametrization*, $G(\alpha_0,\beta_0)$, $\alpha_0=a_0+1$ and $\beta_0=b_0$. ^[Another parametrization of the gamma density is the *scale parametrization* where $\kappa_0=1/\beta_0$. See the health insurance example in Chapter \@ref(Chap1).] Then, a prior conjugate distribution for the Poisson likelihood is a gamma distribution.   
+
+Taking into account that $\sum_{i=1}^N y_i$ is a sufficient statistic for the Poisson distribution, then we can think about $a_0$ as the number of occurrences in $b_0$ experiments. 
+Observe that
+
+\begin{align}
+  \pi(\lambda|\mathbf{y})&\propto \exp(-\lambda \beta_0) \lambda^{\alpha_0-1} \times \exp(-N\lambda)\lambda^{\sum_{i=1}^Ny_i}\\
+  &= \exp(-\lambda(N+\beta_0)) \lambda^{\sum_{i=1}^Ny_i+\alpha_0-1}. 
+\end{align}
+
+As expected, this is the kernel of a gamma distribution, which means $\lambda|\mathbf{y}\sim G(\alpha_n,\beta_n)$, $\alpha_n=\sum_{i=1}^Ny_i+\alpha_0$ and $\beta_n=N+\beta_0$.
+
+Observe that $\alpha_0/\beta_0$ is the prior mean, and $\alpha_0/\beta_0^2$ is the prior variance. Then, $\alpha_0\rightarrow 0$ and $\beta_0\rightarrow 0$ imply a non-informative prior such that the posterior mean converges to the maximum likelihood estimator $\bar{y}=\frac{\sum_{i=1}^N y_i}{N}$,
+
+\begin{align}
+  \mathbb{E}\left[\lambda|\mathbf{y}\right]&=\frac{\alpha_n}{\beta_n}\\
+  &=\frac{\sum_{i=1}^Ny_i+\alpha_0}{N+\beta_0}\\
+  &=\frac{N\bar{y}}{N+\beta_0}+\frac{\alpha_0}{N+\beta_0}.
+\end{align}
+
+The posterior mean is a weighted average between sample and prior information. This is a general result from regular conjugate priors [@diaconis1979conjugate]. Observe that $\mathbb{E}\left[\lambda|\mathbf{y}\right]=\bar{y}, \lim N\rightarrow\infty$. 
+
+In addition, $\alpha_0\rightarrow 0$ and $\beta_0\rightarrow 0$ corresponds to $\pi(\lambda)\propto \frac{1}{\lambda}$, which is an improper prior. Improper priors have bad consequences on Bayes factors (hypothesis testing). In this setting, we can get analytical solutions for the marginal likelihood and the predictive distribution (see the health insurance example and exercise 3 in Chapter \@ref(Chap1)). 
+
+* **The Bernoulli-beta model**
+
+Given a random sample $\mathbf{y}=[y_1,y_2,\dots,y_N]^{\top}$ from a **Bernoulli distribution** then a conjugate prior density for $\theta$ has the form 
+
+\begin{align}
+  \pi(\theta)&\propto (1-\theta)^{b_0} \exp\left\{a_0\log\left(\frac{\theta}{1-\theta}\right)\right\}\\
+ & = (1-\theta)^{b_0-a_0}\theta^{a_0}\\
+ & = \theta^{\alpha_0-1}(1-\theta)^{\beta_0-1}.
+\end{align}
+
+This is the kernel of a beta density, $B(\alpha_0,\beta_0)$, $\alpha_0=a_0+1$ and $\beta_0=b_0-a_0+1$. A prior conjugate distribution for the Bernoulli likelihood is a beta distribution. Given that $b_0$ is the hypothetical sample size, and $a_0$ is the hypothetical sufficient statistic, which is the number of successes, then $b_0-a_0$ is the number of failures. This implies that $\alpha_0$ is the number of prior successes plus one, and $\beta_0$ is the number of prior failures plus one. Given that the mode of a beta distribuited random variable is $\frac{\alpha_0-1}{\alpha_0+\beta_0-2}=\frac{a_0}{b_0}$, then we have the a priori probability of success. Setting $\alpha_0=1$ and $\beta_0=1$, which implies a 0-1 uniform distribution, corresponds to a setting with 0 successes (and 0 failures) in 0 experiments.   
+
+Observe that
+
+\begin{align}
+  \pi(\theta|\mathbf{y})&\propto \theta^{\alpha_0-1}(1-\theta)^{\beta_0-1} \times \theta^{\sum_{i=1}^N y_i}(1-\theta)^{N-\sum_{i=1}^Ny_i}\\
+  &= \theta^{\alpha_0+\sum_{i=1}^N y_i-1}(1-\theta)^{\beta_0+N-\sum_{i=1}^Ny_i-1}. 
+\end{align}
+
+The posterior distribution is beta, $\theta|\mathbf{y}\sim B(\alpha_n,\beta_n)$, $\alpha_n=\alpha_0+\sum_{i=1}^N y_i$ and $\beta_n=\beta_0+N-\sum_{i=1}^Ny_i$, where the posterior mean $\mathbf{E}[\theta|\mathbf{y}]=\frac{\alpha_n}{\alpha_n+\beta_n}=\frac{\alpha_0+N\bar{y}}{\alpha_0+\beta_0+N}=\frac{\alpha_0+\beta_0}{\alpha_0+\beta_0+N}\frac{\alpha_0}{\alpha_0+\beta_0}+\frac{N}{\alpha_0+\beta_0+N}\bar{y}$. The posterior mean is a weighted average between the prior mean and the maximum likelihood estimate.
+
+El marginal likelihood in this setting is
+
+\begin{align}
+  p(\mathbf{y})=&\int_{0}^1 \frac{\theta^{\alpha_0-1}(1-\theta)^{\beta_0-1}}{B(\alpha_0,\beta_0)}\times \theta^{\sum_{i=1}^N y_i}(1-\theta)^{N-\sum_{i=1}^N y_i}d\theta\\
+  =& \frac{B(\alpha_n,\beta_n)}{B(\alpha_0,\beta_0)},
+\end{align}
+
+where $B(\cdot ,\cdot)$ is the beta function.
+
+In addition, the predictive density is
+
+\begin{align}
+  p(Y_0|\mathbf{y})&=\int_0^1 \theta^{y_0}(1-\theta)^{1-y_0}\times \frac{\theta^{\alpha_n-1}(1-\theta)^{\beta_n-1}}{B(\alpha_n,\beta_n)}d\theta\\
+  &=\frac{B(\alpha_n+y_0,\beta_n+1-y_0)}{B(\alpha_n,\beta_n)}\\
+  &=\frac{\Gamma(\alpha_n+\beta_n)\Gamma(\alpha_n+y_0)\Gamma(\beta_n+1-y_0)}{\Gamma(\alpha_n+\beta_n+1)\Gamma(\alpha_n)\Gamma(\beta_n)}\\
+  &=\begin{Bmatrix}
+  \frac{\alpha_n}{\alpha_n+\beta_n}, & y_0=1\\
+  \frac{\beta_n}{\alpha_n+\beta_n}, & y_0=0\\
+  \end{Bmatrix}.
+\end{align}
+
+This is a Bernoulli distribution with probability of success equal to $\frac{\alpha_n}{\alpha_n+\beta_n}$. 
+
+* **The multinomial-Dirichlet model**
+
+Given a random sample $\mathbf{y}=[y_1,y_2,\dots,y_N]^{\top}$ from a **multinomial distribution** then a conjugate prior density for $\mathbf{\theta}=\left[\theta_1,\theta_2,\dots,\theta_m\right]$ has the form 
+
+\begin{align}
+  \pi(\mathbf{\theta})&\propto \theta_m^{b_0} \exp\left\{\mathbf{\eta}(\mathbf{\theta})^{\top}\mathbf{a}_0\right\}\\
+ & = \prod_{l=1}^{m-1}\theta_l^{a_{0l}}\theta_m^{b_0-\sum_{l=1}^{m-1}a_{0l}}\\
+ & = \prod_{l=1}^{m}\theta_l^{\alpha_{0l}-1},
+\end{align}
+
+where $\mathbf{\eta}(\mathbf{\theta})=\left[\log\left(\frac{\theta_1}{\theta_m}\right),\dots,\log\left(\frac{\theta_{m-1}}{\theta_m}\right)\right]$, $\mathbf{a}_0=\left[a_{01},\dots,a_{am-1}\right]^{\top}$, $\mathbf{\alpha}_0=\left[\alpha_{01},\alpha_{02},\dots,\alpha_{0m}\right]$, $\alpha_{0l}=a_{0l}+1$, $l=1,2,\dots,m-1$ and $\alpha_{0m}=b_0-\sum_{l=1}^{m-1} a_{0l}+1$. 
+
+This is the kernel of a Dirichlet distribution, that is, the prior distribution is $D(\mathbf{\alpha}_0)$.
+
+Observe that $a_{0l}$ is the number of hypothetical number of times outcome $l$ is observed over the hypothetical $b_0$ trials. Setting $\alpha_{0l}=1$, that is a uniform distribution over the open standard simplex, implicitly we set $a_{0l}=0$, which means that there are 0 occurrences of category $l$ in $b_0=0$ experiments.    
+
+The posterior distribution of the multinomial-Dirichlet model is given by
+
+\begin{align}
+  \pi(\mathbf{\theta}|\mathbf{y})&\propto \prod_{l=1}^m \theta_l^{\alpha_{0l}-1}\times\prod_{l=1}^m \theta_l^{\sum_{i=1}^{N} y_{il}}\\
+  &=\prod_{l=1}^m \theta_l^{\alpha_{0l}+\sum_{i=1}^{N} y_{il}-1}
+\end{align}
+
+This is the kernel of a Dirichlet distribution $D(\mathbf{\alpha}_n)$, $\mathbf{\alpha}_n=\left[\alpha_{n1},\alpha_{n2},\dots,\alpha_{nm}\right]$, $\alpha_{nl}=\alpha_{0l}+\sum_{i=1}^{N}y_{il}$, $l=1,2,\dots,m$. Observe that
+
+\begin{align}
+
+\mathbb{E}[\theta_{j}|\mathbf{y}]&=\frac{\alpha_{nj}}{\sum_{l=1}^m \left[\alpha_{0l}+\sum_{i=1}^N y_{il}\right]}\\
+&=\frac{\sum_{l=1}^m \alpha_{0l}}{\sum_{l=1}^m \left[\alpha_{0l}+\sum_{i=1}^N y_{il}\right]}\frac{\alpha_{0j}}{\sum_{l=1}^m \alpha_{0l}}+\frac{\sum_{l=1}^m\sum_{i=1}^N y_{il}}{\sum_{l=1}^m \left[\alpha_{0l}+\sum_{i=1}^N y_{il}\right]}\frac{\sum_{i=1}^N y_{ij}}{\sum_{l=1}^m\sum_{i=1}^N y_{il}}.
+\end{align}
+
+We have again that the posterior mean is a weighted average between the prior mean and the maximum likelihood estimate.
+
+The marginal likelihood is
+
+\begin{align}
+  p(\mathbf{y})&=\int_{\mathbf{\Theta}}\frac{\prod_{l=1}^m \theta_l^{\alpha_{0l}-1}}{B(\mathbf{\alpha}_0)}\times \prod_{i=1}^N\frac{n!}{\prod_{l=1}^m y_{il}}\prod_{l=1}^m \theta_{l}^{y_{il}}d\mathbf{\theta}\\
+  &=\frac{N\times n!}{B(\mathbf{\alpha}_0)\prod_{i=1}^N\prod_{l=1}^m y_{il}!}\int_{\mathbf{\Theta}} \prod_{l=1}^m \theta_l^{\alpha_{0l}+\sum_{i=1}^N y_{il}-1} d\mathbf{\theta}\\
+  &=\frac{N\times n!}{B(\mathbf{\alpha}_0)\prod_{i=1}^N\prod_{l=1}^m y_{il}!}B(\mathbf{\alpha}_n)\\
+  &=\frac{N\times n! \Gamma\left(\sum_{l=1}^n \alpha_{0l}\right)}{\Gamma\left(\sum_{l=1}^n \alpha_{0l}+N\times n\right)}\prod_{l=1}^m \frac{\Gamma\left( \alpha_{nl}\right)}{\Gamma\left(\alpha_{0l}\right)\prod_{i=1}^N y_{il}!},
+\end{align}
+
+where $B(\mathbf{\alpha})=\frac{\prod_{l=1}^m\Gamma(\alpha_l)}{\Gamma\left(\sum_{l=1}^m \alpha_l\right)}$.
+
+Following similar steps we get the predictive density
+
+\begin{align}
+  p(Y_0|\mathbf{y})&=\frac{ n! \Gamma\left(\sum_{l=1}^n \alpha_{nl}\right)}{\Gamma\left(\sum_{l=1}^n \alpha_{nl}+ n\right)}\prod_{l=1}^m \frac{\Gamma\left( \alpha_{nl}+y_{0l}\right)}{\Gamma\left(\alpha_{nl}\right) y_{0l}!}.
+\end{align}
+
+This is a Dirichlet-multinomial distribution with parameters $\mathbf{\alpha}_n$.
+
+2. Likelihood functions from continuous distributions
+
+* **The normal-normal/inverse-gamma model**
+
+Given a random sample $\mathbf{y}=[y_1,y_2,\dots,y_N]^{\top}$ from a normal distribution, then the conjugate prior density has the form 
+
+\begin{align}
+  \pi(\mu,\sigma^2)&\propto \exp\left\{b_0\left(-\frac{\mu^2}{2\sigma^2}-\frac{\log \sigma^2}{2}\right)\right\}\exp\left\{a_{01}\frac{\mu}{\sigma^2}-a_{02}\frac{1}{\sigma^2}\right\}\\
+  &=\exp\left\{b_0\left(-\frac{\mu^2}{2\sigma^2}-\frac{\log \sigma^2}{2}\right)\right\}\exp\left\{a_{01}\frac{\mu}{\sigma^2}-a_{02}\frac{1}{\sigma^2}\right\}\exp\left\{-\frac{a_{01}^2}{2\sigma^2b_0}\right\}\exp\left\{\frac{a_{01}^2}{2\sigma^2b_0}\right\}\\
+  &=\exp\left\{-\frac{b_0}{2\sigma^2}\left(\mu-\frac{a_{01}}{b_0}\right)^2\right\}\left(\frac{1}{\sigma^2}\right)^{\frac{b_0+1-1}{2}}\exp\left\{\frac{1}{\sigma^2}\frac{-2b_0a_{02}+a_{01}^2}{2b_0}\right\}\\
+  &=\underbrace{\left(\frac{1}{\sigma^2}\right)^{\frac{1}{2}}\exp\left\{-\frac{b_0}{2\sigma^2}\left(\mu-\frac{a_{01}}{b_0}\right)^2\right\}}_{1}\underbrace{\left(\frac{1}{\sigma^2}\right)^{\frac{b_0-1}{2}}\exp\left\{-\frac{1}{\sigma^2}\frac{2b_0a_{02}-a_{01}^2}{2b_0}\right\}}_{2}.
+\end{align}
+
+The first part is the kernel of a normal density with mean $\mu_0=a_{01}/\beta_0$ and variance $\sigma^2/\beta_0$, $\beta_0=b_0$ that is, $\mu|\sigma^2\sim N(\mu_0,\sigma^2/\beta_0)$. The second part is the kernel of an inverse gamma density with shape parameter $\alpha_0/2=\frac{\beta_0-3}{2}$, and scale parameter $\delta_0/2=\frac{2\beta_0a_{02}-a_{01}^2}{2\beta_0}$, $\sigma^2\sim IG(\alpha_0/2,\delta_0/2)$. Observe that $b_0=\beta_0$ is the hypothetical sample size, and $a_{01}$ is the hypothetical sum of prior observations, then, it makes sense that $a_{01}/\beta_0$ and $\sigma^2/\beta_0$ are the prior mean and variance, respectively. 
+
+Therefore, the posterior distribution is also a normal-inverse gamma distribution,
+
+\begin{align}
+  \pi(\mu,\sigma^2|\mathbf{y})&\propto \left(\frac{1}{\sigma^2}\right)^{1/2}\exp\left\{-\frac{\beta_0}{2\sigma^2}(\mu-\mu_0)^2\right\}\left(\frac{1}{\sigma^2}\right)^{\alpha_0/2+1}\exp\left\{-\frac{\delta_0}{2\sigma^2}\right\}\\
+  &\times(\sigma^2)^{-N/2}\exp\left\{-\frac{1}{2\sigma^2}\sum_{i=1}^N (y_i-\mu)^2\right\}\\
+  & = \left(\frac{1}{\sigma^2}\right)^{1/2}\exp\left\{-\frac{1}{2\sigma^2}\left(\beta_0(\mu-\mu_0)^2+\sum_{i=1}^N (y_i-\bar{y})^2+N(\mu-\bar{y})^2+\delta_0\right)\right\}\\
+  & \left(\frac{1}{\sigma^2}\right)^{\frac{\alpha_0+N}{2}+1} + \frac{(\beta_0\mu_0+N\bar{y})^2}{\beta_0+N} - \frac{(\beta_0\mu_0+N\bar{y})^2}{\beta_0+N}\\
+  & = \underbrace{\left(\frac{1}{\sigma^2}\right)^{1/2}\exp\left\{-\frac{1}{2\sigma^2}\left((\beta_0+N)\left(\mu-\left(\frac{\beta_0\mu_0+N\bar{y}}{\beta_0+N}\right)\right)^2\right)\right\}}_{1}\\
+  & \times \underbrace{\left(\frac{1}{\sigma^2}\right)^{\frac{\alpha_0+N}{2}+1}\exp\left\{-\frac{1}{2\sigma^2}\left(\sum_{i=1}^N (y_i-\bar{y})^2+\delta_0+\frac{\beta_0N}{\beta_0+N}(\bar{y}-\mu_0)^2\right)\right\}}_{2}.
+\end{align}
+
+The first term is the kernel of a normal density, $\mu|\sigma^2,\mathbf{y}\sim N \left(\mu_n, \sigma_n^2\right)$, where $\mu_n=\frac{\beta_0\mu_0+N\bar{y}}{\beta_0+N}$ and $\sigma_n^2=\frac{\sigma^2}{\beta_n}$, $\beta_n=\beta_0+N$. The second term is the kernel of an inverse gamma density, $\sigma^2|\mathbf{y}\sim IG(\alpha_n/2,\delta_n/2)$ where $\alpha_n=\alpha_0+N$ and $\delta_n=\sum_{i=1}^N (y_i-\bar{y})^2+\delta_0+\frac{\beta_0N}{\beta_0+N}(\bar{y}-\mu_0)^2$. Observe that the posterior mean is a weighted average between prior and sample information. The weights depends on the sample sizes ($\beta_0$ and $N$).
+
+The marginal posterior for $\sigma^2$ is inverse gamma with shape and scale parameters $\alpha_n/2$ and $\delta_n/2$, respectively. The marginal posterior of $\mu$ is
+
+\begin{align}
+  \pi(\mu|\mathbf{y})&\propto \int_{0}^{\infty}\left\{ \left(\frac{1}{\sigma^2}\right)^{\frac{\alpha_n+1}{2}+1}\exp\left\{-\frac{1}{2\sigma^2}(\beta_n(\mu-\mu_n)^2+\delta_n)\right\}\right\}d\sigma^2\\
+  &=\frac{\Gamma\left(\frac{\alpha_n+1}{2}\right)}{\left[\frac{\beta_n(\mu-\mu_n)^2+\delta_n}{2}\right]^{\frac{\alpha_n+1}{2}}}\\
+  &\propto \left[\frac{\beta_n(\mu-\mu_n)^2+\delta_n}{2}\right]^{-\frac{\alpha_n+1}{2}}\left(\frac{\delta_n}{\delta_n}\right)^{-\frac{\alpha_n+1}{2}}\\
+  &\propto \left[\frac{\alpha_n\beta_n(\mu-\mu_n)^2}{\alpha_n\delta_n}+1\right]^{-\frac{\alpha_n+1}{2}},
+\end{align}
+
+where the second line due to having the kernel of an inverse gamma density with parameters $(\alpha_n+1)/2$ and $-\frac{1}{2\sigma^2}(\beta_n(\mu-\mu_n)^2+\delta_n)$.
+
+This is the kernel of a Student's t distribution, $\mu|\mathbf{y}\sim t(\mu_n,\delta_n/\beta_n\alpha_n,\alpha_n)$, where $\mathbb{E}[\mu|\mathbf{y}]=\mu_n$ and $Var[\mu|\mathbf{y}]=\frac{\alpha_n}{\alpha_n-2}\left(\frac{\delta_n}{\beta_n\alpha_n}\right)=\frac{\delta_n}{(\alpha_n-2)\beta_n}$, $\alpha_n>2$. Observe that the marginal posterior distribution for $\mu$ has heavier tails than the conditional posterior distribution due to incorporating uncertainty regarding $\sigma^2$.
+
+The marginal likelihood is
+
+\begin{align}
+  p(\mathbf{y})&=\int_{-\infty}^{\infty}\int_{0}^{\infty}\left\{ (2\pi\sigma^2/\beta_0)^{-1/2}\exp\left\{-\frac{1}{2\sigma^2/\beta_0}(\mu-\mu_0)^2\right\}\frac{(\delta_0/2)^{\alpha_0/2}}{\Gamma(\alpha_0/2)}\left(\frac{1}{\sigma^2}\right)^{\alpha_0/2+1}\right.\\
+  &\times\left.\exp\left\{-\frac{\delta_0}{2\sigma^2}\right\}(2\pi\sigma^2)^{-N/2}\exp\left\{-\frac{1}{2\sigma^2}\sum_{i=1}^N(y_i-\mu)^2\right\}\right\}d\sigma^2d\mu\\
+  &=\frac{(\delta_0/2)^{\alpha_0/2}}{\Gamma(\alpha_0/2)}(2\pi)^{-\left(\frac{N+1}{2}\right)}\beta_0^{1/2}\int_{-\infty}^{\infty}\int_{0}^{\infty}\left\{\left(\frac{1}{\sigma^2}\right)^{\frac{\alpha_0+N+1}{2}+1}\right.\\
+  &\times\left.\exp\left\{-\frac{1}{2\sigma^2}(\beta_0(\mu-\mu_0)^2+\sum_{i=1}^N (y_i-\mu)^2+\delta_0)\right\}\right\}d\sigma^2d\mu\\
+  &=\frac{(\delta_0/2)^{\alpha_0/2}}{\Gamma(\alpha_0/2)}(2\pi)^{-\left(\frac{N+1}{2}\right)}\beta_0^{1/2}\Gamma\left(\frac{N+1+\alpha_0}{2}\right)\\
+  &\times \int_{-\infty}^{\infty} \left[\frac{\beta_0(\mu-\mu_0)^2+\sum_{i=1}^N(y_i-\mu)^2+\delta_0}{2}\right]^{-\frac{\alpha_0+N+1}{2}}d\mu\\
+  &=\frac{(\delta_0/2)^{\alpha_0/2}}{\Gamma(\alpha_0/2)}(2\pi)^{-\left(\frac{N+1}{2}\right)}\beta_0^{1/2}\Gamma\left(\frac{N+1+\alpha_0}{2}\right)\\
+  &\times \int_{-\infty}^{\infty} \left[\frac{\beta_n(\mu-\mu_n)^2+\delta_n}{2}\right]^{-\frac{\alpha_n+1}{2}}d\mu\left(\frac{\delta_n/2}{\delta_n/2}\right)^{-\frac{\alpha_n+1}{2}}\\
+  &=\frac{(\delta_0/2)^{\alpha_0/2}}{\Gamma(\alpha_0/2)}(2\pi)^{-\left(\frac{N+1}{2}\right)}\beta_0^{1/2}\Gamma\left(\frac{\alpha_n+1}{2}\right)\left(\frac{\delta_n}{2}\right)^{-\frac{\alpha_n+1}{2}}\frac{\left(\frac{\delta_n\pi}{\beta_n}\right)^{1/2}\Gamma\left(\frac{\alpha_n}{2}\right)}{\Gamma\left(\frac{\alpha_n+1}{2}\right)}\\
+  &=\frac{\Gamma\left(\frac{\alpha_n}{2}\right)}{\Gamma\left(\frac{\alpha_0}{2}\right)}\frac{(\delta_0/2)^{\alpha_0/2}}{(\delta_n/2)^{\alpha_n/2}}\left(\frac{\beta_0}{\beta_n}\right)^{1/2}(\pi)^{-N/2},
+\end{align}
+
+where we take into account that $\int_{-\infty}^{\infty} \left[\frac{\beta_n(\mu-\mu_n)^2+\delta_n}{2}\right]^{-\frac{\alpha_n+1}{2}}d\mu\left(\frac{\delta_n/2}{\delta_n/2}\right)^{-\frac{\alpha_n+1}{2}}=\int_{-\infty}^{\infty} \left[\frac{\beta_n\alpha_n(\mu-\mu_n)^2}{\delta_n\alpha_n}+1\right]^{-\frac{\alpha_n+1}{2}}d\mu\left(\frac{\delta_n}{2}\right)^{-\frac{\alpha_n+1}{2}}$. The term in the integral is the kernel of a Student's t density, this means that the integral is equal to $\frac{\left(\frac{\delta_n\pi}{\beta_n}\right)^{1/2}\Gamma\left(\frac{\alpha_n}{2}\right)}{\Gamma\left(\frac{\alpha_n+1}{2}\right)}$.  
+
+The predictive density is
+
+\begin{align}
+  \pi(Y_0|\mathbf{y})&\propto\int_{-\infty}^{\infty}\int_0^{\infty}\left\{ \left(\frac{1}{\sigma^2}\right)^{1/2}\exp\left\{-\frac{1}{2\sigma^2}(y_0-\mu)^2\right\}\left(\frac{1}{\sigma^2}\right)^{1/2}\exp\left\{-\frac{\beta_n}{2\sigma^2}(\mu-\mu_n)^2\right\}\right.\\
+  &\times \left.\left(\frac{1}{\sigma^2}\right)^{\alpha_n/2+1}\exp\left\{-\frac{\delta_n}{2\sigma^2}\right\}\right\}d\sigma^2d\mu\\
+  &=\int_{-\infty}^{\infty}\int_0^{\infty}\left\{ \left(\frac{1}{\sigma^2}\right)^{\frac{\alpha_n+2}{2}+1}\exp\left\{-\frac{1}{2\sigma^2}((y_0-\mu)^2+\beta_n(\mu-\mu_n)^2+\delta_n)\right\}\right\}d\sigma^2d\mu\\
+  &\propto\int_{-\infty}^{\infty}\left[\beta_n(\mu-\mu_n)^2+(y_0-\mu)^2+\delta_n\right]^{-\left(\frac{\alpha_n}{2}+1\right)}d\mu\\
+  &=\int_{-\infty}^{\infty}\left[(\beta_n+1)\left(\mu-\left(\frac{\beta_n\mu_n+y_0}{\beta_n+1}\right)\right)^2+\frac{\beta_n(y_0-\mu_n)^2}{\beta_n+1}+\delta_n\right]^{-\left(\frac{\alpha_n}{2}+1\right)}d\mu\\
+  &=\int_{-\infty}^{\infty}\left[1+\frac{(\beta_n+1)^2\left(\mu-\left(\frac{\beta_n\mu_n+y_0}{\beta_n+1}\right)\right)^2}{\beta_n(y_0-\mu_n)^2+(\beta_n+1)\delta_n}\right]^{-\left(\frac{\alpha_n}{2}+1\right)}d\mu\\
+  &\times\left(\frac{\beta_n(y_0-\mu_n)^2+(\beta_n+1)\delta_n}{\beta_n+1}\right)^{-\left(\frac{\alpha_n}{2}+1\right)}\\
+  &\propto\left(\frac{\beta_n(y_0-\mu_n)^2+(\beta_n+1)\delta_n}{(\beta_n+1)^2(\alpha_n+1)}\right)^{\frac{1}{2}}\left(\frac{\beta_n(y_0-\mu_n)^2+(\beta_n+1)\delta_n}{\beta_n+1}\right)^{-\left(\frac{\alpha_n}{2}+1\right)}\\
+  &\propto (\beta_n(y_0-\mu_n)^2+(\beta_n+1)\delta_n)^{\left(\frac{\alpha_n+1}{2}\right)}\\
+  &\propto\left[1+\frac{\beta_n\alpha_n}{(\beta_n+1)\delta_n\alpha_n}(y_0-\mu_n)^2\right]^{-\left(\frac{\alpha_n+1}{2}\right)},
+\end{align}
+
+where we have that $\left[1+\frac{(\beta_n+1)^2\left(\mu-\left(\frac{\beta_n\mu_n+y_0}{\beta_n+1}\right)\right)^2}{\beta_n(y_0-\mu_n)^2+(\beta_n+1)\delta_n}\right]^{-\left(\frac{\alpha_n}{2}+1\right)}$ is the kernel of a Student's t density with degrees of freedom $\alpha_n+1$ and scale $\frac{\beta_n(y_0-\mu_n)^2+(\beta_n+1)\delta_n}{(\beta_n+1)^2(\alpha_n+1)}$. 
+
+The last expression is the kernel of a Student's t density, that is, $Y_0|\mathbf{y}\sim t\left(\mu_n,\frac{(\beta_n+1)\delta_n}{\beta_n\alpha_n},\alpha_n\right)$.
+
+* **The multivariate normal-normal/inverse-Wishart model**
+
+We show in the subsection \@ref(sec41) that the multivariate normal distribution is in the exponential family where $h(\mathbf{y})=(2\pi)^{-pN/2}$, $\eta(\mathbf{\mu},\mathbf{\Sigma})^{\top}=\left[\left(vec\left(\mathbf{\Sigma}^{-1}\right)\right)^{\top} \ \ \left(vec\left(\mathbf{\mu}^{\top}\mathbf{\Sigma}^{-1}\right)\right)^{\top}\right]$, $T(\mathbf{y})=\left[-\frac{1}{2}\left(vec\left(\mathbf{S}\right)^{\top}+N vec\left(\hat{\mathbf{\mu}}\hat{\mathbf{\mu}}^{\top}\right)^{\top}\right) \ \ -N\hat{\mathbf{\mu}}^{\top}\right]^{\top}$ and $C(\mathbf{\mu},\mathbf{\Sigma})=\exp\left\{-\frac{1}{2}\left(tr\left(\mathbf{\mu}\mathbf{\mu}^{\top}\mathbf{\Sigma}^{-1}\right)+\log(|\Sigma|)\right)\right\}$. 
+
+Then, its conjugate prior distribution should have the form
+
+\begin{align}
+  \pi(\mathbf{\mu},\mathbf{\Sigma})&\propto \exp\left\{-\frac{b_0}{2}\left(tr\left(\mathbf{\mu}\mathbf{\mu}^{\top}\mathbf{\Sigma}^{-1}\right)+\log(|\Sigma|)\right)\right\}\\
+  &\times \exp\left\{\mathbf{a}_{01}^{\top} vec\left(\mathbf{\Sigma}^{-1}\right)+\mathbf{a}_{02}^{\top}vec\left(\mathbf{\mu}^{\top}\mathbf{\Sigma}^{-1}\right)\right\}\\
+  &=|\Sigma|^{-b_0/2}\exp\left\{-\frac{b_0}{2}\left(tr\left(\mathbf{\mu}^{\top}\mathbf{\Sigma}^{-1}\mathbf{\mu}\right)\right)+tr\left(\mathbf{a}_{02}^{\top}\mathbf{\Sigma}^{-1}\mathbf{\mu}\right)\right\}\\
+  &\times \exp\left\{\mathbf{a}_{01}^{\top} vec\left(\mathbf{\Sigma}^{-1}\right)+\frac{\mathbf{a}_{02}^{\top}\mathbf{\Sigma}^{-1}\mathbf{a}_{02}}{2b_0}-\frac{\mathbf{a}_{02}^{\top}\mathbf{\Sigma}^{-1}\mathbf{a}_{02}}{2b_0}\right\}\\
+  &=|\Sigma|^{-b_0/2}\exp\left\{-\frac{b_0}{2}\left(\mathbf{\mu}-\frac{\mathbf{a}_{02}}{b_0}\right)^{\top}\mathbf{\Sigma}^{-1}\left(\mathbf{\mu}-\frac{\mathbf{a}_{02}}{b_0}\right)\right\}\\
+  &\times \exp\left\{-\frac{1}{2}tr\left(\left(\mathbf{A}_{01}-\frac{\mathbf{a}_{02}\mathbf{a}_{02}^{\top}}{b_0}\right)\mathbf{\Sigma}^{-1}\right)\right\}\\
+  &=\underbrace{|\Sigma|^{-1/2}\exp\left\{-\frac{b_0}{2}\left(\mathbf{\mu}-\frac{\mathbf{a}_{02}}{b_0}\right)^{\top}\mathbf{\Sigma}^{-1}\left(\mathbf{\mu}-\frac{\mathbf{a}_{02}}{b_0}\right)\right\}}_1\\
+  &\times \underbrace{|\Sigma|^{-(\alpha_0+p+1)/2}\exp\left\{-\frac{1}{2}tr\left(\left(\mathbf{A}_{01}-\frac{\mathbf{a}_{02}\mathbf{a}_{02}^{\top}}{b_0}\right)\mathbf{\Sigma}^{-1}\right)\right\}}_2,
+\end{align}
+
+where $b_0$ is the hypothetical sample size, and $\mathbf{a}_{01}$ and $\mathbf{a}_{02}$ are $p^2$ and $p$ dimensional vectors of prior sufficient statistics, and $\mathbf{a}_{01}=-\frac{1}{2}vec(\mathbf{A}_{01})$ such that $\mathbf{A}_{01}$ is a $p\times p$ positive semi-definite matrix. Setting $b_0=1+\alpha_0+p+1$ we have that the first part in the last expression is the kernel of a multivariate normal density with mean $\mathbf{\mu}_0=\mathbf{a}_{02}/b_0$ and covariance $\frac{\mathbf{\Sigma}}{b_0}$, that is, $\mathbf{\mu}|\mathbf{\Sigma}\sim N_p\left(\mathbf{\mu}_0,\frac{\mathbf{\Sigma}}{\beta_0}\right)$, $b_0=\beta_0$. It makes sense these hyperparameters because $\mathbf{a}_{02}$ is the hypothetical sum of prior observations and $b_0$ is the hypothetical prior sample size. On the other hand, the second expression in the last line is the kernel of a Inverse-Wishart distribution with scale matrix $\mathbf{\Psi}_0=\left(\mathbf{A}_{01}-\frac{\mathbf{a}_{02}\mathbf{a}_{02}^{\top}}{b_0}\right)$ and degrees of freedom $\alpha_0$, that is, $\mathbf{\Sigma}\sim IW_p(\mathbf{\Psi}_0,\alpha_0)$. Observe that $\mathbf{\Psi}_0$ has the same structure as the first part of the sufficient statistics in $T(\mathbf{y})$, just that it should be understood as coming from prior hypothetical observations.
+
+Therefore, the prior distribution in this setting is **normal/inverse-Wishart**, and given conjugacy, the posterior distribution is in the same family.
+
+\begin{align}
+  \pi(\mathbf{\mu},\mathbf{\Sigma}|\mathbf{Y})&\propto
+  (2\pi)^{-p N/2}|\Sigma|^{-N/2}\exp\left\{-\frac{1}{2}tr\left[\left(\mathbf{S}+N\left(\mathbf{\mu}-\hat{\mathbf{\mu}}\right)\left(\mathbf{\mu}-\hat{\mathbf{\mu}}\right)^{\top}\right)\mathbf{\Sigma}^{-1}\right]\right\}\\
+  &\times |\mathbf{\Sigma}|^{-1/2}\exp\left\{-\frac{\beta_0}{2}tr\left[(\mathbf{\mu}-\mathbf{\mu}_0)(\mathbf{\mu}-\mathbf{\mu}_0)^{\top}\mathbf{\Sigma}^{-1}\right]\right\}|\mathbf{\Sigma}|^{-(\alpha_0+p+1)/2}\exp\left\{-\frac{1}{2}tr(\mathbf{\Psi}_0\mathbf{\Sigma}^{-1})\right\}.
+\end{align}
+
+Taking into account that 
+\begin{align}
+N\left(\mathbf{\mu}-\hat{\mathbf{\mu}}\right)\left(\mathbf{\mu}-\hat{\mathbf{\mu}}\right)^{\top}+\beta_0\left(\mathbf{\mu}-\mathbf{\mu}_0\right)\left(\mathbf{\mu}-\mathbf{\mu}_0\right)^{\top}&=(N+\beta_0)\left(\mathbf{\mu}-\mathbf{\mu}_n\right)\left(\mathbf{\mu}-\mathbf{\mu}_n\right)^{\top}\\
+&+\frac{N\beta_0}{N+\beta_0}\left(\hat{\mathbf{\mu}}-\mathbf{\mu}_0\right)\left(\hat{\mathbf{\mu}}-\mathbf{\mu}_0\right)^{\top},
+\end{align}
+
+where $\mathbf{\mu}_n=\frac{N}{N+\beta_0}\hat{\mathbf{\mu}}+\frac{\beta_0}{N+\beta_0}\mathbf{\mu}_0$ is the posterior mean. We have
+
+\begin{align}
+  \pi(\mathbf{\mu},\mathbf{\Sigma}|\mathbf{Y})&\propto |\Sigma|^{-1/2}\exp\left\{-\frac{N+\beta_0}{2}tr\left[\left(\left(\mathbf{\mu}-\mathbf{\mu}_n\right)\left(\mathbf{\mu}-\mathbf{\mu}_n\right)^{\top}\right)\mathbf{\Sigma}^{-1}\right]\right\}\\
+  &\times |\mathbf{\Sigma}|^{-(N+\alpha_0+p+1)/2}\exp\left\{-\frac{1}{2}tr\left[\left(\mathbf{\Psi}_0+\mathbf{S}+\frac{N\beta_0}{N+\beta_0}(\hat{\mathbf{\mu}}-\mathbf{\mu}_0)(\hat{\mathbf{\mu}}-\mathbf{\mu}_0)^{\top}\right)\mathbf{\Sigma}^{-1}\right]\right\}.
+\end{align}
+
+Then, $\mathbf{\mu}|\mathbf{\Sigma},\mathbf{Y}\sim N_p\left(\mathbf{\mu}_n,\frac{1}{\beta_n}\mathbf{\Sigma}\right)$, and $\mathbf{\Sigma}|\mathbf{Y}\sim W\left(\alpha_n,\mathbf{\Psi}_n\right)$ where $\beta_n=N+\beta_0$, $\alpha_n=N+\alpha_0$ and $\mathbf{\Psi}_n=\mathbf{\Psi}_0+\mathbf{S}+\frac{N\beta_0}{N+\beta_0}(\hat{\mathbf{\mu}}-\mathbf{\mu}_0)(\hat{\mathbf{\mu}}-\mathbf{\mu}_0)^{\top}$.
+
+The marginal posterior of $\mathbf{\mu}$ is given by $\int_{\mathcal{S}} \pi(\mathbf{\mu},\mathbf{\Sigma})d\mathbf{\Sigma}$ where $\mathcal{S}$ is the space of positive semi-definite matrices. Then,
+
+\begin{align}
+\pi(\mathbf{\mu}|\mathbf{Y})&\propto\int_{\mathcal{S}}\left\{|\mathbf{\Sigma}|^{-(\alpha_n+p+2)/2} \exp\left\{-\frac{1}{2}tr\left[\left(\beta_n\left(\mathbf{\mu}-\mathbf{\mu}_n\right)\left(\mathbf{\mu}-\mathbf{\mu}_n\right)^{\top}+\mathbf{\Psi}_n\right)\mathbf{\Sigma}^{-1}\right]\right\} \right\}d\mathbf{\Sigma}\\
+&\propto \big\lvert\left(\beta_n\left(\mathbf{\mu}-\mathbf{\mu}_n\right)\left(\mathbf{\mu}-\mathbf{\mu}_n\right)^{\top}+\mathbf{\Psi}_n\right)\big\lvert^{-(\alpha_n+1)/2}\\
+&=\left[\big\lvert\mathbf{\Psi}_n\big\lvert\times \big\lvert1+\beta_n\left(\mathbf{\mu}-\mathbf{\mu}_n\right)^{\top}\mathbf{\Psi}_n^{-1}\left(\mathbf{\mu}-\mathbf{\mu}_n\right)\big\lvert\right]^{-(\alpha_n+1)/2}\\
+&\propto \left(1+\frac{1}{\alpha_n+1-p}\left(\mathbf{\mu}-\mathbf{\mu}_n\right)^{\top}\left(\frac{\mathbf{\Psi}_n}{(\alpha_n+1-p)\beta_n}\right)^{-1}\left(\mathbf{\mu}-\mathbf{\mu}_n\right)\right)^{-(\alpha_n+1-p+p)/2}, 
+\end{align}
+
+where the second line uses properties of the inverse Wishart distribution, and the third line uses a particular case of the Sylvester's determinant theorem.
+
+We observe that the last line is the kernel of a Multivariate Student's t distribution, that is, $\mathbf{\mu}|\mathbf{Y}\sim t_p(v_n,\mathbf{\mu}_n,\mathbf{\Sigma}_n)$ where $v_n=\alpha_n+1-p$ and $\mathbf{\Sigma}_n=\frac{\mathbf{\Psi}_n}{(\alpha_n+1-p)\beta_n}$.
+
+The marginal likelihood is given by
+
+\begin{align}
+  p(\mathbf{Y})=\frac{\Gamma_p\left(\frac{\alpha_n}{2}\right)}{\Gamma_p\left(\frac{\alpha_0}{2}\right)}\frac{|\mathbf{\Psi}_0|^{\alpha_0/2}}{|\mathbf{\Psi}_n|^{\alpha_n/2}}\left(\frac{\beta_0}{\beta_n}\right)^{p/2}(2\pi)^{-Np/2},
+\end{align}
+
+where $\Gamma_p$ is the multivariate gamma function (see Exercise 4).
+
+The posterior predictive distribution is $\mathbf{Y}_0|\mathbf{Y}\sim t_p(v_n,\mathbf{\mu}_n,(\beta_n+1)\mathbf{\Sigma}_n)$ (see Exercise 5).
+
+## Linear regression: The conjugate normal-normal/inverse gamma model
+
+In this setting we analyze the conjugate normal-normal/inverse gamma model which is the workhorse in econometrics. In this model, the dependent variable $y_i$ is related to a set of regressors ${\mathbf{x}}_i=(x_{i1},x_{i2},\ldots,x_{iK})^{\top}$ in a linear way, that is, $y_i=\beta_1x_{i1}+\beta_2x_{i2}+\ldots+\beta_Kx_{iK}+\mu_i={\bf{x}}_i^{\top}\beta+\mu_i$ where $\mathbf{\beta}=(\beta_1,\beta_2,\ldots,\beta_K)^{\top}$ and $\mu_i\stackrel{iid} {\thicksim}N(0,\sigma^2)$ is an stochastic error that is independent of the regressors, ${\bf{x}}_i\perp\mu_i$.
+
+Defining $\mathbf{y}=\begin{bmatrix} y_1\\ y_2\\ \vdots \\ y_N \end{bmatrix}$, $\mathbf{X}=\begin{bmatrix} x_{11} & x_{12} & \ldots & x_{1K}\\ x_{21} & x_{22} & \ldots & x_{2K}\\ \vdots & \vdots & \vdots & \vdots\\ x_{N1} & x_{N2} & \ldots & x_{NK}\\ \end{bmatrix}$ and $\mathbf{\mu}=\begin{bmatrix} \mu_1\\ \mu_2\\ \vdots \\ \mu_N \end{bmatrix}$, we can write the model in matrix form: ${\bf{y}}={\bf{X}}\beta+\mu$, where $\mu\sim N(\bf{0},\sigma^2{\bf{I}})$ which implies that ${\bf{y}}\sim N({\bf{X}}\beta,\sigma^2\bf{I})$. Then, the likelihood function is
+
+\begin{align}
+	p({\bf{y}}|\beta, \sigma^2, {{\bf{X}}}) & = (2\pi\sigma^2)^{-\frac{N}{2}} \exp \left\{-\frac{1}{2\sigma^2} ({\bf{y}} - {\bf{X}}\beta)^{\top}({\bf{y}} - {\bf{X}}\beta) \right\}  \\
+	& \propto (\sigma^2)^{-\frac{N}{2}} \exp \left\{-\frac{1}{2\sigma^2} ({\bf{y}} - {\bf{X}}\beta)^{\top}({\bf{y}} - {\bf{X}}\beta) \right\}.
+\end{align}
+
+The conjugate priors for the parameters are
+\begin{align}
+	\beta|\sigma^2 & \sim N(\beta_0, \sigma^2 {\bf{B}}_0),\\
+	\sigma^2 & \sim IG(\alpha_0/2, \delta_0/2).
+\end{align}
+
+Then, the posterior distribution is
+
+\begin{align}
+  \pi(\beta,\sigma^2|\mathbf{y},\mathbf{X})&\propto (\sigma^2)^{-\frac{N}{2}} \exp \left\{-\frac{1}{2\sigma^2} ({\bf{y}} - {\bf{X}}\beta)^{\top}({\bf{y}} - {\bf{X}}\beta) \right\} \\
+	& \times (\sigma^2)^{-\frac{K}{2}} \exp \left\{-\frac{1}{2\sigma^2} (\beta - \beta_0)^{\top}{\bf{B}}_0^{-1}(\beta - \beta_0)\right\} \\
+	& \times \frac{(\delta_0/2)^{\alpha_0/2}}{\Gamma(\alpha_0/2)}\left(\frac{1}{\sigma^2}\right)^{\alpha_0/2+1}\exp \left\{-\frac{\delta_0}{2\sigma^2} \right\} \\
+	& \propto (\sigma^2)^{-\frac{K}{2}} \exp \left\{-\frac{1}{2\sigma^2} [\beta^{\top}({\bf{B}}_0^{-1} + {\bf{X}}^{\top}{\bf{X}})\beta - 2\beta^{\top}({\bf{B}}_0^{-1}\beta_0 + {\bf{X}}^{\top}{\bf{X}}\hat{\beta})] \right\} \\
+	& \times \left(\frac{1}{\sigma^2}\right)^{(\alpha_0+N)/2+1}\exp \left\{-\frac{\delta_0+ {\bf{y}}^{\top}{\bf{y}} + \beta_0^{\top}{\bf{B}}_0^{-1}\beta_0}{2\sigma^2} \right\},
+\end{align}
+
+where $\hat{\beta}=({\bf{X}}^{\top}{\bf{X}})^{-1}{\bf{X}}^{\top}{\bf{y}}$ is the maximum likelihood estimator.
+
+Adding and subtracting $\beta_n^{\top}{{\bf{B}}}_n^{-1} \beta_n$ to complete the square, where ${{\bf{B}}}_n = ({\bf{B}}_0^{-1} + {\bf{X}}^{\top}{\bf{X}})^{-1}$ and $\beta_n = {{\bf{B}}}_n({\bf{B}}_0^{-1}\beta_0 + {\bf{X}}^{\top}{\bf{X}}\hat{\beta})$,
+
+\begin{align}
+  \pi(\beta,\sigma^2|\mathbf{y},\mathbf{X})&\propto \underbrace{(\sigma^2)^{-\frac{K}{2}} \exp \left\{-\frac{1}{2\sigma^2} (\beta-\beta_n)^{\top}{\bf{B}}^{-1}_n(\beta-\beta_n) \right\}}_1 \\
+	& \times \underbrace{(\sigma^2)^{-\left(\frac{\alpha_n}{2}+1 \right)} \exp \left\{-\frac{\delta_n}{2\sigma^2} \right\}}_2.
+\end{align}
+
+The first expression is the kernel of a normal density function, $\beta|\sigma^2, {\bf{y}}, {\bf{X}} \sim N(\beta_n, \sigma^2{\bf{B}}_n)$. The second expression is the kernel of a inverse gamma density,	$\sigma^2| {\bf{y}}, {\bf{X}}\sim IG(\alpha_n/2, \delta_n/2)$, where $\alpha_n = \alpha_0 + N$ and $\delta_n = \delta_0 + {\bf{y}}^{\top}{\bf{y}} + \beta_0^{\top}{\bf{B}}_0^{-1}\beta_0 - \beta_n^{\top}{\bf{B}}_n^{-1}\beta_n$.
+
+Taking into account that 
+\begin{align}\beta_n & = ({\bf{B}}_0^{-1} + {\bf{X}}^{\top}{\bf{X}})^{-1}({\bf{B}}_0^{-1}\beta_0 + {\bf{X}}^{\top}{\bf{X}}\hat{\beta})\\
+& = ({\bf{B}}_0^{-1} + {\bf{X}}^{\top}{\bf{X}})^{-1}{\bf{B}}_0^{-1}\beta_0 + ({\bf{B}}_0^{-1} + {\bf{X}}^{\top}{\bf{X}})^{-1} {\bf{X}}^{\top}{\bf{X}}\hat{\beta}, 
+\end{align}
+
+where $({\bf{B}}_0^{-1} + {\bf{X}}^{\top}{\bf{X}})^{-1}{\bf{B}}_0^{-1}=\bf{I}_K-({\bf{B}}_0^{-1} + {\bf{X}}^{\top}{\bf{X}})^{-1}{\bf{X}}^{\top}{\bf{X}}$ [@Smith1973]. Setting ${\bf{W}}=({\bf{B}}_0^{-1} + {\bf{X}}^{\top}{\bf{X}})^{-1}{\bf{X}}^{\top}{\bf{X}}$ we have $\beta_n=(\bf{I}_K-{\bf{W}})\beta_0+{\bf{W}}\hat{\beta}$, that is, the posterior mean of $\beta$ is a weighted average between the sample and prior information, where the weights depend on the precision of each piece of information. Observe that when the prior covariance matrix is highly vague (non--informative), such that ${\bf{B}}_0^{-1}\rightarrow \bf{0}_K$, we obtain ${\bf{W}} \rightarrow I_K$, such that $\beta_n \rightarrow \hat{\beta}$, that is, the posterior mean location parameter converges to the maximum likelihood estimator.
+
+In addition, we know that the posterior conditional covariance matrix of the location parameters $\sigma^2({\bf{B}}_0^{-1} + {\bf{X}}^{\top}{\bf{X}})^{-1}=\sigma^2({\bf{X}}^{\top}{\bf{X}})^{-1}-\sigma^2\left(({\bf{X}}^{\top}{\bf{X}})^{-1}({\bf{B}}_0 + ({\bf{X}}^{\top}{\bf{X}})^{-1})^{-1}({\bf{X}}^{\top}{\bf{X}})^{-1}\right)$ is positive semi-definite.^[A particular case of the Woodbury matrix identity] Given that $\sigma^2({\bf{X}}^{\top}{\bf{X}})^{-1}$ is the covariance matrix of the maximum likelihood estimator, we observe that prior information reduces estimation uncertainty.
+
+Now, we calculate the posterior marginal distribution of $\beta$,
+
+\begin{align}
+	\pi(\beta|{\bf{y}},{\bf{X}}) & = \int_0^{\infty} \pi(\beta, \sigma^2|{\bf{y}},{\bf{X}}) d\sigma^2 \\
+	& = \int_0^{\infty} \left(\frac{1}{\sigma^2}\right)^{\frac{\alpha_n+K}{2} + 1} \exp \left\{-\frac{s}{2\sigma^2}\right\} d\sigma^2,
+\end{align}
+where $s = \delta_n + (\beta - \beta_n)^{\top}{{\bf{B}}}_n^{-1}(\beta - \beta_n)$. Then we can write
+\begin{align}
+	\pi(\beta|{\bf{y}},{\bf{X}}) & = \int_0^{\infty} \left(\frac{1}{\sigma^2}\right)^{\frac{\alpha_n+K}{2} + 1} \exp \left\{-\frac{s}{2\sigma^2}\right\} d\sigma^2 \\
+	& = \frac{\Gamma((\alpha_n+K)/2)}{(s/2)^{(\alpha_n+K)/2}} \int_0^{\infty} \frac{(s/2)^{(\alpha_n+K)/2}}{\Gamma((\alpha_n+K)/2)} (\sigma^2)^{-(\alpha_n+K)/2 - 1} \exp \left\{-\frac{s}{2\sigma^2}\right\} d\sigma^2.
+\end{align}
+
+The right term is the integral of the probability density function of an inverse gamma distribution with parameters $\nu = (\alpha_n+K)/2$ and $\tau = s/2$. Since we are integrating over the whole support of $\sigma^2$, the integral is equal to 1, and therefore
+\begin{align*}
+	\pi(\beta|{\bf{y}},{\bf{X}}) & = \frac{\Gamma((\alpha_n+K)/2)}{(s/2)^{(\alpha_n+K)/2}} \\
+	& \propto s^{-(\alpha_n+K)/2} \\
+	& = [\delta_n + (\beta - \beta_n)^{\top}{{\bf{B}}}_n^{-1}(\beta - \beta_n)]^{-(\alpha_n+K)/2} \\
+	& = \left[1 + \frac{(\beta - \beta_n)^{\top}\left(\frac{\delta_n}{\alpha_n}{{\bf{B}}}_n\right)^{-1}(\beta - \beta_n)}{\alpha_n}\right]^{-(\alpha_n+K)/2}(\delta_n)^{-(\alpha_N+K)/2} \\
+	& \propto \left[1 + \frac{(\beta - \beta_n)^{\top}{\bf{H}}_n^{-1}(\beta - \beta_n)}{\alpha_n}\right]^{-(\alpha_n+K)/2},
+\end{align*}
+where ${\bf{H}}_n = \frac{\delta_n}{\alpha_n}{\bf{B}}_n$. This last expression is a multivariate Student's $t$ distribution for $\beta$, $\beta|{\bf{y}},{\bf{X}} \sim t_K(\alpha_n, \beta_n, {\bf{H}}_n)$.
+
+Observe that as we have incorporated the uncertainty of the variance, the posterior for $\beta$ changes from a normal to a Students' t distribution, which has heavier tails. 
+
+The marginal likelihood of this model is
+
+\begin{align}
+  p({\bf{y}})=\int_0^{\infty}\int_{R^K}\pi (\beta | \sigma^2,{\bf{B}}_0,\beta_0 )\pi(\sigma^2| \alpha_0/2, \delta_0/2)p({\bf{y}}|\beta, \sigma^2, {\bf{X}})d\sigma^2 d\beta.
+\end{align}
+
+Taking into account that $({\bf{y}}-{\bf{X}}\beta)^{\top}({\bf{y}}-{\bf{X}}\beta)+(\beta-\beta_0)^{\top}{\bf{B}}_0^{-1}(\beta-\beta_0)=(\beta-\beta_n)^{\top}{\bf{B}}_n^{-1}(\beta-\beta_n)+m$, where $m={\bf{y}}^{\top}{\bf{y}}+\beta_0^{\top}{\bf{B}}_0^{-1}\beta_0-\beta_n^{\top}{\bf{B}}_n^{-1}\beta_n$, we have that
+
+\begin{align}
+  p({\bf{y}})&=\int_0^{\infty}\int_{R^K}\pi (\beta | \sigma^2)\pi(\sigma^2)p({\bf{y}}|\beta, \sigma^2, {\bf{X}})d\sigma^2 d\beta\\
+  &=\int_0^{\infty}\pi(\sigma^2) \frac{1}{(2\pi\sigma^2)^{N/2}}\exp\left\{-\frac{1}{2\sigma^2}m \right\}   \frac{1}{(2\pi\sigma^2)^{K/2}|{\bf{B}}_0|^{1/2}}\\
+  &\times\int_{R^K}\exp\left\{-\frac{1}{2\sigma^2}(\beta-\beta_n)^{\top}{\bf{B}}_n^{-1}(\beta-\beta_n)\right\}d\sigma^2 d\beta\\
+  &=\int_0^{\infty}\pi(\sigma^2) \frac{1}{(2\pi\sigma^2)^{N/2}}\exp\left\{-\frac{1}{2\sigma^2}m \right\}   \frac{|{\bf{B}}_n|^{1/2}}{|{\bf{B}}_0|^{1/2}}d\sigma^2\\
+  &=\int_{0}^{\infty} \frac{(\delta_0/2)^{\alpha_0/2}}{\Gamma(\alpha_0/2)}\left(\frac{1}{\sigma^2}\right)^{\alpha_0/2+1}\exp\left\{\left(-\frac{\delta_0}{2\sigma^2}\right)\right\} \frac{1}{(2\pi\sigma^2)^{N/2}}\exp\left\{-\frac{1}{2\sigma^2}m \right\}   \frac{|{\bf{B}}_n|^{1/2}}{|{\bf{B}}_0|^{1/2}} d\sigma^2\\
+  &= \frac{1}{(2\pi)^{N/2}}\frac{(\delta_0/2)^{\alpha_0/2}}{\Gamma(\alpha_0/2)}\frac{|{\bf{B}}_n|^{1/2}}{|{\bf{B}}_0|^{1/2}}\int_{0}^{\infty}\left(\frac{1}{\sigma^2}\right)^{\frac{\alpha_0+N}{2}+1}\exp\left\{\left(-\frac{\delta_0+m}{2\sigma^2}\right)\right\}d\sigma^2\\
+  &= \frac{1}{\pi^{N/2}}\frac{\delta_0^{\alpha_0/2}}{\delta_n^{\alpha_n/2}}\frac{|{\bf{B}}_n|^{1/2}}{|{\bf{B}}_0|^{1/2}}\frac{\Gamma(\alpha_n/2)}{\Gamma(\alpha_0/2)}.
+\end{align}
+
+The posterior predictive is equal to
+
+\begin{align}
+\pi({\bf{Y}}_0|{\bf{y}})&=\int_{0}^{\infty}\int_{R^K}p({\bf{Y}}_0|\beta,\sigma^2,{\bf{y}})\pi(\beta|\sigma^2,{\bf{y}})\pi(\sigma^2|{\bf{y}})d\beta d\sigma^2\\
+&=\int_{0}^{\infty}\int_{R^K}p({\bf{Y}}_0|\beta,\sigma^2)\pi(\beta|\sigma^2,{\bf{y}})\pi(\sigma^2|{\bf{y}})d\beta d\sigma^2,
+\end{align}
+
+where we take into account independence between ${\bf{Y}}_0$ and ${\bf{Y}}$. Given ${\bf{X}}_0$, which is the $N_0\times K$ matrix of regressors associated with ${\bf{Y}}_0$, Then,
+
+\begin{align}
+\pi({\bf{Y}}_0|{\bf{y}})&=\int_{0}^{\infty}\int_{R^K}\left\{ (2\pi\sigma^2)^{-\frac{N_0}{2}} \exp \left\{-\frac{1}{2\sigma^2} ({\bf{Y}}_0 - {\bf{X}}_0\beta)^{\top}({\bf{Y}}_0 - {\bf{X}}_0\beta)^{\top} \right\}\right. \\
+	& \times (2\pi\sigma^2)^{-\frac{K}{2}} |{\bf{B}}_n|^{-1/2} \exp \left\{-\frac{1}{2\sigma^2} (\beta - \beta_n)^{\top}{\bf{B}}_n^{-1}(\beta - \beta_n)\right\} \\
+	& \left. \times \frac{(\delta_n/2)^{\alpha_n/2}}{\Gamma(\alpha_n/2)}\left(\frac{1}{\sigma^2}\right)^{\alpha_n/2+1}\exp \left\{-\frac{\delta_n}{2\sigma^2} \right\}\right\}d\beta d\sigma^2. \\
+\end{align}
+
+Setting ${\bf{M}}=({\bf{X}}_0^{\top}{\bf{X}}_0+{\bf{B}}_n^{-1})$ and $\beta_*={\bf{M}}^{-1}({\bf{B}}_n^{-1}\beta_n+{\bf{X}}_0^{\top}{\bf{Y}}_0)$, we have
+
+\begin{align}
+({\bf{Y}}_0 - {\bf{X}}_0\beta)^{\top}({\bf{Y}}_0 - {\bf{X}}_0\beta)^{\top}+(\beta - \beta_n)^{\top}{\bf{B}}_n^{-1}(\beta - \beta_n)&=(\beta - \beta_*)^{\top}{\bf{M}}(\beta - \beta_*)\\
+&+\beta_n^{\top}{\bf{B}}_n^{-1}\beta_n+{\bf{Y}}_0^{\top}{\bf{Y}}_0-\beta_*^{\top}{\bf{M}}\beta_*,
+\end{align}
+
+Thus, 
+
+\begin{align}
+\pi({\bf{Y}}_0|{\bf{y}})&\propto\int_{0}^{\infty}\left\{\left(\frac{1}{\sigma^2}\right)^{-\frac{K+N_0+\alpha_n}{2}+1}\exp\left\{-\frac{1}{2\sigma^2}(\beta_n^{\top}{\bf{B}}_n^{-1}\beta_n+{\bf{Y}}_0^{\top}{\bf{Y}}_0-\beta_*^{\top}{\bf{M}}\beta_*+\delta_n)\right\}\right.\\
+&\times\left.\int_{R^K}\exp\left\{-\frac{1}{2\sigma^2}(\beta - \beta_*)^{\top}{\bf{M}}(\beta - \beta_*)\right\}d\beta\right\} d\sigma^2,\\
+
+\end{align}
+where the term in the second integral is the kernel of a multivariate normal density with mean $\beta_*$ and covariance matrix $\sigma^2{\bf{M}}^{-1}$. Then,
+ 
+\begin{align}
+\pi({\bf{Y}}_0|{\bf{y}})&\propto\int_{0}^{\infty}\left(\frac{1}{\sigma^2}\right)^{\frac{N_0+\alpha_n}{2}+1}\exp\left\{-\frac{1}{2\sigma^2}(\beta_n^{\top}{\bf{B}}_n^{-1}\beta_n+{\bf{Y}}_0^{\top}{\bf{Y}}_0-\beta_*^{\top}{\bf{M}}\beta_*+\delta_n)\right\}d\sigma^2,\\
+\end{align}
+
+which is the kernel of an inverse gamma density. Thus,
+
+\begin{align}
+  \pi({\bf{Y}}_0|{\bf{y}})&\propto \left[\frac{\beta_n^{\top}{\bf{B}}_n^{-1}\beta_n+{\bf{Y}}_0^{\top}{\bf{Y}}_0-\beta_*^{\top}{\bf{M}}\beta_*+\delta_n}{2}\right]^{-\frac{\alpha_n+N_0}{2}}.
+\end{align}
+
+Setting ${\bf{C}}^{-1}={\bf{I}}_{N_0}+{\bf{X}}_0{\bf{B}}_n{\bf{X}}_0^{\top}$ such that ${\bf{C}}={\bf{I}}_{N_0}-{\bf{X}}_0({\bf{B}}_n^{-1}+{\bf{X}}_0^{\top}{\bf{X}}_0)^{-1}{\bf{X}}_0^{\top}={\bf{I}}_{N_0}-{\bf{X}}_0{\bf{M}}^{-1}{\bf{X}}_0^{\top}$,^[Using this result $({\bf{A}}+{\bf{B}}{\bf{D}}{\bf{C}})^{-1}={\bf{A}}^{-1}-{\bf{A}}^{-1}{\bf{B}}({\bf{D}}^{-1}+{\bf{C}}{\bf{A}}^{-1}{\bf{B}})^{-1}{\bf{C}}{\bf{A}}^{-1}$] and ${\bf{\beta}}_{**}={\bf{C}}^{-1}{\bf{X}}_0{\bf{M}}^{-1}{\bf{B}}_n^{-1}\beta_n$, then 
+
+\begin{align}
+\beta_n^{\top}{\bf{B}}_n^{-1}\beta_n+{\bf{Y}}_0^{\top}{\bf{Y}}_0-\beta_*^{\top}{\bf{M}}\beta_*&=
+\beta_n^{\top}{\bf{B}}_n^{-1}\beta_n+{\bf{Y}}_0^{\top}{\bf{Y}}_0-(\beta_n^{\top}{\bf{B}}_n^{-1}+{\bf{Y}}_0^{\top}{\bf{X}}_0){\bf{M}}^{-1}({\bf{B}}_n^{-1}\beta_n+{\bf{X}}_0^{\top}{\bf{Y}}_0)\\
+&=\beta_n^{\top}({\bf{B}}_n^{-1}-{\bf{B}}_n^{-1}{\bf{M}}^{-1}{\bf{B}}_n^{-1})\beta_n+{\bf{Y}}_0^{\top}{\bf{C}}{\bf{Y}}_0\\
+&-2{\bf{Y}}_0^{\top}{\bf{C}}{\bf{C}}^{-1}{\bf{X}}_0{\bf{M}}^{-1}{\bf{B}}_n^{-1}\beta_n+{\bf{\beta}}_{**}^{\top}{\bf{C}}{\bf{\beta}}_{**}-{\bf{\beta}}_{**}^{\top}{\bf{C}}{\bf{\beta}}_{**}\\
+&=\beta_n^{\top}({\bf{B}}_n^{-1}-{\bf{B}}_n^{-1}{\bf{M}}^{-1}{\bf{B}}_n^{-1})\beta_n+({\bf{Y}}_0-{\bf{\beta}}_{**})^{\top}{\bf{C}}({\bf{Y}}_0-{\bf{\beta}}_{**})\\
+&-{\bf{\beta}}_{**}^{\top}{\bf{C}}{\bf{\beta}}_{**},
+\end{align}
+
+where $\beta_n^{\top}({\bf{B}}_n^{-1}-{\bf{B}}_n^{-1}{\bf{M}}^{-1}{\bf{B}}_n^{-1})\beta_n={\bf{\beta}}_{**}^{\top}{\bf{C}}{\bf{\beta}}_{**}$ and $\beta_{**}={\mathbf{X}}_0\beta_n$ (see Exercise 6).
+
+Then,
+
+\begin{align}
+  \pi({\bf{Y}}_0|{\bf{y}})&\propto\left[\frac{({\bf{Y}}_0-{\mathbf{X}}_0\beta_n)^{\top}{\bf{C}}({\bf{Y}}_0-{\mathbf{X}}_0\beta_n)+\delta_n}{2}\right]^{-\frac{\alpha_n+N_0}{2}}\\
+  &\propto\left[\frac{({\bf{Y}}_0-{\mathbf{X}}_0\beta_n)^{\top}\left(\frac{{\bf{C}}\alpha_n}{\delta_n}\right)({\bf{Y}}_0-{\mathbf{X}}_0\beta_n)}{\alpha_n}+1\right]^{-\frac{\alpha_n+N_0}{2}}.
+  
+\end{align}
+
+Then, the posterior predictive is a multivariate Student's t, ${\bf{Y}}_0|{\bf{y}}\sim t\left({\bf{X}}_0\beta_n,\frac{\delta_n({\bf{I}}_{N_0}+{\bf{X}}_0{\bf{B}}_n{\bf{X}}_0^{\top})}{\alpha_n},\alpha_n\right)$. 
+
+## Multivariate linear regression: The conjugate normal-normal/inverse Wishart model
+
+Let's study the multivariate regression setting where there are $M$ $N$-dimensional vectors ${\bf{y}}_m$, $m=1,2,\dots,M$ such that ${\bf{y}}_m={\bf{X}}\beta_m+\mu_m$, ${\bf{X}}$ is the set of common regressors, and $\mu_m$ is the $N$-dimensional vector of stochastic errors for each equation such that ${\bf{U}}=[\mu_1 \ \mu_2 \ \dots \ \mu_M]\sim MN_{N,M}({\bf{0}}, {\bf{I}}_N, {\bf\Sigma})$, that is, a matrix variate normal distribution where $\bf\Sigma$ is the covariance matrix of each $i$-th row of ${\bf{U}}$, $i=1,2,\dots,N$, and we are assuming independece between the rows. Then, $vec({\bf U})\sim N_{N\times M}({\bf 0}, \bf{\Sigma}\otimes {\bf{I}}_N)$.^[$vec$ denotes the vectorization operation, and $\otimes$ denotes the kronecker product]
+
+This framework can be written in matricial form
+
+\begin{align}
+\underbrace{
+  \begin{bmatrix}
+    y_{11} & y_{12} & \dots & y_{1M}\\
+    y_{21} & y_{22} & \dots & y_{2M}\\
+    \vdots & \vdots & \dots & \vdots\\
+    y_{N1} & y_{N2} & \dots & y_{NM}\\
+  \end{bmatrix}}_{\bf{Y}}
+  &=
+    \underbrace{\begin{bmatrix}
+    x_{11} & x_{12} & \dots & x_{1K}\\
+    x_{21} & x_{22} & \dots & x_{2K}\\
+    \vdots & \vdots & \dots & \vdots\\
+    x_{N1} & x_{N2} & \dots & x_{NK}\\
+  \end{bmatrix}}_{\bf{X}}
+  \underbrace{
+  \begin{bmatrix}
+    \beta_{11} & \beta_{12} & \dots & \beta_{1M}\\
+    \beta_{21} & \beta_{22} & \dots & \beta_{2M}\\
+    \vdots & \vdots & \dots & \vdots\\
+    \beta_{K1} & \beta_{K2} & \dots & \beta_{KM}\\
+  \end{bmatrix}}_{\bf{B}}\\
+&+
+    \underbrace{\begin{bmatrix}
+    \mu_{11} & \mu_{12} & \dots & \mu_{1M}\\
+    \mu_{21} & \mu_{22} & \dots & \mu_{2M}\\
+    \vdots & \vdots & \dots & \vdots\\
+    \mu_{N1} & \mu_{N2} & \dots & \mu_{NM}\\
+  \end{bmatrix}}_{\bf{U}}
+\end{align}
+
+Therefore, ${\bf{Y}}\sim N_{N\times M}({\bf{X}}{\bf{B}},\bf{\Sigma}\otimes {\bf{I}}_N)$,^[We can write down the former expression in a more familiar way using vectorization properties,
+$\underbrace{vec(Y)}_{\bf{y}}=\underbrace{({\bf{I}}_M\otimes {\bf{X}})}_{{\bf{Z}}}\underbrace{vec({\bf{B}})}_{\beta}+\underbrace{vec({\bf{U}})}_{\mu}$, where ${\bf{y}}\sim N_{N\times M}({\bf{Z}}\beta,\bf{\Sigma}\otimes {\bf{I}}_N)$.]
+
+\begin{align}
+p({\bf{Y}}| {\bf{B}},{\bf\Sigma})&\propto |{{\bf \Sigma}}|^{-N/2}\exp\left\lbrace -\frac{1}{2}tr\left[({\bf{Y}}-{\bf{X}}{\bf{B}})^{\top}({\bf{Y}}-{\bf{X}}{\bf{B}}){{\bf \Sigma}}^{-1}\right]\right\rbrace
+\\
+&=|{{\bf \Sigma}}|^{-N/2}\exp\left\lbrace -\frac{1}{2}tr\left[{\bf{S}}+({\bf{B}}-\widehat{\bf{B}})^{\top}{\bf{X}}^{\top}{\bf{X}}({\bf{B}}-\widehat{\bf{B}})\right]{{\bf \Sigma}}^{-1}\right\rbrace,
+\end{align}
+
+where ${\bf{S}}= ({\bf{Y}}-{\bf{X}}\widehat{\bf{B}})^{\top}({\bf{Y}}-{\bf{X}}\widehat{\bf{B}})$, $\widehat{\bf{B}}= ({\bf{X}}^{\top}{\bf{X}})^{-1}{\bf{X}}^{\top}{\bf{Y}}$ (see Exercise 7).
+
+The conjugate prior for this models is $\pi({\bf{B}},{\bf{\Sigma}})=\pi({\bf{B}}|{\bf{\Sigma}})\pi({\bf{\Sigma}})$ where $\pi({\bf{B}}|{\bf \Sigma})\sim N_{K\times M}({\bf{B}}_{0},{\bf\Sigma} \otimes {\bf{V}}_{0})$ and $\pi({\bf\Sigma})\sim IW({\bf{\Psi}}_{0},\alpha_{0})$, that is,
+
+\begin{align}
+\pi ({\bf{B}},{\bf\Sigma})\propto &\left|{\bf\Sigma} \right|^{-K/2}\exp\left\lbrace -\frac{1}{2}tr\left[({\bf{B}}-{\bf{B}}_{0})^{\top}{\bf{V}}_{0}^{-1}({\bf{B}}-{\bf{B}}_{0})\right] {\bf \Sigma}^{-1}\right\rbrace \\
+& \times \left|{\bf \Sigma} \right|^{-(\alpha_{0}+M+1)/2}\exp\left\lbrace -\frac{1}{2}tr \left[ {\bf{\Psi}}_{0} {\bf \Sigma}^{-1}\right] \right\rbrace.
+\end{align}
+
+The posterior distribution is given by
+
+\begin{align}
+\pi({\bf{B}},{\bf\Sigma}|{\bf{Y}},{\bf{X}})&\propto  p({\bf{Y}}|{\bf{B}},{\bf\Sigma},{\bf{X}}) \pi({\bf{B}}| {\bf \Sigma})\pi({\bf\Sigma})\\
+&\propto \left|{\bf\Sigma} \right|^{-\frac{N+K+\alpha_{0}+M+1}{2}}\\
+&\times\exp\left\lbrace -\frac{1}{2}tr\left[(\bf{\Psi}_{0}+{\bf{S}} +({\bf{B}}-{\bf{B}}_{0})^{\top}{\bf{V}}_{0}^{-1}({\bf{B}}-{\bf{B}}_{0})\right.\right.\\
+&\left.\left.   +({\bf{B}}-\widehat{\bf{B}})^{\top}{\bf{X}}^{\top}{\bf{X}}({\bf{B}}-\widehat{\bf{B}}))\bf{\Sigma}^{-1}\right]\right\rbrace .
+\end{align}
+Completing the squares on ${\bf{B}}$ and collecting the remaining terms in the bracket yields
+\begin{align}
+{\bf{\Psi}}_{0}+{\bf{S}} +({\bf{B}}-{\bf{B}}_{0})^{\top}{\bf{V}}_{0}^{-1}({\bf{B}}-{\bf{B}}_{0})+({\bf{B}}-\widehat{\bf{B}})^{\top}{\bf{X}}^{\top}{\bf{X}}({\bf{B}}-\widehat{\bf{B}})
+& = ({\bf{B}}-{\bf{B}}_n)^{\top}{\bf{V}}_n^{-1}({\bf{B}}-{\bf{B}}_n)+{\bf{\Psi}}_n,
+\end{align}
+where 
+\begin{align}
+{\bf{B}}_n = &({\bf{V}}_{0}^{-1}+{\bf{X}}^{\top}{\bf{X}})^{-1}({\bf{V}}_{0}^{-1}{\bf{B}}_{0}+{\bf{X}}^{\top}{\bf{Y}})=({\bf{V}}_{0}^{-1}+{\bf{X}}^{\top}{\bf{X}})^{-1}({\bf{V}}_{0}^{-1}{\bf{B}}_{0}+{\bf{X}}^{\top}{\bf{X}}\widehat{\bf{B}}),\\
+{\bf{V}}_n = &({\bf{V}}_{0}^{-1}+{\bf{X}}^{\top}{\bf{X}})^{-1},\\
+{\bf{\Psi}}_n= &{\bf{\Psi}}_{0}+{\bf{S}}+{\bf{B}}_{0}^{\top}{\bf{V}}_{0}^{-1}{\bf{B}}_{0}+\widehat{\bf{B}}^{\top}{\bf{X}}^{\top}{\bf{X}}\widehat{\bf{B}}-{\bf{B}}_n^{\top}{\bf{V}}_n^{-1}{\bf{B}}_n.
+\end{align}
+Thus, the posterior distribution can be written as
+\begin{align}
+\pi({\bf{B}},{\bf \Sigma}| {\bf{Y}}, {\bf{X}})\propto &\left|{\bf \Sigma} \right|^{-K/2}\exp\left\lbrace -\frac{1}{2} tr\left[({\bf{B}}-{\bf{B}}_n)^{\top}{\bf{V}}_n^{-1}({\bf{B}}-{\bf{B}}_n) \right]  {\bf \Sigma}^{-1}\right\rbrace \\
+\times & \left|{\bf \Sigma} \right|^{-\frac{N+\alpha_{0}+M+1}{2}}\exp\left\lbrace -\frac{1}{2} tr \left[ {\bf{\Psi}}_n{\bf \Sigma}^{-1}\right] \right\rbrace .
+\end{align}
+That is $\pi({\bf{B}},{\bf \Sigma}| {\bf{Y}}, {\bf{X}})=\pi ({\bf{B}}| {\bf \Sigma},{\bf{Y}},{\bf{X}})\pi({\bf \Sigma}| {\bf{Y}},{\bf{X}})$ where $\pi({\bf{B}}| {\bf \Sigma},{\bf{Y}}, {\bf{X}}) \sim N_{K\times M}({\bf{B}}_n,{\bf \Sigma}\otimes {\bf{V}}_n )$ and $\pi({\bf \Sigma}| {\bf{Y}},{\bf{X}}) \sim IW({\bf{\Psi}}_n,{\alpha}_n)$,
+where $\alpha_n= N+\alpha_{0}$.
+
+The marginal posterior for ${\bf{B}}$ is ...
+
+The marginal likelihood is ...
+
+The predictive density is ...
+
+## Computational examples
+
+* What is the probability that the Sun will rise tomorrow?
+
+This is the most famaous Ricard Price^{\top}s example developed in the Appendix of the Bayes^{\top} theorem paper [@bayes1763lii]. Here, we implicitly use *Laplace^{\top}s Rule of Succession* to solve this question. In perticular, if we were *a priori* uncertain about the probability the Sun will on a specified day rise, that is, a prior uniform distribution over (0,1), that is, a beta (1,1) distribution...
+
+
+## Summary: Chapter 4
+
+## Exercises: Chapter 4
+
+1. Write in the canonical form the distribution of the Bernoulli example, and find the mean and variance of the sufficient statistic.
+
+2. Given a random sample $\mathbf{y}=[\mathbf{y}_1,\mathbf{y}_2,\dots,\mathbf{y}_N]^{\top}$ from a **binomial distribution** where the number of trials ($n$) is known. Show that $p(\mathbf{y}|\theta)$ is in the exponential family, and find the posterior distribution, the marginal likelihood and the predictive distribution of the binomial-beta model assuming the number of trials is known.
+
+3. Given a random sample $\mathbf{y}=[y_1,y_2,\dots,y_N]^{\top}$ from a **exponential distribution**. Show that $p(\mathbf{y}|\alpha,\beta)$ is in the exponential family, and find the posterior distribution, marginal likelihood and predictive distribution of the exponential-gamma model.
+
+4. Find the marginal likelihood in the normal/inverse-Wishart model.
+
+5. Find the posterior predictive distribution in the normal/inverse-Wishart model.
+
+6. Show that in the linear regression model $\beta_n^{\top}({\bf{B}}_n^{-1}-{\bf{B}}_n^{-1}{\bf{M}}^{-1}{\bf{B}}_n^{-1})\beta_n={\bf{\beta}}_{**}^{\top}{\bf{C}}{\bf{\beta}}_{**}$ and $\beta_{**}={\mathbf{X}}_0\beta_n$.
+
+7. Show that $({\bf{Y}}-{\bf{X}}{\bf{B}})^{\top}({\bf{Y}}-{\bf{X}}{\bf{B}})={\bf{S}}+({\bf{B}}-\widehat{\bf{B}})^{\top}{\bf{X}}^{\top}{\bf{X}}({\bf{B}}-\widehat{\bf{B}})$ where ${\bf{S}}= ({\bf{Y}}-{\bf{X}}\widehat{\bf{B}})^{\top}({\bf{Y}}-{\bf{X}}\widehat{\bf{B}})$, $\widehat{\bf{B}}= ({\bf{X}}^{\top}{\bf{X}})^{-1}{\bf{X}}^{\top}{\bf{Y}}$.
+

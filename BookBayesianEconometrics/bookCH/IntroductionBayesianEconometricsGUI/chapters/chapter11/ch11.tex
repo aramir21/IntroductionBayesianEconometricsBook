@@ -1,7 +1,73 @@
 \chapter{Semi-parametric and non-parametric models}\label{chap11}
 
-\section{Semi-parametric models}\label{sec11_1}
-\subsection{Finite mixtures}\label{sec11_11}
+Non-parametric models are characterized by making minimal assumptions about the data-generating process. Unlike parametric models, which have a finite-dimensional parameter space, non-parametric models often involve infinite-dimensional parameter spaces. A major challenge in non-parametric modeling is the \textit{curse of dimensionality}, as these models require dense data coverage, necessitating large datasets to achieve reliable estimates.
+
+Semi-parametric methods, on the other hand, combine parametric assumptions for part of the model with non-parametric assumptions for the rest. This approach offers a balance between flexibility, tractability and applicability.
+
+In this chapter, we introduce finite Gaussian mixture models (GM) and Dirichlet mixture processes (DMP), the latter representing an infinite mixture. Both can be used to specify an entire statistical model (non-parametric specification) or to model stochastic error distributions in a semi-parametric framework. Additionally, we present non-parametric generalized additive models (GAM), where the outcome depends linearly on smooth non-parametric functions. This method mitigates the curse of dimensionality while remaining interpretable and flexible for practical applications. 
+
+We let other useful Bayesian non-parametric approaches like Bayesian additive random trees (BART) and Gaussian process (GP) for Chapter \ref{chap13}. 
+
+\section{Mixture models}\label{sec11_1}
+Mixture models naturally arise in situations where a sample consists of draws from different \textit{subpopulations} (\textit{clusters}) that cannot be easily distinguished based on observable characteristics. However, performing inference on specific identified subpopulations can be misleading if the assumed distribution for each cluster is misspecified.  
+
+Even when distinct subpopulations do not exist, finite and infinite mixture models provide a useful framework for semi-parametric inference. They effectively approximate distributions with skewness, excess kurtosis, and multimodality, making them useful for modeling stochastic errors.
+
+In addition, mixture models help capture unobserved heterogeneity. That is, as data modelers, we may observe individuals with identical sets of observable variables but entirely different response variables. These differences cannot be explained solely by sampling variability; rather, they suggest the presence of an unobserved underlying process, independent of the observable features, that accounts for this pattern.
+
+\subsection{Finite Gaussian mixtures}\label{sec11_11}
+A finite Gaussian mixture model with \( H \) known components assumes that a sample 
+\( \bm{y}=\left[y_1 \ y_2 \ \dots \ y_N\right]^{\top} \) consists of observations \( y_i \), 
+for \( i=1,2,\dots,N \), where each \( y_i \) is generated from one of the \( H \) components, 
+\( h=1,2,\dots,H \), conditional on the regressors \( \bm{x}_i \). Specifically, we assume  
+\[
+y_i \mid \bm{x}_i \sim N(\bm{x}_i^{\top}\bm{\beta}_h, \sigma_h^2).
+\]
+
+Thus, the sampling distribution of \( y_i \) is given by  
+\[
+p(y_i \mid \{\lambda_h, \bm{\beta}_h, \sigma_h^2\}_{h=1}^H, \bm{x}_i) = 
+\sum_{h=1}^H \lambda_h \phi(y_i \mid \bm{x}_i^{\top}\bm{\beta}_h, \sigma_h^2),
+\]
+
+where \( \phi(y_i \mid \bm{x}_i^{\top}\bm{\beta}_h, \sigma_h^2) \) is the Gaussian density with mean 
+\( \bm{x}_i^{\top}\bm{\beta}_h \) and variance \( \sigma_h^2 \), \( 0\leq \lambda_h\leq 1 \) represents 
+the proportion of the population belonging to subpopulation \( h \), and the weights satisfy 
+\( \sum_{h=1}^H \lambda_h = 1 \).
+
+Then, we allow cross-sectional units to differ according to unobserved clusters (subpopulations) that exhibit homogeneous behavior within each cluster.
+
+To model a finite Gaussian mixture, we introduce an individual cluster indicator or latent class \( \psi_{ih} \) such that  
+\[
+\psi_{ih}=
+\begin{cases}
+	1, & \text{if the } i\text{-th unit is drawn from the } h\text{-th cluster}, \\
+	0, & \text{otherwise}.
+\end{cases}
+\]
+
+Thus, \( P(\psi_{ih}=1) = \lambda_h \) for all clusters \( h=1,2,\dots,H \) and units \( i=1,2,\dots,N \). Note that a high probability of individuals belonging to the same cluster suggests that these clusters capture similar sources of unobserved heterogeneity.
+
+This setting implies that  
+\[
+\bm{\psi}_i = [\psi_{i1} \  \psi_{i2} \ \dots \ \psi_{iH}]^{\top} \sim \text{Categorical}(\bm{\lambda}),
+\] 
+  
+where \( \bm{\lambda} = [\lambda_1 \  \lambda_2 \  \dots \ \lambda_H]^{\top} \) represents the event probabilities.
+
+We know from Subsection \ref{sec421} that the Dirichlet prior distribution is conjugate to the multinomial distribution, where the categorical distribution is a special case in which the number of trials is one. Thus, we assume that  
+\[
+\pi(\bm{\lambda}) \sim \text{Dir}(\bm{\alpha}),
+\]  
+
+where \( \bm{\alpha} = [\alpha_1 \ \alpha_2 \ \dots \ \alpha_H]^{\top} \).  
+
+Observe that we are using a hierarchical structure, as we specify a prior on \( \bm{\lambda} \), which serves as the hyperparameter for the cluster indicators.
+ 
+
+the label switching identification problem: All finite mixture models are nonidentifiable due to the distribution is unchanged if the group labels are permuted. This posses problems when performing inference in specific components of the mixtures, but it is no a concern when using the mixture to model the stochastic errors. In the former case, there are post-processing strategies to mitigate the issue such as \text{random permutation of latent classes} (see \cite[p.~534]{gelman2021bayesian} and Algorithm 3.5 in \cite[p.~82]{fruhwirth2006finite}).
+
+If we do not want to fixed in advance the number of clusters, we can follow the approach proposed by \cite[p.~536]{gelman2021bayesian}  ... 
 
 \subsection{Direchlet processes}\label{sec11_12}
 
