@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>4.1 Markov Chain Monte Carlo methods | Introduction to Bayesian Data Modeling</title>
+  <meta name="description" content="The subject of this textbook is Bayesian data modeling, with the primary aim of providing an introduction to its theoretical foundations and facilitating the application of Bayesian inference using a GUI." />
+  <meta name="generator" content="bookdown 0.40 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="4.1 Markov Chain Monte Carlo methods | Introduction to Bayesian Data Modeling" />
+  <meta property="og:type" content="book" />
+  
+  <meta property="og:description" content="The subject of this textbook is Bayesian data modeling, with the primary aim of providing an introduction to its theoretical foundations and facilitating the application of Bayesian inference using a GUI." />
+  <meta name="github-repo" content="https://github.com/aramir21/IntroductionBayesianEconometricsBook" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="4.1 Markov Chain Monte Carlo methods | Introduction to Bayesian Data Modeling" />
+  
+  <meta name="twitter:description" content="The subject of this textbook is Bayesian data modeling, with the primary aim of providing an introduction to its theoretical foundations and facilitating the application of Bayesian inference using a GUI." />
+  
+
+<meta name="author" content="Andrés Ramírez-Hassan" />
+
+
+<meta name="date" content="2025-02-17" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  
+<link rel="prev" href="Chap4.html"/>
+<link rel="next" href="sec52.html"/>
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+<link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
+<link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
+<script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+
+
+<style type="text/css">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { color: #008000; } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { color: #008000; font-weight: bold; } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<style type="text/css">
+  
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+</style>
+<style type="text/css">
+/* Used with Pandoc 2.11+ new --citeproc when CSL is used */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}
+</style>
+
+<link rel="stylesheet" href="css/style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><a href="./">Introduction to Bayesian Econometrics: A GUIded tour using R</a></li>
+
+<li class="divider"></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Introduction</a>
+<ul>
+<li class="chapter" data-level="" data-path="to-instructors-and-students.html"><a href="to-instructors-and-students.html"><i class="fa fa-check"></i>To instructors and students</a></li>
+<li class="chapter" data-level="" data-path="acknowledgments.html"><a href="acknowledgments.html"><i class="fa fa-check"></i>Acknowledgments</a></li>
+</ul></li>
+<li class="chapter" data-level="1" data-path="Chap1.html"><a href="Chap1.html"><i class="fa fa-check"></i><b>1</b> Basic formal concepts</a>
+<ul>
+<li class="chapter" data-level="1.1" data-path="sec11.html"><a href="sec11.html"><i class="fa fa-check"></i><b>1.1</b> The Bayes’ rule</a></li>
+<li class="chapter" data-level="1.2" data-path="sec12.html"><a href="sec12.html"><i class="fa fa-check"></i><b>1.2</b> Bayesian framework: A brief summary of theory</a></li>
+<li class="chapter" data-level="1.3" data-path="sec14.html"><a href="sec14.html"><i class="fa fa-check"></i><b>1.3</b> Bayesian reports: Decision theory under uncertainty</a></li>
+<li class="chapter" data-level="1.4" data-path="summary.html"><a href="summary.html"><i class="fa fa-check"></i><b>1.4</b> Summary</a></li>
+<li class="chapter" data-level="1.5" data-path="exercises.html"><a href="exercises.html"><i class="fa fa-check"></i><b>1.5</b> Exercises</a></li>
+</ul></li>
+<li class="chapter" data-level="2" data-path="Chap2.html"><a href="Chap2.html"><i class="fa fa-check"></i><b>2</b> Conceptual differences between the Bayesian and Frequentist approaches</a>
+<ul>
+<li class="chapter" data-level="2.1" data-path="sec21.html"><a href="sec21.html"><i class="fa fa-check"></i><b>2.1</b> The concept of probability</a></li>
+<li class="chapter" data-level="2.2" data-path="sec22.html"><a href="sec22.html"><i class="fa fa-check"></i><b>2.2</b> Subjectivity is not the key</a></li>
+<li class="chapter" data-level="2.3" data-path="sec23.html"><a href="sec23.html"><i class="fa fa-check"></i><b>2.3</b> Estimation, hypothesis testing and prediction</a></li>
+<li class="chapter" data-level="2.4" data-path="sec24.html"><a href="sec24.html"><i class="fa fa-check"></i><b>2.4</b> The likelihood principle</a></li>
+<li class="chapter" data-level="2.5" data-path="sec25.html"><a href="sec25.html"><i class="fa fa-check"></i><b>2.5</b> Why is not the Bayesian approach that popular?</a></li>
+<li class="chapter" data-level="2.6" data-path="sec26.html"><a href="sec26.html"><i class="fa fa-check"></i><b>2.6</b> A simple working example</a></li>
+<li class="chapter" data-level="2.7" data-path="sec27.html"><a href="sec27.html"><i class="fa fa-check"></i><b>2.7</b> Summary</a></li>
+<li class="chapter" data-level="2.8" data-path="sec28.html"><a href="sec28.html"><i class="fa fa-check"></i><b>2.8</b> Exercises</a></li>
+</ul></li>
+<li class="chapter" data-level="3" data-path="Chap3.html"><a href="Chap3.html"><i class="fa fa-check"></i><b>3</b> Cornerstone models: Conjugate families</a>
+<ul>
+<li class="chapter" data-level="3.1" data-path="sec41.html"><a href="sec41.html"><i class="fa fa-check"></i><b>3.1</b> Motivation of conjugate families</a></li>
+<li class="chapter" data-level="3.2" data-path="sec42.html"><a href="sec42.html"><i class="fa fa-check"></i><b>3.2</b> Conjugate prior to exponential family</a></li>
+<li class="chapter" data-level="3.3" data-path="linear-regression-the-conjugate-normal-normalinverse-gamma-model.html"><a href="linear-regression-the-conjugate-normal-normalinverse-gamma-model.html"><i class="fa fa-check"></i><b>3.3</b> Linear regression: The conjugate normal-normal/inverse gamma model</a></li>
+<li class="chapter" data-level="3.4" data-path="multivariate-linear-regression-the-conjugate-normal-normalinverse-wishart-model.html"><a href="multivariate-linear-regression-the-conjugate-normal-normalinverse-wishart-model.html"><i class="fa fa-check"></i><b>3.4</b> Multivariate linear regression: The conjugate normal-normal/inverse Wishart model</a></li>
+<li class="chapter" data-level="3.5" data-path="computational-examples.html"><a href="computational-examples.html"><i class="fa fa-check"></i><b>3.5</b> Computational examples</a></li>
+<li class="chapter" data-level="3.6" data-path="summary-chapter-4.html"><a href="summary-chapter-4.html"><i class="fa fa-check"></i><b>3.6</b> Summary: Chapter 4</a></li>
+<li class="chapter" data-level="3.7" data-path="exercises-chapter-4.html"><a href="exercises-chapter-4.html"><i class="fa fa-check"></i><b>3.7</b> Exercises: Chapter 4</a></li>
+</ul></li>
+<li class="chapter" data-level="4" data-path="Chap4.html"><a href="Chap4.html"><i class="fa fa-check"></i><b>4</b> Simulation methods</a>
+<ul>
+<li class="chapter" data-level="4.1" data-path="sec51.html"><a href="sec51.html"><i class="fa fa-check"></i><b>4.1</b> Markov Chain Monte Carlo methods</a>
+<ul>
+<li class="chapter" data-level="4.1.1" data-path="sec51.html"><a href="sec51.html#sec511"><i class="fa fa-check"></i><b>4.1.1</b> Gibbs sampler</a></li>
+<li class="chapter" data-level="4.1.2" data-path="sec51.html"><a href="sec51.html#sec512"><i class="fa fa-check"></i><b>4.1.2</b> Metropolis-Hastings</a></li>
+<li class="chapter" data-level="4.1.3" data-path="sec51.html"><a href="sec51.html#sec513"><i class="fa fa-check"></i><b>4.1.3</b> Hamiltonian Monte Carlo</a></li>
+</ul></li>
+<li class="chapter" data-level="4.2" data-path="sec52.html"><a href="sec52.html"><i class="fa fa-check"></i><b>4.2</b> Importance sampling</a></li>
+</ul></li>
+<li class="chapter" data-level="5" data-path="Chap5.html"><a href="Chap5.html"><i class="fa fa-check"></i><b>5</b> Graphical user interface</a></li>
+<li class="chapter" data-level="6" data-path="Chap8.html"><a href="Chap8.html"><i class="fa fa-check"></i><b>6</b> Time series</a></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a></li>
+<li class="divider"></li>
+<li><a href="https://bookdown.org" target="blank">Published with bookdown</a></li>
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Introduction to Bayesian Data Modeling</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="sec51" class="section level2 hasAnchor" number="4.1">
+<h2><span class="header-section-number">4.1</span> Markov Chain Monte Carlo methods<a href="sec51.html#sec51" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Markov Chain Monte Carlo (MCMC) methods are algorithms used to approximate complex probability distributions by constructing a Markov chain. This chain is a sequence of random samples where each sample depends only on the previous one. The goal of MCMC methods is to obtain draws from the posterior distribution as the equilibrium distribution. The key point in MCMC methods is the transition kernel or density, <span class="math inline">\(q(\boldsymbol{\theta}^{(s)}\mid \boldsymbol{\theta}^{(s-1)})\)</span>, which generates a draw <span class="math inline">\(\boldsymbol{\theta}^{(s)}\)</span> at stage <span class="math inline">\(s\)</span> that depends solely on <span class="math inline">\(\boldsymbol{\theta}^{(s-1)}\)</span>. This transition distribution must be designed such that the Markov chain converges to a unique stationary distribution, which, in our case, is the posterior distribution, that is,</p>
+<p><span class="math display">\[
+\pi(\boldsymbol{\theta}^{(s)}\mid \boldsymbol{y})=\int_{\boldsymbol{\Theta}}q(\boldsymbol{\theta}^{(s)}\mid \boldsymbol{\theta}^{(s-1)})\pi(\boldsymbol{\theta}^{(s-1)}\mid \boldsymbol{y})d\boldsymbol{\theta}^{(s-1)}.
+\]</span></p>
+<p>Given that we start at an arbitrary point, <span class="math inline">\(\boldsymbol{\theta}^{(0)}\)</span>, the algorithm requires that the Markov chain be <em>irreducible</em>, meaning that the process can reach any other state with positive probability. Additionally, the process must be <em>aperiodic</em>, meaning that for each state, the greatest common divisor of the number of steps it takes to return to the state is 1, ensuring that there are no cycles forcing the system to return to a state only after a fixed number of steps. Furthermore, the process must be <em>recurrent</em>, meaning that it will return to any state an infinite number of times with probability one. However, to ensure convergence to the stationary distribution, a stronger condition is required: the process must be <em>positive recurrent</em>, meaning that the expected return time to a state is finite. Given an <em>irreducible</em>, <em>aperiodic</em>, and <em>positive recurrent</em> transition density, the Markov chain algorithm will asymptotically converge to the stationary posterior distribution we are seeking. For more details, see <span class="citation">Christian P. Robert and Casella (<a href="#ref-robert2011monte">2011</a>)</span>.</p>
+<div id="sec511" class="section level3 hasAnchor" number="4.1.1">
+<h3><span class="header-section-number">4.1.1</span> Gibbs sampler<a href="sec51.html#sec511" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>The Gibbs sampler algorithm is one of the most widely used MCMC methods for sampling from non-standard distributions in Bayesian analysis. While it is a special case of the Metropolis-Hastings (MH) algorithm, it originated from a different theoretical background <span class="citation">(<a href="#ref-Geman1984">Geman and Geman 1984</a>; <a href="#ref-Gelfand1990">Gelfand and Smith 1990</a>)</span>. The key requirement for implementing the Gibbs sampling algorithm is the availability of conditional posterior distributions. The algorithm works by cycling through the conditional posterior distributions corresponding to different blocks of the parameter space under inference.</p>
+<p>To simplify concepts, let’s focus on a parameter space composed of two blocks, <span class="math inline">\(\boldsymbol{\theta} = [\boldsymbol{\theta}_1 \ \boldsymbol{\theta}_2]^{\top}\)</span>. The Gibbs sampling algorithm uses the transition kernel</p>
+<p><span class="math display">\[
+q(\boldsymbol{\theta}_1^{(s)},\boldsymbol{\theta}_2^{(s)}\mid \boldsymbol{\theta}_1^{(s-1)},\boldsymbol{\theta}_2^{(s-1)})=\pi(\boldsymbol{\theta}_1^{(s)}\mid \boldsymbol{\theta}_2^{(s-1)},\boldsymbol{y})\pi(\boldsymbol{\theta}_2^{(s)}\mid \boldsymbol{\theta}_1^{(s)},\boldsymbol{y}).
+\]</span></p>
+<p>Thus,</p>
+<p><span class="math display">\[
+\begin{aligned}
+    \int_{\boldsymbol{\Theta}}q(\boldsymbol{\theta}^{(s)}\mid \boldsymbol{\theta}^{(s-1)})\pi(\boldsymbol{\theta}^{(s-1)}\mid \boldsymbol{y})d\boldsymbol{\theta}^{(s-1)}
+    &amp;=\int_{\boldsymbol{\Theta}_2}\int_{\boldsymbol{\Theta}_1}\pi(\boldsymbol{\theta}_1^{(s)}\mid \boldsymbol{\theta}_2^{(s-1)},\boldsymbol{y})\pi(\boldsymbol{\theta}_2^{(s)}\mid \boldsymbol{\theta}_1^{(s)},\boldsymbol{y})\pi(\boldsymbol{\theta}^{(s-1)}_1,\boldsymbol{\theta}^{(s-1)}_2\mid \boldsymbol{y})d\boldsymbol{\theta}^{(s-1)}_1d\boldsymbol{\theta}^{(s-1)}_2\\
+    &amp;=\pi(\boldsymbol{\theta}_2^{(s)}\mid \boldsymbol{\theta}_1^{(s)},\boldsymbol{y})\int_{\boldsymbol{\Theta}_2}\int_{\boldsymbol{\Theta}_1}\pi(\boldsymbol{\theta}_1^{(s)}\mid \boldsymbol{\theta}_2^{(s-1)},\boldsymbol{y})\pi(\boldsymbol{\theta}^{(s-1)}_1,\boldsymbol{\theta}^{(s-1)}_2\mid \boldsymbol{y})d\boldsymbol{\theta}^{(s-1)}_1d\boldsymbol{\theta}^{(s-1)}_2\\
+    &amp;=\pi(\boldsymbol{\theta}_2^{(s)}\mid \boldsymbol{\theta}_1^{(s)},\boldsymbol{y})\int_{\boldsymbol{\Theta}_2}\pi(\boldsymbol{\theta}_1^{(s)}\mid \boldsymbol{\theta}_2^{(s-1)},\boldsymbol{y})\pi(\boldsymbol{\theta}^{(s-1)}_2\mid \boldsymbol{y})d\boldsymbol{\theta}^{(s-1)}_2\\
+    &amp;=\pi(\boldsymbol{\theta}_2^{(s)}\mid \boldsymbol{\theta}_1^{(s)},\boldsymbol{y})\int_{\boldsymbol{\Theta}_2}\pi(\boldsymbol{\theta}_1^{(s)},\boldsymbol{\theta}_2^{(s-1)}\mid \boldsymbol{y})d\boldsymbol{\theta}^{(s-1)}_2\\
+    &amp;=\pi(\boldsymbol{\theta}_2^{(s)}\mid \boldsymbol{\theta}_1^{(s)},\boldsymbol{y})\pi(\boldsymbol{\theta}_1^{(s)}\mid \boldsymbol{y})\\
+    &amp;=\pi(\boldsymbol{\theta}_1^{(s)},\boldsymbol{\theta}_2^{(s)}\mid \boldsymbol{y}).
+\end{aligned}
+\]</span></p>
+<p>Then, <span class="math inline">\(\pi(\boldsymbol{\theta}\mid \boldsymbol{y})\)</span> is the stationary distribution for the Gibbs transition kernel.</p>
+<p>A word of caution! Even if we have well-defined conditional posterior distributions <span class="math inline">\(\pi(\boldsymbol{\theta}_1^{(s)} \mid \boldsymbol{\theta}_2^{(s-1)}, \boldsymbol{y})\)</span> and <span class="math inline">\(\pi(\boldsymbol{\theta}_2^{(s)} \mid \boldsymbol{\theta}_1^{(s)}, \boldsymbol{y})\)</span>, and we can simulate from them, the joint posterior distribution <span class="math inline">\(\pi(\boldsymbol{\theta}_1^{(s)}, \boldsymbol{\theta}_2^{(s)} \mid \boldsymbol{y})\)</span> may not correspond to any proper distribution. We should be mindful of this situation, especially when dealing with improper prior distributions (see <span class="citation">Christian P. Robert and Casella (<a href="#ref-robert2011monte">2011</a>)</span> for details).</p>
+<p>Algorithm <a href="#algGibbs">1</a> demonstrates the implementation of a Gibbs sampler with <span class="math inline">\(d\)</span> blocks. The number of iterations (<span class="math inline">\(S\)</span>) is chosen to ensure convergence to the stationary distribution. In Section <a href="#sec54"><strong>??</strong></a>, we review several convergence diagnostics to assess whether the posterior draws have reached convergence.</p>
+<figcaption><b>Algorithm: Gibbs sampling</b></figcaption>
+<figure id="alg:Gibbs">
+<pre>
+Set θ<sub>2</sub><sup>(0)</sup>, θ<sub>3</sub><sup>(0)</sup>, ..., θ<sub>d</sub><sup>(0)</sup>, 
+For s=1,2,...,S do
+  Draw θ<sub>1</sub><sup>(s)</sup> from π(θ<sub>1</sub><sup>(s)</sup>|θ<sub>2</sub><sup>(s-1)</sup>,...,θ<sub>d</sub><sup>(s-1)</sup>,<b>y</b>) 
+  Draw θ<sub>2</sub><sup>(s)</sup> from π(θ<sub>2</sub><sup>(s)</sup>|θ<sub>1</sub><sup>(s)</sup>,...,θ<sub>d</sub><sup>(s-1)</sup>,<b>y</b>)
+  ...
+  Draw θ<sub>d</sub><sup>(s)</sup> from π(θ<sub>d</sub><sup>(s)</sup>|θ<sub>1</sub><sup>(s)</sup>,...,θ<sub>d-1</sub><sup>(s)</sup>,<b>y</b>)
+End for
+</pre>
+</figure>
+<p><strong>Example: Mining disaster change point</strong></p>
+<p>Let’s use the dataset <em>Mining.csv</em> provided by <span class="citation">Carlin, Gelfand, and Smith (<a href="#ref-carlin1992hierarchical">1992</a>)</span>. This dataset records the number of mining disasters per year from 1851 to 1962 in British coal mines.</p>
+<p>We assume there is an unknown structural change point in the number of mining disasters, where the parameters of the Poisson distributions change. In particular:</p>
+<p><span class="math display">\[
+\begin{align*}
+p(y_t) =
+\begin{cases}
+\frac{\exp(-\lambda_1) \lambda_1^{y_t}}{y_t!}, &amp; t = 1, 2, \dots, H \\
+\frac{\exp(-\lambda_2) \lambda_2^{y_t}}{y_t!}, &amp; t = H+1, \dots, T
+\end{cases}
+\end{align*}
+\]</span></p>
+<p>where <span class="math inline">\(H\)</span> is the changing point.</p>
+<p>We use conjugate families for <span class="math inline">\(\lambda_l\)</span>, <span class="math inline">\(l = 1, 2\)</span>, where <span class="math inline">\(\lambda_l \sim G(\alpha_{l0}, \beta_{l0})\)</span>, and set <span class="math inline">\(\pi(H) = 1 / T\)</span>, which corresponds to a discrete uniform distribution for the change point. This implies that, a priori, we assume equal probability for any time to be the change point.</p>
+<p>The posterior distribution is:</p>
+<p><span class="math display">\[
+\begin{align*}
+\pi(\lambda_1, \lambda_2, H \mid \mathbf{y}) &amp;\propto \prod_{t=1}^{H} \frac{\exp(-\lambda_1) \lambda_1^{y_t}}{y_t!} \prod_{t=H+1}^{T} \frac{\exp(-\lambda_2) \lambda_2^{y_t}}{y_t!} \\
+&amp;\times \exp(-\beta_{10} \lambda_1) \lambda_1^{\alpha_{10}-1} \exp(-\beta_{20} \lambda_2) \lambda_2^{\alpha_{20}-1} \frac{1}{T} \\
+&amp;\propto \exp(-H \lambda_1) \lambda_1^{\sum_{t=1}^{H} y_t} \exp(-(T-H) \lambda_2) \lambda_2^{\sum_{t=H+1}^{T} y_t} \\
+&amp;\times \exp(-\beta_{10} \lambda_1) \lambda_1^{\alpha_{10}-1} \exp(-\beta_{20} \lambda_2) \lambda_2^{\alpha_{20}-1}
+\end{align*}
+\]</span></p>
+<p>Then, the conditional posterior distribution of <span class="math inline">\(\lambda_1 \mid \lambda_2, H, \mathbf{y}\)</span> is:</p>
+<p><span class="math display">\[
+\begin{align*}
+\pi(\lambda_1 \mid \lambda_2, H, \mathbf{y}) &amp;\propto \exp(-(H + \beta_{10}) \lambda_1) \lambda_1^{\sum_{t=1}^{H} y_t + \alpha_{10} - 1}
+\end{align*}
+\]</span></p>
+<p>That is, <span class="math inline">\(\lambda_1 \mid \lambda_2, H, \mathbf{y} \sim G(\alpha_{1n}, \beta_{1n})\)</span>, <span class="math inline">\(\beta_{1n} = H + \beta_{10}\)</span> and <span class="math inline">\(\alpha_{1n} = \sum_{t=1}^{H} y_t + \alpha_{10}\)</span>.</p>
+<p>The conditional posterior distribution of <span class="math inline">\(\lambda_2\mid \lambda_1,H,y\)</span> is</p>
+<span class="math display">\[\begin{align*}
+\pi(\lambda_2\mid \lambda_1,H,y)&amp;\propto\exp(-((T-H)+\beta_{20})\lambda_2)\lambda_2^{\sum_{t=H+1}^T y_t+\alpha_{20}-1},
+\end{align*}\]</span>
+<p>that is, <span class="math inline">\(\lambda_2\mid \lambda_1,H,y\sim G(\alpha_{2n},\beta_{2n})\)</span>, <span class="math inline">\(\beta_{2n}=(T-H)+\beta_{20}\)</span> and <span class="math inline">\(\alpha_{2n}=\sum_{t=H+1}^T y_t+\alpha_{20}\)</span>.</p>
+<p>The conditional posterior distribution of the change point is</p>
+<span class="math display">\[\begin{align*}
+\pi(H\mid \lambda_1,\lambda_2,y)&amp;\propto\exp(-H\lambda_1)\lambda_1^{\sum_{t=1}^H y_t}\exp(-(T-H)\lambda_2)\lambda_2^{\sum_{t=H+1}^T y_t}\\
+&amp;\propto \exp(-H(\lambda_1-\lambda_2))\lambda_1^{\sum_{t=1}^H y_t}\lambda_2^{\sum_{t=H+1}^T y_t} \exp(-T\lambda_2) \frac{\lambda_2^{\sum_{t=1}^H}}{\lambda_2^{\sum_{t=1}^H} y_t}\\
+&amp;\propto \exp(-H(\lambda_1-\lambda_2))\left(\frac{\lambda_1}{\lambda_2}\right)^{\sum_{t=1}^H y_t}.
+\end{align*}\]</span>
+<p>Thus, the conditional posterior distribution of <span class="math inline">\(H\)</span> is</p>
+<span class="math display">\[\begin{align*}
+\pi(H\mid \lambda_1,\lambda_2,y)=&amp; \frac{\exp(-H(\lambda_1-\lambda_2))\left(\frac{\lambda_1}{\lambda_2}\right)^{\sum_{t=1}^H y_t}}{\sum_{H=1}^T \exp(-H(\lambda_1-\lambda_2))\left(\frac{\lambda_1}{\lambda_2}\right)^{\sum_{t=1}^H y_t}}, &amp; H=1,2,\dots,T.
+\end{align*}\]</span>
+<p>The following code shows how to do a Gibbs sampling algorithm to perform inference of this model using the hyperparameters suggested by <span class="citation">Greenberg (<a href="#ref-greenberg2012introduction">2012</a>)</span>, <span class="math inline">\(\alpha_{l0}=0.5\)</span> and <span class="math inline">\(\beta_{l0}=1\)</span>, <span class="math inline">\(l=1,2\)</span>.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="sec51.html#cb1-1" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">010101</span>)</span>
+<span id="cb1-2"><a href="sec51.html#cb1-2" tabindex="-1"></a>dataset<span class="ot">&lt;-</span><span class="fu">read.csv</span>(<span class="st">&quot;https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/MiningDataCarlin.csv&quot;</span>,<span class="at">header=</span>T)</span>
+<span id="cb1-3"><a href="sec51.html#cb1-3" tabindex="-1"></a><span class="fu">attach</span>(dataset); <span class="fu">str</span>(dataset)</span></code></pre></div>
+<pre><code>## &#39;data.frame&#39;:    112 obs. of  2 variables:
+##  $ year : int  1851 1852 1853 1854 1855 1856 1857 1858 1859 1860 ...
+##  $ Count: int  4 5 4 1 0 4 3 4 0 6 ...</code></pre>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="sec51.html#cb3-1" tabindex="-1"></a>a10<span class="ot">&lt;-</span><span class="fl">0.5</span>; a20<span class="ot">&lt;-</span><span class="fl">0.5</span></span>
+<span id="cb3-2"><a href="sec51.html#cb3-2" tabindex="-1"></a>b10<span class="ot">&lt;-</span><span class="dv">1</span>; b20<span class="ot">&lt;-</span><span class="dv">1</span></span>
+<span id="cb3-3"><a href="sec51.html#cb3-3" tabindex="-1"></a>y<span class="ot">&lt;-</span>Count</span>
+<span id="cb3-4"><a href="sec51.html#cb3-4" tabindex="-1"></a>sumy<span class="ot">&lt;-</span><span class="fu">sum</span>(Count); N<span class="ot">&lt;-</span><span class="fu">length</span>(Count)</span>
+<span id="cb3-5"><a href="sec51.html#cb3-5" tabindex="-1"></a>theta1<span class="ot">&lt;-</span><span class="cn">NULL</span>; theta2<span class="ot">&lt;-</span><span class="cn">NULL</span></span>
+<span id="cb3-6"><a href="sec51.html#cb3-6" tabindex="-1"></a>kk<span class="ot">&lt;-</span><span class="cn">NULL</span>; k<span class="ot">&lt;-</span><span class="dv">60</span>; S<span class="ot">&lt;-</span><span class="dv">10000</span></span>
+<span id="cb3-7"><a href="sec51.html#cb3-7" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>S){</span>
+<span id="cb3-8"><a href="sec51.html#cb3-8" tabindex="-1"></a>    a1<span class="ot">&lt;-</span>a10<span class="sc">+</span><span class="fu">sum</span>(y[<span class="dv">1</span><span class="sc">:</span>k]); b1<span class="ot">&lt;-</span>b10<span class="sc">+</span>k</span>
+<span id="cb3-9"><a href="sec51.html#cb3-9" tabindex="-1"></a>    theta11<span class="ot">&lt;-</span><span class="fu">rgamma</span>(<span class="dv">1</span>,a1,b1)</span>
+<span id="cb3-10"><a href="sec51.html#cb3-10" tabindex="-1"></a>    theta1<span class="ot">&lt;-</span><span class="fu">c</span>(theta1,theta11)</span>
+<span id="cb3-11"><a href="sec51.html#cb3-11" tabindex="-1"></a>    a2<span class="ot">&lt;-</span>a20<span class="sc">+</span><span class="fu">sum</span>(y[(<span class="dv">1</span><span class="sc">+</span>k)<span class="sc">:</span>N]); b2<span class="ot">&lt;-</span>b20<span class="sc">+</span>N<span class="sc">-</span>k</span>
+<span id="cb3-12"><a href="sec51.html#cb3-12" tabindex="-1"></a>    theta22<span class="ot">&lt;-</span><span class="fu">rgamma</span>(<span class="dv">1</span>,a2,b2)</span>
+<span id="cb3-13"><a href="sec51.html#cb3-13" tabindex="-1"></a>    theta2<span class="ot">&lt;-</span><span class="fu">c</span>(theta2,theta22)</span>
+<span id="cb3-14"><a href="sec51.html#cb3-14" tabindex="-1"></a>    pp<span class="ot">&lt;-</span><span class="cn">NULL</span></span>
+<span id="cb3-15"><a href="sec51.html#cb3-15" tabindex="-1"></a>    <span class="cf">for</span>(l <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>N){</span>
+<span id="cb3-16"><a href="sec51.html#cb3-16" tabindex="-1"></a>        p<span class="ot">&lt;-</span><span class="fu">exp</span>(l<span class="sc">*</span>(theta22<span class="sc">-</span>theta11))<span class="sc">*</span>(theta11<span class="sc">/</span>theta22)<span class="sc">^</span>(<span class="fu">sum</span>(y[<span class="dv">1</span><span class="sc">:</span>l]))</span>
+<span id="cb3-17"><a href="sec51.html#cb3-17" tabindex="-1"></a>        pp<span class="ot">&lt;-</span><span class="fu">c</span>(pp,p)</span>
+<span id="cb3-18"><a href="sec51.html#cb3-18" tabindex="-1"></a>    }</span>
+<span id="cb3-19"><a href="sec51.html#cb3-19" tabindex="-1"></a>    prob<span class="ot">&lt;-</span>pp<span class="sc">/</span><span class="fu">sum</span>(pp); k<span class="ot">&lt;-</span><span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span>N,<span class="dv">1</span>,<span class="at">prob=</span>prob)</span>
+<span id="cb3-20"><a href="sec51.html#cb3-20" tabindex="-1"></a>    kk<span class="ot">&lt;-</span><span class="fu">c</span>(kk,k)</span>
+<span id="cb3-21"><a href="sec51.html#cb3-21" tabindex="-1"></a>}</span>
+<span id="cb3-22"><a href="sec51.html#cb3-22" tabindex="-1"></a><span class="fu">library</span>(coda); <span class="fu">summary</span>(<span class="fu">mcmc</span>(theta1)); <span class="fu">summary</span>(<span class="fu">mcmc</span>(theta2))</span></code></pre></div>
+<pre><code>## 
+## Iterations = 1:10000
+## Thinning interval = 1 
+## Number of chains = 1 
+## Sample size per chain = 10000 
+## 
+## 1. Empirical mean and standard deviation for each variable,
+##    plus standard error of the mean:
+## 
+##           Mean             SD       Naive SE Time-series SE 
+##       3.051805       0.283456       0.002835       0.003054 
+## 
+## 2. Quantiles for each variable:
+## 
+##  2.5%   25%   50%   75% 97.5% 
+## 2.513 2.856 3.046 3.237 3.632</code></pre>
+<pre><code>## 
+## Iterations = 1:10000
+## Thinning interval = 1 
+## Number of chains = 1 
+## Sample size per chain = 10000 
+## 
+## 1. Empirical mean and standard deviation for each variable,
+##    plus standard error of the mean:
+## 
+##           Mean             SD       Naive SE Time-series SE 
+##       0.915383       0.117658       0.001177       0.001268 
+## 
+## 2. Quantiles for each variable:
+## 
+##   2.5%    25%    50%    75%  97.5% 
+## 0.6996 0.8341 0.9117 0.9932 1.1570</code></pre>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="sec51.html#cb6-1" tabindex="-1"></a><span class="fu">summary</span>(<span class="fu">mcmc</span>(kk)); <span class="fu">hist</span>(kk, <span class="at">main =</span> <span class="st">&quot;Histogram: Posterior mean change point&quot;</span>, <span class="at">xlab =</span> <span class="st">&quot;Posterior mean&quot;</span>, <span class="at">col =</span> <span class="st">&quot;blue&quot;</span>, <span class="at">breaks =</span> <span class="dv">25</span>)</span></code></pre></div>
+<pre><code>## 
+## Iterations = 1:10000
+## Thinning interval = 1 
+## Number of chains = 1 
+## Sample size per chain = 10000 
+## 
+## 1. Empirical mean and standard deviation for each variable,
+##    plus standard error of the mean:
+## 
+##           Mean             SD       Naive SE Time-series SE 
+##       40.15020        2.48875        0.02489        0.02903 
+## 
+## 2. Quantiles for each variable:
+## 
+##  2.5%   25%   50%   75% 97.5% 
+##    36    39    40    41    46</code></pre>
+<p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-1-1.svg" width="672" /></p>
+<p>The posterior results indicate that the rate of disasters decrease from 3.1 to 0.92 per year in 1890.</p>
+<p>The figure shows the histogram of the posterior draws of the change point in mining disasters.</p>
+</div>
+<div id="sec512" class="section level3 hasAnchor" number="4.1.2">
+<h3><span class="header-section-number">4.1.2</span> Metropolis-Hastings<a href="sec51.html#sec512" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>The Metropolis-Hastings (M-H) algorithm <span class="citation">(<a href="#ref-metropolis53">Metropolis et al. 1953</a>; <a href="#ref-hastings70">Hastings 1970</a>)</span> is a general MCMC method that does not require standard closed-form solutions for the conditional posterior distributions. The key idea is to use a transition kernel whose unique invariant distribution is <span class="math inline">\(\pi(\boldsymbol{\theta} \mid \mathbf{y})\)</span>. This kernel must satisfy the <em>balancing condition</em>, meaning that, given a realization <span class="math inline">\(\boldsymbol{\theta}^{(s-1)}\)</span> at stage <span class="math inline">\(s-1\)</span> from the stationary distribution <span class="math inline">\(\pi(\boldsymbol{\theta} \mid \mathbf{y})\)</span>, we generate a candidate draw <span class="math inline">\(\boldsymbol{\theta}^{c}\)</span> from the <em>proposal distribution</em> <span class="math inline">\(q(\boldsymbol{\theta}^{c} \mid \boldsymbol{\theta}^{(s-1)})\)</span> at stage <span class="math inline">\(s\)</span> such that:</p>
+<p><span class="math display">\[
+q(\boldsymbol{\theta}^{c} \mid  \boldsymbol{\theta}^{(s-1)}) \pi(\boldsymbol{\theta}^{(s-1)} \mid  \mathbf{y}) = q(\boldsymbol{\theta}^{(s-1)} \mid  \boldsymbol{\theta}^{c}) \pi(\boldsymbol{\theta}^{c} \mid  \mathbf{y}),
+\]</span></p>
+<p>which implies that the probability of moving from <span class="math inline">\(\boldsymbol{\theta}^{(s-1)}\)</span> to <span class="math inline">\(\boldsymbol{\theta}^{c}\)</span> is equal to the probability of moving from <span class="math inline">\(\boldsymbol{\theta}^{c}\)</span> to <span class="math inline">\(\boldsymbol{\theta}^{(s-1)}\)</span>.</p>
+<p>In general, the <em>balancing condition</em> is not automatically satisfied, and we must introduce an <em>acceptance probability</em> <span class="math inline">\(\alpha(\boldsymbol{\theta}^{(s-1)}, \boldsymbol{\theta}^{c})\)</span> to ensure that the condition holds:</p>
+<p><span class="math display">\[
+q(\boldsymbol{\theta}^{c} \mid  \boldsymbol{\theta}^{(s-1)}) \pi(\boldsymbol{\theta}^{(s-1)} \mid  \mathbf{y}) \alpha(\boldsymbol{\theta}^{(s-1)}, \boldsymbol{\theta}^{c}) = q(\boldsymbol{\theta}^{(s-1)} \mid  \boldsymbol{\theta}^{c}) \pi(\boldsymbol{\theta}^{c} \mid  \mathbf{y}).
+\]</span></p>
+<p>Thus, the acceptance probability is given by:</p>
+<p><span class="math display">\[
+\alpha(\boldsymbol{\theta}^{(s-1)}, \boldsymbol{\theta}^{c}) =
+\min\left\{\frac{q(\boldsymbol{\theta}^{(s-1)} \mid  \boldsymbol{\theta}^{c}) \pi(\boldsymbol{\theta}^{c} \mid  \mathbf{y})}{q(\boldsymbol{\theta}^{c} \mid  \boldsymbol{\theta}^{(s-1)}) \pi(\boldsymbol{\theta}^{(s-1)} \mid  \mathbf{y})}, 1\right\},
+\]</span></p>
+<p>where <span class="math inline">\(q(\boldsymbol{\theta}^{c} \mid \boldsymbol{\theta}^{(s-1)})\)</span> and <span class="math inline">\(\pi(\boldsymbol{\theta}^{(s-1)} \mid \mathbf{y})\)</span> must be nonzero, as transitioning from <span class="math inline">\(\boldsymbol{\theta}^{(s-1)}\)</span> to <span class="math inline">\(\boldsymbol{\theta}^{c}\)</span> is only possible under these conditions.</p>
+<p>Algorithm <a href="#algMH">2</a> shows how to implement a Metropolis-Hastings algorithm. The number of iterations (<span class="math inline">\(S\)</span>) is chosen to ensure convergence to the stationary distribution.</p>
+<figcaption><b>Algorithm: Metropolis-Hastings</b></figcaption>
+<figure id="alg:MH">
+<pre>
+Set θ<sup>(0)</sup> in the support of π(θ|<b>y</b>) 
+For s=1,2,...,S do
+  Draw θ<sup>c</sup> from q(θ<sup>c</sup>|θ<sup>(s-1)</sup>)
+  Calculate α(θ<sup>(s-1)</sup>,θ<sup>c</sup>)=min((q(θ<sup>(s-1)</sup>|θ<sup>c</sup>)π(θ<sup>c</sup>|<b>y</b>))/(q(θ<sup>c</sup>|θ<sup>(s-1)</sup>)π(θ<sup>(s-1)</sup>|<b>y</b>)),1)
+  Draw U from U(0,1)
+  θ<sup>(s)</sup>= θ<sup>c</sup> if U < α(θ<sup>(s-1)</sup>,θ<sup>c</sup>)
+  θ<sup>(s)</sup>= θ<sup>(s-1)</sup> otherwise
+End for
+</pre>
+</figure>
+<p>Some remarks: First, we do not need to know the marginal likelihood to implement the M-H algorithm, as it cancels out when calculating the acceptance probability. Specifically, given that <span class="math inline">\(\pi(\boldsymbol{\theta} \mid \boldsymbol{y}) \propto \pi(\boldsymbol{\theta}) \times p(\boldsymbol{y} \mid \boldsymbol{\theta})\)</span>, we can use the right-hand side expression to compute the acceptance probability. Second, the Gibbs sampling algorithm is a particular case of the M-H algorithm where the acceptance probability is equal to 1 (<span class="citation">Gelman and Rubin (<a href="#ref-Gelman1992">1992</a>)</span> and <span class="citation">Christian P. Robert and Casella (<a href="#ref-robert2011monte">2011</a>)</span>, see Exercise 2). Third, we can combine the M-H and Gibbs sampling algorithms when dealing with relatively complex posterior distributions. Specifically, the Gibbs sampling algorithm can be used for blocks with conditional posterior distributions in standard closed forms, while the M-H algorithm is applied to sample from conditional posterior distributions that do not have standard forms. This approach is known as the M-H within Gibbs sampling algorithm. Fourth, we can note that the transition kernel in the M-H algorithm is a mixture of a continuous density (<span class="math inline">\(q(\boldsymbol{\theta}^c \mid \boldsymbol{\theta}^{(s-1)})\)</span>) and a probability mass function (<span class="math inline">\(\alpha(\boldsymbol{\theta}^{(s-1)}, \boldsymbol{\theta}^c)\)</span>) <span class="citation">Chib and Greenberg (<a href="#ref-chib1995understanding">1995</a>)</span>.</p>
+<p>Fifth, a crucial point associated with the proposal densities is the acceptance probability. Low or high acceptance probabilities are not ideal. A low rate implies poor mixing, meaning the chain does not move effectively through the support of the posterior distribution. Conversely, a high acceptance rate implies that the chain will converge too slowly. A sensible value depends on the dimension of the parameter space. A rule of thumb is that if the dimension is less than or equal to 2, the acceptance rate should be around 0.50. If the dimension is greater than 2, the acceptance rate should be approximately 0.25 <span class="citation">Roberts, Gelman, and Gilks (<a href="#ref-Roberts1997">1997</a>)</span>. For technical details of the Metropolis-Hastings algorithm, see <span class="citation">Christian P. Robert and Casella (<a href="#ref-robert2011monte">2011</a>)</span>, Chap. 7.</p>
+<p>Regarding the proposal density, it must be positive everywhere the posterior distribution is positive. This ensures that the Markov chain can explore the entire support of the posterior distribution. Additionally, the proposal density must allow the Markov chain to reach any region of the posterior distribution’s support. There are three standard approaches for choosing the proposal density: the independent proposal, the random walk proposal, and the tailored proposal.</p>
+<p>In the independent proposal, <span class="math inline">\(q(\boldsymbol{\theta}^c \mid \boldsymbol{\theta}^{(s-1)}) = q(\boldsymbol{\theta}^c)\)</span>, which implies that</p>
+<p><span class="math display">\[
+\alpha(\boldsymbol{\theta}^{(s-1)}, \boldsymbol{\theta}^c) =
+\min\left\{\frac{q(\boldsymbol{\theta}^{(s-1)}) \pi(\boldsymbol{\theta}^c \mid \boldsymbol{y})}{q(\boldsymbol{\theta}^c) \pi(\boldsymbol{\theta}^{(s-1)} \mid \boldsymbol{y})}, 1\right\}.
+\]</span></p>
+<p>In this case, a move from <span class="math inline">\(\boldsymbol{\theta}^{(s-1)}\)</span> to <span class="math inline">\(\boldsymbol{\theta}^c\)</span> is always accepted if <span class="math inline">\(q(\boldsymbol{\theta}^{(s-1)}) \pi(\boldsymbol{\theta}^c \mid \boldsymbol{y}) \geq q(\boldsymbol{\theta}^c) \pi(\boldsymbol{\theta}^{(s-1)} \mid \boldsymbol{y})\)</span>.</p>
+<p>In the random walk proposal, <span class="math inline">\(\boldsymbol{\theta}^c = \boldsymbol{\theta}^{(s-1)} + \boldsymbol{\epsilon}\)</span>, where <span class="math inline">\(\boldsymbol{\epsilon}\)</span> is a random perturbation. If <span class="math inline">\(p(\boldsymbol{\epsilon}) = p(-\boldsymbol{\epsilon})\)</span>, meaning the distribution <span class="math inline">\(p(\boldsymbol{\epsilon})\)</span> is symmetric around zero, then <span class="math inline">\(q(\boldsymbol{\theta}^c \mid \boldsymbol{\theta}^{(s-1)}) = q(\boldsymbol{\theta}^{(s-1)} \mid \boldsymbol{\theta}^c)\)</span>. This was the original Metropolis algorithm <span class="citation">Metropolis et al. (<a href="#ref-metropolis53">1953</a>)</span>. Thus, the acceptance rate is</p>
+<p><span class="math display">\[
+\alpha(\boldsymbol{\theta}^{(s-1)}, \boldsymbol{\theta}^c) =
+\min\left\{\frac{\pi(\boldsymbol{\theta}^c \mid \boldsymbol{y})}{\pi(\boldsymbol{\theta}^{(s-1)} \mid \boldsymbol{y})}, 1\right\}.
+\]</span></p>
+<p>In this case, a move from <span class="math inline">\(\boldsymbol{\theta}^{(s-1)}\)</span> to <span class="math inline">\(\boldsymbol{\theta}^c\)</span> is always accepted if <span class="math inline">\(\pi(\boldsymbol{\theta}^c \mid \boldsymbol{y}) \geq \pi(\boldsymbol{\theta}^{(s-1)} \mid \boldsymbol{y})\)</span>.</p>
+<p>In the tailored proposal, the density is designed to have fat tails, is centered at the mode of the posterior distribution, and its scale matrix is given by the negative inverse Hessian matrix evaluated at the mode. Specifically, for two blocks, the log posterior distribution is maximized with respect to <span class="math inline">\(\boldsymbol{\theta}_1\)</span> given <span class="math inline">\(\boldsymbol{\theta}_2\)</span>. This process is repeated at each iteration of the algorithm because <span class="math inline">\(\boldsymbol{\theta}_2\)</span> changes at different stages. As a result, the algorithm can be slow since the optimization process is computationally demanding (see <span class="citation">Greenberg (<a href="#ref-greenberg2012introduction">2012</a>)</span>, Chaps. 7 and 9 for examples).</p>
+<p>A sensible recommendation when performing the M-H algorithm is to use a random walk proposal such that <span class="math inline">\(\boldsymbol{\epsilon} \sim N(\boldsymbol{0}, c^2 \boldsymbol{\Sigma})\)</span>, where <span class="math inline">\(\boldsymbol{\Sigma}\)</span> is the negative inverse Hessian matrix evaluated at the mode, that is, maximize with respect to all parameters, and set <span class="math inline">\(c \approx 2.4 / \sqrt{\text{dim}(\boldsymbol{\theta})}\)</span>, which is the most efficient scale compared to independent sampling <span class="citation">Gelman et al. (<a href="#ref-gelman2021bayesian">2021</a>)</span>, Chap. 12. After some iterations of the algorithm, adjust the scale matrix <span class="math inline">\(\boldsymbol{\Sigma}\)</span> as before, and increase or decrease <span class="math inline">\(c\)</span> if the acceptance rate of the simulations is too high or low, respectively. The objective is to bring the acceptance rate to the stated rule of thumb: if the dimension is less than or equal to 2, the acceptance rate should be around 0.50, and if the dimension is greater than 2, the acceptance rate should be around 0.25. Once this is achieved, we should run the algorithm without modifications and use this part of the algorithm to perform inference.</p>
+<p><strong>Example: Ph.D. students sleeping hours continues</strong></p>
+<p>In the Ph.D. students sleeping hours exercise of Chapter <a href="Chap3.html#Chap3">3</a> we get a posterior distribution that is Beta with parameters 16.55 and 39.57. We can sample from this posterior distribution using the function <em>rbeta</em> from <strong>R</strong>. However, we want to compare the performance of a M-H algorithm using as proposal density a <span class="math inline">\(U(0,1)\)</span> distribution.</p>
+<p>The following code shows how to do a M-H algorithm to sample from the beta distribution using the uniform distribution.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="sec51.html#cb8-1" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">010101</span>)</span>
+<span id="cb8-2"><a href="sec51.html#cb8-2" tabindex="-1"></a>an <span class="ot">&lt;-</span> <span class="fl">16.55</span>; bn <span class="ot">&lt;-</span> <span class="fl">39.57</span></span>
+<span id="cb8-3"><a href="sec51.html#cb8-3" tabindex="-1"></a>S <span class="ot">&lt;-</span> <span class="dv">100000</span>; p <span class="ot">&lt;-</span> <span class="fu">runif</span>(S); accept <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">0</span>, S)</span>
+<span id="cb8-4"><a href="sec51.html#cb8-4" tabindex="-1"></a><span class="cf">for</span> (s <span class="cf">in</span> <span class="dv">2</span><span class="sc">:</span>S){</span>
+<span id="cb8-5"><a href="sec51.html#cb8-5" tabindex="-1"></a>    pc <span class="ot">&lt;-</span> <span class="fu">runif</span>(<span class="dv">1</span>) <span class="co"># Candidate</span></span>
+<span id="cb8-6"><a href="sec51.html#cb8-6" tabindex="-1"></a>    a <span class="ot">&lt;-</span> <span class="fu">dbeta</span>(pc, an, bn)<span class="sc">/</span><span class="fu">dbeta</span>(p[s<span class="dv">-1</span>], an, bn) <span class="co"># Acceptance rate</span></span>
+<span id="cb8-7"><a href="sec51.html#cb8-7" tabindex="-1"></a>    U <span class="ot">&lt;-</span> <span class="fu">runif</span>(<span class="dv">1</span>)</span>
+<span id="cb8-8"><a href="sec51.html#cb8-8" tabindex="-1"></a>    <span class="cf">if</span>(U <span class="sc">&lt;=</span> a){</span>
+<span id="cb8-9"><a href="sec51.html#cb8-9" tabindex="-1"></a>        p[s] <span class="ot">&lt;-</span> pc</span>
+<span id="cb8-10"><a href="sec51.html#cb8-10" tabindex="-1"></a>        accept[s] <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb8-11"><a href="sec51.html#cb8-11" tabindex="-1"></a>    }<span class="cf">else</span>{</span>
+<span id="cb8-12"><a href="sec51.html#cb8-12" tabindex="-1"></a>        p[s] <span class="ot">&lt;-</span> p[s<span class="dv">-1</span>]</span>
+<span id="cb8-13"><a href="sec51.html#cb8-13" tabindex="-1"></a>        accept[s] <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb8-14"><a href="sec51.html#cb8-14" tabindex="-1"></a>    }</span>
+<span id="cb8-15"><a href="sec51.html#cb8-15" tabindex="-1"></a>}</span>
+<span id="cb8-16"><a href="sec51.html#cb8-16" tabindex="-1"></a><span class="fu">mean</span>(accept); <span class="fu">mean</span>(p); <span class="fu">sd</span>(p)</span></code></pre></div>
+<pre><code>## [1] 0.19378</code></pre>
+<pre><code>## [1] 0.2949128</code></pre>
+<pre><code>## [1] 0.06087849</code></pre>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="sec51.html#cb12-1" tabindex="-1"></a>an<span class="sc">/</span>(an <span class="sc">+</span> bn); (an<span class="sc">*</span>bn<span class="sc">/</span>((an<span class="sc">+</span>bn)<span class="sc">^</span><span class="dv">2</span><span class="sc">*</span>(an<span class="sc">+</span>bn<span class="sc">+</span><span class="dv">1</span>)))<span class="sc">^</span><span class="fl">0.5</span> <span class="co"># Population values</span></span></code></pre></div>
+<pre><code>## [1] 0.2949038</code></pre>
+<pre><code>## [1] 0.06033513</code></pre>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="sec51.html#cb15-1" tabindex="-1"></a>h <span class="ot">&lt;-</span> <span class="fu">hist</span>(p, <span class="at">breaks=</span><span class="dv">50</span>, <span class="at">col=</span><span class="st">&quot;blue&quot;</span>, <span class="at">xlab=</span><span class="st">&quot;Proportion Ph.D. students sleeping at least 6 hours&quot;</span>, <span class="at">main=</span><span class="st">&quot;Beta draws from a Metropolis-Hastings algorithm&quot;</span>)</span>
+<span id="cb15-2"><a href="sec51.html#cb15-2" tabindex="-1"></a>pfit <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="fu">min</span>(p),<span class="fu">max</span>(p),<span class="at">length=</span><span class="dv">50</span>)</span>
+<span id="cb15-3"><a href="sec51.html#cb15-3" tabindex="-1"></a>yfit<span class="ot">&lt;-</span><span class="fu">dbeta</span>(pfit, an, bn)</span>
+<span id="cb15-4"><a href="sec51.html#cb15-4" tabindex="-1"></a>yfit <span class="ot">&lt;-</span> yfit<span class="sc">*</span><span class="fu">diff</span>(h<span class="sc">$</span>mids[<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>])<span class="sc">*</span><span class="fu">length</span>(p)</span>
+<span id="cb15-5"><a href="sec51.html#cb15-5" tabindex="-1"></a><span class="fu">lines</span>(pfit, yfit, <span class="at">col=</span><span class="st">&quot;red&quot;</span>, <span class="at">lwd=</span><span class="dv">2</span>)</span></code></pre></div>
+<p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-2-1.svg" width="672" /></p>
+<p>The results indicate that the mean and standard deviation obtained from the posterior draws are similar to the population values. Furthermore, this figure presents the histogram of the posterior draws alongside the density of the beta distribution, demonstrating a good match between them.</p>
+</div>
+<div id="sec513" class="section level3 hasAnchor" number="4.1.3">
+<h3><span class="header-section-number">4.1.3</span> Hamiltonian Monte Carlo<a href="sec51.html#sec513" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Hamiltonian Monte Carlo (HMC) was proposed by <span class="citation">Duane et al. (<a href="#ref-duane1987hybrid">1987</a>)</span> and later introduced to the statistical community by <span class="citation">Neal (<a href="#ref-neal1996bayesian">1996</a>)</span>. HMC extends the Metropolis algorithm to efficiently explore the parameter space by introducing <em>momentum variables</em>, which help overcome the random walk behavior of Gibbs sampling and the Metropolis-Hastings algorithm. Known also as hybrid Monte Carlo, HMC is particularly advantageous for high-dimensional posterior distributions, as it reduces the risk of getting stuck in local modes and significantly improves mixing <span class="citation">(<a href="#ref-neal2011mcmc">Neal 2011</a>)</span>.</p>
+<p>However, HMC is designed to work with strictly positive target densities. Therefore, transformations are required to handle bounded parameters, such as variances and proportions. For example, logarithmic and logit transformations can be applied. These transformations necessitate the use of the change-of-variable theorem to compute the log posterior density and its gradient, which are essential for implementing the HMC algorithm.</p>
+<p>HMC leverages concepts from physics, specifically Hamiltonian mechanics, to propose transitions in the Markov chain. In Hamiltonian mechanics, two key variables define the total energy of the system: the <em>position</em> (<span class="math inline">\(\boldsymbol{\theta}\)</span>) and the <em>momentum</em> (<span class="math inline">\(\boldsymbol{\delta}\)</span>). The Hamiltonian represents the total energy of the system, consisting of <em>potential energy</em> (energy due to position) and <em>kinetic energy</em> (energy associated with motion). The objective is to identify trajectories that preserve the system’s total energy, meaning the Hamiltonian remains invariant, while avoiding trajectories that do not. This approach enhances the acceptance rate of proposed transitions.</p>
+<p>To implement HMC, we solve the differential equations derived from the Hamiltonian, which involve derivatives with respect to position and momentum. However, these equations rarely have analytical solutions, requiring numerical methods for approximation. This necessitates discretizing Hamilton’s equations, which introduces errors. To mitigate these errors, HMC uses the <em>leapfrog integrator</em>, a numerical method with smaller errors compared to simpler approaches like the Euler method.</p>
+<p>HMC uses a <em>momentum variable</em> (<span class="math inline">\(\delta_k\)</span>) for each <span class="math inline">\(\theta_k\)</span>, so that the transition kernel of <span class="math inline">\(\boldsymbol{\theta}\)</span> is determined by <span class="math inline">\(\boldsymbol{\delta}\)</span>. Both vectors are updated using a Metropolis algorithm at each stage such that the distribution of <span class="math inline">\(\boldsymbol{\theta}\)</span> remains invariant <span class="citation">(<a href="#ref-neal2011mcmc">Neal 2011</a>)</span>. The joint density in HMC is given by <span class="math inline">\(p(\boldsymbol{\theta}, \boldsymbol{\delta} \mid \boldsymbol{y}) = \pi(\boldsymbol{\theta} \mid \boldsymbol{y}) \times p(\boldsymbol{\delta})\)</span>, where <span class="math inline">\(\boldsymbol{\delta} \sim N(\boldsymbol{0}, \boldsymbol{M})\)</span>, and <span class="math inline">\(\boldsymbol{M}\)</span> is a diagonal matrix such that <span class="math inline">\(\delta_k \sim N(0, M_{kk})\)</span>.</p>
+<p>Algorithm <a href="#algHMC">3</a> outlines the HMC implementation. The gradient vector <span class="math inline">\(\frac{d \log(\pi(\boldsymbol{\theta} \mid \boldsymbol{y}))}{d \boldsymbol{\theta}}\)</span> must be computed analytically, as using finite differences can be computationally expensive. However, it is advisable to verify the analytical calculations by evaluating the gradient at the maximum posterior estimate, where the function should return values close to 0, or by comparing results with finite differences at a few points.</p>
+<figcaption><b>Algorithm: Hamiltonian Monte Carlo</b></figcaption>
+<figure id="alg:HMC">
+  <pre>
+Set θ<sup>(0)</sup> in the support of π(θ|<b>y</b>), and set step size ε, number of leapfrog steps L, and total iterations S
+Draw δ<sup>(0)</sup> from N(0, M)
+For s=1,2,...,S do
+  For l=1,2,...,L do
+    if l=1 then
+      δ<sup>c</sup> ← δ<sup>(s-1)</sup> + 0.5 ε dlog(π(θ|<b>y</b>))/dθ
+      θ<sup>c</sup> ← θ<sup>(s-1)</sup> + ε M<sup>-1</sup> δ<sup>c</sup> 
+    else
+      if l=2,...,L-1 then
+        δ<sup>c</sup> ← δ<sup>c</sup> + ε dlog(π(θ|<b>y</b>))/dθ
+        θ<sup>c</sup> ← θ<sup>c</sup> + ε M<sup>-1</sup> δ<sup>c</sup>
+      else
+        δ<sup>c</sup> ← δ<sup>c</sup> + 0.5 ε dlog(π(θ|<b>y</b>))/dθ
+        θ<sup>c</sup> ← θ<sup>c</sup> + ε M<sup>-1</sup> δ<sup>c</sup>
+      end if
+    end if
+  end for
+  Calculate α([θ, δ]<sup>(s-1)</sup>,[θ, δ]<sup>c</sup>)=min((p(δ<sup>c</sup>)π(θ<sup>c</sup>|<b>y</b>))/(p(δ<sup>(s-1)</sup>)π(θ<sup>(s-1)</sup>|<b>y</b>)),1)
+  Draw U from U(0,1)
+  θ<sup>(s)</sup>= θ<sup>c</sup> if U < α([θ, δ]<sup>(s-1)</sup>,[θ, δ]<sup>c</sup>)
+  θ<sup>(s)</sup>= θ<sup>(s-1)</sup> otherwise
+End for
+  </pre>
+</figure>
+<p>Note that HMC does not require the marginal likelihood, as neither the gradient vector
+<span class="math inline">\(\frac{d \log(\pi(\boldsymbol{\theta} \mid \boldsymbol{y}))}{d \boldsymbol{\theta}}\)</span> nor the acceptance rate depend on it. That is, we can use only <span class="math inline">\(\pi(\boldsymbol{\theta}) \times p(\boldsymbol{y} \mid \boldsymbol{\theta})\)</span> to implement HMC. In addition, we do not retain <span class="math inline">\(\boldsymbol{\delta}\)</span> after it is updated at the beginning of each iteration, as it is not required subsequently. To begin, the step size (<span class="math inline">\(\epsilon\)</span>) can be drawn randomly from a uniform distribution between 0 and <span class="math inline">\(2\epsilon_0\)</span>, and the number of leapfrog steps (<span class="math inline">\(L\)</span>) is set as the largest integer near <span class="math inline">\(1/\epsilon\)</span>, ensuring <span class="math inline">\(\epsilon \times L \approx 1\)</span>. We need to set <span class="math inline">\(\boldsymbol{M}\)</span> to be the inverse of the posterior covariance matrix evaluated at the maximum a posteriori estimate under this setting.</p>
+<p>The acceptance rate should be checked, with the optimal rate around 65% <span class="citation">(<a href="#ref-gelman2021bayesian">Gelman et al. 2021</a>)</span>. If the acceptance rate is much higher than 65%, increase <span class="math inline">\(\epsilon_0\)</span>; if it is much lower, decrease it. This strategy may not always work, and alternative strategies can be tested, such as setting <span class="math inline">\(\boldsymbol{M} = \boldsymbol{I}\)</span> and fine-tuning <span class="math inline">\(\epsilon\)</span> and <span class="math inline">\(L\)</span> to achieve an acceptance rate near 65%. Finally, the number of iterations (<span class="math inline">\(S\)</span>) is chosen to ensure convergence to the stationary distribution.</p>
+<p><strong>Example: Sampling from a bi-variate Gaussian distribution</strong></p>
+<p>As a toy example, let’s compare the Gibbs sampling, M-H, and HMC algorithms when the posterior distribution is a bi-variate Gaussian distribution with mean <span class="math inline">\(\boldsymbol{0}\)</span> and covariance matrix
+<span class="math inline">\(\boldsymbol{\Sigma} = \begin{bmatrix} 1 &amp; \rho \\ \rho &amp; 1 \end{bmatrix}\)</span>. Let’s set <span class="math inline">\(\rho = 0.98\)</span>.</p>
+<p>The Gibbs sampler requires the conditional posterior distributions, which in this case are
+<span class="math inline">\(\theta_1 \mid \theta_2 \sim N(\rho \theta_2, 1 - \rho^2)\)</span> and <span class="math inline">\(\theta_2 \mid \theta_1 \sim N(\rho \theta_1, 1 - \rho^2)\)</span>.
+We use the random walk proposal distribution for the M-H algorithm, where
+<span class="math inline">\(\boldsymbol{\theta}^c \sim N(\boldsymbol{\theta}^{(s-1)}, \text{diag}\left\{0.18^2\right\})\)</span>.
+We set <span class="math inline">\(\epsilon = 0.05\)</span>, <span class="math inline">\(L = 20\)</span>, and <span class="math inline">\(\boldsymbol{M} = \boldsymbol{I}_2\)</span> for the HMC algorithm, and given that
+<span class="math inline">\(\pi(\boldsymbol{\theta} \mid \boldsymbol{y}) \propto \exp\left\{-\frac{1}{2} \boldsymbol{\theta}^{\top} \boldsymbol{\Sigma}^{-1} \boldsymbol{\theta}\right\}\)</span>,
+then <span class="math inline">\(\frac{d \log(\pi(\boldsymbol{\theta} \mid \boldsymbol{y}))}{d \boldsymbol{\theta}} = -\boldsymbol{\Sigma}^{-1} \boldsymbol{\theta}\)</span>.</p>
+<p>The following code shows how to implement the Gibbs sampler, the random walk M-H algorithm, and the HMC in this example such that the effective number of posterior draws is 400.</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="sec51.html#cb16-1" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">010101</span>)</span>
+<span id="cb16-2"><a href="sec51.html#cb16-2" tabindex="-1"></a><span class="co"># Gibbs sampler</span></span>
+<span id="cb16-3"><a href="sec51.html#cb16-3" tabindex="-1"></a>Gibbs <span class="ot">&lt;-</span> <span class="cf">function</span>(theta, rho){</span>
+<span id="cb16-4"><a href="sec51.html#cb16-4" tabindex="-1"></a>    thetal <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="at">mean =</span> rho<span class="sc">*</span>theta, <span class="at">sd =</span> (<span class="dv">1</span><span class="sc">-</span> rho<span class="sc">^</span><span class="dv">2</span>)<span class="sc">^</span><span class="fl">0.5</span>)</span>
+<span id="cb16-5"><a href="sec51.html#cb16-5" tabindex="-1"></a>    <span class="fu">return</span>(thetal)</span>
+<span id="cb16-6"><a href="sec51.html#cb16-6" tabindex="-1"></a>}</span>
+<span id="cb16-7"><a href="sec51.html#cb16-7" tabindex="-1"></a><span class="co"># Metropolis-Hastings</span></span>
+<span id="cb16-8"><a href="sec51.html#cb16-8" tabindex="-1"></a>MH <span class="ot">&lt;-</span> <span class="cf">function</span>(theta, rho, sig2){</span>
+<span id="cb16-9"><a href="sec51.html#cb16-9" tabindex="-1"></a>    SIGMA <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">1</span>, rho, rho, <span class="dv">1</span>), <span class="dv">2</span>, <span class="dv">2</span>)</span>
+<span id="cb16-10"><a href="sec51.html#cb16-10" tabindex="-1"></a>    SIGMAc <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">1</span>, sig2, sig2, <span class="dv">1</span>), <span class="dv">2</span>, <span class="dv">2</span>)</span>
+<span id="cb16-11"><a href="sec51.html#cb16-11" tabindex="-1"></a>    thetac <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">mvrnorm</span>(<span class="dv">1</span>, <span class="at">mu =</span> theta, <span class="at">Sigma =</span> SIGMAc)</span>
+<span id="cb16-12"><a href="sec51.html#cb16-12" tabindex="-1"></a>    a <span class="ot">&lt;-</span> mvtnorm<span class="sc">::</span><span class="fu">dmvnorm</span>(thetac, <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>), SIGMA)<span class="sc">/</span>mvtnorm<span class="sc">::</span><span class="fu">dmvnorm</span>(theta, <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>), SIGMA)</span>
+<span id="cb16-13"><a href="sec51.html#cb16-13" tabindex="-1"></a>    U <span class="ot">&lt;-</span> <span class="fu">runif</span>(<span class="dv">1</span>)</span>
+<span id="cb16-14"><a href="sec51.html#cb16-14" tabindex="-1"></a>    <span class="cf">if</span>(U <span class="sc">&lt;=</span> a){</span>
+<span id="cb16-15"><a href="sec51.html#cb16-15" tabindex="-1"></a>        theta <span class="ot">&lt;-</span> thetac</span>
+<span id="cb16-16"><a href="sec51.html#cb16-16" tabindex="-1"></a>        accept <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb16-17"><a href="sec51.html#cb16-17" tabindex="-1"></a>    }<span class="cf">else</span>{</span>
+<span id="cb16-18"><a href="sec51.html#cb16-18" tabindex="-1"></a>        theta <span class="ot">&lt;-</span> theta</span>
+<span id="cb16-19"><a href="sec51.html#cb16-19" tabindex="-1"></a>        accept <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb16-20"><a href="sec51.html#cb16-20" tabindex="-1"></a>    }</span>
+<span id="cb16-21"><a href="sec51.html#cb16-21" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">theta =</span> theta, <span class="at">accept =</span> accept))</span>
+<span id="cb16-22"><a href="sec51.html#cb16-22" tabindex="-1"></a>}</span>
+<span id="cb16-23"><a href="sec51.html#cb16-23" tabindex="-1"></a><span class="co"># Hamiltonian Monte Carlo</span></span>
+<span id="cb16-24"><a href="sec51.html#cb16-24" tabindex="-1"></a>HMC <span class="ot">&lt;-</span> <span class="cf">function</span>(theta, rho, epsilon, M){</span>
+<span id="cb16-25"><a href="sec51.html#cb16-25" tabindex="-1"></a>    SIGMA <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">1</span>, rho, rho, <span class="dv">1</span>), <span class="dv">2</span>, <span class="dv">2</span>) </span>
+<span id="cb16-26"><a href="sec51.html#cb16-26" tabindex="-1"></a>    L <span class="ot">&lt;-</span> <span class="fu">ceiling</span>(<span class="dv">1</span><span class="sc">/</span>epsilon)</span>
+<span id="cb16-27"><a href="sec51.html#cb16-27" tabindex="-1"></a>    Minv <span class="ot">&lt;-</span> <span class="fu">solve</span>(M); thetat <span class="ot">&lt;-</span> theta</span>
+<span id="cb16-28"><a href="sec51.html#cb16-28" tabindex="-1"></a>    K <span class="ot">&lt;-</span> <span class="fu">length</span>(thetat)</span>
+<span id="cb16-29"><a href="sec51.html#cb16-29" tabindex="-1"></a>    mom <span class="ot">&lt;-</span> <span class="fu">t</span>(mvtnorm<span class="sc">::</span><span class="fu">rmvnorm</span>(<span class="dv">1</span>, <span class="fu">rep</span>(<span class="dv">0</span>, K), M))</span>
+<span id="cb16-30"><a href="sec51.html#cb16-30" tabindex="-1"></a>    logPost_Mom_t <span class="ot">&lt;-</span> mvtnorm<span class="sc">::</span><span class="fu">dmvnorm</span>(<span class="fu">t</span>(theta), <span class="fu">rep</span>(<span class="dv">0</span>, K), SIGMA, <span class="at">log =</span> <span class="cn">TRUE</span>) <span class="sc">+</span>  mvtnorm<span class="sc">::</span><span class="fu">dmvnorm</span>(<span class="fu">t</span>(mom), <span class="fu">rep</span>(<span class="dv">0</span>, K), M, <span class="at">log =</span> <span class="cn">TRUE</span>)  </span>
+<span id="cb16-31"><a href="sec51.html#cb16-31" tabindex="-1"></a>    <span class="cf">for</span>(l <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>L){</span>
+<span id="cb16-32"><a href="sec51.html#cb16-32" tabindex="-1"></a>        <span class="cf">if</span>(l <span class="sc">==</span> <span class="dv">1</span> <span class="sc">|</span> l <span class="sc">==</span> L){</span>
+<span id="cb16-33"><a href="sec51.html#cb16-33" tabindex="-1"></a>            mom <span class="ot">&lt;-</span> mom <span class="sc">+</span> <span class="fl">0.5</span><span class="sc">*</span>epsilon<span class="sc">*</span>(<span class="sc">-</span><span class="fu">solve</span>(SIGMA)<span class="sc">%*%</span>theta)</span>
+<span id="cb16-34"><a href="sec51.html#cb16-34" tabindex="-1"></a>            theta <span class="ot">&lt;-</span> theta <span class="sc">+</span> epsilon<span class="sc">*</span>Minv<span class="sc">%*%</span>mom</span>
+<span id="cb16-35"><a href="sec51.html#cb16-35" tabindex="-1"></a>        }<span class="cf">else</span>{</span>
+<span id="cb16-36"><a href="sec51.html#cb16-36" tabindex="-1"></a>            mom <span class="ot">&lt;-</span> mom <span class="sc">+</span> epsilon<span class="sc">*</span>(<span class="sc">-</span><span class="fu">solve</span>(SIGMA)<span class="sc">%*%</span>theta)</span>
+<span id="cb16-37"><a href="sec51.html#cb16-37" tabindex="-1"></a>            theta <span class="ot">&lt;-</span> theta <span class="sc">+</span> epsilon<span class="sc">*</span>Minv<span class="sc">%*%</span>mom</span>
+<span id="cb16-38"><a href="sec51.html#cb16-38" tabindex="-1"></a>        }</span>
+<span id="cb16-39"><a href="sec51.html#cb16-39" tabindex="-1"></a>    }</span>
+<span id="cb16-40"><a href="sec51.html#cb16-40" tabindex="-1"></a>    logPost_Mom_star <span class="ot">&lt;-</span> mvtnorm<span class="sc">::</span><span class="fu">dmvnorm</span>(<span class="fu">t</span>(theta), <span class="fu">rep</span>(<span class="dv">0</span>, K), SIGMA, <span class="at">log =</span> <span class="cn">TRUE</span>) <span class="sc">+</span>  mvtnorm<span class="sc">::</span><span class="fu">dmvnorm</span>(<span class="fu">t</span>(mom), <span class="fu">rep</span>(<span class="dv">0</span>, K), M, <span class="at">log =</span> <span class="cn">TRUE</span>)  </span>
+<span id="cb16-41"><a href="sec51.html#cb16-41" tabindex="-1"></a>    alpha <span class="ot">&lt;-</span> <span class="fu">min</span>(<span class="dv">1</span>, <span class="fu">exp</span>(logPost_Mom_star<span class="sc">-</span>logPost_Mom_t))</span>
+<span id="cb16-42"><a href="sec51.html#cb16-42" tabindex="-1"></a>    u <span class="ot">&lt;-</span> <span class="fu">runif</span>(<span class="dv">1</span>)</span>
+<span id="cb16-43"><a href="sec51.html#cb16-43" tabindex="-1"></a>    <span class="cf">if</span>(u <span class="sc">&lt;=</span> alpha){</span>
+<span id="cb16-44"><a href="sec51.html#cb16-44" tabindex="-1"></a>        thetaNew <span class="ot">&lt;-</span> <span class="fu">c</span>(theta)</span>
+<span id="cb16-45"><a href="sec51.html#cb16-45" tabindex="-1"></a>    }<span class="cf">else</span>{</span>
+<span id="cb16-46"><a href="sec51.html#cb16-46" tabindex="-1"></a>        thetaNew <span class="ot">&lt;-</span> thetat</span>
+<span id="cb16-47"><a href="sec51.html#cb16-47" tabindex="-1"></a>    }</span>
+<span id="cb16-48"><a href="sec51.html#cb16-48" tabindex="-1"></a>    rest <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">theta =</span> thetaNew, <span class="at">Prob =</span> alpha)</span>
+<span id="cb16-49"><a href="sec51.html#cb16-49" tabindex="-1"></a>    <span class="fu">return</span>(rest)</span>
+<span id="cb16-50"><a href="sec51.html#cb16-50" tabindex="-1"></a>}</span>
+<span id="cb16-51"><a href="sec51.html#cb16-51" tabindex="-1"></a><span class="co"># Hyperparameters</span></span>
+<span id="cb16-52"><a href="sec51.html#cb16-52" tabindex="-1"></a>rho <span class="ot">&lt;-</span> <span class="fl">0.98</span>; sig2 <span class="ot">&lt;-</span> <span class="fl">0.18</span><span class="sc">^</span><span class="dv">2</span></span>
+<span id="cb16-53"><a href="sec51.html#cb16-53" tabindex="-1"></a><span class="co"># Posterior draws Gibbs and M-H</span></span>
+<span id="cb16-54"><a href="sec51.html#cb16-54" tabindex="-1"></a>S <span class="ot">&lt;-</span> <span class="dv">8000</span>; thin <span class="ot">&lt;-</span> <span class="dv">20</span>; K <span class="ot">&lt;-</span> <span class="dv">2</span></span>
+<span id="cb16-55"><a href="sec51.html#cb16-55" tabindex="-1"></a>thetaPostGibbs <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="cn">NA</span>, S, K)</span>
+<span id="cb16-56"><a href="sec51.html#cb16-56" tabindex="-1"></a>thetaPostMH <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="cn">NA</span>, S, K)</span>
+<span id="cb16-57"><a href="sec51.html#cb16-57" tabindex="-1"></a>AcceptMH <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="cn">NA</span>, S)</span>
+<span id="cb16-58"><a href="sec51.html#cb16-58" tabindex="-1"></a>thetaGibbs <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">2</span>, <span class="dv">3</span>); thetaMH <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">2</span>, <span class="dv">3</span>)</span>
+<span id="cb16-59"><a href="sec51.html#cb16-59" tabindex="-1"></a><span class="cf">for</span>(s <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>S){</span>
+<span id="cb16-60"><a href="sec51.html#cb16-60" tabindex="-1"></a>    theta1 <span class="ot">&lt;-</span> <span class="fu">Gibbs</span>(thetaGibbs[<span class="dv">2</span>], rho)</span>
+<span id="cb16-61"><a href="sec51.html#cb16-61" tabindex="-1"></a>    theta2 <span class="ot">&lt;-</span> <span class="fu">Gibbs</span>(theta1, rho)</span>
+<span id="cb16-62"><a href="sec51.html#cb16-62" tabindex="-1"></a>    thetaGibbs <span class="ot">&lt;-</span> <span class="fu">c</span>(theta1, theta2)</span>
+<span id="cb16-63"><a href="sec51.html#cb16-63" tabindex="-1"></a>    ResMH <span class="ot">&lt;-</span> <span class="fu">MH</span>(thetaMH, rho, sig2)</span>
+<span id="cb16-64"><a href="sec51.html#cb16-64" tabindex="-1"></a>    thetaMH <span class="ot">&lt;-</span> ResMH<span class="sc">$</span>theta</span>
+<span id="cb16-65"><a href="sec51.html#cb16-65" tabindex="-1"></a>    thetaPostGibbs[s,] <span class="ot">&lt;-</span> thetaGibbs</span>
+<span id="cb16-66"><a href="sec51.html#cb16-66" tabindex="-1"></a>    thetaPostMH[s,] <span class="ot">&lt;-</span> thetaMH</span>
+<span id="cb16-67"><a href="sec51.html#cb16-67" tabindex="-1"></a>    AcceptMH[s] <span class="ot">&lt;-</span> ResMH<span class="sc">$</span>accept</span>
+<span id="cb16-68"><a href="sec51.html#cb16-68" tabindex="-1"></a>}</span>
+<span id="cb16-69"><a href="sec51.html#cb16-69" tabindex="-1"></a>keep <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">0</span>, S, thin)</span>
+<span id="cb16-70"><a href="sec51.html#cb16-70" tabindex="-1"></a><span class="fu">mean</span>(AcceptMH[keep[<span class="sc">-</span><span class="dv">1</span>]])</span></code></pre></div>
+<pre><code>## [1] 0.165</code></pre>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="sec51.html#cb18-1" tabindex="-1"></a>thetaPostGibbsMCMC <span class="ot">&lt;-</span> coda<span class="sc">::</span><span class="fu">mcmc</span>(thetaPostGibbs[keep[<span class="sc">-</span><span class="dv">1</span>],])</span>
+<span id="cb18-2"><a href="sec51.html#cb18-2" tabindex="-1"></a><span class="fu">summary</span>(thetaPostGibbsMCMC)</span></code></pre></div>
+<pre><code>## 
+## Iterations = 1:400
+## Thinning interval = 1 
+## Number of chains = 1 
+## Sample size per chain = 400 
+## 
+## 1. Empirical mean and standard deviation for each variable,
+##    plus standard error of the mean:
+## 
+##         Mean     SD Naive SE Time-series SE
+## [1,] 0.09561 0.9230  0.04615        0.06976
+## [2,] 0.09338 0.9258  0.04629        0.07029
+## 
+## 2. Quantiles for each variable:
+## 
+##        2.5%     25%     50%    75% 97.5%
+## var1 -1.748 -0.4606 0.07596 0.6520 1.937
+## var2 -1.652 -0.5319 0.10553 0.6702 1.881</code></pre>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="sec51.html#cb20-1" tabindex="-1"></a>coda<span class="sc">::</span><span class="fu">autocorr.plot</span>(thetaPostGibbsMCMC)</span></code></pre></div>
+<p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-3-1.svg" width="672" /></p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="sec51.html#cb21-1" tabindex="-1"></a>thetaPostMHMCMC <span class="ot">&lt;-</span> coda<span class="sc">::</span><span class="fu">mcmc</span>(thetaPostMH[keep[<span class="sc">-</span><span class="dv">1</span>],])</span>
+<span id="cb21-2"><a href="sec51.html#cb21-2" tabindex="-1"></a><span class="fu">plot</span>(thetaPostMHMCMC)</span></code></pre></div>
+<p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-3-2.svg" width="672" /></p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="sec51.html#cb22-1" tabindex="-1"></a>coda<span class="sc">::</span><span class="fu">autocorr.plot</span>(thetaPostMHMCMC)</span></code></pre></div>
+<p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-3-3.svg" width="672" /></p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="sec51.html#cb23-1" tabindex="-1"></a><span class="co"># Posterior draws HMC</span></span>
+<span id="cb23-2"><a href="sec51.html#cb23-2" tabindex="-1"></a>S <span class="ot">&lt;-</span> <span class="dv">400</span>;epsilon <span class="ot">&lt;-</span> <span class="fl">0.05</span>;  L <span class="ot">&lt;-</span> <span class="fu">ceiling</span>(<span class="dv">1</span><span class="sc">/</span>epsilon); M <span class="ot">&lt;-</span> <span class="fu">diag</span>(<span class="dv">2</span>)</span>
+<span id="cb23-3"><a href="sec51.html#cb23-3" tabindex="-1"></a>thetaPostHMC <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="cn">NA</span>, S, K)</span>
+<span id="cb23-4"><a href="sec51.html#cb23-4" tabindex="-1"></a>ProbAcceptHMC  <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="cn">NA</span>, S)</span>
+<span id="cb23-5"><a href="sec51.html#cb23-5" tabindex="-1"></a>thetaHMC <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">2</span>, <span class="dv">3</span>)</span>
+<span id="cb23-6"><a href="sec51.html#cb23-6" tabindex="-1"></a><span class="cf">for</span>(s <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>S){</span>
+<span id="cb23-7"><a href="sec51.html#cb23-7" tabindex="-1"></a>    ResHMC <span class="ot">&lt;-</span> <span class="fu">HMC</span>(<span class="at">theta =</span> thetaHMC, rho, epsilon, M)</span>
+<span id="cb23-8"><a href="sec51.html#cb23-8" tabindex="-1"></a>    thetaHMC <span class="ot">&lt;-</span> ResHMC<span class="sc">$</span>theta</span>
+<span id="cb23-9"><a href="sec51.html#cb23-9" tabindex="-1"></a>    thetaPostHMC[s,] <span class="ot">&lt;-</span> thetaHMC</span>
+<span id="cb23-10"><a href="sec51.html#cb23-10" tabindex="-1"></a>    ProbAcceptHMC[s] <span class="ot">&lt;-</span> ResHMC<span class="sc">$</span>Prob</span>
+<span id="cb23-11"><a href="sec51.html#cb23-11" tabindex="-1"></a>}</span>
+<span id="cb23-12"><a href="sec51.html#cb23-12" tabindex="-1"></a>thetaPostHMCMCMC <span class="ot">&lt;-</span> coda<span class="sc">::</span><span class="fu">mcmc</span>(thetaPostHMC)</span>
+<span id="cb23-13"><a href="sec51.html#cb23-13" tabindex="-1"></a><span class="fu">plot</span>(thetaPostHMCMCMC); coda<span class="sc">::</span><span class="fu">autocorr.plot</span>(thetaPostHMCMCMC)</span></code></pre></div>
+<p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-3-4.svg" width="672" /><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-3-5.svg" width="672" /></p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="sec51.html#cb24-1" tabindex="-1"></a><span class="fu">summary</span>(ProbAcceptHMC)</span></code></pre></div>
+<pre><code>##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+##  0.2422  0.8005  0.9705  0.8747  1.0000  1.0000</code></pre>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="sec51.html#cb26-1" tabindex="-1"></a><span class="co">#Figure</span></span>
+<span id="cb26-2"><a href="sec51.html#cb26-2" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">cbind</span>(<span class="dv">1</span><span class="sc">:</span>S, thetaPostHMC[,<span class="dv">1</span>], thetaPostMH[keep[<span class="sc">-</span><span class="dv">1</span>],<span class="dv">1</span>], thetaPostGibbs[keep[<span class="sc">-</span><span class="dv">1</span>],<span class="dv">1</span>]))</span>
+<span id="cb26-3"><a href="sec51.html#cb26-3" tabindex="-1"></a><span class="fu">colnames</span>(df) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;Iter&quot;</span>, <span class="st">&quot;HMC&quot;</span>, <span class="st">&quot;MH&quot;</span>, <span class="st">&quot;Gibbs&quot;</span>)</span>
+<span id="cb26-4"><a href="sec51.html#cb26-4" tabindex="-1"></a><span class="fu">library</span>(latex2exp); <span class="fu">library</span>(ggpubr)</span></code></pre></div>
+<pre><code>## Loading required package: ggplot2</code></pre>
+<pre><code>## Warning: package &#39;ggplot2&#39; was built under R version 4.3.3</code></pre>
+<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="sec51.html#cb29-1" tabindex="-1"></a>g1 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(df, <span class="fu">aes</span>(<span class="at">x=</span> Iter)) <span class="sc">+</span> <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">y=</span>HMC), <span class="at">colour=</span><span class="st">&quot;black&quot;</span>) <span class="sc">+</span> <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;Iteration&quot;</span>, <span class="at">y =</span> <span class="fu">TeX</span>(<span class="st">&quot;$</span><span class="sc">\\</span><span class="st">theta_{1}$&quot;</span>), <span class="at">title =</span> <span class="st">&quot;HMC algorithm&quot;</span>)</span>
+<span id="cb29-2"><a href="sec51.html#cb29-2" tabindex="-1"></a>g2 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(df, <span class="fu">aes</span>(<span class="at">x=</span> Iter)) <span class="sc">+</span> <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">y=</span>MH), <span class="at">colour=</span><span class="st">&quot;black&quot;</span>) <span class="sc">+</span> <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;Iteration&quot;</span>, <span class="at">y =</span> <span class="fu">TeX</span>(<span class="st">&quot;$</span><span class="sc">\\</span><span class="st">theta_{1}$&quot;</span>), <span class="at">title =</span> <span class="st">&quot;M-H algorithm&quot;</span>)</span>
+<span id="cb29-3"><a href="sec51.html#cb29-3" tabindex="-1"></a>g3 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(df, <span class="fu">aes</span>(<span class="at">x=</span> Iter)) <span class="sc">+</span> <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">y=</span>Gibbs), <span class="at">colour=</span><span class="st">&quot;black&quot;</span>) <span class="sc">+</span> <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;Iteration&quot;</span>, <span class="at">y =</span> <span class="fu">TeX</span>(<span class="st">&quot;$</span><span class="sc">\\</span><span class="st">theta_{1}$&quot;</span>), <span class="at">title =</span> <span class="st">&quot;Gibbs sampling&quot;</span>)</span>
+<span id="cb29-4"><a href="sec51.html#cb29-4" tabindex="-1"></a><span class="fu">ggarrange</span>(g3, g2, g1, <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">&quot;A&quot;</span>, <span class="st">&quot;B&quot;</span>, <span class="st">&quot;C&quot;</span>), <span class="at">ncol =</span> <span class="dv">3</span>, <span class="at">nrow =</span> <span class="dv">1</span>)</span></code></pre></div>
+<p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-3-6.svg" width="672" /></p>
+<p>The figure shows the posterior draws of <span class="math inline">\(\theta_1\)</span> using the Gibbs sampler (Panel A, left), the Metropolis-Hastings algorithm (Panel B, middle), and the Hamiltonian Monte Carlo (Panel C, right). The convergence diagnostic plots (no shown) suggests that the three algorithms perform a good job. Although, the acceptance rate in HMC is higher than the M-H due to the HMC producing larger changes in <span class="math inline">\(\boldsymbol{\theta}\)</span> than a corresponding number of random-walk M-H iterations <span class="citation">(<a href="#ref-neal2011mcmc">Neal 2011</a>)</span>.</p>
+</div>
+</div>
+<h3>References<a href="references.html#references" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-carlin1992hierarchical" class="csl-entry">
+Carlin, Bradley P, Alan E Gelfand, and Adrian FM Smith. 1992. <span>“Hierarchical Bayesian Analysis of Changepoint Problems.”</span> <em>Journal of the Royal Statistical Society: Series C (Applied Statistics)</em> 41 (2): 389–405.
+</div>
+<div id="ref-chib1995understanding" class="csl-entry">
+Chib, Siddhartha, and Edward Greenberg. 1995. <span>“Understanding the Metropolis-Hastings Algorithm.”</span> <em>The American Statistician</em> 49 (4): 327–35.
+</div>
+<div id="ref-duane1987hybrid" class="csl-entry">
+Duane, Simon, Anthony D Kennedy, Brian J Pendleton, and Duncan Roweth. 1987. <span>“Hybrid Monte Carlo.”</span> <em>Physics Letters B</em> 195 (2): 216–22.
+</div>
+<div id="ref-Gelfand1990" class="csl-entry">
+Gelfand, A. E., and A. F. M. Smith. 1990. <span>“Sampling-Based Approaches to Calculating Marginal Densities.”</span> <em>Journal of the American Statistical Association</em> 85: 398–409.
+</div>
+<div id="ref-gelman2021bayesian" class="csl-entry">
+Gelman, Andrew, John B Carlin, Hal S Stern, David Dunson, Aki Vehtari, and Donald B Rubin. 2021. <em>Bayesian Data Analysis</em>. Chapman; Hall/CRC.
+</div>
+<div id="ref-Gelman1992" class="csl-entry">
+Gelman, Andrew, and Donald B. Rubin. 1992. <span>“Inference from Iterative Simulation Using Multiple Sequences.”</span> <em>Statistical Science</em> 7 (4): 457–72. <a href="https://doi.org/10.1214/ss/1177011136">https://doi.org/10.1214/ss/1177011136</a>.
+</div>
+<div id="ref-Geman1984" class="csl-entry">
+Geman, S, and D. Geman. 1984. <span>“Stochastic Relaxation, <span>G</span>ibbs Distributions and the <span>B</span>ayesian Restoration of Images.”</span> <em>IEEE Transactions on Pattern Analysis and Machine Intelligence</em> 6: 721–41.
+</div>
+<div id="ref-greenberg2012introduction" class="csl-entry">
+Greenberg, Edward. 2012. <em>Introduction to Bayesian Econometrics</em>. Cambridge University Press.
+</div>
+<div id="ref-hastings70" class="csl-entry">
+Hastings, W. 1970. <span>“Monte <span>C</span>arlo Sampling Methods Using <span>M</span>arkov Chains and Their Application.”</span> <em>Biometrika</em> 57: 97–109.
+</div>
+<div id="ref-metropolis53" class="csl-entry">
+Metropolis, N., A. Rosenbluth, M. Rosenbluth, A. Teller, and E. Teller. 1953. <span>“Equations of State Calculations by Fast Computing Machines.”</span> <em>J. Chem. Phys</em> 21: 1087–92.
+</div>
+<div id="ref-neal1996bayesian" class="csl-entry">
+Neal, Radford M. 1996. <em>Bayesian Learning for Neural Networks</em>. Vol. 118. Lecture Notes in Statistics. Springer. <a href="https://doi.org/10.1007/978-1-4612-0745-0">https://doi.org/10.1007/978-1-4612-0745-0</a>.
+</div>
+<div id="ref-neal2011mcmc" class="csl-entry">
+———. 2011. <span>“MCMC Using Hamiltonian Dynamics.”</span> In <em>Handbook of Markov Chain Monte Carlo</em>, edited by Steve Brooks, Andrew Gelman, Galin Jones, and Xiao-Li Meng, 113–62. Chapman; Hall/CRC.
+</div>
+<div id="ref-robert2011monte" class="csl-entry">
+Robert, Christian P., and George Casella. 2011. <em>Monte Carlo Statistical Methods</em>. 2nd ed. New York: Springer.
+</div>
+<div id="ref-Roberts1997" class="csl-entry">
+Roberts, G. O., A. Gelman, and W. R. Gilks. 1997. <span>“Weak Convergence and Optimal Scaling of Random Walk <span>M</span>etropolis Algorithms.”</span> <em>The Annals of Applied Probability</em> 7 (1): 110–20.
+</div>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="Chap4.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="sec52.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"github": true,
+"facebook": true,
+"twitter": true,
+"linkedin": false,
+"weibo": false,
+"instapaper": false,
+"vk": false,
+"whatsapp": false,
+"all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
+},
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": {
+"link": "https://github.com/aramir21/IntroductionBayesianEconometricsBook/05-Simulation.Rmd",
+"text": "Edit"
+},
+"history": {
+"link": null,
+"text": null
+},
+"view": {
+"link": null,
+"text": null
+},
+"download": null,
+"search": {
+"engine": "fuse",
+"options": null
+},
+"toc": {
+"collapse": "subsection"
+}
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/latest.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>
