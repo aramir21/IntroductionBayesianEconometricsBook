@@ -4,4 +4,3 @@ bookdown::publish_book(
   server = NULL,
   render = c("none", "local", "server")
 )
-
