@@ -1,0 +1,3320 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>7.3 Instrumental variable | Introduction to Bayesian Data Modeling</title>
+  <meta name="description" content="The subject of this textbook is Bayesian data modeling, with the primary aim of providing an introduction to its theoretical foundations and facilitating the application of Bayesian inference using a GUI." />
+  <meta name="generator" content="bookdown 0.40 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="7.3 Instrumental variable | Introduction to Bayesian Data Modeling" />
+  <meta property="og:type" content="book" />
+  
+  <meta property="og:description" content="The subject of this textbook is Bayesian data modeling, with the primary aim of providing an introduction to its theoretical foundations and facilitating the application of Bayesian inference using a GUI." />
+  <meta name="github-repo" content="https://github.com/aramir21/IntroductionBayesianEconometricsBook" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="7.3 Instrumental variable | Introduction to Bayesian Data Modeling" />
+  
+  <meta name="twitter:description" content="The subject of this textbook is Bayesian data modeling, with the primary aim of providing an introduction to its theoretical foundations and facilitating the application of Bayesian inference using a GUI." />
+  
+
+<meta name="author" content="Andrés Ramírez-Hassan" />
+
+
+<meta name="date" content="2025-02-18" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  
+<link rel="prev" href="sec72.html"/>
+<link rel="next" href="sec74.html"/>
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+<link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
+<link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
+<script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+<script src="libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="libs/lightable-0.0.1/lightable.css" rel="stylesheet" />
+
+
+<style type="text/css">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { color: #008000; } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { color: #008000; font-weight: bold; } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<style type="text/css">
+  
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+</style>
+<style type="text/css">
+/* Used with Pandoc 2.11+ new --citeproc when CSL is used */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}
+</style>
+
+<link rel="stylesheet" href="css/style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><a href="./">Introduction to Bayesian Econometrics: A GUIded tour using R</a></li>
+
+<li class="divider"></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Introduction</a></li>
+<li class="chapter" data-level="" data-path="preface.html"><a href="preface.html"><i class="fa fa-check"></i>Preface</a>
+<ul>
+<li class="chapter" data-level="" data-path="to-instructors-and-students.html"><a href="to-instructors-and-students.html"><i class="fa fa-check"></i>To instructors and students</a></li>
+<li class="chapter" data-level="" data-path="acknowledgments.html"><a href="acknowledgments.html"><i class="fa fa-check"></i>Acknowledgments</a></li>
+</ul></li>
+<li class="chapter" data-level="1" data-path="Chap1.html"><a href="Chap1.html"><i class="fa fa-check"></i><b>1</b> Basic formal concepts</a>
+<ul>
+<li class="chapter" data-level="1.1" data-path="sec11.html"><a href="sec11.html"><i class="fa fa-check"></i><b>1.1</b> The Bayes’ rule</a></li>
+<li class="chapter" data-level="1.2" data-path="sec12.html"><a href="sec12.html"><i class="fa fa-check"></i><b>1.2</b> Bayesian framework: A brief summary of theory</a></li>
+<li class="chapter" data-level="1.3" data-path="sec14.html"><a href="sec14.html"><i class="fa fa-check"></i><b>1.3</b> Bayesian reports: Decision theory under uncertainty</a></li>
+<li class="chapter" data-level="1.4" data-path="summary.html"><a href="summary.html"><i class="fa fa-check"></i><b>1.4</b> Summary</a></li>
+<li class="chapter" data-level="1.5" data-path="exercises.html"><a href="exercises.html"><i class="fa fa-check"></i><b>1.5</b> Exercises</a></li>
+</ul></li>
+<li class="chapter" data-level="2" data-path="Chap2.html"><a href="Chap2.html"><i class="fa fa-check"></i><b>2</b> Conceptual differences between the Bayesian and Frequentist approaches</a>
+<ul>
+<li class="chapter" data-level="2.1" data-path="sec21.html"><a href="sec21.html"><i class="fa fa-check"></i><b>2.1</b> The concept of probability</a></li>
+<li class="chapter" data-level="2.2" data-path="sec22.html"><a href="sec22.html"><i class="fa fa-check"></i><b>2.2</b> Subjectivity is not the key</a></li>
+<li class="chapter" data-level="2.3" data-path="sec23.html"><a href="sec23.html"><i class="fa fa-check"></i><b>2.3</b> Estimation, hypothesis testing and prediction</a></li>
+<li class="chapter" data-level="2.4" data-path="sec24.html"><a href="sec24.html"><i class="fa fa-check"></i><b>2.4</b> The likelihood principle</a></li>
+<li class="chapter" data-level="2.5" data-path="sec25.html"><a href="sec25.html"><i class="fa fa-check"></i><b>2.5</b> Why is not the Bayesian approach that popular?</a></li>
+<li class="chapter" data-level="2.6" data-path="sec26.html"><a href="sec26.html"><i class="fa fa-check"></i><b>2.6</b> A simple working example</a></li>
+<li class="chapter" data-level="2.7" data-path="sec27.html"><a href="sec27.html"><i class="fa fa-check"></i><b>2.7</b> Summary</a></li>
+<li class="chapter" data-level="2.8" data-path="sec28.html"><a href="sec28.html"><i class="fa fa-check"></i><b>2.8</b> Exercises</a></li>
+</ul></li>
+<li class="chapter" data-level="3" data-path="Chap3.html"><a href="Chap3.html"><i class="fa fa-check"></i><b>3</b> Cornerstone models: Conjugate families</a>
+<ul>
+<li class="chapter" data-level="3.1" data-path="sec41.html"><a href="sec41.html"><i class="fa fa-check"></i><b>3.1</b> Motivation of conjugate families</a></li>
+<li class="chapter" data-level="3.2" data-path="sec42.html"><a href="sec42.html"><i class="fa fa-check"></i><b>3.2</b> Conjugate prior to exponential family</a></li>
+<li class="chapter" data-level="3.3" data-path="sec43.html"><a href="sec43.html"><i class="fa fa-check"></i><b>3.3</b> Linear regression: The conjugate normal-normal/inverse gamma model</a></li>
+<li class="chapter" data-level="3.4" data-path="sec44.html"><a href="sec44.html"><i class="fa fa-check"></i><b>3.4</b> Multivariate linear regression: The conjugate normal-normal/inverse Wishart model</a></li>
+<li class="chapter" data-level="3.5" data-path="computational-examples.html"><a href="computational-examples.html"><i class="fa fa-check"></i><b>3.5</b> Computational examples</a></li>
+<li class="chapter" data-level="3.6" data-path="summary-chapter-4.html"><a href="summary-chapter-4.html"><i class="fa fa-check"></i><b>3.6</b> Summary: Chapter 4</a></li>
+<li class="chapter" data-level="3.7" data-path="exercises-chapter-4.html"><a href="exercises-chapter-4.html"><i class="fa fa-check"></i><b>3.7</b> Exercises: Chapter 4</a></li>
+</ul></li>
+<li class="chapter" data-level="4" data-path="Chap4.html"><a href="Chap4.html"><i class="fa fa-check"></i><b>4</b> Simulation methods</a>
+<ul>
+<li class="chapter" data-level="4.1" data-path="sec51.html"><a href="sec51.html"><i class="fa fa-check"></i><b>4.1</b> Markov Chain Monte Carlo methods</a>
+<ul>
+<li class="chapter" data-level="4.1.1" data-path="sec51.html"><a href="sec51.html#sec511"><i class="fa fa-check"></i><b>4.1.1</b> Gibbs sampler</a></li>
+<li class="chapter" data-level="4.1.2" data-path="sec51.html"><a href="sec51.html#sec512"><i class="fa fa-check"></i><b>4.1.2</b> Metropolis-Hastings</a></li>
+<li class="chapter" data-level="4.1.3" data-path="sec51.html"><a href="sec51.html#sec513"><i class="fa fa-check"></i><b>4.1.3</b> Hamiltonian Monte Carlo</a></li>
+</ul></li>
+<li class="chapter" data-level="4.2" data-path="sec52.html"><a href="sec52.html"><i class="fa fa-check"></i><b>4.2</b> Importance sampling</a></li>
+<li class="chapter" data-level="4.3" data-path="sec53.html"><a href="sec53.html"><i class="fa fa-check"></i><b>4.3</b> Particle filtering</a></li>
+<li class="chapter" data-level="4.4" data-path="sec54.html"><a href="sec54.html"><i class="fa fa-check"></i><b>4.4</b> Convergence diagnostics</a>
+<ul>
+<li class="chapter" data-level="4.4.1" data-path="sec54.html"><a href="sec54.html#numerical-standard-error"><i class="fa fa-check"></i><b>4.4.1</b> Numerical standard error</a></li>
+<li class="chapter" data-level="4.4.2" data-path="sec54.html"><a href="sec54.html#effective-number-of-simulation-draws"><i class="fa fa-check"></i><b>4.4.2</b> Effective number of simulation draws</a></li>
+<li class="chapter" data-level="4.4.3" data-path="sec54.html"><a href="sec54.html#tests-of-convergence"><i class="fa fa-check"></i><b>4.4.3</b> Tests of convergence</a></li>
+<li class="chapter" data-level="4.4.4" data-path="sec54.html"><a href="sec54.html#checking-for-errors-in-the-posterior-simulator"><i class="fa fa-check"></i><b>4.4.4</b> Checking for errors in the posterior simulator</a></li>
+</ul></li>
+<li class="chapter" data-level="4.5" data-path="sec55.html"><a href="sec55.html"><i class="fa fa-check"></i><b>4.5</b> Summary</a></li>
+<li class="chapter" data-level="4.6" data-path="sec56.html"><a href="sec56.html"><i class="fa fa-check"></i><b>4.6</b> Exercises</a></li>
+</ul></li>
+<li class="chapter" data-level="5" data-path="Chap5.html"><a href="Chap5.html"><i class="fa fa-check"></i><b>5</b> Graphical user interface</a></li>
+<li class="chapter" data-level="6" data-path="Chap6.html"><a href="Chap6.html"><i class="fa fa-check"></i><b>6</b> Univariate regression</a>
+<ul>
+<li class="chapter" data-level="6.1" data-path="sec61.html"><a href="sec61.html"><i class="fa fa-check"></i><b>6.1</b> The Gaussian linear model</a></li>
+<li class="chapter" data-level="6.2" data-path="sec62.html"><a href="sec62.html"><i class="fa fa-check"></i><b>6.2</b> The logit model</a></li>
+<li class="chapter" data-level="6.3" data-path="sec63.html"><a href="sec63.html"><i class="fa fa-check"></i><b>6.3</b> The probit model</a></li>
+<li class="chapter" data-level="6.4" data-path="sec64.html"><a href="sec64.html"><i class="fa fa-check"></i><b>6.4</b> The multinomial probit model</a></li>
+<li class="chapter" data-level="6.5" data-path="sec65.html"><a href="sec65.html"><i class="fa fa-check"></i><b>6.5</b> The multinomial logit model</a></li>
+<li class="chapter" data-level="6.6" data-path="sec66.html"><a href="sec66.html"><i class="fa fa-check"></i><b>6.6</b> Ordered probit model</a></li>
+<li class="chapter" data-level="6.7" data-path="negative-binomial-model.html"><a href="negative-binomial-model.html"><i class="fa fa-check"></i><b>6.7</b> Negative binomial model</a></li>
+<li class="chapter" data-level="6.8" data-path="sec68.html"><a href="sec68.html"><i class="fa fa-check"></i><b>6.8</b> Tobit model</a></li>
+<li class="chapter" data-level="6.9" data-path="sec69.html"><a href="sec69.html"><i class="fa fa-check"></i><b>6.9</b> Quantile regression</a></li>
+<li class="chapter" data-level="6.10" data-path="sec610.html"><a href="sec610.html"><i class="fa fa-check"></i><b>6.10</b> Bayesian bootstrap regression</a></li>
+<li class="chapter" data-level="6.11" data-path="sec611.html"><a href="sec611.html"><i class="fa fa-check"></i><b>6.11</b> Summary</a></li>
+<li class="chapter" data-level="6.12" data-path="sec612.html"><a href="sec612.html"><i class="fa fa-check"></i><b>6.12</b> Exercises</a></li>
+</ul></li>
+<li class="chapter" data-level="7" data-path="Chap7.html"><a href="Chap7.html"><i class="fa fa-check"></i><b>7</b> Multivariate regression</a>
+<ul>
+<li class="chapter" data-level="7.1" data-path="sec71.html"><a href="sec71.html"><i class="fa fa-check"></i><b>7.1</b> Multivariate regression</a></li>
+<li class="chapter" data-level="7.2" data-path="sec72.html"><a href="sec72.html"><i class="fa fa-check"></i><b>7.2</b> Seemingly Unrelated Regression</a></li>
+<li class="chapter" data-level="7.3" data-path="sec73.html"><a href="sec73.html"><i class="fa fa-check"></i><b>7.3</b> Instrumental variable</a></li>
+<li class="chapter" data-level="7.4" data-path="sec74.html"><a href="sec74.html"><i class="fa fa-check"></i><b>7.4</b> Multivariate probit model</a></li>
+<li class="chapter" data-level="7.5" data-path="sec75.html"><a href="sec75.html"><i class="fa fa-check"></i><b>7.5</b> Summary</a></li>
+<li class="chapter" data-level="7.6" data-path="sec76.html"><a href="sec76.html"><i class="fa fa-check"></i><b>7.6</b> Exercises</a></li>
+</ul></li>
+<li class="chapter" data-level="8" data-path="Chap8.html"><a href="Chap8.html"><i class="fa fa-check"></i><b>8</b> Time series</a></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a></li>
+<li class="divider"></li>
+<li><a href="https://bookdown.org" target="blank">Published with bookdown</a></li>
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Introduction to Bayesian Data Modeling</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="sec73" class="section level2 hasAnchor" number="7.3">
+<h2><span class="header-section-number">7.3</span> Instrumental variable<a href="sec73.html#sec73" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>This inferential approach is used when there are <em>endogeneity</em> issues, that is, when the stochastic error is not independent of the regressors. This, in turn, generates <em>bias</em> in posterior mean estimates when we use an inferential approach that does not account for this issue. <em>Endogeneity</em> can be caused by <em>reverse causality</em>, <em>omitting relevant correlated variables</em>, or <em>measurement error</em> in the regressors.<a href="#fn38" class="footnote-ref" id="fnref38"><sup>38</sup></a></p>
+<p>Let’s specify the dependent variable as a linear function of one endogenous regressor and some exogenous regressors. That is,</p>
+<p><span class="math display">\[
+y_{i} = \boldsymbol{x}_{ei}^{\top} \boldsymbol{\beta}_1 + \beta_s x_{si} + \mu_{i}
+\]</span></p>
+<p>where</p>
+<p><span class="math display">\[
+x_{si} = \boldsymbol{x}_{ei}^{\top} \boldsymbol{\gamma}_1 + \boldsymbol{z}_i^{\top} \boldsymbol{\gamma}_2 + v_{i},
+\]</span></p>
+<p><span class="math inline">\(x_s\)</span> is the variable that generates the endogeneity issues (<span class="math inline">\(\mathbb{E}[\mu \mid x_{s}] \neq 0\)</span>), <span class="math inline">\(\boldsymbol{x}_e\)</span> are <span class="math inline">\(K_1\)</span> exogenous regressors (<span class="math inline">\(\mathbb{E}[\mu \mid \boldsymbol{x}_{e}] = \boldsymbol{0}\)</span>), and <span class="math inline">\(\boldsymbol{z}\)</span> are <span class="math inline">\(K_2\)</span> instruments. The instruments are regressors that drive <span class="math inline">\(x_s\)</span> (<span class="math inline">\(\mathbb{E}[x_{s} \boldsymbol{z}] \neq \boldsymbol{0}\)</span>), but do not have a direct effect on <span class="math inline">\(y\)</span> (<span class="math inline">\(\mathbb{E}[y \boldsymbol{z} \mid x_s] = \boldsymbol{0}\)</span>). The equation for <span class="math inline">\(y\)</span> is called the <em>structural equation</em>, and it is the equation that the researcher is ultimately interested in.</p>
+<p>Assuming</p>
+<p><span class="math display">\[
+(u_{i},v_i)^{\top} \stackrel{i.i.d.}{\thicksim} N(0,\boldsymbol{\Sigma}),
+\]</span></p>
+<p>where <span class="math inline">\(\boldsymbol{\Sigma}=[\sigma_{lm}]\)</span>, <span class="math inline">\(l,m=1,2\)</span>, the likelihood function is</p>
+<p><span class="math display">\[
+p(\boldsymbol{\beta},\boldsymbol{\gamma},\boldsymbol{\Sigma} \mid \boldsymbol{y},\boldsymbol{X},\boldsymbol{Z}) = \frac{1}{(2\pi)^\frac{N}{2}|\boldsymbol{\Sigma}|^\frac{N}{2}} \exp\left\{-\frac{1}{2} \sum_{i=1}^N (y_i-\boldsymbol{x}_i^{\top} \boldsymbol{\beta}, x_{si} -\boldsymbol{w}_i^{\top} \boldsymbol{\gamma}) \boldsymbol{\Sigma}^{-1}
+\begin{pmatrix}
+y_i - \boldsymbol{x}_i^{\top} \boldsymbol{\beta} \\
+x_{si} - \boldsymbol{w}_i^{\top} \boldsymbol{\gamma}
+\end{pmatrix}
+\right\},
+\]</span></p>
+<p>where</p>
+<p><span class="math display">\[
+\boldsymbol{\beta}=\begin{bmatrix} \boldsymbol{\beta}_1^{\top} &amp; \beta_s \end{bmatrix}^{\top}, \quad
+\boldsymbol{\gamma}=\begin{bmatrix} \boldsymbol{\gamma}_1^{\top} &amp; \boldsymbol{\gamma}_2^{\top} \end{bmatrix}^{\top}, \quad
+\boldsymbol{x}_i=\begin{bmatrix} \boldsymbol{x}_{ei}^{\top} &amp; x_{si} \end{bmatrix}^{\top}, \quad
+\boldsymbol{w}_i=\begin{bmatrix} \boldsymbol{x}_{ei}^{\top} &amp; \boldsymbol{z}_{i}^{\top} \end{bmatrix}^{\top}.
+\]</span></p>
+<p>We obtain the standard conditional posterior densities by specifying the following independent priors:</p>
+<p><span class="math display">\[
+\boldsymbol{\gamma} \sim N(\boldsymbol{\gamma}_0, \boldsymbol{G}_0), \quad
+\boldsymbol{\beta} \sim N(\boldsymbol{\beta}_0, \boldsymbol{B}_0), \quad
+\boldsymbol{\Sigma}^{-1} \sim W(\alpha_0, \boldsymbol{\Psi}_0).
+\]</span></p>
+<p>In particular, the conditional distributions are:</p>
+<p><span class="math display">\[
+\boldsymbol{\beta} \mid \boldsymbol{\gamma}, \boldsymbol{\Sigma}, \boldsymbol{y}, \boldsymbol{X}, \boldsymbol{Z} \sim N(\boldsymbol{\beta}_n, \boldsymbol{B}_n),
+\]</span></p>
+<p><span class="math display">\[
+\boldsymbol{\gamma} \mid \boldsymbol{\beta}, \boldsymbol{\Sigma}, \boldsymbol{y}, \boldsymbol{X}, \boldsymbol{Z} \sim N(\boldsymbol{\gamma}_n, \boldsymbol{G}_n),
+\]</span></p>
+<p><span class="math display">\[
+\boldsymbol{\Sigma}^{-1} \mid \boldsymbol{\beta}, \boldsymbol{\gamma}, \boldsymbol{y}, \boldsymbol{X}, \boldsymbol{Z} \sim W(\alpha_n, \boldsymbol{\Psi}_n),
+\]</span></p>
+<p>where</p>
+<p><span class="math display">\[
+\boldsymbol{\beta}_n = \boldsymbol{B}_n \left( \boldsymbol{B}_0^{-1} \boldsymbol{\beta}_0 + \omega_1^{-1} \sum_{i=1}^{N} \left[ \boldsymbol{x}_i \left( y_i - \frac{\sigma_{12}(x_{si} - \boldsymbol{w}_i^{\top} \boldsymbol{\gamma})}{\sigma_{22}} \right) \right] \right),
+\]</span></p>
+<p><span class="math display">\[
+\boldsymbol{B}_n = \left( \omega_1^{-1} \sum_{i=1}^{N} \boldsymbol{x}_i \boldsymbol{x}_i^{\top} + \boldsymbol{B}_0^{-1} \right)^{-1}, \quad
+\omega_1 = \sigma_{11} - \frac{\sigma_{12}^2}{\sigma_{22}},
+\]</span></p>
+<p><span class="math display">\[
+\boldsymbol{G}_n = \left( \omega_2^{-1} \sum_{i=1}^{N} \boldsymbol{w}_i \boldsymbol{w}_i^{\top} + \boldsymbol{G}_0^{-1} \right)^{-1}, \quad
+\boldsymbol{\gamma}_n = \boldsymbol{G}_n \left( \boldsymbol{G}_0^{-1} \boldsymbol{\gamma}_0 + \omega_2^{-1} \sum_{i=1}^{N} \left[ \boldsymbol{w}_i \left( x_{si} - \frac{\sigma_{12} (y_i - \boldsymbol{x}_i^{\top} \boldsymbol{\beta})}{\sigma_{11}} \right) \right] \right),
+\]</span></p>
+<p><span class="math display">\[
+\omega_2 = \sigma_{22} - \frac{\sigma_{12}^2}{\sigma_{11}}, \quad
+\boldsymbol{\Psi}_n = \left[ \boldsymbol{\Psi}_0^{-1} + \sum_{i=1}^N
+\begin{pmatrix} y_i - \boldsymbol{x}_i^{\top} \boldsymbol{\beta} \\ x_{si} - \boldsymbol{w}_i^{\top} \boldsymbol{\gamma} \end{pmatrix}  
+(y_i - \boldsymbol{x}_i^{\top} \boldsymbol{\beta}, x_{si} - \boldsymbol{w}_i^{\top} \boldsymbol{\gamma})
+\right]^{-1},
+\]</span></p>
+<p><span class="math display">\[
+\alpha_n = \alpha_0 + N, \quad \sigma_{lj} \text{ are the elements of } \boldsymbol{\Sigma}.
+\]</span></p>
+<p>We also use a Gibbs sampling algorithm in this model since we have standard conditional posterior distributions.</p>
+<p><strong>Example: Simulation exercise</strong></p>
+<p>Let’s simulate the simple process <span class="math inline">\(y_i=\beta_1+\beta_2x_{si}+\mu_i\)</span> and <span class="math inline">\(x_{si}=\gamma_1+\gamma_2z_i+v_i\)</span> where <span class="math inline">\([\mu_i \ v_i]^{\top} \sim N(\boldsymbol{0},\boldsymbol{\Sigma})\)</span>, <span class="math inline">\(\boldsymbol{\Sigma}=[\sigma_{lj}]\)</span> such that <span class="math inline">\(\sigma_{12} \neq 0\)</span>, <span class="math inline">\(i=1,2,\dots,100\)</span>.</p>
+<p>Observe that <span class="math inline">\(\mu\mid v\sim N\left(\frac{\sigma_{12}}{\sigma_{22}}v,\sigma_{11}-\frac{\sigma_{21}^2}{\sigma_{22}}\right)\)</span>, this implies that <span class="math inline">\(\mathbb{E}[\mu\mid x_s]=\mathbb{E}[\mu\mid v]=\frac{\sigma_{12}}{\sigma_{22}}v\neq 0\)</span> given <span class="math inline">\(\sigma_{12}\neq 0\)</span> and <span class="math inline">\(\mathbb{E}[\mu\mid z]=0\)</span>.
+Let’s set all location parameters equal to 1, and <span class="math inline">\(\sigma_{11}=\sigma_{22}=1\)</span>, <span class="math inline">\(\sigma_{12}=0.8\)</span>, and <span class="math inline">\(z\sim N(0,1)\)</span>.</p>
+<p>We know from the large sampling properties of the posterior mean that this converges to the maximum likelihood estimator (see Section <a href="sec11.html#sec11">1.1</a>, and <span class="citation">Lehmann and Casella (<a href="#ref-Lehmann2003">2003</a>)</span>, <span class="citation">Van der Vaart (<a href="#ref-van2000asymptotic">2000</a>)</span>), which in this setting is</p>
+<p><span class="math display">\[
+\hat{\beta}_2=\frac{\widehat{\text{Cov}}(x_s,y)}{\widehat{\text{Var}}(x_s)}
+\]</span></p>
+<p>which converges in probability to</p>
+<p><span class="math display">\[
+\beta_2+\frac{\sigma_{12}}{\sigma_{22}\text{Var}(x_s)}=\beta_2+\frac{\sigma_{12}}{\sigma_{22}(\gamma_2^2\text{Var}(z)+\sigma_{22})}=1.4,
+\]</span></p>
+<p>that is, the asymptotic bias when using the posterior mean of a linear regression without taking into account endogeneity is 0.4 in this example.</p>
+<p>We assess the sampling performance of the Bayesian estimators by simulating this setting 100 times. The following code demonstrates how to do this using a linear model that does not account for the <em>endogeneity</em> issue (see Section <a href="sec61.html#sec61">6.1</a>), as well as how to implement the instrumental variable model. In this setup, we use <span class="math inline">\(\boldsymbol{B}_0 = 1000 \mathbf{I}_2\)</span>, <span class="math inline">\(\boldsymbol{\beta}_0 = \mathbf{0}_2\)</span>, and the parameters of the inverse gamma distribution are set to 0.0005. For the instrumental variable model, we additionally set <span class="math inline">\(\boldsymbol{\gamma}_0 = \mathbf{0}_2\)</span>, <span class="math inline">\(\boldsymbol{G}_0 = 1000 \mathbf{I}_2\)</span>, <span class="math inline">\(\alpha_0 = 3\)</span>, and <span class="math inline">\(\boldsymbol{\Psi}_0 = 3 \mathbf{I}_2\)</span>.</p>
+<div class="sourceCode" id="cb242"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb242-1"><a href="sec73.html#cb242-1" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">010101</span>)</span>
+<span id="cb242-2"><a href="sec73.html#cb242-2" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="dv">100</span>; k <span class="ot">&lt;-</span> <span class="dv">2</span></span>
+<span id="cb242-3"><a href="sec73.html#cb242-3" tabindex="-1"></a>B <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">1</span>, k); G <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">1</span>, <span class="dv">2</span>); s12 <span class="ot">&lt;-</span> <span class="fl">0.8</span></span>
+<span id="cb242-4"><a href="sec73.html#cb242-4" tabindex="-1"></a>SIGMA <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">1</span>, s12, s12, <span class="dv">1</span>), <span class="dv">2</span>, <span class="dv">2</span>)</span>
+<span id="cb242-5"><a href="sec73.html#cb242-5" tabindex="-1"></a>z <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(N); Z <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="dv">1</span>, z); w <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">1</span>,N,<span class="dv">1</span>); S <span class="ot">&lt;-</span> <span class="dv">100</span></span>
+<span id="cb242-6"><a href="sec73.html#cb242-6" tabindex="-1"></a>U <span class="ot">&lt;-</span> <span class="fu">replicate</span>(S, MASS<span class="sc">::</span><span class="fu">mvrnorm</span>(<span class="at">n =</span> N, <span class="at">mu =</span> <span class="fu">rep</span>(<span class="dv">0</span>, <span class="dv">2</span>), SIGMA))</span>
+<span id="cb242-7"><a href="sec73.html#cb242-7" tabindex="-1"></a>x <span class="ot">&lt;-</span> G[<span class="dv">1</span>] <span class="sc">+</span> G[<span class="dv">2</span>]<span class="sc">*</span>z <span class="sc">+</span> U[,<span class="dv">2</span>,]; y <span class="ot">&lt;-</span> B[<span class="dv">1</span>] <span class="sc">+</span> B[<span class="dv">2</span>]<span class="sc">*</span>x <span class="sc">+</span> U[,<span class="dv">1</span>,]</span>
+<span id="cb242-8"><a href="sec73.html#cb242-8" tabindex="-1"></a><span class="co"># Hyperparameters</span></span>
+<span id="cb242-9"><a href="sec73.html#cb242-9" tabindex="-1"></a>d0 <span class="ot">&lt;-</span> <span class="fl">0.001</span><span class="sc">/</span><span class="dv">2</span>; a0 <span class="ot">&lt;-</span> <span class="fl">0.001</span><span class="sc">/</span><span class="dv">2</span></span>
+<span id="cb242-10"><a href="sec73.html#cb242-10" tabindex="-1"></a>b0 <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">0</span>, k); c0 <span class="ot">&lt;-</span> <span class="dv">1000</span>; B0 <span class="ot">&lt;-</span> c0<span class="sc">*</span><span class="fu">diag</span>(k)</span>
+<span id="cb242-11"><a href="sec73.html#cb242-11" tabindex="-1"></a>B0i <span class="ot">&lt;-</span> <span class="fu">solve</span>(B0); g0 <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">0</span>, <span class="dv">2</span>)</span>
+<span id="cb242-12"><a href="sec73.html#cb242-12" tabindex="-1"></a>G0 <span class="ot">&lt;-</span> <span class="dv">1000</span><span class="sc">*</span><span class="fu">diag</span>(<span class="dv">2</span>); G0i <span class="ot">&lt;-</span> <span class="fu">solve</span>(G0)</span>
+<span id="cb242-13"><a href="sec73.html#cb242-13" tabindex="-1"></a>nu <span class="ot">&lt;-</span> <span class="dv">3</span>; Psi0 <span class="ot">&lt;-</span> nu<span class="sc">*</span><span class="fu">diag</span>(<span class="dv">2</span>)</span>
+<span id="cb242-14"><a href="sec73.html#cb242-14" tabindex="-1"></a><span class="co"># MCMC parameters</span></span>
+<span id="cb242-15"><a href="sec73.html#cb242-15" tabindex="-1"></a>mcmc <span class="ot">&lt;-</span> <span class="dv">5000</span>; burnin <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
+<span id="cb242-16"><a href="sec73.html#cb242-16" tabindex="-1"></a>tot <span class="ot">&lt;-</span> mcmc <span class="sc">+</span> burnin; thin <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb242-17"><a href="sec73.html#cb242-17" tabindex="-1"></a><span class="co"># Gibbs sampling</span></span>
+<span id="cb242-18"><a href="sec73.html#cb242-18" tabindex="-1"></a>Gibbs <span class="ot">&lt;-</span> <span class="cf">function</span>(x, y){</span>
+<span id="cb242-19"><a href="sec73.html#cb242-19" tabindex="-1"></a>    Data <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">y =</span> y, <span class="at">x =</span> x, <span class="at">w =</span> w, <span class="at">z =</span> Z)</span>
+<span id="cb242-20"><a href="sec73.html#cb242-20" tabindex="-1"></a>    Mcmc <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">R =</span> mcmc, <span class="at">keep =</span> thin, <span class="at">nprint =</span> <span class="dv">0</span>)</span>
+<span id="cb242-21"><a href="sec73.html#cb242-21" tabindex="-1"></a>    Prior <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">md =</span> g0, <span class="at">Ad =</span> G0i, <span class="at">mbg =</span> b0, <span class="at">Abg =</span> B0i, <span class="at">nu =</span> nu, <span class="at">V =</span> Psi0)</span>
+<span id="cb242-22"><a href="sec73.html#cb242-22" tabindex="-1"></a>    RestIV <span class="ot">&lt;-</span> bayesm<span class="sc">::</span><span class="fu">rivGibbs</span>(<span class="at">Data =</span> Data, <span class="at">Mcmc =</span> Mcmc, <span class="at">Prior =</span> Prior)</span>
+<span id="cb242-23"><a href="sec73.html#cb242-23" tabindex="-1"></a>    PostBIV <span class="ot">&lt;-</span> <span class="fu">mean</span>(RestIV[[<span class="st">&quot;betadraw&quot;</span>]])</span>
+<span id="cb242-24"><a href="sec73.html#cb242-24" tabindex="-1"></a>    ResLM <span class="ot">&lt;-</span> MCMCpack<span class="sc">::</span><span class="fu">MCMCregress</span>(y <span class="sc">~</span> x <span class="sc">+</span> w <span class="sc">-</span> <span class="dv">1</span>, <span class="at">b0 =</span> b0, <span class="at">B0 =</span> B0i, <span class="at">c0 =</span> a0, <span class="at">d0 =</span> d0)</span>
+<span id="cb242-25"><a href="sec73.html#cb242-25" tabindex="-1"></a>    PostB <span class="ot">&lt;-</span> <span class="fu">mean</span>(ResLM[,<span class="dv">1</span>]); Res <span class="ot">&lt;-</span> <span class="fu">c</span>(PostB,PostBIV)</span>
+<span id="cb242-26"><a href="sec73.html#cb242-26" tabindex="-1"></a>    <span class="fu">return</span>(Res)</span>
+<span id="cb242-27"><a href="sec73.html#cb242-27" tabindex="-1"></a>}</span>
+<span id="cb242-28"><a href="sec73.html#cb242-28" tabindex="-1"></a>PosteriorMeans <span class="ot">&lt;-</span> <span class="fu">sapply</span>(<span class="dv">1</span><span class="sc">:</span>S, <span class="cf">function</span>(s) {<span class="fu">Gibbs</span>(<span class="at">x =</span> x[,s], <span class="at">y =</span> y[,s])})</span></code></pre></div>
+<pre><code>##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+##  
+##  
+## Starting Gibbs Sampler for Linear IV Model
+##  
+##  nobs=  100 ;  2  instruments;  1  included exog vars
+##      Note: the numbers above include intercepts if in z or w
+##  
+## Prior Parms: 
+## mean of delta 
+## [1] 0 0
+## Adelta
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## mean of beta/gamma
+## [1] 0 0
+## Abeta/gamma
+##       [,1]  [,2]
+## [1,] 0.001 0.000
+## [2,] 0.000 0.001
+## Sigma Prior Parms
+## nu=  3  V=
+##      [,1] [,2]
+## [1,]    3    0
+## [2,]    0    3
+##  
+## MCMC parms: 
+## R=  5000  keep=  1  nprint=  0
+## </code></pre>
+<div class="sourceCode" id="cb244"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb244-1"><a href="sec73.html#cb244-1" tabindex="-1"></a><span class="fu">rowMeans</span>(PosteriorMeans)</span></code></pre></div>
+<pre><code>## [1] 1.408272 1.035428</code></pre>
+<div class="sourceCode" id="cb246"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb246-1"><a href="sec73.html#cb246-1" tabindex="-1"></a>Model <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fu">replicate</span>(S, <span class="st">&quot;Ordinary&quot;</span>), <span class="fu">replicate</span>(S, <span class="st">&quot;Instrumental&quot;</span>))</span>
+<span id="cb246-2"><a href="sec73.html#cb246-2" tabindex="-1"></a>postmeans <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fu">t</span>(PosteriorMeans))</span>
+<span id="cb246-3"><a href="sec73.html#cb246-3" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(postmeans, Model, <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb246-4"><a href="sec73.html#cb246-4" tabindex="-1"></a><span class="fu">library</span>(ggplot2); <span class="fu">library</span>(latex2exp)</span>
+<span id="cb246-5"><a href="sec73.html#cb246-5" tabindex="-1"></a>histExo <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(df, <span class="fu">aes</span>(<span class="at">x =</span> postmeans, <span class="at">fill =</span> Model)) <span class="sc">+</span> <span class="fu">geom_histogram</span>(<span class="at">bins =</span> <span class="dv">40</span>, <span class="at">position =</span> <span class="st">&quot;identity&quot;</span>, <span class="at">color =</span> <span class="st">&quot;black&quot;</span>, <span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">&quot;Overlayed Histograms&quot;</span>, <span class="at">x =</span> <span class="st">&quot;Value&quot;</span>, <span class="at">y =</span> <span class="st">&quot;Count&quot;</span>) <span class="sc">+</span> <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">&quot;blue&quot;</span>, <span class="st">&quot;red&quot;</span>)) <span class="sc">+</span> <span class="fu">geom_vline</span>(<span class="fu">aes</span>(<span class="at">xintercept =</span> <span class="fu">mean</span>(postmeans[<span class="dv">1</span><span class="sc">:</span>S])), <span class="at">color =</span> <span class="st">&quot;black&quot;</span>, <span class="at">linewidth =</span> <span class="dv">1</span>, <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span>) <span class="sc">+</span> <span class="fu">geom_vline</span>(<span class="fu">aes</span>(<span class="at">xintercept =</span> <span class="fu">mean</span>(postmeans[<span class="dv">101</span><span class="sc">:</span><span class="dv">200</span>])), <span class="at">color =</span> <span class="st">&quot;black&quot;</span>, <span class="at">linewidth =</span> <span class="dv">1</span>, <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span>) <span class="sc">+</span> <span class="fu">geom_vline</span>(<span class="fu">aes</span>(<span class="at">xintercept =</span> B[<span class="dv">2</span>]), <span class="at">color =</span> <span class="st">&quot;green&quot;</span>, <span class="at">linewidth =</span> <span class="dv">1</span>, <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span>) <span class="sc">+</span> <span class="fu">xlab</span>(<span class="fu">TeX</span>(<span class="st">&quot;$E[</span><span class="sc">\\</span><span class="st">beta_2]$&quot;</span>)) <span class="sc">+</span> <span class="fu">ylab</span>(<span class="st">&quot;Frequency&quot;</span>) <span class="sc">+</span> <span class="fu">ggtitle</span>(<span class="st">&quot;Histogram: Posterior means simulating 100 samples&quot;</span>) </span>
+<span id="cb246-6"><a href="sec73.html#cb246-6" tabindex="-1"></a>histExo </span></code></pre></div>
+<p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-34-1.svg" width="672" /></p>
+<p>The Figure displays the histograms of the posterior means of <span class="math inline">\(\beta_2\)</span> using the ordinary model, which does not account for endogeneity, and the instrumental variable model. On one hand, the mean of the posterior means for the ordinary model is 1.41 (black dashed line in the red histogram), implying a bias of 0.41, which is very close to the population bias of 0.40. On the other hand, the mean of the posterior means for the instrumental variable model is 1.04 (black dashed line in the blue histogram), which is close to the population value of <span class="math inline">\(\beta_2 = 1\)</span> (green dashed line).</p>
+<p>We also observe that the histogram of the posterior means for the ordinary model is less dispersed. That is, this estimator is more efficient, which is a well-known result in the Frequentist inferential approach when comparing ordinary least squares and two-stage least squares (see <span class="citation">Jeffrey M. Wooldridge (<a href="#ref-wooldridge2010econometric">2010</a>)</span>).</p>
+<p>Two very important aspects in the instrumental variables literature are the <em>weakness</em> and <em>exogeneity</em> of the instruments. The former refers to how strong the relationship is between the instruments and the endogenous regressors, while the latter refers to the independence of the instruments from the stochastic error in the <em>structural equation</em>. In Exercise 6, we ask you to use the previous code as a baseline to study these two aspects. Observe the link between the <em>weakness</em> and <em>exogeneity</em> of the instrument, and the <em>exclusion restrictions</em> (<span class="math inline">\(\mathbb{E}[x_s \boldsymbol{z}] \neq \boldsymbol{0}\)</span> and <span class="math inline">\(\mathbb{E}[y \boldsymbol{z} \mid x_s] = \boldsymbol{0}\)</span>). This is the point of departure of <span class="citation">Conley, Hansen, and Rossi (<a href="#ref-Conley2012">2012</a>)</span>, who propose assessing the plausibility of the <em>exclusion restrictions</em> by defining <em>plausible exogeneity</em> as having prior information that the effect of the instrument in the <em>structural equation</em> is near zero, but perhaps not exactly zero.</p>
+<p>The following Algorithm can be used to estimate the instrumental variable model using our GUI. We ask in Exercise 8 to replicate the example of the effect of institutions on per capita GDP using our GUI.</p>
+<div class="algorithm">
+<div style="background-color: #f8f9fa; padding: 15px; border-left: 5px solid #343a40; box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1); border-radius: 5px;">
+<p><strong>Algorithm: Instrumental Variable Model</strong></p>
+<ol style="list-style-type: decimal">
+<li>Select <em>Multivariate Models</em> on the top panel<br />
+</li>
+<li>Select <em>Variable instrumental (two equations)</em> model using the left radio button<br />
+</li>
+<li>Upload the dataset, selecting first if there is a header in the file, and the kind of separator in the <em>csv</em> file of the dataset (comma, semicolon, or tab). Then, use the <em>Browse</em> button under the <strong>Choose File</strong> legend<br />
+</li>
+<li>Select MCMC iterations, burn-in, and thinning parameters using the <em>Range sliders</em><br />
+</li>
+<li>Write down the formula of the structural equation in the <strong>Main Equation</strong> box. This formula must be written using the syntax of the <em>formula</em> command of <strong>R</strong> software. This equation includes the intercept by default, do not include it in the equation<br />
+</li>
+<li>Write down the formula of the endogenous regressor in the <strong>Instrumental Equation</strong> box. This formula must be written using the syntax of the <em>formula</em> command of <strong>R</strong> software. This equation includes the intercept by default, do not include it in the equation<br />
+</li>
+<li>Set the hyperparameters: mean vectors, covariance matrices, degrees of freedom, and the scale matrix. This step is not necessary as by default our GUI uses non-informative priors</li>
+<li>Click the <em>Go!</em> button<br />
+</li>
+<li>Analyze results<br />
+</li>
+<li>Download posterior chains and diagnostic plots using the <em>Download Posterior Chains</em> and <em>Download Posterior Graphs</em> buttons</li>
+</ol>
+</div>
+</div>
+</div>
+<h3>References<a href="references.html#references" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-Conley2012" class="csl-entry">
+Conley, T., C. Hansen, and P. Rossi. 2012. <span>“Plausibly Exogenous.”</span> <em>The Review of Economics and Statistics</em> 94 (1): 260–72.
+</div>
+<div id="ref-Lehmann2003" class="csl-entry">
+Lehmann, E. L., and George Casella. 2003. <em>Theory of Point Estimation</em>. Second Edition. Springer.
+</div>
+<div id="ref-van2000asymptotic" class="csl-entry">
+Van der Vaart, Aad W. 2000. <em>Asymptotic Statistics</em>. Vol. 3. Cambridge university press.
+</div>
+<div id="ref-wooldridge2010econometric" class="csl-entry">
+Wooldridge, Jeffrey M. 2010. <em>Econometric Analysis of Cross Section and Panel Data</em>. MIT press.
+</div>
+<div id="ref-wooldridge2016introductory" class="csl-entry">
+Wooldridge, Jeffrey M. 2016. <em>Introductory Econometrics: A Modern Approach</em>. 6th ed. Boston, MA: Cengage Learning.
+</div>
+</div>
+<div class="footnotes">
+<hr />
+<ol start="38">
+<li id="fn38"><p>See <span class="citation">Jeffrey M. Wooldridge (<a href="#ref-wooldridge2016introductory">2016</a>)</span>, Chap. 15 for an introductory treatment of instrumental variables in the Frequentist inferential approach.<a href="sec73.html#fnref38" class="footnote-back">↩︎</a></p></li>
+</ol>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="sec72.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="sec74.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"github": true,
+"facebook": true,
+"twitter": true,
+"linkedin": false,
+"weibo": false,
+"instapaper": false,
+"vk": false,
+"whatsapp": false,
+"all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
+},
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": {
+"link": "https://github.com/aramir21/IntroductionBayesianEconometricsBook/07-Multivariatereg.Rmd",
+"text": "Edit"
+},
+"history": {
+"link": null,
+"text": null
+},
+"view": {
+"link": null,
+"text": null
+},
+"download": null,
+"search": {
+"engine": "fuse",
+"options": null
+},
+"toc": {
+"collapse": "subsection"
+}
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/latest.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>

@@ -328,3 +328,448 @@ summary(PosteriorDraws[["Sigmadraw"]])
 ```
 
 We ask in the Exercise 5 to run this application using our GUI and the information in the dataset *Utilities.csv*. Observe that this file should be modified to agree the structure that requires our GUI (see the dataset *5Institutions.csv* in the folder *DataApp* of our GitHub repository -**https://github.com/besmarter/BSTApp**- for a template). In addition, we ask to program from scratch the Gibbs sampler algorithm in this application.
+
+## Instrumental variable {#sec73}
+
+This inferential approach is used when there are *endogeneity* issues, that is, when the stochastic error is not independent of the regressors. This, in turn, generates *bias* in posterior mean estimates when we use an inferential approach that does not account for this issue. *Endogeneity* can be caused by *reverse causality*, *omitting relevant correlated variables*, or *measurement error* in the regressors.^[See @wooldridge2016introductory, Chap. 15 for an introductory treatment of instrumental variables in the Frequentist inferential approach.]
+
+Let’s specify the dependent variable as a linear function of one endogenous regressor and some exogenous regressors. That is,  
+
+\[
+y_{i} = \boldsymbol{x}_{ei}^{\top} \boldsymbol{\beta}_1 + \beta_s x_{si} + \mu_{i}
+\]
+
+where  
+
+\[
+x_{si} = \boldsymbol{x}_{ei}^{\top} \boldsymbol{\gamma}_1 + \boldsymbol{z}_i^{\top} \boldsymbol{\gamma}_2 + v_{i},
+\]
+
+\( x_s \) is the variable that generates the endogeneity issues (\(\mathbb{E}[\mu \mid x_{s}] \neq 0\)), \( \boldsymbol{x}_e \) are \( K_1 \) exogenous regressors (\(\mathbb{E}[\mu \mid \boldsymbol{x}_{e}] = \boldsymbol{0}\)), and \( \boldsymbol{z} \) are \( K_2 \) instruments. The instruments are regressors that drive \( x_s \) (\(\mathbb{E}[x_{s} \boldsymbol{z}] \neq \boldsymbol{0}\)), but do not have a direct effect on \( y \) (\(\mathbb{E}[y \boldsymbol{z} \mid x_s] = \boldsymbol{0}\)). The equation for \( y \) is called the *structural equation*, and it is the equation that the researcher is ultimately interested in.
+
+Assuming  
+
+\[
+(u_{i},v_i)^{\top} \stackrel{i.i.d.}{\thicksim} N(0,\boldsymbol{\Sigma}),
+\]
+
+where \( \boldsymbol{\Sigma}=[\sigma_{lm}] \), \( l,m=1,2 \), the likelihood function is  
+
+\[
+p(\boldsymbol{\beta},\boldsymbol{\gamma},\boldsymbol{\Sigma} \mid \boldsymbol{y},\boldsymbol{X},\boldsymbol{Z}) = \frac{1}{(2\pi)^\frac{N}{2}|\boldsymbol{\Sigma}|^\frac{N}{2}} \exp\left\{-\frac{1}{2} \sum_{i=1}^N (y_i-\boldsymbol{x}_i^{\top} \boldsymbol{\beta}, x_{si} -\boldsymbol{w}_i^{\top} \boldsymbol{\gamma}) \boldsymbol{\Sigma}^{-1}
+\begin{pmatrix}
+y_i - \boldsymbol{x}_i^{\top} \boldsymbol{\beta} \\
+x_{si} - \boldsymbol{w}_i^{\top} \boldsymbol{\gamma}
+\end{pmatrix}
+\right\},
+\]
+
+where  
+
+\[
+\boldsymbol{\beta}=\begin{bmatrix} \boldsymbol{\beta}_1^{\top} & \beta_s \end{bmatrix}^{\top}, \quad 
+\boldsymbol{\gamma}=\begin{bmatrix} \boldsymbol{\gamma}_1^{\top} & \boldsymbol{\gamma}_2^{\top} \end{bmatrix}^{\top}, \quad
+\boldsymbol{x}_i=\begin{bmatrix} \boldsymbol{x}_{ei}^{\top} & x_{si} \end{bmatrix}^{\top}, \quad 
+\boldsymbol{w}_i=\begin{bmatrix} \boldsymbol{x}_{ei}^{\top} & \boldsymbol{z}_{i}^{\top} \end{bmatrix}^{\top}.
+\]
+
+We obtain the standard conditional posterior densities by specifying the following independent priors:  
+
+\[
+\boldsymbol{\gamma} \sim N(\boldsymbol{\gamma}_0, \boldsymbol{G}_0), \quad 
+\boldsymbol{\beta} \sim N(\boldsymbol{\beta}_0, \boldsymbol{B}_0), \quad 
+\boldsymbol{\Sigma}^{-1} \sim W(\alpha_0, \boldsymbol{\Psi}_0).
+\]
+
+In particular, the conditional distributions are:  
+
+\[
+\boldsymbol{\beta} \mid \boldsymbol{\gamma}, \boldsymbol{\Sigma}, \boldsymbol{y}, \boldsymbol{X}, \boldsymbol{Z} \sim N(\boldsymbol{\beta}_n, \boldsymbol{B}_n),
+\]
+
+\[
+\boldsymbol{\gamma} \mid \boldsymbol{\beta}, \boldsymbol{\Sigma}, \boldsymbol{y}, \boldsymbol{X}, \boldsymbol{Z} \sim N(\boldsymbol{\gamma}_n, \boldsymbol{G}_n),
+\]
+
+\[
+\boldsymbol{\Sigma}^{-1} \mid \boldsymbol{\beta}, \boldsymbol{\gamma}, \boldsymbol{y}, \boldsymbol{X}, \boldsymbol{Z} \sim W(\alpha_n, \boldsymbol{\Psi}_n),
+\]
+
+where  
+
+\[
+\boldsymbol{\beta}_n = \boldsymbol{B}_n \left( \boldsymbol{B}_0^{-1} \boldsymbol{\beta}_0 + \omega_1^{-1} \sum_{i=1}^{N} \left[ \boldsymbol{x}_i \left( y_i - \frac{\sigma_{12}(x_{si} - \boldsymbol{w}_i^{\top} \boldsymbol{\gamma})}{\sigma_{22}} \right) \right] \right),
+\]
+
+\[
+\boldsymbol{B}_n = \left( \omega_1^{-1} \sum_{i=1}^{N} \boldsymbol{x}_i \boldsymbol{x}_i^{\top} + \boldsymbol{B}_0^{-1} \right)^{-1}, \quad 
+\omega_1 = \sigma_{11} - \frac{\sigma_{12}^2}{\sigma_{22}},
+\]
+
+\[
+\boldsymbol{G}_n = \left( \omega_2^{-1} \sum_{i=1}^{N} \boldsymbol{w}_i \boldsymbol{w}_i^{\top} + \boldsymbol{G}_0^{-1} \right)^{-1}, \quad 
+\boldsymbol{\gamma}_n = \boldsymbol{G}_n \left( \boldsymbol{G}_0^{-1} \boldsymbol{\gamma}_0 + \omega_2^{-1} \sum_{i=1}^{N} \left[ \boldsymbol{w}_i \left( x_{si} - \frac{\sigma_{12} (y_i - \boldsymbol{x}_i^{\top} \boldsymbol{\beta})}{\sigma_{11}} \right) \right] \right),
+\]
+
+\[
+\omega_2 = \sigma_{22} - \frac{\sigma_{12}^2}{\sigma_{11}}, \quad 
+\boldsymbol{\Psi}_n = \left[ \boldsymbol{\Psi}_0^{-1} + \sum_{i=1}^N 
+\begin{pmatrix} y_i - \boldsymbol{x}_i^{\top} \boldsymbol{\beta} \\ x_{si} - \boldsymbol{w}_i^{\top} \boldsymbol{\gamma} \end{pmatrix}  
+(y_i - \boldsymbol{x}_i^{\top} \boldsymbol{\beta}, x_{si} - \boldsymbol{w}_i^{\top} \boldsymbol{\gamma}) 
+\right]^{-1},
+\]
+
+\[
+\alpha_n = \alpha_0 + N, \quad \sigma_{lj} \text{ are the elements of } \boldsymbol{\Sigma}.
+\]
+
+We also use a Gibbs sampling algorithm in this model since we have standard conditional posterior distributions.
+
+**Example: Simulation exercise**
+
+Let's simulate the simple process \( y_i=\beta_1+\beta_2x_{si}+\mu_i \) and \( x_{si}=\gamma_1+\gamma_2z_i+v_i \) where \( [\mu_i \ v_i]^{\top} \sim N(\boldsymbol{0},\boldsymbol{\Sigma}) \), \( \boldsymbol{\Sigma}=[\sigma_{lj}] \) such that \( \sigma_{12} \neq 0 \), \( i=1,2,\dots,100 \).
+
+Observe that \( \mu\mid v\sim N\left(\frac{\sigma_{12}}{\sigma_{22}}v,\sigma_{11}-\frac{\sigma_{21}^2}{\sigma_{22}}\right) \), this implies that \( \mathbb{E}[\mu\mid x_s]=\mathbb{E}[\mu\mid v]=\frac{\sigma_{12}}{\sigma_{22}}v\neq 0 \) given \( \sigma_{12}\neq 0 \) and \( \mathbb{E}[\mu\mid z]=0 \).
+Let's set all location parameters equal to 1, and \( \sigma_{11}=\sigma_{22}=1 \), \( \sigma_{12}=0.8 \), and \( z\sim N(0,1) \). 
+
+We know from the large sampling properties of the posterior mean that this converges to the maximum likelihood estimator (see Section \@ref(sec11), and @Lehmann2003, @van2000asymptotic), which in this setting is 
+
+\[
+\hat{\beta}_2=\frac{\widehat{\text{Cov}}(x_s,y)}{\widehat{\text{Var}}(x_s)}
+\]
+
+which converges in probability to 
+
+\[
+\beta_2+\frac{\sigma_{12}}{\sigma_{22}\text{Var}(x_s)}=\beta_2+\frac{\sigma_{12}}{\sigma_{22}(\gamma_2^2\text{Var}(z)+\sigma_{22})}=1.4,
+\]
+
+that is, the asymptotic bias when using the posterior mean of a linear regression without taking into account endogeneity is 0.4 in this example.
+
+We assess the sampling performance of the Bayesian estimators by simulating this setting 100 times. The following code demonstrates how to do this using a linear model that does not account for the *endogeneity* issue (see Section \@ref(sec61)), as well as how to implement the instrumental variable model. In this setup, we use \( \boldsymbol{B}_0 = 1000 \mathbf{I}_2 \), \( \boldsymbol{\beta}_0 = \mathbf{0}_2 \), and the parameters of the inverse gamma distribution are set to 0.0005. For the instrumental variable model, we additionally set \( \boldsymbol{\gamma}_0 = \mathbf{0}_2 \), \( \boldsymbol{G}_0 = 1000 \mathbf{I}_2 \), \( \alpha_0 = 3 \), and \( \boldsymbol{\Psi}_0 = 3 \mathbf{I}_2 \).
+
+
+```{r}
+rm(list = ls()); set.seed(010101)
+N <- 100; k <- 2
+B <- rep(1, k); G <- rep(1, 2); s12 <- 0.8
+SIGMA <- matrix(c(1, s12, s12, 1), 2, 2)
+z <- rnorm(N); Z <- cbind(1, z); w <- matrix(1,N,1); S <- 100
+U <- replicate(S, MASS::mvrnorm(n = N, mu = rep(0, 2), SIGMA))
+x <- G[1] + G[2]*z + U[,2,]; y <- B[1] + B[2]*x + U[,1,]
+# Hyperparameters
+d0 <- 0.001/2; a0 <- 0.001/2
+b0 <- rep(0, k); c0 <- 1000; B0 <- c0*diag(k)
+B0i <- solve(B0); g0 <- rep(0, 2)
+G0 <- 1000*diag(2); G0i <- solve(G0)
+nu <- 3; Psi0 <- nu*diag(2)
+# MCMC parameters
+mcmc <- 5000; burnin <- 1000
+tot <- mcmc + burnin; thin <- 1
+# Gibbs sampling
+Gibbs <- function(x, y){
+	Data <- list(y = y, x = x, w = w, z = Z)
+	Mcmc <- list(R = mcmc, keep = thin, nprint = 0)
+	Prior <- list(md = g0, Ad = G0i, mbg = b0, Abg = B0i, nu = nu, V = Psi0)
+	RestIV <- bayesm::rivGibbs(Data = Data, Mcmc = Mcmc, Prior = Prior)
+	PostBIV <- mean(RestIV[["betadraw"]])
+	ResLM <- MCMCpack::MCMCregress(y ~ x + w - 1, b0 = b0, B0 = B0i, c0 = a0, d0 = d0)
+	PostB <- mean(ResLM[,1]); Res <- c(PostB,PostBIV)
+	return(Res)
+}
+PosteriorMeans <- sapply(1:S, function(s) {Gibbs(x = x[,s], y = y[,s])})
+rowMeans(PosteriorMeans)
+Model <- c(replicate(S, "Ordinary"), replicate(S, "Instrumental"))
+postmeans <- c(t(PosteriorMeans))
+df <- data.frame(postmeans, Model, stringsAsFactors = FALSE)
+library(ggplot2); library(latex2exp)
+histExo <- ggplot(df, aes(x = postmeans, fill = Model)) + geom_histogram(bins = 40, position = "identity", color = "black", alpha = 0.5) + labs(title = "Overlayed Histograms", x = "Value", y = "Count") + scale_fill_manual(values = c("blue", "red")) + geom_vline(aes(xintercept = mean(postmeans[1:S])), color = "black", linewidth = 1, linetype = "dashed") + geom_vline(aes(xintercept = mean(postmeans[101:200])), color = "black", linewidth = 1, linetype = "dashed") + geom_vline(aes(xintercept = B[2]), color = "green", linewidth = 1, linetype = "dashed") + xlab(TeX("$E[\\beta_2]$")) + ylab("Frequency") + ggtitle("Histogram: Posterior means simulating 100 samples") 
+histExo 
+```
+
+The Figure displays the histograms of the posterior means of \( \beta_2 \) using the ordinary model, which does not account for endogeneity, and the instrumental variable model. On one hand, the mean of the posterior means for the ordinary model is 1.41 (black dashed line in the red histogram), implying a bias of 0.41, which is very close to the population bias of 0.40. On the other hand, the mean of the posterior means for the instrumental variable model is 1.04 (black dashed line in the blue histogram), which is close to the population value of \( \beta_2 = 1 \) (green dashed line).
+
+We also observe that the histogram of the posterior means for the ordinary model is less dispersed. That is, this estimator is more efficient, which is a well-known result in the Frequentist inferential approach when comparing ordinary least squares and two-stage least squares (see @wooldridge2010econometric).
+
+Two very important aspects in the instrumental variables literature are the *weakness* and *exogeneity* of the instruments. The former refers to how strong the relationship is between the instruments and the endogenous regressors, while the latter refers to the independence of the instruments from the stochastic error in the *structural equation*. In Exercise 6, we ask you to use the previous code as a baseline to study these two aspects. Observe the link between the *weakness* and *exogeneity* of the instrument, and the *exclusion restrictions* (\( \mathbb{E}[x_s \boldsymbol{z}] \neq \boldsymbol{0} \) and \( \mathbb{E}[y \boldsymbol{z} \mid x_s] = \boldsymbol{0} \)). This is the point of departure of @Conley2012, who propose assessing the plausibility of the *exclusion restrictions* by defining *plausible exogeneity* as having prior information that the effect of the instrument in the *structural equation* is near zero, but perhaps not exactly zero.
+
+The following Algorithm can be used to estimate the instrumental variable model using our GUI. We ask in Exercise 8 to replicate the example of the effect of institutions on per capita GDP using our GUI.  
+
+
+::: {.algorithm}
+<div style="background-color: #f8f9fa; padding: 15px; border-left: 5px solid #343a40; box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1); border-radius: 5px;">
+
+**Algorithm: Instrumental Variable Model**  
+
+1. Select *Multivariate Models* on the top panel  
+2. Select *Variable instrumental (two equations)* model using the left radio button  
+3. Upload the dataset, selecting first if there is a header in the file, and the kind of separator in the *csv* file of the dataset (comma, semicolon, or tab). Then, use the *Browse* button under the **Choose File** legend  
+4. Select MCMC iterations, burn-in, and thinning parameters using the *Range sliders*  
+5. Write down the formula of the structural equation in the **Main Equation** box. This formula must be written using the syntax of the *formula* command of **R** software. This equation includes the intercept by default, do not include it in the equation  
+6. Write down the formula of the endogenous regressor in the **Instrumental Equation** box. This formula must be written using the syntax of the *formula* command of **R** software. This equation includes the intercept by default, do not include it in the equation  
+7. Set the hyperparameters: mean vectors, covariance matrices, degrees of freedom, and the scale matrix. This step is not necessary as by default our GUI uses non-informative priors 
+8. Click the *Go!* button  
+9. Analyze results  
+10. Download posterior chains and diagnostic plots using the *Download Posterior Chains* and *Download Posterior Graphs* buttons  
+
+</div>
+:::
+
+## Multivariate probit model {#sec74}
+
+In the multivariate probit model @Edwards2003, the response variable \( y_{il} = \{0, 1\} \) indicates that individual \( i \) makes binary choices among \( L \) mutually exclusive alternatives, where \( l = 1, 2, \dots, L \) and \( i = 1, 2, \dots, N \). Specifically,
+
+\[
+	y_{il} =
+	\begin{cases}
+		0, & \quad y_{il}^* \leq 0 \\
+		1, & \quad y_{il}^* > 0
+	\end{cases}
+\]
+
+where \( \boldsymbol{y}_i^* = \boldsymbol{X}_i \boldsymbol{\beta} + \boldsymbol{\mu}_i \sim \text{i.i.d.} \, N(\boldsymbol{0}, \boldsymbol{\Sigma}) \). Here, \( \boldsymbol{y}_i^* \) is an unobserved latent \( L \)-dimensional vector, \( \boldsymbol{X}_i = \boldsymbol{x}_i^\top \otimes \mathbf{I}_L \) is an \( L \times K \) design matrix of regressors, with \( K = L \times k \), where \( k \) is the number of regressors (i.e., the length of \( \boldsymbol{x}_i \)). In addition, \( \boldsymbol{\beta} = \left[\boldsymbol{\beta}_1^\top \ \boldsymbol{\beta}_2^\top \dots \boldsymbol{\beta}_k^\top\right]^\top \), where \( \boldsymbol{\beta}_j \) forms an \( L \)-dimensional vector of coefficients for \( j = 1, 2, \dots, k \).
+
+The likelihood function for this model is given by
+
+\[
+p(\boldsymbol{\beta}, \boldsymbol{\Sigma} \mid \boldsymbol{y}, \boldsymbol{X}) = \prod_{i=1}^N \prod_{l=1}^L p_{il}^{y_{il}},
+\]
+
+where \( p_{il} = p(y_{il}^* \geq 0) \).
+
+Observe that \( p({y}_{il}^*\geq 0)=p({\lambda}_{ll}{y}_{il}^*\geq 0) \), \( \lambda_{ll}>0 \). This generates identification issues because only the correlation matrix can be identified, similar to the univariate probit model where the variance of the model is fixed to 1. We follow the post-processing strategy proposed by @Edwards2003 to obtain identified parameters, that is, \( \tilde{\boldsymbol{\beta}}=\text{vec}\left\{\boldsymbol{\Lambda}\mathbf{B}\right\} \) and the correlation matrix \( \boldsymbol{R}=\boldsymbol{\Lambda}\boldsymbol{\Sigma}\boldsymbol{\Lambda} \), where \( \boldsymbol{\Lambda}=\text{diag}\left\{\sigma_{ll}\right\}^{-1/2} \) and \( \mathbf{B}=\left[\boldsymbol{\beta}_1 \ \boldsymbol{\beta}_2 \dots \boldsymbol{\beta}_k\right] \).^[In a Bayesian setting, a model can be non-identified; however, the posterior distribution of the model parameters exists as long as a proper prior distribution is specified @Edwards2003.]
+
+We assume independent priors: \( \boldsymbol{\beta} \sim N(\boldsymbol{\beta}_0, \boldsymbol{B}_0) \) and \( \boldsymbol{\Sigma}^{-1} \sim W(\alpha_0, \boldsymbol{\Psi}_0) \). We can apply Gibbs sampling to this model, as it is a standard Bayesian linear regression model when data augmentation in \( \boldsymbol{y}^* \) is used.
+
+The posterior conditional distributions are
+\begin{equation}
+	\boldsymbol{\beta}\mid \boldsymbol{\Sigma},\boldsymbol{w} \sim N(\boldsymbol{\beta}_n,\boldsymbol{B}_n),
+\end{equation}
+\begin{equation}
+	\boldsymbol{\Sigma}^{-1} \mid \boldsymbol{\beta},\boldsymbol{w} \sim W(\alpha_n,\boldsymbol{\Psi}_n),
+\end{equation}
+\begin{equation}
+	y_{il}^* \mid \boldsymbol{y}_{i,-l}^*,\boldsymbol{\beta},\boldsymbol{\Sigma}^{-1},\boldsymbol{y_i} \sim TN_{I_{il}}(m_{il},\tau_{ll}^2)
+\end{equation}
+
+where \( \boldsymbol{B}_n=(\boldsymbol{B}_0^{-1}+\boldsymbol{X}^{*\top}\boldsymbol{X}^*)^{-1} \), \( \boldsymbol{\beta}_n=\boldsymbol{B}_n(\boldsymbol{B}_0^{-1}\boldsymbol{\beta}_0+\boldsymbol{X}^{*\top}\boldsymbol{y}^{**}) \), \( \boldsymbol{\Sigma}^{-1}=\boldsymbol{C}^{\top}\boldsymbol{C} \), \( \boldsymbol{X}_i^{*}=\boldsymbol{C}^{\top}\boldsymbol{X}_i \), \( \boldsymbol{y}_i^{**}=\boldsymbol{C}^{\top}\boldsymbol{y}_i^* \), \( \alpha_n=\alpha_0+N \), \( \boldsymbol{\Psi}_n=(\boldsymbol{\Psi}_0+\sum_{i=1}^N (\boldsymbol{y}_i^*-\boldsymbol{X}_i\boldsymbol{\beta})(\boldsymbol{y}_i^*-\boldsymbol{X}_i\boldsymbol{\beta})^{\top})^{-1} \),  
+
+\[
+m_{il}=\boldsymbol{x}_{il}^{\top}\boldsymbol{\beta}+\boldsymbol{f}_l^{\top}(\boldsymbol{y}_{i,-l}^*-\boldsymbol{X}_{i,-l}\boldsymbol{\beta}),
+\]
+
+where \( \boldsymbol{y}_{i,-l}^* \) is an \( L-1 \) dimensional vector of all components of \( \boldsymbol{y}_i^* \) excluding \( y_{il}^* \), \( \boldsymbol{x}_{il}^{\top} \) is the \( l \)-th row of \( \boldsymbol{X}_i \), \( \boldsymbol{X}_{i,-l} \) is \( \boldsymbol{X}_{i} \) after deleting the \( l \)-th row,  
+
+\[
+\boldsymbol{f}_l^{\top}=\boldsymbol{\omega}_{l,-l}^{\top}\boldsymbol{\Sigma}_{-l,-l}^{-1},
+\]
+
+where \( \boldsymbol{\omega}_{l,-l}^{\top} \) and \( \boldsymbol{\Sigma}_{-l,-l} \) are the \( l \)-th row of \( \boldsymbol{\Sigma} \) extracting the \( l \)-th element, and the sub-matrix of \( \boldsymbol{\Sigma} \) extracting the \( l,l \) element, and  
+
+\[
+\tau_{ll}^2=\sigma_{l,l}-\boldsymbol{\omega}_{l,-l}^{\top}\boldsymbol{\Sigma}_{-l,-l}^{-1}\boldsymbol{\omega}_{-l,l},
+\]
+
+and
+
+\[
+\boldsymbol{X}^*=
+\begin{bmatrix}
+	\boldsymbol{X}_1^*\\
+	\boldsymbol{X}_2^*\\
+	\vdots\\
+	\boldsymbol{X}_N^*
+\end{bmatrix}, 
+\quad 
+I_{il}=
+\begin{Bmatrix} 
+	y_{il}^*> 0, & y_{il}=1\\
+	y_{il}^*\leq 0 , & y_{il}=0
+\end{Bmatrix},
+\quad 
+\boldsymbol{\Sigma}=
+\begin{bmatrix}
+	\boldsymbol{\omega}_1^{\top} \\ 
+	\boldsymbol{\omega}_2^{\top} \\ 
+	\vdots \\ 
+	\boldsymbol{\omega}_{L}^{\top} 
+\end{bmatrix}.
+\]
+
+The setting in our GUI has the same regressors in each binary decision. However, we can see that the multivariate probit model is similar to a SUR model in latent variables. We ask in Exercise 9 to implement a Gibbs sampling algorithm for a multivariate probit model with different regressors in each equation.
+
+**Example: Self selection in hospitalization due to a subsidized health care program**
+
+We use the dataset *7HealthMed.csv*, where the dependent variable is $y = \left[\text{Hosp} \ \text{SHI}\right]^{\top}$, with $\text{Hosp} = 1$ if an individual was hospitalized in the year prior to the survey (0 otherwise), and $\text{SHI} = 1$ if the individual had subsidized health insurance (0 otherwise).
+
+Recall that our application of binary response models aimed to uncover the determinants of hospitalization in Medellín (Colombia), where one of the regressors was a binary indicator of participation in a subsidized health care program (Section \@ref(sec63)). We can use a bivariate probit model if we suspect there is dependence between the decisions regarding these two variables. A priori, we would expect that being in a subsidized health care program increases the probability of hospitalization *ceteris paribus*, due to reduced costs for the patient. However, if an individual expects to be hospitalized in the future, and the factors influencing this decision are unobserved by the modeler, a feedback effect may exist from hospitalization to enrollment in the subsidized health care program.
+
+
+We considered seven regressors: a constant, gender (female), age, self-perception of health status (with categories fair, good, and excellent, using bad as the reference category), and the proportion of the individual’s age spent living in their neighborhood. The last variable attempts to account for social capital, which can affect enrollment in the subsidized health insurance program, as the target population is identified by the local government [@Ramirez2019a]. The dataset includes 12,975 individuals who can "choose" two options: hospitalization and enrollment in the subsidized health insurance regime.
+
+The following Algorithm shows how to run a multivariate probit model using our GUI.
+
+::: {.algorithm}
+<div style="background-color: #f8f9fa; padding: 15px; border-left: 5px solid #343a40; box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1); border-radius: 5px;">
+
+**Algorithm: Multivariate Probit Model**  
+
+1. Select *Multivariate Models* on the top panel  
+2. Select *Multivariate Probit* model using the left radio button  
+3. Upload the dataset, selecting first if there is a header in the file, and the kind of separator in the *csv* file of the dataset (comma, semicolon, or tab). Then, use the *Browse* button under the **Choose File** legend  
+4. Select MCMC iterations, burn-in, and thinning parameters using the *Range sliders*  
+5. Write down the number of cross-sectional units in the **Number of individuals: n** box  
+6. Write down the number of exogenous variables in the **Number of exogenous variables: k** box  
+7. Write down the number of choices in the **Number of choices: l** box  
+8. Set the hyperparameters: mean vectors, covariance matrix, degrees of freedom, and the scale matrix. This step is not necessary as by default our GUI uses non-informative priors 
+9. Click the *Go!* button  
+10. Analyze results  
+11. Download posterior chains and diagnostic plots using the *Download Posterior Chains* and *Download Posterior Graphs* buttons  
+
+</div>
+:::
+
+We set 20,000 MCMC iterations with a thinning parameter equal to 5. The hyperparameters are $\boldsymbol{\beta}_0 = \boldsymbol{0}_{14}$, $\boldsymbol{B}_0 = 100\boldsymbol{I}_{14}$, $\alpha_0 = 4$, and $\boldsymbol{\Psi}_0 = 4\boldsymbol{I}_2$.^[Note that the order of the location coefficients in our GUI follows the equations, not the order of the regressors as in the theoretical setting presented in this section. This distinction is important for correctly setting the hyperparameters and interpreting the results of the location parameters.]
+
+
+```{r}
+rm(list = ls()); set.seed(010101)
+Data <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/7HealthMed.csv", sep = ",", header = TRUE, quote = "")
+attach(Data); str(Data)
+p <- 2; nd <- 7; N <- length(y)/p; y <- y
+Xd <- as.matrix(Data[seq(1, p*N, 2),3:9])
+XcreateMP<-function(p,nxs,nind,Data){
+	pandterm = function(message) {
+		stop(message, call. = FALSE)
+	}
+	if (missing(nxs)) 
+	pandterm("requires number of regressors: include intercept if required")
+	if (missing(nind)) 
+	pandterm("requires number of units (individuals)")
+	if (missing(Data)) 
+	pandterm("requires dataset")
+	if (nrow(Data)!=nind*2)
+	pandterm("check dataset! number of units times number alternatives should be equal to dataset rows")
+	XXDat<-array(0,c(p,1+nxs,nind))
+	XX<-array(0,c(p,nxs*p,nind))
+	YY<-array(0,c(p,1,nind))
+	is<- seq(p,nind*p,p)
+	cis<- seq(nxs,nxs*p+1,nxs)
+	for(i in is){
+		j<-which(i==is)
+		XXDat[,,j]<-as.matrix(Data[c((i-(p-1)):i),-1])
+		YY[,,j]<-XXDat[,1,j]
+		for(l in 1:p){
+			XX[l,((cis[l]-(nxs-1)):cis[l]),j]<-XXDat[l,-1,j]
+		}
+	}
+	return(list(y=YY,X=XX))
+}
+Dat <- XcreateMP(p = p, nxs = nd, nind = N, Data = Data)
+y<-NULL; X<-NULL
+for(i in 1:dim(Dat$y)[3]){
+	y<-c(y,Dat$y[,,i])
+	X<-rbind(X,Dat$X[,,i])
+}
+DataMP = list(p=p, y=y, X=X)
+# Hyperparameters
+k <- dim(X)[2]; b0 <- rep(0, k); c0 <- 1000
+B0 <- c0*diag(k); B0i <- solve(B0)
+a0 <- p - 1 + 3; Psi0 <- a0*diag(p)
+Prior <- list(betabar = b0, A = B0i, nu = a0, V = Psi0)
+# MCMC parameters
+mcmc <- 20000; thin <- 5; 
+Mcmc <- list(R = mcmc, keep = thin, nprint = 0)
+Results <- bayesm::rmvpGibbs(Data = DataMP, Mcmc = Mcmc, Prior = Prior)
+betatilde1 <- Results$betadraw[,1:7] / sqrt(Results$sigmadraw[,1])
+summary(coda::mcmc(betatilde1))
+betatilde2 <- Results$betadraw[,8:14] / sqrt(Results$sigmadraw[,4])
+summary(coda::mcmc(betatilde2))
+sigmadraw12 <-  Results$sigmadraw[,3] / (Results$sigmadraw[,1]*Results$sigmadraw[,4])^0.5
+summary(coda::mcmc(sigmadraw12))
+```
+
+The previous **R** code demonstrates how to obtain the posterior draws using the *rmvpGibbs* command from the *bayesm* package. The results suggest that females, older individuals, and those who self-assess their health as poor are more likely to be hospitalized. Furthermore, females, older individuals, and those with a poor or fair self-perception of health, who have lived a larger proportion of their life in their current neighborhood, are more likely to be enrolled in the subsidized health care system. However, the results indicate that there is no unobserved correlation between the two equations, as the 95% credible interval for the correlation is (-0.07, 0.06).
+
+## Summary {#sec75}
+
+In this chapter, we present the setting and posterior distributions of the most common multivariate models. The multivariate framework allows us to address *endogeneity* issues by using the conditional distribution of a multivariate normal vector. Moreover, we always obtain posterior conditional distributions that belong to standard families (multivariate normal, Wishart, and truncated normal) in these models. This property enables the implementation of the Gibbs sampling algorithm for all these models.
+
+## Exercises {#sec76}
+
+1. Show that $\mathbb{E}[u_1\text{PAER}] = \frac{\alpha_1}{1 - \beta_1\alpha_1} \sigma_1^2$, assuming that $\mathbb{E}[u_1 u_2] = 0$, where $\text{Var}(u_1) = \sigma_1^2$, in the example of the effect of institutions on per capita GDP.  
+
+2. Show that $\beta_1=\pi_1/\gamma_1$, in the example of the effect of institutions on per capita GDP.  
+
+3. **The effect of institutions on per capita gross domestic product continues I**  
+
+   Use the *rmultireg* command from the *bayesm* package to perform inference in the example of the effect of institutions on per capita GDP.  
+
+4. **Demand and supply simulation**  
+
+   Given the structural demand-supply model:  
+   $$
+   \begin{aligned}
+   q_i^d &= \beta_1 + \beta_2 p_i + \beta_3 y_i + \beta_4 pc_i + \beta_5 ps_i + u_{i1}, \\
+   q_i^s &= \alpha_1 + \alpha_2 p_i + \alpha_3 er_i + u_{i2},
+   \end{aligned}
+   $$
+   where $q^d$ is demand, $q^s$ is supply, $p$, $y$, $pc$, $ps$, and $er$ are price, income, complementary price, substitute price, and exchange rate, respectively. Complementary and substitute prices refer to the prices of complementary and substitute goods for $q$. Assume that  
+   $$
+   \boldsymbol{\beta} = \begin{bmatrix} 5 \\ -0.5 \\ 0.8 \\ -0.4 \\ 0.7 \end{bmatrix}, \quad 
+   \boldsymbol{\alpha} = \begin{bmatrix} -2 \\ 0.5 \\ -0.4 \end{bmatrix},
+   $$
+   $u_1 \sim N(0, 0.5^2)$, and $u_2 \sim N(0, 0.5^2)$. Additionally, assume that $y \sim N(10, 1)$, $pc \sim N(5, 1)$, $ps \sim N(5, 1)$, and $er \sim N(15, 1)$.  
+
+   - Find the *reduced-form* model by using the condition that in equilibrium, demand and supply are equal, i.e., $q^d = q^s$. This condition defines the observable quantity, $q$.  
+   - Simulate $p$ and $q$ from the *reduced-form* equations.  
+   - Perform inference for the *reduced-form* model using the *rmultireg* command from the *bayesm* package.  
+   - Use the posterior draws of the *reduced-form* parameters to perform inference for the *structural* parameters. Any issues? Hint: Are all *structural* parameters exactly identified?  
+
+5. **Utility demand continues**  
+
+   - Run the **Utility demand** application using our GUI and the information in the dataset *Utilities.csv*. Hint: This file should be modified to agree with the structure that our GUI requires (see the dataset *5Institutions.csv* in the folder *DataApp* of our GitHub repository - **https://github.com/besmarter/BSTApp** - for a template).  
+   - Program from scratch the Gibbs sampler algorithm in this application.  
+
+6. **Simulation exercise of instrumental variables continues I**  
+
+   - Use the setting of the simulation exercise with instrumental variables to analyze the impact of a weak instrument. For instance, set $\gamma_2 = 0.2$ and compare the performance of the posterior means of the ordinary and instrumental variable models.  
+   - Perform a simulation to analyze how the degree of exogeneity of the instrument affects the performance of the posterior mean in the instrumental variable model.  
+
+7. **Simulation exercise of instrumental variables continues II**  
+
+   Program from scratch the Gibbs sampling algorithm of the instrumental model for the simulation exercise of the instrumental variables.  
+
+8. **The effect of institutions on per capita gross domestic product continues II**  
+
+   Estimate the structural Equation \@ref(eq:str1) using the instrumental variable model where the instrument of PAER is $\log(\textit{Mort})$. Compare the effect of property rights on per capita GDP of this model with the effect estimated in the example of the effect of institutions on per capita gross domestic product. Use the file *6Institutions.csv* to do this exercise in our GUI, and set  
+   $$
+   \boldsymbol{B}_0=100\boldsymbol{I}_5, \quad \boldsymbol{\beta}_0=\boldsymbol{0}_5, \quad \boldsymbol{\gamma}_0=\boldsymbol{0}_2, \quad \boldsymbol{G}_0=100\boldsymbol{I}_2, \quad \alpha_0=3, \quad \boldsymbol{\Psi}_0=3\boldsymbol{I}_2.
+   $$
+   The MCMC iterations, burn-in, and thinning parameters are 50000, 1000, and 5, respectively.  
+
+9. **Multivariate probit with different regressors**  
+
+   Let's do a simulation exercise where  
+   $$
+   \begin{aligned}
+   y_{i1}^* &= 0.5 - 1.2x_{i11} + 0.7x_{i12} + 0.8x_{i3} + \mu_{i1}, \\
+   y_{i2}^* &= 1.5 - 0.8x_{i21} + 0.5x_{i22} + \mu_{i2},
+   \end{aligned}
+   $$
+   with  
+   $$
+   \boldsymbol{\Sigma}=
+   \begin{bmatrix}
+   1 & 0.5 \\
+   0.5 & 1
+   \end{bmatrix},
+   $$
+   where all regressors follow a standard normal distribution, and $N=5000$. Use  
+   $$
+   \boldsymbol{\beta}_0=\boldsymbol{0}, \quad \boldsymbol{B}_0=1000\boldsymbol{B}, \quad \alpha_0=4, \quad \boldsymbol{\Psi}_0=4\boldsymbol{I}_2.
+   $$
+   Set the number of iterations to 2000 and a thinning parameter equal to 5.  
+
+   - Perform inference using the setting of Section \@ref(sec74), that is, assuming that $x_{i3}$ could have an effect on $y_{i2}$.  
+   - Program a Gibbs sampling algorithm taking into account that there are different regressors in each binary decision, that is, $x_{i3}$ does not have an effect on $y_{i2}$.  
