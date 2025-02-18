@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>6.10 Bayesian bootstrap regression | Introduction to Bayesian Data Modeling</title>
+  <meta name="description" content="The subject of this textbook is Bayesian data modeling, with the primary aim of providing an introduction to its theoretical foundations and facilitating the application of Bayesian inference using a GUI." />
+  <meta name="generator" content="bookdown 0.40 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="6.10 Bayesian bootstrap regression | Introduction to Bayesian Data Modeling" />
+  <meta property="og:type" content="book" />
+  
+  <meta property="og:description" content="The subject of this textbook is Bayesian data modeling, with the primary aim of providing an introduction to its theoretical foundations and facilitating the application of Bayesian inference using a GUI." />
+  <meta name="github-repo" content="https://github.com/aramir21/IntroductionBayesianEconometricsBook" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="6.10 Bayesian bootstrap regression | Introduction to Bayesian Data Modeling" />
+  
+  <meta name="twitter:description" content="The subject of this textbook is Bayesian data modeling, with the primary aim of providing an introduction to its theoretical foundations and facilitating the application of Bayesian inference using a GUI." />
+  
+
+<meta name="author" content="Andrés Ramírez-Hassan" />
+
+
+<meta name="date" content="2025-02-18" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  
+<link rel="prev" href="sec69.html"/>
+<link rel="next" href="sec611.html"/>
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+<link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
+<link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
+<script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+
+
+<style type="text/css">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { color: #008000; } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { color: #008000; font-weight: bold; } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<style type="text/css">
+  
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+</style>
+<style type="text/css">
+/* Used with Pandoc 2.11+ new --citeproc when CSL is used */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}
+</style>
+
+<link rel="stylesheet" href="css/style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><a href="./">Introduction to Bayesian Econometrics: A GUIded tour using R</a></li>
+
+<li class="divider"></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Introduction</a>
+<ul>
+<li class="chapter" data-level="" data-path="to-instructors-and-students.html"><a href="to-instructors-and-students.html"><i class="fa fa-check"></i>To instructors and students</a></li>
+<li class="chapter" data-level="" data-path="acknowledgments.html"><a href="acknowledgments.html"><i class="fa fa-check"></i>Acknowledgments</a></li>
+</ul></li>
+<li class="chapter" data-level="1" data-path="Chap1.html"><a href="Chap1.html"><i class="fa fa-check"></i><b>1</b> Basic formal concepts</a>
+<ul>
+<li class="chapter" data-level="1.1" data-path="sec11.html"><a href="sec11.html"><i class="fa fa-check"></i><b>1.1</b> The Bayes’ rule</a></li>
+<li class="chapter" data-level="1.2" data-path="sec12.html"><a href="sec12.html"><i class="fa fa-check"></i><b>1.2</b> Bayesian framework: A brief summary of theory</a></li>
+<li class="chapter" data-level="1.3" data-path="sec14.html"><a href="sec14.html"><i class="fa fa-check"></i><b>1.3</b> Bayesian reports: Decision theory under uncertainty</a></li>
+<li class="chapter" data-level="1.4" data-path="summary.html"><a href="summary.html"><i class="fa fa-check"></i><b>1.4</b> Summary</a></li>
+<li class="chapter" data-level="1.5" data-path="exercises.html"><a href="exercises.html"><i class="fa fa-check"></i><b>1.5</b> Exercises</a></li>
+</ul></li>
+<li class="chapter" data-level="2" data-path="Chap2.html"><a href="Chap2.html"><i class="fa fa-check"></i><b>2</b> Conceptual differences between the Bayesian and Frequentist approaches</a>
+<ul>
+<li class="chapter" data-level="2.1" data-path="sec21.html"><a href="sec21.html"><i class="fa fa-check"></i><b>2.1</b> The concept of probability</a></li>
+<li class="chapter" data-level="2.2" data-path="sec22.html"><a href="sec22.html"><i class="fa fa-check"></i><b>2.2</b> Subjectivity is not the key</a></li>
+<li class="chapter" data-level="2.3" data-path="sec23.html"><a href="sec23.html"><i class="fa fa-check"></i><b>2.3</b> Estimation, hypothesis testing and prediction</a></li>
+<li class="chapter" data-level="2.4" data-path="sec24.html"><a href="sec24.html"><i class="fa fa-check"></i><b>2.4</b> The likelihood principle</a></li>
+<li class="chapter" data-level="2.5" data-path="sec25.html"><a href="sec25.html"><i class="fa fa-check"></i><b>2.5</b> Why is not the Bayesian approach that popular?</a></li>
+<li class="chapter" data-level="2.6" data-path="sec26.html"><a href="sec26.html"><i class="fa fa-check"></i><b>2.6</b> A simple working example</a></li>
+<li class="chapter" data-level="2.7" data-path="sec27.html"><a href="sec27.html"><i class="fa fa-check"></i><b>2.7</b> Summary</a></li>
+<li class="chapter" data-level="2.8" data-path="sec28.html"><a href="sec28.html"><i class="fa fa-check"></i><b>2.8</b> Exercises</a></li>
+</ul></li>
+<li class="chapter" data-level="3" data-path="Chap3.html"><a href="Chap3.html"><i class="fa fa-check"></i><b>3</b> Cornerstone models: Conjugate families</a>
+<ul>
+<li class="chapter" data-level="3.1" data-path="sec41.html"><a href="sec41.html"><i class="fa fa-check"></i><b>3.1</b> Motivation of conjugate families</a></li>
+<li class="chapter" data-level="3.2" data-path="sec42.html"><a href="sec42.html"><i class="fa fa-check"></i><b>3.2</b> Conjugate prior to exponential family</a></li>
+<li class="chapter" data-level="3.3" data-path="sec43.html"><a href="sec43.html"><i class="fa fa-check"></i><b>3.3</b> Linear regression: The conjugate normal-normal/inverse gamma model</a></li>
+<li class="chapter" data-level="3.4" data-path="multivariate-linear-regression-the-conjugate-normal-normalinverse-wishart-model.html"><a href="multivariate-linear-regression-the-conjugate-normal-normalinverse-wishart-model.html"><i class="fa fa-check"></i><b>3.4</b> Multivariate linear regression: The conjugate normal-normal/inverse Wishart model</a></li>
+<li class="chapter" data-level="3.5" data-path="computational-examples.html"><a href="computational-examples.html"><i class="fa fa-check"></i><b>3.5</b> Computational examples</a></li>
+<li class="chapter" data-level="3.6" data-path="summary-chapter-4.html"><a href="summary-chapter-4.html"><i class="fa fa-check"></i><b>3.6</b> Summary: Chapter 4</a></li>
+<li class="chapter" data-level="3.7" data-path="exercises-chapter-4.html"><a href="exercises-chapter-4.html"><i class="fa fa-check"></i><b>3.7</b> Exercises: Chapter 4</a></li>
+</ul></li>
+<li class="chapter" data-level="4" data-path="Chap4.html"><a href="Chap4.html"><i class="fa fa-check"></i><b>4</b> Simulation methods</a>
+<ul>
+<li class="chapter" data-level="4.1" data-path="sec51.html"><a href="sec51.html"><i class="fa fa-check"></i><b>4.1</b> Markov Chain Monte Carlo methods</a>
+<ul>
+<li class="chapter" data-level="4.1.1" data-path="sec51.html"><a href="sec51.html#sec511"><i class="fa fa-check"></i><b>4.1.1</b> Gibbs sampler</a></li>
+<li class="chapter" data-level="4.1.2" data-path="sec51.html"><a href="sec51.html#sec512"><i class="fa fa-check"></i><b>4.1.2</b> Metropolis-Hastings</a></li>
+<li class="chapter" data-level="4.1.3" data-path="sec51.html"><a href="sec51.html#sec513"><i class="fa fa-check"></i><b>4.1.3</b> Hamiltonian Monte Carlo</a></li>
+</ul></li>
+<li class="chapter" data-level="4.2" data-path="sec52.html"><a href="sec52.html"><i class="fa fa-check"></i><b>4.2</b> Importance sampling</a></li>
+<li class="chapter" data-level="4.3" data-path="sec53.html"><a href="sec53.html"><i class="fa fa-check"></i><b>4.3</b> Particle filtering</a></li>
+<li class="chapter" data-level="4.4" data-path="sec54.html"><a href="sec54.html"><i class="fa fa-check"></i><b>4.4</b> Convergence diagnostics</a>
+<ul>
+<li class="chapter" data-level="4.4.1" data-path="sec54.html"><a href="sec54.html#numerical-standard-error"><i class="fa fa-check"></i><b>4.4.1</b> Numerical standard error</a></li>
+<li class="chapter" data-level="4.4.2" data-path="sec54.html"><a href="sec54.html#effective-number-of-simulation-draws"><i class="fa fa-check"></i><b>4.4.2</b> Effective number of simulation draws</a></li>
+<li class="chapter" data-level="4.4.3" data-path="sec54.html"><a href="sec54.html#tests-of-convergence"><i class="fa fa-check"></i><b>4.4.3</b> Tests of convergence</a></li>
+<li class="chapter" data-level="4.4.4" data-path="sec54.html"><a href="sec54.html#checking-for-errors-in-the-posterior-simulator"><i class="fa fa-check"></i><b>4.4.4</b> Checking for errors in the posterior simulator</a></li>
+</ul></li>
+<li class="chapter" data-level="4.5" data-path="sec55.html"><a href="sec55.html"><i class="fa fa-check"></i><b>4.5</b> Summary</a></li>
+<li class="chapter" data-level="4.6" data-path="sec56.html"><a href="sec56.html"><i class="fa fa-check"></i><b>4.6</b> Exercises</a></li>
+</ul></li>
+<li class="chapter" data-level="5" data-path="Chap5.html"><a href="Chap5.html"><i class="fa fa-check"></i><b>5</b> Graphical user interface</a></li>
+<li class="chapter" data-level="6" data-path="Chap6.html"><a href="Chap6.html"><i class="fa fa-check"></i><b>6</b> Univariate regression</a>
+<ul>
+<li class="chapter" data-level="6.1" data-path="sec61.html"><a href="sec61.html"><i class="fa fa-check"></i><b>6.1</b> The Gaussian linear model</a></li>
+<li class="chapter" data-level="6.2" data-path="sec62.html"><a href="sec62.html"><i class="fa fa-check"></i><b>6.2</b> The logit model</a></li>
+<li class="chapter" data-level="6.3" data-path="sec63.html"><a href="sec63.html"><i class="fa fa-check"></i><b>6.3</b> The probit model</a></li>
+<li class="chapter" data-level="6.4" data-path="sec64.html"><a href="sec64.html"><i class="fa fa-check"></i><b>6.4</b> The multinomial probit model</a></li>
+<li class="chapter" data-level="6.5" data-path="sec65.html"><a href="sec65.html"><i class="fa fa-check"></i><b>6.5</b> The multinomial logit model</a></li>
+<li class="chapter" data-level="6.6" data-path="sec66.html"><a href="sec66.html"><i class="fa fa-check"></i><b>6.6</b> Ordered probit model</a></li>
+<li class="chapter" data-level="6.7" data-path="negative-binomial-model.html"><a href="negative-binomial-model.html"><i class="fa fa-check"></i><b>6.7</b> Negative binomial model</a></li>
+<li class="chapter" data-level="6.8" data-path="sec68.html"><a href="sec68.html"><i class="fa fa-check"></i><b>6.8</b> Tobit model</a></li>
+<li class="chapter" data-level="6.9" data-path="sec69.html"><a href="sec69.html"><i class="fa fa-check"></i><b>6.9</b> Quantile regression</a></li>
+<li class="chapter" data-level="6.10" data-path="sec610.html"><a href="sec610.html"><i class="fa fa-check"></i><b>6.10</b> Bayesian bootstrap regression</a></li>
+<li class="chapter" data-level="6.11" data-path="sec611.html"><a href="sec611.html"><i class="fa fa-check"></i><b>6.11</b> Summary</a></li>
+<li class="chapter" data-level="6.12" data-path="sec612.html"><a href="sec612.html"><i class="fa fa-check"></i><b>6.12</b> Exercises</a></li>
+</ul></li>
+<li class="chapter" data-level="7" data-path="Chap8.html"><a href="Chap8.html"><i class="fa fa-check"></i><b>7</b> Time series</a></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a></li>
+<li class="divider"></li>
+<li><a href="https://bookdown.org" target="blank">Published with bookdown</a></li>
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Introduction to Bayesian Data Modeling</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="sec610" class="section level2 hasAnchor" number="6.10">
+<h2><span class="header-section-number">6.10</span> Bayesian bootstrap regression<a href="sec610.html#sec610" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>We implement the Bayesian bootstrap <span class="citation">(<a href="#ref-Rubin1981">Rubin 1981</a>)</span> for linear regression models. In particular, the Bayesian bootstrap simulates the posterior distributions by assuming that the sample cumulative distribution function (CDF) is the population CDF (this assumption is also implicit in the frequentist bootstrap <span class="citation">(<a href="#ref-Efron1979">Efron 1979</a>)</span>).</p>
+<p>Given <span class="math inline">\(y_i \stackrel{i.i.d.}{\sim} \mathcal{F}\)</span>, where <span class="math inline">\(\mathcal{F}\)</span> does not specify a particular parametric family of distributions, but instead sets <span class="math inline">\(\mathbb{E}(y_i \mid \boldsymbol{x}_i) = \boldsymbol{x}_i^{\top} \boldsymbol{\beta}\)</span>, with <span class="math inline">\(\boldsymbol{x}_i\)</span> being a <span class="math inline">\(K\)</span>-dimensional vector of regressors and <span class="math inline">\(\boldsymbol{\beta}\)</span> a <span class="math inline">\(K\)</span>-dimensional vector of parameters, the Bayesian bootstrap generates posterior probabilities for each <span class="math inline">\(y_i\)</span>, where the values of <span class="math inline">\(\boldsymbol{y}\)</span> that are not observed have zero posterior probability.</p>
+<p>The algorithm to implement the Bayesian bootstrap is the following:</p>
+<figcaption><b>Algorithm: Bayesian bootstrap</b></figcaption>
+<figure id="alg:Gibbs">
+<pre>
+Draw <b>g</b> ∼ Dir(α<sub>1</sub>, α<sub>2</sub>, ..., α<sub>N</sub>) such that α<sub>i</sub>=1 for all i 
+<b>g</b>=(g<sub>1</sub>, g<sub>2</sub>, ..., g<sub>N</sub>) is the vector of probabilities to attach to (y<sub>1</sub>,<b>x</b><sub>1</sub>), (y<sub>2</sub>,<b>x</b><sub>2</sub>), ..., (y<sub>N</sub>,<b>x</b><sub>N</sub>) for each Bayesian bootstrap replication.
+Sample (y<sub>i</sub>,<b>x</b><sub>i</sub>) N times with replacement and probabilities g<sub>i</sub>, i=1,2, ...,N.
+Estimate <b>β</b> using ordinary least squares in the model E(<b>y</b>|<b>X</b>)=<b>X</b><b>β</b>, <b>y</b> being a S<sub>1</sub> dimensional vector, and <b>X</b> a S<sub>1</sub> X K matrix from the previous stage. 
+Repeat this process S times.
+The distribution of <b>β</b><sup>(s)</sup> is the Bayesian distribution of <b>β</b>.
+</pre>
+</figure>
+<p><strong>Example: Simulation exercise</strong></p>
+<p>Let’s perform a simulation exercise to evaluate the performance of the previous Algorithm for inference using the Bayesian bootstrap. The data-generating process is defined by two regressors, each distributed as standard normal. The location vector is <span class="math inline">\(\boldsymbol{\beta} = \left[1 \ 1 \ 1\right]^{\top}\)</span>, with a variance of <span class="math inline">\(\sigma^2 = 1\)</span>, and the sample size is 1,000.</p>
+<p>The following Algorithm illustrates how to use our GUI to run the Bayesian bootstrap. Our GUI is based on the <em>bayesboot</em> command from the <em>bayesboot</em> package in <strong>R</strong>. Exercise 11 asks about using this package to perform inference in this simulation and compares the results with those obtained using our GUI with <span class="math inline">\(S = 10000\)</span>.</p>
+<div class="algorithm">
+<div style="background-color: #f8f9fa; padding: 15px; border-left: 5px solid #343a40; box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1); border-radius: 5px;">
+<p><strong>Algorithm: Bayesian Bootstrap in Linear Regression</strong></p>
+<ol style="list-style-type: decimal">
+<li>Select <em>Univariate Models</em> on the top panel<br />
+</li>
+<li>Select <em>Bootstrap</em> model using the left radio button<br />
+</li>
+<li>Upload the dataset by first selecting whether there is a header in the file, and the kind of separator in the <em>csv</em> file of the dataset (comma, semicolon, or tab). Then, use the <em>Browse</em> button under the <strong>Choose File</strong> legend. You should see a preview of the dataset<br />
+</li>
+<li>Select number of bootstrap replications using the <em>Range sliders</em><br />
+</li>
+<li>Select dependent and independent variables using the <em>Formula builder</em> table<br />
+</li>
+<li>Click the <em>Build formula</em> button to generate the formula in <strong>R</strong> syntax. You can modify the formula in the <strong>Main equation</strong> box using valid arguments of the <em>formula</em> command structure in <strong>R</strong><br />
+</li>
+<li>Click the <em>Go!</em> button<br />
+</li>
+<li>Analyze results<br />
+</li>
+<li>Download posterior chains and diagnostic plots using the <em>Download Posterior Chains</em> and <em>Download Posterior Graphs</em> buttons</li>
+</ol>
+</div>
+</div>
+<p>The following <strong>R</strong> code shows how to program the Bayesian bootstrap from scratch. We observe from the results that all 95% credible intervals encompass the population parameters, and the posterior means are close to the population parameters.</p>
+<div class="sourceCode" id="cb89"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb89-1"><a href="sec610.html#cb89-1" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">010101</span>)</span>
+<span id="cb89-2"><a href="sec610.html#cb89-2" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="dv">1000</span>; x1 <span class="ot">&lt;-</span> <span class="fu">runif</span>(N); x2 <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(N)</span>
+<span id="cb89-3"><a href="sec610.html#cb89-3" tabindex="-1"></a>X <span class="ot">&lt;-</span> <span class="fu">cbind</span>(x1, x2); k <span class="ot">&lt;-</span> <span class="fu">dim</span>(X)[<span class="dv">2</span>]</span>
+<span id="cb89-4"><a href="sec610.html#cb89-4" tabindex="-1"></a>B <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">1</span>, k<span class="sc">+</span><span class="dv">1</span>); sig2 <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb89-5"><a href="sec610.html#cb89-5" tabindex="-1"></a>u <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(N, <span class="dv">0</span>, sig2); y <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="dv">1</span>, X)<span class="sc">%*%</span>B <span class="sc">+</span> u</span>
+<span id="cb89-6"><a href="sec610.html#cb89-6" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">cbind</span>(y, X))</span>
+<span id="cb89-7"><a href="sec610.html#cb89-7" tabindex="-1"></a><span class="fu">names</span>(data) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;y&quot;</span>, <span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>)</span>
+<span id="cb89-8"><a href="sec610.html#cb89-8" tabindex="-1"></a>Reg <span class="ot">&lt;-</span> <span class="cf">function</span>(d){</span>
+<span id="cb89-9"><a href="sec610.html#cb89-9" tabindex="-1"></a>    Reg <span class="ot">&lt;-</span> <span class="fu">lm</span>(y <span class="sc">~</span> x1 <span class="sc">+</span> x2, <span class="at">data =</span> d)</span>
+<span id="cb89-10"><a href="sec610.html#cb89-10" tabindex="-1"></a>    Bhat <span class="ot">&lt;-</span> Reg<span class="sc">$</span>coef</span>
+<span id="cb89-11"><a href="sec610.html#cb89-11" tabindex="-1"></a>    <span class="fu">return</span>(Bhat)</span>
+<span id="cb89-12"><a href="sec610.html#cb89-12" tabindex="-1"></a>}</span>
+<span id="cb89-13"><a href="sec610.html#cb89-13" tabindex="-1"></a>S <span class="ot">&lt;-</span> <span class="dv">10000</span>; alpha <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb89-14"><a href="sec610.html#cb89-14" tabindex="-1"></a>BB <span class="ot">&lt;-</span> <span class="cf">function</span>(S, df, alpha){</span>
+<span id="cb89-15"><a href="sec610.html#cb89-15" tabindex="-1"></a>    Betas <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="cn">NA</span>, S, <span class="fu">dim</span>(df)[<span class="dv">2</span>])</span>
+<span id="cb89-16"><a href="sec610.html#cb89-16" tabindex="-1"></a>    N <span class="ot">&lt;-</span> <span class="fu">dim</span>(df)[<span class="dv">1</span>]</span>
+<span id="cb89-17"><a href="sec610.html#cb89-17" tabindex="-1"></a>    pb <span class="ot">&lt;-</span> <span class="fu">winProgressBar</span>(<span class="at">title =</span> <span class="st">&quot;progress bar&quot;</span>, <span class="at">min =</span> <span class="dv">0</span>, <span class="at">max =</span> S, <span class="at">width =</span> <span class="dv">300</span>)</span>
+<span id="cb89-18"><a href="sec610.html#cb89-18" tabindex="-1"></a>    <span class="cf">for</span>(s <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>S){</span>
+<span id="cb89-19"><a href="sec610.html#cb89-19" tabindex="-1"></a>        g <span class="ot">&lt;-</span> LaplacesDemon<span class="sc">::</span><span class="fu">rdirichlet</span>(N, alpha)</span>
+<span id="cb89-20"><a href="sec610.html#cb89-20" tabindex="-1"></a>        ids <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span>N, <span class="at">size =</span> N, <span class="at">replace =</span> <span class="cn">TRUE</span>, <span class="at">prob =</span> g)</span>
+<span id="cb89-21"><a href="sec610.html#cb89-21" tabindex="-1"></a>        datas <span class="ot">&lt;-</span> df[ids,]</span>
+<span id="cb89-22"><a href="sec610.html#cb89-22" tabindex="-1"></a>        <span class="fu">names</span>(datas) <span class="ot">&lt;-</span> <span class="fu">names</span>(df)</span>
+<span id="cb89-23"><a href="sec610.html#cb89-23" tabindex="-1"></a>        Bs <span class="ot">&lt;-</span> <span class="fu">Reg</span>(<span class="at">d =</span> datas)</span>
+<span id="cb89-24"><a href="sec610.html#cb89-24" tabindex="-1"></a>        Betas[s, ] <span class="ot">&lt;-</span> Bs</span>
+<span id="cb89-25"><a href="sec610.html#cb89-25" tabindex="-1"></a>        <span class="fu">setWinProgressBar</span>(pb, s, <span class="at">title=</span><span class="fu">paste</span>( <span class="fu">round</span>(s<span class="sc">/</span>S<span class="sc">*</span><span class="dv">100</span>, <span class="dv">0</span>), <span class="st">&quot;% done&quot;</span>))</span>
+<span id="cb89-26"><a href="sec610.html#cb89-26" tabindex="-1"></a>    }</span>
+<span id="cb89-27"><a href="sec610.html#cb89-27" tabindex="-1"></a>    <span class="fu">close</span>(pb)</span>
+<span id="cb89-28"><a href="sec610.html#cb89-28" tabindex="-1"></a>    <span class="fu">return</span>(Betas)</span>
+<span id="cb89-29"><a href="sec610.html#cb89-29" tabindex="-1"></a>}</span>
+<span id="cb89-30"><a href="sec610.html#cb89-30" tabindex="-1"></a>BBs <span class="ot">&lt;-</span> <span class="fu">BB</span>(<span class="at">S =</span> S, <span class="at">df =</span> data, <span class="at">alpha =</span> alpha)</span>
+<span id="cb89-31"><a href="sec610.html#cb89-31" tabindex="-1"></a><span class="fu">summary</span>(coda<span class="sc">::</span><span class="fu">mcmc</span>(BBs))</span></code></pre></div>
+<pre><code>## 
+## Iterations = 1:10000
+## Thinning interval = 1 
+## Number of chains = 1 
+## Sample size per chain = 10000 
+## 
+## 1. Empirical mean and standard deviation for each variable,
+##    plus standard error of the mean:
+## 
+##        Mean      SD  Naive SE Time-series SE
+## [1,] 0.9182 0.06475 0.0006475      0.0006475
+## [2,] 1.1735 0.10948 0.0010948      0.0010948
+## [3,] 1.0133 0.03359 0.0003359      0.0003359
+## 
+## 2. Quantiles for each variable:
+## 
+##        2.5%    25%    50%    75% 97.5%
+## var1 0.7882 0.8755 0.9178 0.9612 1.045
+## var2 0.9560 1.1009 1.1738 1.2467 1.391
+## var3 0.9467 0.9902 1.0134 1.0362 1.079</code></pre>
+</div>
+<h3>References<a href="references.html#references" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-Efron1979" class="csl-entry">
+Efron, B. 1979. <span>“Bootstrap Methods: <span>A</span>nother Look at the Jackknife.”</span> <em>The Annals of Statistics</em> 7: 1–26.
+</div>
+<div id="ref-Rubin1981" class="csl-entry">
+Rubin, Donnald B. 1981. <span>“The <span>B</span>ayesian Bootstrap.”</span> <em>The Annals of Statistics</em> 9 (1): 130–34.
+</div>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="sec69.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="sec611.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"github": true,
+"facebook": true,
+"twitter": true,
+"linkedin": false,
+"weibo": false,
+"instapaper": false,
+"vk": false,
+"whatsapp": false,
+"all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
+},
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": {
+"link": "https://github.com/aramir21/IntroductionBayesianEconometricsBook/06-Univariatereg.Rmd",
+"text": "Edit"
+},
+"history": {
+"link": null,
+"text": null
+},
+"view": {
+"link": null,
+"text": null
+},
+"download": null,
+"search": {
+"engine": "fuse",
+"options": null
+},
+"toc": {
+"collapse": "subsection"
+}
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/latest.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>

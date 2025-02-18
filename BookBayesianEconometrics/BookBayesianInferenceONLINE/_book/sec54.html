@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>4.4 Convergence diagnostics | Introduction to Bayesian Data Modeling</title>
+  <meta name="description" content="The subject of this textbook is Bayesian data modeling, with the primary aim of providing an introduction to its theoretical foundations and facilitating the application of Bayesian inference using a GUI." />
+  <meta name="generator" content="bookdown 0.40 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="4.4 Convergence diagnostics | Introduction to Bayesian Data Modeling" />
+  <meta property="og:type" content="book" />
+  
+  <meta property="og:description" content="The subject of this textbook is Bayesian data modeling, with the primary aim of providing an introduction to its theoretical foundations and facilitating the application of Bayesian inference using a GUI." />
+  <meta name="github-repo" content="https://github.com/aramir21/IntroductionBayesianEconometricsBook" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="4.4 Convergence diagnostics | Introduction to Bayesian Data Modeling" />
+  
+  <meta name="twitter:description" content="The subject of this textbook is Bayesian data modeling, with the primary aim of providing an introduction to its theoretical foundations and facilitating the application of Bayesian inference using a GUI." />
+  
+
+<meta name="author" content="Andrés Ramírez-Hassan" />
+
+
+<meta name="date" content="2025-02-17" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  
+<link rel="prev" href="sec53.html"/>
+<link rel="next" href="sec55.html"/>
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+<link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
+<link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
+<script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+
+
+<style type="text/css">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { color: #008000; } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { color: #008000; font-weight: bold; } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<style type="text/css">
+  
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+</style>
+<style type="text/css">
+/* Used with Pandoc 2.11+ new --citeproc when CSL is used */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}
+</style>
+
+<link rel="stylesheet" href="css/style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><a href="./">Introduction to Bayesian Econometrics: A GUIded tour using R</a></li>
+
+<li class="divider"></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Introduction</a>
+<ul>
+<li class="chapter" data-level="" data-path="to-instructors-and-students.html"><a href="to-instructors-and-students.html"><i class="fa fa-check"></i>To instructors and students</a></li>
+<li class="chapter" data-level="" data-path="acknowledgments.html"><a href="acknowledgments.html"><i class="fa fa-check"></i>Acknowledgments</a></li>
+</ul></li>
+<li class="chapter" data-level="1" data-path="Chap1.html"><a href="Chap1.html"><i class="fa fa-check"></i><b>1</b> Basic formal concepts</a>
+<ul>
+<li class="chapter" data-level="1.1" data-path="sec11.html"><a href="sec11.html"><i class="fa fa-check"></i><b>1.1</b> The Bayes’ rule</a></li>
+<li class="chapter" data-level="1.2" data-path="sec12.html"><a href="sec12.html"><i class="fa fa-check"></i><b>1.2</b> Bayesian framework: A brief summary of theory</a></li>
+<li class="chapter" data-level="1.3" data-path="sec14.html"><a href="sec14.html"><i class="fa fa-check"></i><b>1.3</b> Bayesian reports: Decision theory under uncertainty</a></li>
+<li class="chapter" data-level="1.4" data-path="summary.html"><a href="summary.html"><i class="fa fa-check"></i><b>1.4</b> Summary</a></li>
+<li class="chapter" data-level="1.5" data-path="exercises.html"><a href="exercises.html"><i class="fa fa-check"></i><b>1.5</b> Exercises</a></li>
+</ul></li>
+<li class="chapter" data-level="2" data-path="Chap2.html"><a href="Chap2.html"><i class="fa fa-check"></i><b>2</b> Conceptual differences between the Bayesian and Frequentist approaches</a>
+<ul>
+<li class="chapter" data-level="2.1" data-path="sec21.html"><a href="sec21.html"><i class="fa fa-check"></i><b>2.1</b> The concept of probability</a></li>
+<li class="chapter" data-level="2.2" data-path="sec22.html"><a href="sec22.html"><i class="fa fa-check"></i><b>2.2</b> Subjectivity is not the key</a></li>
+<li class="chapter" data-level="2.3" data-path="sec23.html"><a href="sec23.html"><i class="fa fa-check"></i><b>2.3</b> Estimation, hypothesis testing and prediction</a></li>
+<li class="chapter" data-level="2.4" data-path="sec24.html"><a href="sec24.html"><i class="fa fa-check"></i><b>2.4</b> The likelihood principle</a></li>
+<li class="chapter" data-level="2.5" data-path="sec25.html"><a href="sec25.html"><i class="fa fa-check"></i><b>2.5</b> Why is not the Bayesian approach that popular?</a></li>
+<li class="chapter" data-level="2.6" data-path="sec26.html"><a href="sec26.html"><i class="fa fa-check"></i><b>2.6</b> A simple working example</a></li>
+<li class="chapter" data-level="2.7" data-path="sec27.html"><a href="sec27.html"><i class="fa fa-check"></i><b>2.7</b> Summary</a></li>
+<li class="chapter" data-level="2.8" data-path="sec28.html"><a href="sec28.html"><i class="fa fa-check"></i><b>2.8</b> Exercises</a></li>
+</ul></li>
+<li class="chapter" data-level="3" data-path="Chap3.html"><a href="Chap3.html"><i class="fa fa-check"></i><b>3</b> Cornerstone models: Conjugate families</a>
+<ul>
+<li class="chapter" data-level="3.1" data-path="sec41.html"><a href="sec41.html"><i class="fa fa-check"></i><b>3.1</b> Motivation of conjugate families</a></li>
+<li class="chapter" data-level="3.2" data-path="sec42.html"><a href="sec42.html"><i class="fa fa-check"></i><b>3.2</b> Conjugate prior to exponential family</a></li>
+<li class="chapter" data-level="3.3" data-path="linear-regression-the-conjugate-normal-normalinverse-gamma-model.html"><a href="linear-regression-the-conjugate-normal-normalinverse-gamma-model.html"><i class="fa fa-check"></i><b>3.3</b> Linear regression: The conjugate normal-normal/inverse gamma model</a></li>
+<li class="chapter" data-level="3.4" data-path="multivariate-linear-regression-the-conjugate-normal-normalinverse-wishart-model.html"><a href="multivariate-linear-regression-the-conjugate-normal-normalinverse-wishart-model.html"><i class="fa fa-check"></i><b>3.4</b> Multivariate linear regression: The conjugate normal-normal/inverse Wishart model</a></li>
+<li class="chapter" data-level="3.5" data-path="computational-examples.html"><a href="computational-examples.html"><i class="fa fa-check"></i><b>3.5</b> Computational examples</a></li>
+<li class="chapter" data-level="3.6" data-path="summary-chapter-4.html"><a href="summary-chapter-4.html"><i class="fa fa-check"></i><b>3.6</b> Summary: Chapter 4</a></li>
+<li class="chapter" data-level="3.7" data-path="exercises-chapter-4.html"><a href="exercises-chapter-4.html"><i class="fa fa-check"></i><b>3.7</b> Exercises: Chapter 4</a></li>
+</ul></li>
+<li class="chapter" data-level="4" data-path="Chap4.html"><a href="Chap4.html"><i class="fa fa-check"></i><b>4</b> Simulation methods</a>
+<ul>
+<li class="chapter" data-level="4.1" data-path="sec51.html"><a href="sec51.html"><i class="fa fa-check"></i><b>4.1</b> Markov Chain Monte Carlo methods</a>
+<ul>
+<li class="chapter" data-level="4.1.1" data-path="sec51.html"><a href="sec51.html#sec511"><i class="fa fa-check"></i><b>4.1.1</b> Gibbs sampler</a></li>
+<li class="chapter" data-level="4.1.2" data-path="sec51.html"><a href="sec51.html#sec512"><i class="fa fa-check"></i><b>4.1.2</b> Metropolis-Hastings</a></li>
+<li class="chapter" data-level="4.1.3" data-path="sec51.html"><a href="sec51.html#sec513"><i class="fa fa-check"></i><b>4.1.3</b> Hamiltonian Monte Carlo</a></li>
+</ul></li>
+<li class="chapter" data-level="4.2" data-path="sec52.html"><a href="sec52.html"><i class="fa fa-check"></i><b>4.2</b> Importance sampling</a></li>
+<li class="chapter" data-level="4.3" data-path="sec53.html"><a href="sec53.html"><i class="fa fa-check"></i><b>4.3</b> Particle filtering</a></li>
+<li class="chapter" data-level="4.4" data-path="sec54.html"><a href="sec54.html"><i class="fa fa-check"></i><b>4.4</b> Convergence diagnostics</a>
+<ul>
+<li class="chapter" data-level="4.4.1" data-path="sec54.html"><a href="sec54.html#numerical-standard-error"><i class="fa fa-check"></i><b>4.4.1</b> Numerical standard error</a></li>
+<li class="chapter" data-level="4.4.2" data-path="sec54.html"><a href="sec54.html#effective-number-of-simulation-draws"><i class="fa fa-check"></i><b>4.4.2</b> Effective number of simulation draws</a></li>
+<li class="chapter" data-level="4.4.3" data-path="sec54.html"><a href="sec54.html#tests-of-convergence"><i class="fa fa-check"></i><b>4.4.3</b> Tests of convergence</a></li>
+<li class="chapter" data-level="4.4.4" data-path="sec54.html"><a href="sec54.html#checking-for-errors-in-the-posterior-simulator"><i class="fa fa-check"></i><b>4.4.4</b> Checking for errors in the posterior simulator</a></li>
+</ul></li>
+<li class="chapter" data-level="4.5" data-path="sec55.html"><a href="sec55.html"><i class="fa fa-check"></i><b>4.5</b> Summary</a></li>
+<li class="chapter" data-level="4.6" data-path="sec56.html"><a href="sec56.html"><i class="fa fa-check"></i><b>4.6</b> Exercises</a></li>
+</ul></li>
+<li class="chapter" data-level="5" data-path="Chap5.html"><a href="Chap5.html"><i class="fa fa-check"></i><b>5</b> Graphical user interface</a></li>
+<li class="chapter" data-level="6" data-path="Chap8.html"><a href="Chap8.html"><i class="fa fa-check"></i><b>6</b> Time series</a></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a></li>
+<li class="divider"></li>
+<li><a href="https://bookdown.org" target="blank">Published with bookdown</a></li>
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Introduction to Bayesian Data Modeling</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="sec54" class="section level2 hasAnchor" number="4.4">
+<h2><span class="header-section-number">4.4</span> Convergence diagnostics<a href="sec54.html#sec54" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>MCMC methods rely on <em>irreducibility</em>, <em>positive recurrence</em>, and <em>aperiodicity</em>, ensuring that, after a sufficient burn-in (warm-up) period, the posterior draws are sampled from the invariant stationary posterior distribution. This can be achieved by running multiple chains initiated at different points and then mixing them, or by running a single longer chain. In this book, we follow the latter approach, as suggested by <span class="citation">Geyer (<a href="#ref-geyer1992practical">1992</a>)</span>.</p>
+<p>In this section, we present diagnostics to assess whether the sample draws come from the stationary posterior distribution. First, we calculate the numerical standard error associated with the MCMC algorithm. Next, we review the effective number of simulation draws and various convergence tests. Finally, we examine potential errors in the posterior simulator.</p>
+<div id="numerical-standard-error" class="section level3 hasAnchor" number="4.4.1">
+<h3><span class="header-section-number">4.4.1</span> Numerical standard error<a href="sec54.html#numerical-standard-error" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Many times, the goal in Bayesian inference is to obtain a set of independent draws <span class="math inline">\(\boldsymbol{\theta}^{(s)}\)</span>, <span class="math inline">\(s = 1, 2, \dots, S\)</span>, from the posterior distribution, such that a measure of interest can be estimated with reasonable precision. In particular, we approximate Equation <a href="sec52.html#eq:51">(4.1)</a> using Equation <a href="sec52.html#eq:52">(4.2)</a>. By the central limit theorem, we know that</p>
+<p><span class="math display" id="eq:54">\[
+\begin{equation}
+\frac{\bar{h}(\boldsymbol{\theta})_S - \mathbb{E}_{\pi}[h(\boldsymbol{\theta})]}{\sigma_h(\boldsymbol{\theta})/\sqrt{S}} \stackrel{d}{\rightarrow} N(0, 1),
+\tag{4.4}
+\end{equation}
+\]</span></p>
+<p>where <span class="math inline">\(\sigma^2_h(\boldsymbol{\theta})\)</span> is the variance of <span class="math inline">\(h(\boldsymbol{\theta})\)</span>.</p>
+<p>If we have independent draws, we can estimate <span class="math inline">\(\sigma^2_h(\boldsymbol{\theta})\)</span> using the posterior draws as follows:</p>
+<p><span class="math display">\[
+\hat{\sigma}^2_{Sh}(\boldsymbol{\theta}) = \frac{1}{S} \sum_{s=1}^S \left[h(\boldsymbol{\theta}^{(s)})\right]^2 - \left[\bar{h}(\boldsymbol{\theta})_S\right]^2.
+\]</span></p>
+<p>However, if there are dependent draws, we have</p>
+<p><span class="math display">\[
+\hat{\sigma}^{2*}_{Sh}(\boldsymbol{\theta}) = \frac{1}{S} \left\{\sum_{s=1}^S \left[h(\boldsymbol{\theta}^{(s)})-\bar{h}(\boldsymbol{\theta})_S\right]^2 + 2\sum_{l=k+1}^K \big(h(\boldsymbol{\theta}^{(l)}) - \bar{h}(\boldsymbol{\theta})\big)\big(h(\boldsymbol{\theta}^{(l-k)}) - \bar{h}(\boldsymbol{\theta})\big)\right\}.
+\]</span></p>
+<p>The <em>numerical standard error</em> is given by <span class="math inline">\(\sigma_h(\boldsymbol{\theta})/\sqrt{S}\)</span> and serves as a measure of the approximation error in the Monte Carlo integration. Note that this error can be decreased by increasing <span class="math inline">\(S\)</span>. For instance, <span class="math inline">\(S = 1000\)</span> implies an error proportional to 3.2%, while <span class="math inline">\(S = 10000\)</span> reduces the error to approximately 1%.</p>
+</div>
+<div id="effective-number-of-simulation-draws" class="section level3 hasAnchor" number="4.4.2">
+<h3><span class="header-section-number">4.4.2</span> Effective number of simulation draws<a href="sec54.html#effective-number-of-simulation-draws" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>MCMC posterior draws are not independent; therefore, the effective sample size of the posterior chains is not equal to <span class="math inline">\(S\)</span>. To assess the effective sample size of the posterior draws, we use the following measure:</p>
+<p><span class="math display">\[
+S_{\text{ef}} = \frac{S}{1 + 2\sum_{k=1}^{\infty} \rho_k(h)},
+\]</span></p>
+<p>where <span class="math inline">\(\rho_k(h)\)</span> is the autocorrelation of the sequence <span class="math inline">\(h(\boldsymbol{\theta})\)</span> at lag <span class="math inline">\(k\)</span>.</p>
+<p>The sample counterpart of this expression is:</p>
+<p><span class="math display">\[
+\hat{S}_{\text{ef}} = \frac{S}{1 + 2\sum_{k=1}^{K} \hat{\rho}_k(h)},
+\]</span></p>
+<p>where</p>
+<p><span class="math display">\[
+\hat{\rho}_k(h) = \frac{\sum_{l=k+1}^K \big(h(\boldsymbol{\theta}^{(l)}) - \bar{h}(\boldsymbol{\theta})\big)\big(h(\boldsymbol{\theta}^{(l-k)}) - \bar{h}(\boldsymbol{\theta})\big)}{\sum_{s=1}^K \big(h(\boldsymbol{\theta}^{(s)}) - \bar{h}(\boldsymbol{\theta})\big)^2}.
+\]</span></p>
+<p>If <span class="math inline">\(\hat{\rho}_k(h)\)</span> declines to zero slowly as <span class="math inline">\(k\)</span> increases, it indicates significant memory in the draws. Consequently, the effective sample size of the posterior draws is small, and it becomes necessary to either decrease the autocorrelation or increase the number of posterior draws.</p>
+<p>Note that</p>
+<p><span class="math display">\[
+\hat{\sigma}^{2*}_{Sh}(\boldsymbol{\theta}) = \hat{\sigma}^2_{Sh}\left(\boldsymbol{\theta}\right) (1+2\sum_{k=1}^K \hat{\rho}_k(h)),
+\]</span></p>
+<p>where <span class="math inline">\(\hat{\sigma}^{2*}_{Sh}(\boldsymbol{\theta})\)</span> and <span class="math inline">\(\hat{\sigma}^2_{Sh}\)</span> are the simulation variances using dependent and independent draws, and <span class="math inline">\(\hat{\kappa}(h) = (1+2\sum_{k=1}^K \hat{\rho}_k(h))\)</span> is called the <em>inefficiency factor</em>, which represents the inflation of the simulation variance due to autocorrelation in the draws. Values near one indicate draws with little correlation.</p>
+</div>
+<div id="tests-of-convergence" class="section level3 hasAnchor" number="4.4.3">
+<h3><span class="header-section-number">4.4.3</span> Tests of convergence<a href="sec54.html#tests-of-convergence" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>Regarding convergence issues, there are several diagnostics to assess the adequacy of the posterior chains. In particular, graphical approaches such as trace plots and autocorrelation plots are widely used. Trace plots display the sampled values of a parameter (or multiple parameters) as a function of the iteration number, while autocorrelation plots graphically represent <span class="math inline">\(\hat{\rho}_k\)</span>. The latter shows how correlated the values of <span class="math inline">\(\boldsymbol{\theta}\)</span>, or functions of <span class="math inline">\(\boldsymbol{\theta}\)</span>, are at different lags. Trace plots should fluctuate around a stable mean, exploring the entire parameter space without becoming stuck in any particular region. Autocorrelation plots, on the other hand, should exhibit values close to zero or diminish quickly as the lag increases.</p>
+<p>Additionally, Geweke’s test <span class="citation">(<a href="#ref-Geweke1992">J. Geweke 1992</a>)</span> provides a simple two-sample test of means. If the mean of the first window (10% of the chain) is not significantly different from the mean of the second window (50% of the chain), we do not reject the null hypothesis that the two segments of the chain are drawn from the same stationary distribution.</p>
+<p>The Raftery and Lewis test <span class="citation">(<a href="#ref-Raftery1992">Raftery and Lewis 1992</a>)</span> is designed to calculate the approximate number of iterations (<span class="math inline">\(S\)</span>), burn-in (<span class="math inline">\(b\)</span>), and thinning parameter (<span class="math inline">\(d\)</span>) required to estimate <span class="math inline">\(p\left[H(\boldsymbol{\theta}) \leq h\right]\)</span>, where <span class="math inline">\(H(\boldsymbol{\theta}): \mathcal{R}^K \rightarrow \mathcal{R}\)</span>. This calculation is based on a specific quantile of interest (<span class="math inline">\(q\)</span>), precision (<span class="math inline">\(r\)</span>), and probability (<span class="math inline">\(p\)</span>). The diagnostic is based on the dependence factor, <span class="math inline">\(I = \frac{S + b}{S_{\text{Min}}}\)</span>, where <span class="math inline">\(S_{\text{Min}} = \Phi^{-1}\left(\frac{1}{2}(p+1)\right)^2 q(1-q) / r^2\)</span>, and <span class="math inline">\(\Phi(\cdot)\)</span> is the standard normal cumulative distribution function. Values of <span class="math inline">\(I\)</span> much greater than 5 indicate a high level of dependence.</p>
+<p>Heidelberger and Welch’s test <span class="citation">(<a href="#ref-Heidelberger1983">Heidelberger and Welch 1983</a>)</span> uses a Cramér-von Mises statistic to test the null hypothesis that the sampled values, <span class="math inline">\(\boldsymbol{\theta}^{(s)}\)</span>, are drawn from a stationary distribution. The statistic is given by:</p>
+<p><span class="math display">\[
+\text{CVM}(B_S) = \int_0^1 B_S(t)^2 \, dt,
+\]</span></p>
+<p>where <span class="math inline">\(B_S(t) = \frac{S_{\left[St\right]} - \left[St\right] \bar{\boldsymbol{\theta}}^S}{\sqrt{S p(0)}}\)</span>, <span class="math inline">\(S_S = \sum_{s=1}^S \boldsymbol{\theta}^{(s)}\)</span>, <span class="math inline">\(\bar{\boldsymbol{\theta}}^S = S_S / S\)</span>, and <span class="math inline">\(p(0)\)</span> is the spectral density at 0, with <span class="math inline">\(0 \leq t \leq 1\)</span>. Under the null hypothesis, <span class="math inline">\(B_S(t)\)</span> converges in distribution to a Brownian bridge.</p>
+<p>This test is recursively applied until either the null hypothesis is not rejected, or <span class="math inline">\(s = 50\%\)</span> of the chain has been discarded. Subsequently, the half-width test calculates a 95% confidence interval for the mean using the portion of the chain that passed the stationarity test. If the ratio of the half-width of this interval to the mean is less than 0.1, the test is considered passed. This indicates no evidence to reject the null hypothesis that the estimated mean is accurate and stable.</p>
+<p>There are other diagnostics in Bayesian inference that we do not mention here, such as the Gelman and Rubin test <span class="citation">(<a href="#ref-Gelman1992">Gelman and Rubin 1992</a>)</span>. This is because we focus on the available diagnostics in our Graphical User Interface (GUI).</p>
+</div>
+<div id="checking-for-errors-in-the-posterior-simulator" class="section level3 hasAnchor" number="4.4.4">
+<h3><span class="header-section-number">4.4.4</span> Checking for errors in the posterior simulator<a href="sec54.html#checking-for-errors-in-the-posterior-simulator" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<p>In this book, we provide basic code templates to get posterior draws for performing inference under the Bayesian framework when there is no closed-form solution. We are prone to making mistakes and greatly appreciate your feedback to help improve our code and identify any other potential issues. One way to check if our code works correctly is to perform simulations where the population parameters are known. If the code is functioning properly, the posterior estimates should converge to these values as the sample size increases due to the Bayesian consistency. This is an informal approach to identifying potential mistakes.</p>
+<p><span class="citation">John Geweke (<a href="#ref-geweke2004getting">2004</a>)</span> offers a more formal method for code validation. The starting point is the joint density <span class="math inline">\(p(\boldsymbol{y}, \boldsymbol{\theta}) = p(\boldsymbol{y} \mid \boldsymbol{\theta}) \pi(\boldsymbol{\theta})\)</span> and a test function <span class="math inline">\(h(\boldsymbol{y}, \boldsymbol{\theta})\)</span> such that <span class="math inline">\(\sigma_h^2 = \text{Var}[h(\boldsymbol{y}, \boldsymbol{\theta})] &lt; \infty\)</span>.</p>
+<p>Assume that there is a <em>marginal-conditional simulator</em> for the joint distribution of <span class="math inline">\(\boldsymbol{y}\)</span> and <span class="math inline">\(\boldsymbol{\theta}\)</span>:</p>
+<p><span class="math display">\[\begin{align}
+\boldsymbol{\theta}^{(s)} &amp;\sim \pi(\boldsymbol{\theta}) \\
+\boldsymbol{y}^{(s)} &amp;\sim p(\boldsymbol{y} \mid \boldsymbol{\theta}^{(s)}) \\
+h^{(s)} &amp;= h(\boldsymbol{y}^{(s)}, \boldsymbol{\theta}^{(s)}).
+\end{align}\]</span></p>
+<p>The sequence <span class="math inline">\(\left\{\boldsymbol{y}^{(s)}, \boldsymbol{\theta}^{(s)}\right\}\)</span> is i.i.d., <span class="math inline">\(\bar{h}_S\)</span> converges almost surely to <span class="math inline">\(\mathbb{E}[h(\boldsymbol{y}, \boldsymbol{\theta})]\)</span>, and there is convergence in distribution when <span class="math inline">\(\bar{h}_S\)</span> is well standardized (see Equation <a href="sec54.html#eq:54">(4.4)</a>) and <span class="math inline">\(\hat{\sigma}^2_{Sh}(\boldsymbol{\theta})\)</span> converges to <span class="math inline">\({\sigma}^2_h(\boldsymbol{\theta})\)</span> almost surely.</p>
+<p>A posterior simulator produces draws <span class="math inline">\(\boldsymbol{\theta}^{(s)}\)</span> given a particular realization <span class="math inline">\(\boldsymbol{y}_{\text{Obs}}\)</span>, using the transition density <span class="math inline">\(q(\boldsymbol{\theta} \mid \boldsymbol{\theta}^{(s-1)}, \boldsymbol{y}_{\text{Obs}})\)</span>. Thus, a <em>successive-conditional simulator</em> consists of an initial draw <span class="math inline">\(\boldsymbol{\theta}^{(0)}\)</span> from <span class="math inline">\(\pi(\boldsymbol{\theta})\)</span> followed by:</p>
+<p><span class="math display">\[\begin{align}
+\boldsymbol{y}^{(l)} &amp;\sim p(\boldsymbol{y} \mid \boldsymbol{\theta}^{(l-1)}) \\
+\boldsymbol{\theta}^{(l)} &amp;\sim q(\boldsymbol{\theta} \mid \boldsymbol{y}^{(l)}, \boldsymbol{\theta}^{(l-1)}) \\
+h^{(l)} &amp;= h(\boldsymbol{y}^{(l)}, \boldsymbol{\theta}^{(l)}),
+\end{align}\]</span></p>
+<p>where <span class="math inline">\(\bar{h}_L = L^{-1} \sum_{l=1}^L h(\boldsymbol{y}^{(l)}, \boldsymbol{\theta}^{(l)})\)</span> converges almost surely to <span class="math inline">\(\mathbb{E}[h(\boldsymbol{y}, \boldsymbol{\theta})]\)</span>, and there is convergence in distribution when <span class="math inline">\(\bar{h}_L\)</span> is well standardized, and <span class="math inline">\(\hat{\sigma}^{*2}_{Lh}(\boldsymbol{\theta})\)</span> converges to <span class="math inline">\({\sigma}^2_h(\boldsymbol{\theta})\)</span> almost surely, for <span class="math inline">\(l = 1, 2, \dots, L\)</span>. Thus,</p>
+<p><span class="math display">\[\begin{align}
+\frac{\bar{h}_S - \bar{h}_L}{\left( S^{-1} \hat{\sigma}^2_{Sh}(\boldsymbol{\theta}) + L^{-1} \hat{\sigma}^{*2}_{Lh}(\boldsymbol{\theta}) \right)^{1/2}} &amp;\stackrel{d}{\rightarrow} N(0, 1).
+\end{align}\]</span></p>
+<p>Thus, we can test <span class="math inline">\(H_0. \ \bar{h}_S - \bar{h}_L = 0\)</span> versus <span class="math inline">\(H_1. \ \bar{h}_S - \bar{h}_L \neq 0\)</span>. Rejection of the null indicates potential errors in implementing the posterior simulator.</p>
+<p><strong>Example: Mining disaster change point continues</strong></p>
+<p>Let’s revisit the mining disaster change point example from subsection <a href="sec51.html#sec511">4.1.1</a> and examine some convergence diagnostics for the posterior draws of the rate of disasters after the change point (<span class="math inline">\(\lambda_2\)</span>). The following code demonstrates how to perform these diagnostics using the <strong>R</strong> package <em>coda</em>. For clarity and replicability of the results, we present the Gibbs sampler again.</p>
+<p>The following two figures show the trace and autocorrelation plots. We observe that the posterior draws of <span class="math inline">\(\lambda_2\)</span> appear stationary around their mean, and the autocorrelation decreases rapidly to zero.</p>
+<p>The mean and standard deviation of the rate after the change point are 0.92 and 0.12, respectively. The naive and time series standard errors are 0.0008245 and 0.0008945, respectively. The naive standard error assumes iid posterior draws, whereas the time series standard error accounts for autocorrelation. Both standard errors are very similar, indicating a low level of autocorrelation, which is consistent with the results shown in the second figure. The effective sample size of the posterior draws is 16,991, while the total number of posterior draws is 20,000 after a burn-in period of 1,000.</p>
+<p>The Geweke test statistic is 1.43, which implies no statistical evidence to reject the null hypothesis of equal means in the two segments of the posterior draws. The Raftery and Lewis test yields a dependence factor near 1, indicating a low level of dependence. The Heidelberger and Welch test does not reject the null hypothesis of stationarity for the posterior draws and also confirms that the mean is accurate and stable.</p>
+<p>In summary, all posterior diagnostics indicate that the posterior draws originate from an invariant stationary distribution.</p>
+<p>The second part of the code implements the proposal by <span class="citation">John Geweke (<a href="#ref-geweke2004getting">2004</a>)</span> to assess the reliability of the posterior simulator. The parameter vector is defined as <span class="math inline">\(\boldsymbol{\theta} = [\lambda_1 \ \lambda_2 \ H]\)</span>, and the first moments of these parameters are used as test functions. We do not reject the null hypothesis of equal means across the three test functions, indicating that the posterior simulator is functioning correctly.</p>
+<p>To evaluate the effectiveness of the test, we run the <em>marginal-conditional simulator</em> with prior parameters <span class="math inline">\(\alpha_{l0} = 0.5\)</span> and <span class="math inline">\(\beta_{l0} = 1\)</span>, <span class="math inline">\(l = 1, 2\)</span>. In contrast, for the <em>successive-conditional simulator</em>, we use prior parameters <span class="math inline">\(\alpha_{l0} = 1\)</span> and <span class="math inline">\(\beta_{l0} = 0.5\)</span>, <span class="math inline">\(l = 1, 2\)</span>. In this case, we reject the null hypothesis in two out of three test functions, suggesting that the test performs well in this example.</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb42-1"><a href="sec54.html#cb42-1" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>())</span>
+<span id="cb42-2"><a href="sec54.html#cb42-2" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">010101</span>)</span>
+<span id="cb42-3"><a href="sec54.html#cb42-3" tabindex="-1"></a>dataset<span class="ot">&lt;-</span><span class="fu">read.csv</span>(<span class="st">&quot;https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/MiningDataCarlin.csv&quot;</span>,<span class="at">header=</span>T)</span>
+<span id="cb42-4"><a href="sec54.html#cb42-4" tabindex="-1"></a><span class="fu">attach</span>(dataset)</span></code></pre></div>
+<pre><code>## The following objects are masked from dataset (pos = 8):
+## 
+##     Count, year</code></pre>
+<div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb44-1"><a href="sec54.html#cb44-1" tabindex="-1"></a><span class="fu">str</span>(dataset)</span></code></pre></div>
+<pre><code>## &#39;data.frame&#39;:    112 obs. of  2 variables:
+##  $ year : int  1851 1852 1853 1854 1855 1856 1857 1858 1859 1860 ...
+##  $ Count: int  4 5 4 1 0 4 3 4 0 6 ...</code></pre>
+<div class="sourceCode" id="cb46"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb46-1"><a href="sec54.html#cb46-1" tabindex="-1"></a>a10 <span class="ot">&lt;-</span> <span class="fl">0.5</span>; a20 <span class="ot">&lt;-</span> <span class="fl">0.5</span></span>
+<span id="cb46-2"><a href="sec54.html#cb46-2" tabindex="-1"></a>b10 <span class="ot">&lt;-</span> <span class="dv">1</span>; b20 <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb46-3"><a href="sec54.html#cb46-3" tabindex="-1"></a>y <span class="ot">&lt;-</span> Count</span>
+<span id="cb46-4"><a href="sec54.html#cb46-4" tabindex="-1"></a>sumy <span class="ot">&lt;-</span> <span class="fu">sum</span>(Count); T <span class="ot">&lt;-</span> <span class="fu">length</span>(Count)</span>
+<span id="cb46-5"><a href="sec54.html#cb46-5" tabindex="-1"></a>theta1 <span class="ot">&lt;-</span> <span class="cn">NULL</span>; theta2 <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb46-6"><a href="sec54.html#cb46-6" tabindex="-1"></a>kk <span class="ot">&lt;-</span> <span class="cn">NULL</span>; H <span class="ot">&lt;-</span> <span class="dv">60</span></span>
+<span id="cb46-7"><a href="sec54.html#cb46-7" tabindex="-1"></a>MCMC <span class="ot">&lt;-</span> <span class="dv">20000</span>; burnin <span class="ot">&lt;-</span> <span class="dv">1000</span>; S <span class="ot">&lt;-</span> MCMC <span class="sc">+</span> burnin; keep <span class="ot">&lt;-</span> (burnin<span class="sc">+</span><span class="dv">1</span>)<span class="sc">:</span>S</span>
+<span id="cb46-8"><a href="sec54.html#cb46-8" tabindex="-1"></a>pb <span class="ot">&lt;-</span> <span class="fu">winProgressBar</span>(<span class="at">title =</span> <span class="st">&quot;progress bar&quot;</span>, <span class="at">min =</span> <span class="dv">0</span>, <span class="at">max =</span> S, <span class="at">width =</span> <span class="dv">300</span>)</span>
+<span id="cb46-9"><a href="sec54.html#cb46-9" tabindex="-1"></a><span class="cf">for</span>(s <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>S){</span>
+<span id="cb46-10"><a href="sec54.html#cb46-10" tabindex="-1"></a>    a1 <span class="ot">&lt;-</span> a10 <span class="sc">+</span> <span class="fu">sum</span>(y[<span class="dv">1</span><span class="sc">:</span>H])</span>
+<span id="cb46-11"><a href="sec54.html#cb46-11" tabindex="-1"></a>    b1 <span class="ot">&lt;-</span> b10<span class="sc">+</span>H</span>
+<span id="cb46-12"><a href="sec54.html#cb46-12" tabindex="-1"></a>    theta11 <span class="ot">&lt;-</span> <span class="fu">rgamma</span>(<span class="dv">1</span>,a1,b1)</span>
+<span id="cb46-13"><a href="sec54.html#cb46-13" tabindex="-1"></a>    theta1 <span class="ot">&lt;-</span> <span class="fu">c</span>(theta1,theta11)</span>
+<span id="cb46-14"><a href="sec54.html#cb46-14" tabindex="-1"></a>    a2 <span class="ot">&lt;-</span> a20 <span class="sc">+</span> <span class="fu">sum</span>(y[(<span class="dv">1</span><span class="sc">+</span>H)<span class="sc">:</span>T])</span>
+<span id="cb46-15"><a href="sec54.html#cb46-15" tabindex="-1"></a>    b2 <span class="ot">&lt;-</span> b20 <span class="sc">+</span> T<span class="sc">-</span>H</span>
+<span id="cb46-16"><a href="sec54.html#cb46-16" tabindex="-1"></a>    theta22 <span class="ot">&lt;-</span> <span class="fu">rgamma</span>(<span class="dv">1</span>,a2,b2)</span>
+<span id="cb46-17"><a href="sec54.html#cb46-17" tabindex="-1"></a>    theta2 <span class="ot">&lt;-</span> <span class="fu">c</span>(theta2,theta22)</span>
+<span id="cb46-18"><a href="sec54.html#cb46-18" tabindex="-1"></a>    pp<span class="ot">&lt;-</span><span class="cn">NULL</span></span>
+<span id="cb46-19"><a href="sec54.html#cb46-19" tabindex="-1"></a>    <span class="cf">for</span>(l <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>T){</span>
+<span id="cb46-20"><a href="sec54.html#cb46-20" tabindex="-1"></a>        p <span class="ot">&lt;-</span> <span class="fu">exp</span>(l<span class="sc">*</span>(theta22<span class="sc">-</span>theta11))<span class="sc">*</span>(theta11<span class="sc">/</span>theta22)<span class="sc">^</span>(<span class="fu">sum</span>(y[<span class="dv">1</span><span class="sc">:</span>l]))</span>
+<span id="cb46-21"><a href="sec54.html#cb46-21" tabindex="-1"></a>        pp <span class="ot">&lt;-</span> <span class="fu">c</span>(pp,p)</span>
+<span id="cb46-22"><a href="sec54.html#cb46-22" tabindex="-1"></a>    }</span>
+<span id="cb46-23"><a href="sec54.html#cb46-23" tabindex="-1"></a>    prob <span class="ot">&lt;-</span> pp<span class="sc">/</span><span class="fu">sum</span>(pp)</span>
+<span id="cb46-24"><a href="sec54.html#cb46-24" tabindex="-1"></a>    H <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span>T,<span class="dv">1</span>,<span class="at">prob=</span>prob)</span>
+<span id="cb46-25"><a href="sec54.html#cb46-25" tabindex="-1"></a>    kk <span class="ot">&lt;-</span> <span class="fu">c</span>(kk,H)</span>
+<span id="cb46-26"><a href="sec54.html#cb46-26" tabindex="-1"></a>    <span class="fu">setWinProgressBar</span>(pb, s, <span class="at">title=</span><span class="fu">paste</span>( <span class="fu">round</span>(s<span class="sc">/</span>S<span class="sc">*</span><span class="dv">100</span>, <span class="dv">0</span>),<span class="st">&quot;% done&quot;</span>))</span>
+<span id="cb46-27"><a href="sec54.html#cb46-27" tabindex="-1"></a>}</span>
+<span id="cb46-28"><a href="sec54.html#cb46-28" tabindex="-1"></a><span class="fu">close</span>(pb)</span></code></pre></div>
+<pre><code>## NULL</code></pre>
+<div class="sourceCode" id="cb48"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb48-1"><a href="sec54.html#cb48-1" tabindex="-1"></a><span class="fu">library</span>(coda); <span class="fu">library</span>(latex2exp)</span>
+<span id="cb48-2"><a href="sec54.html#cb48-2" tabindex="-1"></a>theta1Post <span class="ot">&lt;-</span> <span class="fu">mcmc</span>(theta1[keep]); <span class="fu">summary</span>(theta1Post)</span></code></pre></div>
+<pre><code>## 
+## Iterations = 1:20000
+## Thinning interval = 1 
+## Number of chains = 1 
+## Sample size per chain = 20000 
+## 
+## 1. Empirical mean and standard deviation for each variable,
+##    plus standard error of the mean:
+## 
+##           Mean             SD       Naive SE Time-series SE 
+##       3.049150       0.282297       0.001996       0.002155 
+## 
+## 2. Quantiles for each variable:
+## 
+##  2.5%   25%   50%   75% 97.5% 
+## 2.517 2.855 3.042 3.235 3.625</code></pre>
+<div class="sourceCode" id="cb50"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb50-1"><a href="sec54.html#cb50-1" tabindex="-1"></a>HPost <span class="ot">&lt;-</span> <span class="fu">mcmc</span>(kk); <span class="fu">summary</span>(HPost)</span></code></pre></div>
+<pre><code>## 
+## Iterations = 1:21000
+## Thinning interval = 1 
+## Number of chains = 1 
+## Sample size per chain = 21000 
+## 
+## 1. Empirical mean and standard deviation for each variable,
+##    plus standard error of the mean:
+## 
+##           Mean             SD       Naive SE Time-series SE 
+##       40.15843        2.48171        0.01713        0.01973 
+## 
+## 2. Quantiles for each variable:
+## 
+##  2.5%   25%   50%   75% 97.5% 
+##    36    39    40    41    46</code></pre>
+<div class="sourceCode" id="cb52"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb52-1"><a href="sec54.html#cb52-1" tabindex="-1"></a>theta2Post <span class="ot">&lt;-</span> <span class="fu">mcmc</span>(theta2[keep]); <span class="fu">summary</span>(theta2Post) </span></code></pre></div>
+<pre><code>## 
+## Iterations = 1:20000
+## Thinning interval = 1 
+## Number of chains = 1 
+## Sample size per chain = 20000 
+## 
+## 1. Empirical mean and standard deviation for each variable,
+##    plus standard error of the mean:
+## 
+##           Mean             SD       Naive SE Time-series SE 
+##      0.9151697      0.1165952      0.0008245      0.0008945 
+## 
+## 2. Quantiles for each variable:
+## 
+##   2.5%    25%    50%    75%  97.5% 
+## 0.7010 0.8343 0.9104 0.9914 1.1564</code></pre>
+<div class="sourceCode" id="cb54"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb54-1"><a href="sec54.html#cb54-1" tabindex="-1"></a><span class="fu">plot</span>(theta2Post, <span class="at">density =</span> <span class="cn">FALSE</span>, <span class="at">main =</span> <span class="st">&quot;Trace plot&quot;</span>, <span class="at">ylab =</span> <span class="fu">TeX</span>(<span class="st">&quot;$</span><span class="sc">\\</span><span class="st">theta_{2}$&quot;</span>))</span></code></pre></div>
+<p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-7-1.svg" width="672" /></p>
+<div class="sourceCode" id="cb55"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb55-1"><a href="sec54.html#cb55-1" tabindex="-1"></a><span class="fu">autocorr.plot</span>(theta2Post, <span class="at">main =</span> <span class="st">&quot;Autocorrelation plot&quot;</span>)</span></code></pre></div>
+<p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-7-2.svg" width="672" /></p>
+<div class="sourceCode" id="cb56"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb56-1"><a href="sec54.html#cb56-1" tabindex="-1"></a><span class="fu">raftery.diag</span>(theta2Post, <span class="at">q =</span> <span class="fl">0.025</span>, <span class="at">r =</span> <span class="fl">0.005</span>, <span class="at">s =</span> <span class="fl">0.95</span>)</span></code></pre></div>
+<pre><code>## 
+## Quantile (q) = 0.025
+## Accuracy (r) = +/- 0.005
+## Probability (s) = 0.95 
+##                                        
+##  Burn-in  Total Lower bound  Dependence
+##  (M)      (N)   (Nmin)       factor (I)
+##  2        3865  3746         1.03</code></pre>
+<div class="sourceCode" id="cb58"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb58-1"><a href="sec54.html#cb58-1" tabindex="-1"></a><span class="fu">geweke.diag</span>(theta2Post, <span class="at">frac1 =</span> <span class="fl">0.1</span>, <span class="at">frac2 =</span> <span class="fl">0.5</span>)</span></code></pre></div>
+<pre><code>## 
+## Fraction in 1st window = 0.1
+## Fraction in 2nd window = 0.5 
+## 
+##  var1 
+## 1.431</code></pre>
+<div class="sourceCode" id="cb60"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb60-1"><a href="sec54.html#cb60-1" tabindex="-1"></a><span class="fu">heidel.diag</span>(theta2Post, <span class="at">eps =</span> <span class="fl">0.1</span>, <span class="at">pvalue =</span> <span class="fl">0.05</span>)</span></code></pre></div>
+<pre><code>##                                    
+##      Stationarity start     p-value
+##      test         iteration        
+## var1 passed       1         0.196  
+##                               
+##      Halfwidth Mean  Halfwidth
+##      test                     
+## var1 passed    0.915 0.00175</code></pre>
+<div class="sourceCode" id="cb62"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb62-1"><a href="sec54.html#cb62-1" tabindex="-1"></a><span class="fu">effectiveSize</span>(theta2Post)</span></code></pre></div>
+<pre><code>##     var1 
+## 16990.59</code></pre>
+<div class="sourceCode" id="cb64"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb64-1"><a href="sec54.html#cb64-1" tabindex="-1"></a><span class="co"># Marginal-conditional simulator</span></span>
+<span id="cb64-2"><a href="sec54.html#cb64-2" tabindex="-1"></a>Theta1Prior <span class="ot">&lt;-</span> <span class="fu">rgamma</span>(MCMC,a10,b10); Theta2Prior <span class="ot">&lt;-</span> <span class="fu">rgamma</span>(MCMC,a20,b20) </span>
+<span id="cb64-3"><a href="sec54.html#cb64-3" tabindex="-1"></a>kPrior <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span>T, MCMC, <span class="at">replace =</span> <span class="cn">TRUE</span>, <span class="at">prob =</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">/</span>T,T))</span>
+<span id="cb64-4"><a href="sec54.html#cb64-4" tabindex="-1"></a>ytPrior <span class="ot">&lt;-</span> <span class="cf">function</span>(par){</span>
+<span id="cb64-5"><a href="sec54.html#cb64-5" tabindex="-1"></a>    y1t <span class="ot">&lt;-</span> <span class="fu">rpois</span>(par[<span class="dv">3</span>], par[<span class="dv">1</span>])</span>
+<span id="cb64-6"><a href="sec54.html#cb64-6" tabindex="-1"></a>    <span class="cf">if</span>(par[<span class="dv">3</span>] <span class="sc">==</span> T){y2t <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb64-7"><a href="sec54.html#cb64-7" tabindex="-1"></a>    }<span class="cf">else</span>{y2t <span class="ot">&lt;-</span> <span class="fu">rpois</span>(T<span class="sc">-</span>par[<span class="dv">3</span>], par[<span class="dv">2</span>])</span>
+<span id="cb64-8"><a href="sec54.html#cb64-8" tabindex="-1"></a>    }</span>
+<span id="cb64-9"><a href="sec54.html#cb64-9" tabindex="-1"></a>    yt <span class="ot">&lt;-</span> <span class="fu">c</span>(y1t, y2t)</span>
+<span id="cb64-10"><a href="sec54.html#cb64-10" tabindex="-1"></a>    <span class="fu">return</span>(yt)</span>
+<span id="cb64-11"><a href="sec54.html#cb64-11" tabindex="-1"></a>}</span>
+<span id="cb64-12"><a href="sec54.html#cb64-12" tabindex="-1"></a>pars1 <span class="ot">&lt;-</span> <span class="fu">cbind</span>(Theta1Prior, Theta2Prior, kPrior); Yt <span class="ot">&lt;-</span> <span class="fu">apply</span>(pars1, <span class="dv">1</span>, ytPrior)</span>
+<span id="cb64-13"><a href="sec54.html#cb64-13" tabindex="-1"></a>parsmcmc1 <span class="ot">&lt;-</span> coda<span class="sc">::</span><span class="fu">mcmc</span>(pars1); Summ1 <span class="ot">&lt;-</span> <span class="fu">summary</span>(parsmcmc1)</span>
+<span id="cb64-14"><a href="sec54.html#cb64-14" tabindex="-1"></a><span class="co"># Successive-conditional simulator</span></span>
+<span id="cb64-15"><a href="sec54.html#cb64-15" tabindex="-1"></a>SucConSim <span class="ot">&lt;-</span> <span class="cf">function</span>(a10, b10, a20, b20, par){</span>
+<span id="cb64-16"><a href="sec54.html#cb64-16" tabindex="-1"></a>    y <span class="ot">&lt;-</span> <span class="fu">ytPrior</span>(par) </span>
+<span id="cb64-17"><a href="sec54.html#cb64-17" tabindex="-1"></a>    theta1 <span class="ot">&lt;-</span> par[<span class="dv">1</span>]; theta2 <span class="ot">&lt;-</span> par[<span class="dv">2</span>]; H <span class="ot">&lt;-</span> par[<span class="dv">3</span>]</span>
+<span id="cb64-18"><a href="sec54.html#cb64-18" tabindex="-1"></a>    a1 <span class="ot">&lt;-</span> a10 <span class="sc">+</span> <span class="fu">sum</span>(y[<span class="dv">1</span><span class="sc">:</span>H]);    b1 <span class="ot">&lt;-</span> b10<span class="sc">+</span>H</span>
+<span id="cb64-19"><a href="sec54.html#cb64-19" tabindex="-1"></a>    theta11 <span class="ot">&lt;-</span> <span class="fu">rgamma</span>(<span class="dv">1</span>,a1,b1)</span>
+<span id="cb64-20"><a href="sec54.html#cb64-20" tabindex="-1"></a>    <span class="cf">if</span>(H <span class="sc">==</span> T){ a2 <span class="ot">&lt;-</span> a20</span>
+<span id="cb64-21"><a href="sec54.html#cb64-21" tabindex="-1"></a>    }<span class="cf">else</span>{ a2 <span class="ot">&lt;-</span> a20 <span class="sc">+</span> <span class="fu">sum</span>(y[(<span class="dv">1</span><span class="sc">+</span>H)<span class="sc">:</span>T])</span>
+<span id="cb64-22"><a href="sec54.html#cb64-22" tabindex="-1"></a>    }</span>
+<span id="cb64-23"><a href="sec54.html#cb64-23" tabindex="-1"></a>    b2 <span class="ot">&lt;-</span> b20 <span class="sc">+</span> T<span class="sc">-</span>H; theta22 <span class="ot">&lt;-</span> <span class="fu">rgamma</span>(<span class="dv">1</span>,a2,b2); pp<span class="ot">&lt;-</span><span class="cn">NULL</span></span>
+<span id="cb64-24"><a href="sec54.html#cb64-24" tabindex="-1"></a>    <span class="cf">for</span>(l <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>T){</span>
+<span id="cb64-25"><a href="sec54.html#cb64-25" tabindex="-1"></a>        p <span class="ot">&lt;-</span> l<span class="sc">*</span>(theta22<span class="sc">-</span>theta11) <span class="sc">+</span> (<span class="fu">sum</span>(y[<span class="dv">1</span><span class="sc">:</span>l]))<span class="sc">*</span><span class="fu">log</span>(theta11<span class="sc">/</span>theta22)</span>
+<span id="cb64-26"><a href="sec54.html#cb64-26" tabindex="-1"></a>        pp <span class="ot">&lt;-</span> <span class="fu">c</span>(pp,p)</span>
+<span id="cb64-27"><a href="sec54.html#cb64-27" tabindex="-1"></a>    }</span>
+<span id="cb64-28"><a href="sec54.html#cb64-28" tabindex="-1"></a>    pps <span class="ot">&lt;-</span> <span class="fu">exp</span>(pp <span class="sc">-</span> <span class="fu">max</span>(pp)); prob <span class="ot">&lt;-</span> pps<span class="sc">/</span><span class="fu">sum</span>(pps)</span>
+<span id="cb64-29"><a href="sec54.html#cb64-29" tabindex="-1"></a>    H <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span>T, <span class="dv">1</span>, <span class="at">prob=</span>prob)</span>
+<span id="cb64-30"><a href="sec54.html#cb64-30" tabindex="-1"></a>    parNew <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">y =</span> y, <span class="at">pars =</span> <span class="fu">c</span>(theta11, theta22, H))</span>
+<span id="cb64-31"><a href="sec54.html#cb64-31" tabindex="-1"></a>    <span class="fu">return</span>(parNew)</span>
+<span id="cb64-32"><a href="sec54.html#cb64-32" tabindex="-1"></a>}</span>
+<span id="cb64-33"><a href="sec54.html#cb64-33" tabindex="-1"></a>a10 <span class="ot">&lt;-</span> <span class="fl">0.5</span>; b10 <span class="ot">&lt;-</span> <span class="dv">1</span>; a20 <span class="ot">&lt;-</span> <span class="fl">0.5</span>; b20 <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb64-34"><a href="sec54.html#cb64-34" tabindex="-1"></a><span class="co"># a10 &lt;- 1; b10 &lt;- 0.5; a20 &lt;- 1; b20 &lt;- 0.5</span></span>
+<span id="cb64-35"><a href="sec54.html#cb64-35" tabindex="-1"></a>par1 <span class="ot">&lt;-</span> <span class="fu">rgamma</span>(<span class="dv">1</span>,a10,b10); par2 <span class="ot">&lt;-</span> <span class="fu">rgamma</span>(<span class="dv">1</span>,a20,b20) </span>
+<span id="cb64-36"><a href="sec54.html#cb64-36" tabindex="-1"></a>par3 <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span>T, <span class="dv">1</span>, <span class="at">replace =</span> <span class="cn">TRUE</span>, <span class="at">prob =</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">/</span>T,T))</span>
+<span id="cb64-37"><a href="sec54.html#cb64-37" tabindex="-1"></a>pars2 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="cn">NA</span>, MCMC, <span class="dv">3</span>); pars2[<span class="dv">1</span>,] <span class="ot">&lt;-</span> <span class="fu">c</span>(par1, par2, par3)</span>
+<span id="cb64-38"><a href="sec54.html#cb64-38" tabindex="-1"></a><span class="cf">for</span>(s <span class="cf">in</span> <span class="dv">2</span><span class="sc">:</span>MCMC){</span>
+<span id="cb64-39"><a href="sec54.html#cb64-39" tabindex="-1"></a>    Res <span class="ot">&lt;-</span> <span class="fu">SucConSim</span>(<span class="at">a10 =</span> a10, <span class="at">b10 =</span> b10, <span class="at">a20 =</span> a20, <span class="at">b20 =</span> b20, <span class="at">par =</span> pars2[s<span class="dv">-1</span>,])</span>
+<span id="cb64-40"><a href="sec54.html#cb64-40" tabindex="-1"></a>    pars2[s, ] <span class="ot">&lt;-</span> Res<span class="sc">$</span>pars</span>
+<span id="cb64-41"><a href="sec54.html#cb64-41" tabindex="-1"></a>}</span>
+<span id="cb64-42"><a href="sec54.html#cb64-42" tabindex="-1"></a>parsmcmc2 <span class="ot">&lt;-</span> coda<span class="sc">::</span><span class="fu">mcmc</span>(pars2); Summ2 <span class="ot">&lt;-</span> <span class="fu">summary</span>(parsmcmc2)</span>
+<span id="cb64-43"><a href="sec54.html#cb64-43" tabindex="-1"></a>TestGeweke <span class="ot">&lt;-</span> <span class="cf">function</span>(j){</span>
+<span id="cb64-44"><a href="sec54.html#cb64-44" tabindex="-1"></a>    Test <span class="ot">&lt;-</span> (Summ1[[<span class="st">&quot;statistics&quot;</span>]][j,<span class="dv">1</span>] <span class="sc">-</span> Summ2[[<span class="st">&quot;statistics&quot;</span>]][j,<span class="dv">1</span>])<span class="sc">/</span>(Summ1[[<span class="st">&quot;statistics&quot;</span>]][j,<span class="dv">4</span>]<span class="sc">+</span>Summ2[[<span class="st">&quot;statistics&quot;</span>]][j,<span class="dv">4</span>])<span class="sc">^</span><span class="fl">0.5</span></span>
+<span id="cb64-45"><a href="sec54.html#cb64-45" tabindex="-1"></a>    Reject <span class="ot">&lt;-</span> <span class="fu">abs</span>(Test) <span class="sc">&gt;</span> <span class="fu">qnorm</span>(<span class="fl">0.975</span>)</span>
+<span id="cb64-46"><a href="sec54.html#cb64-46" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">list</span>(<span class="at">Test =</span> Test, <span class="at">Reject =</span> Reject))</span>
+<span id="cb64-47"><a href="sec54.html#cb64-47" tabindex="-1"></a>}</span>
+<span id="cb64-48"><a href="sec54.html#cb64-48" tabindex="-1"></a><span class="fu">TestGeweke</span>(<span class="dv">1</span>); <span class="fu">TestGeweke</span>(<span class="dv">2</span>); <span class="fu">TestGeweke</span>(<span class="dv">3</span>)</span></code></pre></div>
+<pre><code>## $Test
+##       Mean 
+## -0.0966628 
+## 
+## $Reject
+##  Mean 
+## FALSE</code></pre>
+<pre><code>## $Test
+##       Mean 
+## -0.2038595 
+## 
+## $Reject
+##  Mean 
+## FALSE</code></pre>
+<pre><code>## $Test
+##      Mean 
+## 0.7029845 
+## 
+## $Reject
+##  Mean 
+## FALSE</code></pre>
+</div>
+</div>
+<h3>References<a href="references.html#references" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-Gelman1992" class="csl-entry">
+Gelman, Andrew, and Donald B. Rubin. 1992. <span>“Inference from Iterative Simulation Using Multiple Sequences.”</span> <em>Statistical Science</em> 7 (4): 457–72. <a href="https://doi.org/10.1214/ss/1177011136">https://doi.org/10.1214/ss/1177011136</a>.
+</div>
+<div id="ref-Geweke1992" class="csl-entry">
+Geweke, J. 1992. <span>“Bayesian Statistics.”</span> In. Clarendon Press, Oxford, UK.
+</div>
+<div id="ref-geweke2004getting" class="csl-entry">
+Geweke, John. 2004. <span>“Getting It Right: Joint Distribution Tests of Posterior Simulators.”</span> <em>Journal of the American Statistical Association</em> 99 (467): 799–804.
+</div>
+<div id="ref-geyer1992practical" class="csl-entry">
+Geyer, Charles J. 1992. <span>“Practical Markov Chain Monte Carlo.”</span> <em>Statistical Science</em>, 473–83.
+</div>
+<div id="ref-Heidelberger1983" class="csl-entry">
+Heidelberger, P., and P. D. Welch. 1983. <span>“Simulation Run Length Control in the Presence of an Initial Transient.”</span> <em>Operations Research</em> 31 (6): 1109–44.
+</div>
+<div id="ref-Raftery1992" class="csl-entry">
+Raftery, A. E., and S. M. Lewis. 1992. <span>“One Long Run with Diagnostics: Implementation Strategies for <span>M</span>arkov Chain <span>M</span>onte <span>C</span>arlo.”</span> <em>Statistical Science</em> 7: 493–97.
+</div>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="sec53.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="sec55.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"github": true,
+"facebook": true,
+"twitter": true,
+"linkedin": false,
+"weibo": false,
+"instapaper": false,
+"vk": false,
+"whatsapp": false,
+"all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
+},
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": {
+"link": "https://github.com/aramir21/IntroductionBayesianEconometricsBook/05-Simulation.Rmd",
+"text": "Edit"
+},
+"history": {
+"link": null,
+"text": null
+},
+"view": {
+"link": null,
+"text": null
+},
+"download": null,
+"search": {
+"engine": "fuse",
+"options": null
+},
+"toc": {
+"collapse": "subsection"
+}
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/latest.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>
