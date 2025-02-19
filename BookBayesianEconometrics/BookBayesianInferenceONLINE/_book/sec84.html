@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>8.4 Vector Autoregressive models | Introduction to Bayesian Data Modeling</title>
+  <meta name="description" content="The subject of this textbook is Bayesian data modeling, with the primary aim of providing an introduction to its theoretical foundations and facilitating the application of Bayesian inference using a GUI." />
+  <meta name="generator" content="bookdown 0.40 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="8.4 Vector Autoregressive models | Introduction to Bayesian Data Modeling" />
+  <meta property="og:type" content="book" />
+  
+  <meta property="og:description" content="The subject of this textbook is Bayesian data modeling, with the primary aim of providing an introduction to its theoretical foundations and facilitating the application of Bayesian inference using a GUI." />
+  <meta name="github-repo" content="https://github.com/aramir21/IntroductionBayesianEconometricsBook" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="8.4 Vector Autoregressive models | Introduction to Bayesian Data Modeling" />
+  
+  <meta name="twitter:description" content="The subject of this textbook is Bayesian data modeling, with the primary aim of providing an introduction to its theoretical foundations and facilitating the application of Bayesian inference using a GUI." />
+  
+
+<meta name="author" content="Andrés Ramírez-Hassan" />
+
+
+<meta name="date" content="2025-02-19" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  
+<link rel="prev" href="sec83.html"/>
+<link rel="next" href="sec85.html"/>
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+<link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
+<link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
+<script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+
+
+<style type="text/css">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { color: #008000; } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { color: #008000; font-weight: bold; } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<style type="text/css">
+  
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+</style>
+<style type="text/css">
+/* Used with Pandoc 2.11+ new --citeproc when CSL is used */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}
+</style>
+
+<link rel="stylesheet" href="css/style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><a href="./">Introduction to Bayesian Econometrics: A GUIded tour using R</a></li>
+
+<li class="divider"></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Introduction</a>
+<ul>
+<li class="chapter" data-level="" data-path="to-instructors-and-students.html"><a href="to-instructors-and-students.html"><i class="fa fa-check"></i>To instructors and students</a></li>
+<li class="chapter" data-level="" data-path="acknowledgments.html"><a href="acknowledgments.html"><i class="fa fa-check"></i>Acknowledgments</a></li>
+</ul></li>
+<li class="chapter" data-level="1" data-path="Chap1.html"><a href="Chap1.html"><i class="fa fa-check"></i><b>1</b> Basic formal concepts</a>
+<ul>
+<li class="chapter" data-level="1.1" data-path="sec11.html"><a href="sec11.html"><i class="fa fa-check"></i><b>1.1</b> The Bayes’ rule</a></li>
+<li class="chapter" data-level="1.2" data-path="sec12.html"><a href="sec12.html"><i class="fa fa-check"></i><b>1.2</b> Bayesian framework: A brief summary of theory</a></li>
+<li class="chapter" data-level="1.3" data-path="sec14.html"><a href="sec14.html"><i class="fa fa-check"></i><b>1.3</b> Bayesian reports: Decision theory under uncertainty</a></li>
+<li class="chapter" data-level="1.4" data-path="summary.html"><a href="summary.html"><i class="fa fa-check"></i><b>1.4</b> Summary</a></li>
+<li class="chapter" data-level="1.5" data-path="exercises.html"><a href="exercises.html"><i class="fa fa-check"></i><b>1.5</b> Exercises</a></li>
+</ul></li>
+<li class="chapter" data-level="2" data-path="Chap2.html"><a href="Chap2.html"><i class="fa fa-check"></i><b>2</b> Conceptual differences between the Bayesian and Frequentist approaches</a>
+<ul>
+<li class="chapter" data-level="2.1" data-path="sec21.html"><a href="sec21.html"><i class="fa fa-check"></i><b>2.1</b> The concept of probability</a></li>
+<li class="chapter" data-level="2.2" data-path="sec22.html"><a href="sec22.html"><i class="fa fa-check"></i><b>2.2</b> Subjectivity is not the key</a></li>
+<li class="chapter" data-level="2.3" data-path="sec23.html"><a href="sec23.html"><i class="fa fa-check"></i><b>2.3</b> Estimation, hypothesis testing and prediction</a></li>
+<li class="chapter" data-level="2.4" data-path="sec24.html"><a href="sec24.html"><i class="fa fa-check"></i><b>2.4</b> The likelihood principle</a></li>
+<li class="chapter" data-level="2.5" data-path="sec25.html"><a href="sec25.html"><i class="fa fa-check"></i><b>2.5</b> Why is not the Bayesian approach that popular?</a></li>
+<li class="chapter" data-level="2.6" data-path="sec26.html"><a href="sec26.html"><i class="fa fa-check"></i><b>2.6</b> A simple working example</a></li>
+<li class="chapter" data-level="2.7" data-path="sec27.html"><a href="sec27.html"><i class="fa fa-check"></i><b>2.7</b> Summary</a></li>
+<li class="chapter" data-level="2.8" data-path="sec28.html"><a href="sec28.html"><i class="fa fa-check"></i><b>2.8</b> Exercises</a></li>
+</ul></li>
+<li class="chapter" data-level="3" data-path="Chap3.html"><a href="Chap3.html"><i class="fa fa-check"></i><b>3</b> Cornerstone models: Conjugate families</a>
+<ul>
+<li class="chapter" data-level="3.1" data-path="sec41.html"><a href="sec41.html"><i class="fa fa-check"></i><b>3.1</b> Motivation of conjugate families</a></li>
+<li class="chapter" data-level="3.2" data-path="sec42.html"><a href="sec42.html"><i class="fa fa-check"></i><b>3.2</b> Conjugate prior to exponential family</a></li>
+<li class="chapter" data-level="3.3" data-path="sec43.html"><a href="sec43.html"><i class="fa fa-check"></i><b>3.3</b> Linear regression: The conjugate normal-normal/inverse gamma model</a></li>
+<li class="chapter" data-level="3.4" data-path="sec44.html"><a href="sec44.html"><i class="fa fa-check"></i><b>3.4</b> Multivariate linear regression: The conjugate normal-normal/inverse Wishart model</a></li>
+<li class="chapter" data-level="3.5" data-path="computational-examples.html"><a href="computational-examples.html"><i class="fa fa-check"></i><b>3.5</b> Computational examples</a></li>
+<li class="chapter" data-level="3.6" data-path="summary-chapter-4.html"><a href="summary-chapter-4.html"><i class="fa fa-check"></i><b>3.6</b> Summary: Chapter 4</a></li>
+<li class="chapter" data-level="3.7" data-path="exercises-chapter-4.html"><a href="exercises-chapter-4.html"><i class="fa fa-check"></i><b>3.7</b> Exercises: Chapter 4</a></li>
+</ul></li>
+<li class="chapter" data-level="4" data-path="Chap4.html"><a href="Chap4.html"><i class="fa fa-check"></i><b>4</b> Simulation methods</a>
+<ul>
+<li class="chapter" data-level="4.1" data-path="sec51.html"><a href="sec51.html"><i class="fa fa-check"></i><b>4.1</b> Markov Chain Monte Carlo methods</a>
+<ul>
+<li class="chapter" data-level="4.1.1" data-path="sec51.html"><a href="sec51.html#sec511"><i class="fa fa-check"></i><b>4.1.1</b> Gibbs sampler</a></li>
+<li class="chapter" data-level="4.1.2" data-path="sec51.html"><a href="sec51.html#sec512"><i class="fa fa-check"></i><b>4.1.2</b> Metropolis-Hastings</a></li>
+<li class="chapter" data-level="4.1.3" data-path="sec51.html"><a href="sec51.html#sec513"><i class="fa fa-check"></i><b>4.1.3</b> Hamiltonian Monte Carlo</a></li>
+</ul></li>
+<li class="chapter" data-level="4.2" data-path="sec52.html"><a href="sec52.html"><i class="fa fa-check"></i><b>4.2</b> Importance sampling</a></li>
+<li class="chapter" data-level="4.3" data-path="sec53.html"><a href="sec53.html"><i class="fa fa-check"></i><b>4.3</b> Particle filtering</a></li>
+<li class="chapter" data-level="4.4" data-path="sec54.html"><a href="sec54.html"><i class="fa fa-check"></i><b>4.4</b> Convergence diagnostics</a>
+<ul>
+<li class="chapter" data-level="4.4.1" data-path="sec54.html"><a href="sec54.html#numerical-standard-error"><i class="fa fa-check"></i><b>4.4.1</b> Numerical standard error</a></li>
+<li class="chapter" data-level="4.4.2" data-path="sec54.html"><a href="sec54.html#effective-number-of-simulation-draws"><i class="fa fa-check"></i><b>4.4.2</b> Effective number of simulation draws</a></li>
+<li class="chapter" data-level="4.4.3" data-path="sec54.html"><a href="sec54.html#tests-of-convergence"><i class="fa fa-check"></i><b>4.4.3</b> Tests of convergence</a></li>
+<li class="chapter" data-level="4.4.4" data-path="sec54.html"><a href="sec54.html#checking-for-errors-in-the-posterior-simulator"><i class="fa fa-check"></i><b>4.4.4</b> Checking for errors in the posterior simulator</a></li>
+</ul></li>
+<li class="chapter" data-level="4.5" data-path="sec55.html"><a href="sec55.html"><i class="fa fa-check"></i><b>4.5</b> Summary</a></li>
+<li class="chapter" data-level="4.6" data-path="sec56.html"><a href="sec56.html"><i class="fa fa-check"></i><b>4.6</b> Exercises</a></li>
+</ul></li>
+<li class="chapter" data-level="5" data-path="Chap5.html"><a href="Chap5.html"><i class="fa fa-check"></i><b>5</b> Graphical user interface</a></li>
+<li class="chapter" data-level="6" data-path="Chap6.html"><a href="Chap6.html"><i class="fa fa-check"></i><b>6</b> Univariate regression</a>
+<ul>
+<li class="chapter" data-level="6.1" data-path="sec61.html"><a href="sec61.html"><i class="fa fa-check"></i><b>6.1</b> The Gaussian linear model</a></li>
+<li class="chapter" data-level="6.2" data-path="sec62.html"><a href="sec62.html"><i class="fa fa-check"></i><b>6.2</b> The logit model</a></li>
+<li class="chapter" data-level="6.3" data-path="sec63.html"><a href="sec63.html"><i class="fa fa-check"></i><b>6.3</b> The probit model</a></li>
+<li class="chapter" data-level="6.4" data-path="sec64.html"><a href="sec64.html"><i class="fa fa-check"></i><b>6.4</b> The multinomial probit model</a></li>
+<li class="chapter" data-level="6.5" data-path="sec65.html"><a href="sec65.html"><i class="fa fa-check"></i><b>6.5</b> The multinomial logit model</a></li>
+<li class="chapter" data-level="6.6" data-path="sec66.html"><a href="sec66.html"><i class="fa fa-check"></i><b>6.6</b> Ordered probit model</a></li>
+<li class="chapter" data-level="6.7" data-path="negative-binomial-model.html"><a href="negative-binomial-model.html"><i class="fa fa-check"></i><b>6.7</b> Negative binomial model</a></li>
+<li class="chapter" data-level="6.8" data-path="sec68.html"><a href="sec68.html"><i class="fa fa-check"></i><b>6.8</b> Tobit model</a></li>
+<li class="chapter" data-level="6.9" data-path="sec69.html"><a href="sec69.html"><i class="fa fa-check"></i><b>6.9</b> Quantile regression</a></li>
+<li class="chapter" data-level="6.10" data-path="sec610.html"><a href="sec610.html"><i class="fa fa-check"></i><b>6.10</b> Bayesian bootstrap regression</a></li>
+<li class="chapter" data-level="6.11" data-path="sec611.html"><a href="sec611.html"><i class="fa fa-check"></i><b>6.11</b> Summary</a></li>
+<li class="chapter" data-level="6.12" data-path="sec612.html"><a href="sec612.html"><i class="fa fa-check"></i><b>6.12</b> Exercises</a></li>
+</ul></li>
+<li class="chapter" data-level="7" data-path="Chap7.html"><a href="Chap7.html"><i class="fa fa-check"></i><b>7</b> Multivariate regression</a>
+<ul>
+<li class="chapter" data-level="7.1" data-path="sec71.html"><a href="sec71.html"><i class="fa fa-check"></i><b>7.1</b> Multivariate regression</a></li>
+<li class="chapter" data-level="7.2" data-path="sec72.html"><a href="sec72.html"><i class="fa fa-check"></i><b>7.2</b> Seemingly Unrelated Regression</a></li>
+<li class="chapter" data-level="7.3" data-path="sec73.html"><a href="sec73.html"><i class="fa fa-check"></i><b>7.3</b> Instrumental variable</a></li>
+<li class="chapter" data-level="7.4" data-path="sec74.html"><a href="sec74.html"><i class="fa fa-check"></i><b>7.4</b> Multivariate probit model</a></li>
+<li class="chapter" data-level="7.5" data-path="sec75.html"><a href="sec75.html"><i class="fa fa-check"></i><b>7.5</b> Summary</a></li>
+<li class="chapter" data-level="7.6" data-path="sec76.html"><a href="sec76.html"><i class="fa fa-check"></i><b>7.6</b> Exercises</a></li>
+</ul></li>
+<li class="chapter" data-level="8" data-path="Chap8.html"><a href="Chap8.html"><i class="fa fa-check"></i><b>8</b> Time series</a>
+<ul>
+<li class="chapter" data-level="8.1" data-path="sec81.html"><a href="sec81.html"><i class="fa fa-check"></i><b>8.1</b> State-space representation</a>
+<ul>
+<li class="chapter" data-level="8.1.1" data-path="sec81.html"><a href="sec81.html#gaussian-linear-state-space-models"><i class="fa fa-check"></i><b>8.1.1</b> Gaussian linear state-space models</a></li>
+</ul></li>
+<li class="chapter" data-level="8.2" data-path="sec82.html"><a href="sec82.html"><i class="fa fa-check"></i><b>8.2</b> ARMA processes</a></li>
+<li class="chapter" data-level="8.3" data-path="sec83.html"><a href="sec83.html"><i class="fa fa-check"></i><b>8.3</b> Stochastic volatility models</a></li>
+<li class="chapter" data-level="8.4" data-path="sec84.html"><a href="sec84.html"><i class="fa fa-check"></i><b>8.4</b> Vector Autoregressive models</a></li>
+<li class="chapter" data-level="8.5" data-path="sec85.html"><a href="sec85.html"><i class="fa fa-check"></i><b>8.5</b> Summary</a></li>
+<li class="chapter" data-level="8.6" data-path="sec86.html"><a href="sec86.html"><i class="fa fa-check"></i><b>8.6</b> Exercises</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a></li>
+<li class="divider"></li>
+<li><a href="https://bookdown.org" target="blank">Published with bookdown</a></li>
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Introduction to Bayesian Data Modeling</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="sec84" class="section level2 hasAnchor" number="8.4">
+<h2><span class="header-section-number">8.4</span> Vector Autoregressive models<a href="sec84.html#sec84" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Another widely used methodological approach in time series analysis is the vector autoregressive (VAR) model, which extends AR(p) models to the multivariate case. Since the seminal work by Sims (1980) <span class="citation">(<a href="#ref-sims1980macroeconomics">Sims 1980</a>)</span>, these models have become a cornerstone of macroeconomic research to perform forecasts, and impulse-response (structural) analysis. This chapter provides an introduction to Bayesian inference in VAR models, with detailed discussions available in <span class="citation">G. Koop, Korobilis, et al. (<a href="#ref-koop2010bayesian">2010</a>)</span>, <span class="citation">Del Negro and Schorfheide (<a href="#ref-DelNegro2011VAR">2011</a>)</span>, <span class="citation">Woźniak (<a href="#ref-wozniak2016bayesian">2016</a>)</span>, and <span class="citation">Chan et al. (<a href="#ref-chan2019bayesian">2019</a>)</span>.</p>
+<p>The <em>reduced-form</em> VAR(p) model can be written as
+<span class="math display" id="eq:eqVAR">\[\begin{align}
+    \boldsymbol{y}_t=\boldsymbol{v} + \sum_{j=1}^p\boldsymbol{A}_{j}\boldsymbol{y}_{t-j}+\boldsymbol{\mu}_t,
+    \tag{8.10}
+\end{align}\]</span>
+where <span class="math inline">\(\boldsymbol{y}_t\)</span> is a <span class="math inline">\(M\)</span>-dimensional vector having information of <span class="math inline">\(M\)</span> time series variables, <span class="math inline">\(\boldsymbol{v}\)</span> is a <span class="math inline">\(M\)</span>-dimensional vector of intercepts, <span class="math inline">\(\boldsymbol{A}_{j}\)</span> are <span class="math inline">\(M\times M\)</span> matrices of coefficients, and <span class="math inline">\(\boldsymbol{\mu}_t \stackrel{iid}{\sim} N_M(\boldsymbol{0}, \boldsymbol{\Sigma})\)</span> are stochastic errors, <span class="math inline">\(t=1,2,\dots,T\)</span> and <span class="math inline">\(j=1,2,\dots,p\)</span>. Other deterministic terms and exogenous variables can be added to the specification without main difficulty, we do not do this to keep simply the notation. In addition, we assume that the stability condition is satisfied such that the stochastic process is stationary (see <span class="citation">Helmut (<a href="#ref-helmut2005new">2005</a>)</span> Chap. 2 for details), and we have available <span class="math inline">\(p\)</span> presample values for each variable.</p>
+<p>Following the matrix-form notation of the multivariate regression model (see sections <a href="sec44.html#sec44">3.4</a> and <a href="sec71.html#sec71">7.1</a>), we can set <span class="math inline">\(\boldsymbol{Y}=\left[{\boldsymbol{y_{1}}} \ {\boldsymbol{y_{2}}} \ \ldots \ {\boldsymbol{y_{M}}}\right]\)</span>, which is an <span class="math inline">\(T \times M\)</span> matrix, <span class="math inline">\(\boldsymbol{x}_t=[1 \ \boldsymbol{y}_{t-1}^{\top} \ \dots \ \boldsymbol{y}_{t-p}^{\top}]\)</span> is a <span class="math inline">\((1+Mp)\)</span>-dimensional row vector, we define <span class="math inline">\(K=1+Mp\)</span> to facilitate notation, and set
+<span class="math display">\[\begin{align*}
+\boldsymbol{X}=\begin{bmatrix}
+    \boldsymbol{x}_1\\
+    \boldsymbol{x}_2\\
+    \vdots \\
+    \boldsymbol{x}_T\\
+\end{bmatrix},
+\end{align*}\]</span>
+which is a <span class="math inline">\(T\times K\)</span> matrix, <span class="math inline">\(\boldsymbol{B}=\left[\boldsymbol{v} \ \boldsymbol{A}_{1} \ \boldsymbol{A}_{2} \ldots \boldsymbol{A}_{P}\right]^{\top}\)</span> is a <span class="math inline">\(K \times M\)</span> matrix of parameters, and <span class="math inline">\(\boldsymbol{U}=\left[\boldsymbol{\mu}_{1} \ \boldsymbol{\mu}_{2}\ldots \boldsymbol{\mu}_{M}\right]\)</span> is a <span class="math inline">\(T\times M\)</span>-dimensional matrix of stochastic random errors such that <span class="math inline">\(\boldsymbol{U}\sim N_{T\times M}(\boldsymbol{0}_{T\times M},\boldsymbol{\Sigma}\otimes \boldsymbol{I}_T)\)</span>. Thus, we can express the VAR(p) model in the form of a multivariate regression model,
+<span class="math display">\[\begin{align*}
+    \boldsymbol{Y}=\boldsymbol{X}\boldsymbol{B}+\boldsymbol{U}.
+\end{align*}\]</span>
+We can assume conjugate priors to facilitate computation, that is,
+<span class="math display">\[
+\pi({\boldsymbol{B}}, {\boldsymbol{\Sigma}}) = \pi({\boldsymbol{B}} \mid {\boldsymbol{\Sigma}}) \pi({\boldsymbol{\Sigma}}),
+\]</span>
+where <span class="math inline">\({\boldsymbol{B}} \mid {\boldsymbol{\Sigma}} \sim N_{K \times M}({\boldsymbol{B}}_{0}, {\boldsymbol{V}}_{0}, {\boldsymbol{\Sigma}})\)</span> and <span class="math inline">\({\boldsymbol{\Sigma}} \sim IW({\boldsymbol{\Psi}}_{0}, \alpha_{0})\)</span>. Thus,
+<span class="math display">\[
+\pi({\boldsymbol{B}}, {\boldsymbol{\Sigma}} \mid {\boldsymbol{Y}}, {\boldsymbol{X}}) = \pi({\boldsymbol{B}} \mid {\boldsymbol{\Sigma}}, {\boldsymbol{Y}}, {\boldsymbol{X}}) \pi({\boldsymbol{\Sigma}} \mid {\boldsymbol{Y}}, {\boldsymbol{X}}),
+\]</span>
+where <span class="math inline">\({\boldsymbol{B}} \mid {\boldsymbol{\Sigma}}, {\boldsymbol{Y}}, {\boldsymbol{X}} \sim N_{K \times M}({\boldsymbol{B}}_n, {\boldsymbol{V}}_n, {\boldsymbol{\Sigma}})\)</span> and <span class="math inline">\({\boldsymbol{\Sigma}} \mid {\boldsymbol{Y}}, {\boldsymbol{X}} \sim IW({\boldsymbol{\Psi}}_n, \alpha_n)\)</span>. The quantities <span class="math inline">\({\boldsymbol{B}}_n\)</span>, <span class="math inline">\({\boldsymbol{V}}_n\)</span>, <span class="math inline">\({\boldsymbol{\Psi}}_n\)</span>, and <span class="math inline">\(\alpha_n\)</span> are given by the following expressions:</p>
+<p><span class="math display">\[
+{\boldsymbol{B}}_n = ({\boldsymbol{V}}_{0}^{-1} + {\boldsymbol{X}}^{\top}{\boldsymbol{X}})^{-1}({\boldsymbol{V}}_{0}^{-1}{\boldsymbol{B}}_{0} + {\boldsymbol{X}}^{\top}{\boldsymbol{X}} \widehat{\boldsymbol{B}}),
+\]</span>
+<span class="math display">\[
+{\boldsymbol{V}}_n = ({\boldsymbol{V}}_{0}^{-1} + {\boldsymbol{X}}^{\top}{\boldsymbol{X}})^{-1},
+\]</span>
+<span class="math display">\[
+{\boldsymbol{\Psi}}_n = {\boldsymbol{\Psi}}_{0} + {\boldsymbol{S}} + {\boldsymbol{B}}_{0}^{\top}{\boldsymbol{V}}_{0}^{-1}{\boldsymbol{B}}_{0} + \widehat{\boldsymbol{B}}^{\top}{\boldsymbol{X}}^{\top}{\boldsymbol{X}} \widehat{\boldsymbol{B}} - {\boldsymbol{B}}_n^{\top} {\boldsymbol{V}}_n^{-1} {\boldsymbol{B}}_n,
+\]</span>
+<span class="math display">\[
+{\boldsymbol{S}} = ({\boldsymbol{Y}} - {\boldsymbol{X}} \widehat{\boldsymbol{B}})^{\top}({\boldsymbol{Y}} - {\boldsymbol{X}} \widehat{\boldsymbol{B}}),
+\]</span>
+<span class="math display">\[
+\widehat{\boldsymbol{B}} = ({\boldsymbol{X}}^{\top}{\boldsymbol{X}})^{-1}{\boldsymbol{X}}^{\top}{\boldsymbol{Y}},
+\]</span>
+and
+<span class="math display">\[
+\alpha_n = T + \alpha_0.
+\]</span></p>
+<p>Thus, we see that once we express a VAR(p) model in the correct form, we can perform Bayesian inference as we did in the multivariate regression model. However, assuming conjugate priors has some limitations. First, VAR(p) models have many parameters. For instance, with 4 lags and 6 variables, we would have 150 location parameters (<span class="math inline">\((1 + (6 \times 4)) \times 6\)</span>) and 21 scale parameters (<span class="math inline">\(6 \times (6 + 1)/2\)</span>) for the covariance matrix. This can lead to a loss of precision, especially when using macroeconomic data, due to the typical lack of large sample sizes. Therefore, it is desirable to impose prior restrictions on the model specification, which cannot be achieved using conjugate priors.</p>
+<p>Second, natural conjugate priors do not allow for flexible extensions, such as having different regressors in different equations. Third, the prior structure implies that the prior covariance of the coefficients in any two equations must be proportional to each other. This is because the prior covariance form is <span class="math inline">\(\boldsymbol{\Sigma} \otimes \boldsymbol{V}_0\)</span>. However, this does not always make sense in certain applications. For example, imposing zero prior restrictions on some coefficients would imply that the prior variance of these coefficients should be near zero, but this does not need to be true for all coefficients in the model.</p>
+<p>To address the first issue, we can think of the VAR(p) specification in a similar way to the seemingly unrelated regression (SUR) model, where we have different regressors in different equations and account for unobserved dependence. This approach allows us to impose zero restrictions on the VAR(p) model, thereby improving its parsimony. Following the setup in Section <a href="sec72.html#sec72">7.2</a>, we have
+<span class="math display">\[
+\boldsymbol{y}_{m} = \boldsymbol{Z}_{m} \boldsymbol{\beta}_m + \boldsymbol{\mu}_m,
+\]</span>
+where <span class="math inline">\(\boldsymbol{y}_m\)</span> is a <span class="math inline">\(T\)</span>-dimensional vector corresponding to the <span class="math inline">\(m\)</span>-th time series variable, <span class="math inline">\(\boldsymbol{Z}_m\)</span> is a <span class="math inline">\(T \times K_m\)</span> matrix of regressors, <span class="math inline">\(\boldsymbol{\beta}_m\)</span> is a <span class="math inline">\(K_m\)</span>-dimensional vector of location parameters, and <span class="math inline">\(\boldsymbol{\mu}_m\)</span> is a <span class="math inline">\(T\)</span>-dimensional vector of stochastic errors, for <span class="math inline">\(m = 1, 2, \dots, M\)</span>.</p>
+<p>Stacking the <span class="math inline">\(M\)</span> equations, we can write <span class="math inline">\(\boldsymbol{y}=\boldsymbol{Z}\boldsymbol{\beta}+\boldsymbol{\mu}\)</span> where <span class="math inline">\(\boldsymbol{y}=\left[\boldsymbol{y}_{1}^{\top} \ \boldsymbol{y}_{2}^{\top} \dots \boldsymbol{y}_{M}^{\top}\right]^{\top}\)</span> is a <span class="math inline">\(MT\)</span>-dimensional vector, <span class="math inline">\(\boldsymbol{\beta}=\left[\boldsymbol{\beta}_{1}^{\top} \ \boldsymbol{\beta}_{2}^{\top} \ldots \boldsymbol{\beta}_{M}^{\top}\right]^{\top}\)</span> is a <span class="math inline">\(K\)</span> dimensional vector, <span class="math inline">\(K=\sum_{m=1}^{M} K_m\)</span>, <span class="math inline">\(\boldsymbol{Z}\)</span> is an <span class="math inline">\(MT\times K\)</span> block diagonal matrix composed of <span class="math inline">\(\boldsymbol{Z}_{m}\)</span>, that is,
+<span class="math display">\[\begin{align*}
+    \boldsymbol{Z}&amp;=\begin{bmatrix}
+        \boldsymbol{Z}_1 &amp; \boldsymbol{0} &amp; \dots &amp; \boldsymbol{0}\\
+        \boldsymbol{0} &amp; \boldsymbol{Z}_2 &amp; \dots &amp; \boldsymbol{0}\\
+        \vdots &amp; \vdots &amp; \ddots &amp; \vdots\\
+        \boldsymbol{0} &amp; \boldsymbol{0} &amp; \dots &amp; \boldsymbol{Z}_M      
+    \end{bmatrix},
+\end{align*}\]</span>
+and <span class="math inline">\(\boldsymbol{\mu}=\left[\boldsymbol{\mu}_{1}^{\top} \ \boldsymbol{\mu}_{2}^{\top} \dots \ \boldsymbol{\mu}_{M}^{\top}\right]^{\top}\)</span> is a <span class="math inline">\(MT\)</span>-dimensional vector of stochastic errors such that <span class="math inline">\(\boldsymbol{\mu}\sim{N}(\boldsymbol{0},\boldsymbol{\Sigma}\otimes \boldsymbol{I}_T)\)</span>.</p>
+<p>We can use independent priors in this model to overcome the limitations of the conjugate prior, that is, <span class="math inline">\(\pi(\boldsymbol{\beta})\sim{N}(\boldsymbol{\beta}_0,\boldsymbol{B}_0)\)</span> and <span class="math inline">\(\pi(\boldsymbol{\Sigma}^{-1})\sim{W}(\alpha_0,\boldsymbol{\Psi}_0)\)</span>. Thus, we know from Section <a href="sec72.html#sec72">7.2</a> that the posterior distributions are
+<span class="math display">\[\begin{equation*}
+    \boldsymbol{\beta}\mid \boldsymbol{\Sigma}, \boldsymbol{y}, \boldsymbol{Z} \sim {N}(\boldsymbol{\beta}_n, \boldsymbol{B}_n),
+\end{equation*}\]</span>
+<span class="math display">\[\begin{equation*}
+    \boldsymbol{\Sigma}^{-1}\mid \boldsymbol{\beta}, \boldsymbol{y}, \boldsymbol{Z} \sim {W}(\alpha_n, \boldsymbol{\Psi}_n),
+\end{equation*}\]</span></p>
+<p>where <span class="math inline">\(\boldsymbol{B}_n=(\boldsymbol{Z}^{\top}(\boldsymbol{\Sigma}^{-1}\otimes \boldsymbol{I}_T )\boldsymbol{Z}+\boldsymbol{B}_0^{-1})^{-1}\)</span>, <span class="math inline">\(\boldsymbol{\beta}_n=\boldsymbol{B}_n(\boldsymbol{B}_0^{-1}\boldsymbol{\beta}_0 + \boldsymbol{Z}^{\top}(\boldsymbol{\Sigma}^{-1}\otimes \boldsymbol{I}_T)\boldsymbol{y})\)</span>, <span class="math inline">\(\alpha_n = \alpha_0 + T\)</span> and <span class="math inline">\(\boldsymbol{\Psi}_n = (\boldsymbol{\Psi}_0^{-1} + \boldsymbol{U}^{\top}\boldsymbol{U})^{-1}\)</span>, where <span class="math inline">\(\boldsymbol{U}\)</span> is an <span class="math inline">\(T\times M\)</span> matrix whose columns are <span class="math inline">\(\boldsymbol{y}_m-\boldsymbol{Z}_m\boldsymbol{\beta}_m\)</span>.<a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a></p>
+<p>Observe that we have standard conditional posteriors, thus, we can employ a Gibbs sampling algorithm to get the posterior draws. We can calculate the prediction <span class="math inline">\(\boldsymbol{y}_{T+1}=[y_{1T+1} \ y_{2T+1} \ \dots \ y_{MT+1}]^{\top}\)</span> knowing that <span class="math inline">\(\boldsymbol{y}_{T+1}\sim N(\boldsymbol{Z}_{T}\boldsymbol{\beta},\boldsymbol{\Sigma})\)</span>, where <span class="math display">\[\begin{align*}
+    \boldsymbol{Z}_T&amp;=\begin{bmatrix}
+        \boldsymbol{z}_{1T}^{\top} &amp; 0 &amp; \dots &amp; 0\\
+        0 &amp; \boldsymbol{z}_{2T}^{\top} &amp; \dots &amp; 0\\
+        \vdots &amp; \vdots &amp; \ddots &amp; \vdots\\
+        0 &amp; 0&amp; \dots &amp; \boldsymbol{z}_{MT}^{\top}       
+    \end{bmatrix},
+\end{align*}\]</span>
+and using the posterior draws of <span class="math inline">\(\boldsymbol{\beta}^{(s)}\)</span> and <span class="math inline">\(\boldsymbol{\Sigma}^{(s)}\)</span>, <span class="math inline">\(s=1,2,\dots,S\)</span>. We can also perform inference of functions of the parameters that are of main interest when using VAR models.</p>
+<p>Note that independent priors offer more flexibility regarding prior information. For instance, we can set <span class="math inline">\(\boldsymbol{\Psi}_0 = \boldsymbol{S}^{-1}\)</span>, <span class="math inline">\(\alpha_0 = T\)</span>, <span class="math inline">\(\boldsymbol{\beta}_0 = \boldsymbol{0}\)</span>, and <span class="math inline">\(\boldsymbol{B}_0\)</span> as a diagonal matrix, where the variance of the components associated with the coefficients in the <span class="math inline">\(m\)</span>-th equation is such that the prior variance of the coefficients for the own lags is <span class="math inline">\(a_1/l^2\)</span>, the variances for lag <span class="math inline">\(l\)</span> of variable <span class="math inline">\(m \neq j\)</span> are <span class="math inline">\(a_2s_{m}^2/(l^2 s_{j}^2)\)</span>, and the variance of the intercepts is set to <span class="math inline">\(a_3 s_{m}^2\)</span>, with <span class="math inline">\(l = 1, 2, \dots, p\)</span>, where <span class="math inline">\(s_m\)</span> is the estimated standard error of the residuals from an unrestricted univariate autoregression of variable <span class="math inline">\(m\)</span> against a constant and its <span class="math inline">\(p\)</span> lags <span class="citation">(<a href="#ref-litterman1986forecasting">Litterman 1986</a>; <a href="#ref-koop2010bayesian">G. Koop, Korobilis, et al. 2010</a>)</span>.</p>
+<p>Note that setting <span class="math inline">\(a_1 &gt; a_2\)</span> implies that own lags are more important as predictors than lags of other variables, and dividing by <span class="math inline">\(l^2\)</span> implies that more recent lags are more relevant than those further in the past. The specific choices of <span class="math inline">\(a_1\)</span>, <span class="math inline">\(a_2\)</span>, and <span class="math inline">\(a_3\)</span> (<span class="math inline">\(a_k &gt; 0\)</span>, <span class="math inline">\(k = 1, 2, 3\)</span>) depend on the specific application, but it is generally easier to elicit these parameters rather than the <span class="math inline">\(K(K+1)/2\)</span> different components of <span class="math inline">\(\boldsymbol{B}_0\)</span>.<a href="#fn4" class="footnote-ref" id="fnref4"><sup>4</sup></a></p>
+<p>This setting is known as the <em>Minnesota prior</em>, as it is based on the seminal proposals for Bayesian VAR models by researchers at the University of Minnesota and the Federal Reserve Bank of Minneapolis <span class="citation">(<a href="#ref-doan1984forecasting">Doan, Litterman, and Sims 1984</a>; <a href="#ref-litterman1986forecasting">Litterman 1986</a>)</span>.<a href="#fn5" class="footnote-ref" id="fnref5"><sup>5</sup></a></p>
+<p>An important non-linear function of parameters when performing VAR analysis is the <em>impulse response</em> function, which is, the response of one variable to an impulse in another variable in the model. The <em>impulse response</em> function can be deduced using the <span class="math inline">\(MA\)</span> representation of the VAR model. In particular, we can write Equation <a href="sec84.html#eq:eqVAR">(8.10)</a> using the lag operator (see Section <a href="sec82.html#sec82">8.2</a>),
+<span class="math display" id="eq:eqVAR1">\[\begin{align}
+    \boldsymbol{y}_t=\boldsymbol{v} + (\boldsymbol{A}_{1}L+\boldsymbol{A}_{2}L^2+\dots+\boldsymbol{A}_{p}L^p)\boldsymbol{y}_t+\boldsymbol{\mu}_t,
+    \tag{8.11}
+\end{align}\]</span>
+thus <span class="math inline">\(\boldsymbol{A}(L)\boldsymbol{y}_t=\boldsymbol{v}+\boldsymbol{\mu}_t\)</span>, where <span class="math inline">\(\boldsymbol{A}(L)=\boldsymbol{I}_M-\boldsymbol{A}_{1}L-\boldsymbol{A}_{2}L^2-\dots-\boldsymbol{A}_{p}L^p\)</span>. Let <span class="math inline">\(\boldsymbol{\Phi}(L):= \sum_{s=0}^{\infty}\boldsymbol{\Phi}_sL^s\)</span> an operator such that <span class="math inline">\(\boldsymbol{\Phi}(L)\boldsymbol{A}(L)=\boldsymbol{I}_M\)</span>. Thus, we have that <span class="math inline">\(\boldsymbol{\Phi}(L)\boldsymbol{A}(L)\boldsymbol{y}_t=\left(\sum_{s=0}^{\infty}\boldsymbol{\Phi}_sL^s\right)\boldsymbol{v}+\left(\sum_{s=0}^{\infty}\boldsymbol{\Phi}_sL^s\right)\boldsymbol{\mu}_{t}=\boldsymbol{\mu}+\sum_{s=0}^{\infty}\boldsymbol{\Phi}_s\boldsymbol{\mu}_{t-s}\)</span>. Note that <span class="math inline">\(L^s\boldsymbol{v}=\boldsymbol{v}\)</span> because <span class="math inline">\(\boldsymbol{v}\)</span> is constant, thus we set <span class="math inline">\(\sum_{s=0}^{\infty}\boldsymbol{\Phi}_sL^s\boldsymbol{v}=\sum_{s=0}^{\infty}\boldsymbol{\Phi}_s\boldsymbol{v}=\boldsymbol{\Phi}(1)\boldsymbol{v}=(\boldsymbol{I}_M-\boldsymbol{A}_{1}-\boldsymbol{A}_{2}-\dots-\boldsymbol{A}_{p})^{-1}\boldsymbol{v}:=\boldsymbol{\mu}\)</span>, which is the mean of the process <span class="citation">(<a href="#ref-helmut2005new">Helmut 2005</a>)</span>. Therefore, the MA representation of the VAR is
+<span class="math display" id="eq:eqMA">\[\begin{align}
+    \boldsymbol{y}_t=\boldsymbol{\mu} + \sum_{s=0}^{\infty}\boldsymbol{\Phi}_s\boldsymbol{\mu}_{t-s},
+    \tag{8.12}
+\end{align}\]</span>
+where <span class="math inline">\(\boldsymbol{\Phi}_0=\boldsymbol{I}_M\)</span>, and we can get the coefficients in <span class="math inline">\(\boldsymbol{\Phi}_s\)</span> by the recursion <span class="math inline">\(\boldsymbol{\Phi}_s=\sum_{l=1}^s\boldsymbol{\Phi}_{s-l}\boldsymbol{A}_l\)</span>, <span class="math inline">\(\boldsymbol{A}_l=\boldsymbol{0}\)</span>, <span class="math inline">\(l&gt;p\)</span> and <span class="math inline">\(s=1,2,..\)</span> <span class="citation">(<a href="#ref-helmut2005new">Helmut 2005</a>)</span>. This impulse response function is called <em>forecast error impulse response function</em>.</p>
+<p>The MA coefficients contain the impulse responses of the system. In particular, <span class="math inline">\(\phi_{mj,s}\)</span>, which is the <span class="math inline">\(mj\)</span>-th element of the matrix <span class="math inline">\(\boldsymbol{\Phi}_s\)</span>, represents the response of the <span class="math inline">\(m\)</span>-th variable to a unit shock of the variable <span class="math inline">\(j\)</span> in the system, <span class="math inline">\(s\)</span> periods ago, provided that the effect is not contaminated by other shocks in the system. The long-term effects (total multipliers) are given by <span class="math inline">\(\boldsymbol{\Psi}_{\infty}:=\sum_{s=1}^{\infty}\boldsymbol{\Phi}_s=(\boldsymbol{I}_M-\boldsymbol{A}_{1}-\boldsymbol{A}_{2}-\dots-\boldsymbol{A}_{p})^{-1}\)</span>.</p>
+<p>An assumption in these <em>impulse response</em> functions is that a shock occurs in only one variable at a time. This can be questionable as different shocks may be correlated, consequently, occurring simultaneously. Thus, the <em>impulse response</em> analysis can be performed based on the alternative MA representation, <span class="math inline">\(\boldsymbol{y}_t=\boldsymbol{\mu} + \sum_{s=0}^{\infty}\boldsymbol{\Phi}_s\boldsymbol{P}\boldsymbol{P}^{-1}\boldsymbol{\mu}_{t-s}=\boldsymbol{\mu} + \sum_{s=0}^{\infty}\boldsymbol{\Theta}_s\boldsymbol{w}_{t-s}\)</span>, where <span class="math inline">\(\boldsymbol{\Theta}_s=\boldsymbol{\Phi}_s\boldsymbol{P}\)</span> and <span class="math inline">\(\boldsymbol{w}_{t}=\boldsymbol{P}^{-1}\boldsymbol{\mu}_{t}\)</span>, <span class="math inline">\(\boldsymbol{P}\)</span> is a lower triangular matrix such that <span class="math inline">\(\boldsymbol{\Sigma}=\boldsymbol{P}\boldsymbol{P}^{\top}\)</span> (Cholesky factorization/decomposition). Note that the covariance matrix of <span class="math inline">\(\boldsymbol{w}_t\)</span> is <span class="math inline">\(\boldsymbol{I}_M\)</span> due to <span class="math inline">\(\mathbb{E}[\boldsymbol{w}_t\boldsymbol{w}_t^{\top}]=\mathbb{E}[\boldsymbol{P}^{-1}\boldsymbol{\mu}_{t}\boldsymbol{\mu}_t^{\top}(\boldsymbol{P}^{-1})^{\top}]=\boldsymbol{P}^{-1}\boldsymbol{\Sigma}(\boldsymbol{P}^{-1})^{\top}=\boldsymbol{P}^{-1}\boldsymbol{P}\boldsymbol{P}^{\top}(\boldsymbol{P}^{-1})^{\top}=\boldsymbol{I}_M\)</span>.</p>
+<p>In this representation is sensible to assume that each shock occurs independently due to the covariance matrix of <span class="math inline">\(\boldsymbol{w}_t\)</span> being an identity. In addition, a unit shock is a shock of size one standard deviation due the result of the covariance matrix. This is named the <em>ortogonalized impulse response</em>, where <span class="math inline">\(\theta_{mj,s}\)</span>, which is the <span class="math inline">\(mj\)</span>-th element of the matrix <span class="math inline">\(\boldsymbol{\Theta}_s\)</span>, represents the response of the <span class="math inline">\(m\)</span>-th variable to a standard deviation shock of the variable <span class="math inline">\(j\)</span> in the system, <span class="math inline">\(s\)</span> periods ago. The critical point with the ortogonalized impulse responses is that the order of the variables in the VAR is really important because implicitly establishes a recursive model, that is, the <span class="math inline">\(m\)</span>-th equation in the system may contain <span class="math inline">\(y_{1t}, y_{2t}, \dots, y_{m-1t}\)</span>, but not <span class="math inline">\(y_{mt}, y_{m+1t}, \dots, y_{Mt}\)</span> on the hand-right side of its equation. Thus, <span class="math inline">\(y_{mt}\)</span> cannot have an instantaneous impact on <span class="math inline">\(y_{jt}\)</span> for <span class="math inline">\(j&lt;m\)</span> <span class="citation">(<a href="#ref-helmut2005new">Helmut 2005</a>)</span>.</p>
+<p>Beyond the fascinating macroeconomic implications embedded in the specification of VAR models, the key point for this section is that we can infer impulse response functions using the posterior draws.</p>
+<p><strong>Example: US fiscal system</strong></p>
+<p>Let’s use the dataset provided by <span class="citation">Woźniak (<a href="#ref-Tomasz2024">2024</a>)</span> of the US fiscal system, where <em>ttr</em> is the quarterly total tax revenue, <em>gs</em> is the quarterly total government spending, and <em>gdp</em> is the quarterly gross domestic product, all expressed in log, real, per person terms, and the period is 1948q1 to 2024q2. This dataset is the <em>18USAfiscal.csv</em> file. <span class="citation">Mertens and Ravn (<a href="#ref-mertens2014reconciliation">2014</a>)</span> analyze the US fiscal policy shocks using these variables.</p>
+<p>Let’s estimate a VAR model where <span class="math inline">\(\boldsymbol{y}_t=[\Delta(ttr_t) \ \Delta(gs_t) \ \Delta(gdp_t)]^{\top}\)</span>, that is, we work with the log differences (variation rates), and we set <span class="math inline">\(p=1\)</span>. We use the package <em>bvartools</em> to estimate the <em>forecast error</em> and <em>ortogonalized</em> impulse response functions. We use vague independent priors setting <span class="math inline">\(\boldsymbol{\beta}_0=\boldsymbol{0}\)</span>, <span class="math inline">\(\boldsymbol{B}_0=100\boldsymbol{I}\)</span>, <span class="math inline">\(\boldsymbol{V}_0=5^{-1}\boldsymbol{I}\)</span> and <span class="math inline">\(\alpha_0=3\)</span>, and the Minnesota prior setting <span class="math inline">\(a_1=2\)</span>, <span class="math inline">\(\kappa_2=0.5\)</span> and <span class="math inline">\(\kappa_3=5\)</span> (default values).<a href="#fn6" class="footnote-ref" id="fnref6"><sup>6</sup></a></p>
+<p>The following code shows how to do this, take into account that we use the first 301 observations to estimate the model, and keep the last 4 observations to check the forecasting performance. The first and second figures show the impulse response functions of <em>gs</em> with respect to <em>gs</em>, the <em>forecast error impulse response</em> using vague independent priors, and the <em>orthogonalized impulse response</em> using the Minnesota prior, respectively. We see that the effect of the Minnesota prior is to decrease uncertainty. In addition, the forecasting exercise results indicate that these assumptions have same effects in this example. In particular, the third Figure shows that the mean forecasts using the vague prior (green line) and the Minnesota prior (red line) are indistinguishable from the true observations (black line). However, the Minnesota prior enhances forecast precision, as its 95% predictive interval (blue shaded area) is narrower and fully contained within the 95% predictive interval obtained using vague priors (light blue shaded area). This improvement is attributable to the shrinkage properties of the Minnesota prior.</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="sec84.html#cb20-1" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">010101</span>)</span>
+<span id="cb20-2"><a href="sec84.html#cb20-2" tabindex="-1"></a>DataUSfilcal <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/18USAfiscal.csv&quot;</span>, <span class="at">sep =</span> <span class="st">&quot;,&quot;</span>, <span class="at">header =</span> <span class="cn">TRUE</span>, <span class="at">quote =</span> <span class="st">&quot;&quot;</span>)</span>
+<span id="cb20-3"><a href="sec84.html#cb20-3" tabindex="-1"></a><span class="fu">attach</span>(DataUSfilcal) <span class="co"># upload data</span></span>
+<span id="cb20-4"><a href="sec84.html#cb20-4" tabindex="-1"></a>Y <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="fu">diff</span>(<span class="fu">as.matrix</span>(DataUSfilcal[,<span class="sc">-</span><span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>)])))</span>
+<span id="cb20-5"><a href="sec84.html#cb20-5" tabindex="-1"></a>T <span class="ot">&lt;-</span> <span class="fu">dim</span>(Y)[<span class="dv">1</span>]<span class="sc">-</span><span class="dv">1</span>; K <span class="ot">&lt;-</span> <span class="fu">dim</span>(Y)[<span class="dv">2</span>]</span>
+<span id="cb20-6"><a href="sec84.html#cb20-6" tabindex="-1"></a>Ynew <span class="ot">&lt;-</span> Y[<span class="sc">-</span><span class="fu">c</span>((T<span class="dv">-2</span>)<span class="sc">:</span>(T<span class="sc">+</span><span class="dv">1</span>)), ] <span class="co"># Use 4 last observations to check forecast</span></span>
+<span id="cb20-7"><a href="sec84.html#cb20-7" tabindex="-1"></a>y1 <span class="ot">&lt;-</span> Ynew[<span class="sc">-</span><span class="dv">1</span>, <span class="dv">1</span>]; y2 <span class="ot">&lt;-</span> Ynew[<span class="sc">-</span><span class="dv">1</span>, <span class="dv">2</span>]; y3 <span class="ot">&lt;-</span> Ynew[<span class="sc">-</span><span class="dv">1</span>, <span class="dv">3</span>]</span>
+<span id="cb20-8"><a href="sec84.html#cb20-8" tabindex="-1"></a>X1 <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="dv">1</span>, <span class="fu">lag</span>(Ynew)); X1 <span class="ot">&lt;-</span> X1[<span class="sc">-</span><span class="dv">1</span>,]</span>
+<span id="cb20-9"><a href="sec84.html#cb20-9" tabindex="-1"></a>X2 <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="dv">1</span>, <span class="fu">lag</span>(Ynew)); X2 <span class="ot">&lt;-</span> X2[<span class="sc">-</span><span class="dv">1</span>,]</span>
+<span id="cb20-10"><a href="sec84.html#cb20-10" tabindex="-1"></a>X3 <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="dv">1</span>, <span class="fu">lag</span>(Ynew)); X3 <span class="ot">&lt;-</span> X3[<span class="sc">-</span><span class="dv">1</span>,]</span>
+<span id="cb20-11"><a href="sec84.html#cb20-11" tabindex="-1"></a>M <span class="ot">&lt;-</span> <span class="fu">dim</span>(Y)[<span class="dv">2</span>]; K1 <span class="ot">&lt;-</span> <span class="fu">dim</span>(X1)[<span class="dv">2</span>]; K2 <span class="ot">&lt;-</span> <span class="fu">dim</span>(X2)[<span class="dv">2</span>]; K3 <span class="ot">&lt;-</span> <span class="fu">dim</span>(X3)[<span class="dv">2</span>] </span>
+<span id="cb20-12"><a href="sec84.html#cb20-12" tabindex="-1"></a>K <span class="ot">&lt;-</span> K1 <span class="sc">+</span> K2 <span class="sc">+</span> K3</span>
+<span id="cb20-13"><a href="sec84.html#cb20-13" tabindex="-1"></a><span class="co"># Hyperparameters</span></span>
+<span id="cb20-14"><a href="sec84.html#cb20-14" tabindex="-1"></a>b0 <span class="ot">&lt;-</span> <span class="dv">0</span>; c0 <span class="ot">&lt;-</span> <span class="dv">100</span>; V0 <span class="ot">&lt;-</span> <span class="dv">5</span><span class="sc">^</span>(<span class="sc">-</span><span class="dv">1</span>); a0 <span class="ot">&lt;-</span> M</span>
+<span id="cb20-15"><a href="sec84.html#cb20-15" tabindex="-1"></a><span class="co">#Posterior draws</span></span>
+<span id="cb20-16"><a href="sec84.html#cb20-16" tabindex="-1"></a><span class="fu">library</span>(tibble)</span>
+<span id="cb20-17"><a href="sec84.html#cb20-17" tabindex="-1"></a>MCMC <span class="ot">&lt;-</span> <span class="dv">10000</span>; burnin <span class="ot">&lt;-</span> <span class="dv">1000</span>; H <span class="ot">&lt;-</span> <span class="dv">10</span>; YnewPack <span class="ot">&lt;-</span> <span class="fu">ts</span>(Ynew)</span>
+<span id="cb20-18"><a href="sec84.html#cb20-18" tabindex="-1"></a>model <span class="ot">&lt;-</span> bvartools<span class="sc">::</span><span class="fu">gen_var</span>(YnewPack, <span class="at">p =</span> <span class="dv">1</span>, <span class="at">deterministic =</span> <span class="st">&quot;const&quot;</span>, <span class="at">iterations =</span> MCMC, <span class="at">burnin =</span> burnin) <span class="co"># Create model</span></span>
+<span id="cb20-19"><a href="sec84.html#cb20-19" tabindex="-1"></a>model <span class="ot">&lt;-</span> bvartools<span class="sc">::</span><span class="fu">add_priors</span>(model, <span class="at">coef =</span> <span class="fu">list</span>(<span class="at">v_i =</span> c0<span class="sc">^-</span><span class="dv">1</span>, <span class="at">v_i_det =</span> c0<span class="sc">^-</span><span class="dv">1</span>, <span class="at">const =</span> b0), <span class="at">sigma =</span> <span class="fu">list</span>(<span class="at">df =</span> a0, <span class="at">scale =</span> V0<span class="sc">/</span>a0), <span class="at">coint_var =</span> <span class="cn">FALSE</span>) <span class="co"># Add priors</span></span>
+<span id="cb20-20"><a href="sec84.html#cb20-20" tabindex="-1"></a>object <span class="ot">&lt;-</span> bvartools<span class="sc">::</span><span class="fu">draw_posterior</span>(model) <span class="co"># Posterior draws</span></span>
+<span id="cb20-21"><a href="sec84.html#cb20-21" tabindex="-1"></a>ir <span class="ot">&lt;-</span> bvartools<span class="sc">::</span><span class="fu">irf.bvar</span>(object, <span class="at">impulse =</span> <span class="st">&quot;gs&quot;</span>, <span class="at">response =</span> <span class="st">&quot;gs&quot;</span>, <span class="at">n.ahead =</span> H, <span class="at">type =</span> <span class="st">&quot;feir&quot;</span>, <span class="at">cumulative =</span> <span class="cn">FALSE</span>) <span class="co"># Calculate IR</span></span>
+<span id="cb20-22"><a href="sec84.html#cb20-22" tabindex="-1"></a><span class="co"># Plot IR</span></span>
+<span id="cb20-23"><a href="sec84.html#cb20-23" tabindex="-1"></a>plot_IR <span class="ot">&lt;-</span> <span class="cf">function</span>(df) {</span>
+<span id="cb20-24"><a href="sec84.html#cb20-24" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(<span class="at">data =</span> df, <span class="fu">aes</span>(<span class="at">x =</span> t)) <span class="sc">+</span> <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> lower, <span class="at">ymax =</span> upper), <span class="at">alpha =</span> <span class="dv">1</span>, <span class="at">fill =</span> <span class="st">&quot;lightblue&quot;</span>) <span class="sc">+</span> <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> mean), <span class="at">colour =</span> <span class="st">&quot;blue&quot;</span>, <span class="at">linewidth =</span> <span class="fl">0.5</span>) <span class="sc">+</span> <span class="fu">ylab</span>(<span class="st">&quot;Impulse response&quot;</span>) <span class="sc">+</span> <span class="fu">xlab</span>(<span class="st">&quot;Time&quot;</span>) <span class="sc">+</span> <span class="fu">xlim</span>(<span class="dv">0</span>,H)</span>
+<span id="cb20-25"><a href="sec84.html#cb20-25" tabindex="-1"></a>    <span class="fu">print</span>(p)</span>
+<span id="cb20-26"><a href="sec84.html#cb20-26" tabindex="-1"></a>}</span>
+<span id="cb20-27"><a href="sec84.html#cb20-27" tabindex="-1"></a>dfNew <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">t =</span> <span class="dv">0</span><span class="sc">:</span>H, <span class="at">mean =</span> <span class="fu">as.numeric</span>(ir[,<span class="dv">2</span>]), <span class="at">lower =</span> <span class="fu">as.numeric</span>(ir[,<span class="dv">1</span>]), <span class="at">upper =</span> <span class="fu">as.numeric</span>(ir[,<span class="dv">3</span>]))</span>
+<span id="cb20-28"><a href="sec84.html#cb20-28" tabindex="-1"></a>FigNew <span class="ot">&lt;-</span> <span class="fu">plot_IR</span>(dfNew)</span>
+<span id="cb20-29"><a href="sec84.html#cb20-29" tabindex="-1"></a><span class="co"># Using Minnesota prior</span></span>
+<span id="cb20-30"><a href="sec84.html#cb20-30" tabindex="-1"></a>modelMin <span class="ot">&lt;-</span> bvartools<span class="sc">::</span><span class="fu">gen_var</span>(YnewPack, <span class="at">p =</span> <span class="dv">1</span>, <span class="at">deterministic =</span> <span class="st">&quot;const&quot;</span>, <span class="at">iterations =</span> MCMC, <span class="at">burnin =</span> burnin)</span>
+<span id="cb20-31"><a href="sec84.html#cb20-31" tabindex="-1"></a>modelMin <span class="ot">&lt;-</span> bvartools<span class="sc">::</span><span class="fu">add_priors</span>(modelMin, <span class="at">minnesota =</span> <span class="fu">list</span>(<span class="at">kappa0 =</span> <span class="dv">2</span>, <span class="at">kappa1 =</span> <span class="fl">0.5</span>, <span class="at">kappa3 =</span> <span class="dv">5</span>), <span class="at">coint_var =</span> <span class="cn">FALSE</span>) <span class="co"># Minnesota prior</span></span>
+<span id="cb20-32"><a href="sec84.html#cb20-32" tabindex="-1"></a>objectMin <span class="ot">&lt;-</span> bvartools<span class="sc">::</span><span class="fu">draw_posterior</span>(modelMin) <span class="co"># Posterior draws</span></span>
+<span id="cb20-33"><a href="sec84.html#cb20-33" tabindex="-1"></a>irMin <span class="ot">&lt;-</span> bvartools<span class="sc">::</span><span class="fu">irf.bvar</span>(objectMin, <span class="at">impulse =</span> <span class="st">&quot;gs&quot;</span>, <span class="at">response =</span> <span class="st">&quot;gs&quot;</span>, <span class="at">n.ahead =</span> H, <span class="at">type =</span> <span class="st">&quot;feir&quot;</span>, <span class="at">cumulative =</span> <span class="cn">FALSE</span>) <span class="co"># Calculate IR</span></span>
+<span id="cb20-34"><a href="sec84.html#cb20-34" tabindex="-1"></a>dfNewMin <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">t =</span> <span class="dv">0</span><span class="sc">:</span>H, <span class="at">mean =</span> <span class="fu">as.numeric</span>(irMin[,<span class="dv">2</span>]), <span class="at">lower =</span> <span class="fu">as.numeric</span>(irMin[,<span class="dv">1</span>]), <span class="at">upper =</span> <span class="fu">as.numeric</span>(irMin[,<span class="dv">3</span>]))</span>
+<span id="cb20-35"><a href="sec84.html#cb20-35" tabindex="-1"></a>FigNewMin <span class="ot">&lt;-</span> <span class="fu">plot_IR</span>(dfNewMin)</span>
+<span id="cb20-36"><a href="sec84.html#cb20-36" tabindex="-1"></a><span class="do">### Forecasting</span></span>
+<span id="cb20-37"><a href="sec84.html#cb20-37" tabindex="-1"></a>bvar_pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(object, <span class="at">n.ahead =</span> <span class="dv">4</span>, <span class="at">new_d =</span> <span class="fu">rep</span>(<span class="dv">1</span>, <span class="dv">4</span>))</span>
+<span id="cb20-38"><a href="sec84.html#cb20-38" tabindex="-1"></a>bvar_predOR <span class="ot">&lt;-</span> <span class="fu">predict</span>(objectMin, <span class="at">n.ahead =</span> <span class="dv">4</span>, <span class="at">new_d =</span> <span class="fu">rep</span>(<span class="dv">1</span>, <span class="dv">4</span>))</span>
+<span id="cb20-39"><a href="sec84.html#cb20-39" tabindex="-1"></a>dfFore <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">t =</span> <span class="fu">c</span>((T<span class="dv">-2</span>)<span class="sc">:</span>(T<span class="sc">+</span><span class="dv">1</span>)), <span class="at">mean =</span> <span class="fu">as.numeric</span>(bvar_pred[[<span class="st">&quot;fcst&quot;</span>]][[<span class="st">&quot;gs&quot;</span>]][,<span class="dv">2</span>]), <span class="at">lower =</span> <span class="fu">as.numeric</span>(bvar_pred[[<span class="st">&quot;fcst&quot;</span>]][[<span class="st">&quot;gs&quot;</span>]][,<span class="dv">1</span>]), <span class="at">upper =</span> <span class="fu">as.numeric</span>(bvar_pred[[<span class="st">&quot;fcst&quot;</span>]][[<span class="st">&quot;gs&quot;</span>]][,<span class="dv">3</span>]), <span class="at">mean1 =</span> <span class="fu">as.numeric</span>(bvar_predOR[[<span class="st">&quot;fcst&quot;</span>]][[<span class="st">&quot;gs&quot;</span>]][,<span class="dv">2</span>]), <span class="at">lower1 =</span> <span class="fu">as.numeric</span>(bvar_predOR[[<span class="st">&quot;fcst&quot;</span>]][[<span class="st">&quot;gs&quot;</span>]][,<span class="dv">1</span>]), <span class="at">upper1 =</span> <span class="fu">as.numeric</span>(bvar_predOR[[<span class="st">&quot;fcst&quot;</span>]][[<span class="st">&quot;gs&quot;</span>]][,<span class="dv">3</span>]), <span class="at">true =</span> <span class="fu">as.numeric</span>(Y[<span class="fu">c</span>((T<span class="dv">-2</span>)<span class="sc">:</span>(T<span class="sc">+</span><span class="dv">1</span>)),<span class="dv">2</span>]))</span>
+<span id="cb20-40"><a href="sec84.html#cb20-40" tabindex="-1"></a>plot_FORE <span class="ot">&lt;-</span> <span class="cf">function</span>(df) {</span>
+<span id="cb20-41"><a href="sec84.html#cb20-41" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(<span class="at">data =</span> dfFore, <span class="fu">aes</span>(<span class="at">x =</span> t)) <span class="sc">+</span> <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> lower1, <span class="at">ymax =</span> upper1), <span class="at">alpha =</span> <span class="dv">1</span>, <span class="at">fill =</span> <span class="st">&quot;blue&quot;</span>) <span class="sc">+</span> <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> lower, <span class="at">ymax =</span> upper), <span class="at">alpha =</span> <span class="dv">1</span>, <span class="at">fill =</span> <span class="st">&quot;lightblue&quot;</span>) <span class="sc">+</span> <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> mean), <span class="at">colour =</span> <span class="st">&quot;green&quot;</span>, <span class="at">linewidth =</span> <span class="fl">0.5</span>) <span class="sc">+</span> <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> mean1), <span class="at">colour =</span> <span class="st">&quot;red&quot;</span>, <span class="at">linewidth =</span> <span class="fl">0.5</span>) <span class="sc">+</span> <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> true), <span class="at">colour =</span> <span class="st">&quot;black&quot;</span>, <span class="at">linewidth =</span> <span class="fl">0.5</span>) <span class="sc">+</span> <span class="fu">ylab</span>(<span class="st">&quot;Forecast&quot;</span>) <span class="sc">+</span> <span class="fu">xlab</span>(<span class="st">&quot;Time&quot;</span>) <span class="sc">+</span> <span class="fu">xlim</span>(<span class="fu">c</span>((T<span class="dv">-2</span>),(T<span class="sc">+</span><span class="dv">1</span>)))</span>
+<span id="cb20-42"><a href="sec84.html#cb20-42" tabindex="-1"></a>    <span class="fu">print</span>(p)</span>
+<span id="cb20-43"><a href="sec84.html#cb20-43" tabindex="-1"></a>}</span>
+<span id="cb20-44"><a href="sec84.html#cb20-44" tabindex="-1"></a>FigFore <span class="ot">&lt;-</span> <span class="fu">plot_FORE</span>(dfFore)</span></code></pre></div>
+<p>The following Algorithm shows how to do perform inference in VAR models using our GUI. See also Chapter <a href="Chap5.html#Chap5">5</a> for details regarding the dataset structure.</p>
+<div class="algorithm">
+<div style="background-color: #f8f9fa; padding: 15px; border-left: 5px solid #343a40; box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1); border-radius: 5px;">
+<p><strong>Algorithm: Vector Autoregressive Models</strong></p>
+<ol style="list-style-type: decimal">
+<li>Select <em>Time series Model</em> on the top panel<br />
+</li>
+<li>Select <em>VAR models</em> using the left radio button<br />
+</li>
+<li>Upload the dataset selecting first if there is a header in the file, and the kind of separator in the <em>csv</em> file of the dataset (comma, semicolon, or tab). Then, use the <em>Browse</em> button under the <strong>Choose File</strong> legend<br />
+</li>
+<li>Select MCMC iterations, burn-in, and thinning parameters using the <em>Range sliders</em><br />
+</li>
+<li>Set the number of lags (p)<br />
+</li>
+<li>Set the hyperparameters for the Minnesota prior: a<sub>1</sub>, κ<sub>2</sub> and κ<sub>3</sub>. This step is not necessary as by default our GUI uses default values in the <em>bvartools</em> package</li>
+<li>Select the type of <em>impulse response functions</em>: forecast error or orthogonalized, and ordinary or cumulative<br />
+</li>
+<li>Set the time horizon for the impulse response functions and the forecasts<br />
+</li>
+<li>Click the <em>Go!</em> button<br />
+</li>
+<li>Analyze results<br />
+</li>
+<li>Download impulse responses and forecasts using the <em>Download Impulse Responses</em>, and <em>Forecast</em> buttons</li>
+</ol>
+</div>
+</div>
+<p>There are other good packages in <strong>R</strong> to perform Bayesian inference in VAR models. For instance, <em>bayesianVARs</em> package implements inference of reduced-form VARs with stochastic volatility <span class="citation">(<a href="#ref-Gruber2024">Luis and Gregor 2024</a>)</span>, <em>BVAR</em> package performs inference using hierarchical priors <span class="citation">(<a href="#ref-Kuschnig2024">Nikolas et al. 2022</a>)</span>, <em>bvarsv</em> implements time-varying parameters models <span class="citation">(<a href="#ref-Krueger2022">Krueger 2022</a>)</span>, <em>bsvars</em> performs estimation of structural VAR models <span class="citation">(<a href="#ref-Tomasz2024">Woźniak 2024</a>)</span>, and <em>bsvarSIGNs</em> to estimating structural VAR models with sign restrictions <span class="citation">(<a href="#ref-Wang2024">Xiaolei and Woźniak 2024</a>)</span>.</p>
+</div>
+<h3>References<a href="references.html#references" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-chan2019bayesian" class="csl-entry">
+Chan, Joshua, Gary Koop, Dale J Poirier, and Justin L Tobias. 2019. <em>Bayesian Econometric Methods</em>. Vol. 7. Cambridge University Press.
+</div>
+<div id="ref-DelNegro2011VAR" class="csl-entry">
+Del Negro, Marco, and F. Schorfheide. 2011. <span>“Forecasting with Bayesian VAR Models.”</span> In <em>The Oxford Handbook of Bayesian Econometrics</em>, edited by John Geweke, Gary Koop, and Herman van Dijk, 224–54. Oxford University Press.
+</div>
+<div id="ref-doan1984forecasting" class="csl-entry">
+Doan, Thomas, Robert Litterman, and Christopher Sims. 1984. <span>“Forecasting and Conditional Projection Using Realistic Prior Distributions.”</span> <em>Econometric Reviews</em> 3 (1): 1–100.
+</div>
+<div id="ref-helmut2005new" class="csl-entry">
+Helmut, Lütkepohl. 2005. <em>New Introduction to Multiple Time Series Analysis</em>. Springer.
+</div>
+<div id="ref-koop2010bayesian" class="csl-entry">
+Koop, Gary, Dimitris Korobilis, et al. 2010. <span>“Bayesian Multivariate Time Series Methods for Empirical Macroeconomics.”</span> <em>Foundations and Trends<span></span> in Econometrics</em> 3 (4): 267–358.
+</div>
+<div id="ref-Krueger2022" class="csl-entry">
+Krueger, Fabian. 2022. <em>Bvarsv: <span>B</span>ayesian Analysis of a Vector Autoregressive Model with Stochastic Volatility and Time-Varying Parameters</em>. <a href="https://doi.org/10.32614/CRAN.package.bvarsv">https://doi.org/10.32614/CRAN.package.bvarsv</a>.
+</div>
+<div id="ref-litterman1986forecasting" class="csl-entry">
+Litterman, Robert B. 1986. <span>“Forecasting with Bayesian Vector Autoregressions—Five Years of Experience.”</span> <em>Journal of Business &amp; Economic Statistics</em> 4 (1): 25–38.
+</div>
+<div id="ref-Gruber2024" class="csl-entry">
+Luis, Gruber, and Kastner Gregor. 2024. <em>Bayesian<span>VAR</span>s: MCMC Estimation of Bayesian Vectorautoregressions</em>. <a href="https://doi.org/10.32614/CRAN.package.bayesianVARs">https://doi.org/10.32614/CRAN.package.bayesianVARs</a>.
+</div>
+<div id="ref-mertens2014reconciliation" class="csl-entry">
+Mertens, Karel, and Morten O Ravn. 2014. <span>“A Reconciliation of SVAR and Narrative Estimates of Tax Multipliers.”</span> <em>Journal of Monetary Economics</em> 68: S1–19.
+</div>
+<div id="ref-Kuschnig2024" class="csl-entry">
+Nikolas, Kuschnig, Vashold Lukas, Tomass Nirai, McCracken Michael, and Ng Serena. 2022. <em><span>BVAR</span>: Hierarchical <span>B</span>ayesian Vector Autoregression</em>. <a href="https://doi.org/10.32614/CRAN.package.BVAR">https://doi.org/10.32614/CRAN.package.BVAR</a>.
+</div>
+<div id="ref-sims1980macroeconomics" class="csl-entry">
+Sims, Christopher A. 1980. <span>“Macroeconomics and Reality.”</span> <em>Econometrica: Journal of the Econometric Society</em>, 1–48.
+</div>
+<div id="ref-wozniak2016bayesian" class="csl-entry">
+Woźniak, Tomasz. 2016. <span>“Bayesian Vector Autoregressions.”</span> <em>Australian Economic Review</em> 49 (3): 365–80.
+</div>
+<div id="ref-Tomasz2024" class="csl-entry">
+———. 2024. <em>Bsvars: <span>B</span>ayesian Estimation of Structural Vector Autoregressive Models</em>. <a href="https://doi.org/10.32614/CRAN.package.bsvars">https://doi.org/10.32614/CRAN.package.bsvars</a>.
+</div>
+<div id="ref-Wang2024" class="csl-entry">
+Xiaolei, Wang, and Tomasz Woźniak. 2024. <em>bsvarSIGNs: <span>B</span>ayesian <span>SVAR</span>s with Sign, Zero, and Narrative Restrictions</em>. <a href="https://doi.org/10.32614/CRAN.package.bsvarSIGNs">https://doi.org/10.32614/CRAN.package.bsvarSIGNs</a>.
+</div>
+</div>
+<div class="footnotes">
+<hr />
+<ol start="3">
+<li id="fn3"><p>We can also use the alternative representation presented in Section <a href="sec72.html#sec72">7.2</a>.<a href="sec84.html#fnref3" class="footnote-back">↩︎</a></p></li>
+<li id="fn4"><p>In our GUI, we use the <em>bvartools</em> package, which adopts a slightly different notation such that <span class="math inline">\(a_2 = a_1 \kappa_2\)</span> and <span class="math inline">\(a_3 = a_1 \kappa_3\)</span>. Thus, we need to set <span class="math inline">\(a_1\)</span>, <span class="math inline">\(\kappa_2\)</span>, and <span class="math inline">\(\kappa_3\)</span>.<a href="sec84.html#fnref4" class="footnote-back">↩︎</a></p></li>
+<li id="fn5"><p>In the case that the variables are not stationary, which is more likely when using variables in levels (e.g., gross domestic product), we set <span class="math inline">\(\boldsymbol{\beta}_0 = \boldsymbol{0}\)</span>, except for the elements associated with the first own lags of the dependent variables in each equation, where the prior mean is set to 1. Additionally, the original proposal of the Minnesota prior set <span class="math inline">\(\boldsymbol{\Sigma} = \boldsymbol{S}/T\)</span>, meaning it did not account for uncertainty regarding <span class="math inline">\(\boldsymbol{\Sigma}\)</span>.<a href="sec84.html#fnref5" class="footnote-back">↩︎</a></p></li>
+<li id="fn6"><p>The <em>bvartools</em> package uses the inverse Wishart distribution as prior for <span class="math inline">\(\boldsymbol{\Sigma}\)</span>, where the hyperparameters are the degrees of freedom of the error term, and the prior error variance of endogenous variables.<a href="sec84.html#fnref6" class="footnote-back">↩︎</a></p></li>
+</ol>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="sec83.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="sec85.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"github": true,
+"facebook": true,
+"twitter": true,
+"linkedin": false,
+"weibo": false,
+"instapaper": false,
+"vk": false,
+"whatsapp": false,
+"all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
+},
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": {
+"link": "https://github.com/aramir21/IntroductionBayesianEconometricsBook/08-Timeseries.Rmd",
+"text": "Edit"
+},
+"history": {
+"link": null,
+"text": null
+},
+"view": {
+"link": null,
+"text": null
+},
+"download": null,
+"search": {
+"engine": "fuse",
+"options": null
+},
+"toc": {
+"collapse": "subsection"
+}
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/latest.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>

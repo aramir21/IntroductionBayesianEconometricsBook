@@ -481,6 +481,7 @@ PosteriorPhi <- coda::mcmc(PostPhis[keep])
 summary(PosteriorPhi)
 dfBinf <- as.data.frame(PosteriorBetas[,2])
 # Basic density
+library(ggplot2)
 p <- ggplot(dfBinf, aes(x=var1)) + 
 geom_density(color="darkblue", fill="lightblue") +
 geom_vline(aes(xintercept=mean(var1)), color="blue", linetype="dashed", linewidth=1) +
@@ -497,7 +498,6 @@ Figure \ref{fig3} shows the posterior density plot of the effects of inflation r
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter8/figures/InfInt.png}
 	\caption[List of figure caption goes here]{Density: Effects of inflation on interest rate.}\label{fig3}
 \end{figure} 
-
 
 Observe that the previous setting encompasses the particular relevant case  $y_t\sim AR(p)$, it is just omitting the covariates such that $y_t=\mu_t$. \cite{chib1994bayes} extend the Bayesian inference of linear regression with $AR(p)$ errors to $ARMA(p,q)$ errors using a \textit{state-space} representation. 
 
@@ -801,7 +801,7 @@ Algorithm \ref{alg:SV} shows how to perform inference in stochastic volatility m
 
 The following code shows how to simulate and perform Bayesian inference in the stochastic volatility model using the function \textit{svsample} from the \textit{stochvol} package. We set the stochastic volatility parameters to $\mu = -10$, $\phi = 0.95$, and $\sigma = 0.3$. We assume two regressors, which are distributed as standard normal, with $\bm{\beta} = [0.5 \ 0.3]^{\top}$, and the sample size is 1250, which corresponds to approximately 5 years of daily returns. We use the default hyperparameters: 10000 MCMC iterations, a burn-in of 5000, and a thinning parameter of 5.
 
-The summary statistics of the posterior draws show that all 95\% credible intervals encompass the population parameters, and the posterior chains appear to have converged. Figure \ref{fig4} displays the posterior results for the volatility ($h_t$). The posterior mean (blue) follows the "observed" series (black), and the 95\% credible intervals (light blue) typically encompass the ``observed" series.
+The summary statistics of the posterior draws show that all 95\% credible intervals encompass the population parameters, and the posterior chains appear to have converged. Figure \ref{fig4} displays the posterior results for the volatility ($h_t$). The posterior mean (blue) follows the ``observed" series (black), and the 95\% credible intervals (light blue) typically encompass the ``observed" series.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -1113,6 +1113,7 @@ plot_IR <- function(df) {
 dfNew <- tibble(t = 0:H, mean = as.numeric(ir[,2]), lower = as.numeric(ir[,1]), upper = as.numeric(ir[,3]))
 FigNew <- plot_IR(dfNew)
 # Using Minnesota prior
+library(tibble)
 modelMin <- bvartools::gen_var(YnewPack, p = 1, deterministic = "const", iterations = MCMC, burnin = burnin)
 modelMin <- bvartools::add_priors(modelMin, minnesota = list(kappa0 = 2, kappa1 = 0.5, kappa3 = 5), coint_var = FALSE) # Minnesota prior
 objectMin <- bvartools::draw_posterior(modelMin) # Posterior draws
@@ -1167,7 +1168,7 @@ Algorithm \ref{alg:VAR} shows how to do perform inference in VAR models using ou
 		\State Upload the dataset selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend
 		\State Select MCMC iterations, burn-in and thinning parameters using the \textit{Range sliders}
 		\State Set the number of lags ($p$)
-		\State Set the hyperparameters for the Minnesota prior: $a_1$, $\kappa_2$ and $\kappa_2$. This step is not necessary as by default our GUI uses default values in \textit{bvartools} package
+		\State Set the hyperparameters for the Minnesota prior: $a_1$, $\kappa_2$ and $\kappa_3$. This step is not necessary as by default our GUI uses default values in \textit{bvartools} package
 		\State Select the type of \textit{impulse response functions}: forecast error or orthogonalized, and ordinary or cumulative.
 		\State Set the time horizon for the impulse response functions and the forecasts 
 		\State Click the \textit{Go!} button
@@ -1176,7 +1177,7 @@ Algorithm \ref{alg:VAR} shows how to do perform inference in VAR models using ou
 	\end{algorithmic} 
 \end{algorithm}
 
- There are other good packages in \textbf{R} to perform Bayesian inference in VAR models. For instance, \textit{bayesianVARs} package implements inference of reduced-form VARs with stochastic volatility \cite{Gruber2024}, \textit{BVAR} package performs inference using hierarchical priors \cite{Kuschnig2024}, \textit{bvarsv} implements time-varying parameters models \cite{Krueger2022}, \textit{bsvars} performs estimation of structural VAR models \cite{Tomasz2024}, and \textit{bsvarSIGNs} to estimating structural VAR models with sign restrictions \cite{Wang2024}. 
+There are other good packages in \textbf{R} to perform Bayesian inference in VAR models. For instance, \textit{bayesianVARs} package implements inference of reduced-form VARs with stochastic volatility \cite{Gruber2024}, \textit{BVAR} package performs inference using hierarchical priors \cite{Kuschnig2024}, \textit{bvarsv} implements time-varying parameters models \cite{Krueger2022}, \textit{bsvars} performs estimation of structural VAR models \cite{Tomasz2024}, and \textit{bsvarSIGNs} to estimating structural VAR models with sign restrictions \cite{Wang2024}. 
  
 \section{Summary}\label{sec85}
 We present a brief review of Bayesian inference in time series models. In particular, we introduce the \textit{state-space} representation and demonstrate how to perform inferential analysis for these models, focusing on the dynamic linear model and the stochastic volatility model. Additionally, we show how $ARMA(p,q)$ processes can be expressed in \textit{state-space} form and provide methods for estimating such models.
