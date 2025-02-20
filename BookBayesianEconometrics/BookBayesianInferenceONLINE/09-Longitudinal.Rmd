@@ -1,3 +1,686 @@
-# Longitudinal regression {#longi}
+# Longitudinal regression {#Chap9}
 
-We will describe the theory framework of Bayesian longitudinal models. Particularly, the normal, logit, and poisson models. We will perform some applications using our GUI and R. There will be mathematical and computational exercises using our GUI and R.
+We describe how to perform inference in longitudinal/panel models using a Bayesian framework. In this context, multiple cross-sectional units are observed repeatedly over time, a structure referred to as panel data by econometricians and longitudinal data by statisticians. Specifically, we present models for continuous (normal), binary (logit), and count (Poisson) responses. Applications and exercises illustrate the potential of these models.
+
+In longitudinal/panel data sets, we have $y_{it}$ where $i=1,2,\dots,N$ and $t=1,2,\dots,T_i$. If $T_i=T$ for all $i$, the dataset is *balanced*; otherwise, it is *unbalanced*. Longitudinal data typically involves by far more cross-sectional units than time periods, this is called typically a *short panel*. It assumes that cross-sectional units are independent, though serial correlation exists within each unit over time, and unobserved heterogeneity for each unit must be accounted for. We can treat this unobserved heterogeneity as random variables, assuming it is either independent or dependent on control variables. Econometricians refer to these cases as *random effects* and *fixed effects*, respectively. The Bayesian literature takes a different approach, modeling the panel structure hierarchically, where the unobserved heterogeneity may or may not depend on other controls.^[See @rendon2013fixed for a nice comparison of Frequentist and Bayesian treatments of panel data models].
+
+Remember that we can run our GUI typing `shiny::runGitHub("besmarter/BSTApp", launch.browser=T)` in the **R** console or any **R** code editor and execute it. However, users should see Chapter \@ref(Chap5) for details.
+
+## Normal model {#sec91}
+
+The longitudinal/panel normal model establishes $\boldsymbol{y}_i=\boldsymbol{X}_i\boldsymbol{\beta}+\boldsymbol{W}_i\boldsymbol{b}_i+\boldsymbol{\mu}_i$ where $\boldsymbol{y}_i$ are $T_i$-dimensional vectors corresponding to units $i=1,2,\dots,N$, $\boldsymbol{X}_i$ and $\boldsymbol{W}_i$ are $T_i\times K_1$ and $T_i\times K_2$ matrices, respectively. In the statistical literature, $\boldsymbol{\beta}$ is a $K_1$-dimensional vector of *fixed effects*, and $\boldsymbol{b}_i$ is a $K_2$-dimensional vector of unit-specific *random effects* that allow unit-specific means, and enable capturing marginal dependence among the observations on the cross-sectional units. We assume normal stochastic errors, $\boldsymbol{\mu}_i\sim{N}(\boldsymbol{0},\sigma^2\boldsymbol{I}_{T_i})$, which means that the likelihood function is
+
+\begin{align*}
+	p(\boldsymbol{\beta},\boldsymbol{b},\sigma^2\mid \boldsymbol{y}, \boldsymbol{X},\boldsymbol{W}) & \propto \prod_{i=1}^N |\sigma^2\boldsymbol{I}_{T_i}|^{-1/2}\exp\left\{-\frac{1}{2\sigma^2}(\boldsymbol{y}_i-\boldsymbol{X}_i\boldsymbol{\beta}-\boldsymbol{W}_i\boldsymbol{b}_i)^{\top}(\boldsymbol{y}_i-\boldsymbol{X}_i\boldsymbol{\beta}-\boldsymbol{W}_i\boldsymbol{b}_i)\right\}\\
+	& = (\sigma^2)^{-\frac{\sum_{i=1}^N T_i}{2}}\exp\left\{-\frac{1}{2\sigma^2}\sum_{i=1}^N(\boldsymbol{y}_i-\boldsymbol{X}_i\boldsymbol{\beta}-\boldsymbol{W}_i\boldsymbol{b}_i)^{\top}(\boldsymbol{y}_i-\boldsymbol{X}_i\boldsymbol{\beta}-\boldsymbol{W}_i\boldsymbol{b}_i)\right\},
+\end{align*}
+
+where $\boldsymbol{b}=[\boldsymbol{b}_1^{\top}, \boldsymbol{b}_2^{\top},\dots, \boldsymbol{b}_N^{\top}]^{\top}$.
+
+Panel data modeling in the Bayesian approach assumes a hierarchical structure in the *random effects*. Following @Chib1999, there is a first stage where $\boldsymbol{b}_i\sim{N}(\boldsymbol{0},\boldsymbol{D})$, $\boldsymbol{D}$ allows serial correlation within each cross-sectional unit $i$, and then, there is a second stage where $\boldsymbol{D}\sim{I}{W}(d_0,d_0\boldsymbol{D}_0)$. Thus, we can see that there is an additional layer of priors as there is a prior on the hyperparameter $\boldsymbol{D}$.
+
+In addition, we have standard conjugate prior distributions for $\boldsymbol{\beta}$ and $\sigma^2$, $\boldsymbol{\beta} \sim {N}(\boldsymbol{\beta}_0,\boldsymbol{B}_0)$ and
+$\sigma^2 \sim {I}{G}(\alpha_0, \delta_0)$.
+
+@Chib1999 propose a blocking algorithm to perform inference in longitudinal hierarchical models by considering the distribution of $\boldsymbol{y}_i$ marginalized over the random effects. Given that $\boldsymbol{y}_i\mid  \boldsymbol{\beta},\boldsymbol{b}_i,\sigma^2,\boldsymbol{X}_i,\boldsymbol{W}_i\sim N(\boldsymbol{X}_i\boldsymbol{\beta}+\boldsymbol{W}_i\boldsymbol{b}_i,\sigma^2\boldsymbol{I}_{T_i})$, we can see that $\boldsymbol{y}_i\mid \boldsymbol{\beta},\boldsymbol{D},\sigma^2,\boldsymbol{X}_i,\boldsymbol{W}_i\sim{N}(\boldsymbol{X}_i\boldsymbol{\beta},\boldsymbol{V}_i)$, where $\boldsymbol{V}_i=\sigma^2\boldsymbol{I}_{T_i}+\boldsymbol{W}_i\boldsymbol{D}\boldsymbol{W}_i^{\top}$ given that $\mathbb{E}[\boldsymbol{b}_i]=\boldsymbol{0}$ and $Var[\boldsymbol{b}_i]=\boldsymbol{D}$. If we have just random intercepts, then $\boldsymbol{W}_i=\boldsymbol{i}_{T_i}$, where $\boldsymbol{i}_{T_i}$ is a $T_i$-dimensional vector of ones. Thus, $\boldsymbol{V}_i=\sigma^2\boldsymbol{I}_{T_i}+\sigma_{b}^2\boldsymbol{i}_{T_i}\boldsymbol{i}_{T_i}^{\top}$, the variance is $\sigma^2+\sigma^2_{b}$ and the covariance is $\sigma^2_{b}$ within each cross-sectional unit through time.
+
+We can deduce the posterior distribution of $\boldsymbol{\beta}$ given $\sigma^2$ and $\boldsymbol{D}$,
+\begin{align*}
+	\pi(\boldsymbol{\beta}\mid \sigma^2, \boldsymbol{D},\boldsymbol{y}, \boldsymbol{X}, \boldsymbol{W}) & \propto \exp\left\{-\frac{1}{2}\sum_{i=1}^N(\boldsymbol{y}_i-\boldsymbol{X}_i\boldsymbol{\beta})^{\top}\boldsymbol{V}_i^{-1}(\boldsymbol{y}_i-\boldsymbol{X}_i\boldsymbol{\beta})\right\}\\
+	&\times \exp\left\{-\frac{1}{2}(\boldsymbol{\beta}-\boldsymbol{\beta}_0)^{\top}\boldsymbol{B}_0^{-1}(\boldsymbol{\beta}-\boldsymbol{\beta}_0)\right\}.
+\end{align*} 
+This implies that (see Exercise 1)  
+\begin{equation*}
+	\boldsymbol{\beta}\mid \sigma^2,\boldsymbol{D},\boldsymbol{y}, \boldsymbol{X}, \boldsymbol{W} \sim {N}(\boldsymbol{\beta}_n,\boldsymbol{B}_n), 
+\end{equation*}
+where $\boldsymbol{B}_n = (\boldsymbol{B}_0^{-1} +\sum_{i=1}^N \boldsymbol{X}_i^{\top}\boldsymbol{V}_i^{-1}\boldsymbol{X}_i)^{-1}$, $\boldsymbol{\beta}_n= \boldsymbol{B}_n(\boldsymbol{B}_0^{-1}\boldsymbol{\beta}_0 + \sum_{i=1}^N\boldsymbol{X}_i^{\top}\boldsymbol{V}_i^{-1}\boldsymbol{y}_i)$.
+
+We can use the likelihood $p(\boldsymbol{\beta},\boldsymbol{b}_i,\sigma^2\mid \boldsymbol{y}, \boldsymbol{X},\boldsymbol{W})$ to get the posterior distributions of $\boldsymbol{b}_i$, $\sigma^2$ and $\boldsymbol{D}$. In particular,
+\begin{align*}
+	\pi(\boldsymbol{b}_i\mid \boldsymbol{\beta},\sigma^2,\boldsymbol{D},\boldsymbol{y}, \boldsymbol{X}, \boldsymbol{W})&\propto \exp\left\{-\frac{1}{2\sigma^2}\sum_{i=1}^N(\boldsymbol{y}_i-\boldsymbol{X}_i\boldsymbol{\beta}-\boldsymbol{W}_i\boldsymbol{b}_i)^{\top}(\boldsymbol{y}_i-\boldsymbol{X}_i\boldsymbol{\beta}-\boldsymbol{W}_i\boldsymbol{b}_i)\right\}\\
+	&\times \exp\left\{-\frac{1}{2}\sum_{i=1}^N \boldsymbol{b}_i^{\top}\boldsymbol{D}^{-1}\boldsymbol{b}_i\right\}\\
+	&\propto\exp\left\{-\frac{1}{2}\sum_{i=1}^N(-2\boldsymbol{b}_i^{\top}(\sigma^{-2}\boldsymbol{W}_i^{\top}(\boldsymbol{y}_i-\boldsymbol{X}_i\boldsymbol{\beta}))+ \boldsymbol{b}_i^{\top}(\sigma^{-2}\boldsymbol{W}_i^{\top}\boldsymbol{W}_i+\boldsymbol{D}^{-1})\boldsymbol{b}_i)\right\}\\
+	&\propto\exp\left\{-\frac{1}{2}(-2\boldsymbol{b}_i^{\top}\boldsymbol{B}_{ni}^{-1}\boldsymbol{B}_{ni}(\sigma^{-2}\boldsymbol{W}_i^{\top}(\boldsymbol{y}_i-\boldsymbol{X}_i\boldsymbol{\beta}))+ \boldsymbol{b}_i^{\top}\boldsymbol{B}_{ni}^{-1}\boldsymbol{b}_i)\right\}\\
+	&=\exp\left\{-\frac{1}{2}(-2\boldsymbol{b}_i^{\top}\boldsymbol{B}_{ni}^{-1}\boldsymbol{b}_{ni}+ \boldsymbol{b}_i^{\top}\boldsymbol{B}_{ni}^{-1}\boldsymbol{b}_i)\right\}, 
+\end{align*}
+where $\boldsymbol{B}_{ni}=(\sigma^{-2}\boldsymbol{W}_i^{\top}\boldsymbol{W}_i+\boldsymbol{D}^{-1})^{-1}$ and $\boldsymbol{b}_{ni}=\boldsymbol{B}_{ni}(\sigma^{-2}\boldsymbol{W}_i^{\top}(\boldsymbol{y}_i-\boldsymbol{X}_i\boldsymbol{\beta}))$.
+
+We can complete the square in this expression by adding and subtracting $\boldsymbol{b}_{ni}^{\top}\boldsymbol{B}_{ni}^{-1}\boldsymbol{b}_{ni}$. Thus,
+\begin{align*}
+	\pi(\boldsymbol{b}_i\mid \boldsymbol{\beta},\sigma^2,\boldsymbol{D},\boldsymbol{y}, \boldsymbol{X}, \boldsymbol{W})&\propto \exp\left\{-\frac{1}{2}(-2\boldsymbol{b}_i^{\top}\boldsymbol{B}_{ni}^{-1}\boldsymbol{b}_{ni}+ \boldsymbol{b}_i^{\top}\boldsymbol{B}_{ni}^{-1}\boldsymbol{b}_i+\boldsymbol{b}_{ni}^{\top}\boldsymbol{B}_{ni}^{-1}\boldsymbol{b}_{ni}-\boldsymbol{b}_{ni}^{\top}\boldsymbol{B}_{ni}^{-1}\boldsymbol{b}_{ni})\right\}\\
+	&\propto \exp\left\{(\boldsymbol{b}_i-\boldsymbol{b}_{ni})^{\top}\boldsymbol{B}_{ni}^{-1}(\boldsymbol{b}_i-\boldsymbol{b}_{ni})\right\}. 
+\end{align*}
+This is the kernel of a multivariate normal distribution with mean $\boldsymbol{b}_{ni}$ and variance $\boldsymbol{B}_{ni}$. Thus,
+\begin{equation*}
+	\boldsymbol{b}_i\mid \boldsymbol{\beta},\sigma^2,\boldsymbol{D},\boldsymbol{y}, \boldsymbol{X}, \boldsymbol{W} \sim {N}(\boldsymbol{b}_{ni},\boldsymbol{B}_{ni}), 
+\end{equation*} 
+Let's see the posterior distribution of $\sigma^2$,
+\begin{align*}
+	\pi(\sigma^2\mid \boldsymbol{\beta},\boldsymbol{b},\boldsymbol{y}, \boldsymbol{X}, \boldsymbol{W})&\propto (\sigma^2)^{-\frac{\sum_{i=1}^N T_i}{2}}\exp\left\{-\frac{1}{2\sigma^2}\sum_{i=1}^N(\boldsymbol{y}_i-\boldsymbol{X}_i\boldsymbol{\beta}-\boldsymbol{W}_i\boldsymbol{b}_i)^{\top}(\boldsymbol{y}_i-\boldsymbol{X}_i\boldsymbol{\beta}-\boldsymbol{W}_i\boldsymbol{b}_i)\right\}\\
+	&\times (\sigma^2)^{-\alpha_0-1}\exp\left\{-\frac{\delta_0}{\sigma^2}\right\}\\
+	&=(\sigma^2)^{-\frac{\sum_{i=1}^N T_i}{2}-\alpha_0-1}\\
+	&\times \exp\left\{-\frac{1}{\sigma^2}\left(\delta_0+\sum_{i=1}^N\frac{(\boldsymbol{y}_i-\boldsymbol{X}_i\boldsymbol{\beta}-\boldsymbol{W}_i\boldsymbol{b}_i)^{\top}(\boldsymbol{y}_i-\boldsymbol{X}_i\boldsymbol{\beta}-\boldsymbol{W}_i\boldsymbol{b}_i)}{2}\right)\right\}. 
+\end{align*}
+Thus,
+\begin{equation*}
+	\sigma^2\mid  \boldsymbol{\beta}, \boldsymbol{b}, \boldsymbol{y}, \boldsymbol{X}, \boldsymbol{W} \sim {I}{G}(\alpha_n, \delta_n),
+\end{equation*}
+where $\alpha_n=\alpha_0+\frac{1}{2}\sum_{i=1}^N T_i$ and $\delta_n=\delta_0+\frac{1}{2}\sum_{i=1}^N(\boldsymbol{y}_i-\boldsymbol{X}_i\boldsymbol{\beta}-\boldsymbol{W}_i\boldsymbol{b}_i)^{\top}(\boldsymbol{y}_i-\boldsymbol{X}_i\boldsymbol{\beta}-\boldsymbol{W}_i\boldsymbol{b}_i)$.
+
+The posterior distribution of $\boldsymbol{D}$ is the following,
+\begin{align*}
+	\pi(\boldsymbol{D}\mid \boldsymbol{b})&\propto  |\boldsymbol{D}|^{-N/2} \exp\left\{-\frac{1}{2}\sum_{i=1}^N \boldsymbol{b}_i^{\top}\boldsymbol{D}^{-1}\boldsymbol{b}_i\right\}\\
+	&\times |\boldsymbol{D}|^{-(d_0+K_2+1)/2}\exp\left\{-\frac{1}{2}tr(d_0\boldsymbol{D}_0\boldsymbol{D}^{-1})\right\}\\
+	&=|\boldsymbol{D}|^{-(d_0+N+K_2+1)/2}\exp\left\{-\frac{1}{2}tr\left(\left(d_0\boldsymbol{D}_0+\sum_{i=1}^N\boldsymbol{b}_i\boldsymbol{b}_i^{\top}\right)\boldsymbol{D}^{-1}\right) \right\}. 
+\end{align*}
+This is the kernel of an inverse Wishart distribution with degrees of freedom $d_n=d_0+N$ and scale matrix $\boldsymbol{D}_n=d_0\boldsymbol{D}_0+\sum_{i=1}^N\boldsymbol{b}_i\boldsymbol{b}_i^{\top}$. Thus,   
+\begin{equation*}
+	\boldsymbol{D}\mid  \boldsymbol{b} \sim {I}{W}(d_n, \boldsymbol{D}_n).
+\end{equation*}
+Observe that the posterior distribution of $\boldsymbol{D}$ dependents just on $\boldsymbol{b}$. 
+
+All the posterior conditional distributions belong to standard families, this implies that we can use a Gibbs sampling algorithm to perform inference in these hierarchical normal models.
+
+**Example: The relation between productivity and public investment**
+
+We used the dataset named *8PublicCap.csv* used by @Ramirez2017 to analyze the relation  between public investment and gross state product in the setting of a spatial panel dataset consisting of 48 US states from 1970 to 1986.
+In particular, we perform inference based on the following equation 
+\begin{equation*}
+	\log(\text{gsp}_{it})=b_i+\beta_1+\beta_2\log(\text{pcap}_{it})+\beta_3\log(\text{pc}_{it})+\beta_4\log(\text{emp}_{it})+\beta_5\text{unemp}_{it}+\mu_{it},
+\end{equation*}
+
+where *gsp* in the gross state product, *pcap* is public capital, and *pc* is private capital all in USD, *emp* is employment (people), and *unemp* is the unemployment rate in percentage.
+
+The following Algorithm shows how to perform inference in hierarchical longitudinal normal models in our GUI. See also Chapter \@ref(Chap5) for details regarding the dataset structure.
+
+::: {.algorithm}
+<div style="background-color: #f8f9fa; padding: 15px; border-left: 5px solid #343a40; box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1); border-radius: 5px;">
+
+**Algorithm: Hierarchical Longitudinal Normal Models**
+
+1. Select *Hierarchical Longitudinal Model* on the top panel
+
+2. Select *Normal* model using the left radio button
+
+3. Upload the dataset, selecting first if there is a header in the file, and the kind of separator in the *csv* file of the dataset (comma, semicolon, or tab). Then, use the *Browse* button under the **Choose File** legend 
+
+4. Select MCMC iterations, burn-in, and thinning parameters using the *Range sliders* 
+
+5. Write down the formula of the *fixed effects* equation in the **Main Equation: Fixed Effects** box. This formula must be written using the syntax of the *formula* command of **R** software. This equation includes intercept by default, do not include it in the equation
+
+6. Write down the formula of the *random effects* equation in the **Main Equation: Random Effects** box without writing the dependent variable, that is, starting the equation with the *tilde* ("~") symbol. This formula must be written using the syntax of the *formula* command of **R** software. This equation includes intercept by default, do not include it in the equation. If there are just random intercepts do not write anything in this box
+
+7. Write down the name of the grouping variable, that is, the variable that indicates the cross-sectional units 
+
+8. Set the hyperparameters of the *fixed effects*: mean vector, covariance matrix, shape and scale parameters. This step is not necessary as by default our GUI uses non-informative priors
+
+9. Set the hyperparameters of the *random effects*: degrees of freedom and scale matrix of the inverse Wishart distribution. This step is not necessary as by default our GUI uses non-informative priors
+
+10. Click the *Go!* button
+
+11. Analyze results
+
+12. Download posterior chains and diagnostic plots using the *Download Posterior Chains* and *Download Posterior Graphs* buttons
+
+</div>
+:::
+
+We ask in Exercise 2 to run this application in our GUI using 10,000 MCMC iterations plus a burn-in equal to 5,000 iterations, and a thinning parameter equal to 1. We also used the default values for the hyperparameters of the prior distributions, that is, $\boldsymbol{\beta}_0=\boldsymbol{0}_5$, $\boldsymbol{B}_0=\boldsymbol{I}_5$, $\alpha_0=\delta_0=0.001$, $d_0=5$ and $\boldsymbol{D}_0=\boldsymbol{I}_1$. It seems that all posterior draws come from stationary distributions, as suggested by the diagnostics and posterior plots (see Exercise 2).  
+
+The following code uses the command *MCMChregress* from the package *MCMCpack* to run this application. This command is also used by our GUI to perform inference in hierarchical longitudinal normal models.  
+
+We can see that the 95% symmetric credible intervals for public capital, private capital, employment, and unemployment are (-2.54e-02, -2.06e-02), (2.92e-01, 2.96e-01), (7.62e-01, 7.67e-01) and (-5.47e-03, -5.31e-03), respectively. The posterior mean elasticity estimate of public capital to GSP is -0.023, that is, an increase by 1% in public capital means a 0.023% decrease in gross state product. The posterior mean estimates of private capital and employment elasticities are 0.294 and 0.765, respectively. In addition, a 1 percentage point increase in the unemployment rate means a decrease of 0.54% in GSP. It seems that all these variables are statistically relevant.  
+
+In addition, the posterior mean estimates of the variance associated with the unobserved heterogeneity and stochastic errors are 1.06e-01 and 1.45e-03. We obtained the posterior chain of the proportion of the variance associated with the unobserved heterogeneity. The 95% symmetric credible interval is (0.98, 0.99) for this proportion, that is, unobserved heterogeneity is very important to explain the total variability.
+
+```{r, eval=FALSE}
+rm(list = ls())
+set.seed(12345)
+DataGSP <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/8PublicCap.csv", sep = ",", header = TRUE, quote = "")
+attach(DataGSP)
+K1 <- 5; K2 <- 1
+b0 <- rep(0, K1); B0 <- diag(K1)
+r0 <- 5; R0 <- diag(K2)
+a0 <- 0.001; d0 <- 0.001
+Resultshreg <- MCMCpack::MCMChregress(fixed = log(gsp)~log(pcap)+log(pc)+log(emp)+unemp, random = ~1, group = "id", data = DataGSP, burnin = 5000, mcmc = 10000, thin = 1, r = r0, R = R0, nu = a0, delta = d0)
+Betas <- Resultshreg[["mcmc"]][,1:K1]
+Sigma2RanEff <- Resultshreg[["mcmc"]][,54]
+Sigma2 <- Resultshreg[["mcmc"]][,55]
+summary(Betas)
+summary(Sigma2RanEff)
+summary(Sigma2)
+```
+
+There are many extensions of this model. For instance, @Chib1999 propose introducing heteroskedasticity in this model by assuming $\mu_{it} \mid \tau_{it} \sim N(0, \sigma^2/\tau_{it})$, $\tau_{it} \sim G(v/2,v/2)$. We ask in Exercise 2 to perform inference on the relationship between productivity and public investment using this setting.  
+
+Another potential extension is to allow dependence between $\boldsymbol{b}_i$ and some controls, let's say $\boldsymbol{z}_i$, a $K_3$-dimensional vector, and assume $\boldsymbol{b}_i \sim N(\boldsymbol{Z}_i \boldsymbol{\gamma}, \boldsymbol{D})$ where $\boldsymbol{Z}_i = \mathbf{I}_{K_2} \otimes \boldsymbol{z}_i^{\top}$, and complete the model using a prior for $\boldsymbol{\gamma}$, $\boldsymbol{\gamma} \sim N(\boldsymbol{\gamma}_0, \boldsymbol{\Gamma}_0)$. We ask to perform a simulation using this setting in Exercise 3.
+
+**Example: Simulation exercise of the longitudinal normal model with heteroskedasticity**
+
+Let's perform a simulation exercise to assess some potential extensions of the longitudinal hierarchical normal model. The point of departure is to assume that
+\[y_{it}=\beta_0+\beta_1x_{it1}+\beta_2x_{it2}+\beta_3x_{it3}+b_i+w_{it1}b_{i1}+\mu_{it},\]
+where $x_{itk}\sim N(0,1)$, $k=1,2,3$, $w_{it1}\sim N(0,1)$, $b_i\sim N(0, 0.7^{1/2})$, $b_{i1}\sim N(0, 0.6^{1/2})$, $\mu_{it}\sim N(0, (0.1/\tau)^{1/2})$, $\tau_{it}\sim G(v/2,v/2)$ and $\boldsymbol{\beta}=[0.5 \ 0.4 \ 0.6 \ -0.6]^{\top}$, $i=1,2,\dots,50$. The sample size is 2000 in an *unbalanced panel structure*. 
+
+Following same stages as in this section and Exercise 1, the posterior conditional distributions assuming that $\mu_{it}\mid \tau_{it}\sim N(0, \sigma^2/\tau_{it})$, $\tau_{it}\sim G(v/2,v/2)$ are given by 
+\begin{equation*}
+	\boldsymbol{\beta}\mid \sigma^2,\boldsymbol{\tau},\boldsymbol{D},\boldsymbol{y}, \boldsymbol{X}, \boldsymbol{W} \sim {N}(\boldsymbol{\beta}_n,\boldsymbol{B}_n), 
+\end{equation*}
+where $\boldsymbol{\tau}=[\tau_{it}]^{\top}$, $\boldsymbol{B}_n = (\boldsymbol{B}_0^{-1} +\sum_{i=1}^N \boldsymbol{X}_i^{\top}\boldsymbol{V}_i^{-1}\boldsymbol{X}_i)^{-1}$, $\boldsymbol{\beta}_n= \boldsymbol{B}_n(\boldsymbol{B}_0^{-1}\boldsymbol{\beta}_0 + \sum_{i=1}^N\boldsymbol{X}_i^{\top}\boldsymbol{V}_i^{-1}\boldsymbol{y}_i)$, $\boldsymbol{V}_i=\sigma^2\boldsymbol{\Psi}_i+\sigma_{b}^2\boldsymbol{i}_{T_i}\boldsymbol{i}_{T_i}^{\top}$ and $\boldsymbol{\Psi}_i=diag\left\{\tau_{it}^{-1}\right\}$.
+\begin{equation*}
+	\boldsymbol{b}_i\mid \boldsymbol{\beta},\sigma^2,\boldsymbol{\tau},\boldsymbol{D},\boldsymbol{y}, \boldsymbol{X}, \boldsymbol{W} \sim {N}(\boldsymbol{b}_{ni},\boldsymbol{B}_{ni}), 
+\end{equation*} 
+where $\boldsymbol{B}_{ni}=(\sigma^{-2}\boldsymbol{W}_i^{\top}\boldsymbol{\Psi}_i^{-1}\boldsymbol{W}_i+\boldsymbol{D}^{-1})^{-1}$ and $\boldsymbol{b}_{ni}=\boldsymbol{B}_{ni}(\sigma^{-2}\boldsymbol{W}_i^{\top}\boldsymbol{\Psi}_i^{-1}(\boldsymbol{y}_i-\boldsymbol{X}_i\boldsymbol{\beta}))$.
+\begin{equation*}
+	\sigma^2\mid  \boldsymbol{\beta}, \boldsymbol{b}, \boldsymbol{\tau}, \boldsymbol{y}, \boldsymbol{X}, \boldsymbol{W} \sim {I}{G}(\alpha_n, \delta_n),
+\end{equation*}
+where $\alpha_n=\alpha_0+\frac{1}{2}\sum_{i=1}^N T_i$ and $\delta_n=\delta_0+\frac{1}{2}\sum_{i=1}^N(\boldsymbol{y}_i-\boldsymbol{X}_i\boldsymbol{\beta}-\boldsymbol{W}_i\boldsymbol{b}_i)^{\top}\boldsymbol{\Psi}_i^{-1}(\boldsymbol{y}_i-\boldsymbol{X}_i\boldsymbol{\beta}-\boldsymbol{W}_i\boldsymbol{b}_i)$.  
+\begin{equation*}
+	\boldsymbol{D}\mid  \boldsymbol{b} \sim {I}{W}(d_n, \boldsymbol{D}_n),
+\end{equation*}
+where $d_n=d_0+N$ and $\boldsymbol{D}_n=d_0\boldsymbol{D}_0+\sum_{i=1}^N\boldsymbol{b}_i\boldsymbol{b}_i^{\top}$. And
+\begin{equation*}
+	\tau_{it}\mid \sigma^2, \boldsymbol{\beta}, \boldsymbol{b}, \boldsymbol{y}, \boldsymbol{X}, \boldsymbol{W} \sim {G}(v_{1n}/2, v_{2ni}/2),
+\end{equation*}
+where $v_{1n}=v+1$ and $v_{2ni}=v+\sigma^{-2}(y_{it}-\boldsymbol{x}_{it}^{\top}\boldsymbol{\beta}-\boldsymbol{w}_{it}^{\top}\boldsymbol{b}_i)^2$.
+
+The following code implements this simulation, and gets draws of the posterior distributions. We set MCMC iterations, burn-in and thinning parameters equal to 5000, 1000 and 1, respectively. In addition, $\boldsymbol{\beta}_0=\boldsymbol{0}_5$, $\boldsymbol{B}_0=\boldsymbol{I}_5$, $\alpha_0=\delta_0=0.001$, $d_0=2$, $\boldsymbol{D}_0=\boldsymbol{I}_2$ and $v=5$.
+
+```{r, eval=FALSE}
+rm(list = ls()); set.seed(010101)
+NT <- 2000; N <- 50
+id <- c(1:N, sample(1:N, NT - N,replace=TRUE))
+table(id)
+x1 <- rnorm(NT); x2 <- rnorm(NT); x3 <- rnorm(NT) 
+X <- cbind(1, x1, x2, x3); K1 <- dim(X)[2]
+w1 <- rnorm(NT); W <- cbind(1, w1)
+K2 <- dim(W)[2]; B <- c(0.5, 0.4, 0.6, -0.6)
+D <- c(0.7, 0.6)
+b1 <- rnorm(N, 0, sd = D[1]^0.5)
+b2 <- rnorm(N, 0, sd = D[2]^0.5)
+b <- cbind(b1, b2)
+v <- 5; tau <- rgamma(NT, shape = v/2, rate = v/2)
+sig2 <- 0.1; u <- rnorm(NT, 0, sd = (sig2/tau)^0.5)
+y <- NULL
+for(i in 1:NT){
+	yi <- X[i,]%*%B + W[i,]%*%b[id[i],] + u[i] 
+	y <- c(y, yi)
+}
+Data <- as.data.frame(cbind(y, x1, x2, x3, w1, id))
+mcmc <- 5000; burnin <- 1000; thin <- 1; tot <- mcmc + burnin
+b0 <- rep(0, K1); B0 <- diag(K1); B0i <- solve(B0) 
+r0 <- K2; R0 <- diag(K2); a0 <- 0.001; d0 <- 0.001
+PostBeta <- function(sig2, D, tau){
+	XVX <- matrix(0, K1, K1)
+	XVy <- matrix(0, K1, 1)
+	for(i in 1:N){
+		ids <- which(id == i)
+		Ti <- length(ids)
+		Wi <- W[ids, ]
+		taui <- tau[ids]
+		Vi <- sig2*solve(diag(1/taui)) + Wi%*%D%*%t(Wi)
+		ViInv <- solve(Vi)
+		Xi <- X[ids, ]
+		XVXi <- t(Xi)%*%ViInv%*%Xi
+		XVX <- XVX + XVXi
+		yi <- y[ids]
+		XVyi <- t(Xi)%*%ViInv%*%yi
+		XVy <- XVy + XVyi
+	}
+	Bn <- solve(B0i + XVX)
+	bn <- Bn%*%(B0i%*%b0 + XVy)
+	Beta <- MASS::mvrnorm(1, bn, Bn)
+	return(Beta)
+}
+Postb <- function(Beta, sig2, D, tau){
+	Di <- solve(D); 	bis <- matrix(0, N, K2)
+	for(i in 1:N){
+		ids <- which(id == i)
+		Wi <- W[ids, ]; Xi <- X[ids, ]
+		yi <- y[ids]; taui <- tau[ids]
+		Taui <- solve(diag(1/taui))
+		Wtei <- sig2^(-1)*t(Wi)%*%Taui%*%(yi - Xi%*%Beta)
+		Bni <- solve(sig2^(-1)*t(Wi)%*%Taui%*%Wi + Di)
+		bni <- Bni%*%Wtei
+		bi <- MASS::mvrnorm(1, bni, Bni)
+		bis[i, ] <- bi
+	}
+	return(bis)
+}
+PostSig2 <- function(Beta, bs, tau){
+	an <- a0 + 0.5*NT
+	ete <- 0
+	for(i in 1:N){
+		ids <- which(id == i)
+		Xi <- X[ids, ]; yi <- y[ids]
+		Wi <- W[ids, ]; taui <- tau[ids]
+		Taui <- solve(diag(1/taui))
+		ei <- yi - Xi%*%Beta - Wi%*%bs[i, ]
+		etei <- t(ei)%*%Taui%*%ei
+		ete <- ete + etei
+	}
+	dn <- d0 + 0.5*ete 
+	sig2 <- MCMCpack::rinvgamma(1, shape = an, scale = dn)
+	return(sig2)
+}
+PostD <- function(bs){
+	rn <- r0 + N
+	btb <- matrix(0, K2, K2)
+	for(i in 1:N){
+		bsi <- bs[i, ]
+		btbi <- bsi%*%t(bsi)
+		btb <- btb + btbi
+	}
+	Rn <- d0*R0 + btb
+	Sigma <- MCMCpack::riwish(v = rn, S = Rn)
+	return(Sigma)
+}
+PostTau <- function(sig2, Beta, bs){
+	v1n <- v + 1
+	v2n <- NULL
+	for(i in 1:NT){
+		Xi <- X[i, ]; yi <- y[i]
+		Wi <- W[i, ]; bi <- bs[id[i],]
+		v2ni <- v + sig2^(-1)*(yi - Xi%*%Beta - Wi%*%bi)^2
+		v2n <- c(v2n, v2ni)
+	}
+	tau <- rgamma(NT, shape = rep(v1n/2, NT), rate = v2n/2)
+	return(tau)
+}
+PostBetas <- matrix(0, tot, K1); PostDs <- matrix(0, tot, K2*(K2+1)/2)
+PostSig2s <- rep(0, tot); Postbs <- array(0, c(N, K2, tot))
+PostTaus <- matrix(0, tot, NT); RegLS <- lm(y ~ X - 1)
+SumLS <- summary(RegLS)
+Beta <- SumLS[["coefficients"]][,1]
+sig2 <- SumLS[["sigma"]]^2; D <- diag(K2)
+tau <- rgamma(NT, shape = v/2, rate = v/2) 
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+	bs <- Postb(Beta = Beta, sig2 = sig2, D = D, tau = tau)
+	D <- PostD(bs = bs)
+	Beta <- PostBeta(sig2 = sig2, D = D, tau = tau)
+	sig2 <- PostSig2(Beta = Beta, bs = bs, tau = tau)
+	tau <- PostTau(sig2 = sig2, Beta = Beta, bs = bs)
+	PostBetas[s,] <- Beta
+	PostDs[s,] <- matrixcalc::vech(D)
+	PostSig2s[s] <- sig2
+	Postbs[, , s] <- bs
+	PostTaus[s,] <- tau
+	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+keep <- seq((burnin+1), tot, thin)
+Bs <- PostBetas[keep,]; Ds <- PostDs[keep,]
+bs <- Postbs[, , keep]; sig2s <- PostSig2s[keep]
+taus <- PostTaus[keep,]
+summary(coda::mcmc(Bs))
+summary(coda::mcmc(Ds))
+summary(coda::mcmc(sig2s))
+```
+
+We can see that all the 95\% credible intervals encompass the population parameters, except for the second *fixed effect* and the variance of the model, but both for a tiny margin.  
+
+## Logit model {#sec92}
+
+We can use the framework of Section \@ref(sec91) to perform inference in models with longitudinal/panel data of binary response variables. In particular, let $y_{it} \sim B(\pi_{it})$, where $\text{logit}(\pi_{it}) = \log\left(\frac{\pi_{it}}{1 - \pi_{it}}\right) \equiv y_{it}^*$, such that $y_{it}^* \sim N(\boldsymbol{x}_{it}^{\top} \boldsymbol{\beta} + \boldsymbol{w}_{it}^{\top} \boldsymbol{b}_i, \sigma^2)$. Thus, we can *augment* the model with the latent variable $y_{it}^*$ and perform inference using a Metropolis-within-Gibbs sampling algorithm based on the posterior conditional distributions from the previous section. 
+
+We can implement a Gibbs sampling algorithm to sample draws from the posterior conditional distributions of $\boldsymbol{\beta}$, $\sigma^2$, $\boldsymbol{b}_i$, and $\boldsymbol{D}$ using the equations in Section \@ref(sec91) conditional on $\boldsymbol{y}_i^*$. Then, we can use a random walk Metropolis-Hastings algorithm to sample $y_{it}^*$, where the proposal distribution is Gaussian with mean $y_{it}^*$ and variance $v^2$, that is, $y_{it}^{*c} = y_{it}^* + \epsilon_{it}$, where $\epsilon_{it} \sim \mathcal{N}(0, v^2)$, and $v$ is a tuning parameter to achieve good acceptance rates. 
+
+Finally, for making predictions, we should take into account that $\mathbb{E}[\pi_{it}] = \frac{1}{1 + \exp\left\{(\boldsymbol{x}_{it}^{\top} \boldsymbol{\beta} + \boldsymbol{w}_{it}^{\top} \boldsymbol{b}_i)/\sqrt{1 + \left(\frac{16\sqrt{3}}{15\pi}\right)^2 \sigma^2}\right\}}$ [@diggle2002analysis].
+
+The posterior distribution of this model is
+\begin{align*}
+	\pi(\boldsymbol{\beta},\sigma^2, \boldsymbol{b}_i, \boldsymbol{D}, \boldsymbol{y}^*\mid \boldsymbol{y}, \boldsymbol{X}, \boldsymbol{W})&\propto \prod_{i=1}^N \prod_{t=1}^{T_i}\left\{\pi_{it}^{y_{it}}(1-\pi_{it})^{1-y_{it}}\right.\\
+	&\left.\times (\sigma^2)^{-1}\exp\left\{-\frac{1}{2\sigma^2}(y_{it}^{*}-\boldsymbol{x}_{it}^{\top}\boldsymbol{\beta}-\boldsymbol{w}_{it}^{\top}\boldsymbol{b}_i)^{\top}(y_{it}^{*}-\boldsymbol{x}_{it}^{\top}\boldsymbol{\beta}-\boldsymbol{w}_{it}^{\top}\boldsymbol{b}_i)\right\}\right\}\\
+	&\times \exp\left\{-\frac{1}{2}(\boldsymbol{\beta}-\boldsymbol{\beta}_0)^{\top}\boldsymbol{B}_0^{-1}(\boldsymbol{\beta}-\boldsymbol{\beta}_0)\right\}\\
+	&\times \exp\left\{-\frac{1}{2}\sum_{i=1}^N \boldsymbol{b}_i^{\top}\boldsymbol{D}^{-1}\boldsymbol{b}_i\right\}\\
+	&\times (\sigma^2)^{-\alpha_0-1}\exp\left\{-\frac{\delta_0}{\sigma^2}\right\}\\
+	&\times |\boldsymbol{D}|^{-(d_0+K_2+1)/2}\exp\left\{-\frac{1}{2}tr(d_0\boldsymbol{D}_0\boldsymbol{D}^{-1})\right\}.	
+\end{align*}
+
+We can get samples of $y_{it}^*$ from a normal distribution with mean equal to $\boldsymbol{x}_{it}^{\top}\boldsymbol{\beta}+\boldsymbol{w}_{it}^{\top}\boldsymbol{b}_i$ and variance $\sigma^2$, and use these samples to get $\pi_{it}=\frac{1}{1+e^{-y_{it}^*}}$, $y_{it}^{*c}=y_{it}^{*}+\epsilon_{it}$ and $\pi_{it}^c=\frac{1}{1+e^{-y_{it}^{*c}}}$, and calculate the acceptance rate of the Metropolis-Hastings algorithm, 
+\begin{align*}
+	\alpha=\min\left(1,\frac{ \pi_{it}^{cy_{it}}(1-\pi_{it}^c)^{(1-y_{it})}\times\exp\left\{-\frac{1}{2\sigma^2}(y_{it}^{c*}-\boldsymbol{x}_{it}^{\top}\boldsymbol{\beta}-\boldsymbol{w}_{it}^{\top}\boldsymbol{b}_i)^{\top}(y_{it}^{c*}-\boldsymbol{x}_{it}^{\top}\boldsymbol{\beta}-\boldsymbol{w}_{it}^{\top}\boldsymbol{b}_i)\right\}}{\pi_{it}^{y_{it}}(1-\pi_{it})^{(1-y_{it})}\times\exp\left\{-\frac{1}{2\sigma^2}(y_{it}^{*}-\boldsymbol{x}_{it}^{\top}\boldsymbol{\beta}-\boldsymbol{w}_{it}^{\top}\boldsymbol{b}_i)^{\top}(y_{it}^{*}-\boldsymbol{x}_{it}^{\top}\boldsymbol{\beta}-\boldsymbol{w}_{it}^{\top}\boldsymbol{b}_i)\right\}}\right).
+\end{align*}
+
+**Example: Doctor visits in Germany**
+
+We used the dataset *9VisitDoc.csv* provided by @Winkelmann2004^[See *http://qed.econ.queensu.ca/jae/2004-v19.4/winkelmann/* for details]. We analyze the determinants of a binary variable (*DocVis*), which equals 1 if an individual visited a physician in the last three months and 0 otherwise. The dataset contains 32,837 observations of 9,197 individuals in an *unbalanced longitudinal/panel* dataset over the years 1995--1999 from the German Socioeconomic Panel Data.
+
+The specification is given by
+\begin{align*}
+	\text{logit}(\pi_{it}) &= \beta_1 + \beta_2 \text{Age} + \beta_3 \text{Male} + \beta_4 \text{Sport} + \beta_5 \text{LogInc} \\
+	&\quad + \beta_6 \text{GoodHealth} + \beta_7 \text{BadHealth} + b_i + b_{i1} \text{Sozh},
+\end{align*}
+where $\pi_{it} = p(\text{DocVis}_{it} = 1)$.
+
+This specification controls for *age*, a *gender* indicator (with 1 representing male), whether the individual practices any *sport* (with 1 for sport), the logarithm of monthly gross *income*, and self-perception of *health status*, where “good” and “bad” are compared to a baseline of “regular”. Additionally, we assume that unobserved heterogeneity is linked to whether the individual receives welfare payments (with *Sozh* equal to 1 for receiving welfare). 
+
+We set 10,000 MCMC iterations, plus 1,000 burn-in, and a thinning parameter equal to 10. In addition, $\boldsymbol{\beta}_0 = \boldsymbol{0}_7$, $\boldsymbol{B}_0 = \boldsymbol{I}_7$, $\alpha_0 = \delta_0 = 0.001$, $d_0 = 5$, and $\boldsymbol{D}_0 = \boldsymbol{I}_2$.
+
+The following Algorithm shows how to perform inference of the hierarchical longitudinal logit model using our GUI. 
+
+::: {.algorithm}
+
+<div style="background-color: #f8f9fa; padding: 15px; border-left: 5px solid #343a40; box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1); border-radius: 5px;">
+
+**Algorithm: Hierarchical Longitudinal Logit Model**  
+
+1. Select *Hierarchical Longitudinal Model* on the top panel  
+
+2. Select *Logit* model using the left radio button  
+
+3. Upload the dataset selecting first if there is a header in the file and the kind of separator in the *csv* file of the dataset (comma, semicolon, or tab). Then, use the *Browse* button under the **Choose File** legend  
+
+4. Select MCMC iterations, burn-in, and thinning parameters using the *Range sliders*  
+
+5. Write down the formula of the *fixed effects* equation in the **Main Equation: Fixed Effects** box. This formula must be written using the syntax of the *formula* command of **R** software. This equation includes the intercept by default, so do not include it in the equation  
+
+6. Write down the formula of the *random effects* equation in the **Main Equation: Random Effects** box without writing the dependent variable, that is, starting the equation with the *tilde* (`~`) symbol. This formula must be written using the syntax of the *formula* command of **R** software. This equation includes the intercept by default, so do not include it in the equation. If there are just random intercepts, do not write anything in this box  
+
+7. Write down the name of the grouping variable, that is, the variable that indicates the cross-sectional units  
+
+8. Set the hyperparameters of the *fixed effects*: mean vector, covariance matrix, shape, and scale parameters. This step is not necessary as by default our GUI uses non-informative priors  
+
+9. Set the hyperparameters of the *random effects*: degrees of freedom and scale matrix of the inverse Wishart distribution. This step is not necessary as by default our GUI uses non-informative priors  
+
+10. Click the *Go!* button  
+
+11. Analyze results  
+
+12. Download posterior chains and diagnostic plots using the *Download Posterior Chains* and *Download Posterior Graphs* buttons  
+
+</div>
+
+:::
+
+
+We show in the following code how to perform inference of this example using the command *MCMChlogit* from the *MCMCpack* package. We fixed the variance for over-dispersion ($\sigma^2$) setting *FixOD = 1* in this example. Our GUI does not fix this value, that is, it sets *FixOD = 0*, which is the default value in the command *MCMChlogit*. We ask to replicate this example using our GUI in Exercise 4. The command *MCMChlogit* uses an adaptive algorithm to tune $v$ based on an optimal acceptance rate equal to 0.44. 
+
+```{r, eval=FALSE}
+rm(list = ls())
+set.seed(12345)
+Data <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/9VisitDoc.csv", sep = ",", header = TRUE, quote = "")
+attach(Data)
+K1 <- 7; K2 <- 2; N <- 9197
+b0 <- rep(0, K1); B0 <- diag(K1)
+r0 <- 5; R0 <- diag(K2)
+a0 <- 0.001; d0 <- 0.001
+RegLogit <- glm(DocVis ~ Age + Male + Sport + LogInc + GoodHealth + BadHealth, family = binomial(link = "logit"))
+SumLogit <- summary(RegLogit)
+Beta0 <- SumLogit[["coefficients"]][,1]
+mcmc <- 10000; burnin <- 1000; thin <- 10
+# MCMChlogit
+Resultshlogit <- MCMCpack::MCMChlogit(fixed = DocVis ~ Age + Male + Sport + LogInc + GoodHealth + BadHealth, random = ~Sozh, group="id", data = Data, burnin = burnin, mcmc = mcmc, thin = thin, mubeta = b0, Vbeta = B0, r = r0, R = R0, nu = a0, delta = d0, beta.start = Beta0, FixOD = 1)
+Betas <- Resultshlogit[["mcmc"]][,1:K1]
+Sigma2RanEff <- Resultshlogit[["mcmc"]][,c(K2*N+K1+1, 2*N+K1+K2^2)]
+summary(Betas)
+summary(Sigma2RanEff)
+```
+
+
+The results suggest that age, sports, income and a bad perception of health status increase the probability of visiting the physician, the posterior estimates have 95\% symmetric credible intervals equal to (5.1e-03, 1.3e-02), (0.23, 0.40), (0.18, 0.37) and (1.22, 1.53), whereas men have a lower probability of visiting a physician, the 95\% credible interval is (-1.19, -1.01), and individuals who have a good perception of their health status also have a lower probability of visiting the doctor, the 95\% credible interval is (-1.16, -0.98). The 95\% credible interval of the variances of the unobserved heterogeneity associated with the welfare program is (0.35, 1.27).
+
+
+## Poisson model {#sec93}
+
+We can use same ideas as in Section \@ref(sec92) to perform inference in longitudinal/panel datasets where the dependent variable takes non-negative integers. Let's assume that $y_{it}\sim P(\lambda_{it})$ where $\log(\lambda_{it})=y_{it}^*$ such that $y_{it}^*\sim N(\boldsymbol{x}_{it}^{\top}\boldsymbol{\beta}+\boldsymbol{w}_{it}^{\top}\boldsymbol{b}_i,\sigma^2)$. We can *augment* the model with the latent variable $y_{it}^{*}$, and again use a Metropolis-within-Gibbs algorithm to perform inference in this model.
+
+The posterior distribution of this model is
+\begin{align*}
+	\pi(\boldsymbol{\beta},\sigma^2, \boldsymbol{b}_i, \boldsymbol{D}, \boldsymbol{y}^*\mid \boldsymbol{y}, \boldsymbol{X}, \boldsymbol{W})&\propto \prod_{i=1}^N \prod_{t=1}^{T_i}\left\{\lambda_{it}^{y_{it}}\exp\left\{-\lambda_{it}\right\}\right.\\
+	&\left.\times (\sigma^2)^{-1}\exp\left\{-\frac{1}{2\sigma^2}(y_{it}^*-\boldsymbol{x}_{it}^{\top}\boldsymbol{\beta}-\boldsymbol{w}_{it}^{\top}\boldsymbol{b}_i)^{\top}(y_{it}^*-\boldsymbol{x}_{it}^{\top}\boldsymbol{\beta}-\boldsymbol{w}_{it}^{\top}\boldsymbol{b}_i)\right\}\right\}\\
+	&\times \exp\left\{-\frac{1}{2}(\boldsymbol{\beta}-\boldsymbol{\beta}_0)^{\top}\boldsymbol{B}_0^{-1}(\boldsymbol{\beta}-\boldsymbol{\beta}_0)\right\}\\
+	&\times \exp\left\{-\frac{1}{2}\sum_{i=1}^N \boldsymbol{b}_i^{\top}\boldsymbol{D}^{-1}\boldsymbol{b}_i\right\}\\
+	&\times (\sigma^2)^{-\alpha_0-1}\exp\left\{-\frac{\delta_0}{\sigma^2}\right\}\\
+	&\times |\boldsymbol{D}|^{-(d_0+K_2+1)/2}\exp\left\{-\frac{1}{2}tr(d_0\boldsymbol{D}_0\boldsymbol{D}^{-1})\right\}.	
+\end{align*}
+
+We can get samples of $y_{it}^*$ from a normal distribution with mean equal to $\boldsymbol{x}_{it}^{\top}\boldsymbol{\beta}+\boldsymbol{w}_{it}^{\top}\boldsymbol{b}_i$ and variance $\sigma^2$, and use these samples to get $\lambda_{it}=\exp(y_{it}^*)$, $y_{it}^{*c}=y_{it}^{*}+\epsilon_{it}$, where $\epsilon_{it}\sim\mathcal{N}(0,v^2)$, $v$ is a tuning parameter to get good acceptance rates, and $\lambda_{it}^c=\exp(y_{it}^{*c})$. The acceptance rate of the Metropolis-Hastings algorithm is 
+	\begin{align*}
+		\alpha=\min\left(1,\frac{ \lambda_{it}^{cy_{it}}\exp(-\lambda_{it}^c)\times\exp\left\{-\frac{1}{2\sigma^2}(y_{it}^{c*}-\boldsymbol{x}_{it}^{\top}\boldsymbol{\beta}-\boldsymbol{w}_{it}^{\top}\boldsymbol{b}_i)^{\top}(y_{it}^{c*}-\boldsymbol{x}_{it}^{\top}\boldsymbol{\beta}-\boldsymbol{w}_{it}^{\top}\boldsymbol{b}_i)\right\}}{\lambda_{it}^{y_{it}}\exp(-\lambda_{it})\times\exp\left\{-\frac{1}{2\sigma^2}(y_{it}^{*}-\boldsymbol{x}_{it}^{\top}\boldsymbol{\beta}-\boldsymbol{w}_{it}^{\top}\boldsymbol{b}_i)^{\top}(y_{it}^{*}-\boldsymbol{x}_{it}^{\top}\boldsymbol{\beta}-\boldsymbol{w}_{it}^{\top}\boldsymbol{b}_i)\right\}}\right).
+	\end{align*}
+
+In addition, we should use the posterior conditional distributions from Section \@ref(sec91) to complete the algorithm getting samples of $\boldsymbol{\beta}$, $\sigma^2$, $\boldsymbol{b}_i$ and $\boldsymbol{D}$ replacing $y_{it}$ by ${y}_{it}^*$.
+
+We should take into account for doing predictions that $\mathbb{E}[{\lambda}_{it}]=\exp\left\{\boldsymbol{x}_{it}^{\top}\boldsymbol{\beta}+\boldsymbol{w}_{it}^{\top}\boldsymbol{b}_i+0.5\sigma^2\right\}$ [@diggle2002analysis].
+
+**Example: Simulation exercise**
+
+Let's perform a simulation exercise to assess the performance of the hierarchical longitudinal Poisson model. The point of departure is to assume that 
+\[
+y_{it}^* = \beta_0 + \beta_1 x_{it1} + \beta_2 x_{it2} + \beta_3 x_{it3} + b_i + w_{it1} b_{i1},
+\]
+where $x_{itk} \sim N(0,1)$ for $k = 1, 2, 3$, $w_{it1} \sim N(0,1)$, $b_i \sim N(0, 0.7^{1/2})$, $b_{i1} \sim N(0, 0.6^{1/2})$, and $\boldsymbol{\beta} = [0.5 \ 0.4 \ 0.6 \ -0.6]^{\top}$, with $i = 1, 2, \dots, 50$. Additionally, $y_{it} \sim P(\lambda_{it})$, where $\lambda_{it} = \exp(y_{it}^*)$. The sample size is 1000 in an *unbalanced panel structure*.
+
+We set the priors as $\boldsymbol{\beta}_0 = \boldsymbol{0}_4$, $\boldsymbol{B}_0 = \boldsymbol{I}_4$, $\alpha_0 = \delta_0 = 0.001$, $d_0 = 2$, and $\boldsymbol{D}_0 = \boldsymbol{I}_2$. The number of MCMC iterations, burn-in, and thinning parameters are 15,000, 5,000, and 10, respectively.
+
+The following code shows how to perform inference in the hierarchical longitudinal Poisson model programming the Metropolis-within-Gibbs sampler.
+
+```{r, eval=FALSE}
+rm(list = ls()); set.seed(010101)
+NT <- 1000; N <- 50
+id <- c(1:N, sample(1:N, NT - N,replace=TRUE))
+x1 <- rnorm(NT); x2 <- rnorm(NT); x3 <- rnorm(NT) 
+X <- cbind(1, x1, x2, x3)
+K1 <- dim(X)[2]; w1 <- rnorm(NT) 
+W <- cbind(1, w1); K2 <- dim(W)[2]
+B <- c(0.5, 0.4, 0.6, -0.6)
+D <- c(0.7, 0.6); sig2 <- 0.1
+b1 <- rnorm(N, 0, sd = D[1]^0.5)
+b2 <- rnorm(N, 0, sd = D[2]^0.5)
+b <- cbind(b1, b2)
+yl <- NULL
+for(i in 1:NT){
+	ylmeani <- X[i,]%*%B + W[i,]%*%b[id[i],]
+	yli <- rnorm(1, ylmeani, sig2^0.5)
+	yl <- c(yl, yli)
+}
+lambdait <- exp(yl); y <- rpois(NT, lambdait)
+Data <- as.data.frame(cbind(y, x1, x2, x3, w1, id))
+mcmc <- 15000; burnin <- 5000; thin <- 10; tot <- mcmc + burnin
+b0 <- rep(0, K1); B0 <- diag(K1); B0i <- solve(B0) 
+r0 <- K2; R0 <- diag(K2); a0 <- 0.001; d0 <- 0.001
+LatentMHV1 <- function(tuning, Beta, bs, sig2){
+	ylhat <- rep(0, NT)
+	accept <- NULL
+	for(i in 1:NT){
+		ids <- which(id == i)
+		yi <- y[i]
+		ylhatmeani <- X[i,]%*%Beta + W[i,]%*%bs[id[i],]
+		ylhati <- rnorm(1, ylhatmeani, sd = sig2^0.5)
+		lambdahati <- exp(ylhati)
+		ei <- rnorm(1, 0, sd = tuning)
+		ylpropi <- ylhati + ei
+		lambdapropi <- exp(ylpropi)
+		logPosthati <- sum(dpois(yi, lambdahati, log = TRUE) + dnorm(ylhati, ylhatmeani, sig2^0.5, log = TRUE))
+		logPostpropi <- sum(dpois(yi, lambdapropi, log = TRUE) + dnorm(ylpropi, ylhatmeani, sig2^0.5, log = TRUE))
+		alphai <- min(1, exp(logPostpropi - logPosthati))
+		ui <- runif(1)
+		if(ui <= alphai){
+			ylhati <- ylpropi; accepti <- 1
+		}else{
+			ylhati <- ylhati; accepti <- 0
+		}
+		ylhat[i] <- ylhati
+		accept <- c(accept, accepti)
+	}
+	res <- list(ylhat = ylhat, accept = mean(accept))
+	return(res)
+}
+PostBeta <- function(D, ylhat, sig2){
+	XVX <- matrix(0, K1, K1); XVy <- matrix(0, K1, 1)
+	for(i in 1:N){
+		ids <- which(id == i); Ti <- length(ids)
+		Wi <- W[ids, ]
+		Vi <- diag(Ti)*sig2 + Wi%*%D%*%t(Wi)
+		ViInv <- solve(Vi); Xi <- X[ids, ]
+		XVXi <- t(Xi)%*%ViInv%*%Xi
+		XVX <- XVX + XVXi
+		yi <- ylhat[ids]
+		XVyi <- t(Xi)%*%ViInv%*%yi
+		XVy <- XVy + XVyi
+	}
+	Bn <- solve(B0i + XVX); bn <- Bn%*%(B0i%*%b0 + XVy)
+	Beta <- MASS::mvrnorm(1, bn, Bn)
+	return(Beta)
+}
+Postb <- function(Beta, D, ylhat, sig2){
+	Di <- solve(D); bis <- matrix(0, N, K2)
+	for(i in 1:N){
+		ids <- which(id == i)
+		Wi <- W[ids, ]; Xi <- X[ids, ]
+		yi <- ylhat[ids]
+		Wtei <- sig2^(-1)*t(Wi)%*%(yi - Xi%*%Beta)
+		Bni <- solve(sig2^(-1)*t(Wi)%*%Wi + Di)
+		bni <- Bni%*%Wtei
+		bi <- MASS::mvrnorm(1, bni, Bni)
+		bis[i, ] <- bi
+	}
+	return(bis)
+}
+PostD <- function(bs){
+	rn <- r0 + N; btb <- matrix(0, K2, K2)
+	for(i in 1:N){
+		bsi <- bs[i, ]; btbi <- bsi%*%t(bsi)
+		btb <- btb + btbi
+	}
+	Rn <- d0*R0 + btb
+	Sigma <- MCMCpack::riwish(v = rn, S = Rn)
+	return(Sigma)
+}
+PostSig2 <- function(Beta, bs, ylhat){
+	an <- a0 + 0.5*NT; ete <- 0
+	for(i in 1:N){
+		ids <- which(id == i)
+		Xi <- X[ids, ]
+		yi <- ylhat[ids]
+		Wi <- W[ids, ]
+		ei <- yi - Xi%*%Beta - Wi%*%bs[i, ]
+		etei <- t(ei)%*%ei
+		ete <- ete + etei
+	}
+	dn <- d0 + 0.5*ete 
+	sig2 <- MCMCpack::rinvgamma(1, shape = an, scale = dn)
+	return(sig2)
+}
+PostBetas <- matrix(0, tot, K1); PostDs <- matrix(0, tot, K2*(K2+1)/2)
+Postbs <- array(0, c(N, K2, tot)); PostSig2s <- rep(0, tot)
+Accepts <- rep(NULL, tot)
+RegPois <- glm(y ~ X - 1, family = poisson(link = "log"))
+SumPois <- summary(RegPois)
+Beta <- SumPois[["coefficients"]][,1]
+sig2 <- sum(SumPois[["deviance.resid"]]^2)/SumPois[["df.residual"]]
+D <- diag(K2); bs1 <- rnorm(N, 0, sd = D[1,1]^0.5)
+bs2 <- rnorm(N, 0, sd = D[2,2]^0.5); bs <- cbind(bs1, bs2)
+tuning <- 0.1; ropt <- 0.44
+tunepariter <- seq(round(tot/10, 0), tot, round(tot/10, 0));   l <- 1
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+	LatY <- LatentMHV1(tuning = tuning, Beta = Beta, bs = bs, sig2 = sig2)
+	ylhat <- LatY[["ylhat"]]
+	bs <- Postb(Beta = Beta, D = D, ylhat=ylhat, sig2 = sig2)
+	D <- PostD(bs = bs)
+	Beta <- PostBeta(D = D, ylhat = ylhat, sig2 = sig2)
+	sig2 <- PostSig2(Beta = Beta, bs = bs, ylhat = ylhat)
+	PostBetas[s,] <- Beta
+	PostDs[s,] <- matrixcalc::vech(D)
+	Postbs[, , s] <- bs; PostSig2s[s] <- sig2
+	AcceptRate <- LatY[["accept"]]
+	Accepts[s] <- AcceptRate
+	if(AcceptRate > ropt){
+		tuning = tuning*(2-(1-AcceptRate)/(1-ropt))
+	}else{
+		tuning = tuning/(2-AcceptRate/ropt)
+	}
+	if(s == tunepariter[l]){
+		print(AcceptRate); l <- l + 1
+	}
+	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+keep <- seq((burnin+1), tot, thin)
+Bs <- PostBetas[keep,]; Ds <- PostDs[keep,]
+bs <- Postbs[, , keep]; sig2s <- PostSig2s[keep]
+summary(coda::mcmc(Bs))
+summary(coda::mcmc(Ds))
+```
+
+We can see that all 95\% credible intervals encompass the population parameters of the *fixed effects*, the posterior medians are relatively near the population values. However, we do not get good posterior estimates of the covariance matrix of the *random effects* as the 95\% credible intervals do not encompass the second element of the diagonal of this matrix. In addition, the posterior draws of this algorithm over-estimates the over-dispersion parameter.
+
+We can perform inference for the hierarchical longitudinal Poisson model in our GUI using the following Algorithm. Our GUI is based on the *MCMChpoisson* command from the *MCMCpack* package.^[At the time of writing this book there was an issue with the function *MCMChpoisson* from *MCMCpack*. We contact the maintainer, but users may have issues running this algorithm or running this function directly in **R**.]
+
+::: {.algorithm}
+
+<div style="background-color: #f8f9fa; padding: 15px; border-left: 5px solid #343a40; box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1); border-radius: 5px;">
+
+**Algorithm: Hierarchical Longitudinal Poisson Model**  
+
+1. Select *Hierarchical Longitudinal Model* on the top panel  
+
+2. Select *Poisson* model using the left radio button  
+
+3. Upload the dataset selecting first if there is a header in the file and the kind of separator in the *csv* file of the dataset (comma, semicolon, or tab). Then, use the *Browse* button under the **Choose File** legend  
+
+4. Select MCMC iterations, burn-in, and thinning parameters using the *Range sliders*  
+
+5. Write down the formula of the *fixed effects* equation in the **Main Equation: Fixed Effects** box. This formula must be written using the syntax of the *formula* command of **R** software. This equation includes the intercept by default, so do not include it in the equation  
+
+6. Write down the formula of the *random effects* equation in the **Main Equation: Random Effects** box without writing the dependent variable, that is, starting the equation with the *tilde* (`~`) symbol. This formula must be written using the syntax of the *formula* command of **R** software. This equation includes the intercept by default, so do not include it in the equation. If there are just random intercepts, do not write anything in this box  
+
+7. Write down the name of the grouping variable, that is, the variable that indicates the cross-sectional units  
+
+8. Set the hyperparameters of the *fixed effects*: mean vector, covariance matrix, shape, and scale parameters. This step is not necessary as by default our GUI uses non-informative priors  
+
+9. Set the hyperparameters of the *random effects*: degrees of freedom and scale matrix of the inverse Wishart distribution. This step is not necessary as by default our GUI uses non-informative priors  
+
+10. Click the *Go!* button  
+
+11. Analyze results  
+
+12. Download posterior chains and diagnostic plots using the *Download Posterior Chains* and *Download Posterior Graphs* buttons  
+
+</div>
+
+:::
+
+## Summary {#sec94}
+In this chapter, we present how to perform inference in longitudinal/panel data models from a Bayesian perspective. In particular, the Bayesian approach uses a hierarchical structure, where the *random effects* have priors that depend on hyperparameters, which in turn also have priors. We cover the three most common cases: continuous, binary, and count dependent variables. The basic models presented in this chapter can be easily extended to more flexible cases, given the hierarchical structure.
+
+## Exercises {#sec95}
+
+1. Show that the posterior distribution of \(\boldsymbol{\beta} \mid \sigma^2, \boldsymbol{D}\) is \(N(\boldsymbol{\beta}_n, \boldsymbol{B}_n)\), where \(\boldsymbol{B}_n = (\boldsymbol{B}_0^{-1} + \sum_{i=1}^N \boldsymbol{X}_i^{\top} \boldsymbol{V}_i^{-1} \boldsymbol{X}_i)^{-1}\), \(\boldsymbol{\beta}_n = \boldsymbol{B}_n (\boldsymbol{B}_0^{-1} \boldsymbol{\beta}_0 + \sum_{i=1}^N \boldsymbol{X}_i^{\top} \boldsymbol{V}_i^{-1} \boldsymbol{y}_i)\).
+
+2. **The relation between productivity and public investment example continues**
+    - Perform inference of this example using our GUI.
+    - Program from scratch a Gibbs sampling algorithm to perform this application. Set \(\boldsymbol{\beta}_0 = \boldsymbol{0}_5\), \(\boldsymbol{B}_0 = \boldsymbol{I}_5\), \(\alpha_0 = \delta_0 = 0.001\), \(d_0 = 5\) and \(\boldsymbol{D}_0 = \boldsymbol{I}_1\).
+    - Perform inference in this example assuming that \(\mu_{it} \mid \tau_{it} \sim N(0, \sigma^2 / \tau_{it})\) and \(\tau_{it} \sim G(v/2, v/2)\) setting \(v = 5\).
+
+3. **Simulation exercise of the longitudinal normal model continues**
+
+   Assume that
+   \[
+   y_{it} = \beta_0 + \beta_1 x_{it1} + \beta_2 x_{it2} + \beta_3 x_{it3} + \beta_4 z_{i1} + b_i + w_{it1} b_{i1} + \mu_{it},
+   \]
+   where \(x_{itk} \sim N(0, 1)\), \(k = 1, 2, 3\), \(z_{i1} \sim B(0.5)\), \(w_{it1} \sim N(0, 1)\), \(b_i \sim N(0, 0.7^{1/2})\), \(b_{i1} \sim N(0, 0.6^{1/2})\), \(\mu_{it} \sim N(0, 0.1^{1/2})\), \(\boldsymbol{\beta} = [0.5, 0.4, 0.6, -0.6, 0.7]^{\top}\), \(i = 1, 2, \dots, 50\), and the sample size is 2,000 in an *unbalanced panel structure*. In addition, we assume that \(\boldsymbol{b}_i\) depends on \(\boldsymbol{z}_i = [1, z_{i1}]^{\top}\) such that \(\boldsymbol{b}_i \sim N(\boldsymbol{Z}_i \boldsymbol{\gamma}, \boldsymbol{D})\) where \(\boldsymbol{Z}_i = \boldsymbol{I}_{K_2} \otimes \boldsymbol{z}_i^{\top}\), and \(\boldsymbol{\gamma} = [1, 1, 1, 1]\). The prior for \(\boldsymbol{\gamma}\) is \(N(\boldsymbol{\gamma}_0, \boldsymbol{\Gamma}_0)\) where we set \(\boldsymbol{\gamma}_0 = \boldsymbol{0}_4\) and \(\boldsymbol{\Gamma}_0 = \boldsymbol{I}_4\).
+
+    - Perform inference in this model without taking into account the dependence between \(\boldsymbol{b}_i\) and \(z_{i1}\), and compare the posterior estimates with the population parameters.
+    - Perform inference in this model taking into account the dependence between \(\boldsymbol{b}_i\) and \(z_{i1}\), and compare the posterior estimates with the population parameters.
+
+4. **Doctor visits in Germany continues I**
+
+   Replicate this example using our GUI, which by default does not fix the over-dispersion parameter (\(\sigma^2\)), and compare the results with the results of this example in Section \@ref(sec92).
+
+5. **Simulation exercise of the longitudinal logit model**
+
+   Perform a simulation exercise to assess the performance of the hierarchical longitudinal logit model. The point of departure is to assume that
+   \[
+   y_{it}^* = \beta_0 + \beta_1 x_{it1} + \beta_2 x_{it2} + \beta_3 x_{it3} + b_i + w_{it1} b_{i1},
+   \]
+   where \(x_{itk} \sim N(0, 1)\), \(k = 1, 2, 3\), \(w_{it1} \sim N(0, 1)\), \(b_i \sim N(0, 0.7^{1/2})\), \(b_{i1} \sim N(0, 0.6^{1/2})\), \(\boldsymbol{\beta} = [0.5, 0.4, 0.6, -0.6]^{\top}\), \(i = 1, 2, \dots, 50\), and \(y_{it} \sim B(\pi_{it})\), where \(\pi_{it} = \frac{1}{1 + \exp(y_{it}^*)}\). The sample size is 1,000 in an *unbalanced panel structure*.
+
+    - Perform inference using the command *MCMChlogit* fixing the over-dispersion parameter, and using \(\boldsymbol{\beta}_0 = \boldsymbol{0}_4\), \(\boldsymbol{B}_0 = \boldsymbol{I}_4\), \(\alpha_0 = \delta_0 = 0.001\), \(d_0 = 2\), and \(\boldsymbol{D}_0 = \boldsymbol{I}_2\).
+    - Program from scratch a Metropolis-within-Gibbs algorithm to perform inference in this simulation.
+
+6. **Doctor visits in Germany continues II**
+
+   Take a sub-sample of the first 500 individuals of the dataset *9VisitDoc.csv* to perform inference in the number of visits to doctors (*DocNum*) with the same specification of the example of **Doctor visits in Germany** in Section \@ref(sec92).

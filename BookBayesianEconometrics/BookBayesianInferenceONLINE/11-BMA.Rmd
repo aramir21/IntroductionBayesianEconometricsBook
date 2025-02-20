@@ -1,3 +1,687 @@
-# Bayesian model averaging in variable selection  {#bma}
+# Bayesian model averaging in variable selection  {#Chap10}
 
-We will show how to perform Bayesian model averaging. There are two issue to handle here: models space and the marginal likelihood. The former will be tackled using Markov chain Monte Carlo model composition, Occam’s window and stochastic search variable selection. The latter can be overcome using analytical solutions or Laplace approximation. We will show the theory underlying these approaches, how to perform BMA using our GUI and R for linear models: exogenous and endogenous, and non-linear models: logit, gamma and poisson. We will have also mathematical and computational exercises in R and our GUI.
+We outline in this chapter a framework for addressing model uncertainty and averaging across different models in a probabilistically consistent manner. The discussion tackles two major computational challenges in Bayesian model averaging: the vast space of possible models and the absence of analytical solutions for the marginal likelihood.
+
+We begin by illustrating the approach within the Gaussian linear model, assuming exogeneity of the regressors, and extend the analysis to cases with endogenous regressors, and dynamic models. Additionally, we adapt the framework to generalized linear models, including the logit, gamma, and Poisson families. Lastly, we explore alternative methods for computing marginal likelihoods, especially when the Bayesian information criterion's asymptotic approximation proves inadequate.
+
+Remember that we can run our GUI typing `shiny::runGitHub("besmarter/BSTApp", launch.browser=T)` in the **R** console or any **R** code editor and execute it. However, users should see Chapter \@ref(Chap5) for details.
+
+## Foundation {#sec10_1}
+Remember from Chapter \@ref(Chap1) that Bayesian model averaging (BMA) is an approach which takes into account model uncertainty. In particular, we consider uncertainty in the regressors (variable selection) in a regression framework where there are $K$ possible explanatory variables.^[Take into account that $K$ can increase when interaction terms and/or polynomial terms of the original control variables are included.] This implies $2^K$ potential models indexed by parameters $\boldsymbol{\theta}_m$, $m=1,2,\dots,2^K$.
+
+Following @Simmons2010, the posterior model probability is
+\begin{equation*}
+	\pi(\mathcal{M}_j |\boldsymbol{y})=\frac{p(\boldsymbol{y} | \mathcal{M}_j)\pi(\mathcal{M}_j)}{\sum_{m=1}^{2^K}p(\boldsymbol{y} | \mathcal{M}_m)\pi(\mathcal{M}_m)},
+\end{equation*}
+where $\pi(\mathcal{M}_j)$ is the prior model probability,^[We attach equal prior probabilities to each model in our GUI. However, this choice gives more prior probability to the set of models of medium size (think about the $k$-th row of Pascal's triangle). An interesting alternative is to use the Beta-Binomial prior proposed by @ley2009effect.] 
+\begin{equation*}
+	p(\boldsymbol{y} | \mathcal{M}_j)=\int_{\boldsymbol{\Theta}_j} p(\boldsymbol{y}| \boldsymbol{\theta}_j,\mathcal{M}_j)\pi(\boldsymbol{\theta}_j | \mathcal{M}_j) d\boldsymbol{\theta}_{j}
+\end{equation*}
+is the marginal likelihood, and $\pi(\boldsymbol{\theta}_j | \mathcal{M}_j)$ is the prior distribution of $\boldsymbol{\theta}_j$ conditional on model $\mathcal{M}_j$.
+
+Following @Raftery93, the posterior distribution of $\boldsymbol{\theta}$ is 
+\begin{equation*}
+	\pi(\boldsymbol{\theta}|\boldsymbol{y})= \sum_{m=1}^{2^K}\pi(\boldsymbol{\theta}_m|\boldsymbol{y},\mathcal{M}_m) \pi(\mathcal{M}_m|\boldsymbol{y})
+\end{equation*}
+The posterior distribution of the parameter vector \(\boldsymbol{\theta}\) under model \(\mathcal{M}_m\) is denoted as \(\pi(\boldsymbol{\theta}_m|\boldsymbol{y}, \mathcal{M}_m)\). The posterior mean of \(\boldsymbol{\theta}\) is given by:
+\[
+\mathbb{E}[\boldsymbol{\theta}|\boldsymbol{y}] = \sum_{m=1}^{2^K} \hat{\boldsymbol{\theta}}_m \, \pi(\mathcal{M}_m|\boldsymbol{y}),
+\]
+
+where \(\hat{\boldsymbol{\theta}}_m\) represents the posterior mean under model \(\mathcal{M}_m\).
+
+The variance of the \(k\)-th element of \(\boldsymbol{\theta}\) given the data \(\boldsymbol{y}\) is:
+\[
+\text{Var}(\theta_{km}|\boldsymbol{y}) = \sum_{m=1}^{2^K} \pi(\mathcal{M}_m|\boldsymbol{y}) \, \widehat{\text{Var}}(\theta_{km}|\boldsymbol{y}, \mathcal{M}_m) + \sum_{m=1}^{2^K} \pi(\mathcal{M}_m|\boldsymbol{y}) \left( \hat{\theta}_{km} - \mathbb{E}[\theta_{km}|\boldsymbol{y}] \right)^2,
+\]
+
+where \(\widehat{\text{Var}}(\theta_{km}|\boldsymbol{y}, \mathcal{M}_m)\) denotes the posterior variance of the \(k\)-th element of \(\boldsymbol{\theta}\) under model \(\mathcal{M}_m\).
+
+The posterior variance highlights how BMA accounts for model uncertainty. The first term represents the weighted variance of each model, averaged across all potential models, while the second term reflects the stability of the estimates across models. The greater the variation in estimates between models, the higher the posterior variance.
+
+The posterior predictive distribution is
+\begin{equation*}
+	\pi(\boldsymbol{y}_0|\boldsymbol{y})= \sum_{m=1}^{2^K}p_m(\boldsymbol{y}_0|\boldsymbol{y},\mathcal{M}_m) \pi(M_m|\boldsymbol{y})
+\end{equation*}
+
+where $p_m(\boldsymbol{y}_0|\boldsymbol{y},\mathcal{M}_m)=\int_{\boldsymbol{\Theta}_m} p(\boldsymbol{y}_0|\boldsymbol{y},\boldsymbol{\theta}_m,\mathcal{M}_m)\pi(\boldsymbol{\theta}_m |\boldsymbol{y}, \mathcal{M}_m) d\boldsymbol{\theta}_{m}$ is the posterior predictive distribution under model $\mathcal{M}_m$. 
+
+Another important statistic in BMA is the posterior inclusion probability associated with variable $\boldsymbol{x}_k$, $k=1,2,\dots,K$, which is
+
+\begin{equation*}
+	PIP(\boldsymbol{x}_k)=\sum_{m=1}^{2^K}\pi(\mathcal{M}_m|\boldsymbol{y})\times \mathbb{1}_{k,m},
+\end{equation*}
+where
+$\mathbb{1}_{k,m}= \left\{ \begin{array}{lcc}
+	1&   if  & \boldsymbol{x}_{k}\in \mathcal{M}_m \\
+	\\ 0 &  if & \boldsymbol{x}_{k}\not \in \mathcal{M}_m
+\end{array}
+\right\}.$
+
+@Kass1995 suggest that posterior inclusion probabilities (PIP) less than 0.5 are evidence against the regressor, $0.5\leq PIP<0.75$ is weak evidence, $0.75\leq PIP<0.95$ is positive evidence, $0.95\leq PIP<0.99$ is strong evidence, and $PIP\geq 0.99$ is very strong evidence.
+
+There are two main computational issues in implementing BMA based on variable selection. First, the number of models in the model space is $2^K$, which sometimes can be enormous. For instance, three regressors imply just eight models, see the next Table, but 40 regressors implies approximately  1.1e+12 models. Take into account that models always include the intercept, and all regressors should be standardized to avoid scale issues.^[Scaling variables is always an important step in variable selection.] The second computational issue is calculating the marginal likelihood $p(\boldsymbol{y} | \mathcal{M}_j)=\int_{\boldsymbol{\Theta}_j} p(\boldsymbol{y}| \boldsymbol{\theta}_j,\mathcal{M}_j)\pi(\boldsymbol{\theta}_j | \mathcal{M}_j) d\boldsymbol{\theta}_{j}$, which most of the time does not have an analytic solution.
+
+```{r spacemodels, echo=FALSE, results='asis'}
+# suppressWarnings(library(kableExtra))
+c1 <- c("$x_1$", "$x_2$", "$x_3$")
+c2 <- c("1", "1", "1")
+c3 <- c("1", "1", "0")
+c4 <- c("1", "0", "1")
+c5 <- c("1", "0", "0")
+c6 <- c("0", "1", "1")
+c7 <- c("0", "1", "0")
+c8 <- c("0", "0", "1")
+c9 <- c("0", "0", "0")
+tab <- cbind(c1, c2, c3, c4, c5, c6, c7, c8 ,c9)
+colnames(tab) <- c('Variable', '$M_{1}$', '$M_{2}$', '$M_{3}$', '$M_{4}$', '$M_{5}$', '$M_{6}$', '$M_{7}$', '$M_{8}$')
+knitr::kable(tab, booktabs = TRUE, caption = 'Space of models', escape = FALSE)
+```
+
+The first computational issue is basically a problem of ranking models. This can be tackled using different approaches, such as Occam's window criterion [@Madigan1994;@Raftery1997], reversible jump Markov chain Monte Carlo computation [@Green1995], Markov chain Monte Carlo model composition [@madigan95], and multiple testing using intrinsic priors [@Casella2006] or nonlocal prior densities [@Johnson2012]. We focus on Occam's window and Markov chain Monte Carlo model composition in our GUI.^[Variable selection (model selection or regularization) is a topic related to model uncertainty. Approaches such as stochastic search variable selection (spike and slab) [@George1993;@George1997] and Bayesian Lasso [@Park2008] are good examples of how to tackle this issue. See Chapter \@ref(Chap12).]
+
+In Occam's window, a model is discarded if its predictive performance is much worse than that of the best model [@Madigan1994;@Raftery1997].
+Thus, models not belonging to $\mathcal{M}'=\left\{\mathcal{M}_j:\frac{\max_m {\pi(\mathcal{M}_m|\boldsymbol{y})}}{\pi(\mathcal{M}_j|\boldsymbol{y})}\leq c\right\}$ should be discarded, where $c$ is chosen by the user (@Madigan1994 propose $c=20$).
+In addition, complicated models than are less supported by the data than simpler models are also discarded, that is, $\mathcal{M}''=\left\{\mathcal{M}_j:\exists \mathcal{M}_m\in\mathcal{M}',\mathcal{M}_m\subset \mathcal{M}_j,\frac{\pi(\mathcal{M}_m|\boldsymbol{y})}{\pi(\mathcal{M}_j|\boldsymbol{y})}>1\right\}$. Then, the set of models used in BMA is $\mathcal{M}^*=\mathcal{M}'\cap \mathcal{M}''^c\in\mathcal{M}$. @Raftery1997 find that the number of models in $\mathcal{M}^*$ is normally less than 25.
+
+However, the previous theoretical framework requires finding the model with the maximum a posteriori model probability ($\max_m {\pi(\mathcal{M}_m|\boldsymbol{y})}$), which implies calculating all possible models in $\mathcal{M}$. This is computationally burdensome. Hence, a heuristic approach is proposed by @Raftery2012 based on ideas of @Madigan1994. The search strategy is based on a series of nested comparisons of ratios of posterior model probabilities. Let $\mathcal{M}_0$ be a model with one regressor less than model $\mathcal{M}_1$, then:
+
+1. If $\log(\pi(\mathcal{M}_0|\boldsymbol{y})/\pi(\mathcal{M}_1|\boldsymbol{y}))>\log(O_R)$, then $\mathcal{M}_1$ is rejected and $\mathcal{M}_0$ is considered.
+
+2. If $\log(\pi(\mathcal{M}_0|\boldsymbol{y})/\pi(\mathcal{M}_1|\boldsymbol{y}))\leq -\log(O_L)$, then $\mathcal{M}_0$ is rejected, and $\mathcal{M}_1$ is considered.
+
+3. If $\log(O_L)<\log(\pi(\mathcal{M}_0|\boldsymbol{y})/\pi(\mathcal{M}_1|\boldsymbol{y}))\leq \log(O_R$), $\mathcal{M}_0$ and $\mathcal{M}_1$ are considered.
+
+Here $O_R$ is a number specifying the maximum ratio for excluding models in Occam's window, and $O_L=1/O_R^{2}$ is defined by default in @Raftery2012. The search strategy can be "up'', adding one regressor, or "down'', dropping one regressor (see @Madigan1994 for details about the down and up algorithms). The leaps and bounds algorithm [@Furnival1974] is implemented to improve the computational efficiency of this search strategy [@Raftery2012]. Once the set of potentially acceptable models is defined, we discard all the models that are not in $\mathcal{M}'$, and the models that are in $\mathcal{M}''$ where 1 is replaced by $\exp\left\{O_R\right\}$ due to the leaps and bounds algorithm giving an approximation to BIC, so as to ensure that no good models are discarded.
+
+The second approach that we consider in our GUI to tackle the model space size issue is Markov chain Monte Carlo model composition (MC3) [@madigan1995bayesian1].
+In particular, given the space of models $\mathcal{M}_m$, we simulate a chain of $\mathcal{M}_s$ models, $s = 1, 2, ..., S<<2^K$, where the algorithm randomly extracts a candidate model $\mathcal{M}_c$ from a neighborhood of models ($nbd(\mathcal{M}_m)$) that consists of the actual model itself and the set of models with either one variable more or one variable less [@Raftery1997]. Therefore, there is a transition kernel in the space of models $q(\mathcal{M}_m\rightarrow \mathcal{M}_c)$, such that $q(\mathcal{M}_m\rightarrow \mathcal{M}_{c})=0 \ \forall \mathcal{M}_{c}\notin nbd(\mathcal{M}_m)$ and $q(\mathcal{M}_m\rightarrow \mathcal{M}_{c})=\frac{1}{|nbd(\mathcal{M}_m)|} \ \forall \mathcal{M}_m\in nbd(\mathcal{M}_m)$, $|nbd(\mathcal{M}_m)|$ being the number of neighbors of $\mathcal{M}_m$. This candidate model is accepted with probability
+
+\begin{equation*}
+	\alpha (\mathcal{M}_{s-1},\mathcal{M}_{c})=\min \bigg \{ \frac{|nbd(\mathcal{M}_m)|p(\boldsymbol{y} | \mathcal{M}_c)\pi(\mathcal{M}_c)}{|nbd(\mathcal{M}^{c})|p(\boldsymbol{y}| \mathcal{M}_{(s-1)})\pi(\mathcal{M}_{(s-1)})},1 \bigg \}.
+\end{equation*}
+
+Observe that by construction $|nbd(\mathcal{M}_m)|=|nbd(\mathcal{M}_c)|=k$, except in extreme cases where a model has only one regressor or has all regressors.
+
+The Bayesian information criterion is a possible solution for the second computational issue in BMA, that is, calculating the marginal likelihood when there is no an analytic solution. Defining $h(\boldsymbol{\theta}|\mathcal{M}_j)=-\frac{\log(p(\boldsymbol{y}| \boldsymbol{\theta}_j,\mathcal{M}_j)\pi(\boldsymbol{\theta}_j | \mathcal{M}_j))}{N}$, then $p(\boldsymbol{y} | \mathcal{M}_j)=\int_{\boldsymbol{\Theta}_j} \exp\left\{-N h(\boldsymbol{\theta}|\mathcal{M}_j)\right\}  d\boldsymbol{\theta}_{j}$. If $N$ is sufficiently large (technically $N\to \infty$), we can make the following assumptions [@Hoeting1999]:
+
+1. We can use the Laplace method for approximating integrals [@Tierney1986].
+2. The posterior mode is reached at the same point as the maximum likelihood estimator (MLE), denoted by $\hat{\boldsymbol{\theta}}_{MLE}$.
+
+We get the following results under these assumptions:
+\begin{align*}
+	p(\boldsymbol{y} | \mathcal{M}_j)\approx&\left( \frac{2\pi}{N}\right)^{K_j/2}|\boldsymbol{\Sigma}|^{-1/2} \exp\left\{-N h(\boldsymbol{\hat{\theta}}_j^{MLE}|\mathcal{M}_j)\right\}, \ N\rightarrow\infty,
+\end{align*}
+where $\boldsymbol{\Sigma}$ is the inverse of the Hessian matrix of $h(\boldsymbol{\hat{\theta}}_j^{MLE}|\mathcal{M}_j)$, and $K_j=dim\left\{\boldsymbol{\theta}_j\right\}$.
+
+This implies
+\begin{align*}
+	\log\left(p(\boldsymbol{y} | \mathcal{M}_j)\right)\approx& \frac{K_j}{2}\log(2\pi)- \frac{K_j}{2}\log(N) -\frac{1}{2}\log(|\boldsymbol{\Sigma}|) + \log(p(\boldsymbol{y}| \boldsymbol{\hat{\theta}}_j^{MLE},\mathcal{M}_j))+\log(\pi(\boldsymbol{\hat{\theta}}_j^{MLE} | \mathcal{M}_j)), \ N\rightarrow\infty.
+\end{align*}
+
+Since $\frac{K_j}{2}\log(2\pi)$ and $\log(\pi(\boldsymbol{\hat{\theta}}_j^{MLE} | \mathcal{M}_j))$ are constants as functions of $\boldsymbol{y}$, and $|\boldsymbol{\Sigma}|$ is bounded by a finite constant, we have
+\begin{align*}
+	log\left(p(\boldsymbol{y} | \mathcal{M}_j)\right)\approx& -\frac{K_j}{2}\log(N)+\log(p(\boldsymbol{y}| \boldsymbol{\hat{\theta}}_j^{MLE},\mathcal{M}_j))= -\frac{BIC}{2}, \ N \rightarrow \infty.
+\end{align*}
+
+The marginal likelihood thus asymptotically converges to a linear transformation of the Bayesian Information Criterion (BIC), significantly simplifying its calculation. In addition, the BIC is consistent, that is, the probability of uncovering the population statistical model converges to one as the sample size converges to infinity given a $\mathcal{M}$-closed view [@Bernardo1994], that is, one of the models in consideration is the population statistical model (data generating process) [@schwarz1978estimating; @burnham2004multimodel]. In case that there is an $\mathcal{M}$-completed view of nature, that is, there is a true data generating process, but the space of models that we are comparing does not include it, the BIC asymptotically selects the model that minimizes the Kullback-Leiber (KL) divergence to the true (population) model [@claeskens2008model]. 
+
+## The Gaussian linear model {#sec10_2}
+
+The Gaussian linear model specifies $\boldsymbol{y}=\alpha\boldsymbol{i}_N+\boldsymbol{X}_m\boldsymbol{\beta}_m+\boldsymbol{\mu}_m$ such that $\boldsymbol{\mu}_m\sim{N}(\boldsymbol{0},\sigma^2\boldsymbol{I}_n)$, and $\boldsymbol{X}_m$ does not have the column of ones. Following @koop2003bayesian, the conjugate prior for the location parameters is $\boldsymbol{\beta}_m|\sigma^2 \sim {N}(\boldsymbol{\beta}_{m0}, \sigma^2 \boldsymbol{B}_{m0})$, and the priors for $\sigma^2$ and $\alpha$ can be improper, as these parameters are common to all models $\mathcal{M}_m$. Particularly, $\pi(\sigma^2)\propto 1/\sigma^2$ (Jeffreys' prior for the linear Gaussian model, see @prior1991bayesian) and $\pi(\alpha)\propto 1$.
+
+The selection of the hyperparameters of $\boldsymbol{\beta}_m$ is more critical, as these parameters are not common to all models. A very common prior for the location parameters in the BMA literature is the Zellner's prior [@zellner1986assessing], where $\boldsymbol{\beta}_{m0}=\boldsymbol{0}_m$ and $\boldsymbol{B}_{m0}=(g_m\boldsymbol{X}_m^{\top}\boldsymbol{X}_m)^{-1}$. Observe that this covariance matrix is similar to the covariance matrix of the ordinary least squares estimator of the location parameters. This suggests that there is compatibility between the prior information and the sample information, and the only parameter to elicit is $g_m\geq 0$, which facilitates the elicitation process, as eliciting covariance matrices is a very hard endeavor.
+
+Following same steps as in Section \@ref(sec43), the posterior conditional distribution of $\boldsymbol{\beta}_m$ has covariance matrix $\sigma^2\boldsymbol{B}_{mn}$, where $\boldsymbol{B}_{mn}=((1+g_m)\boldsymbol{X}_m^{\top}\boldsymbol{X}_m)^{-1}$ (Exercise 1), which means that $g_m=0$ implies a non-informative prior, whereas $g_m=1$ implies that prior and data information have same weights. We follow @fernandez2001benchmark, who recommend
+\begin{align*}
+	g_m & =
+	\begin{Bmatrix}
+		1/K^2, & N \leq K^2\\
+		1/N, & N>K^2 
+	\end{Bmatrix}.
+\end{align*}  
+ 
+Given the likelihood function, 
+\begin{equation*}
+	p(\boldsymbol{\beta}_m, \sigma^2|\boldsymbol{y}, \boldsymbol{X}_m) = (2\pi\sigma^2)^{-\frac{N}{2}} \exp \left\{-\frac{1}{2\sigma^2} (\boldsymbol{y} - \alpha\boldsymbol{i}_N - \boldsymbol{X}_m\boldsymbol{\beta}_m)^{\top}(\boldsymbol{y} - \alpha\boldsymbol{i}_N - \boldsymbol{X}_m\boldsymbol{\beta}_m) \right\},
+\end{equation*}
+the marginal likelihood associated with model $\mathcal{M}_m$ is proportional to (Exercise 1) 
+\begin{align*}
+	p(\boldsymbol{y}|\mathcal{M}_m)&\propto \left(\frac{g_m}{1+g_m}\right)^{k_m/2} \left[(\boldsymbol{y}-\bar{y}\boldsymbol{i}_N)^{\top}(\boldsymbol{y}-\bar{y}\boldsymbol{i}_N)-\frac{1}{1+g_m}(\boldsymbol{y}^{\top}\boldsymbol{P}_{X_m}\boldsymbol{y})\right]^{-(N-1)/2},
+\end{align*}
+where all parameters are indexed to model $\mathcal{M}_m$, $\boldsymbol{P}_{X_m}=\boldsymbol{X}_m(\boldsymbol{X}_m^{\top}\boldsymbol{X}_m)^{-1}\boldsymbol{X}_m$ is the projection matrix on the space generated by the columns of $\boldsymbol{X}_m$, and $\bar{y}$ is the sample mean of $\boldsymbol{y}$.
+
+We implement in our GUI four approaches to perform BMA in the Gaussian linear model: the BIC approximation using the Occam's window approach, the MC3 algorithm using the analytical expression for calculating the marginal likelihood, an instrumental variable approach based on conditional likelihoods, and dynamic variable selection.
+
+**Example: Simulation exercise**
+
+Let's perform a simulation exercise to assess the performance of the BIC approximation using the Occam's window, and the Markov chain Monte Carlo model composition approaches. Let's set a model where the computational burden is low and we know the data generating process (population statistical model). In particular, we set 10 regressors such that $x_k\sim N(1, 1)$, $k =1,\dots,6$, and $x_k\sim B(0.5)$, $k=7,\dots,10$. We set $\boldsymbol{\beta}=[1 \ 0 \ 0 \ 0 \ 0.5 \ 0, 0, 0, 0, -0.7]^{\top}$ such that just $x_1$, $x_5$ and $x_{10}$ are relevant to drive $y_i=1+\boldsymbol{x}^{\top}\boldsymbol{\beta}+\mu_i$, $\mu_i\sim N(0,0.5^2)$. Observe that we just have $2^{10}=1024$ models in this setting, thus, we can calculate the posterior model probability for each model. 
+
+Our GUI uses the commands *bicreg* and *MC3.REG* from the package *BMA* to perform Bayesian model averaging in the linear regression model using the BIC approximation and MC3, respectively. These commands in turn are based on @Raftery1995 and @Raftery1997. The following code shows how to perform the simulation and get the posterior mean and standard deviation using these commands with the default values of hyperparameters and tuning parameters.
+
+```{r, eval=FALSE}
+rm(list = ls()); set.seed(010101)
+N <- 1000
+K1 <- 6; K2 <- 4; K <- K1 + K2
+X1 <- matrix(rnorm(N*K1,1 ,1), N, K1)
+X2 <- matrix(rbinom(N*K2, 1, 0.5), N, K2)
+X <- cbind(X1, X2); e <- rnorm(N, 0, 0.5)
+B <- c(1,0,0,0,0.5,0,0,0,0,-0.7)
+y <- 1 + X%*%B + e
+BMAglm <- BMA::bicreg(X, y, strict = FALSE, OR = 50) 
+summary(BMAglm)
+BMAreg <- BMA::MC3.REG(y, X, num.its=500)
+Models <- unique(BMAreg[["variables"]])
+nModels <- dim(Models)[1]
+nVistModels <- dim(BMAreg[["variables"]])[1]
+PMP <- NULL
+for(m in 1:nModels){
+	idModm <- NULL
+	for(j in 1:nVistModels){
+		if(sum(Models[m,] == BMAreg[["variables"]][j,]) == K){
+			idModm <- c(idModm, j)
+		}else{
+			idModm <- idModm
+		} 
+	}
+	PMPm <- sum(BMAreg[["post.prob"]][idModm])
+	PMP <- c(PMP, PMPm)
+}
+PIP <- NULL
+for(k in 1:K){
+	PIPk <- sum(PMP[which(Models[,k] == 1)])
+	PIP <- c(PIP, PIPk)
+}
+plot(PIP)
+Means <- matrix(0, nModels, K)
+Vars <- matrix(0, nModels, K)
+for(m in 1:nModels){
+	idXs <- which(Models[m,] == 1)
+	if(length(idXs) == 0){
+		Regm <- lm(y ~ 1)
+	}else{
+		Xm <- X[, idXs]
+		Regm <- lm(y ~ Xm)
+		SumRegm <- summary(Regm)
+		Means[m, idXs] <- SumRegm[["coefficients"]][-1,1]
+		Vars[m, idXs] <- SumRegm[["coefficients"]][-1,2]^2 
+	} 
+}
+BMAmeans <- colSums(Means*PMP)
+BMAsd <- (colSums(PMP*Vars)  + colSums(PMP*(Means-matrix(rep(BMAmeans, each = nModels), nModels, K))^2))^0.5
+BMAmeans
+BMAsd
+BMAmeans/BMAsd
+```
+
+We can see from the results that the BIC approximation with the Occam's window, and the MC3 algorithm perform a good job finding the relevant regressors, and their posterior BMA means are very close to the population values. We also see that the BMA results are very similar in the two approaches.
+
+We can perform Bayesian model averaging in our GUI for linear Gaussian models using the BIC approximation and MC3 using the following Algorithms. We ask in Exercise 2 to perform BMA using the dataset *10ExportDiversificationHHI.csv* from @Jetter2015.
+
+::: {.algorithm}
+
+<div style="background-color: #f8f9fa; padding: 15px; border-left: 5px solid #343a40; box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1); border-radius: 5px;">
+
+**Algorithm: Bayesian Model Averaging in Linear Gaussian Models using the Bayesian Information Criterion**  
+
+1. Select *Bayesian Model Averaging* on the top panel  
+
+2. Select *Normal data* model using the left radio button  
+
+3. Select *BIC* using the right radio button under **Which type do you want to perform?**  
+
+4. Upload the dataset, selecting first if there is a header in the file and the kind of separator in the *csv* file of the dataset (comma, semicolon, or tab). Then, use the *Browse* button under the **Choose File** legend  
+
+5. Type the *OR* number of the Occam's window in the box under **OR: Number between 5 and 50** (this step is optional, as the default value is 50)  
+
+6. Click the *Go!* button  
+
+7. Analyze results: After a few seconds or minutes, a table appears showing, for each regressor in the dataset, the PIP (posterior inclusion probability, **p!=0**), the BMA posterior mean (**EV**), the BMA standard deviation (**SD**), and the posterior mean for models with the highest PMP. At the bottom of the table, for the models with the largest PMP, the number of variables (**nVar**), the coefficient of determination (**r2**), the BIC, and the PMP (**post prob**) are displayed  
+
+8. Download posterior results using the *Download results using BIC* button. Two files are provided:  
+   - The first file contains the best models by row according to the PMP (last column), indicating variable inclusion with a 1 (0 indicates no inclusion)  
+   - The second file contains the PIP, the BMA expected value, and the standard deviation for each variable in the dataset  
+
+</div>
+
+:::
+
+
+::: {.algorithm}
+
+<div style="background-color: #f8f9fa; padding: 15px; border-left: 5px solid #343a40; box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1); border-radius: 5px;">
+
+**Algorithm: Bayesian Model Averaging in Linear Gaussian Models using Markov Chain Monte Carlo Model Composition**  
+
+1. Select *Bayesian Model Averaging* on the top panel  
+
+2. Select *Normal data* model using the left radio button  
+
+3. Select *MC3* using the right radio button under **Which type do you want to perform?**  
+
+4. Upload the dataset, selecting first if there is a header in the file and the kind of separator in the *csv* file of the dataset (comma, semicolon, or tab). Then, use the *Browse* button under the **Choose File** legend  
+
+5. Select MC3 iterations using the *Range slider* under the label **MC3 iterations:**  
+
+6. Click the *Go!* button  
+
+7. Analyze results: After a few seconds or minutes, a table appears showing, for each regressor in the dataset, the PIP (posterior inclusion probability, **p!=0**), the BMA posterior mean (**EV**), the BMA standard deviation (**SD**), and the posterior mean for models with the highest PMP. At the bottom of the table, for the models with the largest PMP, the number of variables (**nVar**), the coefficient of determination (**r2**), the BIC, and the PMP (**post prob**) are displayed  
+
+8. Download posterior results using the *Download results using BIC* button. Two files are provided:  
+   - The first file contains the best models by row according to the PMP (last column), indicating variable inclusion with a 1 (0 indicates no inclusion)  
+   - The second file contains the PIP, the BMA expected value, and the standard deviation for each variable in the dataset  
+
+</div>
+
+:::
+
+We show in the following code how to program a MC3 algorithm from scratch to perform BMA using the setting from the previous simulation exercise. The first part of the code is the function to calculate the log marginal likelihood. This is a small simulation setting, thus we can calculate the marginal likelihood for all 1024 models, and then calculate the posterior model probability standardizing using the model with the largest log marginal likelihood. We see from the results that this model is the data generating process (population statistical model). We also find that the posterior inclusion probabilities for $x_{1}$, $x_{5}$ and $x_{10}$ are 1, whereas the PIP for the other variables are less than 0.05. 
+
+Although BMA allows incorporating model uncertainty in a regression framework, sometimes it is desirable to select just one model. Two compelling alternatives are the model with the largest posterior model probability, and the median probability model. The latter is the model which includes every predictor that has posterior inclusion probability higher than 0.5. The first model is the best alternative for prediction in the case of a 0--1 loss function [@Clyde2004], whereas the second is the best alternative when there is a quadratic loss function in prediction [@Barbieri2004]. In this simulation, the two criteria indicate selection of the data generating process.
+
+We also show how to estimate the posterior mean and standard deviation based on BMA in this code. We see that the posterior means are very close to the population parameters.  
+
+```{r, eval=FALSE}
+rm(list = ls()); set.seed(010101)
+N <- 1000
+K1 <- 6; K2 <- 4; K <- K1 + K2
+X1 <- matrix(rnorm(N*K1,1 ,1), N, K1)
+X2 <- matrix(rbinom(N*K2, 1, 0.5), N, K2)
+X <- cbind(X1, X2); e <- rnorm(N, 0, 0.5)
+B <- c(1,0,0,0,0.5,0,0,0,0,-0.7)
+y <- 1 + X%*%B + e
+LogMLfunt <- function(Model){
+	indr <- Model == 1
+	kr <- sum(indr)
+	if(kr > 0){
+		gr <- ifelse(N > kr^2, 1/N, kr^(-2))
+		Xr <- matrix(Xnew[ , indr], ncol = kr)
+		PX <- Xr%*%solve(t(Xr)%*%Xr)%*%t(Xr)
+		s2pos <- c((t(y - mean(y))%*%(y - mean(y))) - t(y)%*%PX%*%y/(1 + gr))
+		mllMod <- (kr/2)*log(gr/(1+gr))-(N-1)/2*log(s2pos)
+	}else{
+		gr <- ifelse(N > kr^2, 1/N, kr^(-2))
+		s2pos <- c((t(y - mean(y))%*%(y - mean(y))))
+		mllMod <- (kr/2)*log(gr/(1+gr))-(N-1)/2*log(s2pos)
+	}
+	return(mllMod)
+}
+combs <- expand.grid(c(0,1), c(0,1), c(0,1), c(0,1), c(0,1),c(0,1), c(0,1), c(0,1), c(0,1), c(0,1))
+Xnew <- apply(X, 2, scale)
+mll <- sapply(1:2^K, function(s){LogMLfunt(matrix(combs[s,], 1, K))})
+MaxPMP <- which.max(mll); StMarLik <- exp(mll-max(mll))
+PMP <- StMarLik/sum(StMarLik)
+PMP[MaxPMP]
+combs[MaxPMP,]
+PIP <- NULL
+for(k in 1:K){
+	PIPk <- sum(PMP[which(combs[,k] == 1)]); PIP <- c(PIP, PIPk)
+}
+PIP
+nModels <- dim(combs)[1]; Means <- matrix(0, nModels, K)
+Vars <- matrix(0, nModels, K)
+for(m in 1:nModels){
+	idXs <- which(combs[m,] == 1)
+	if(length(idXs) == 0){
+		Regm <- lm(y ~ 1)
+	}else{
+		Xm <- X[, idXs]; Regm <- lm(y ~ Xm)
+		SumRegm <- summary(Regm)
+		Means[m, idXs] <- SumRegm[["coefficients"]][-1,1]
+		Vars[m, idXs] <- SumRegm[["coefficients"]][-1,2]^2 
+	}
+}
+BMAmeans <- colSums(Means*PMP)
+BMAmeans
+BMAsd <- (colSums(PMP*Vars)  + colSums(PMP*(Means-matrix(rep(BMAmeans, each = nModels), nModels, K))^2))^0.5
+BMAsd 
+BMAmeans/BMAsd 
+
+#### MC3 Algorithm ####
+M <- 100
+Models <- matrix(rbinom(K*M, 1, p = 0.5), ncol=K, nrow = M)
+mllnew <- sapply(1:M,function(s){LogMLfunt(matrix(Models[s,], 1, K))})
+oind <- order(mllnew, decreasing = TRUE)
+mllnew <- mllnew[oind]; Models <- Models[oind, ]; iter <- 1000
+pb <- winProgressBar(title = "progress bar", min = 0, max = iter, width = 300); s <- 1
+while(s <= iter){
+	ActModel <- Models[M,]; idK <- which(ActModel == 1)
+	Kact <- length(idK)
+	if(Kact < K & Kact > 1){
+		CardMol <- K; opt <- sample(1:3, 1)
+		if(opt == 1){ # Same
+			CandModel <- ActModel
+		}else{
+			if(opt == 2){ # Add
+				All <- 1:K; NewX <- sample(All[-idK], 1)
+				CandModel <- ActModel; CandModel[NewX] <- 1
+			}else{ # Subtract
+				LessX <- sample(idK, 1); CandModel <- ActModel
+				CandModel[LessX] <- 0
+			}
+		}
+	}else{
+		CardMol <- K + 1
+		if(Kact == K){
+			opt <- sample(1:2, 1)
+			if(opt == 1){ # Same
+				CandModel <- ActModel
+			}else{ # Subtract
+				LessX <- sample(1:K, 1); CandModel <- ActModel
+				CandModel[LessX] <- 0
+			}
+		}else{
+			if(K == 1){
+				opt <- sample(1:3, 1)
+				if(opt == 1){ # Same
+					CandModel <- ActModel
+				}else{
+					if(opt == 2){ # Add
+						All <- 1:K; NewX <- sample(All[-idK], 1)
+						CandModel <- ActModel; CandModel[NewX] <- 1
+					}else{ # Subtract
+						LessX <- sample(idK, 1); CandModel <- ActModel
+						CandModel[LessX] <- 0
+					}
+				}
+			}else{ # Add
+				NewX <- sample(1:K, 1); CandModel <- ActModel
+				CandModel[NewX] <- 1
+			}
+		}
+	}
+	LogMLact <- LogMLfunt(matrix(ActModel, 1, K))
+	LogMLcand <- LogMLfunt(matrix(CandModel, 1, K))
+	alpha <- min(1, exp(LogMLcand-LogMLact))
+	u <- runif(1)
+	if(u <= alpha){
+		mllnew[M] <- LogMLcand; Models[M, ] <- CandModel
+		oind <- order(mllnew, decreasing = TRUE)
+		mllnew <- mllnew[oind]; Models <- Models[oind, ]
+	}else{
+		mllnew <- mllnew; Models <- Models
+	}
+	s <- s + 1
+	setWinProgressBar(pb, s, title=paste( round(s/iter*100, 0),"% done"))
+}
+close(pb)
+ModelsUni <- unique(Models)
+mllnewUni <- sapply(1:dim(ModelsUni)[1], function(s){LogMLfunt(matrix(ModelsUni[s,], 1, K))})
+StMarLik <- exp(mllnewUni-mllnewUni[1])
+PMP <- StMarLik/sum(StMarLik) # PMP based on unique selected models
+nModels <- dim(ModelsUni)[1]
+StMarLik <- exp(mllnew-mllnew[1])
+PMPold <- StMarLik/sum(StMarLik) # PMP all selected models
+PMPot <- NULL
+PMPap <- NULL
+FreqMod <- NULL
+for(m in 1:nModels){
+	idModm <- NULL
+	for(j in 1:M){
+		if(sum(ModelsUni[m,] == Models[j,]) == K){
+			idModm <- c(idModm, j)
+		}else{
+			idModm <- idModm
+		}
+	}
+	PMPm <- sum(PMPold[idModm]) # PMP unique models using sum of all selected models
+	PMPot <- c(PMPot, PMPm)
+	PMPapm <- length(idModm)/M # PMP using relative frequency in all selected models
+	PMPap <- c(PMPap, PMPapm)
+	FreqMod <- c(FreqMod, length(idModm))
+}
+PIP <- NULL
+for(k in 1:K){
+	PIPk <- sum(PMP[which(ModelsUni[,k] == 1)])
+	PIP <- c(PIP, PIPk)
+}
+Means <- matrix(0, nModels, K)
+Vars <- matrix(0, nModels, K)
+for(m in 1:nModels){
+	idXs <- which(ModelsUni[m,] == 1)
+	if(length(idXs) == 0){
+		Regm <- lm(y ~ 1)
+	}else{
+		Xm <- X[, idXs]
+		Regm <- lm(y ~ Xm)
+		SumRegm <- summary(Regm)
+		Means[m, idXs] <- SumRegm[["coefficients"]][-1,1]
+		Vars[m, idXs] <- SumRegm[["coefficients"]][-1,2]^2 
+	}
+}
+BMAmeans <- colSums(Means*PMP)
+BMAsd <- (colSums(PMP*Vars)  + colSums(PMP*(Means-matrix(rep(BMAmeans, each = nModels), nModels, K))^2))^0.5 
+BMAmeans; BMAsd; BMAmeans/BMAsd
+```
+
+The second part of the code demonstrates how to perform the MC3 algorithm. While this algorithm is not strictly necessary for this small-dimensional problem, it serves as a useful pedagogical exercise. The starting point is to set $S=100$ random models and order their log marginal likelihoods. The logic of the algorithm is to select the worst model among the $S$ models and propose a candidate model to compete against it. We repeat this process for 1000 iterations (as shown in the code). Note that 1000 iterations is fewer than the number of potential models (1024). This is the essence of the MC3 algorithm: performing fewer iterations than the number of models in the space.
+
+In our algorithm, we analyze all model scenarios using different conditionals and reasonably assume the same prior model probability for all models, with the same cardinality for both the actual and candidate models. The posterior model probability (PMP) can be calculated in several ways. One method is to recover the unique models from the final set of $S$ models, calculate the log marginal likelihood for these models, and then standardize by the best model among them. Another method involves calculating the PMP using the complete set of $S$ final models, accounting for the fact that some models may appear multiple times in the set, which requires summing the PMPs of repeated models. A third method is to calculate the PMP based on the relative frequency with which a model appears in the final set of $S$ models. These three methods can yield different PMPs, particularly when the number of MC3 iterations is small. In our example, using 1000 MC3 iterations, the data-generating process receives the highest PMP across all three methods.
+
+A noteworthy aspect of this algorithm is that we can obtain a single model after significantly increasing the number of iterations (for example, try using 10,000 iterations). This can be advantageous if we require only one model. However, this approach neglects model uncertainty, which could be a desirable characteristic in some cases. As a challenge, we suggest programming an algorithm that yields $S$ different models after completing the MC3 iterations (Exercise 3).
+
+An important issue to account for regressors (model) uncertainty in the identification of causal effects, rather than finding good predictors (association relationships), is endogeneity. Thus, we also implement the instrumental variable approach of Section \@ref(sec73) to tackle this issue in BMA. We assume that $\boldsymbol{\gamma}\sim {N}(\boldsymbol{0},\boldsymbol{I})$, $\boldsymbol{\beta}\sim {N}(\boldsymbol{0},\boldsymbol{I})$, and $\boldsymbol{\Sigma}^{-1} \sim {W}(3,\boldsymbol{I})$ [@Karl2012].
+
+@Lenkoski2013 propose an algorithm based on conditional Bayes factors [@Dickey1978] that allows embedding MC3 within a Gibbs sampling algorithm. Given the candidate ($M_{c}^{2nd}$) and actual ($M_{s-1}^{2nd}$) models for the iteration $s$ in the second stage, the conditional Bayes factor is 
+\begin{equation*}
+	CBF^{2nd}=\frac{p(\boldsymbol{y}|M_{c}^{2nd},\boldsymbol{\gamma},\boldsymbol{\Sigma})}{p(\boldsymbol{y}|M_{s-1}^{2nd},\boldsymbol{\gamma},\boldsymbol{\Sigma})},
+\end{equation*}
+where 
+\begin{align*}
+	p(\boldsymbol{y}|M_{c}^{2nd},\boldsymbol{\gamma},\boldsymbol{\Sigma})&=\int_{\mathcal{M}^{2nd}}p(\boldsymbol{y}|\boldsymbol{\beta},\boldsymbol{\gamma},\boldsymbol{\Sigma})\pi(\boldsymbol{\beta}|M_{c}^{2nd})d\boldsymbol{\beta}\\
+	&\propto |\boldsymbol{B}_n|^{-1/2} \exp\left\{\frac{1}{2}{\boldsymbol{\beta}_n}^{\top}\boldsymbol{B}_n^{-1}\boldsymbol{\beta}_n\right\}
+	.
+\end{align*}
+
+In the first stage,
+\begin{equation*}
+	CBF^{1st}=\frac{p(\boldsymbol{y}|M_{c}^{1st},\boldsymbol{\beta},\boldsymbol{\Sigma})}{p(\boldsymbol{y}|M_{s-1}^{1st},\boldsymbol{\beta},\boldsymbol{\Sigma})},
+\end{equation*}
+where \begin{align*}
+	p(\boldsymbol{y}|M_{c}^{1st},\boldsymbol{\beta},\boldsymbol{\Sigma})&=\int_{\mathcal{M}^{1st}}p(\boldsymbol{y}|\boldsymbol{\gamma},\boldsymbol{\beta},\boldsymbol{\Sigma})\pi(\boldsymbol{\gamma}|M_{c}^{1st})d\boldsymbol{\gamma}\\
+	&\propto |\boldsymbol{G}_n|^{-1/2} \exp\left\{\frac{1}{2}{\boldsymbol{\gamma}_n}^{\top}\boldsymbol{G}_n^{-1}\boldsymbol{\gamma}_n\right\}.
+\end{align*}
+These conditional Bayes factors assume $\pi(M^{1st},M^{2sd})\propto 1$. See @Lenkoski2013 for more details of the instrumental variable BMA algorithm.^[@Koop12 and @Lenkoski2014 propose other frameworks for BMA taking into account endogeneity.]
+
+We perform instrumental variable BMA in our GUI using the package *ivbma*. The following Algorithm shows how to perform this in our GUI. 
+
+::: {.algorithm}
+
+<div style="background-color: #f8f9fa; padding: 15px; border-left: 5px solid #343a40; box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1); border-radius: 5px;">
+
+**Algorithm: Instrumental Variable Bayesian Model Averaging in Linear Gaussian Models**  
+
+1. Select *Bayesian Model Averaging* on the top panel  
+
+2. Select *Normal data* model using the left radio button  
+
+3. Select *Instrumental variable* using the right radio button under **Which type do you want to perform?**  
+
+4. Upload the dataset containing the dependent variable, endogenous regressors, and exogenous regressors (including the constant). The user should first select if there is a header in the file and the kind of separator in the *csv* file (comma, semicolon, or tab). Then, use the *Browse* button under the **Choose File** legend  
+
+5. Upload the dataset containing the instruments. The user should first select if there is a header in the file and the kind of separator in the *csv* file (comma, semicolon, or tab). Then, use the *Browse* button under the **Choose File (Instruments)** legend  
+
+6. Write down the number of endogenous regressors in the box labeled **Number of Endogenous variables**  
+
+7. Select MCMC iterations and burn-in using the *Range slider* under the labels **MCMC iterations:** and **Burn-in Sample:**  
+
+8. Click the *Go!* button  
+
+9. Analyze results: After a few seconds or minutes, two tables appear showing, for each regressor in the dataset, the PIP (posterior inclusion probability, **p!=0**), and the BMA posterior mean (**EV**). The top table shows the results of the second stage (main equation), and the bottom table shows the results of the first stage (auxiliary equations)  
+
+10. Download posterior results using the *Download results using IV* button. Three files are provided:  
+   - The first file contains the posterior inclusion probabilities of each variable and the BMA posterior means of the coefficients in the first stage equations  
+   - The second file contains these results for the second stage (main equation)  
+   - The third file contains the posterior chains of all parameters by iteration  
+
+</div>
+
+:::
+
+**Example: Simulation exercise**
+
+Let's assume that $y_i = 2 + 0.5x_{i1} - x_{i2} + x_{i3} + \mu_i$, where $x_{i1} = 4z_{i1} - z_{i2} + 2z_{i3} + \epsilon_{i1}$ and $x_{i2} = -2z_{i1} + 3z_{i2} - z_{i3} + \epsilon_{i2}$, such that $[\epsilon_{i1} \ \epsilon_{i2} \ \mu_i]^{\top} \sim N(\boldsymbol{0}, \boldsymbol{\Sigma})$, where $\boldsymbol{\Sigma} = \begin{bmatrix} 1 & 0 & 0.8 \\ 0 & 1 & 0.5 \\ 0.8 & 0.5 & 1 \end{bmatrix}$, for $i = 1, 2, \dots, 1000$. The endogeneity arises due to the correlation between $\mu_i$ and $x_{i1}$ and $x_{i2}$ through the stochastic errors. In addition, there are three instruments, $z_{il} \sim U(0,1)$, for $l = 1, 2, 3$, and another 18 regressors believed to influence $y_i$, which are distributed according to a standard normal distribution.
+
+The following code shows how to perform IV BMA using the *ivbma* package. We see from the results that the PIP of $x_{i1}$, $x_{i2}$, intercept and $x_{i3}$ are equal to 1, whereas the remaining PIP are close to 0. In addition, the BMA means are also close to the population values. The PIP of the first stage equations, as well as their BMA posterior means, are very close to the populations values. The same happens with the covariance matrix. 
+
+```{r, eval=FALSE}
+rm(list = ls())
+set.seed(010101)
+simIV <- function(delta1,delta2,beta0,betas1,betas2,beta2,Sigma,n,z) {
+	eps <- matrix(rnorm(3*n),ncol=3) %*% chol(Sigma)
+	xs1 <- z%*%delta1 + eps[,1]
+	xs2 <- z%*%delta2 + eps[,2]
+	x2 <- rnorm(dim(z)[1])
+	y <- beta0+betas1*xs1+betas2*xs2+beta2*x2 + eps[,3]
+	X <- as.matrix(cbind(xs1,xs2,1,x2)) 
+	colnames(X) <- c("x1en","x2en","cte","xex")
+	y <- matrix(y,dim(z)[1],1)
+	colnames(y) <- c("y")
+	list(X=X,y=y)
+}
+n <- 1000 ; p <- 3 
+z <- matrix(runif(n*p),ncol=p)
+rho31 <- 0.8; rho32 <- 0.5;
+Sigma <- matrix(c(1,0,rho31,0,1,rho32,rho31,rho32,1),ncol=3)
+delta1 <- c(4,-1,2); delta2 <- c(-2,3,-1); betas1 <- .5; betas2 <- -1; beta2 <- 1; beta0 <- 2
+simiv <- simIV(delta1,delta2,beta0,betas1,betas2,beta2,Sigma,n,z)
+nW <- 18
+W <- matrix(rnorm(nW*dim(z)[1]),dim(z)[1],nW)
+YXW<-cbind(simiv$y, simiv$X, W)
+y <- YXW[,1]; X <- YXW[,2:3]; W <- YXW[,-c(1:3)]
+S <- 10000; burnin <- 1000
+regivBMA <- ivbma::ivbma(Y = y, X = X, Z = z, W = W, s = S+burnin, b = burnin, odens = S, print.every = round(S/10), run.diagnostics = FALSE)
+PIPmain <- regivBMA[["L.bar"]] # PIP outcome
+PIPmain
+EVmain <- regivBMA[["rho.bar"]] # Posterior mean outcome
+EVmain
+PIPaux <- regivBMA[["M.bar"]] # PIP auxiliary
+EVaux <- regivBMA[["lambda.bar"]] # Posterior mean auxiliary
+plot(EVaux[,1])
+plot(EVaux[,2])
+EVsigma <- regivBMA[["Sigma.bar"]] # Posterior mean variance matrix
+EVsigma
+```
+
+Bayesian model averaging has been also extended to state-space models. The point of departure is the univariate random walk state-space model (see Chapter \@ref(Chap8)) conditional on model $\mathcal{M}_m$, $m=1,2\dots,M$. 
+\begin{align}
+	y_t&=\boldsymbol{x}_{mt}^{\top}\boldsymbol{\beta}_{mt}+\mu_{mt}\\
+	\boldsymbol{\beta}_{mt}&=\boldsymbol{\beta}_{mt-1}+\boldsymbol{w}_{mt},
+\end{align}
+where $\mu_{mt}\sim N(0,\sigma^2)$ and $\boldsymbol{w}_{mt}\sim N(\boldsymbol{0},\boldsymbol{\Omega}_{mt})$.
+
+Given $\boldsymbol{\beta}_{mt-1}|\boldsymbol{y}_{1:t-1}\sim N(\boldsymbol{b}_{mt-1},\boldsymbol{B}_{mt-1})$, then, we know from Chapter \@ref(Chap8) that $\boldsymbol{\beta}_{mt}|\boldsymbol{y}_{1:t-1}\sim N(\boldsymbol{b}_{mt-1}, \boldsymbol{R}_{mt})$, $\boldsymbol{R}_{mt}=\boldsymbol{B}_{mt-1}+\boldsymbol{\Omega}_{mt}$. 
+
+Specification of $\boldsymbol{\Omega}_t$ can be highly demanding. Thus, a common approach is to express $\boldsymbol{\Omega}_{mt}=\frac{1-\lambda}{\lambda}\boldsymbol{B}_{mt-1}$, where $\lambda$ is called the *forgetting parameter* or *discount factor*, because it discounts the matrix $\boldsymbol{B}_{mt-1}$ that we would have with a deterministic state evolution into the matrix $\boldsymbol{R}_{mt}$ [@petris2009dynamic]. This parameter is typically slightly below 1, and implies that $\boldsymbol{R}_{mt}=\lambda^{-1}\boldsymbol{B}_{mt-1}$. ($\lambda^{-1}>1$).
+
+@raftery2010online assume that the model changes infrequently, and its evolution is given by the transition matrix $\boldsymbol{T}=[t_{ml}]$, where $t_{ml}=P(\mathcal{M}_t=\mathcal{M}_m|\mathcal{M}_{t-1}=\mathcal{M}_l)$.
+
+Then, the aim is to calculate the filtering distribution $p(\boldsymbol{\beta}_{mt},\mathcal{M}_t|y_t)=\sum_{m=1}^Mp(\boldsymbol{\beta}_{mt}|\mathcal{M}_t=\mathcal{M}_m,y_t)p(\mathcal{M}_t=\mathcal{M}_m|y_t)$. Thus, given the conditional distribution of the state at time $t-1$, $p(\boldsymbol{\beta}_{mt-1},\mathcal{M}_{t-1}|{y}_{t-1})=\sum_{m=1}^Mp(\boldsymbol{\beta}_{mt-1}|\mathcal{M}_{t-1}=\mathcal{M}_m,{y}_{t-1})p(\mathcal{M}_{t-1}=\mathcal{M}_m|{y}_{t-1})$, where the conditional distribution of $\boldsymbol{\beta}_{mt-1}$ is approximated by a Gaussian distribution, $\boldsymbol{\beta}_{mt-1}|\mathcal{M}_{t-1}=\mathcal{M}_{m},y_{t-1}\sim N(\boldsymbol{b}_{mt-1},\boldsymbol{B}_{mt-1})$, then the first step to get the one-step-ahead predictive distribution is getting the prediction of the model indicator, 
+\begin{align*}
+	p(\mathcal{M}_t=\mathcal{M}_l|y_{t-1})&=\sum_{m=1}^M p(\mathcal{M}_{t-1}=\mathcal{M}_m|y_{t-1})\times t_{lm}\\
+	&\approx \frac{p(\mathcal{M}_{t-1}=\mathcal{M}_l|y_{t-1})^{\delta}+c}{\sum_{m=1}^M p(\mathcal{M}_{t-1}=\mathcal{M}_m|y_{t-1})^{\delta}+c},  
+\end{align*}
+where the second equality is used to avoid dealing with the $M^2$ elements of the transition matrix $\boldsymbol{T}$ such that the forgetting parameter $\delta$ is used, this parameter is slightly less than 1, and $c=0.001/M$ is introduced to handle a model probability being brought to computational zero by outliers.
+
+Then, we get the one-step-ahead predictive distribution of the state vector, $\boldsymbol{\beta}_{mt}|\mathcal{M}_{t}=\mathcal{M}_{m},y_{t-1}\sim N(\boldsymbol{b}_{mt-1},\lambda^{-1}\boldsymbol{B}_{mt-1})$ 
+
+Now, we consider the filtering stage, where the model filtering equation is 
+\begin{align*}
+	p(\mathcal{M}_t=\mathcal{M}_l|y_{t})=\frac{p(\mathcal{M}_t=\mathcal{M}_l|y_{t-1})p_l(y_t|y_{t-1})}{\sum_{m=1}^M p(\mathcal{M}_t=\mathcal{M}_m|y_{t-1})p_m(y_t|y_{t-1})},
+\end{align*}
+where $p_m(y_t|y_{t-1})$ is the one-step-ahead predictive distribution of $y_t|{y}_{t-1}$, which is $N(f_t,Q_t)$, where $f_t=\boldsymbol{x}_t^{\top}\boldsymbol{b}_{t-1}$ and $Q_t=\boldsymbol{x}_{mt}^{\top}\lambda^{-1}\boldsymbol{B}_{mt-1}\boldsymbol{x}_{mt}+\sigma^2$ (see Chapter \@ref(Chap8)).
+
+The states filtering equation is $\boldsymbol{\beta}_{mt}|\mathcal{M}_{t}=\mathcal{M}_{m},y_{t}\sim N(\boldsymbol{b}_{mt},\boldsymbol{B}_{mt})$ where $\boldsymbol{b}_{mt}$ and $\boldsymbol{B}_{mt}$ are given in the Kalman filtering recursion of Chapter \@ref(Chap8).
+
+@raftery2010online initiate their algorithm assuming equal prior model probabilities, and $\sigma^2$ is estimated using a recursive method of moments estimator.^[@ramirez2020dynamic extends this approach to Markov chain Monte Carlo model composition]
+
+We implement dynamic Bayesian model averaging in our GUI using the function *dma* from the package *dma*. The next Algorithm shows how to perform inference using our GUI.
+
+::: {.algorithm}
+
+<div style="background-color: #f8f9fa; padding: 15px; border-left: 5px solid #343a40; box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1); border-radius: 5px;">
+
+**Algorithm: Dynamic Bayesian Model Averaging**  
+
+1. Select *Bayesian Model Averaging* on the top panel  
+
+2. Select *Normal data* model using the left radio button  
+
+3. Select *Dynamic Bayesian Model Averaging* using the right radio button under **Which type do you want to perform?**  
+
+4. Upload the dataset, selecting first whether there is a header in the file and the type of separator in the *csv* file (comma, semicolon, or tab). Then, use the *Browse* button under the **Choose File** legend  
+
+5. Upload the matrix of models, selecting first whether there is a header in the file and the type of separator in the *csv* file (comma, semicolon, or tab). Then, use the *Browse* button under the **Choose File** legend  
+
+6. Type the *forgetting parameters* in the boxes under **Lambda: Number slightly below 1** and **Delta: Number slightly below 1**. This is not necessary, as the default values are 0.99 for both  
+
+7. Click the *Go!* button  
+
+8. Analyze results: After a few seconds or minutes, a table appears showing, for each regressor in the dataset, the dynamic Bayesian average filtering recursions for each state (**Mean** and **Standard deviation**), the posterior model probability (**PMP**), and the Bayesian model averaging prediction (**Prediction**)  
+
+9. Download posterior results using the *Download results DBMA* button. Two files are provided:  
+   - The first file contains the dynamic Bayesian average filtering recursions for each state  
+   - The second file contains the PMP of each model and the dynamic Bayesian model averaging prediction  
+
+</div>
+
+:::
+
+**Example: Dynamic Bayesian model averaging**
+
+We perform a simulation exercise where there are 8 ($2^3$) competing models originating from 3 regressors: $x_{tk} \sim N(0.5, 0.8^2)$ for $k = 2, 3, 4$, with $\beta_1 = 0.5$. The sequence $\beta_{2t}$ ranges from 1 to 2 in steps of $1/T$, and $\beta_{3t}$ is given by:
+\[
+\beta_{3t} = \begin{cases}
+	-1, & 1 < t \leq 0.75T \\
+	0, & 0.75T < t \leq T
+\end{cases}
+\]
+and $\beta_4 = 1.2$. 
+
+Then, we have the model:
+\[
+y_t = \beta_1 + \beta_{2t} x_{2t} + \beta_{3t} x_{3t} + \beta_4 x_{4t} + \mu_t, 
+\]
+where $\mu_t \sim N(0,1)$ for $t = 1, 2, \dots, 500$. This setting implies that during the first 75\% of the period, the model with all 3 regressors is the data-generating process, while after this, the model with regressors 2 and 4 is the data-generating process.
+
+The following code shows the simulation exercise and the results of the dynamic Bayesian model averaging, setting $\lambda = \delta = 0.99$.
+
+```{r}
+			rm(list = ls()); set.seed(010101)
+			T <- 500; K <- 3
+			X <- matrix(rnorm(T*K, mean = 0.5, sd = 0.8), T, K)
+			combs <- expand.grid(c(0,1), c(0,1), c(0,1))
+			B1 <- 0.5; B2t <- seq(1, 2, length.out=T )
+			a <- 0.75; B3t <- c(rep(-1,round(a*T)), rep(0,round((1-a)*T)))
+			B4 <- 1.2; sigma <- 1; mu <- rnorm(T, 0, sigma)
+			y <- B1 + X[,1]*B2t + X[,2]*B3t + X[,3]*B4 + mu
+			T0 <- 50
+			dma.test <- dma::dma(X, y, combs, lambda=.99, gamma=.99, initialperiod = T0)
+			plot(dma.test[["pmp"]][-c(1:T0),8], type = "l", col = "green", main = "Posterior model probability", xlab = "Time", ylab = "PMP")
+			lines(dma.test[["pmp"]][-c(1:T0),6], col = "red")
+			legend(x = 0, y = 1, legend = c("Model: All regressors", "Model: Regressors 2 and 4"), col = c("green", "red"), lty=1:1, cex=0.8)
+			require(latex2exp)
+			plot(dma.test[["thetahat.ma"]][-c(1:T0),1], type = "l", col = "green", main = "Bayesian model average filtering recursion", xlab = "Time", ylab = TeX("$\\beta_{1}$"))
+			abline(h = B1, col = "red")
+			legend(x = 0, y = 0.4, legend = c("State filtering", "State population"), col = c("green", "red"), lty=1:1, cex=0.8)
+			plot(dma.test[["thetahat.ma"]][-c(1:T0),2], type = "l", col = "green", main = "Bayesian model average filtering recursion", xlab = "Time", ylab = TeX("$\\beta_{2t}$"), ylim = c(0.5,2))
+			lines(B2t[-c(1:T0)], col = "red")
+			legend(x = 0, y = 0.8, legend = c("State filtering", "State population"), col = c("green", "red"), lty=1:1, cex=0.8)
+			plot(dma.test[["thetahat.ma"]][-c(1:T0),3], type = "l", col = "green", main = "Bayesian model average filtering recursion", xlab = "Time", ylab = TeX("$\\beta_{3t}$"))
+			lines(B3t[-c(1:T0)], col = "red")
+			legend(x = 0, y = -0.4, legend = c("State filtering", "State population"), col = c("green", "red"), lty=1:1, cex=0.8)
+			plot(dma.test[["thetahat.ma"]][-c(1:T0),4], type = "l", col = "green", main = "Bayesian model average filtering recursion", xlab = "Time", ylab = TeX("$\\beta_{4t}$"))
+			abline(h = B4, col = "red")
+			legend(x = 0, y = 1.3, legend = c("State filtering", "State population"), col = c("green", "red"), lty=1:1, cex=0.8)
+
+```
+
+The first Figure shows the posterior model probabilities for the model with all the regressors (green line) and the model with regressors 2 and 4 (red line). On one hand, we see that the model with all regressors, which is the data-generating process in the first period ($t \leq 0.75T$), has a PMP close to 1, and then its PMP decreases. On the other hand, the model with regressors 2 and 4 has a PMP close to 0 in the first part of the period, and then its PMP increases to values higher than 60\% on average, when this model becomes the data-generating process. These results suggest that, in this particular simulation exercise, the dynamic Bayesian model averaging method works relatively well in calculating the PMPs.
+
+
+The following four Figures show a comparison between the Bayesian model averaging filtering recursions of the states (green lines) and their population values (red lines). We observe that the filtering recursions follow the general pattern of the population values. However, the values are not perfectly aligned. This discrepancy arises because the posterior model probabilities (PMPs) of the models that match the data-generating process are not equal to 1, which in turn affects the performance of the filtering recursions. 
+
+Dynamic Bayesian model averaging was extended to logit models by @mccormick2012dynamic. We ask in Exercise 12 to perform a simulation of this model, and perform BMA using the function *logistic.dma* from the *dma* package.
+     
+## Generalized linear models {#sec10_3}
+

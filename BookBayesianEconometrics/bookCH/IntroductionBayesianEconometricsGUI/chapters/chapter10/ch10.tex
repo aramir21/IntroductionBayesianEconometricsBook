@@ -2,9 +2,7 @@
 
 We outline in this chapter a framework for addressing model uncertainty and averaging across different models in a probabilistically consistent manner. The discussion tackles two major computational challenges in Bayesian model averaging: the vast space of possible models and the absence of analytical solutions for the marginal likelihood.
 
-We begin by illustrating the approach within the Gaussian linear model, assuming exogeneity of the regressors, and extend the analysis to cases with endogenous regressors. Additionally, we adapt the framework to generalized linear models, including the logit, gamma, and Poisson families.
-
-For dynamic models, we demonstrate how Bayesian model averaging can be implemented in contexts requiring online predictions. Lastly, we explore alternative methods for computing marginal likelihoods, especially when the Bayesian information criterion's asymptotic approximation proves inadequate.  
+We begin by illustrating the approach within the Gaussian linear model, assuming exogeneity of the regressors, and extend the analysis to cases with endogenous regressors, and dynamic models. Additionally, we adapt the framework to generalized linear models, including the logit, gamma, and Poisson families. Lastly, we explore alternative methods for computing marginal likelihoods, especially when the Bayesian information criterion's asymptotic approximation proves inadequate.  
 
 Remember that we can run our GUI typing
 
@@ -104,7 +102,7 @@ However, the previous theoretical framework requires finding the model with the 
 	\item If $\log(\pi(\mathcal{M}_0|\bm{y})/\pi(\mathcal{M}_1|\bm{y}))\leq -\log(O_L)$, then $\mathcal{M}_0$ is rejected, and $\mathcal{M}_1$ is considered.
 	 \item If $\log(O_L)<\log(\pi(\mathcal{M}_0|\bm{y})/\pi(\mathcal{M}_1|\bm{y}))\leq \log(O_R$), $\mathcal{M}_0$ and $\mathcal{M}_1$ are considered.
 \end{itemize} 
-Here $O_R$ is a number specifying the maximum ratio for excluding models in Occam's window, and $O_L=1/O_R^{2}$ is defined by default in \cite{Raftery2012}. The search strategy can be ``up,'' adding one regressor, or ``down,'' dropping one regressor (see \cite{Madigan1994} for details about the down and up algorithms). The leaps and bounds algorithm \cite{Furnival1974} is implemented to improve the computational efficiency of this search strategy \cite{Raftery2012}. Once the set of potentially acceptable models is defined, we discard all the models that are not in $\mathcal{M}'$, and the models that are in $\mathcal{M}''$ where 1 is replaced by $\exp\left\{O_R\right\}$ due to the leaps and bounds algorithm giving an approximation to BIC, so as to ensure that no good models are discarded.
+Here $O_R$ is a number specifying the maximum ratio for excluding models in Occam's window, and $O_L=1/O_R^{2}$ is defined by default in \cite{Raftery2012}. The search strategy can be ``up'', adding one regressor, or ``down'', dropping one regressor (see \cite{Madigan1994} for details about the down and up algorithms). The leaps and bounds algorithm \cite{Furnival1974} is implemented to improve the computational efficiency of this search strategy \cite{Raftery2012}. Once the set of potentially acceptable models is defined, we discard all the models that are not in $\mathcal{M}'$, and the models that are in $\mathcal{M}''$ where 1 is replaced by $\exp\left\{O_R\right\}$ due to the leaps and bounds algorithm giving an approximation to BIC, so as to ensure that no good models are discarded.
 
 The second approach that we consider in our GUI to tackle the model space size issue is Markov chain Monte Carlo model composition (MC3) \cite{madigan1995bayesian1}.
 In particular, given the space of models $\mathcal{M}_m$, we simulate a chain of $\mathcal{M}_s$ models, $s = 1, 2, ..., S<<2^K$, where the algorithm randomly extracts a candidate model $\mathcal{M}_c$ from a neighborhood of models ($nbd(\mathcal{M}_m)$) that consists of the actual model itself and the set of models with either one variable more or one variable less \cite{Raftery1997}. Therefore, there is a transition kernel in the space of models $q(\mathcal{M}_m\rightarrow \mathcal{M}_c)$, such that $q(\mathcal{M}_m\rightarrow \mathcal{M}_{c})=0 \ \forall \mathcal{M}_{c}\notin nbd(\mathcal{M}_m)$ and $q(\mathcal{M}_m\rightarrow \mathcal{M}_{c})=\frac{1}{|nbd(\mathcal{M}_m)|} \ \forall \mathcal{M}_m\in nbd(\mathcal{M}_m)$, $|nbd(\mathcal{M}_m)|$ being the number of neighbors of $\mathcal{M}_m$. This candidate model is accepted with probability
@@ -141,7 +139,6 @@ Since $\frac{K_j}{2}\log(2\pi)$ and $\log(\pi(\bm{\hat{\theta}}_j^{MLE} | \mathc
 
 The marginal likelihood thus asymptotically converges to a linear transformation of the Bayesian Information Criterion (BIC), significantly simplifying its calculation. In addition, the BIC is consistent, that is, the probability of uncovering the population statistical model converges to one as the sample size converges to infinity given a $\mathcal{M}$-closed view \cite[Chap.~6]{Bernardo1994}, that is, one of the models in consideration is the population statistical model (data generating process) \cite{schwarz1978estimating, burnham2004multimodel}. In case that there is an $\mathcal{M}$-completed view of nature, that is, there is a true data generating process, but the space of models that we are comparing does not include it, the BIC asymptotically selects the model that minimizes the Kullback-Leiber (KL) divergence to the true (population) model \cite[Chap. ~4]{claeskens2008model}. 
 
-
 \section{The Gaussian linear model}\label{sec10_2}
 
 The Gaussian linear model specifies $\bm{y}=\alpha\bm{i}_N+\bm{X}_m\bm{\beta}_m+\bm{\mu}_m$ such that $\bm{\mu}_m\sim{N}(\bm{0},\sigma^2\bm{I}_n)$, and $\bm{X}_m$ does not have the column of ones. Following \cite{koop2003bayesian}, the conjugate prior for the location parameters is $\bm{\beta}_m|\sigma^2 \sim {N}(\bm{\beta}_{m0}, \sigma^2 \bm{B}_{m0})$, and the priors for $\sigma^2$ and $\alpha$ can be improper, as these parameters are common to all models $\mathcal{M}_m$. Particularly, $\pi(\sigma^2)\propto 1/\sigma^2$ (Jeffreys' prior for the linear Gaussian model, see \cite{prior1991bayesian}) and $\pi(\alpha)\propto 1$.
@@ -167,7 +164,7 @@ the marginal likelihood associated with model $\mathcal{M}_m$ is proportional to
 \end{align*}
 where all parameters are indexed to model $\mathcal{M}_m$, $\bm{P}_{X_m}=\bm{X}_m(\bm{X}_m^{\top}\bm{X}_m)^{-1}\bm{X}_m$ is the projection matrix on the space generated by the columns of $\bm{X}_m$, and $\bar{y}$ is the sample mean of $\bm{y}$.
 
-We implement in our GUI three approaches to perform BMA in the Gaussian linear model: the BIC approximation using the Occam's window approach, the MC3 algorithm using the analytical expression for calculating the marginal likelihood, and an instrumental variable approach based on conditional likelihoods.\\
+We implement in our GUI four approaches to perform BMA in the Gaussian linear model: the BIC approximation using the Occam's window approach, the MC3 algorithm using the analytical expression for calculating the marginal likelihood, an instrumental variable approach based on conditional likelihoods, and dynamic variable selection.\\
 
 \textbf{Example: Simulation exercise}
 
@@ -280,7 +277,7 @@ We can perform Bayesian model averaging in our GUI for linear Gaussian models us
 	\end{algorithmic} 
 \end{algorithm}
 
-We show in the following code how to program a MC3 algorithm from scratch to perform BMA using the setting from Section \ref{sec10_2} in this simulation exercise. The first part of the code is the function to calculate the log marginal likelihood. This is a small simulation setting, thus we can calculate the marginal likelihood for all 1024 models, and then calculate the posterior model probability standardizing using the model with the largest log marginal likelihood. We see from the results that this model is the data generating process (population statistical model). We also find that the posterior inclusion probabilities for $x_{1}$, $x_{5}$ and $x_{10}$ are 1, whereas the PIP for the other variables are less than 0.05. 
+We show in the following code how to program a MC3 algorithm from scratch to perform BMA using the setting from the previous simulation exercise. The first part of the code is the function to calculate the log marginal likelihood. This is a small simulation setting, thus we can calculate the marginal likelihood for all 1024 models, and then calculate the posterior model probability standardizing using the model with the largest log marginal likelihood. We see from the results that this model is the data generating process (population statistical model). We also find that the posterior inclusion probabilities for $x_{1}$, $x_{5}$ and $x_{10}$ are 1, whereas the PIP for the other variables are less than 0.05. 
 
 Although BMA allows incorporating model uncertainty in a regression framework, sometimes it is desirable to select just one model. Two compelling alternatives are the model with the largest posterior model probability, and the median probability model. The latter is the model which includes every predictor that has posterior inclusion probability higher than 0.5. The first model is the best alternative for prediction in the case of a 0--1 loss function \cite{Clyde2004}, whereas the second is the best alternative when there is a quadratic loss function in prediction \cite{Barbieri2004}. In this simulation, the two criteria indicate selection of the data generating process.
 
@@ -291,6 +288,12 @@ We also show how to estimate the posterior mean and standard deviation based on 
 	\textit{R code. Simulation exercise: Bayesian model averaging, small setting from scratch}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+N <- 1000; K1 <- 6; K2 <- 4; K <- K1 + K2
+X1 <- matrix(rnorm(N*K1,1 ,1), N, K1)
+X2 <- matrix(rbinom(N*K2, 1, 0.5), N, K2)
+X <- cbind(X1, X2); e <- rnorm(N, 0, 0.5)
+B <- c(1,0,0,0,0.5,0,0,0,0,-0.7); y <- 1 + X%*%B + e			
 LogMLfunt <- function(Model){
 	indr <- Model == 1
 	kr <- sum(indr)
@@ -312,16 +315,12 @@ Xnew <- apply(X, 2, scale)
 mll <- sapply(1:2^K, function(s){LogMLfunt(matrix(combs[s,], 1, K))})
 MaxPMP <- which.max(mll); StMarLik <- exp(mll-max(mll))
 PMP <- StMarLik/sum(StMarLik)
-PMP[MaxPMP]
-combs[MaxPMP,]
-    Var1 Var2 Var3 Var4 Var5 Var6 Var7 Var8 Var9 Var10
-530    1    0    0    0    1    0    0    0    0     1
+PMP[MaxPMP]; combs[MaxPMP,]
 PIP <- NULL
 for(k in 1:K){
 	PIPk <- sum(PMP[which(combs[,k] == 1)]); PIP <- c(PIP, PIPk)
 }
 PIP
-[1] 1.00000000 0.03617574 0.03208369 0.03516743 1.00000000 0.04795509 0.03457102 0.03468819 0.03510209 1.00000000
 nModels <- dim(combs)[1]; Means <- matrix(0, nModels, K)
 Vars <- matrix(0, nModels, K)
 for(m in 1:nModels){
@@ -336,9 +335,7 @@ for(m in 1:nModels){
 	}
 }
 BMAmeans <- colSums(Means*PMP)
-1.0018105888 -0.0003196423  0.0001489711  0.0002853524  0.4976225353 -0.0007229563  0.0005342718  0.0005441905  0.0005758708 -0.7035206822
 BMAsd <- (colSums(PMP*Vars)  + colSums(PMP*(Means-matrix(rep(BMAmeans, each = nModels), nModels, K))^2))^0.5
-0.015274980 0.003304115 0.002814491 0.003214722 0.015668278 0.004694003 0.006400541 0.006435695 0.006528471 0.030940753 
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
@@ -618,7 +615,7 @@ where $p_m(y_t|y_{t-1})$ is the one-step-ahead predictive distribution of $y_t|{
 
 The states filtering equation is $\bm{\beta}_{mt}|\mathcal{M}_{t}=\mathcal{M}_{m},y_{t}\sim N(\bm{b}_{mt},\bm{B}_{mt})$ where $\bm{b}_{mt}$ and $\bm{B}_{mt}$ are given in the Kalman filtering recursion of Chapter \ref{chap8}.
 
-\cite{raftery2010online} initiate their algorithm assuming equal prior model probabilities, and $\sigma^2$ is estimated using a recursive method of moments estimator.
+\cite{raftery2010online} initiate their algorithm assuming equal prior model probabilities, and $\sigma^2$ is estimated using a recursive method of moments estimator.\footnote{\cite{ramirez2020dynamic} extends this approach to Markov chain Monte Carlo model composition}
 
 We implement dynamic Bayesian model averaging in our GUI using the function \textit{dma} from the package \textit{dma}. Algorithm \ref{alg:DBMA} shows how to perform inference using our GUI.
 
@@ -671,9 +668,9 @@ The following code shows the simulation exercise and the results of the dynamic 
 			y <- B1 + X[,1]*B2t + X[,2]*B3t + X[,3]*B4 + mu
 			T0 <- 50
 			dma.test <- dma::dma(X, y, combs, lambda=.99, gamma=.99, initialperiod = T0)
-			plot(dma.test[["pmp"]][-c(1:T0),8], type = "l", col = "green", main = "Posterior model probability: Model all regressors vs model regressors 1 and 3", xlab = "Time", ylab = "PMP")
+			plot(dma.test[["pmp"]][-c(1:T0),8], type = "l", col = "green", main = "Posterior model probability: Model all regressors vs model regressors 2 and 4", xlab = "Time", ylab = "PMP")
 			lines(dma.test[["pmp"]][-c(1:T0),6], col = "red")
-			legend(x = 0, y = 1, legend = c("Model: All regressors", "Model: Regressors 1 and 3"), col = c("green", "red"), lty=1:1, cex=0.8)
+			legend(x = 0, y = 1, legend = c("Model: All regressors", "Model: Regressors 2 and 4"), col = c("green", "red"), lty=1:1, cex=0.8)
 			require(latex2exp)
 			plot(dma.test[["thetahat.ma"]][-c(1:T0),1], type = "l", col = "green", main = "Bayesian model average filtering recursion", xlab = "Time", ylab = TeX("$\\beta_{1}$"))
 			abline(h = B1, col = "red")
