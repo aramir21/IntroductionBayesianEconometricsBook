@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+<head>
+
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>10.3 Generalized linear models | Introduction to Bayesian Data Modeling</title>
+  <meta name="description" content="The subject of this textbook is Bayesian data modeling, with the primary aim of providing an introduction to its theoretical foundations and facilitating the application of Bayesian inference using a GUI." />
+  <meta name="generator" content="bookdown 0.40 and GitBook 2.6.7" />
+
+  <meta property="og:title" content="10.3 Generalized linear models | Introduction to Bayesian Data Modeling" />
+  <meta property="og:type" content="book" />
+  
+  <meta property="og:description" content="The subject of this textbook is Bayesian data modeling, with the primary aim of providing an introduction to its theoretical foundations and facilitating the application of Bayesian inference using a GUI." />
+  <meta name="github-repo" content="https://github.com/aramir21/IntroductionBayesianEconometricsBook" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="10.3 Generalized linear models | Introduction to Bayesian Data Modeling" />
+  
+  <meta name="twitter:description" content="The subject of this textbook is Bayesian data modeling, with the primary aim of providing an introduction to its theoretical foundations and facilitating the application of Bayesian inference using a GUI." />
+  
+
+<meta name="author" content="Andrés Ramírez-Hassan" />
+
+
+<meta name="date" content="2025-02-20" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  
+  
+<link rel="prev" href="sec102.html"/>
+<link rel="next" href="sec10_4.html"/>
+<script src="libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js@6.4.6/dist/fuse.min.js"></script>
+<link href="libs/gitbook-2.6.7/css/style.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-table.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-bookdown.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-highlight.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-search.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-fontsettings.css" rel="stylesheet" />
+<link href="libs/gitbook-2.6.7/css/plugin-clipboard.css" rel="stylesheet" />
+
+
+
+
+
+
+
+
+<link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
+<link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
+<script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+
+
+<style type="text/css">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { color: #008000; } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { color: #008000; font-weight: bold; } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+</style>
+
+<style type="text/css">
+  
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+</style>
+<style type="text/css">
+/* Used with Pandoc 2.11+ new --citeproc when CSL is used */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}
+</style>
+
+<link rel="stylesheet" href="css/style.css" type="text/css" />
+</head>
+
+<body>
+
+
+
+  <div class="book without-animation with-summary font-size-2 font-family-1" data-basepath=".">
+
+    <div class="book-summary">
+      <nav role="navigation">
+
+<ul class="summary">
+<li><a href="./">Introduction to Bayesian Econometrics: A GUIded tour using R</a></li>
+
+<li class="divider"></li>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Introduction</a>
+<ul>
+<li class="chapter" data-level="" data-path="to-instructors-and-students.html"><a href="to-instructors-and-students.html"><i class="fa fa-check"></i>To instructors and students</a></li>
+<li class="chapter" data-level="" data-path="acknowledgments.html"><a href="acknowledgments.html"><i class="fa fa-check"></i>Acknowledgments</a></li>
+</ul></li>
+<li class="chapter" data-level="1" data-path="Chap1.html"><a href="Chap1.html"><i class="fa fa-check"></i><b>1</b> Basic formal concepts</a>
+<ul>
+<li class="chapter" data-level="1.1" data-path="sec11.html"><a href="sec11.html"><i class="fa fa-check"></i><b>1.1</b> The Bayes’ rule</a></li>
+<li class="chapter" data-level="1.2" data-path="sec12.html"><a href="sec12.html"><i class="fa fa-check"></i><b>1.2</b> Bayesian framework: A brief summary of theory</a></li>
+<li class="chapter" data-level="1.3" data-path="sec14.html"><a href="sec14.html"><i class="fa fa-check"></i><b>1.3</b> Bayesian reports: Decision theory under uncertainty</a></li>
+<li class="chapter" data-level="1.4" data-path="summary.html"><a href="summary.html"><i class="fa fa-check"></i><b>1.4</b> Summary</a></li>
+<li class="chapter" data-level="1.5" data-path="exercises.html"><a href="exercises.html"><i class="fa fa-check"></i><b>1.5</b> Exercises</a></li>
+</ul></li>
+<li class="chapter" data-level="2" data-path="Chap2.html"><a href="Chap2.html"><i class="fa fa-check"></i><b>2</b> Conceptual differences between the Bayesian and Frequentist approaches</a>
+<ul>
+<li class="chapter" data-level="2.1" data-path="sec21.html"><a href="sec21.html"><i class="fa fa-check"></i><b>2.1</b> The concept of probability</a></li>
+<li class="chapter" data-level="2.2" data-path="sec22.html"><a href="sec22.html"><i class="fa fa-check"></i><b>2.2</b> Subjectivity is not the key</a></li>
+<li class="chapter" data-level="2.3" data-path="sec23.html"><a href="sec23.html"><i class="fa fa-check"></i><b>2.3</b> Estimation, hypothesis testing and prediction</a></li>
+<li class="chapter" data-level="2.4" data-path="sec24.html"><a href="sec24.html"><i class="fa fa-check"></i><b>2.4</b> The likelihood principle</a></li>
+<li class="chapter" data-level="2.5" data-path="sec25.html"><a href="sec25.html"><i class="fa fa-check"></i><b>2.5</b> Why is not the Bayesian approach that popular?</a></li>
+<li class="chapter" data-level="2.6" data-path="sec26.html"><a href="sec26.html"><i class="fa fa-check"></i><b>2.6</b> A simple working example</a></li>
+<li class="chapter" data-level="2.7" data-path="sec27.html"><a href="sec27.html"><i class="fa fa-check"></i><b>2.7</b> Summary</a></li>
+<li class="chapter" data-level="2.8" data-path="sec28.html"><a href="sec28.html"><i class="fa fa-check"></i><b>2.8</b> Exercises</a></li>
+</ul></li>
+<li class="chapter" data-level="3" data-path="Chap3.html"><a href="Chap3.html"><i class="fa fa-check"></i><b>3</b> Cornerstone models: Conjugate families</a>
+<ul>
+<li class="chapter" data-level="3.1" data-path="sec41.html"><a href="sec41.html"><i class="fa fa-check"></i><b>3.1</b> Motivation of conjugate families</a></li>
+<li class="chapter" data-level="3.2" data-path="sec42.html"><a href="sec42.html"><i class="fa fa-check"></i><b>3.2</b> Conjugate prior to exponential family</a></li>
+<li class="chapter" data-level="3.3" data-path="sec43.html"><a href="sec43.html"><i class="fa fa-check"></i><b>3.3</b> Linear regression: The conjugate normal-normal/inverse gamma model</a></li>
+<li class="chapter" data-level="3.4" data-path="sec44.html"><a href="sec44.html"><i class="fa fa-check"></i><b>3.4</b> Multivariate linear regression: The conjugate normal-normal/inverse Wishart model</a></li>
+<li class="chapter" data-level="3.5" data-path="computational-examples.html"><a href="computational-examples.html"><i class="fa fa-check"></i><b>3.5</b> Computational examples</a></li>
+<li class="chapter" data-level="3.6" data-path="summary-chapter-4.html"><a href="summary-chapter-4.html"><i class="fa fa-check"></i><b>3.6</b> Summary: Chapter 4</a></li>
+<li class="chapter" data-level="3.7" data-path="exercises-chapter-4.html"><a href="exercises-chapter-4.html"><i class="fa fa-check"></i><b>3.7</b> Exercises: Chapter 4</a></li>
+</ul></li>
+<li class="chapter" data-level="4" data-path="Chap4.html"><a href="Chap4.html"><i class="fa fa-check"></i><b>4</b> Simulation methods</a>
+<ul>
+<li class="chapter" data-level="4.1" data-path="sec51.html"><a href="sec51.html"><i class="fa fa-check"></i><b>4.1</b> Markov Chain Monte Carlo methods</a>
+<ul>
+<li class="chapter" data-level="4.1.1" data-path="sec51.html"><a href="sec51.html#sec511"><i class="fa fa-check"></i><b>4.1.1</b> Gibbs sampler</a></li>
+<li class="chapter" data-level="4.1.2" data-path="sec51.html"><a href="sec51.html#sec512"><i class="fa fa-check"></i><b>4.1.2</b> Metropolis-Hastings</a></li>
+<li class="chapter" data-level="4.1.3" data-path="sec51.html"><a href="sec51.html#sec513"><i class="fa fa-check"></i><b>4.1.3</b> Hamiltonian Monte Carlo</a></li>
+</ul></li>
+<li class="chapter" data-level="4.2" data-path="sec52.html"><a href="sec52.html"><i class="fa fa-check"></i><b>4.2</b> Importance sampling</a></li>
+<li class="chapter" data-level="4.3" data-path="sec53.html"><a href="sec53.html"><i class="fa fa-check"></i><b>4.3</b> Particle filtering</a></li>
+<li class="chapter" data-level="4.4" data-path="sec54.html"><a href="sec54.html"><i class="fa fa-check"></i><b>4.4</b> Convergence diagnostics</a>
+<ul>
+<li class="chapter" data-level="4.4.1" data-path="sec54.html"><a href="sec54.html#numerical-standard-error"><i class="fa fa-check"></i><b>4.4.1</b> Numerical standard error</a></li>
+<li class="chapter" data-level="4.4.2" data-path="sec54.html"><a href="sec54.html#effective-number-of-simulation-draws"><i class="fa fa-check"></i><b>4.4.2</b> Effective number of simulation draws</a></li>
+<li class="chapter" data-level="4.4.3" data-path="sec54.html"><a href="sec54.html#tests-of-convergence"><i class="fa fa-check"></i><b>4.4.3</b> Tests of convergence</a></li>
+<li class="chapter" data-level="4.4.4" data-path="sec54.html"><a href="sec54.html#checking-for-errors-in-the-posterior-simulator"><i class="fa fa-check"></i><b>4.4.4</b> Checking for errors in the posterior simulator</a></li>
+</ul></li>
+<li class="chapter" data-level="4.5" data-path="sec55.html"><a href="sec55.html"><i class="fa fa-check"></i><b>4.5</b> Summary</a></li>
+<li class="chapter" data-level="4.6" data-path="sec56.html"><a href="sec56.html"><i class="fa fa-check"></i><b>4.6</b> Exercises</a></li>
+</ul></li>
+<li class="chapter" data-level="5" data-path="Chap5.html"><a href="Chap5.html"><i class="fa fa-check"></i><b>5</b> Graphical user interface</a></li>
+<li class="chapter" data-level="6" data-path="Chap6.html"><a href="Chap6.html"><i class="fa fa-check"></i><b>6</b> Univariate regression</a>
+<ul>
+<li class="chapter" data-level="6.1" data-path="sec61.html"><a href="sec61.html"><i class="fa fa-check"></i><b>6.1</b> The Gaussian linear model</a></li>
+<li class="chapter" data-level="6.2" data-path="sec62.html"><a href="sec62.html"><i class="fa fa-check"></i><b>6.2</b> The logit model</a></li>
+<li class="chapter" data-level="6.3" data-path="sec63.html"><a href="sec63.html"><i class="fa fa-check"></i><b>6.3</b> The probit model</a></li>
+<li class="chapter" data-level="6.4" data-path="sec64.html"><a href="sec64.html"><i class="fa fa-check"></i><b>6.4</b> The multinomial probit model</a></li>
+<li class="chapter" data-level="6.5" data-path="sec65.html"><a href="sec65.html"><i class="fa fa-check"></i><b>6.5</b> The multinomial logit model</a></li>
+<li class="chapter" data-level="6.6" data-path="sec66.html"><a href="sec66.html"><i class="fa fa-check"></i><b>6.6</b> Ordered probit model</a></li>
+<li class="chapter" data-level="6.7" data-path="negative-binomial-model.html"><a href="negative-binomial-model.html"><i class="fa fa-check"></i><b>6.7</b> Negative binomial model</a></li>
+<li class="chapter" data-level="6.8" data-path="sec68.html"><a href="sec68.html"><i class="fa fa-check"></i><b>6.8</b> Tobit model</a></li>
+<li class="chapter" data-level="6.9" data-path="sec69.html"><a href="sec69.html"><i class="fa fa-check"></i><b>6.9</b> Quantile regression</a></li>
+<li class="chapter" data-level="6.10" data-path="sec610.html"><a href="sec610.html"><i class="fa fa-check"></i><b>6.10</b> Bayesian bootstrap regression</a></li>
+<li class="chapter" data-level="6.11" data-path="sec611.html"><a href="sec611.html"><i class="fa fa-check"></i><b>6.11</b> Summary</a></li>
+<li class="chapter" data-level="6.12" data-path="sec612.html"><a href="sec612.html"><i class="fa fa-check"></i><b>6.12</b> Exercises</a></li>
+</ul></li>
+<li class="chapter" data-level="7" data-path="Chap7.html"><a href="Chap7.html"><i class="fa fa-check"></i><b>7</b> Multivariate regression</a>
+<ul>
+<li class="chapter" data-level="7.1" data-path="sec71.html"><a href="sec71.html"><i class="fa fa-check"></i><b>7.1</b> Multivariate regression</a></li>
+<li class="chapter" data-level="7.2" data-path="sec72.html"><a href="sec72.html"><i class="fa fa-check"></i><b>7.2</b> Seemingly Unrelated Regression</a></li>
+<li class="chapter" data-level="7.3" data-path="sec73.html"><a href="sec73.html"><i class="fa fa-check"></i><b>7.3</b> Instrumental variable</a></li>
+<li class="chapter" data-level="7.4" data-path="sec74.html"><a href="sec74.html"><i class="fa fa-check"></i><b>7.4</b> Multivariate probit model</a></li>
+<li class="chapter" data-level="7.5" data-path="sec75.html"><a href="sec75.html"><i class="fa fa-check"></i><b>7.5</b> Summary</a></li>
+<li class="chapter" data-level="7.6" data-path="sec76.html"><a href="sec76.html"><i class="fa fa-check"></i><b>7.6</b> Exercises</a></li>
+</ul></li>
+<li class="chapter" data-level="8" data-path="Chap8.html"><a href="Chap8.html"><i class="fa fa-check"></i><b>8</b> Time series</a>
+<ul>
+<li class="chapter" data-level="8.1" data-path="sec81.html"><a href="sec81.html"><i class="fa fa-check"></i><b>8.1</b> State-space representation</a>
+<ul>
+<li class="chapter" data-level="8.1.1" data-path="sec81.html"><a href="sec81.html#gaussian-linear-state-space-models"><i class="fa fa-check"></i><b>8.1.1</b> Gaussian linear state-space models</a></li>
+</ul></li>
+<li class="chapter" data-level="8.2" data-path="sec82.html"><a href="sec82.html"><i class="fa fa-check"></i><b>8.2</b> ARMA processes</a></li>
+<li class="chapter" data-level="8.3" data-path="sec83.html"><a href="sec83.html"><i class="fa fa-check"></i><b>8.3</b> Stochastic volatility models</a></li>
+<li class="chapter" data-level="8.4" data-path="sec84.html"><a href="sec84.html"><i class="fa fa-check"></i><b>8.4</b> Vector Autoregressive models</a></li>
+<li class="chapter" data-level="8.5" data-path="sec85.html"><a href="sec85.html"><i class="fa fa-check"></i><b>8.5</b> Summary</a></li>
+<li class="chapter" data-level="8.6" data-path="sec86.html"><a href="sec86.html"><i class="fa fa-check"></i><b>8.6</b> Exercises</a></li>
+</ul></li>
+<li class="chapter" data-level="9" data-path="Chap9.html"><a href="Chap9.html"><i class="fa fa-check"></i><b>9</b> Longitudinal regression</a>
+<ul>
+<li class="chapter" data-level="9.1" data-path="sec91.html"><a href="sec91.html"><i class="fa fa-check"></i><b>9.1</b> Normal model</a></li>
+<li class="chapter" data-level="9.2" data-path="sec92.html"><a href="sec92.html"><i class="fa fa-check"></i><b>9.2</b> Logit model</a></li>
+<li class="chapter" data-level="9.3" data-path="sec93.html"><a href="sec93.html"><i class="fa fa-check"></i><b>9.3</b> Poisson model</a></li>
+<li class="chapter" data-level="9.4" data-path="sec94.html"><a href="sec94.html"><i class="fa fa-check"></i><b>9.4</b> Summary</a></li>
+<li class="chapter" data-level="9.5" data-path="sec95.html"><a href="sec95.html"><i class="fa fa-check"></i><b>9.5</b> Exercises</a></li>
+</ul></li>
+<li class="chapter" data-level="10" data-path="Chap10.html"><a href="Chap10.html"><i class="fa fa-check"></i><b>10</b> Bayesian model averaging in variable selection</a>
+<ul>
+<li class="chapter" data-level="10.1" data-path="sec10_1.html"><a href="sec10_1.html"><i class="fa fa-check"></i><b>10.1</b> Foundation</a></li>
+<li class="chapter" data-level="10.2" data-path="sec102.html"><a href="sec102.html"><i class="fa fa-check"></i><b>10.2</b> The Gaussian linear model</a></li>
+<li class="chapter" data-level="10.3" data-path="sec103.html"><a href="sec103.html"><i class="fa fa-check"></i><b>10.3</b> Generalized linear models</a></li>
+<li class="chapter" data-level="10.4" data-path="sec10_4.html"><a href="sec10_4.html"><i class="fa fa-check"></i><b>10.4</b> Calculating the marginal likelihood</a>
+<ul>
+<li class="chapter" data-level="10.4.1" data-path="sec10_4.html"><a href="sec10_4.html#sec10_4_1"><i class="fa fa-check"></i><b>10.4.1</b> Savage-Dickey density ratio</a></li>
+<li class="chapter" data-level="10.4.2" data-path="sec10_4.html"><a href="sec10_4.html#sec10_4_2"><i class="fa fa-check"></i><b>10.4.2</b> Chib’s methods</a></li>
+<li class="chapter" data-level="10.4.3" data-path="sec10_4.html"><a href="sec10_4.html#sec10_4_3"><i class="fa fa-check"></i><b>10.4.3</b> Gelfand-Dey method</a></li>
+</ul></li>
+<li class="chapter" data-level="10.5" data-path="sec10_5.html"><a href="sec10_5.html"><i class="fa fa-check"></i><b>10.5</b> Summary</a></li>
+<li class="chapter" data-level="10.6" data-path="sec10_6.html"><a href="sec10_6.html"><i class="fa fa-check"></i><b>10.6</b> Exercises</a></li>
+</ul></li>
+<li class="chapter" data-level="11" data-path="Chap11.html"><a href="Chap11.html"><i class="fa fa-check"></i><b>11</b> Semi-parametric and non-parametric models</a>
+<ul>
+<li class="chapter" data-level="11.1" data-path="sec11_1.html"><a href="sec11_1.html"><i class="fa fa-check"></i><b>11.1</b> Mixture models</a>
+<ul>
+<li class="chapter" data-level="11.1.1" data-path="sec11_1.html"><a href="sec11_1.html#sec11_11"><i class="fa fa-check"></i><b>11.1.1</b> Finite Gaussian mixtures</a></li>
+<li class="chapter" data-level="11.1.2" data-path="sec11_1.html"><a href="sec11_1.html#sec11_12"><i class="fa fa-check"></i><b>11.1.2</b> Dirichlet processes</a></li>
+</ul></li>
+<li class="chapter" data-level="11.2" data-path="sec11_2.html"><a href="sec11_2.html"><i class="fa fa-check"></i><b>11.2</b> Non-parametric generalized additive models</a></li>
+</ul></li>
+<li class="chapter" data-level="12" data-path="Chap12.html"><a href="Chap12.html"><i class="fa fa-check"></i><b>12</b> Machine learning</a>
+<ul>
+<li class="chapter" data-level="12.1" data-path="sec12_1.html"><a href="sec12_1.html"><i class="fa fa-check"></i><b>12.1</b> Cross validation and Bayes factors</a></li>
+<li class="chapter" data-level="12.2" data-path="sec12_2.html"><a href="sec12_2.html"><i class="fa fa-check"></i><b>12.2</b> Regularization</a>
+<ul>
+<li class="chapter" data-level="12.2.1" data-path="sec12_2.html"><a href="sec12_2.html#sec12_21"><i class="fa fa-check"></i><b>12.2.1</b> Bayesian LASSO</a></li>
+<li class="chapter" data-level="12.2.2" data-path="sec12_2.html"><a href="sec12_2.html#sec12_22"><i class="fa fa-check"></i><b>12.2.2</b> Stochastic search variable selection</a></li>
+<li class="chapter" data-level="12.2.3" data-path="sec12_2.html"><a href="sec12_2.html#sec12_23"><i class="fa fa-check"></i><b>12.2.3</b> Non-local priors</a></li>
+</ul></li>
+<li class="chapter" data-level="12.3" data-path="sec12_3.html"><a href="sec12_3.html"><i class="fa fa-check"></i><b>12.3</b> Bayesian additive regression trees</a></li>
+<li class="chapter" data-level="12.4" data-path="sec12_4.html"><a href="sec12_4.html"><i class="fa fa-check"></i><b>12.4</b> Gaussian processes</a></li>
+</ul></li>
+<li class="chapter" data-level="13" data-path="Chap13.html"><a href="Chap13.html"><i class="fa fa-check"></i><b>13</b> Causal inference</a>
+<ul>
+<li class="chapter" data-level="13.1" data-path="sec13_1.html"><a href="sec13_1.html"><i class="fa fa-check"></i><b>13.1</b> Instrumental variables</a>
+<ul>
+<li class="chapter" data-level="13.1.1" data-path="sec13_1.html"><a href="sec13_1.html#sec13_11"><i class="fa fa-check"></i><b>13.1.1</b> Semi-parametric IV model</a></li>
+</ul></li>
+<li class="chapter" data-level="13.2" data-path="sec13_2.html"><a href="sec13_2.html"><i class="fa fa-check"></i><b>13.2</b> Regression discontinuity design</a></li>
+<li class="chapter" data-level="13.3" data-path="sec13_3.html"><a href="sec13_3.html"><i class="fa fa-check"></i><b>13.3</b> Regression kink design</a></li>
+<li class="chapter" data-level="13.4" data-path="sec13_4.html"><a href="sec13_4.html"><i class="fa fa-check"></i><b>13.4</b> Synthetic control</a></li>
+<li class="chapter" data-level="13.5" data-path="sec13_5.html"><a href="sec13_5.html"><i class="fa fa-check"></i><b>13.5</b> Difference in difference estimation</a></li>
+<li class="chapter" data-level="13.6" data-path="sec13_6.html"><a href="sec13_6.html"><i class="fa fa-check"></i><b>13.6</b> Event Analysis</a></li>
+<li class="chapter" data-level="13.7" data-path="sec13_7.html"><a href="sec13_7.html"><i class="fa fa-check"></i><b>13.7</b> Bayesian exponential tilted empirical likelihood</a></li>
+<li class="chapter" data-level="13.8" data-path="sec13_8.html"><a href="sec13_8.html"><i class="fa fa-check"></i><b>13.8</b> Double-Debiased machine learning causal effects</a></li>
+</ul></li>
+<li class="chapter" data-level="14" data-path="Chap14.html"><a href="Chap14.html"><i class="fa fa-check"></i><b>14</b> Approximation methods</a>
+<ul>
+<li class="chapter" data-level="14.1" data-path="sec14_1.html"><a href="sec14_1.html"><i class="fa fa-check"></i><b>14.1</b> Approximate Bayesian computation</a></li>
+<li class="chapter" data-level="14.2" data-path="sec14_2.html"><a href="sec14_2.html"><i class="fa fa-check"></i><b>14.2</b> Bayesian synthetic likelihood</a></li>
+<li class="chapter" data-level="14.3" data-path="sec14_3.html"><a href="sec14_3.html"><i class="fa fa-check"></i><b>14.3</b> Expectation propagation</a></li>
+<li class="chapter" data-level="14.4" data-path="sec14_4.html"><a href="sec14_4.html"><i class="fa fa-check"></i><b>14.4</b> Integrated nested Laplace approximations</a></li>
+<li class="chapter" data-level="14.5" data-path="sec14_5.html"><a href="sec14_5.html"><i class="fa fa-check"></i><b>14.5</b> Variational Bayes</a></li>
+</ul></li>
+<li class="chapter" data-level="" data-path="appendix.html"><a href="appendix.html"><i class="fa fa-check"></i>Appendix</a></li>
+<li class="chapter" data-level="" data-path="references.html"><a href="references.html"><i class="fa fa-check"></i>References</a></li>
+<li class="divider"></li>
+<li><a href="https://bookdown.org" target="blank">Published with bookdown</a></li>
+</ul>
+
+      </nav>
+    </div>
+
+    <div class="book-body">
+      <div class="body-inner">
+        <div class="book-header" role="navigation">
+          <h1>
+            <i class="fa fa-circle-o-notch fa-spin"></i><a href="./">Introduction to Bayesian Data Modeling</a>
+          </h1>
+        </div>
+
+        <div class="page-wrapper" tabindex="-1" role="main">
+          <div class="page-inner">
+
+            <section class="normal" id="section-">
+<div id="sec103" class="section level2 hasAnchor" number="10.3">
+<h2><span class="header-section-number">10.3</span> Generalized linear models<a href="sec103.html#sec103" class="anchor-section" aria-label="Anchor link to header"></a></h2>
+<p>Generalized linear models (GLMs) were introduced by <span class="citation">Nelder and Wedderburn (<a href="#ref-nelder1972generalized">1972</a>)</span>, extending the concept of linear regression to a more general setting. These models are characterized by: i) a dependent variable <span class="math inline">\(y_i\)</span> whose probability distribution function belongs to the exponential family (see Section <a href="sec41.html#sec41">3.1</a>, ii) a linear predictor <span class="math inline">\(\eta = \boldsymbol{x}^{\top}\boldsymbol{\beta}\)</span>, and iii) a link function such that <span class="math inline">\(\mathbb{E}[y|\boldsymbol{x}] = g^{-1}(\boldsymbol{x}^{\top}\boldsymbol{\beta})\)</span>, which implies that <span class="math inline">\(g(\mathbb{E}[y|\boldsymbol{x}]) = \boldsymbol{x}^{\top}\boldsymbol{\beta}\)</span>. GLMs can be extended to the overdispersed exponential family <span class="citation">(<a href="#ref-McCullagh1989">McCullagh and Nelder 1989</a>)</span>.</p>
+<p>As we know from Section <a href="sec41.html#sec41">3.1</a>, the Poisson distribution belongs to the exponential family, such that <span class="math inline">\(p(y|\lambda) = \frac{\exp(-\lambda)\exp(y\log(\lambda))}{y!}\)</span>, or in the canonical form <span class="math inline">\(p(y|\eta) = \frac{\exp(\eta y - \exp(\eta))}{y!}\)</span>, where <span class="math inline">\(\eta = \log(\lambda)\)</span>, which means that <span class="math inline">\(\boldsymbol{x}^{\top}\boldsymbol{\beta} = \log(\lambda)\)</span>. Consequently, <span class="math inline">\(\mathbb{E}[y|\boldsymbol{x}] = \nabla(\exp(\eta)) = \exp(\eta) = \lambda = \exp(\boldsymbol{x}^{\top}\boldsymbol{\beta})\)</span>. Therefore, the link function in the Poisson case is the <em>log</em> function. In Exercise 6, we ask you to show that the link function in the Bernoulli case is the <em>logit</em> function. Other examples include the identity function in the case of the Gaussian distribution and the negative inverse in the case of the gamma distribution.</p>
+<p>We can use the GLM framework to perform Bayesian model averaging (BMA) using the BIC approximation, following <span class="citation">A. Raftery (<a href="#ref-Raftery1995">1995</a>)</span>. Specifically, the BIC is given by <span class="math inline">\(BIC = k_m \log(N) - 2 \log(p(\hat{\boldsymbol{\theta}}_m | \boldsymbol{y}))\)</span>, where <span class="math inline">\(\hat{\boldsymbol{\theta}}_m\)</span> is the maximum likelihood estimator. Thus, we simply need to calculate the likelihood function at the maximum likelihood estimator.</p>
+<p><strong>Example: Simulation exercises</strong></p>
+<p>Let’s perform some simulation exercises to assess the performance of the BIC approximation using the Occam’s window in GLMs. There are 27 regressors, where <span class="math inline">\(x_{i1}\)</span> and <span class="math inline">\(x_{i2}\)</span> are just the relevant regressors in all exercises, <span class="math inline">\(i=1,2,\dots,1000\)</span>.</p>
+<ol style="list-style-type: decimal">
+<li><p><strong>Logit</strong>: <span class="math inline">\(x_k\sim N(0, 1)\)</span>, <span class="math inline">\(k =1,\dots,27\)</span>, and <span class="math inline">\(p(y_i=1|\boldsymbol{x}_i)=\exp(0.5+0.8x_{i1}-1.2x_{i2})/(1+\exp(0.5+0.8x_{i1}-1.2x_{i2}))\)</span>.</p></li>
+<li><p><strong>Gamma</strong>: <span class="math inline">\(x_k\sim N(0, 0.5^2)\)</span>, <span class="math inline">\(k =1,\dots,27\)</span>, and <span class="math inline">\(y_i\sim G(\alpha,\delta)\)</span> where <span class="math inline">\(\alpha=-(0.5+0.2x_{i1}0.1x_{i2})^{-1}\)</span> and <span class="math inline">\(\delta=1\)</span>.</p></li>
+<li><p><strong>Poisson</strong>: <span class="math inline">\(x_k\sim N(0, 1)\)</span>, <span class="math inline">\(k =1,\dots,27\)</span>, and <span class="math inline">\(\mathbb{E}[y_i|\boldsymbol{x}_i]=\lambda_i=\exp(0.5+1.1x_{i1}+0.7x_{i2})\)</span>.</p></li>
+</ol>
+<p>Our GUI uses the command <em>bic.glm</em> from the <em>BMA</em> package to perform BMA using the BIC approximation with the Occam’s window in GLMs. The next Algorithm shows how to do this in our GUI, and the following code shows how to perform BMA in logit models using the simulation setting.</p>
+<div class="algorithm">
+<div style="background-color: #f8f9fa; padding: 15px; border-left: 5px solid #343a40; box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1); border-radius: 5px;">
+<p><strong>Algorithm: Bayesian Model Averaging in Generalized Linear Models using BIC</strong></p>
+<ol style="list-style-type: decimal">
+<li><p>Select <em>Bayesian Model Averaging</em> on the top panel</p></li>
+<li><p>Select the <em>Generalized Linear Model</em> using the left radio button. Options:</p>
+<ul>
+<li><em>Binomial data (Logit)</em><br />
+</li>
+<li><em>Real positive data (Gamma)</em><br />
+</li>
+<li><em>Count data (Poisson)</em></li>
+</ul></li>
+<li><p>Upload the dataset, selecting first whether there is a header in the file and the type of separator in the <em>csv</em> file (comma, semicolon, or tab). Then, use the <em>Browse</em> button under the <strong>Choose File</strong> legend</p></li>
+<li><p>Type the <em>OR</em> number of Occam’s window in the box under <strong>OR: Number between 5 and 50</strong>. This is not necessary, as the default value is 50</p></li>
+<li><p>Type the <em>OL</em> number of Occam’s window in the box under <strong>OL: Number between 0.0001 and 1</strong>. This is not necessary, as the default value is 0.0025</p></li>
+<li><p>Click the <em>Go!</em> button</p></li>
+<li><p>Analyze results: After a few seconds or minutes, a table appears showing, for each regressor in the dataset:</p>
+<ul>
+<li>The posterior inclusion probability (<strong>p!=0</strong>)<br />
+</li>
+<li>The BMA posterior mean (<strong>EV</strong>)<br />
+</li>
+<li>The BMA standard deviation (<strong>SD</strong>)<br />
+</li>
+<li>The PMP for the most relevant models (highest PMPs)</li>
+</ul></li>
+<li><p>Download posterior results using the <em>Download results using BIC</em> button. Two files are provided:</p>
+<ul>
+<li>The first file contains the best models by row according to the PMP (last column), indicating variable inclusion with 1 (0 indicates no inclusion)<br />
+</li>
+<li>The second file contains the PIP, the BMA expected value, and the standard deviation for each variable in the dataset</li>
+</ul></li>
+</ol>
+</div>
+</div>
+<p>The results show that the PIPs of <span class="math inline">\(x_{i1}\)</span> and <span class="math inline">\(x_{i2}\)</span> are equal 1 in all three settings, the data generating process gets the highest PMP, and the BMA posterior means are close to the population values in each simulation setting. The other variables get PIPs close to 0, except a few exceptions, and the BMA posterior means are also close to 0. This suggests that the BIC approximation does a good job finding the data generating process in generalized linear models.</p>
+<p>We can take advantage of the <em>glm</em> function in <strong>R</strong> to perform BMA by programming an MC3 algorithm. The following code illustrates how to do this in the Poisson simulation. First, we simulate the data; second, we define a function to compute the log marginal likelihood approximation using the results from the <em>glm</em> function. Then, we initialize the models to begin the MC3 algorithm. After that, we implement the MC3 algorithm, which involves small modifications of the code used for MC3 in Gaussian linear models. We can calculate the posterior model probabilities (PMPs), posterior inclusion probabilities (PIPs), BMA means, and standard deviations as we did previously.</p>
+<p>The simulation setting involves <span class="math inline">\(2^{27}\)</span> models, which corresponds to approximately 135 million models in the model space. We run our MC3 algorithm using the BIC approximation with 50,000 iterations. This takes considerably more time than the BIC approximation from the <em>BMA</em> package, but it seems to perform well in identifying the data-generating process, as the PMP of this model equals 1. The posterior inclusion probabilities (PIPs) for <span class="math inline">\(x_{i1}\)</span> and <span class="math inline">\(x_{i2}\)</span> are also 1, and the posterior means are 1.1 and 0.7, respectively, which are equal to the population values. The t-ratios are far greater than 2. However, running 50,000 iterations results in mass concentration in one model, in this case, the data-generating process. If we run 25,000 MC3 iterations, the highest PMP is 0.8, but it is not associated with the data-generating process. Nonetheless, the PIP is equal to 1 for <span class="math inline">\(x_{i1}\)</span> and <span class="math inline">\(x_{i2}\)</span>, and other regressors also have high PIPs. The BMA means for <span class="math inline">\(x_{i1}\)</span> and <span class="math inline">\(x_{i2}\)</span> are equal to the population values, and the BMA means for the other regressors are equal to 0. The t-ratios of the regressors in the population statistical model are much greater than 2, whereas the t-ratios of the other regressors are equal to 0. This exercise demonstrates that 25,000 iterations were not sufficient to uncover the data-generating process. However, it also emphasizes an important point: we need to analyze all the relevant results from the BMA analysis, not just the PMPs and/or PIPs.</p>
+<p>In Exercise 10, we ask you to use this approach to perform a BMA algorithm in the logit regression, using the simulation setting for logit models from this section.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="sec103.html#cb11-1" tabindex="-1"></a><span class="do">### Logit </span><span class="al">###</span></span>
+<span id="cb11-2"><a href="sec103.html#cb11-2" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">010101</span>)</span>
+<span id="cb11-3"><a href="sec103.html#cb11-3" tabindex="-1"></a>n<span class="ot">&lt;-</span><span class="dv">1000</span>; B<span class="ot">&lt;-</span><span class="fu">c</span>(<span class="fl">0.5</span>,<span class="fl">0.8</span>,<span class="sc">-</span><span class="fl">1.2</span>)</span>
+<span id="cb11-4"><a href="sec103.html#cb11-4" tabindex="-1"></a>X<span class="ot">&lt;-</span><span class="fu">matrix</span>(<span class="fu">cbind</span>(<span class="fu">rep</span>(<span class="dv">1</span>,n),<span class="fu">rnorm</span>(n,<span class="dv">0</span>,<span class="dv">1</span>),<span class="fu">rnorm</span>(n,<span class="dv">0</span>,<span class="dv">1</span>)),n,<span class="fu">length</span>(B))</span>
+<span id="cb11-5"><a href="sec103.html#cb11-5" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">exp</span>(X<span class="sc">%*%</span>B)<span class="sc">/</span>(<span class="dv">1</span><span class="sc">+</span><span class="fu">exp</span>(X<span class="sc">%*%</span>B)); y <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n, <span class="dv">1</span>, p)</span>
+<span id="cb11-6"><a href="sec103.html#cb11-6" tabindex="-1"></a>nXgar<span class="ot">&lt;-</span><span class="dv">25</span>; Xgar<span class="ot">&lt;-</span><span class="fu">matrix</span>(<span class="fu">rnorm</span>(nXgar<span class="sc">*</span>n),n,nXgar)</span>
+<span id="cb11-7"><a href="sec103.html#cb11-7" tabindex="-1"></a>df<span class="ot">&lt;-</span><span class="fu">as.data.frame</span>(<span class="fu">cbind</span>(y,X[,<span class="sc">-</span><span class="dv">1</span>],Xgar))</span>
+<span id="cb11-8"><a href="sec103.html#cb11-8" tabindex="-1"></a><span class="fu">colnames</span>(df) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;y&quot;</span>, <span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>, <span class="st">&quot;x4&quot;</span>, <span class="st">&quot;x5&quot;</span>, <span class="st">&quot;x6&quot;</span>, <span class="st">&quot;x7&quot;</span>, <span class="st">&quot;x8&quot;</span>, <span class="st">&quot;x9&quot;</span>, <span class="st">&quot;x10&quot;</span>, <span class="st">&quot;x11&quot;</span>, <span class="st">&quot;x12&quot;</span>, <span class="st">&quot;x13&quot;</span>, <span class="st">&quot;x14&quot;</span>, <span class="st">&quot;x15&quot;</span>, <span class="st">&quot;x16&quot;</span>, <span class="st">&quot;x17&quot;</span>, <span class="st">&quot;x18&quot;</span>, <span class="st">&quot;x19&quot;</span>, <span class="st">&quot;x20&quot;</span>, <span class="st">&quot;x21&quot;</span>, <span class="st">&quot;x22&quot;</span>, <span class="st">&quot;x23&quot;</span>, <span class="st">&quot;x24&quot;</span>, <span class="st">&quot;x25&quot;</span>, <span class="st">&quot;x26&quot;</span>, <span class="st">&quot;x27&quot;</span>)</span>
+<span id="cb11-9"><a href="sec103.html#cb11-9" tabindex="-1"></a>BMAglmLogit <span class="ot">&lt;-</span> BMA<span class="sc">::</span><span class="fu">bic.glm</span>(y <span class="sc">~</span> x1<span class="sc">+</span>x2<span class="sc">+</span>x3<span class="sc">+</span>x4<span class="sc">+</span>x5<span class="sc">+</span>x6<span class="sc">+</span>x7<span class="sc">+</span>x8<span class="sc">+</span>x9<span class="sc">+</span>x10<span class="sc">+</span>x11<span class="sc">+</span>x12<span class="sc">+</span>x13<span class="sc">+</span>x14<span class="sc">+</span>x15<span class="sc">+</span>x16<span class="sc">+</span>x17<span class="sc">+</span>x18<span class="sc">+</span>x19<span class="sc">+</span>x20<span class="sc">+</span>x21<span class="sc">+</span>x22<span class="sc">+</span>x23<span class="sc">+</span>x24<span class="sc">+</span>x25<span class="sc">+</span>x26<span class="sc">+</span>x27, <span class="at">data =</span> df, <span class="at">glm.family =</span> <span class="fu">binomial</span>(<span class="at">link=</span><span class="st">&quot;logit&quot;</span>), <span class="at">strict =</span> <span class="cn">FALSE</span>, <span class="at">OR =</span> <span class="dv">50</span>)</span>
+<span id="cb11-10"><a href="sec103.html#cb11-10" tabindex="-1"></a><span class="fu">summary</span>(BMAglmLogit)</span>
+<span id="cb11-11"><a href="sec103.html#cb11-11" tabindex="-1"></a><span class="do">### Gamma </span><span class="al">###</span></span>
+<span id="cb11-12"><a href="sec103.html#cb11-12" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">010101</span>)</span>
+<span id="cb11-13"><a href="sec103.html#cb11-13" tabindex="-1"></a>n<span class="ot">&lt;-</span><span class="dv">1000</span>; B<span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">0.5</span>, <span class="fl">0.2</span>, <span class="fl">0.1</span>)</span>
+<span id="cb11-14"><a href="sec103.html#cb11-14" tabindex="-1"></a>X<span class="ot">&lt;-</span><span class="fu">matrix</span>(<span class="fu">cbind</span>(<span class="fu">rep</span>(<span class="dv">1</span>,n),<span class="fu">rnorm</span>(n,<span class="dv">0</span>,<span class="fl">0.5</span>),<span class="fu">rnorm</span>(n,<span class="dv">0</span>,<span class="fl">0.5</span>)),n,<span class="fu">length</span>(B))</span>
+<span id="cb11-15"><a href="sec103.html#cb11-15" tabindex="-1"></a>y1 <span class="ot">&lt;-</span> (X<span class="sc">%*%</span>B)<span class="sc">^</span>(<span class="sc">-</span><span class="dv">1</span>)</span>
+<span id="cb11-16"><a href="sec103.html#cb11-16" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="fu">rgamma</span>(n,y1,<span class="at">scale=</span><span class="dv">1</span>)</span>
+<span id="cb11-17"><a href="sec103.html#cb11-17" tabindex="-1"></a>nXgar<span class="ot">&lt;-</span><span class="dv">25</span>; Xgar<span class="ot">&lt;-</span><span class="fu">matrix</span>(<span class="fu">rnorm</span>(nXgar<span class="sc">*</span>n),n,nXgar)</span>
+<span id="cb11-18"><a href="sec103.html#cb11-18" tabindex="-1"></a>df<span class="ot">&lt;-</span><span class="fu">as.data.frame</span>(<span class="fu">cbind</span>(y,X[,<span class="sc">-</span><span class="dv">1</span>],Xgar))</span>
+<span id="cb11-19"><a href="sec103.html#cb11-19" tabindex="-1"></a><span class="fu">colnames</span>(df) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;y&quot;</span>, <span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>, <span class="st">&quot;x4&quot;</span>, <span class="st">&quot;x5&quot;</span>, <span class="st">&quot;x6&quot;</span>, <span class="st">&quot;x7&quot;</span>, <span class="st">&quot;x8&quot;</span>, <span class="st">&quot;x9&quot;</span>, <span class="st">&quot;x10&quot;</span>, <span class="st">&quot;x11&quot;</span>, <span class="st">&quot;x12&quot;</span>, <span class="st">&quot;x13&quot;</span>, <span class="st">&quot;x14&quot;</span>, <span class="st">&quot;x15&quot;</span>, <span class="st">&quot;x16&quot;</span>, <span class="st">&quot;x17&quot;</span>, <span class="st">&quot;x18&quot;</span>, <span class="st">&quot;x19&quot;</span>, <span class="st">&quot;x20&quot;</span>, <span class="st">&quot;x21&quot;</span>, <span class="st">&quot;x22&quot;</span>, <span class="st">&quot;x23&quot;</span>, <span class="st">&quot;x24&quot;</span>, <span class="st">&quot;x25&quot;</span>, <span class="st">&quot;x26&quot;</span>, <span class="st">&quot;x27&quot;</span>)</span>
+<span id="cb11-20"><a href="sec103.html#cb11-20" tabindex="-1"></a>BMAglmGamma <span class="ot">&lt;-</span> BMA<span class="sc">::</span><span class="fu">bic.glm</span>(y <span class="sc">~</span> x1<span class="sc">+</span>x2<span class="sc">+</span>x3<span class="sc">+</span>x4<span class="sc">+</span>x5<span class="sc">+</span>x6<span class="sc">+</span>x7<span class="sc">+</span>x8<span class="sc">+</span>x9<span class="sc">+</span>x10<span class="sc">+</span>x11<span class="sc">+</span>x12<span class="sc">+</span>x13<span class="sc">+</span>x14<span class="sc">+</span>x15<span class="sc">+</span>x16<span class="sc">+</span>x17<span class="sc">+</span>x18<span class="sc">+</span>x19<span class="sc">+</span>x20<span class="sc">+</span>x21<span class="sc">+</span>x22<span class="sc">+</span>x23<span class="sc">+</span>x24<span class="sc">+</span>x25<span class="sc">+</span>x26<span class="sc">+</span>x27, <span class="at">data =</span> df, <span class="at">glm.family =</span> <span class="fu">Gamma</span>(<span class="at">link=</span><span class="st">&quot;inverse&quot;</span>), <span class="at">strict =</span> <span class="cn">FALSE</span>, <span class="at">OR =</span> <span class="dv">50</span>)</span>
+<span id="cb11-21"><a href="sec103.html#cb11-21" tabindex="-1"></a><span class="fu">summary</span>(BMAglmGamma)</span>
+<span id="cb11-22"><a href="sec103.html#cb11-22" tabindex="-1"></a><span class="do">### Poisson </span><span class="al">###</span></span>
+<span id="cb11-23"><a href="sec103.html#cb11-23" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">010101</span>)</span>
+<span id="cb11-24"><a href="sec103.html#cb11-24" tabindex="-1"></a>n<span class="ot">&lt;-</span><span class="dv">1000</span>; B<span class="ot">&lt;-</span><span class="fu">c</span>(<span class="dv">2</span>,<span class="fl">1.1</span>,<span class="fl">0.7</span>)</span>
+<span id="cb11-25"><a href="sec103.html#cb11-25" tabindex="-1"></a>X<span class="ot">&lt;-</span><span class="fu">matrix</span>(<span class="fu">cbind</span>(<span class="fu">rep</span>(<span class="dv">1</span>,n),<span class="fu">rnorm</span>(n,<span class="dv">0</span>,<span class="dv">1</span>),<span class="fu">rnorm</span>(n,<span class="dv">0</span>,<span class="dv">1</span>)),n,<span class="fu">length</span>(B))</span>
+<span id="cb11-26"><a href="sec103.html#cb11-26" tabindex="-1"></a>y1<span class="ot">&lt;-</span><span class="fu">exp</span>(X<span class="sc">%*%</span>B); y<span class="ot">&lt;-</span><span class="fu">rpois</span>(n,y1)</span>
+<span id="cb11-27"><a href="sec103.html#cb11-27" tabindex="-1"></a>nXgar<span class="ot">&lt;-</span><span class="dv">25</span>; Xgar<span class="ot">&lt;-</span><span class="fu">matrix</span>(<span class="fu">rnorm</span>(nXgar<span class="sc">*</span>n),n,nXgar)</span>
+<span id="cb11-28"><a href="sec103.html#cb11-28" tabindex="-1"></a>df<span class="ot">&lt;-</span><span class="fu">as.data.frame</span>(<span class="fu">cbind</span>(y,X[,<span class="sc">-</span><span class="dv">1</span>],Xgar))</span>
+<span id="cb11-29"><a href="sec103.html#cb11-29" tabindex="-1"></a><span class="fu">colnames</span>(df) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;y&quot;</span>, <span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>, <span class="st">&quot;x4&quot;</span>, <span class="st">&quot;x5&quot;</span>, <span class="st">&quot;x6&quot;</span>, <span class="st">&quot;x7&quot;</span>, <span class="st">&quot;x8&quot;</span>, <span class="st">&quot;x9&quot;</span>, <span class="st">&quot;x10&quot;</span>, <span class="st">&quot;x11&quot;</span>, <span class="st">&quot;x12&quot;</span>, <span class="st">&quot;x13&quot;</span>, <span class="st">&quot;x14&quot;</span>, <span class="st">&quot;x15&quot;</span>, <span class="st">&quot;x16&quot;</span>, <span class="st">&quot;x17&quot;</span>, <span class="st">&quot;x18&quot;</span>, <span class="st">&quot;x19&quot;</span>, <span class="st">&quot;x20&quot;</span>, <span class="st">&quot;x21&quot;</span>, <span class="st">&quot;x22&quot;</span>, <span class="st">&quot;x23&quot;</span>, <span class="st">&quot;x24&quot;</span>, <span class="st">&quot;x25&quot;</span>, <span class="st">&quot;x26&quot;</span>, <span class="st">&quot;x27&quot;</span>)</span>
+<span id="cb11-30"><a href="sec103.html#cb11-30" tabindex="-1"></a>BMAglmPoisson <span class="ot">&lt;-</span> BMA<span class="sc">::</span><span class="fu">bic.glm</span>(y <span class="sc">~</span> x1<span class="sc">+</span>x2<span class="sc">+</span>x3<span class="sc">+</span>x4<span class="sc">+</span>x5<span class="sc">+</span>x6<span class="sc">+</span>x7<span class="sc">+</span>x8<span class="sc">+</span>x9<span class="sc">+</span>x10<span class="sc">+</span>x11<span class="sc">+</span>x12<span class="sc">+</span>x13<span class="sc">+</span>x14<span class="sc">+</span>x15<span class="sc">+</span>x16<span class="sc">+</span>x17<span class="sc">+</span>x18<span class="sc">+</span>x19<span class="sc">+</span>x20<span class="sc">+</span>x21<span class="sc">+</span>x22<span class="sc">+</span>x23<span class="sc">+</span>x24<span class="sc">+</span>x25<span class="sc">+</span>x26<span class="sc">+</span>x27, <span class="at">data =</span> df, <span class="at">glm.family =</span> <span class="fu">poisson</span>(<span class="at">link=</span><span class="st">&quot;log&quot;</span>), <span class="at">strict =</span> <span class="cn">FALSE</span>, <span class="at">OR =</span> <span class="dv">50</span>)</span>
+<span id="cb11-31"><a href="sec103.html#cb11-31" tabindex="-1"></a><span class="fu">summary</span>(BMAglmPoisson)</span>
+<span id="cb11-32"><a href="sec103.html#cb11-32" tabindex="-1"></a><span class="do">########################################</span></span>
+<span id="cb11-33"><a href="sec103.html#cb11-33" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">010101</span>)</span>
+<span id="cb11-34"><a href="sec103.html#cb11-34" tabindex="-1"></a>n<span class="ot">&lt;-</span><span class="dv">1000</span>; B<span class="ot">&lt;-</span><span class="fu">c</span>(<span class="dv">2</span>,<span class="fl">1.1</span>,<span class="fl">0.7</span>)</span>
+<span id="cb11-35"><a href="sec103.html#cb11-35" tabindex="-1"></a>X<span class="ot">&lt;-</span><span class="fu">matrix</span>(<span class="fu">cbind</span>(<span class="fu">rep</span>(<span class="dv">1</span>,n),<span class="fu">rnorm</span>(n,<span class="dv">0</span>,<span class="dv">1</span>),<span class="fu">rnorm</span>(n,<span class="dv">0</span>,<span class="dv">1</span>)),n,<span class="fu">length</span>(B))</span>
+<span id="cb11-36"><a href="sec103.html#cb11-36" tabindex="-1"></a>y1<span class="ot">&lt;-</span><span class="fu">exp</span>(X<span class="sc">%*%</span>B); y<span class="ot">&lt;-</span><span class="fu">rpois</span>(n,y1)</span>
+<span id="cb11-37"><a href="sec103.html#cb11-37" tabindex="-1"></a>nXgar<span class="ot">&lt;-</span><span class="dv">25</span>; Xgar<span class="ot">&lt;-</span><span class="fu">matrix</span>(<span class="fu">rnorm</span>(nXgar<span class="sc">*</span>n),n,nXgar)</span>
+<span id="cb11-38"><a href="sec103.html#cb11-38" tabindex="-1"></a>df<span class="ot">&lt;-</span><span class="fu">as.data.frame</span>(<span class="fu">cbind</span>(y,X[,<span class="sc">-</span><span class="dv">1</span>],Xgar))</span>
+<span id="cb11-39"><a href="sec103.html#cb11-39" tabindex="-1"></a><span class="fu">colnames</span>(df) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;y&quot;</span>, <span class="st">&quot;x1&quot;</span>, <span class="st">&quot;x2&quot;</span>, <span class="st">&quot;x3&quot;</span>, <span class="st">&quot;x4&quot;</span>, <span class="st">&quot;x5&quot;</span>, <span class="st">&quot;x6&quot;</span>, <span class="st">&quot;x7&quot;</span>, <span class="st">&quot;x8&quot;</span>, <span class="st">&quot;x9&quot;</span>, <span class="st">&quot;x10&quot;</span>, <span class="st">&quot;x11&quot;</span>, <span class="st">&quot;x12&quot;</span>, <span class="st">&quot;x13&quot;</span>, <span class="st">&quot;x14&quot;</span>, <span class="st">&quot;x15&quot;</span>, <span class="st">&quot;x16&quot;</span>, <span class="st">&quot;x17&quot;</span>, <span class="st">&quot;x18&quot;</span>, <span class="st">&quot;x19&quot;</span>, <span class="st">&quot;x20&quot;</span>, <span class="st">&quot;x21&quot;</span>, <span class="st">&quot;x22&quot;</span>, <span class="st">&quot;x23&quot;</span>, <span class="st">&quot;x24&quot;</span>, <span class="st">&quot;x25&quot;</span>, <span class="st">&quot;x26&quot;</span>, <span class="st">&quot;x27&quot;</span>)</span>
+<span id="cb11-40"><a href="sec103.html#cb11-40" tabindex="-1"></a>Xnew <span class="ot">&lt;-</span> <span class="fu">apply</span>(df[,<span class="sc">-</span><span class="dv">1</span>], <span class="dv">2</span>, scale)</span>
+<span id="cb11-41"><a href="sec103.html#cb11-41" tabindex="-1"></a>BICfunt <span class="ot">&lt;-</span> <span class="cf">function</span>(Model){</span>
+<span id="cb11-42"><a href="sec103.html#cb11-42" tabindex="-1"></a>    indr <span class="ot">&lt;-</span> Model <span class="sc">==</span> <span class="dv">1</span>; kr <span class="ot">&lt;-</span> <span class="fu">sum</span>(indr)</span>
+<span id="cb11-43"><a href="sec103.html#cb11-43" tabindex="-1"></a>    <span class="cf">if</span>(kr <span class="sc">&gt;</span> <span class="dv">0</span>){</span>
+<span id="cb11-44"><a href="sec103.html#cb11-44" tabindex="-1"></a>        Xr <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(Xnew[ , indr])</span>
+<span id="cb11-45"><a href="sec103.html#cb11-45" tabindex="-1"></a>        model <span class="ot">&lt;-</span> <span class="fu">glm</span>(y <span class="sc">~</span> Xr, <span class="at">family =</span> <span class="fu">poisson</span>(<span class="at">link =</span> <span class="st">&quot;log&quot;</span>))</span>
+<span id="cb11-46"><a href="sec103.html#cb11-46" tabindex="-1"></a>        model_bic <span class="ot">&lt;-</span> <span class="fu">BIC</span>(model)</span>
+<span id="cb11-47"><a href="sec103.html#cb11-47" tabindex="-1"></a>        mllMod <span class="ot">&lt;-</span> <span class="sc">-</span>model_bic<span class="sc">/</span><span class="dv">2</span></span>
+<span id="cb11-48"><a href="sec103.html#cb11-48" tabindex="-1"></a>    }<span class="cf">else</span>{</span>
+<span id="cb11-49"><a href="sec103.html#cb11-49" tabindex="-1"></a>        model <span class="ot">&lt;-</span> <span class="fu">glm</span>(y <span class="sc">~</span> <span class="dv">1</span>, <span class="at">family =</span> <span class="fu">poisson</span>(<span class="at">link =</span> <span class="st">&quot;log&quot;</span>))</span>
+<span id="cb11-50"><a href="sec103.html#cb11-50" tabindex="-1"></a>        model_bic <span class="ot">&lt;-</span> <span class="fu">BIC</span>(model); mllMod <span class="ot">&lt;-</span> <span class="sc">-</span>model_bic<span class="sc">/</span><span class="dv">2</span></span>
+<span id="cb11-51"><a href="sec103.html#cb11-51" tabindex="-1"></a>    }</span>
+<span id="cb11-52"><a href="sec103.html#cb11-52" tabindex="-1"></a>    <span class="fu">return</span>(mllMod)</span>
+<span id="cb11-53"><a href="sec103.html#cb11-53" tabindex="-1"></a>}</span>
+<span id="cb11-54"><a href="sec103.html#cb11-54" tabindex="-1"></a>M <span class="ot">&lt;-</span> <span class="dv">500</span>; K <span class="ot">&lt;-</span> <span class="fu">dim</span>(df)[<span class="dv">2</span>] <span class="sc">-</span> <span class="dv">1</span></span>
+<span id="cb11-55"><a href="sec103.html#cb11-55" tabindex="-1"></a>Models <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rbinom</span>(K<span class="sc">*</span>M, <span class="dv">1</span>, <span class="at">p =</span> <span class="fl">0.5</span>), <span class="at">ncol =</span> K, <span class="at">nrow =</span> M)</span>
+<span id="cb11-56"><a href="sec103.html#cb11-56" tabindex="-1"></a>mllnew <span class="ot">&lt;-</span> <span class="fu">sapply</span>(<span class="dv">1</span><span class="sc">:</span>M, <span class="cf">function</span>(s){<span class="fu">BICfunt</span>(<span class="fu">matrix</span>(Models[s,], <span class="dv">1</span>, K))})</span>
+<span id="cb11-57"><a href="sec103.html#cb11-57" tabindex="-1"></a>oind <span class="ot">&lt;-</span> <span class="fu">order</span>(mllnew, <span class="at">decreasing =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb11-58"><a href="sec103.html#cb11-58" tabindex="-1"></a>mllnew <span class="ot">&lt;-</span> mllnew[oind]; Models <span class="ot">&lt;-</span> Models[oind, ]</span>
+<span id="cb11-59"><a href="sec103.html#cb11-59" tabindex="-1"></a><span class="co"># Hyperparameters MC3</span></span>
+<span id="cb11-60"><a href="sec103.html#cb11-60" tabindex="-1"></a>iter <span class="ot">&lt;-</span> <span class="dv">25000</span></span>
+<span id="cb11-61"><a href="sec103.html#cb11-61" tabindex="-1"></a>pb <span class="ot">&lt;-</span> <span class="fu">winProgressBar</span>(<span class="at">title =</span> <span class="st">&quot;progress bar&quot;</span>, <span class="at">min =</span> <span class="dv">0</span>, <span class="at">max =</span> iter, <span class="at">width =</span> <span class="dv">300</span>)</span>
+<span id="cb11-62"><a href="sec103.html#cb11-62" tabindex="-1"></a>s <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb11-63"><a href="sec103.html#cb11-63" tabindex="-1"></a><span class="cf">while</span>(s <span class="sc">&lt;=</span> iter){</span>
+<span id="cb11-64"><a href="sec103.html#cb11-64" tabindex="-1"></a>    ActModel <span class="ot">&lt;-</span> Models[M,]</span>
+<span id="cb11-65"><a href="sec103.html#cb11-65" tabindex="-1"></a>    idK <span class="ot">&lt;-</span> <span class="fu">which</span>(ActModel <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb11-66"><a href="sec103.html#cb11-66" tabindex="-1"></a>    Kact <span class="ot">&lt;-</span> <span class="fu">length</span>(idK)</span>
+<span id="cb11-67"><a href="sec103.html#cb11-67" tabindex="-1"></a>    <span class="cf">if</span>(Kact <span class="sc">&lt;</span> K <span class="sc">&amp;</span> Kact <span class="sc">&gt;</span> <span class="dv">1</span>){</span>
+<span id="cb11-68"><a href="sec103.html#cb11-68" tabindex="-1"></a>        CardMol <span class="ot">&lt;-</span> K</span>
+<span id="cb11-69"><a href="sec103.html#cb11-69" tabindex="-1"></a>        opt <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="dv">1</span>)</span>
+<span id="cb11-70"><a href="sec103.html#cb11-70" tabindex="-1"></a>        <span class="cf">if</span>(opt <span class="sc">==</span> <span class="dv">1</span>){ <span class="co"># Same</span></span>
+<span id="cb11-71"><a href="sec103.html#cb11-71" tabindex="-1"></a>            CandModel <span class="ot">&lt;-</span> ActModel</span>
+<span id="cb11-72"><a href="sec103.html#cb11-72" tabindex="-1"></a>        }<span class="cf">else</span>{</span>
+<span id="cb11-73"><a href="sec103.html#cb11-73" tabindex="-1"></a>                    <span class="cf">if</span>(opt <span class="sc">==</span> <span class="dv">2</span>){ <span class="co"># Add</span></span>
+<span id="cb11-74"><a href="sec103.html#cb11-74" tabindex="-1"></a>            All <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span>K</span>
+<span id="cb11-75"><a href="sec103.html#cb11-75" tabindex="-1"></a>            NewX <span class="ot">&lt;-</span> <span class="fu">sample</span>(All[<span class="sc">-</span>idK], <span class="dv">1</span>)</span>
+<span id="cb11-76"><a href="sec103.html#cb11-76" tabindex="-1"></a>            CandModel <span class="ot">&lt;-</span> ActModel</span>
+<span id="cb11-77"><a href="sec103.html#cb11-77" tabindex="-1"></a>            CandModel[NewX] <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb11-78"><a href="sec103.html#cb11-78" tabindex="-1"></a>        }<span class="cf">else</span>{ <span class="co"># Subtract</span></span>
+<span id="cb11-79"><a href="sec103.html#cb11-79" tabindex="-1"></a>            LessX <span class="ot">&lt;-</span> <span class="fu">sample</span>(idK, <span class="dv">1</span>)</span>
+<span id="cb11-80"><a href="sec103.html#cb11-80" tabindex="-1"></a>            CandModel <span class="ot">&lt;-</span> ActModel</span>
+<span id="cb11-81"><a href="sec103.html#cb11-81" tabindex="-1"></a>            CandModel[LessX] <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb11-82"><a href="sec103.html#cb11-82" tabindex="-1"></a>        }</span>
+<span id="cb11-83"><a href="sec103.html#cb11-83" tabindex="-1"></a>    }</span>
+<span id="cb11-84"><a href="sec103.html#cb11-84" tabindex="-1"></a>    }<span class="cf">else</span>{</span>
+<span id="cb11-85"><a href="sec103.html#cb11-85" tabindex="-1"></a>        CardMol <span class="ot">&lt;-</span> K <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb11-86"><a href="sec103.html#cb11-86" tabindex="-1"></a>        <span class="cf">if</span>(Kact <span class="sc">==</span> K){</span>
+<span id="cb11-87"><a href="sec103.html#cb11-87" tabindex="-1"></a>            opt <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>, <span class="dv">1</span>)</span>
+<span id="cb11-88"><a href="sec103.html#cb11-88" tabindex="-1"></a>            <span class="cf">if</span>(opt <span class="sc">==</span> <span class="dv">1</span>){ <span class="co"># Same</span></span>
+<span id="cb11-89"><a href="sec103.html#cb11-89" tabindex="-1"></a>                CandModel <span class="ot">&lt;-</span> ActModel</span>
+<span id="cb11-90"><a href="sec103.html#cb11-90" tabindex="-1"></a>            }<span class="cf">else</span>{ <span class="co"># Subtract</span></span>
+<span id="cb11-91"><a href="sec103.html#cb11-91" tabindex="-1"></a>                LessX <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span>K, <span class="dv">1</span>)</span>
+<span id="cb11-92"><a href="sec103.html#cb11-92" tabindex="-1"></a>                CandModel <span class="ot">&lt;-</span> ActModel</span>
+<span id="cb11-93"><a href="sec103.html#cb11-93" tabindex="-1"></a>                CandModel[LessX] <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb11-94"><a href="sec103.html#cb11-94" tabindex="-1"></a>            }</span>
+<span id="cb11-95"><a href="sec103.html#cb11-95" tabindex="-1"></a>        }<span class="cf">else</span>{</span>
+<span id="cb11-96"><a href="sec103.html#cb11-96" tabindex="-1"></a>            <span class="cf">if</span>(K <span class="sc">==</span> <span class="dv">1</span>){</span>
+<span id="cb11-97"><a href="sec103.html#cb11-97" tabindex="-1"></a>                opt <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="dv">1</span>)</span>
+<span id="cb11-98"><a href="sec103.html#cb11-98" tabindex="-1"></a>                <span class="cf">if</span>(opt <span class="sc">==</span> <span class="dv">1</span>){ <span class="co"># Same</span></span>
+<span id="cb11-99"><a href="sec103.html#cb11-99" tabindex="-1"></a>                    CandModel <span class="ot">&lt;-</span> ActModel</span>
+<span id="cb11-100"><a href="sec103.html#cb11-100" tabindex="-1"></a>                }<span class="cf">else</span>{</span>
+<span id="cb11-101"><a href="sec103.html#cb11-101" tabindex="-1"></a>                    <span class="cf">if</span>(opt <span class="sc">==</span> <span class="dv">2</span>){ <span class="co"># Add</span></span>
+<span id="cb11-102"><a href="sec103.html#cb11-102" tabindex="-1"></a>                        All <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span>K</span>
+<span id="cb11-103"><a href="sec103.html#cb11-103" tabindex="-1"></a>                        NewX <span class="ot">&lt;-</span> <span class="fu">sample</span>(All[<span class="sc">-</span>idK], <span class="dv">1</span>)</span>
+<span id="cb11-104"><a href="sec103.html#cb11-104" tabindex="-1"></a>                        CandModel <span class="ot">&lt;-</span> ActModel</span>
+<span id="cb11-105"><a href="sec103.html#cb11-105" tabindex="-1"></a>                        CandModel[NewX] <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb11-106"><a href="sec103.html#cb11-106" tabindex="-1"></a>                    }<span class="cf">else</span>{ <span class="co"># Subtract</span></span>
+<span id="cb11-107"><a href="sec103.html#cb11-107" tabindex="-1"></a>                        LessX <span class="ot">&lt;-</span> <span class="fu">sample</span>(idK, <span class="dv">1</span>)</span>
+<span id="cb11-108"><a href="sec103.html#cb11-108" tabindex="-1"></a>                        CandModel <span class="ot">&lt;-</span> ActModel</span>
+<span id="cb11-109"><a href="sec103.html#cb11-109" tabindex="-1"></a>                        CandModel[LessX] <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb11-110"><a href="sec103.html#cb11-110" tabindex="-1"></a>                    }</span>
+<span id="cb11-111"><a href="sec103.html#cb11-111" tabindex="-1"></a>                }</span>
+<span id="cb11-112"><a href="sec103.html#cb11-112" tabindex="-1"></a>            }<span class="cf">else</span>{ <span class="co"># Add</span></span>
+<span id="cb11-113"><a href="sec103.html#cb11-113" tabindex="-1"></a>                NewX <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span>K, <span class="dv">1</span>)</span>
+<span id="cb11-114"><a href="sec103.html#cb11-114" tabindex="-1"></a>                CandModel <span class="ot">&lt;-</span> ActModel</span>
+<span id="cb11-115"><a href="sec103.html#cb11-115" tabindex="-1"></a>                CandModel[NewX] <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb11-116"><a href="sec103.html#cb11-116" tabindex="-1"></a>            }</span>
+<span id="cb11-117"><a href="sec103.html#cb11-117" tabindex="-1"></a>        }</span>
+<span id="cb11-118"><a href="sec103.html#cb11-118" tabindex="-1"></a>    }</span>
+<span id="cb11-119"><a href="sec103.html#cb11-119" tabindex="-1"></a>    LogMLact <span class="ot">&lt;-</span> <span class="fu">BICfunt</span>(<span class="fu">matrix</span>(ActModel, <span class="dv">1</span>, K))</span>
+<span id="cb11-120"><a href="sec103.html#cb11-120" tabindex="-1"></a>    LogMLcand <span class="ot">&lt;-</span> <span class="fu">BICfunt</span>(<span class="fu">matrix</span>(CandModel, <span class="dv">1</span>, K))</span>
+<span id="cb11-121"><a href="sec103.html#cb11-121" tabindex="-1"></a>    alpha <span class="ot">&lt;-</span> <span class="fu">min</span>(<span class="dv">1</span>, <span class="fu">exp</span>(LogMLcand<span class="sc">-</span>LogMLact))</span>
+<span id="cb11-122"><a href="sec103.html#cb11-122" tabindex="-1"></a>    u <span class="ot">&lt;-</span> <span class="fu">runif</span>(<span class="dv">1</span>)</span>
+<span id="cb11-123"><a href="sec103.html#cb11-123" tabindex="-1"></a>    <span class="cf">if</span>(u <span class="sc">&lt;=</span> alpha){</span>
+<span id="cb11-124"><a href="sec103.html#cb11-124" tabindex="-1"></a>        mllnew[M] <span class="ot">&lt;-</span> LogMLcand</span>
+<span id="cb11-125"><a href="sec103.html#cb11-125" tabindex="-1"></a>        Models[M, ] <span class="ot">&lt;-</span> CandModel</span>
+<span id="cb11-126"><a href="sec103.html#cb11-126" tabindex="-1"></a>        oind <span class="ot">&lt;-</span> <span class="fu">order</span>(mllnew, <span class="at">decreasing =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb11-127"><a href="sec103.html#cb11-127" tabindex="-1"></a>        mllnew <span class="ot">&lt;-</span> mllnew[oind]</span>
+<span id="cb11-128"><a href="sec103.html#cb11-128" tabindex="-1"></a>        Models <span class="ot">&lt;-</span> Models[oind, ]</span>
+<span id="cb11-129"><a href="sec103.html#cb11-129" tabindex="-1"></a>    }<span class="cf">else</span>{</span>
+<span id="cb11-130"><a href="sec103.html#cb11-130" tabindex="-1"></a>        mllnew <span class="ot">&lt;-</span> mllnew</span>
+<span id="cb11-131"><a href="sec103.html#cb11-131" tabindex="-1"></a>        Models <span class="ot">&lt;-</span> Models</span>
+<span id="cb11-132"><a href="sec103.html#cb11-132" tabindex="-1"></a>    }</span>
+<span id="cb11-133"><a href="sec103.html#cb11-133" tabindex="-1"></a>    s <span class="ot">&lt;-</span> s <span class="sc">+</span> <span class="dv">1</span></span>
+<span id="cb11-134"><a href="sec103.html#cb11-134" tabindex="-1"></a>    <span class="fu">setWinProgressBar</span>(pb, s, <span class="at">title=</span><span class="fu">paste</span>( <span class="fu">round</span>(s<span class="sc">/</span>iter<span class="sc">*</span><span class="dv">100</span>, <span class="dv">0</span>),<span class="st">&quot;% done&quot;</span>))</span>
+<span id="cb11-135"><a href="sec103.html#cb11-135" tabindex="-1"></a>}</span>
+<span id="cb11-136"><a href="sec103.html#cb11-136" tabindex="-1"></a><span class="fu">close</span>(pb)</span>
+<span id="cb11-137"><a href="sec103.html#cb11-137" tabindex="-1"></a>ModelsUni <span class="ot">&lt;-</span> <span class="fu">unique</span>(Models)</span>
+<span id="cb11-138"><a href="sec103.html#cb11-138" tabindex="-1"></a>mllnewUni <span class="ot">&lt;-</span> <span class="fu">sapply</span>(<span class="dv">1</span><span class="sc">:</span><span class="fu">dim</span>(ModelsUni)[<span class="dv">1</span>], <span class="cf">function</span>(s){<span class="fu">BICfunt</span>(<span class="fu">matrix</span>(ModelsUni[s,], <span class="dv">1</span>, K))})</span>
+<span id="cb11-139"><a href="sec103.html#cb11-139" tabindex="-1"></a>StMarLik <span class="ot">&lt;-</span> <span class="fu">exp</span>(mllnewUni<span class="sc">-</span>mllnewUni[<span class="dv">1</span>])</span>
+<span id="cb11-140"><a href="sec103.html#cb11-140" tabindex="-1"></a>PMP <span class="ot">&lt;-</span> StMarLik<span class="sc">/</span><span class="fu">sum</span>(StMarLik) <span class="co"># PMP based on unique selected models</span></span>
+<span id="cb11-141"><a href="sec103.html#cb11-141" tabindex="-1"></a><span class="fu">plot</span>(PMP)</span>
+<span id="cb11-142"><a href="sec103.html#cb11-142" tabindex="-1"></a>ModelsUni[<span class="dv">1</span>,]</span>
+<span id="cb11-143"><a href="sec103.html#cb11-143" tabindex="-1"></a>PIP <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb11-144"><a href="sec103.html#cb11-144" tabindex="-1"></a><span class="cf">for</span>(k <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>K){</span>
+<span id="cb11-145"><a href="sec103.html#cb11-145" tabindex="-1"></a>    PIPk <span class="ot">&lt;-</span> <span class="fu">sum</span>(PMP[<span class="fu">which</span>(ModelsUni[,k] <span class="sc">==</span> <span class="dv">1</span>)])</span>
+<span id="cb11-146"><a href="sec103.html#cb11-146" tabindex="-1"></a>    PIP <span class="ot">&lt;-</span> <span class="fu">c</span>(PIP, PIPk)</span>
+<span id="cb11-147"><a href="sec103.html#cb11-147" tabindex="-1"></a>}</span>
+<span id="cb11-148"><a href="sec103.html#cb11-148" tabindex="-1"></a><span class="fu">plot</span>(PIP)</span>
+<span id="cb11-149"><a href="sec103.html#cb11-149" tabindex="-1"></a>Xnew <span class="ot">&lt;-</span> df[,<span class="sc">-</span><span class="dv">1</span>]</span>
+<span id="cb11-150"><a href="sec103.html#cb11-150" tabindex="-1"></a>nModels <span class="ot">&lt;-</span> <span class="fu">dim</span>(ModelsUni)[<span class="dv">1</span>]</span>
+<span id="cb11-151"><a href="sec103.html#cb11-151" tabindex="-1"></a>Means <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span>, nModels, K)</span>
+<span id="cb11-152"><a href="sec103.html#cb11-152" tabindex="-1"></a>Vars <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span>, nModels, K)</span>
+<span id="cb11-153"><a href="sec103.html#cb11-153" tabindex="-1"></a><span class="cf">for</span>(m <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>nModels){</span>
+<span id="cb11-154"><a href="sec103.html#cb11-154" tabindex="-1"></a>    idXs <span class="ot">&lt;-</span> <span class="fu">which</span>(ModelsUni[m,] <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb11-155"><a href="sec103.html#cb11-155" tabindex="-1"></a>    <span class="cf">if</span>(<span class="fu">length</span>(idXs) <span class="sc">==</span> <span class="dv">0</span>){</span>
+<span id="cb11-156"><a href="sec103.html#cb11-156" tabindex="-1"></a>        Regm <span class="ot">&lt;-</span> <span class="fu">glm</span>(y <span class="sc">~</span> <span class="dv">1</span>, <span class="at">family =</span> <span class="fu">poisson</span>(<span class="at">link =</span> <span class="st">&quot;log&quot;</span>))</span>
+<span id="cb11-157"><a href="sec103.html#cb11-157" tabindex="-1"></a>    }<span class="cf">else</span>{</span>
+<span id="cb11-158"><a href="sec103.html#cb11-158" tabindex="-1"></a>        Xm <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(Xnew[, idXs])</span>
+<span id="cb11-159"><a href="sec103.html#cb11-159" tabindex="-1"></a>        Regm <span class="ot">&lt;-</span> <span class="fu">glm</span>(y <span class="sc">~</span> Xm, <span class="at">family =</span> <span class="fu">poisson</span>(<span class="at">link =</span> <span class="st">&quot;log&quot;</span>))</span>
+<span id="cb11-160"><a href="sec103.html#cb11-160" tabindex="-1"></a>        SumRegm <span class="ot">&lt;-</span> <span class="fu">summary</span>(Regm)</span>
+<span id="cb11-161"><a href="sec103.html#cb11-161" tabindex="-1"></a>        Means[m, idXs] <span class="ot">&lt;-</span> SumRegm[[<span class="st">&quot;coefficients&quot;</span>]][<span class="sc">-</span><span class="dv">1</span>,<span class="dv">1</span>]</span>
+<span id="cb11-162"><a href="sec103.html#cb11-162" tabindex="-1"></a>        Vars[m, idXs] <span class="ot">&lt;-</span> SumRegm[[<span class="st">&quot;coefficients&quot;</span>]][<span class="sc">-</span><span class="dv">1</span>,<span class="dv">2</span>]<span class="sc">^</span><span class="dv">2</span> </span>
+<span id="cb11-163"><a href="sec103.html#cb11-163" tabindex="-1"></a>    }</span>
+<span id="cb11-164"><a href="sec103.html#cb11-164" tabindex="-1"></a>}</span>
+<span id="cb11-165"><a href="sec103.html#cb11-165" tabindex="-1"></a>BMAmeans <span class="ot">&lt;-</span> <span class="fu">colSums</span>(Means<span class="sc">*</span>PMP)</span>
+<span id="cb11-166"><a href="sec103.html#cb11-166" tabindex="-1"></a>BMAsd <span class="ot">&lt;-</span> (<span class="fu">colSums</span>(PMP<span class="sc">*</span>Vars)  <span class="sc">+</span> <span class="fu">colSums</span>(PMP<span class="sc">*</span>(Means<span class="sc">-</span><span class="fu">matrix</span>(<span class="fu">rep</span>(BMAmeans, <span class="at">each =</span> nModels), nModels, K))<span class="sc">^</span><span class="dv">2</span>))<span class="sc">^</span><span class="fl">0.5</span> </span>
+<span id="cb11-167"><a href="sec103.html#cb11-167" tabindex="-1"></a><span class="fu">plot</span>(BMAmeans)</span>
+<span id="cb11-168"><a href="sec103.html#cb11-168" tabindex="-1"></a><span class="fu">plot</span>(BMAsd)</span>
+<span id="cb11-169"><a href="sec103.html#cb11-169" tabindex="-1"></a><span class="fu">plot</span>(BMAmeans<span class="sc">/</span>BMAsd)</span></code></pre></div>
+</div>
+<h3>References<a href="references.html#references" class="anchor-section" aria-label="Anchor link to header"></a></h3>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-McCullagh1989" class="csl-entry">
+McCullagh, P., and J. A. Nelder. 1989. <em>Generalized Linear Models</em>. London: Chapman; Hall.
+</div>
+<div id="ref-nelder1972generalized" class="csl-entry">
+Nelder, J. A., and R. W. M. Wedderburn. 1972. <span>“Generalized Linear Models.”</span> <em>Journal of the Royal Statistical Society: Series A (General)</em> 135 (3): 370–84.
+</div>
+<div id="ref-Raftery1995" class="csl-entry">
+Raftery, A. 1995. <span>“Bayesian Model Selection in Social Research.”</span> <em>Sociological Methodology</em> 25: 111–63.
+</div>
+</div>
+            </section>
+
+          </div>
+        </div>
+      </div>
+<a href="sec102.html" class="navigation navigation-prev " aria-label="Previous page"><i class="fa fa-angle-left"></i></a>
+<a href="sec10_4.html" class="navigation navigation-next " aria-label="Next page"><i class="fa fa-angle-right"></i></a>
+    </div>
+  </div>
+<script src="libs/gitbook-2.6.7/js/app.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/clipboard.min.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-search.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-sharing.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-fontsettings.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-bookdown.js"></script>
+<script src="libs/gitbook-2.6.7/js/jquery.highlight.js"></script>
+<script src="libs/gitbook-2.6.7/js/plugin-clipboard.js"></script>
+<script>
+gitbook.require(["gitbook"], function(gitbook) {
+gitbook.start({
+"sharing": {
+"github": true,
+"facebook": true,
+"twitter": true,
+"linkedin": false,
+"weibo": false,
+"instapaper": false,
+"vk": false,
+"whatsapp": false,
+"all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
+},
+"fontsettings": {
+"theme": "white",
+"family": "sans",
+"size": 2
+},
+"edit": {
+"link": "https://github.com/aramir21/IntroductionBayesianEconometricsBook/11-BMA.Rmd",
+"text": "Edit"
+},
+"history": {
+"link": null,
+"text": null
+},
+"view": {
+"link": null,
+"text": null
+},
+"download": null,
+"search": {
+"engine": "fuse",
+"options": null
+},
+"toc": {
+"collapse": "subsection"
+}
+});
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    var src = "true";
+    if (src === "" || src === "true") src = "https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/latest.js?config=TeX-MML-AM_CHTML";
+    if (location.protocol !== "file:")
+      if (/^https?:/.test(src))
+        src = src.replace(/^https?:/, '');
+    script.src = src;
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+</body>
+
+</html>

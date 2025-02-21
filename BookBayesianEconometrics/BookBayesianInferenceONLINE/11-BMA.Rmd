@@ -126,7 +126,7 @@ Since $\frac{K_j}{2}\log(2\pi)$ and $\log(\pi(\boldsymbol{\hat{\theta}}_j^{MLE} 
 
 The marginal likelihood thus asymptotically converges to a linear transformation of the Bayesian Information Criterion (BIC), significantly simplifying its calculation. In addition, the BIC is consistent, that is, the probability of uncovering the population statistical model converges to one as the sample size converges to infinity given a $\mathcal{M}$-closed view [@Bernardo1994], that is, one of the models in consideration is the population statistical model (data generating process) [@schwarz1978estimating; @burnham2004multimodel]. In case that there is an $\mathcal{M}$-completed view of nature, that is, there is a true data generating process, but the space of models that we are comparing does not include it, the BIC asymptotically selects the model that minimizes the Kullback-Leiber (KL) divergence to the true (population) model [@claeskens2008model]. 
 
-## The Gaussian linear model {#sec10_2}
+## The Gaussian linear model {#sec102}
 
 The Gaussian linear model specifies $\boldsymbol{y}=\alpha\boldsymbol{i}_N+\boldsymbol{X}_m\boldsymbol{\beta}_m+\boldsymbol{\mu}_m$ such that $\boldsymbol{\mu}_m\sim{N}(\boldsymbol{0},\sigma^2\boldsymbol{I}_n)$, and $\boldsymbol{X}_m$ does not have the column of ones. Following @koop2003bayesian, the conjugate prior for the location parameters is $\boldsymbol{\beta}_m|\sigma^2 \sim {N}(\boldsymbol{\beta}_{m0}, \sigma^2 \boldsymbol{B}_{m0})$, and the priors for $\sigma^2$ and $\alpha$ can be improper, as these parameters are common to all models $\mathcal{M}_m$. Particularly, $\pi(\sigma^2)\propto 1/\sigma^2$ (Jeffreys' prior for the linear Gaussian model, see @prior1991bayesian) and $\pi(\alpha)\propto 1$.
 
@@ -683,5 +683,591 @@ The following four Figures show a comparison between the Bayesian model averagin
 
 Dynamic Bayesian model averaging was extended to logit models by @mccormick2012dynamic. We ask in Exercise 12 to perform a simulation of this model, and perform BMA using the function *logistic.dma* from the *dma* package.
      
-## Generalized linear models {#sec10_3}
+## Generalized linear models {#sec103}
+
+Generalized linear models (GLMs) were introduced by @nelder1972generalized, extending the concept of linear regression to a more general setting. These models are characterized by: i) a dependent variable $y_i$ whose probability distribution function belongs to the exponential family (see Section \@ref(sec41), ii) a linear predictor $\eta = \boldsymbol{x}^{\top}\boldsymbol{\beta}$, and iii) a link function such that $\mathbb{E}[y|\boldsymbol{x}] = g^{-1}(\boldsymbol{x}^{\top}\boldsymbol{\beta})$, which implies that $g(\mathbb{E}[y|\boldsymbol{x}]) = \boldsymbol{x}^{\top}\boldsymbol{\beta}$. GLMs can be extended to the overdispersed exponential family [@McCullagh1989].
+
+As we know from Section \@ref(sec41), the Poisson distribution belongs to the exponential family, such that $p(y|\lambda) = \frac{\exp(-\lambda)\exp(y\log(\lambda))}{y!}$, or in the canonical form $p(y|\eta) = \frac{\exp(\eta y - \exp(\eta))}{y!}$, where $\eta = \log(\lambda)$, which means that $\boldsymbol{x}^{\top}\boldsymbol{\beta} = \log(\lambda)$. Consequently, $\mathbb{E}[y|\boldsymbol{x}] = \nabla(\exp(\eta)) = \exp(\eta) = \lambda = \exp(\boldsymbol{x}^{\top}\boldsymbol{\beta})$. Therefore, the link function in the Poisson case is the *log* function. In Exercise 6, we ask you to show that the link function in the Bernoulli case is the *logit* function. Other examples include the identity function in the case of the Gaussian distribution and the negative inverse in the case of the gamma distribution.
+
+We can use the GLM framework to perform Bayesian model averaging (BMA) using the BIC approximation, following @Raftery1995. Specifically, the BIC is given by $BIC = k_m \log(N) - 2 \log(p(\hat{\boldsymbol{\theta}}_m | \boldsymbol{y}))$, where $\hat{\boldsymbol{\theta}}_m$ is the maximum likelihood estimator. Thus, we simply need to calculate the likelihood function at the maximum likelihood estimator.
+
+**Example: Simulation exercises**
+
+Let's perform some simulation exercises to assess the performance of the BIC approximation using the Occam's window in GLMs. There are 27 regressors, where $x_{i1}$ and $x_{i2}$ are just the relevant regressors in all exercises, $i=1,2,\dots,1000$.
+
+1. **Logit**: $x_k\sim N(0, 1)$, $k =1,\dots,27$, and $p(y_i=1|\boldsymbol{x}_i)=\exp(0.5+0.8x_{i1}-1.2x_{i2})/(1+\exp(0.5+0.8x_{i1}-1.2x_{i2}))$.
+	
+2. **Gamma**: $x_k\sim N(0, 0.5^2)$, $k =1,\dots,27$, and $y_i\sim G(\alpha,\delta)$ where $\alpha=-(0.5+0.2x_{i1}0.1x_{i2})^{-1}$ and $\delta=1$.
+	
+3. **Poisson**: $x_k\sim N(0, 1)$, $k =1,\dots,27$, and $\mathbb{E}[y_i|\boldsymbol{x}_i]=\lambda_i=\exp(0.5+1.1x_{i1}+0.7x_{i2})$.   
+
+Our GUI uses the command *bic.glm* from the *BMA* package to perform BMA using the BIC approximation with the Occam's window in GLMs. The next Algorithm shows how to do this in our GUI, and the following code shows how to perform BMA in logit models using the simulation setting.
+
+::: {.algorithm}
+
+<div style="background-color: #f8f9fa; padding: 15px; border-left: 5px solid #343a40; box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1); border-radius: 5px;">
+
+**Algorithm: Bayesian Model Averaging in Generalized Linear Models using BIC**  
+
+1. Select *Bayesian Model Averaging* on the top panel  
+
+2. Select the *Generalized Linear Model* using the left radio button. Options:  
+   - *Binomial data (Logit)*  
+   - *Real positive data (Gamma)*  
+   - *Count data (Poisson)*  
+
+3. Upload the dataset, selecting first whether there is a header in the file and the type of separator in the *csv* file (comma, semicolon, or tab). Then, use the *Browse* button under the **Choose File** legend  
+
+4. Type the *OR* number of Occam's window in the box under **OR: Number between 5 and 50**. This is not necessary, as the default value is 50  
+
+5. Type the *OL* number of Occam's window in the box under **OL: Number between 0.0001 and 1**. This is not necessary, as the default value is 0.0025  
+
+6. Click the *Go!* button  
+
+7. Analyze results: After a few seconds or minutes, a table appears showing, for each regressor in the dataset:  
+   - The posterior inclusion probability (**p!=0**)  
+   - The BMA posterior mean (**EV**)  
+   - The BMA standard deviation (**SD**)  
+   - The PMP for the most relevant models (highest PMPs)  
+
+8. Download posterior results using the *Download results using BIC* button. Two files are provided:  
+   - The first file contains the best models by row according to the PMP (last column), indicating variable inclusion with 1 (0 indicates no inclusion)  
+   - The second file contains the PIP, the BMA expected value, and the standard deviation for each variable in the dataset  
+
+</div>
+
+:::
+
+The results show that the PIPs of $x_{i1}$ and $x_{i2}$ are equal 1 in all three settings, the data generating process gets the highest PMP, and the BMA posterior means are close to the population values in each simulation setting. The other variables get PIPs close to 0, except a few exceptions, and the BMA posterior means are also close to 0. This suggests that the BIC approximation does a good job finding the data generating process in generalized linear models.
+ 
+We can take advantage of the *glm* function in **R** to perform BMA by programming an MC3 algorithm. The following code illustrates how to do this in the Poisson simulation. First, we simulate the data; second, we define a function to compute the log marginal likelihood approximation using the results from the *glm* function. Then, we initialize the models to begin the MC3 algorithm. After that, we implement the MC3 algorithm, which involves small modifications of the code used for MC3 in Gaussian linear models. We can calculate the posterior model probabilities (PMPs), posterior inclusion probabilities (PIPs), BMA means, and standard deviations as we did previously.
+
+The simulation setting involves $2^{27}$ models, which corresponds to approximately 135 million models in the model space. We run our MC3 algorithm using the BIC approximation with 50,000 iterations. This takes considerably more time than the BIC approximation from the *BMA* package, but it seems to perform well in identifying the data-generating process, as the PMP of this model equals 1. The posterior inclusion probabilities (PIPs) for $x_{i1}$ and $x_{i2}$ are also 1, and the posterior means are 1.1 and 0.7, respectively, which are equal to the population values. The t-ratios are far greater than 2. However, running 50,000 iterations results in mass concentration in one model, in this case, the data-generating process. If we run 25,000 MC3 iterations, the highest PMP is 0.8, but it is not associated with the data-generating process. Nonetheless, the PIP is equal to 1 for $x_{i1}$ and $x_{i2}$, and other regressors also have high PIPs. The BMA means for $x_{i1}$ and $x_{i2}$ are equal to the population values, and the BMA means for the other regressors are equal to 0. The t-ratios of the regressors in the population statistical model are much greater than 2, whereas the t-ratios of the other regressors are equal to 0. This exercise demonstrates that 25,000 iterations were not sufficient to uncover the data-generating process. However, it also emphasizes an important point: we need to analyze all the relevant results from the BMA analysis, not just the PMPs and/or PIPs.
+
+In Exercise 10, we ask you to use this approach to perform a BMA algorithm in the logit regression, using the simulation setting for logit models from this section.
+
+```{r, eval=FALSE}
+### Logit ###
+rm(list = ls()); set.seed(010101)
+n<-1000; B<-c(0.5,0.8,-1.2)
+X<-matrix(cbind(rep(1,n),rnorm(n,0,1),rnorm(n,0,1)),n,length(B))
+p <- exp(X%*%B)/(1+exp(X%*%B)); y <- rbinom(n, 1, p)
+nXgar<-25; Xgar<-matrix(rnorm(nXgar*n),n,nXgar)
+df<-as.data.frame(cbind(y,X[,-1],Xgar))
+colnames(df) <- c("y", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17", "x18", "x19", "x20", "x21", "x22", "x23", "x24", "x25", "x26", "x27")
+BMAglmLogit <- BMA::bic.glm(y ~ x1+x2+x3+x4+x5+x6+x7+x8+x9+x10+x11+x12+x13+x14+x15+x16+x17+x18+x19+x20+x21+x22+x23+x24+x25+x26+x27, data = df, glm.family = binomial(link="logit"), strict = FALSE, OR = 50)
+summary(BMAglmLogit)
+### Gamma ###
+rm(list = ls()); set.seed(010101)
+n<-1000; B<- c(0.5, 0.2, 0.1)
+X<-matrix(cbind(rep(1,n),rnorm(n,0,0.5),rnorm(n,0,0.5)),n,length(B))
+y1 <- (X%*%B)^(-1)
+y <- rgamma(n,y1,scale=1)
+nXgar<-25; Xgar<-matrix(rnorm(nXgar*n),n,nXgar)
+df<-as.data.frame(cbind(y,X[,-1],Xgar))
+colnames(df) <- c("y", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17", "x18", "x19", "x20", "x21", "x22", "x23", "x24", "x25", "x26", "x27")
+BMAglmGamma <- BMA::bic.glm(y ~ x1+x2+x3+x4+x5+x6+x7+x8+x9+x10+x11+x12+x13+x14+x15+x16+x17+x18+x19+x20+x21+x22+x23+x24+x25+x26+x27, data = df, glm.family = Gamma(link="inverse"), strict = FALSE, OR = 50)
+summary(BMAglmGamma)
+### Poisson ###
+rm(list = ls()); set.seed(010101)
+n<-1000; B<-c(2,1.1,0.7)
+X<-matrix(cbind(rep(1,n),rnorm(n,0,1),rnorm(n,0,1)),n,length(B))
+y1<-exp(X%*%B); y<-rpois(n,y1)
+nXgar<-25; Xgar<-matrix(rnorm(nXgar*n),n,nXgar)
+df<-as.data.frame(cbind(y,X[,-1],Xgar))
+colnames(df) <- c("y", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17", "x18", "x19", "x20", "x21", "x22", "x23", "x24", "x25", "x26", "x27")
+BMAglmPoisson <- BMA::bic.glm(y ~ x1+x2+x3+x4+x5+x6+x7+x8+x9+x10+x11+x12+x13+x14+x15+x16+x17+x18+x19+x20+x21+x22+x23+x24+x25+x26+x27, data = df, glm.family = poisson(link="log"), strict = FALSE, OR = 50)
+summary(BMAglmPoisson)
+########################################
+rm(list = ls()); set.seed(010101)
+n<-1000; B<-c(2,1.1,0.7)
+X<-matrix(cbind(rep(1,n),rnorm(n,0,1),rnorm(n,0,1)),n,length(B))
+y1<-exp(X%*%B); y<-rpois(n,y1)
+nXgar<-25; Xgar<-matrix(rnorm(nXgar*n),n,nXgar)
+df<-as.data.frame(cbind(y,X[,-1],Xgar))
+colnames(df) <- c("y", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17", "x18", "x19", "x20", "x21", "x22", "x23", "x24", "x25", "x26", "x27")
+Xnew <- apply(df[,-1], 2, scale)
+BICfunt <- function(Model){
+	indr <- Model == 1; kr <- sum(indr)
+	if(kr > 0){
+		Xr <- as.matrix(Xnew[ , indr])
+		model <- glm(y ~ Xr, family = poisson(link = "log"))
+		model_bic <- BIC(model)
+		mllMod <- -model_bic/2
+	}else{
+		model <- glm(y ~ 1, family = poisson(link = "log"))
+		model_bic <- BIC(model); mllMod <- -model_bic/2
+	}
+	return(mllMod)
+}
+M <- 500; K <- dim(df)[2] - 1
+Models <- matrix(rbinom(K*M, 1, p = 0.5), ncol = K, nrow = M)
+mllnew <- sapply(1:M, function(s){BICfunt(matrix(Models[s,], 1, K))})
+oind <- order(mllnew, decreasing = TRUE)
+mllnew <- mllnew[oind]; Models <- Models[oind, ]
+# Hyperparameters MC3
+iter <- 25000
+pb <- winProgressBar(title = "progress bar", min = 0, max = iter, width = 300)
+s <- 1
+while(s <= iter){
+	ActModel <- Models[M,]
+	idK <- which(ActModel == 1)
+	Kact <- length(idK)
+	if(Kact < K & Kact > 1){
+		CardMol <- K
+		opt <- sample(1:3, 1)
+		if(opt == 1){ # Same
+			CandModel <- ActModel
+		}else{
+					if(opt == 2){ # Add
+			All <- 1:K
+			NewX <- sample(All[-idK], 1)
+			CandModel <- ActModel
+			CandModel[NewX] <- 1
+		}else{ # Subtract
+			LessX <- sample(idK, 1)
+			CandModel <- ActModel
+			CandModel[LessX] <- 0
+		}
+	}
+	}else{
+		CardMol <- K + 1
+		if(Kact == K){
+			opt <- sample(1:2, 1)
+			if(opt == 1){ # Same
+				CandModel <- ActModel
+			}else{ # Subtract
+				LessX <- sample(1:K, 1)
+				CandModel <- ActModel
+				CandModel[LessX] <- 0
+			}
+		}else{
+			if(K == 1){
+				opt <- sample(1:3, 1)
+				if(opt == 1){ # Same
+					CandModel <- ActModel
+				}else{
+					if(opt == 2){ # Add
+						All <- 1:K
+						NewX <- sample(All[-idK], 1)
+						CandModel <- ActModel
+						CandModel[NewX] <- 1
+					}else{ # Subtract
+						LessX <- sample(idK, 1)
+						CandModel <- ActModel
+						CandModel[LessX] <- 0
+					}
+				}
+			}else{ # Add
+				NewX <- sample(1:K, 1)
+				CandModel <- ActModel
+				CandModel[NewX] <- 1
+			}
+		}
+	}
+	LogMLact <- BICfunt(matrix(ActModel, 1, K))
+	LogMLcand <- BICfunt(matrix(CandModel, 1, K))
+	alpha <- min(1, exp(LogMLcand-LogMLact))
+	u <- runif(1)
+	if(u <= alpha){
+		mllnew[M] <- LogMLcand
+		Models[M, ] <- CandModel
+		oind <- order(mllnew, decreasing = TRUE)
+		mllnew <- mllnew[oind]
+		Models <- Models[oind, ]
+	}else{
+		mllnew <- mllnew
+		Models <- Models
+	}
+	s <- s + 1
+	setWinProgressBar(pb, s, title=paste( round(s/iter*100, 0),"% done"))
+}
+close(pb)
+ModelsUni <- unique(Models)
+mllnewUni <- sapply(1:dim(ModelsUni)[1], function(s){BICfunt(matrix(ModelsUni[s,], 1, K))})
+StMarLik <- exp(mllnewUni-mllnewUni[1])
+PMP <- StMarLik/sum(StMarLik) # PMP based on unique selected models
+plot(PMP)
+ModelsUni[1,]
+PIP <- NULL
+for(k in 1:K){
+	PIPk <- sum(PMP[which(ModelsUni[,k] == 1)])
+	PIP <- c(PIP, PIPk)
+}
+plot(PIP)
+Xnew <- df[,-1]
+nModels <- dim(ModelsUni)[1]
+Means <- matrix(0, nModels, K)
+Vars <- matrix(0, nModels, K)
+for(m in 1:nModels){
+	idXs <- which(ModelsUni[m,] == 1)
+	if(length(idXs) == 0){
+		Regm <- glm(y ~ 1, family = poisson(link = "log"))
+	}else{
+		Xm <- as.matrix(Xnew[, idXs])
+		Regm <- glm(y ~ Xm, family = poisson(link = "log"))
+		SumRegm <- summary(Regm)
+		Means[m, idXs] <- SumRegm[["coefficients"]][-1,1]
+		Vars[m, idXs] <- SumRegm[["coefficients"]][-1,2]^2 
+	}
+}
+BMAmeans <- colSums(Means*PMP)
+BMAsd <- (colSums(PMP*Vars)  + colSums(PMP*(Means-matrix(rep(BMAmeans, each = nModels), nModels, K))^2))^0.5 
+plot(BMAmeans)
+plot(BMAsd)
+plot(BMAmeans/BMAsd)
+```
+
+## Calculating the marginal likelihood {#sec10_4}
+
+The BIC is an asymptotic approximation of the marginal likelihood, and consequently, it is used to obtain the Bayes factors. However, this method has limitations in applications with moderate and small sample sizes [@gelfand1994bayesian]. Therefore, other methods are available to calculate the Bayes factors when there is no analytical solution for the marginal likelihood.
+
+Observe that calculating the Bayes factor with respect to a reference model ($\mathcal{M}_0$) helps to obtain the posterior model probabilities,
+
+\begin{align*}
+	\pi(\mathcal{M}_j |\boldsymbol{y})&=\frac{p(\boldsymbol{y} | \mathcal{M}_j)\pi(\mathcal{M}_j)}{\sum_{m=1}^{M}p(\boldsymbol{y} | \mathcal{M}_m)\pi(\mathcal{M}_m)}\\
+	&=\frac{p(\boldsymbol{y} | \mathcal{M}_j)\pi(\mathcal{M}_j)/p(\boldsymbol{y} | \mathcal{M}_0)}{\sum_{m=1}^{M}p(\boldsymbol{y} | \mathcal{M}_m)\pi(\mathcal{M}_m)/p(\boldsymbol{y} | \mathcal{M}_0)}\\
+	&=\frac{BF_{j0}\times\pi(\mathcal{M}_j)}{\sum_{m=1}^{M}BF_{l0}\times\pi(\mathcal{M}_l)}.
+\end{align*}
+
+Thus, $\pi(\mathcal{M}_j |\boldsymbol{y})=\frac{BF_{j0}}{\sum_{m=1}^{M}BF_{l0}}$ assuming equal prior model probabilities.
+
+In addition, it has been established in many settings that the Bayes factor is consistent. That is, the probability of identifying the true data generating process converges to 1 as the sample size increases to infinity. Alternatively, it asymptotically identifies the model that minimizes the Kullback-Leibler divergence with respect to the data generating process when this process is not part of the models under consideration [@chib2016bayes; @walker2004new; @walker2004modern].^[@Johnson2012 highlight the important distinction between pairwise consistency and model selection consistency. The latter requires the consistency of a sequence of pairwise nested comparisons.]
+
+### Savage-Dickey density ratio {#sec10_4_1}
+
+The Savage-Dickey density ratio is a way to calculate the Bayes factors when we compare nested models with particular priors [@dickey1971weighted;@verdinelli1995computing]. In particular, given the parameter space $\boldsymbol{\theta}=(\boldsymbol{\omega}^{\top}, \boldsymbol{\psi}^{\top})^{\top}\in \boldsymbol{\Theta}=\boldsymbol{\Omega}\times \boldsymbol{\Psi}$, where we wish to test the null hypothesis $H_0:\boldsymbol{\omega}=\boldsymbol{\omega}_0$ (model $\mathcal{M}_1$) versus $H_1:\boldsymbol{\omega}\neq \boldsymbol{\omega}_0$ (model $\mathcal{M}_2$), if $\pi(\boldsymbol{\psi}|\boldsymbol{\omega}_0,\mathcal{M}_2)=\pi(\boldsymbol{\psi}|\mathcal{M}_1)$,^[Note that a sufficient condition for this assumption is to assume the same prior for the parameters that are the same in each model. @verdinelli1995computing incorporate a correction factor when this assumption is not satisfied.] then the Bayes factor comparing $\mathcal{M}_1$ versus $\mathcal{M}_2$ is
+
+\begin{equation}
+	BF_{12}=\frac{\pi(\boldsymbol{\omega}=\boldsymbol{\omega}_0|\boldsymbol{y},\mathcal{M}_2)}{\pi(\boldsymbol{\omega}=\boldsymbol{\omega}_0|\mathcal{M}_2)},
+	(\#eq:SD) 
+\end{equation}
+where $\pi(\boldsymbol{\omega}=\boldsymbol{\omega}_0|\boldsymbol{y},\mathcal{M}_2)$ and $\pi(\boldsymbol{\omega}=\boldsymbol{\omega}_0|\mathcal{M}_2)$ are the posterior and prior densities of $\boldsymbol{\omega}$ under $\mathcal{M}_2$ evaluated at $\boldsymbol{\omega}_0$ (see @verdinelli1995computing). 
+
+Equation \@ref(eq:SD) is called the Savage-Dickey density ratio. A nice feature is that just requires estimation of model $\mathcal{M}_2$, and evaluation of the prior and posterior densities. This means no evaluation of the marginal likelihood [@koop2003bayesian].
+
+### Chib's methods {#sec10_4_2}
+
+Another popular method to calculate the marginal likelihood is given by @chib1995marginal and @chib2001marginal. The former is an algorithm to calculate the marginal likelihood from the posterior draws of the Gibbs sampling algorithm, and the latter calculates the marginal likelihood from the posterior draws of the Metropolis-Hastings algorithm.
+
+The point of departure in @chib1995marginal is the identity
+\begin{align*}
+	\pi(\boldsymbol{\theta}^*|\boldsymbol{y},\mathcal{M}_m)=\frac{p(\boldsymbol{y}|\boldsymbol{\theta}^*,\mathcal{M}_m)\times\pi(\boldsymbol{\theta}^*|\mathcal{M}_m)}{p(\boldsymbol{y}|\mathcal{M}_m)},
+\end{align*} 
+where $\boldsymbol{\theta}^*$ is a particular value of $\boldsymbol{\theta}$ of high probability, for instance, the mode. This implies that
+\begin{align*}
+	p(\boldsymbol{y}|\mathcal{M}_m)=\frac{p(\boldsymbol{y}|\boldsymbol{\theta}^*,\mathcal{M}_m)\times\pi(\boldsymbol{\theta}^*|\mathcal{M}_m)}{\pi(\boldsymbol{\theta}^*|\boldsymbol{y},\mathcal{M}_m)}.
+\end{align*} 
+We can easily calculate the numerator of this expression. However, the critical point in this expression is to calculate the denominator as we know $\pi(\boldsymbol{\theta}^*|\boldsymbol{y},\mathcal{M}_m)$ up to a normalizing constant. We can calculate this from the posterior draws. Assume that $\boldsymbol{\theta}=[\boldsymbol{\theta}^{\top}_1 \ \boldsymbol{\theta}^{\top}_2]^{\top}$, then $\pi(\boldsymbol{\theta}^*|\boldsymbol{y},\mathcal{M}_m)=\pi(\boldsymbol{\theta}^*_1|\boldsymbol{\theta}^*_2,\boldsymbol{y},\mathcal{M}_m)\times \pi(\boldsymbol{\theta}^*_2|\boldsymbol{y},\mathcal{M}_m)$. We have the first term because in the Gibbs sampling algorithm the posterior conditional distributions are available. The second is
+
+\begin{align*}
+	\pi(\boldsymbol{\theta}^*_2|\boldsymbol{y},\mathcal{M}_m)&=\int_{\boldsymbol{\Theta}_1}\pi(\boldsymbol{\theta}_1,\boldsymbol{\theta}^*_2|\boldsymbol{y},\mathcal{M}_m)d\boldsymbol{\theta}_1\\
+	&=\int_{\boldsymbol{\Theta}_1}\pi(\boldsymbol{\theta}^*_2|\boldsymbol{\theta}_1,\boldsymbol{y},\mathcal{M}_m)\pi(\boldsymbol{\theta}_1|\boldsymbol{y},\mathcal{M}_m)d\boldsymbol{\theta}_1\\
+	&\approx \frac{1}{S}\sum_{s=1}^S \pi(\boldsymbol{\theta}^*_2|\boldsymbol{\theta}^{(s)}_1,\boldsymbol{y},\mathcal{M}_m),
+\end{align*} 
+
+where $\boldsymbol{\theta}^{(s)}_1$ are the posterior draws of $\boldsymbol{\theta}_1$ from the Gibbs sampling algorithm. 
+
+The generalization to more blocks can be seen in @chib1995marginal and @greenberg2012introduction. In addition, the extension to the Metropolis-Hastings algorithm can be seen in @chib2001marginal, and @greenberg2012introduction.
+
+### Gelfand-Dey method {#sec10_4_3}
+We can use the Gelfand-Dey method [@gelfand1994bayesian] when we want to calculate the Bayes factor to compare non-nested models, models where the Savage-Dickey density ratio is hard to calculate, or the Chib's methods are difficult to implement. The Gelfand-Dey method is very general, and can be used in virtually any model [@koop2003bayesian].
+
+Given a probability density function $q(\boldsymbol{\theta})$, whose support is in $\boldsymbol{\Theta}$, then
+\begin{align*}
+	\mathbb{E}\left[\frac{q(\boldsymbol{\theta})}{\pi(\boldsymbol{\theta}|\mathcal{M}_m)p(\boldsymbol{y}|\boldsymbol{\theta}_m,\mathcal{M}_m)}\biggr\rvert \boldsymbol{y},\mathcal{M}_m\right]&=\frac{1}{p(\boldsymbol{y}|\mathcal{M}_m)},
+\end{align*} 
+
+where the expected value is with respect to the posterior distribution given the model $\mathcal{M}_m$ (see Exercise 12).
+
+The critical point is to select a good $q(\boldsymbol{\theta})$. @geweke1999using recommends to use $q(\boldsymbol{\theta})$ equal to a truncated multivariate normal density function with mean and variance equal to the posterior mean ($\hat{\boldsymbol{\theta}}$) and variance ($\hat{\boldsymbol{\Sigma}}$) of $\boldsymbol{\theta}$. The truncation region is $\hat{\boldsymbol{\Theta}}=\left\{\boldsymbol{\theta}:(\boldsymbol{\theta}-\hat{\boldsymbol{\theta}})^{\top}\hat{\boldsymbol{\Sigma}}^{-1}(\boldsymbol{\theta}-\hat{\boldsymbol{\theta}})\leq \chi_{1-\alpha}^2(K)\right\}$, where $\chi_{1-\alpha}^2(K)$ is the $(1-\alpha)$ percentile of the Chi-squared distribution with $K$ degrees of freedom, $K$ is the dimension of $\boldsymbol{\theta}$. We can pick small values of $\alpha$, for instance, $\alpha=0.01$.
+
+Observe that 
+\begin{align*}
+	\mathbb{E}\left[\frac{q(\boldsymbol{\theta})}{\pi(\boldsymbol{\theta}|\mathcal{M}_m)p(\boldsymbol{y}|\boldsymbol{\theta}_m,\mathcal{M}_m)}\biggr\rvert \boldsymbol{y},\mathcal{M}_m\right]&\approx \frac{1}{S}\sum_{s=1}^S \left[\frac{q(\boldsymbol{\theta}^{(s)})}{\pi(\boldsymbol{\theta}^{(s)}|\mathcal{M}_m)p(\boldsymbol{y}|\boldsymbol{\theta}^{(s)}_m,\mathcal{M}_m)}\right],
+\end{align*}
+where $\boldsymbol{\theta}^{(s)}_m$ are draws from the posterior distribution.
+
+Observe that we can calculate the marginal likelihoods of the models in Chapters \@ref(Chap6), \@ref(Chap7), \@ref(Chap8) and \@ref(Chap9) using the Chib's methods and the Gelfand-Dickey method.
+
+**Example: Simulation exercise**
+
+Let's check the performance of the Savage-Dickey density ratio, Chib's method and the Gelfand-Dey method to calculate the Bayes factor in a setting where we can obtain the analytical solution for the marginal likelihood. In particular, we will consider the Gaussian linear model with a conjugate prior (see Section \@ref(sec43)).
+
+Assume that the data generating process is given by  
+\[
+y_{i} = 0.7 + 0.3x_{i1} + 0.7x_{i2} - 0.2x_{i3} + 0.2x_{i4} + \mu_i,
+\]
+where \(x_{i1} \sim B(0.3)\), \(x_{ik} \sim N(0,1)\), for \(k = 2, \dots, 4\), and \(\mu_i \sim N(0, 1)\), for \(i = 1, 2, \dots, 500\). Let us set \(H_0: \beta_5 = 0\) (model \(\mathcal{M}_1\)) versus \(H_1: \beta_5 \neq 0\) (model \(\mathcal{M}_2\)).
+
+We assume that \(\boldsymbol{\beta}_{m0} = \boldsymbol{0}_{m0}\), \(\boldsymbol{B}_{m0} = 0.5 \boldsymbol{I}_{m}\), \(\alpha_0 = \delta_0 = 4\). The dimensions of \(\boldsymbol{0}_{m0}\) and \(\boldsymbol{I}_m\) are 4 for model \(\mathcal{M}_1\) and 5 for model \(\mathcal{M}_2\). In addition, we assume equal prior probabilities for both models.
+
+We know from Section \@ref(sec43) that the marginal likelihood is
+\begin{align*}
+	p(\bf{y}|\mathcal{M}_m)&=\frac{\delta_{m0}^{\alpha_{m0}/2}}{\delta_{mn}^{\alpha_{mn}/2}}\frac{|{\bf{B}}_{mn}|^{1/2}}{|{\bf{B}}_{m0}|^{1/2}}\frac{\Gamma(\alpha_{mn}/2)}{\Gamma(\alpha_{m0}/2)},
+\end{align*}
+where  ${{\boldsymbol{B}}}_{mn} = ({\boldsymbol{B}}_{m0}^{-1} + {\boldsymbol{X}}_m^{\top}{\boldsymbol{X}}_m)^{-1}$, $\boldsymbol{\beta}_{mn} = {{\bf{B}}}_{mn}({\boldsymbol{B}}_{m0}^{-1}\boldsymbol{\beta}_{m0} + {\boldsymbol{X}}_m^{\top}{\boldsymbol{X}}_m\hat{\boldsymbol{\beta}}_m)$, $\alpha_{mn}=\alpha_{m0}+N$, and $\delta_{mn}=\delta_{m0}+({\boldsymbol{y}}-{\boldsymbol{X}}_m\hat{\boldsymbol{\beta}}_m)^{\top}({\boldsymbol{y}}-{\boldsymbol{X}}_m\hat{\boldsymbol{\beta}}_m)+(\hat{\boldsymbol{\beta}}_m-\boldsymbol{\beta}_{m0})^{\top}(({\boldsymbol{X}_m}^{\top}{\boldsymbol{X}_m})^{-1}+{\boldsymbol{B}}_{m0})^{-1}(\hat{\boldsymbol{\beta}}_m-\boldsymbol{\beta}_{m0})$, $m=1,2$ are the indices of the models.
+
+The log marginal likelihoods for models $\mathcal{M}_1$ and $\mathcal{M}_2$ are -751.72 and -740.79, respectively. This implies a $2\times\log(BF_{21})=21.85$ which means positive evidence against model $\mathcal{M}_1$.
+
+We have different ways to calculate the Bayes factor using the Savage-Dickey density ratio in this example because we know that the marginal prior and marginal posterior distributions of $\beta_5$ have analytical solutions. In addition, we can use the posterior draws of $\sigma^2$ to evaluate the conditional prior and conditional posterior distributions at $\beta_5=0$. We show in the following code the latter approach, as it is more general than using analytical solutions, which are not always available.
+
+We know that the conditional posterior distribution of $\beta_5$ is $N(\beta_{5n}, \sigma \boldsymbol{B}_{55n})$, where $\beta_{5n}$ is the 5th element of $\boldsymbol{\beta}_n$, and $\boldsymbol{B}_{55n}$ is the element 5,5 of $\boldsymbol{B}_n$. Then,
+\begin{align*}
+	\pi(\beta_5=0|\boldsymbol{y}, \mathcal{M}_2) &= \int_{\mathcal{R}^+} \pi(\beta_5=0|\boldsymbol{y}, \sigma^2) \pi(\sigma^2|\boldsymbol{y}) \, d\sigma^2 \\
+	&\approx \frac{1}{S} \sum_{s=1}^S \pi(\beta_5=0|\boldsymbol{y}, \sigma^{2(s)}),
+\end{align*}
+
+where $\sigma^{2(s)}$ are draws from the posterior distribution of $\sigma^2$.
+
+We can follow the same logic to obtain an approximation to $\pi(\beta_5=0|\mathcal{M}_2)$ by sampling draws from the prior distribution of $\sigma^2$.
+
+We obtain $2 \times \log(BF_{21}) = 21.85$ using the Savage-Dickey density ratio, which is the same value as the analytic solution using the marginal likelihoods.
+  
+
+We calculate the log marginal likelihood using the Chib's method taking into account that 
+\begin{align*}
+	\log(p(\boldsymbol{y}|\mathcal{M}_m))&=\log(p(\boldsymbol{y}|\boldsymbol{\theta}^*,\mathcal{M}_m))+\log(\pi(\boldsymbol{\theta}^*|\mathcal{M}_m))-\log(\pi(\boldsymbol{\theta}^*|\boldsymbol{y},\mathcal{M}_m)),\\
+\end{align*}
+where $p(\boldsymbol{y}|\boldsymbol{\theta}^*,\mathcal{M}_m)$ is the value of a normal density with mean $\boldsymbol{X}_m\boldsymbol{\beta}_{m}^*$ and variance $\sigma^{2*}_m\boldsymbol{I}_N$ evaluated at $\boldsymbol{y}$. In addition, $\log(\pi(\boldsymbol{\theta}^*|\mathcal{M}_m))=\log(\pi(\boldsymbol{\beta}_m^*|\sigma^{2*}_m))+\log(\pi(\sigma^{2*}_m))$, where the first term is the density of a normal with mean $\boldsymbol{\beta}_{m0}$ and variance matrix $\sigma^{2*}\boldsymbol{B}_{m0}$ evaluated at $\boldsymbol{\beta}_m^*$, and the second term is the density of an inverse-gamma with parameters $\alpha_{m0}/2$ and $\delta_{m0}/2$ evaluated at $\sigma^{2*}_m$. Finally, the third term in the right hand of the previous expression is $\log(\pi(\boldsymbol{\theta}^*|\boldsymbol{y},\mathcal{M}_m))=\log(\pi(\boldsymbol{\beta}_m^*|\sigma^{2*}_m,\boldsymbol{y}))+\log(\pi(\sigma^{2*}_m|\boldsymbol{y}))$, where the first term is the density of a normal with mean $\boldsymbol{\beta}_{mn}$ and variance matrix $\sigma^{2*}_m\boldsymbol{B}_{mn}$ evaluated at $\boldsymbol{\beta}_m^*$, and the second term is the density of an inverse-gamma with parameters $\alpha_{mn}/2$ and $\delta_{mn}/2$ evaluated at $\sigma^{2*}_m$. We use the modes of the posterior draws of $\boldsymbol{\beta}_m$ and $\sigma^2_m$ as reference values. 
+
+We get the same value, up to two decimals, for the log marginal likelihood of the restricted and unrestricted models using the Chib's method and the analytical expression. Thus, $2\times\log(BF_{21})=21.85$, that is, positive evidence against model $\mathcal{M}_1$.
+
+We calculate the log marginal likelihood using the Gelfand-Dey method taking into account that
+\begin{align*}
+	\log\left[\frac{q(\boldsymbol{\theta}^{(s)})}{\pi(\boldsymbol{\theta}^{(s)}|\mathcal{M}_m)p(\boldsymbol{y}|\boldsymbol{\theta}^{(s)}_m,\mathcal{M}_m)}\right]&=\log(q(\boldsymbol{\theta}^{(s)}))-\log(\pi(\boldsymbol{\theta}^{(s)}|\mathcal{M}_m))-\log(p(\boldsymbol{y}|\boldsymbol{\theta}^{(s)}_m,\mathcal{M}_m)),
+\end{align*}
+where $q(\boldsymbol{\theta}^{(s)})$ is the truncated multivariate normal density of Subsection \@ref(sec10_4_3) evaluated at $\boldsymbol{\theta}^{(s)}=[\boldsymbol{\beta}^{(s)\top} \ \sigma^{2(s)}]^{\top}$, which is the $s$-th posterior draw of the Gibbs sampling algorithm, such that $\boldsymbol{\theta}^{(s)}$ satisfies the truncation restriction. $\log(\pi(\boldsymbol{\theta}^{(s)}|\mathcal{M}_m))=\log(\pi(\boldsymbol{\beta}_m^{(s)}|\sigma^{2(s)}_m))+\log(\pi(\sigma^{2(s)}_m))$, where the first term is the density of a normal with mean $\boldsymbol{\beta}_{m0}$ and variance matrix $\sigma^{2(s)}\boldsymbol{B}_{m0}$ evaluated at $\boldsymbol{\beta}_m^{(s)}$, and the second term is the density of an inverse-gamma with parameters $\alpha_{m0}/2$ and $\delta_{m0}/2$ evaluated at $\sigma^{2(s)}_m$. The third term $p(\boldsymbol{y}|\boldsymbol{\theta}^{(s)},\mathcal{M}_m)$ is the value of a normal density with mean $\boldsymbol{X}_m\boldsymbol{\beta}_{m}^{(s)}$ and variance $\sigma^{2(s)}_m\boldsymbol{I}_N$ evaluated at $\boldsymbol{y}$.
+
+The log marginal likelihoods of the restricted and unrestricted models using the Gelfand-Dey method are -751.79 and -740.89, respectively. This implies $2\times \log(BF_{21})=21.81$, which is positive evidence in favor of the unrestricted model.
+
+We see in this example that these methods give very good approximations to the true marginal likelihoods. However, the Savage-Dickey density ratio and Chib's method performed slightly better than the Gelfand-Dey method. In addition, the computational demand of the Gelfand-Dey method is by far the largest. This is because the Gelfand-Dey method requires many evaluations based on the posterior draws. However, we should keep in mind that the Gelfand-Dey method is more general.
+
+The following code shows how to do all these calculations.
+
+```{r, eval=FALSE}
+rm(list = ls()); set.seed(010101)
+N <- 500; K <- 5; K2 <- 3 
+B <- c(0.7, 0.3, 0.7, -0.2, 0.2) 
+X1 <- rbinom(N, 1, 0.3)
+X2 <- matrix(rnorm(K2*N), N, K2)
+X <- cbind(1, X1, X2)
+Y <- X%*%B + rnorm(N, 0, sd = 1)
+# Hyperparameters
+d0 <- 4; a0 <- 4
+b0 <- rep(0, K); cOpt <- 0.5
+an <- N + a0; B0 <- cOpt*diag(K)
+Bn <- solve(solve(B0)+t(X)%*%X); bhat <- solve(t(X)%*%X)%*%t(X)%*%Y
+bn <- Bn%*%(solve(B0)%*%b0+t(X)%*%X%*%bhat)
+dn <- as.numeric(d0 + t(Y-X%*%bhat)%*%(Y-X%*%bhat)+t(bhat - b0)%*%solve(solve(t(X)%*%X)+B0)%*%(bhat - b0))
+Hn <- as.matrix(Matrix::forceSymmetric(dn*Bn/an))
+S <- 10000
+LogMarLikLM <- function(X, c0){
+	K <- dim(X)[2]
+	N <- dim(X)[1]	
+	# Hyperparameters
+	B0 <- c0*diag(K)
+	b0 <- rep(0, K)
+	# Posterior parameters
+	bhat <- solve(t(X)%*%X)%*%t(X)%*%Y
+	# Force this matrix to be symmetric
+	Bn <- as.matrix(Matrix::forceSymmetric(solve(solve(B0) + t(X)%*%X))) 
+	bn <- Bn%*%(solve(B0)%*%b0 + t(X)%*%X%*%bhat)
+	dn <- as.numeric(d0 + t(Y)%*%Y+t(b0)%*%solve(B0)%*%b0-t(bn)%*%solve(Bn)%*%bn)
+	an <- a0 + N
+	# Log marginal likelihood
+	logpy <- (N/2)*log(1/pi)+(a0/2)*log(d0)-(an/2)*log(dn) + 0.5*log(det(Bn)/det(B0)) + lgamma(an/2)-lgamma(a0/2)
+	return(-logpy)
+}
+LogMarM2 <- -LogMarLikLM(X = X, c0 = cOpt)
+LogMarM1 <- -LogMarLikLM(X = X[,1:4], c0 = cOpt)
+BF12 <- exp(LogMarM1-LogMarM2) 
+BF12; 1/BF12
+2*log(1/BF12)
+# Savage-Dickey density ratio
+# Posterior evaluation
+Brest <- 0
+sig2P <- invgamma::rinvgamma(S, shape = an/2, rate = dn/2)
+PostRestCom <- mean(sapply(sig2P, function(x){dnorm(Brest, mean = bn[5], sd = (x*Bn[5,5])^0.5, log = FALSE)})) 
+# Prior evaluation
+sig2 <- invgamma::rinvgamma(S, shape = a0/2, rate = d0/2)
+PriorRestCom <- mean(sapply(sig2, function(x){dnorm(Brest, mean = 0, sd = (x*cOpt)^0.5, log = FALSE)})) 
+# Bayes factor
+BF12SD <- PostRestCom/PriorRestCom
+2*log(1/BF12SD)
+# Chib's method
+sig2Post <- MCMCpack::rinvgamma(S,an/2,dn/2)
+BetasGibbs <- sapply(1:S, function(s){MASS::mvrnorm(n = 1, mu = bn, Sigma = sig2Post[s]*Bn)})
+# Mode function for continuous data
+mode_continuous <- function(x){
+	density_est <- density(x)       
+	mode_value <- density_est$x[which.max(density_est$y)]  
+	return(mode_value)
+}
+# Unrestricted model
+BetasMode <- apply(BetasGibbs, 1, mode_continuous)
+Sigma2Mode <- mode_continuous(sig2Post)
+VarModel <- Sigma2Mode*diag(N)
+MeanModel <- X%*%BetasMode
+LogLik <- mvtnorm::dmvnorm(c(Y), mean = MeanModel, sigma = VarModel, log = TRUE, checkSymmetry = TRUE)
+LogPrior <- mvtnorm::dmvnorm(BetasMode, mean = rep(0, K), sigma = Sigma2Mode*cOpt*diag(K), log = TRUE, checkSymmetry = TRUE)+log(MCMCpack::dinvgamma(Sigma2Mode, a0/2, d0/2))
+LogPost1 <- mvtnorm::dmvnorm(BetasMode, mean = bn, sigma = Sigma2Mode*Bn, log = TRUE, checkSymmetry = TRUE)
+LogPost2 <- log(MCMCpack::dinvgamma(Sigma2Mode, an/2, dn/2))
+LogMarLikChib <- LogLik + LogPrior -(LogPost1 + LogPost2)
+# Restricted model
+anRest <- N + a0; XRest <- X[,-5]
+KRest <- dim(XRest)[2]; B0Rest <- cOpt*diag(KRest) 
+BnRest <- solve(solve(B0Rest)+t(XRest)%*%XRest)
+bhatRest <- solve(t(XRest)%*%XRest)%*%t(XRest)%*%Y
+b0Rest <- rep(0, KRest)
+bnRest <- BnRest%*%(solve(B0Rest)%*%b0Rest+t(XRest)%*%XRest%*%bhatRest)
+dnRest <- as.numeric(d0 + t(Y-XRest%*%bhatRest)%*%(Y-XRest%*%bhatRest)+t(bhatRest - b0Rest)%*%solve(solve(t(XRest)%*%XRest)+B0Rest)%*%(bhatRest - b0Rest))
+sig2PostRest <- MCMCpack::rinvgamma(S,anRest/2,dnRest/2)
+BetasGibbsRest <- sapply(1:S, function(s){MASS::mvrnorm(n = 1, mu = bnRest, Sigma = sig2PostRest[s]*BnRest)})
+BetasModeRest <- apply(BetasGibbsRest, 1, mode_continuous)
+Sigma2ModeRest <- mode_continuous(sig2PostRest)
+VarModelRest <- Sigma2ModeRest*diag(N)
+MeanModelRest <- XRest%*%BetasModeRest
+LogLikRest <- mvtnorm::dmvnorm(c(Y), mean = MeanModelRest, sigma = VarModelRest, log = TRUE, checkSymmetry = TRUE)
+LogPriorRest <- mvtnorm::dmvnorm(BetasModeRest, mean = rep(0, KRest), sigma = Sigma2ModeRest*cOpt*diag(KRest), log = TRUE, checkSymmetry = TRUE)+log(MCMCpack::dinvgamma(Sigma2ModeRest, a0/2, d0/2))
+LogPost1Rest <- mvtnorm::dmvnorm(BetasModeRest, mean = bnRest, sigma = Sigma2ModeRest*BnRest, log = TRUE, checkSymmetry = TRUE)
+LogPost2Rest <- log(MCMCpack::dinvgamma(Sigma2ModeRest, anRest/2, dnRest/2))
+LogMarLikChibRest <- LogLikRest + LogPriorRest -(LogPost1Rest + LogPost2Rest)
+BFChibs <- exp(LogMarLikChibRest-LogMarLikChib)
+BFChibs; 1/BFChibs; 2*log(1/BFChibs)
+# Gelfand-Dey method
+GDmarglik <- function(ids, X, Betas, MeanThetas, VarThetas, sig2Post){
+	K <- dim(X)[2]; Thetas <- c(Betas[ids,], sig2Post[ids])
+	Lognom <- (1/(1-alpha))*mvtnorm::dmvnorm(Thetas, mean = MeanThetas, sigma = VarThetas, log = TRUE, checkSymmetry = TRUE)
+	Logden1 <- mvtnorm::dmvnorm(Betas[ids,], mean = rep(0, K), sigma = sig2Post[ids]*cOpt*diag(K), log = TRUE, checkSymmetry = TRUE) + log(MCMCpack::dinvgamma(sig2Post[ids], a0/2, d0/2))
+	VarModel <- sig2Post[ids]*diag(N)
+	MeanModel <- X%*%Betas[ids,]
+	Logden2 <- mvtnorm::dmvnorm(c(Y), mean = MeanModel, sigma = VarModel, log = TRUE, checkSymmetry = TRUE)
+	LogGDid <- Lognom - Logden1 - Logden2
+	return(LogGDid)
+}
+sig2Post <- MCMCpack::rinvgamma(S,an/2,dn/2)
+Betas <- LaplacesDemon::rmvt(S, bn, Hn, an)
+Thetas <- cbind(Betas, sig2Post)
+MeanThetas <- colMeans(Thetas); VarThetas <- var(Thetas)
+iVarThetas <- solve(VarThetas)
+ChiSQ <- sapply(1:S, function(s){(Thetas[s,]-MeanThetas)%*%iVarThetas%*%(Thetas[s,]-MeanThetas)})
+alpha <- 0.01; criticalval <- qchisq(1-alpha, K + 1)
+idGoodThetas <- which(ChiSQ <= criticalval)
+pb <- winProgressBar(title = "progress bar", min = 0, max = S, width = 300)
+InvMargLik2 <- NULL
+for(s in idGoodThetas){
+	LogInvs <- GDmarglik(ids = s, X = X, Betas = Betas, MeanThetas = MeanThetas, VarThetas = VarThetas, sig2Post = sig2Post)
+	InvMargLik2 <- c(InvMargLik2, LogInvs)
+	setWinProgressBar(pb, s, title=paste( round(s/S*100, 0),"% done"))
+}
+close(pb); mean(InvMargLik2)
+# Restricted model
+anRest <- N + a0; XRest <- X[,-5]
+KRest <- dim(XRest)[2]; B0Rest <- cOpt*diag(KRest) 
+BnRest <- solve(solve(B0Rest)+t(XRest)%*%XRest)
+bhatRest <- solve(t(XRest)%*%XRest)%*%t(XRest)%*%Y
+b0Rest <- rep(0, KRest)
+bnRest <- BnRest%*%(solve(B0Rest)%*%b0Rest+t(XRest)%*%XRest%*%bhatRest)
+dnRest <- as.numeric(d0 + t(Y-XRest%*%bhatRest)%*%(Y-XRest%*%bhatRest)+t(bhatRest - b0Rest)%*%solve(solve(t(XRest)%*%XRest)+B0Rest)%*%(bhatRest - b0Rest))
+HnRest <- as.matrix(Matrix::forceSymmetric(dnRest*BnRest/anRest))
+sig2PostRest <- MCMCpack::rinvgamma(S,anRest/2,dnRest/2)
+BetasRest <- LaplacesDemon::rmvt(S, bnRest, HnRest, anRest)
+ThetasRest <- cbind(BetasRest, sig2PostRest)
+MeanThetasRest <- colMeans(ThetasRest)
+VarThetasRest <- var(ThetasRest)
+iVarThetasRest <- solve(VarThetasRest)
+ChiSQRest <- sapply(1:S, function(s){(ThetasRest[s,]-MeanThetasRest)%*%iVarThetasRest%*%(ThetasRest[s,]-MeanThetasRest)})
+idGoodThetasRest <- which(ChiSQRest <= criticalval)
+pb <- winProgressBar(title = "progress bar", min = 0, max = S, width = 300)
+InvMargLik1 <- NULL
+for(s in idGoodThetasRest){
+	LogInvs <- GDmarglik(ids = s, X = XRest, Betas = BetasRest, MeanThetas = MeanThetasRest, VarThetas = VarThetasRest, sig2Post = sig2PostRest)
+	InvMargLik1 <- c(InvMargLik1, LogInvs)
+	setWinProgressBar(pb, s, title=paste( round(s/S*100, 0),"% done"))
+}
+close(pb); summary(coda::mcmc(InvMargLik1))
+mean(InvMargLik1)
+BFFD <- exp(mean(InvMargLik2)-mean(InvMargLik1))
+BFFD; mean(1/BFFD); 2*log(1/BFFD)
+```
+
+## Summary {#sec10_5}
+
+In this chapter, we introduced Bayesian model averaging (BMA) in generalized linear models. For linear Gaussian models, we perform BMA using three approaches: the Bayesian Information Criterion (BIC) approximation with Occam's window, the Markov Chain Monte Carlo Model Composition (MC3) algorithm, and conditional Bayes factors, which account for endogeneity. Additionally, we show how to perform dynamic Bayesian model averaging in state-space models, where forgetting parameters are used to facilitate computation. For other generalized linear models, such as logit, gamma, and Poisson, we demonstrate how to use the BIC approximation to perform BMA. Finally, we present alternative methods for calculating the marginal likelihood: the Savage-Dickey density ratio, Chib's method, and the Gelfand-Dey method. These methods are particularly useful when the BIC approximation does not perform well due to small or moderate sample sizes.
+
+## Exercises {#sec10_6}
+
+1. The Gaussian linear model specifies $\mathbf{y} = \alpha\boldsymbol{i}_N + \boldsymbol{X}_m\boldsymbol{\beta}_m + \boldsymbol{\mu}_m$ such that $\boldsymbol{\mu}_m \sim N(\boldsymbol{0}, \sigma^2\boldsymbol{I}_n)$, and $\boldsymbol{X}_m$ does not have the column of ones. Assuming that $\pi(\sigma^2) \propto 1/{\sigma^2}$, $\pi(\alpha) \propto 1$, and $\boldsymbol{\beta}_m | \sigma^2 \sim N(\boldsymbol{0}_{k_m}, \sigma^2 (g_m\boldsymbol{X}_m^{\top}\boldsymbol{X}_m)^{-1})$:
+
+   - Show that the posterior conditional distribution of $\boldsymbol{\beta}_m$ is $N(\boldsymbol{\beta}_{mn}, \sigma^2\boldsymbol{B}_{mn})$, where $\boldsymbol{\beta}_{mn} = \boldsymbol{B}_{mn}\boldsymbol{X}_m^{\top}\mathbf{y}$ and $\boldsymbol{B}_{mn} = ((1+g_m)\boldsymbol{X}_m^{\top}\boldsymbol{X}_m)^{-1}$.
+   - Show that the marginal likelihood associated with model $\mathcal{M}_m$ is proportional to
+
+     $$
+     p(\mathbf{y} | \mathcal{M}_m) \propto \left(\frac{g_m}{1+g_m}\right)^{k_m/2} \left[(\mathbf{y} - \bar{y}\boldsymbol{i}_N)^{\top}(\mathbf{y} - \bar{y}\boldsymbol{i}_N) - \frac{1}{1+g_m}(\mathbf{y}^{\top}\boldsymbol{P}_{X_m}\mathbf{y})\right]^{-(N-1)/2},
+     $$
+     where all parameters are indexed to model $\mathcal{M}_m$, $\boldsymbol{P}_{X_m} = \boldsymbol{X}_m(\boldsymbol{X}_m^{\top}\boldsymbol{X}_m)^{-1}\boldsymbol{X}_m$ is the projection matrix on the space generated by the columns of $\boldsymbol{X}_m$, and $\bar{y}$ is the sample mean of $\mathbf{y}$.
+
+     **Hint:** Take into account that $\boldsymbol{i}_N^{\top}\boldsymbol{X}_m = \boldsymbol{0}_{k_m}$ due to all columns being centered with respect to their means.
+
+2. **Determinants of export diversification I**  
+   @Jetter2015 use BMA to study the determinants of export diversification. Use the dataset *10ExportDiversificationHHI.csv* to perform BMA using the BIC approximation and MC3 to check if these two approaches agree.
+
+3. **Simulation exercise of the Markov Chain Monte Carlo model composition**  
+   Program an algorithm to perform MC3 where the final $S$ models are unique. Use the simulation setting of Section \@ref(sec102) increasing the number of regressors to 40, which implies approximately $1.1 \times 10^{12}$ models.
+
+4. **Simulation exercise of IV BMA**  
+   Use the simulation setting with endogeneity in Section \@ref(sec102) to perform BMA based on the BIC approximation and MC3.
+
+5. **Determinants of export diversification II**  
+   Use the datasets *11ExportDiversificationHHI.csv* and *12ExportDiversificationHHIInstr.csv* to perform IV BMA assuming that the log of per capita gross domestic product is endogenous (*avglgdpcap*). See @Jetter2015 for details.
+
+6. Show that the link function in the case of the Bernoulli distribution is $\log(\theta / (1 - \theta))$.
+
+7. @ramirez2020dynamic, @ramirez2021specification perform variable selection using the file *13InternetMed.csv*. In this dataset, the dependent variable is an indicator of Internet adoption (*internet*) for 5,000 households in Medellín (Colombia) during 2006–2014. This dataset contains 18 potential determinants, implying 262,144 ($2^{18}$) potential models. Perform BMA using the logit link function with this dataset.
+
+8. @Serna2018 use *14ValueFootballPlayers.csv* to analyze the market value of soccer players in Europe's top leagues. There are 26 potential determinants of the market value of 335 soccer players. Use this dataset to perform BMA using the gamma distribution, setting default values for Occam's window.
+
+9. Use the dataset *15Fertile2.csv* from @Wooldridge2012 to perform BMA using the Poisson model with the log link. The dataset contains 1,781 women from Botswana in 1988. The dependent variable is the number of children ever born (*ceb*), modeled as a function of 19 potential determinants.
+
+10. Perform BMA in the logit model using MC3 and the BIC approximation using the simulation setting of Section \@ref(sec103).
+
+11. Use *19ExchangeRateCOPUSD.csv* to perform dynmaic BMA using four state-space models explaining annual variations in the COP to USD exchange rate:
+
+- Interest rate parity
+	
+	$\Delta e_t = \beta_{1t}^{IRP} + \beta_{2t}^{IRP} (i_{t-1}^{Col}-i_{t-1}^{USA})+\mu_{t}^{IRP}$ 
+
+- Purchasing power parity
+	
+	$\Delta e_t = \beta_{1t}^{PPP} + \beta_{2t}^{PPP} (\pi_{t-1}^{Col}-\pi_{t-1}^{USA})+\mu_{t}^{PPP}$
+
+- Taylor rule
+	
+	$\Delta e_t = \beta_{1t}^{Taylor} + \beta_{2t}^{Taylor} (\pi_{t-1}^{Col}-\pi_{t-1}^{USA})+\beta_{2t}^{Taylor} (g_{t-1}^{Col}-g_{t-1}^{USA})+\mu_{t}^{IRP}$
+
+- Money supply
+	
+	$\Delta e_t = \beta_{1t}^{Money} + \beta_{2t}^{Money} (g_{t-1}^{Col}-g_{t-1}^{USA})+\beta_{2t}^{Money} (m_{t-1}^{Col}-m_{t-1}^{USA})+\mu_{t}^{Money}$
+	
+where *varTRM* ($\Delta e_t$) represents the annual variation rate of the exchange rate from COP to USD, *TES\_COL10* ($i_{t}^{Col}$) and *TES\_USA10* ($i_{t}^{USA}$) denote the annual return rates of Colombian and U.S. public debts over 10 years, *inflation\_COL* ($\pi_{t}^{Col}$) and *inflation\_USA* ($\pi_{t}^{USA}$) are the annual inflation rates for Colombia and the U.S., *varISE\_COL* ($g_{t}^{Col}$) and *varISE\_USA* ($g_{t}^{USA}$) represent the annual variations of economic activity indices, and *varCOL\_M3* ($m_{t}^{Col}$) and *varUSA\_M3* ($m_{t}^{USA}$) are the annual variations of the money supply. In addition, $\mu_{t}^{\cdot}$ is the stochastic error. The dataset includes monthly variations from January 2006 to November 2023.
+
+	
+Perform Bayesian model averaging using these models, calculate posterior model probabilities, and plot the posterior mean and credible interval of $\beta_{2t}^{Money}$.
+
+12. Perform a simulation of the dynamic logistic model, where there are 7 ($2^3 - 1$, excluding the model without regressors) competing models originating from 3 regressors: $x_{tk} \sim N(0.5, 0.8^2)$, $k = 2, 3, 4$, and $\beta_1 = 0.5$, $\beta_{2t}$ is a sequence from 1 to 2 in steps given by $1/T$, and $\beta_{3t} = \begin{Bmatrix}
+	-1, & 1 < t \leq 0.5T \\
+	0, & 0.5T < t \leq T
+\end{Bmatrix}$, with $\beta_4 = 1.2$. Then, $\boldsymbol{x}_t^{\top} \boldsymbol{\beta}_t = \beta_1 + \beta_{2t} x_{2t} + \beta_{3t} x_{3t} + \beta_4 x_{4t}$, where 
+\[
+P[Y_t = 1 | \boldsymbol{x}_t, \boldsymbol{\beta}_t] = \frac{\exp(\boldsymbol{x}_t^{\top} \boldsymbol{\beta}_t)}{1 + \exp(\boldsymbol{x}_t^{\top} \boldsymbol{\beta}_t)}, \quad t = 1, 2, \dots, 1100.
+\]
+Use the function *logistic.dma* from the *dma* package to obtain the posterior model probabilities, first setting the forgetting parameter of the models to 0.99, and then to 0.95. Compare the results.
+
+13. Show that
+
+    $$
+    \mathbb{E}\left[\frac{q(\boldsymbol{\theta})}{\pi(\boldsymbol{\theta} | \mathcal{M}_m)p(\mathbf{y} | \boldsymbol{\theta}_m, \mathcal{M}_m)} \bigg\rvert \mathbf{y}, \mathcal{M}_m\right] = \frac{1}{p(\mathbf{y} | \mathcal{M}_m)},
+    $$
+    where the expected value is with respect to the posterior distribution given model $\mathcal{M}_m$, and $q(\boldsymbol{\theta})$ is the proposal distribution whose support is $\boldsymbol{\Theta}$.
 

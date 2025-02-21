@@ -749,7 +749,7 @@ Our GUI uses the command \textit{bic.glm} from the \textit{BMA} package to perfo
 		\State Type the \textit{OR} number of the Occam's window in the box under \textbf{OR: Number between 5 and 50}, this is not necessary as by default there is 50
 		\State Type the \textit{OL} number of the Occam's window in the box under \textbf{OL: Number between 0.0001 and 1}, this is not necessary as by default there is 0.0025
 		\State Click the \textit{Go!} button
-		\State Analyze results: After a few seconds or minutes, a table appears showing, for each regressor in the dataset, the PIP (posterior inclusion probability, \textbf{p!=0}), the BMA posterior mean (\textbf{EV}), the BMA standard deviation (\textbf{SD}), and the posterior mean for models with the highest PMP. At the bottom of the table, for the models with the largest PMP, the number of variables (\textbf{nVar}), the BIC, and the PMP (\textbf{post prob}) are displayed
+		\State Analyze results: After a few seconds or minutes, a table appears showing, for each regressor in the dataset, the PIP (posterior inclusion probability, \textbf{p!=0}), the BMA posterior mean (\textbf{EV}), and the BMA standard deviation (\textbf{SD}). User can also see the PMP for the most relevant models
 		\State Download posterior results using the \textit{Download results using BIC}. There are two files, the first has the best models by row according to the PMP (last column) indicating with a 1 inclusion of the variable (0 indicates no inclusion), and the second file has the PIP, the BMA expected value and standard deviation for each variable in the dataset
 	\end{algorithmic} 
 \end{algorithm}
@@ -767,37 +767,37 @@ In Exercise 10, we ask you to use this approach to perform a BMA algorithm in th
 	\textit{R code. Simulation exercise: BMA for generalized linear models}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-			### Logit ###
-			rm(list = ls()); set.seed(010101)
-			n<-1000; B<-c(0.5,0.8,-1.2)
-			X<-matrix(cbind(rep(1,n),rnorm(n,0,1),rnorm(n,0,1)),n,length(B))
-			p <- exp(X%*%B)/(1+exp(X%*%B)); y <- rbinom(n, 1, p)
-			nXgar<-25; Xgar<-matrix(rnorm(nXgar*n),n,nXgar)
-			df<-as.data.frame(cbind(y,X[,-1],Xgar))
-			colnames(df) <- c("y", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17", "x18", "x19", "x20", "x21", "x22", "x23", "x24", "x25", "x26", "x27")
-			BMAglmLogit <- BMA::bic.glm(y ~ x1+x2+x3+x4+x5+x6+x7+x8+x9+x10+x11+x12+x13+x14+x15+x16+x17+x18+x19+x20+x21+x22+x23+x24+x25+x26+x27, data = df, glm.family = binomial(link="logit"), strict = FALSE, OR = 50)
-			summary(BMAglmLogit)
-			### Gamma ###
-			rm(list = ls()); set.seed(010101)
-			n<-1000; B<- c(0.5, 0.2, 0.1)
-			X<-matrix(cbind(rep(1,n),rnorm(n,0,0.5),rnorm(n,0,0.5)),n,length(B))
-			y1 <- (X%*%B)^(-1)
-			y <- rgamma(n,y1,scale=1)
-			nXgar<-25; Xgar<-matrix(rnorm(nXgar*n),n,nXgar)
-			df<-as.data.frame(cbind(y,X[,-1],Xgar))
-			colnames(df) <- c("y", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17", "x18", "x19", "x20", "x21", "x22", "x23", "x24", "x25", "x26", "x27")
-			BMAglmGamma <- BMA::bic.glm(y ~ x1+x2+x3+x4+x5+x6+x7+x8+x9+x10+x11+x12+x13+x14+x15+x16+x17+x18+x19+x20+x21+x22+x23+x24+x25+x26+x27, data = df, glm.family = Gamma(link="inverse"), strict = FALSE, OR = 50)
-			summary(BMAglmGamma)
-			### Poisson ###
-			rm(list = ls()); set.seed(010101)
-			n<-1000; B<-c(2,1.1,0.7)
-			X<-matrix(cbind(rep(1,n),rnorm(n,0,1),rnorm(n,0,1)),n,length(B))
-			y1<-exp(X%*%B); y<-rpois(n,y1)
-			nXgar<-25; Xgar<-matrix(rnorm(nXgar*n),n,nXgar)
-			df<-as.data.frame(cbind(y,X[,-1],Xgar))
-			colnames(df) <- c("y", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17", "x18", "x19", "x20", "x21", "x22", "x23", "x24", "x25", "x26", "x27")
-			BMAglmPoisson <- BMA::bic.glm(y ~ x1+x2+x3+x4+x5+x6+x7+x8+x9+x10+x11+x12+x13+x14+x15+x16+x17+x18+x19+x20+x21+x22+x23+x24+x25+x26+x27, data = df, glm.family = poisson(link="log"), strict = FALSE, OR = 50)
-			summary(BMAglmPoisson)
+### Logit ###
+rm(list = ls()); set.seed(010101)
+n<-1000; B<-c(0.5,0.8,-1.2)
+X<-matrix(cbind(rep(1,n),rnorm(n,0,1),rnorm(n,0,1)),n,length(B))
+p <- exp(X%*%B)/(1+exp(X%*%B)); y <- rbinom(n, 1, p)
+nXgar<-25; Xgar<-matrix(rnorm(nXgar*n),n,nXgar)
+df<-as.data.frame(cbind(y,X[,-1],Xgar))
+colnames(df) <- c("y", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17", "x18", "x19", "x20", "x21", "x22", "x23", "x24", "x25", "x26", "x27")
+BMAglmLogit <- BMA::bic.glm(y ~ x1+x2+x3+x4+x5+x6+x7+x8+x9+x10+x11+x12+x13+x14+x15+x16+x17+x18+x19+x20+x21+x22+x23+x24+x25+x26+x27, data = df, glm.family = binomial(link="logit"), strict = FALSE, OR = 50)
+summary(BMAglmLogit)
+### Gamma ###
+rm(list = ls()); set.seed(010101)
+n<-1000; B<- c(0.5, 0.2, 0.1)
+X<-matrix(cbind(rep(1,n),rnorm(n,0,0.5),rnorm(n,0,0.5)),n,length(B))
+y1 <- (X%*%B)^(-1)
+y <- rgamma(n,y1,scale=1)
+nXgar<-25; Xgar<-matrix(rnorm(nXgar*n),n,nXgar)
+df<-as.data.frame(cbind(y,X[,-1],Xgar))
+colnames(df) <- c("y", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17", "x18", "x19", "x20", "x21", "x22", "x23", "x24", "x25", "x26", "x27")
+BMAglmGamma <- BMA::bic.glm(y ~ x1+x2+x3+x4+x5+x6+x7+x8+x9+x10+x11+x12+x13+x14+x15+x16+x17+x18+x19+x20+x21+x22+x23+x24+x25+x26+x27, data = df, glm.family = Gamma(link="inverse"), strict = FALSE, OR = 50)
+summary(BMAglmGamma)
+### Poisson ###
+rm(list = ls()); set.seed(010101)
+n<-1000; B<-c(2,1.1,0.7)
+X<-matrix(cbind(rep(1,n),rnorm(n,0,1),rnorm(n,0,1)),n,length(B))
+y1<-exp(X%*%B); y<-rpois(n,y1)
+nXgar<-25; Xgar<-matrix(rnorm(nXgar*n),n,nXgar)
+df<-as.data.frame(cbind(y,X[,-1],Xgar))
+colnames(df) <- c("y", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17", "x18", "x19", "x20", "x21", "x22", "x23", "x24", "x25", "x26", "x27")
+BMAglmPoisson <- BMA::bic.glm(y ~ x1+x2+x3+x4+x5+x6+x7+x8+x9+x10+x11+x12+x13+x14+x15+x16+x17+x18+x19+x20+x21+x22+x23+x24+x25+x26+x27, data = df, glm.family = poisson(link="log"), strict = FALSE, OR = 50)
+summary(BMAglmPoisson)
 		\end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
@@ -1329,7 +1329,7 @@ Given that the prior distribution of $\bm{\beta}|\sigma^2$ is $N(\bm{\beta}_0,\s
     
 
 \section{Summary}\label{sec10_5}
-In this chapter, we introduced Bayesian model averaging (BMA) in generalized linear models. For linear Gaussian models, we perform BMA using three approaches: the Bayesian Information Criterion (BIC) approximation with Occam's window, the Markov Chain Monte Carlo Model Composition (MC3) algorithm, and conditional Bayes factors, which account for endogeneity. For other generalized linear models, such as logit, gamma, and Poisson, we demonstrate how to use the BIC approximation to perform BMA. Additionally, we show how to perform dynamic Bayesian model averaging in state-space models, where forgetting parameters are used to facilitate computation. Finally, we present alternative methods for calculating the marginal likelihood: the Savage-Dickey density ratio, Chib's method, and the Gelfand-Dey method. These methods are particularly useful when the BIC approximation does not perform well due to small or moderate sample sizes.
+In this chapter, we introduced Bayesian model averaging (BMA) in generalized linear models. For linear Gaussian models, we perform BMA using three approaches: the Bayesian Information Criterion (BIC) approximation with Occam's window, the Markov Chain Monte Carlo Model Composition (MC3) algorithm, and conditional Bayes factors, which account for endogeneity. Additionally, we show how to perform dynamic Bayesian model averaging in state-space models, where forgetting parameters are used to facilitate computation. For other generalized linear models, such as logit, gamma, and Poisson, we demonstrate how to use the BIC approximation to perform BMA. Finally, we present alternative methods for calculating the marginal likelihood: the Savage-Dickey density ratio, Chib's method, and the Gelfand-Dey method. These methods are particularly useful when the BIC approximation does not perform well due to small or moderate sample sizes.
 
 \section{Exercises}\label{sec10_6}
 
@@ -1372,7 +1372,7 @@ Use the datasets \textit{11ExportDiversificationHHI.csv} and \textit{12ExportDiv
 
 \item Perform BMA in the logit model using MC3 and the BIC approximation using the simulation setting of Section \ref{sec10_3}.
 
-\item Use the dataset \textit{19ExchangeRateCOPUSD.csv} to estimate four different \textit{state-space models} to explain the annual variation of the COP to USD exchange rate: 
+\item Use the dataset \textit{19ExchangeRateCOPUSD.csv} to perform dynamic BMA using four different \textit{state-space models} to explain the annual variation of the COP to USD exchange rate: 
 \begin{itemize}
 	\item Interest rate parity
 	
@@ -1387,7 +1387,7 @@ Use the datasets \textit{11ExportDiversificationHHI.csv} and \textit{12ExportDiv
 	
 	$\Delta e_t = \beta_{1t}^{Money} + \beta_{2t}^{Money} (g_{t-1}^{Col}-g_{t-1}^{USA})+\beta_{2t}^{Money} (m_{t-1}^{Col}-m_{t-1}^{USA})+\mu_{t}^{Money}$   
 \end{itemize}
-where \textit{varTRM} ($\Delta e_t$) represents the annual variation rate of the exchange rate from COP to USD, \textit{TES\_COL10} ($i_{t}^{Col}$) and \textit{TES\_USA10} ($i_{t}^{USA}$) denote the annual return rates of Colombian and U.S. public debts over 10 years, \textit{inflation\_COL} ($\pi_{t}^{Col}$) and \textit{inflation\_USA} ($\pi_{t}^{USA}$) are the annual inflation rates for Colombia and the U.S., \textit{varISE\_COL} ($g_{t}^{Col}$) and \textit{varISE\_USA} ($g_{t}^{USA}$) represent the annual variations of economic activity indices, and \textit{varCOL\_M3} ($m_{t}^{Col}$) and \textit{varUSA\_M3} ($m_{t}^{USA}$) are the annual variations of the money supply. The dataset includes monthly variations from January 2006 to November 2023.
+where \textit{varTRM} ($\Delta e_t$) represents the annual variation rate of the exchange rate from COP to USD, \textit{TES\_COL10} ($i_{t}^{Col}$) and \textit{TES\_USA10} ($i_{t}^{USA}$) denote the annual return rates of Colombian and U.S. public debts over 10 years, \textit{inflation\_COL} ($\pi_{t}^{Col}$) and \textit{inflation\_USA} ($\pi_{t}^{USA}$) are the annual inflation rates for Colombia and the U.S., \textit{varISE\_COL} ($g_{t}^{Col}$) and \textit{varISE\_USA} ($g_{t}^{USA}$) represent the annual variations of economic activity indices, and \textit{varCOL\_M3} ($m_{t}^{Col}$) and \textit{varUSA\_M3} ($m_{t}^{USA}$) are the annual variations of the money supply. In addition, $\mu_{t}^{\cdot}$ is the stochastic error. The dataset includes monthly variations from January 2006 to November 2023.
 
 Perform Bayesian model averaging using these four models to explain the annual variation of the exchange rate, calculate the posterior model probabilities, and plot the posterior mean and credible interval of $\beta_{2t}^{Money}$.   
 
