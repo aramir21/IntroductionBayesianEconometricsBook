@@ -513,8 +513,8 @@ fig1 <- ggplot(data = data, aes(lambda, VaguePrior)) + geom_line() + 	xlab(TeX("
 fig2 <- ggplot(data = data, aes(lambda, EBPrior)) + geom_line() + xlab(TeX("$\\lambda$")) + ylab("Density") + ggtitle("Prior: Empirical Bayes Gamma")
 fig3 <- ggplot(data = data, aes(lambda, PosteriorV)) + geom_line() + xlab(TeX("$\\lambda$")) + ylab("Density") + ggtitle("Posterior: Vague Gamma")
 fig4 <- ggplot(data = data, aes(lambda, PosteriorEB)) + geom_line() + xlab(TeX("$\\lambda$")) + ylab("Density") + ggtitle("Posterior: Empirical Bayes Gamma")
-FIG <- ggarrange(fig1, fig2, fig3, fig4, ncol = 2, nrow = 2)
-annotate_figure(FIG, top = text_grob("Vague versus Empirical Bayes: Poisson-Gamma model", color = "black", face = "bold", size = 14))
+FIGcap1 <- ggarrange(fig1, fig2, fig3, fig4, ncol = 2, nrow = 2)
+annotate_figure(FIGcap1, top = text_grob("Vague versus Empirical Bayes: Poisson-Gamma model", color = "black", face = "bold", size = 14))
 dataNew <- data.frame(cbind(rep(lambda, 3), c(EBPrior, PosteriorEB, LiksScale), rep(1:3, each = 1000))) #Data frame
 colnames(dataNew) <- c("Lambda", "Density", "Factor")
 dataNew$Factor <- factor(dataNew$Factor, levels=c("1", "3", "2"), 
@@ -555,9 +555,10 @@ PredVague <- PredDen(y=y, y0=y0, a0=a0, b0=b0)
 PredEB <- PredDen(y=y, y0=y0, a0=a0EB, b0=b0EB)
 dataPred <- as.data.frame(cbind(y0, PredVague, PredEB))
 colnames(dataPred) <- c("y0", "PredictiveVague", "PredictiveEB")
-ggplot(data = dataPred) + geom_point(aes(y0, PredictiveVague, color = "red")) +  
+FIGchappred <- ggplot(data = dataPred) + geom_point(aes(y0, PredictiveVague, color = "red")) + 
 xlab(TeX("$y_0$")) + ylab("Density") + ggtitle("Predictive density: Vague and Empirical Bayes priors") + geom_point(aes(y0, PredictiveEB, color = "yellow")) +
 guides(color = guide_legend(title="Prior")) + scale_color_manual(labels = c("Vague", "Empirical Bayes"), values = c("red", "yellow")) + scale_x_continuous(breaks=seq(0,10,by=1))
+FIGchappred
 ```
 
 This figure displays the predictive probability mass of not having any visits to a physician next year, as well as having one, two, and so on, using Empirical Bayes and vague hyperparameters. The predictive probabilities of not having any visits are approximately 30\% and 33\% based on the Empirical Bayes and vague hyperparameters, respectively.
@@ -591,7 +592,8 @@ BMAVar
 BMAPred <- PostProMEM * PredEB+PostProbMV * PredVague
 dataPredBMA <- as.data.frame(cbind(y0, BMAPred))
 colnames(dataPredBMA) <- c("y0", "PredictiveBMA")
-ggplot(data = dataPredBMA) + geom_point(aes(y0, PredictiveBMA, color = "red")) +  xlab(TeX("$y_0$")) + ylab("Density") + ggtitle("Predictive density: BMA") + guides(color = guide_legend(title="BMA")) + scale_color_manual(labels = c("Probability"), values = c("red")) + scale_x_continuous(breaks=seq(0,10,by=1)) 
+FIGchappred1 <- ggplot(data = dataPredBMA) + geom_point(aes(y0, PredictiveBMA, color = "red")) +  xlab(TeX("$y_0$")) + ylab("Density") + ggtitle("Predictive density: BMA") + guides(color = guide_legend(title="BMA")) + scale_color_manual(labels = c("Probability"), values = c("red")) + scale_x_continuous(breaks=seq(0,10,by=1))
+FIGchappred1
 ```
 
 The first figure displays the predictive density using Bayesian model averaging based on the vague and Empirical Bayes hyperparameters. This figure closely resembles the predictive probability mass function based on the Empirical Bayes framework, as the posterior model probability for that setting is nearly one.

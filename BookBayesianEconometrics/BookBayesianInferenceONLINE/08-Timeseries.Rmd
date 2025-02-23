@@ -243,7 +243,7 @@ The following algorithm demonstrates how to perform inference using *dlmGibbsDIG
 
 Users can observe that we employ a straightforward strategy for setting the hyperparameters. First, we recursively estimate the model using ordinary least squares (OLS), progressively increasing the sample size, and save the location parameters. Next, we compute the covariance matrix of this sequence and use it to set the priors: the prior mean of the precision of the state vector is set equal to the inverse of the maximum element of the main diagonal of this covariance matrix (*a.theta*), and the prior variance is set equal to ten times this value (*b.theta*). For the observation equation, the prior mean of the precision is set equal to the inverse of the OLS variance estimate (*a.y*), and the prior variance is set equal to ten times this value (*b.y*). We perform some sensitivity analysis of the results regarding the hyperparameters, and it seems that the results are robust. However, we encourage giving more consideration to empirical Bayes methods for setting hyperparameters in *state-space models*.
 
-```{r, eval=FALSE}
+```{r}
 rm(list = ls()); set.seed(010101)
 T <- 200; sig2 <- 0.5^2
 x <- rnorm(T, mean = 1, sd = 1) 
@@ -333,7 +333,7 @@ The following code shows how to perform this application. We use the variance of
 
 The Figure shows the posterior results of the effect of inflation on the interest rate. This is a fan chart indicating deciles from 10\% to 90\%. The red shaded area shows the range around the median value, and the black line represents the mean value of the state associated with the annual change in inflation. We see that the annual changes in interest rates are weakly positively related to annual changes in inflation.
 
-```{r, eval=FALSE}
+```{r}
 rm(list = ls()); set.seed(010101)
 DataIntRate <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/16INTDEF.csv", sep = ",", header = TRUE, quote = "")
 attach(DataIntRate); Xt <- cbind(diff(inf), diff(def))
@@ -592,7 +592,7 @@ We use the function *stan_sarima* from the package *bayesforecast* to perform Ba
 
 We perform 10000 MCMC iterations plus a burn-in equal 5000 assuming $\sigma^2\sim IG(0.01/2, 0.01/2)$, $\mu\sim N(0, 1)$ and $\phi_k\sim N(0, 1)$, $k=1,2$. The trace plots look well, and all 95\% credible intervals encompass the population values.
 
-```{r, eval=FALSE}
+```{r}
 rm(list = ls()); set.seed(010101)
 T <- 200; mu <- 0.5 
 phi1 <- 0.5; phi2 <- 0.3; sig <- 0.5
@@ -674,7 +674,7 @@ Next, we provide the code for the Hamiltonian Monte Carlo, as outlined in Chapte
 
 We can verify that all 95\% credible intervals encompass the population values, and the posterior means are close to the population values. The acceptance rate averages above 65\%, so we should consider increasing the base step ($\epsilon_0$). Furthermore, we do not impose the stationarity conditions on $\phi_1$ and $\phi_2$. Exercise 6 asks to program an HMC that takes these requirements into account.
 
-```{r, eval=FALSE}
+```{r}
 # Simulation AR(2)
 rm(list = ls()); set.seed(010101); T <- 1000; K <- 4 
 mu <- 0.5; phi1 <- 0.5; phi2 <- 0.3; sig <- 0.5 
@@ -847,7 +847,7 @@ The following code shows how to simulate and perform Bayesian inference in the s
 
 The summary statistics of the posterior draws show that all 95\% credible intervals encompass the population parameters, and the posterior chains appear to have converged. The Figure displays the posterior results for the volatility ($h_t$). The posterior mean (blue) follows the "observed" series (black), and the 95\% credible intervals (light blue) typically encompass the "observed" series.
 
-```{r, eval=FALSE}
+```{r}
 rm(list = ls()); set.seed(010101)
 T <- 1250; K <- 2
 X <- matrix(rnorm(T*K), T, K)
@@ -874,8 +874,8 @@ x_means <- colMeans(ht)
 x_quantiles <- apply(ht, 2, function(x) quantile(x, probs = c(0.025, 0.975)))
 df <- tibble(t = seq(1, T), mean = x_means, lower = x_quantiles[1, ], upper = x_quantiles[2, ], x_true = h, observations = y)
 plot_filtering_estimates <- function(df) {
-	p <- ggplot(data = df, aes(x = t)) + geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1, fill = "lightblue") + geom_line(aes(y = x_true), colour = "black", alpha = 1, linewidth = 0.5) + geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) + 	ylab(TeX("$h_{t}$")) + xlab("Time")
-	print(p)
+	pchap8 <- ggplot(data = df, aes(x = t)) + geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1, fill = "lightblue") + geom_line(aes(y = x_true), colour = "black", alpha = 1, linewidth = 0.5) + geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) + 	ylab(TeX("$h_{t}$")) + xlab("Time")
+	print(pchap8)
 }
 plot_filtering_estimates(df)
 ```
@@ -887,7 +887,7 @@ Remember from Chapter \@ref(Chap4) that particle filters (sequential Monte Carlo
 
 The following code shows how to perform particle filtering in the vanilla stochastic volatility model assuming that the proposal distribution is the conditional prior distribution, that is, $q(h_t\mid h_{t-1},y_t)=\pi(h_t\mid h_{t-1})$, which is normal with mean $\mu+\phi(h_{t-1}-\mu)$ and variance $\sigma^2$. This choice implies that the incremental importance weights are equal to $p(y_t\mid h_t)$, which is $N(0,\exp(h_t))$. Therefore, the weights are proportional to the likelihood function. We perform multinomial resampling every time period in the code, and start the algorithm in the stationary distribution of $h_t$. Remember that there are other resampling approaches that are more efficient, for instance, residual resampling. We ask in Exercise 7 to modify this code to perform resampling when the effective sample size is lower than 50\% of the initial number of particles. In addition, we ask to program a sequential importance sampling, and check why is important to perform resampling in this simple example. 
 
-```{r, eval=FALSE}
+```{r}
 rm(list = ls()); set.seed(010101)
 T <- 1250; mu <- -10; phi <- 0.95; sigma <- 0.3
 h <- numeric(T); y <- numeric(T)
@@ -934,7 +934,7 @@ SDFilterDist <- (colSums(particles^2 * WeightsST) - FilterDist^2)^0.5
 FilterDistT <- colSums(particlesT * WeightsSTT)
 SDFilterDistT <- (colSums(particlesT^2 * WeightsSTT) - FilterDistT^2)^0.5
 MargLik <- colMeans(Weights)
-plot(MargLik, type = "l")
+# plot(MargLik, type = "l")
 library(dplyr)
 library(ggplot2)
 require(latex2exp)
@@ -950,7 +950,7 @@ lowerT = FilterDistT[keepFig] - 2*SDFilterDistT[keepFig],
 upperT = FilterDistT[keepFig] + 2*SDFilterDistT[keepFig],
 x_true = h[keepFig])
 plot_filtering_estimates <- function(df) {
-	p <- ggplot(data = df, aes(x = t)) +
+	pchap8l <- ggplot(data = df, aes(x = t)) +
 	geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1,
 	fill = "lightblue") +
 	geom_line(aes(y = x_true), colour = "black", alpha = 1,
@@ -958,7 +958,7 @@ plot_filtering_estimates <- function(df) {
 	geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) +
 	geom_line(aes(y = meanT), colour = "purple", linewidth = 0.5) +
 	ylab(TeX("$h_{t}$")) + xlab("Time")
-	print(p)
+	print(pchap8l)
 }
 plot_filtering_estimates(df)
 ```
@@ -1097,7 +1097,7 @@ Let's estimate a VAR model where $\boldsymbol{y}_t=[\Delta(ttr_t) \ \Delta(gs_t)
 
 The following code shows how to do this, take into account that we use the first 301 observations to estimate the model, and keep the last 4 observations to check the forecasting performance. The first and second figures show the impulse response functions of *gs* with respect to *gs*, the *forecast error impulse response* using vague independent priors, and the *orthogonalized impulse response* using the Minnesota prior, respectively. We see that the effect of the Minnesota prior is to decrease uncertainty. In addition, the forecasting exercise results indicate that these assumptions have same effects in this example. In particular, the third Figure shows that the mean forecasts using the vague prior (green line) and the Minnesota prior (red line) are indistinguishable from the true observations (black line). However, the Minnesota prior enhances forecast precision, as its 95\% predictive interval (blue shaded area) is narrower and fully contained within the 95\% predictive interval obtained using vague priors (light blue shaded area). This improvement is attributable to the shrinkage properties of the Minnesota prior.
 
-```{r, eval=FALSE}
+```{r}
 rm(list = ls()); set.seed(010101)
 DataUSfilcal <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/18USAfiscal.csv", sep = ",", header = TRUE, quote = "")
 attach(DataUSfilcal) # upload data
