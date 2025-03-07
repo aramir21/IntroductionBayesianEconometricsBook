@@ -86,19 +86,36 @@ A semi-parametric regression imposes a specific structure in part of the model a
 
 Thus, the distribution of the stochastic error is a finite Gaussian mixture. Note that the mean of the stochastic error is not equal to zero; consequently, the intercept in the regression should be removed, as these two parameters are not separately identifiable \cite{van2011bayesian}. Additionally, this approach allows for multiple modes and asymmetric distributions of the stochastic errors, providing greater flexibility.
 
+We can use a Gibbs sampling algorithm in this semi-parametric specification if we assume conjugate families. The difference from the previous setting is that we have the same slope parameters; thus, $\bm{\beta} \sim N(\bm{\beta}_{0},\bm{B}_{0})$. Additionally, we must specify the prior distribution for the means of the stochastic errors, given by $\mu_h \sim N(\mu_{h0},\sigma^2_{\mu 0})$. Then, the posterior distributions are:
+
+$$\bm{\beta}\sim N(\bm{\beta}_{n},\bm{B}_{n}),$$ where $\bm{B}_{n}=(\bm{B}_{0}^{-1}+\sum_{h=1}^H\sum_{\left\{i:  \psi_{ih}=1\right\}}\sigma_h^{-2}\bm{x}_i\bm{x}_i^{\top})^{-1}$ and $\bm{\beta}_{n}=\bm{B}_{n}(\bm{B}_{0}^{-1}\bm{\beta}_{0}+\sum_{h=1}^H\sum_{\left\{i:  \psi_{ih}=1\right\}}\sigma_h^{-2}\bm{x}_i(y_i-\mu_h))$.
+$$\sigma_h^2\sim IG(\alpha_{hn}/2,\delta_{hn}/2),$$
+
+where $\alpha_{hn}=\alpha_{h0}+N_h$, $\delta_{hn}=\delta_{h0}+\sum_{\left\{i:  \psi_{ih}=1\right\}}(y_i-\mu_h-\bm{x}_i^{\top}\bm{\beta}_h)^2$, and $N_h$ is the number of units in cluster $h$.
+
+$$\mu_h\sim N(\mu_{hn},\sigma_{hn}^2),$$
+
+where $\sigma_{hn}^2=\left(\frac{1}{\sigma_{h}^{2}}+\frac{N_h}{\sigma_{h}^2}\right)^{-1}$ and $\mu_{hn}=\sigma_{hn}^2\left(\frac{\mu_{h0}}{\sigma_{\mu0}^2}+\frac{\sum_{\left\{i:\psi_{ih}=1\right\}} (y_i-\bm{x}_i\bm{\beta})}{\sigma_h^2}\right)$.
+
+$$\bm{\lambda}\sim \text{Dir}(\bm{\alpha}_n),$$   
+where $\bm{\alpha}_n=[\alpha_{1n} \  \alpha_{2n} \ \dots \ \alpha_{Hn}]^{\top}$, and $\alpha_{hn}=\alpha_{h0}+N_h$.
+
+$$\bm{\psi}_{in}\sim \text{Categorical}(\bm{\lambda}_n),$$
+where $P(\psi_{ih}=1)=\frac{\lambda_{h}\phi(y_i-\bm{x}_i^{\top}\bm{\beta} \mid \mu_h,\sigma_h^2)}{\sum_{j=1}^H\lambda_{j}\phi(y_i-\bm{x}_i^{\top} \mid \mu_j,\sigma_j^2)}$.
+ 
 A potential limitation of finite mixture models is the need to specify the number of components in advance. This issue can be mitigated by setting $H$ large enough (e.g., 20 components), assigning $\alpha_h = 1/H$, and performing an initial run of the algorithm. If we are not interested in specific components of the clusters, this procedure is sufficient. Otherwise, the posterior distribution of $H$ can be obtained by tracking the number of nonempty clusters in each iteration. In a second run, $H$ can be fixed at the mode of this posterior distribution. Another approach is to avoid fixing the number of components altogether and instead use a Dirichlet process mixture (DPM).\\
 
 \textbf{Example: Simulation exercise}
 
-We simulate a simple regression mixture with two components such that $\psi_{i1}\sim \text{Ber}(0.5)$, consequently, $\psi_{i2}=1-\psi_{i1}$, and assume one regressor, $x_i\sim N(0,1)$, $i=1,2,\dots,500$. Then, 
+We simulate a simple regression mixture with two components such that $\psi_{i1}\sim \text{Ber}(0.5)$, consequently, $\psi_{i2}=1-\psi_{i1}$, and assume one regressor, $x_i\sim N(0,1)$, $i=1,2,\dots,1,000$. Then, 
 $$p(y_i \mid \bm{x}_i) = 
 0.5 \phi(y_i \mid 2+1.5x_i,1^2)+0.5 \phi(y_i \mid -1+0.5x_i,0.8^2).$$
 
-The following code shows how to perform inference in this model, assuming $N(0,5)$ and $N(0,2)$ priors for the intercepts and slopes, respectively. Additionally, we use a $Cauchy(0,2)$ prior truncated at 0 for the standard deviations, and a $Dirichlet(1,1)$ prior for the probabilities. We use the \textit{brms} package in \textbf{R}, which in turn uses \textit{Stan}, setting number of MCMC iterations 2,000, a burn-in equal to 1,000, and 4 chains. Remember that \textit{Stan} software uses Hamiltonian Monte Carlo. 
+The following code shows how to perform inference in this model, assuming $N(0,5)$ and $N(0,2)$ priors for the intercepts and slopes, respectively. Additionally, we use a $Cauchy(0,2)$ prior truncated at 0 for the standard deviations, and a $Dirichlet(1,1)$ prior for the probabilities. We use the \textit{brms} package in \textbf{R}, which in turn uses \textit{Stan}, setting number of MCMC iterations 2,000, a burn-in (warm-up) equal to 1,000, and 4 chains. Remember that \textit{Stan} software uses Hamiltonian Monte Carlo. 
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Simulation exercise: Gaussian mixture with 2 components}
+	\textit{R code. Simulation exercise: Gaussian mixture with 2 components using Hamiltonian Monte Carlo}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
 ####### Simulation exercise: Gaussian mixture: 2 components #############
@@ -108,7 +125,7 @@ library(brms)
 library(ggplot2)
 
 # Simulate data from a 2-component mixture model
-n <- 500
+n <- 1000
 x <- rnorm(n)
 z <- rbinom(n, 1, 0.5)  # Latent class indicator
 y <- ifelse(z == 0, rnorm(n, 2 + 1.5*x, 1), rnorm(n, -1 + 0.5*x, 0.8))
@@ -145,18 +162,18 @@ plot(fit) # Plots of posterior draws
 	\end{VF}
 \end{tcolorbox}
 
-The following code performs inference in this simulation from scratch using Gibbs sampling.
+The following code performs inference in this simulation from scratch using Gibbs sampling. We use non-informative priors, setting $\alpha_{h0}=\delta_{h0}=0.01$, $\bm{\beta}_{h0}=\bm{0}_2$, $\bm{B}_{h0}=\bm{I}_2$, and $\bm{\alpha}_0=[1/2 \ 1/2]^{\top}$. The number of MCMC iterations is 5,000, the burn-in is 1,000, and the thinning parameter is 2. In general, the Gibbs sampler appears to yield good posterior results.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Simulation exercise: Gaussian mixture with 2 components}
+	\textit{R code. Simulation exercise: Gaussian mixture with 2 components using Gibbs sampling}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
 ########### Perform inference from scratch ###############
 rm(list = ls()); set.seed(010101)
 library(brms); library(ggplot2)
 # Simulate data from a 2-component mixture model
-n <- 500
+n <- 1000
 x <- rnorm(n)
 z <- rbinom(n, 1, 0.5)  # Latent class indicator
 y <- ifelse(z == 0, rnorm(n, 2 + 1.5*x, 1), rnorm(n, -1 + 0.5*x, 0.8))
@@ -165,7 +182,7 @@ d0 <- 0.001; a0 <- 0.001
 b0 <- rep(0, 2); B0 <- diag(2); B0i <- solve(B0)
 a01 <- 1/2; a02 <- 1/2
 # MCMC parameters
-mcmc <- 2000; burnin <- 500
+mcmc <- 5000; burnin <- 1000
 tot <- mcmc + burnin; thin <- 2
 # Gibbs sampling functions
 PostSig2 <- function(Betah, Xh, yh){
@@ -203,7 +220,7 @@ X <- cbind(1, x); Psi <- rep(NA, n)
  
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Simulation exercise: Gaussian mixture with 2 components}
+	\textit{R code. Simulation exercise: Gaussian mixture with 2 components using Gibbs sampling}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
 for(s in 1:tot){
@@ -242,9 +259,31 @@ plot(PosteriorSigma22)
 	\end{VF}
 \end{tcolorbox}
 
+Let's perform another simulation exercise in which we conduct a semi-parametric analysis where the stochastic error follows a Student's t-distribution with 3 degrees of freedom. Specifically,  
+\begin{align*}
+	y_i &= 1 + 0.5x_{i1} - 1.2x_{i2} + \mu_i.
+\end{align*}
+The variables $x_{i1}$ and $x_{i2}$ are standard normally distributed.
+
+
+
 \subsection{Direchlet processes}\label{sec11_12}
 
 \section{Non-parametric generalized additive models}\label{sec11_2}
 %\section{Additive non-parametric structure}\label{sec11_1}
 %\subsection{Partial linear model}\label{sec11_21}
+
+\section{Summary}\label{sec11_3}
+
+\section{Exercises}\label{sec11_4}
+
+\begin{enumerate}
+	\item Simulate a semi-parametric regression where
+	\begin{align*}
+		y_i &= 0.5x_{i1} - 1.2x_{i2} + \mu_i\\
+		p(\mu_i) &= 
+		0.3 \phi(\mu_i \mid -0.5,0.5^2)+0.7 \phi(\mu_i \mid 1,0.8^2).		
+	\end{align*}
+Assume that $x_{i1}$ and $x_{i2}$ distribute standard normal, and the sample size is 500. Perform inference in this model assuming that you do not the number of components, and begin with $H=5$, get the posterior distribution of the number of component, and use non-informative priors setting $\alpha_{h0}=\delta_{h0}=0.01$, $\bm{\beta}_0=\bm{0}_2$, $\bm{B}_0=\bm{I}_2$, $\mu_{h0}=0$, $\sigma^2_{\mu 0}=10$ and $\bm{\alpha}_0=[1/H \ \dots \ 1/H]^{\top}$. 
+\end{enumerate}
 
