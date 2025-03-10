@@ -75,7 +75,9 @@ where $\bm{\alpha}_n=[\alpha_{1n} \  \alpha_{2n} \ \dots \ \alpha_{Hn}]^{\top}$,
 $$\bm{\psi}_{in}\sim \text{Categorical}(\bm{\lambda}_n),$$
 where $P(\psi_{ih}=1)=\frac{\lambda_{h}\phi(y_i \mid \bm{x}_i^{\top}\bm{\beta}_h,\sigma_h^2)}{\sum_{j=1}^H\lambda_{j}\phi(y_i \mid \bm{x}_i^{\top}\bm{\beta}_j,\sigma_j^2)}$.
 
-Mixture models have the label-switching identification problem, meaning they are nonidentifiable because the distribution remains unchanged if the group labels are permuted \cite{van2011bayesian}. This poses challenges when performing inference on specific mixture components, such as in the regression analysis presented here. However, it is not a concern when using mixtures to model stochastic errors, as in semi-parametric settings where stochastic errors are represented by mixtures. In the former case, post-processing strategies can mitigate the issue, such as \textit{random permutation of latent classes} (see \cite[p.~534]{gelman2021bayesian} and Algorithm 3.5 in \cite[p.~82]{fruhwirth2006finite}).  
+Mixture models have the label-switching identification problem, meaning they are nonidentifiable because the distribution remains unchanged if the group labels are permuted \cite{van2011bayesian}. For instance, a mixture model with two components can be characterized by $\left\{\lambda_1,\bm{\beta}_1,\sigma_1^2\right\}$ for the first cluster and $\left\{1-\lambda_1,\bm{\beta}_2,\sigma_2^2\right\}$ for the second. However, an alternative characterization is $\left\{1-\lambda_1,\bm{\beta}_2,\sigma_2^2\right\}$ for cluster 1 and $\left\{\lambda_1,\bm{\beta}_1,\sigma_1^2\right\}$ for cluster 2. This parametrization yields exactly the same likelihood as the first one, meaning any permutation of the cluster labels leaves the likelihood unchanged. Consequently, the posterior draws of each component-specific parameter target the same distribution.
+
+Label switching may pose challenges when performing inference on specific mixture components, such as in the regression analysis presented here. However, it is not an issue when inference on specific components is unnecessary, as in cases where mixtures are used to model stochastic errors in semi-parametric settings. In the former case, post-processing strategies can mitigate the issue, such as \textit{random permutation of latent classes} (see \cite[p.~534]{gelman2021bayesian} and Algorithm 3.5 in \cite[p.~82]{fruhwirth2006finite}). 
 
 A semi-parametric regression imposes a specific structure in part of the model and uses flexible assumptions in another part, for instance
 
@@ -103,7 +105,7 @@ where $\bm{\alpha}_n=[\alpha_{1n} \  \alpha_{2n} \ \dots \ \alpha_{Hn}]^{\top}$,
 $$\bm{\psi}_{in}\sim \text{Categorical}(\bm{\lambda}_n),$$
 where $P(\psi_{ih}=1)=\frac{\lambda_{h}\phi(y_i-\bm{x}_i^{\top}\bm{\beta} \mid \mu_h,\sigma_h^2)}{\sum_{j=1}^H\lambda_{j}\phi(y_i-\bm{x}_i^{\top} \mid \mu_j,\sigma_j^2)}$.
  
-A potential limitation of finite mixture models is the need to specify the number of components in advance. This issue can be mitigated by setting $H$ large enough (e.g., 20 components), assigning $\alpha_h = 1/H$, and performing an initial run of the algorithm. If we are not interested in specific components of the clusters, this procedure is sufficient. Otherwise, the posterior distribution of $H$ can be obtained by tracking the number of nonempty clusters in each iteration. In a second run, $H$ can be fixed at the mode of this posterior distribution. Another approach is to avoid fixing the number of components altogether and instead use a Dirichlet process mixture (DPM).\\
+A potential limitation of finite mixture models is the need to specify the number of components in advance. This issue can be mitigated by setting $H$ large enough (e.g., 10 components), assigning $\alpha_{h0} = 1/H$, and performing an initial run of the algorithm. If we are not interested in specific components of the clusters, this procedure is sufficient. Otherwise, the posterior distribution of $H$ can be obtained by tracking the number of nonempty clusters in each iteration. In a second run, $H$ can be fixed at the mode of this posterior distribution. Another approach is to avoid fixing the number of components altogether and instead use a Dirichlet process mixture (DPM).\\
 
 \textbf{Example: Simulation exercise}
 
@@ -162,7 +164,7 @@ plot(fit) # Plots of posterior draws
 	\end{VF}
 \end{tcolorbox}
 
-The following code performs inference in this simulation from scratch using Gibbs sampling. We use non-informative priors, setting $\alpha_{h0}=\delta_{h0}=0.01$, $\bm{\beta}_{h0}=\bm{0}_2$, $\bm{B}_{h0}=\bm{I}_2$, and $\bm{\alpha}_0=[1/2 \ 1/2]^{\top}$. The number of MCMC iterations is 5,000, the burn-in is 1,000, and the thinning parameter is 2. In general, the Gibbs sampler appears to yield good posterior results.
+The following code performs inference in this simulation from scratch using Gibbs sampling. We use non-informative priors, setting $\alpha_{h0}=\delta_{h0}=0.01$, $\bm{\beta}_{h0}=\bm{0}_2$, $\bm{B}_{h0}=\bm{I}_2$, and $\bm{\alpha}_0=[1/2 \ 1/2]^{\top}$. The number of MCMC iterations is 5,000, the burn-in is 1,000, and the thinning parameter is 2. In general, the Gibbs sampler appears to yield good posterior results as all 95\% intervals encompass the population parameters.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -261,10 +263,158 @@ plot(PosteriorSigma22)
 
 Let's perform another simulation exercise in which we conduct a semi-parametric analysis where the stochastic error follows a Student's t-distribution with 3 degrees of freedom. Specifically,  
 \begin{align*}
-	y_i &= 1 + 0.5x_{i1} - 1.2x_{i2} + \mu_i.
+	y_i &= 1 - 0.5x_{i1} + 1.5x_{i2} + \mu_i, \ i=1,2,\dots,500.
 \end{align*}
-The variables $x_{i1}$ and $x_{i2}$ are standard normally distributed.
+The variables $x_{i1}$ and $x_{i2}$ are standard normally distributed. Let's set $H=5$, and use non-informative priors setting $\alpha_{h0}=\delta_{h0}=0.01$, $\bm{\beta}_0=\bm{0}_2$, $\bm{B}_0=\bm{I}_2$, $\mu_{h0}=0$, $\sigma^2_{\mu 0}=10$ and $\bm{\alpha}_0=[1/H \ \dots \ 1/H]^{\top}$. Use 6,000 MCMC iterations, burn-in equal to 4,000, and thinning parameter equal to 2.
 
+We can see from the posterior estimates that three components disappear after the burn-in iterations. The 95\% credible intervals encompass the population values of the slope parameters. The 95\% credible intervals for the probabilities are (0.70, 0.89) and (0.11, 0.30), and the 95\% credible interval for the weighted average of the intercepts encompasses the population parameter.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Semi-parametric model using Gibbs sampling}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+library(ggplot2)
+# Simulate data from a 2-component mixture model
+n <- 500
+x1 <- rnorm(n); x2 <- rnorm(n)
+X <- cbind(x1,x2); B <- c(-0.5, 1.5)
+u <- rt(n, 3); y <- 1 + X%*%B + u
+Reg <- lm(y ~ X)
+Res <- Reg$residuals
+data <- data.frame(Res)
+# Plot
+ggplot(data, aes(x = Res)) +
+geom_density(fill = "blue", alpha = 0.3) +  # Density plot with fill color
+labs(title = "Density Plot", x = "Residuals", y = "Density") +
+theme_minimal()
+# Hyperparameters
+d0 <- 0.001; a0 <- 0.001; b0 <- rep(0, 2)
+B0 <- diag(2); B0i <- solve(B0)
+mu0 <- 0; sig2mu0 <- 10; H <- 5; a0h <- rep(1/H, H)
+# MCMC parameters
+mcmc <- 2000; burnin <- 4000
+tot <- mcmc + burnin; thin <- 2
+# Gibbs sampling functions
+PostSig2 <- function(Beta, muh, Xh, yh){
+	Nh <- length(yh); an <- a0 + Nh
+	dn <- d0 + t(yh - muh - Xh%*%Beta)%*%(yh - muh - Xh%*%Beta)
+	sig2 <- invgamma::rinvgamma(1, shape = an/2, rate = dn/2)
+	return(sig2)
+}
+PostBeta <- function(sig2, mu, X, y, Psi){
+	XtX <- matrix(0, 2, 2); Xty <- matrix(0, 2, 1)
+	Hs <- length(mu)
+	for(h in 1:Hs){
+		idh <- which(Psi == h)
+		if(length(idh) == 1){
+			Xh <- matrix(X[idh,], 1, 2)
+			XtXh <- sig2[h]^(-1)*t(Xh)%*%Xh
+			yh <- y[idh]
+			Xtyh <- sig2[h]^(-1)*t(Xh)%*%(yh - mu[h])
+		}else{
+			Xh <- X[idh,]
+			XtXh <- sig2[h]^(-1)*t(Xh)%*%Xh
+			yh <- y[idh]
+			Xtyh <- sig2[h]^(-1)*t(Xh)%*%(yh - mu[h])
+		}
+		XtX <- XtX + XtXh; Xty <- Xty + Xtyh
+	}
+	Bn <- solve(B0i + XtX); bn <- Bn%*%(B0i%*%b0 + Xty)
+	Beta <- MASS::mvrnorm(1, bn, Bn)
+	return(Beta)
+}
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Semi-parametric model using Gibbs sampling}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+Postmu <- function(sig2h, Beta, Xh, yh){
+	Nh <- length(yh)
+	sig2mu <- (1/sig2mu0 + Nh/sig2h)^(-1)
+	mun <- sig2mu*(mu0/sig2mu0 + sum((yh - Xh%*%Beta))/sig2h)
+	mu <- rnorm(1, mun, sig2mu^0.5)
+	return(mu)
+}
+PostBetas <- matrix(0, mcmc+burnin, 2)
+PostPsi <- matrix(0, mcmc+burnin, n)
+PostSigma2 <- list(); PostMu <- list()
+PostLambda <- list()
+Resq <- quantile(Res, c(0.2, 0.4, 0.6, 0.8))
+Id1 <- which(Res <= Resq[1])
+Id2 <- which(Res > Resq[1] & Res <= Resq[2])
+Id3 <- which(Res > Resq[2] & Res <= Resq[3])
+Id4 <- which(Res > Resq[3] & Res <= Resq[4])
+Id5 <- which(Res > Resq[4])
+Nh <- rep(n/H, H); Lambda <- rep(1/H, H)
+MU <- c(mean(Res[Id1]), mean(Res[Id2]), mean(Res[Id3]), mean(Res[Id4]), mean(Res[Id5]))
+Sig2 <- c(var(Res[Id1]), var(Res[Id2]), var(Res[Id3]), var(Res[Id4]), var(Res[Id5]))
+Beta <- Reg$coefficients[2:3]
+Psi <- rep(NA, n); Hs <- length(MU)
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+	for(i in 1:n){
+		lambdai <- NULL
+		for(h in 1:Hs){
+			lambdaih <- Lambda[h]*dnorm(y[i] - X[i,]%*%Beta, MU[h], Sig2[h]^0.5)
+			lambdai <- c(lambdai, lambdaih)
+		}
+		Psi[i] <- sample(1:Hs, 1, prob = lambdai)
+	}
+	PostPsi[s, ] <- Psi
+	Hs <- length(table(Psi))
+	for(h in 1:Hs){
+		idh <- which(Psi == h)
+		Sig2[h] <- PostSig2(Beta = Beta, muh = MU[h], Xh = X[idh,], yh = y[idh])
+		MU[h] <- Postmu(sig2h = Sig2[h], Beta = Beta, Xh = X[idh,], yh = y[idh])
+	}
+	PostSigma2[[s]] <- Sig2
+	PostMu[[s]] <- MU 
+	Beta <- PostBeta(sig2 = Sig2, mu = MU, X = X, y = y, Psi = Psi)
+	PostBetas[s,] <- Beta
+	Lambda <- sort(MCMCpack::rdirichlet(1, a0h[1:Hs] + table(Psi)), decreasing = TRUE)
+	PostLambda[[s]] <- Lambda
+	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Semi-parametric model using Gibbs sampling}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+keep <- seq(burnin, tot, thin)
+PosteriorBetas <- coda::mcmc(PostBetas[keep,])
+summary(PosteriorBetas)
+plot(PosteriorBetas)
+PosteriorPsi <- PostPsi[keep,]
+Clusters <- sapply(1:length(keep), function(i){length(table(PosteriorPsi[i,]))})
+NClus <- 2
+PosteriorSIGMA <- matrix(NA, length(keep), NClus)
+PosteriorMU <- matrix(NA, length(keep), NClus)
+PosteriorLAMBDA <- matrix(NA, length(keep), NClus)
+l <- 1
+for (s in keep){
+	PosteriorSIGMA[l,] <- PostSigma2[[s]][1:NClus]
+	PosteriorMU[l,] <- PostMu[[s]][1:NClus]
+	PosteriorLAMBDA[l,] <- PostLambda[[s]][1:NClus]
+	l <- l + 1
+}
+
+summary(coda::mcmc(PosteriorSIGMA))
+summary(coda::mcmc(PosteriorMU))
+summary(coda::mcmc(PosteriorLAMBDA))
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
 
 
 \subsection{Direchlet processes}\label{sec11_12}
@@ -278,12 +428,15 @@ The variables $x_{i1}$ and $x_{i2}$ are standard normally distributed.
 \section{Exercises}\label{sec11_4}
 
 \begin{enumerate}
-	\item Simulate a semi-parametric regression where
+	\item Simulate a semi-parametric regression where  
 	\begin{align*}
-		y_i &= 0.5x_{i1} - 1.2x_{i2} + \mu_i\\
+		y_i &= 0.5x_{i1} - 1.2x_{i2} + \mu_i, \\
 		p(\mu_i) &= 
-		0.3 \phi(\mu_i \mid -0.5,0.5^2)+0.7 \phi(\mu_i \mid 1,0.8^2).		
+		0.3 \phi(\mu_i \mid -0.5,0.5^2) + 0.7 \phi(\mu_i \mid 1,0.8^2).		
 	\end{align*}
-Assume that $x_{i1}$ and $x_{i2}$ distribute standard normal, and the sample size is 500. Perform inference in this model assuming that you do not the number of components, and begin with $H=5$, get the posterior distribution of the number of component, and use non-informative priors setting $\alpha_{h0}=\delta_{h0}=0.01$, $\bm{\beta}_0=\bm{0}_2$, $\bm{B}_0=\bm{I}_2$, $\mu_{h0}=0$, $\sigma^2_{\mu 0}=10$ and $\bm{\alpha}_0=[1/H \ \dots \ 1/H]^{\top}$. 
+	Assume that $x_{i1}$ and $x_{i2}$ follow a standard normal distribution and that the sample size is 1,000. Perform inference in this model assuming that the number of components is unknown. Start with $H=5$ and use non-informative priors, setting $\alpha_{h0}=\delta_{h0}=0.01$, $\bm{\beta}_0=\bm{0}_2$, $\bm{B}_0=\bm{I}_2$, $\mu_{h0}=0$, $\sigma^2_{\mu 0}=10$, and $\bm{\alpha}_0=[1/H \ \dots \ 1/H]^{\top}$. Use 6,000 MCMC iterations, a burn-in period of 4,000, and a thinning parameter of 2. Compare the population parameters with the posterior estimates and plot the population density along with the posterior density estimate of $\bm{\mu}$ (the mean, and the 95\% credible interval).
+	
+
+  
 \end{enumerate}
 
