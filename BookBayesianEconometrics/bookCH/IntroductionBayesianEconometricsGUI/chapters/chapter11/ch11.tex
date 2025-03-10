@@ -105,15 +105,209 @@ where $\bm{\alpha}_n=[\alpha_{1n} \  \alpha_{2n} \ \dots \ \alpha_{Hn}]^{\top}$,
 $$\bm{\psi}_{in}\sim \text{Categorical}(\bm{\lambda}_n),$$
 where $P(\psi_{ih}=1)=\frac{\lambda_{h}\phi(y_i-\bm{x}_i^{\top}\bm{\beta} \mid \mu_h,\sigma_h^2)}{\sum_{j=1}^H\lambda_{j}\phi(y_i-\bm{x}_i^{\top} \mid \mu_j,\sigma_j^2)}$.
  
-A potential limitation of finite mixture models is the need to specify the number of components in advance. This issue can be mitigated by setting $H$ large enough (e.g., 10 components), assigning $\alpha_{h0} = 1/H$, and performing an initial run of the algorithm. If we are not interested in specific components of the clusters, this procedure is sufficient. Otherwise, the posterior distribution of $H$ can be obtained by tracking the number of nonempty clusters in each iteration. In a second run, $H$ can be fixed at the mode of this posterior distribution. Another approach is to avoid fixing the number of components altogether and instead use a Dirichlet process mixture (DPM).\\
+A potential limitation of finite mixture models is the need to specify the number of components in advance. One approach is to estimate the model for different values of $H$ and then compute the marginal likelihood to select the model best supported by the data. However, this procedure can be tedious. A simpler strategy is to set $H$ large enough (e.g., 10 components), assign $\alpha_{h0} = 1/H$, and perform an initial run of the algorithm. If we are not interested in the specific composition of clusters, this approach is sufficient. Otherwise, the posterior distribution of $H$ can be obtained by tracking the number of nonempty clusters in each iteration. In a second run, $H$ can then be fixed at the mode of this posterior distribution. An alternative is to avoid pre-specifying the number of components altogether by using a Dirichlet process mixture (DPM).\\
 
-\textbf{Example: Simulation exercise}
+\textbf{Example: Simulation exercises}
 
-We simulate a simple regression mixture with two components such that $\psi_{i1}\sim \text{Ber}(0.5)$, consequently, $\psi_{i2}=1-\psi_{i1}$, and assume one regressor, $x_i\sim N(0,1)$, $i=1,2,\dots,1,000$. Then, 
+First, let’s illustrate the label-switching issue using a simple model without regressors, assuming the same known variance. Consider the following distribution:  
+
+$$p(y_i) = 0.75 \phi(y_i \mid \beta_{01},1^2) + 0.25 \phi(y_i \mid \beta_{02},1^2), \quad i = 1,2,\dots,500.$$
+
+Initially, we set $\beta_{01} = 0.5$ and $\beta_{02} = 2.5$. We perform 1,000 MCMC iterations, with a burn-in period of 500 and a thinning factor of 2. The following code demonstrates how to implement the Gibbs sampler using a prior normal distribution with mean 0 and variance 10, with the hyperparameters of the Dirichlet distribution set to $1/2$.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Label switching issue}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+			####### Simulation exercise: Label swithching issue #############
+rm(list = ls()); set.seed(010101); library(ggplot2)
+# Simulate data from a 2-component mixture model
+n <- 500
+z <- rbinom(n, 1, 0.75)  # Latent class indicator
+y <- ifelse(z == 0, rnorm(n, 0.5, 1), rnorm(n, 2.5, 1))
+data <- data.frame(y)
+# Plot
+ggplot(data, aes(x = y)) +
+geom_density(fill = "blue", alpha = 0.3) + labs(title = "Density Plot", x = "y", y = "Density") + theme_minimal()
+# Hyperparameters
+mu0 <- 0; sig2mu0 <- 10; H <- 2; a0h <- rep(1/H, H)
+# MCMC parameters
+mcmc <- 1000; burnin <- 500; tot <- mcmc + burnin; thin <- 2
+# Gibbs sampling functions
+Postmu <- function(yh){
+	Nh <- length(yh)
+	sig2mu <- (1/sig2mu0 + Nh)^(-1)
+	mun <- sig2mu*(mu0/sig2mu0 + sum(yh))
+	mu <- rnorm(1, mun, sig2mu^0.5)
+	return(mu)
+}
+PostPsi <- matrix(NA, tot, n); PostMu <- matrix(NA, tot, H)
+PostLambda <- rep(NA, tot)
+Id1 <- which(y <= 1) # 1 is from inspection of the density plot of y 
+Id2 <- which(y > 1)
+N1 <- length(Id1); N2 <- length(Id2)
+Lambda <- c(N1/n, N2/n)
+MU <- c(mean(y[Id1]), mean(y[Id2])); Psi <- rep(NA, n)
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+	for(i in 1:n){
+		lambdai <- NULL
+		for(h in 1:H){
+			lambdaih <- Lambda[h]*dnorm(y[i], MU[h], 1)
+			lambdai <- c(lambdai, lambdaih)
+		}
+		Psi[i] <- sample(1:H, 1, prob = lambdai)
+	}
+	PostPsi[s, ] <- Psi
+	for(h in 1:H){
+		idh <- which(Psi == h); 		MU[h] <- Postmu(yh = y[idh])
+	}
+	PostMu[s,] <- MU; Lambda <- MCMCpack::rdirichlet(1, a0h + table(Psi))
+	PostLambda[s] <- Lambda[1]
+	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+keep <- seq(burnin, tot, thin)
+PosteriorMUs <- coda::mcmc(PostMu[keep,])
+summary(PosteriorMUs); plot(PosteriorMUs)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+ 
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Label switching issue}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+dfMU <- data.frame(mu1 = PostMu[keep,1], mu2 = PostMu[keep,2])
+# Plot
+require(latex2exp)
+ggplot(dfMU) + geom_density(aes(x = mu1, color = "mu1"), linewidth = 1) + geom_density(aes(x = mu2, color = "mu2"), linewidth = 1) + labs(title = "Density Plot", x = TeX("$\\mu$"), y = "Density", color = "Variable") + theme_minimal() + scale_color_manual(values = c("mu1" = "blue", "mu2" = "red"))
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+Figure \ref{figMean1} shows the posterior densities of the location parameters. The posterior means are 0.42 and 2.50, with 95\% credible intervals of (0.07, 0.71) and (2.34, 2.65), respectively. The posterior mean of the probability is 0.27, with a 95\% credible interval of (0.19, 0.35).  
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter11/figures/Sim1LSI.png}
+	\caption[List of figure caption goes here]{Posterior distributions: Mean parameters, population values $\beta_{01}=0.5$ and $\beta_{02}=1$.}\label{figMean1}
+\end{figure}
+
+We perform the same exercise assuming $\beta_{01}=0.5$ and $\beta_{02}=1$. Figure \ref{figMean2} shows the posterior densities, where we observe significant overlap. The posterior means are 0.77 in both cases, with 95\% credible intervals of (0.40, 1.05) and (-0.44, 1.71). The posterior mean of the probability is 0.84. 
+ 
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter11/figures/Sim2LSI.png}
+	\caption[List of figure caption goes here]{Posterior distributions: Mean parameters, population values $\beta_{01}=0.5$ and $\beta_{02}=1$.}\label{figMean2}
+\end{figure}
+
+In the second setting, the posterior draws of the Gibbs sampler can switch between the two means because they are relatively close. This situation contrasts with the first example, where there is a relatively large separation between the means. The key point is that, given a sufficiently large number of Gibbs sampler iterations, the algorithm should eventually explore the entire parameter space and encounter the label-switching issue. This occurs because the true posterior distribution is bimodal, meaning that both posterior chains should exhibit similar behavior. 
+
+We can implement \textit{random permutation of latent classes} to address this issue. This involves sampling a random permutation of the labels at each iteration of the MCMC algorithm. For example, with three clusters, there are $3! = 6$ possible label permutations. Let the permutations be labeled as $\bm{p}_k=\left\{p_k(1),p_k(2),\dots,p_k(H)\right\}, k=1,2,\dots,H!$. At the end of each iteration in the MCMC algorithm, we randomly select one of the permutations $\bm{p}_k$ and replace the cluster probabilities $\lambda_1^{(s)},\dots,\lambda_H^{(s)}$ with $\lambda_{p_k(1)}^{(s)},\dots,\lambda_{p_k(H)}^{(s)}$. We apply the same permutation to $\bm{\beta}^{(s)}$, $\sigma^{2(s)}$, and $\bm{\psi}_{i}^{(s)}$, for $i=1,2,\dots,n$. The following algorithm illustrates how to implement this in our simple example.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Random permutation of latent classes}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+###### Permutations ######
+rm(list = ls()); set.seed(010101); library(ggplot2)
+# Simulate data from a 2-component mixture model
+n <- 500
+z <- rbinom(n, 1, 0.75)  # Latent class indicator
+y <- ifelse(z == 0, rnorm(n, 0.5, 1), rnorm(n, 2.5, 1))
+# Hyperparameters
+mu0 <- 0; sig2mu0 <- 10; H <- 2; a0h <- rep(1/H, H)
+# MCMC parameters
+mcmc <- 2000; burnin <- 500
+tot <- mcmc + burnin; thin <- 2
+# Gibbs sampling functions
+Postmu <- function(yh){
+	Nh <- length(yh)
+	sig2mu <- (1/sig2mu0 + Nh)^(-1)
+	mun <- sig2mu*(mu0/sig2mu0 + sum(yh))
+	mu <- rnorm(1, mun, sig2mu^0.5)
+	return(mu)
+}
+PostPsi <- matrix(NA, tot, n); PostMu <- matrix(NA, tot, H)
+PostLambda <- rep(NA, tot)
+Id1 <- which(y <= 1); Id2 <- which(y > 1)
+N1 <- length(Id1); N2 <- length(Id2)
+Lambda <- c(N1/n, N2/n); MU <- c(mean(y[Id1]), mean(y[Id2]))
+Psi <- rep(NA, n); per1 <- c(1,2); per2 <- c(2,1)
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+	for(i in 1:n){
+		lambdai <- NULL
+		for(h in 1:H){
+			lambdaih <- Lambda[h]*dnorm(y[i], MU[h], 1)
+			lambdai <- c(lambdai, lambdaih)
+		}
+		Psi[i] <- sample(1:H, 1, prob = lambdai)
+	}
+	for(h in 1:H){
+		idh <- which(Psi == h)
+		MU[h] <- Postmu(yh = y[idh])
+	}
+	Lambda <- MCMCpack::rdirichlet(1, a0h + table(Psi))
+	# Permutations
+	labels <- sample(1:2, 1, prob = c(0.5, 0.5))
+	if(labels == 2){
+		Lambda <- Lambda[per2]
+		MU <- MU[per2]
+		for(i in 1:n){
+			if(Psi[i] == 1){Psi[i] <- 2
+			}else{Psi[i] <- 1}
+		}
+	}
+	PostPsi[s, ] <- Psi; PostMu[s,] <- MU
+	PostLambda[s] <- Lambda[1]
+	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Random permutation of latent classes}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+keep <- seq(burnin, tot, thin)
+PosteriorMUs <- coda::mcmc(PostMu[keep,])
+summary(PosteriorMUs)
+plot(PosteriorMUs)
+dfMU <- data.frame(mu1 = PostMu[keep,1], mu2 = PostMu[keep,2])
+# Plot
+require(latex2exp)
+ggplot(dfMU) +
+geom_density(aes(x = mu1, color = "mu1"), linewidth = 1) +  # First density plot
+geom_density(aes(x = mu2, color = "mu2"), linewidth = 1) +  # Second density plot
+labs(title = "Density Plot", x = TeX("$\\mu$"), y = "Density", color = "Variable") +
+theme_minimal() +
+scale_color_manual(values = c("mu1" = "blue", "mu2" = "red"))  # Custom colors
+PosteriorLAMBDA <- coda::mcmc(PostLambda[keep])
+summary(PosteriorLAMBDA)
+plot(PosteriorLAMBDA)
+		\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+Figure \ref{figMeanPerm} shows the posterior distributions from the random permutation of latent classes in the first simulation setting. We observe that both posterior distributions look similar.
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter11/figures/Permutation.png}
+	\caption[List of figure caption goes here]{Posterior distributions: Mean parameters, population values $\beta_{01}=0.5$ and $\beta_{02}=2.5$.}\label{figMeanPerm}
+\end{figure}
+ 
+In the following setting we simulate a simple regression mixture with two components such that $\psi_{i1}\sim \text{Ber}(0.5)$, consequently, $\psi_{i2}=1-\psi_{i1}$, and assume one regressor, $x_i\sim N(0,1)$, $i=1,2,\dots,1,000$. Then, 
 $$p(y_i \mid \bm{x}_i) = 
 0.5 \phi(y_i \mid 2+1.5x_i,1^2)+0.5 \phi(y_i \mid -1+0.5x_i,0.8^2).$$
 
-The following code shows how to perform inference in this model, assuming $N(0,5)$ and $N(0,2)$ priors for the intercepts and slopes, respectively. Additionally, we use a $Cauchy(0,2)$ prior truncated at 0 for the standard deviations, and a $Dirichlet(1,1)$ prior for the probabilities. We use the \textit{brms} package in \textbf{R}, which in turn uses \textit{Stan}, setting number of MCMC iterations 2,000, a burn-in (warm-up) equal to 1,000, and 4 chains. Remember that \textit{Stan} software uses Hamiltonian Monte Carlo. 
+The following code shows how to perform inference in this model, assuming $N(0,5)$ and $N(0,2)$ priors for the intercepts and slopes, respectively. Additionally, we use a $Cauchy(0,2)$ prior truncated at 0 for the standard deviations, and a $Dirichlet(1,1)$ prior for the probabilities. We use the \textit{brms} package in \textbf{R}, which in turn uses \textit{Stan}, setting number of MCMC iterations 2,000, a burn-in (warm-up) equal to 1,000, and 4 chains. Remember that \textit{Stan} software uses Hamiltonian Monte Carlo.
+
+The following code performs inference in this simulation from scratch using Gibbs sampling. We do not implement the random permutation of latent classes algorithm for facilitating exposition and comparability with the results from the package \textit{brms}. We use non-informative priors, setting $\alpha_{h0}=\delta_{h0}=0.01$, $\bm{\beta}_{h0}=\bm{0}_2$, $\bm{B}_{h0}=\bm{I}_2$, and $\bm{\alpha}_0=[1/2 \ 1/2]^{\top}$. The number of MCMC iterations is 5,000, the burn-in is 1,000, and the thinning parameter is 2. In general, the Gibbs sampler appears to yield good posterior results as all 95\% intervals encompass the population parameters. 
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -163,8 +357,6 @@ plot(fit) # Plots of posterior draws
 		\end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
-
-The following code performs inference in this simulation from scratch using Gibbs sampling. We use non-informative priors, setting $\alpha_{h0}=\delta_{h0}=0.01$, $\bm{\beta}_{h0}=\bm{0}_2$, $\bm{B}_{h0}=\bm{I}_2$, and $\bm{\alpha}_0=[1/2 \ 1/2]^{\top}$. The number of MCMC iterations is 5,000, the burn-in is 1,000, and the thinning parameter is 2. In general, the Gibbs sampler appears to yield good posterior results as all 95\% intervals encompass the population parameters.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -265,7 +457,7 @@ Let's perform another simulation exercise in which we conduct a semi-parametric 
 \begin{align*}
 	y_i &= 1 - 0.5x_{i1} + 1.5x_{i2} + \mu_i, \ i=1,2,\dots,500.
 \end{align*}
-The variables $x_{i1}$ and $x_{i2}$ are standard normally distributed. Let's set $H=5$, and use non-informative priors setting $\alpha_{h0}=\delta_{h0}=0.01$, $\bm{\beta}_0=\bm{0}_2$, $\bm{B}_0=\bm{I}_2$, $\mu_{h0}=0$, $\sigma^2_{\mu 0}=10$ and $\bm{\alpha}_0=[1/H \ \dots \ 1/H]^{\top}$. Use 6,000 MCMC iterations, burn-in equal to 4,000, and thinning parameter equal to 2.
+The variables $x_{i1}$ and $x_{i2}$ are standard normally distributed. Let's set $H=5$, and use non-informative priors setting $\alpha_{h0}=\delta_{h0}=0.01$, $\bm{\beta}_0=\bm{0}_2$, $\bm{B}_0=\bm{I}_2$, $\mu_{h0}=0$, $\sigma^2_{\mu 0}=10$ and $\bm{\alpha}_0=[1/H \ \dots \ 1/H]^{\top}$. Use 6,000 MCMC iterations, burn-in equal to 4,000, and thinning parameter equal to 2. In this exercise, there is no need to address the label-switching issue, as we are not specifically interested in the individual components of the posterior distributions of the clusters. 
 
 We can see from the posterior estimates that three components disappear after the burn-in iterations. The 95\% credible intervals encompass the population values of the slope parameters. The 95\% credible intervals for the probabilities are (0.70, 0.89) and (0.11, 0.30), and the 95\% credible interval for the weighted average of the intercepts encompasses the population parameter.
 
@@ -435,6 +627,8 @@ summary(coda::mcmc(PosteriorLAMBDA))
 		0.3 \phi(\mu_i \mid -0.5,0.5^2) + 0.7 \phi(\mu_i \mid 1,0.8^2).		
 	\end{align*}
 	Assume that $x_{i1}$ and $x_{i2}$ follow a standard normal distribution and that the sample size is 1,000. Perform inference in this model assuming that the number of components is unknown. Start with $H=5$ and use non-informative priors, setting $\alpha_{h0}=\delta_{h0}=0.01$, $\bm{\beta}_0=\bm{0}_2$, $\bm{B}_0=\bm{I}_2$, $\mu_{h0}=0$, $\sigma^2_{\mu 0}=10$, and $\bm{\alpha}_0=[1/H \ \dots \ 1/H]^{\top}$. Use 6,000 MCMC iterations, a burn-in period of 4,000, and a thinning parameter of 2. Compare the population parameters with the posterior estimates and plot the population density along with the posterior density estimate of $\bm{\mu}$ (the mean, and the 95\% credible interval).
+	
+	\item 
 	
 
   

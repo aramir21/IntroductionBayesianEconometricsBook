@@ -1,3 +1,269 @@
+########################## Simulation exercise: Gaussian mixture with 2 components no regressors########################## 
+rm(list = ls())
+set.seed(010101)
+library(ggplot2)
+
+# Simulate data from a 2-component mixture model
+n <- 500
+z <- rbinom(n, 1, 0.75)  # Latent class indicator
+y <- ifelse(z == 0, rnorm(n, 0.5, 1), rnorm(n, 2.5, 1))
+data <- data.frame(y)
+
+# Plot
+ggplot(data, aes(x = y)) +
+  geom_density(fill = "blue", alpha = 0.3) +  # Density plot with fill color
+  labs(title = "Density Plot", x = "y", y = "Density") +
+  theme_minimal()
+
+# Hyperparameters
+mu0 <- 0
+sig2mu0 <- 10
+H <- 2
+a0h <- rep(1/H, H)
+# MCMC parameters
+mcmc <- 1000
+burnin <- 500
+tot <- mcmc + burnin
+thin <- 2
+# Gibbs sampling functions
+Postmu <- function(yh){
+  Nh <- length(yh)
+  sig2mu <- (1/sig2mu0 + Nh)^(-1)
+  mun <- sig2mu*(mu0/sig2mu0 + sum(yh))
+  mu <- rnorm(1, mun, sig2mu^0.5)
+  return(mu)
+}
+
+PostPsi <- matrix(NA, tot, n)
+PostMu <- matrix(NA, tot, H)
+PostLambda <- rep(NA, tot)
+Id1 <- which(y <= 1) # 1 is from inspection of the density plot of y 
+Id2 <- which(y > 1)
+N1 <- length(Id1); N2 <- length(Id2)
+Lambda <- c(N1/n, N2/n)
+MU <- c(mean(y[Id1]), mean(y[Id2]))
+Psi <- rep(NA, n)
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+  for(i in 1:n){
+    lambdai <- NULL
+    for(h in 1:H){
+      lambdaih <- Lambda[h]*dnorm(y[i], MU[h], 1)
+      lambdai <- c(lambdai, lambdaih)
+    }
+    Psi[i] <- sample(1:H, 1, prob = lambdai)
+  }
+  PostPsi[s, ] <- Psi
+  for(h in 1:H){
+    idh <- which(Psi == h)
+    MU[h] <- Postmu(yh = y[idh])
+  }
+  PostMu[s,] <- MU 
+  Lambda <- MCMCpack::rdirichlet(1, a0h + table(Psi))
+  PostLambda[s] <- Lambda[1]
+  setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+keep <- seq(burnin, tot, thin)
+PosteriorMUs <- coda::mcmc(PostMu[keep,])
+summary(PosteriorMUs)
+plot(PosteriorMUs)
+dfMU <- data.frame(mu1 = PostMu[keep,1], mu2 = PostMu[keep,2])
+# Plot
+require(latex2exp)
+ggplot(dfMU) +
+  geom_density(aes(x = mu1, color = "mu1"), linewidth = 1) +  # First density plot
+  geom_density(aes(x = mu2, color = "mu2"), linewidth = 1) +  # Second density plot
+  labs(title = "Density Plot", x = TeX("$\\mu$"), y = "Density", color = "Variable") +
+  theme_minimal() +
+  scale_color_manual(values = c("mu1" = "blue", "mu2" = "red"))  # Custom colors
+
+PosteriorLAMBDA <- coda::mcmc(PostLambda[keep])
+summary(PosteriorLAMBDA)
+plot(PosteriorLAMBDA)
+
+##### Change mean #####
+set.seed(010101)
+library(ggplot2)
+
+# Simulate data from a 2-component mixture model
+n <- 500
+z <- rbinom(n, 1, 0.75)  # Latent class indicator
+y <- ifelse(z == 0, rnorm(n, 0.5, 1), rnorm(n, 1, 1))
+data <- data.frame(y)
+
+# Plot
+ggplot(data, aes(x = y)) +
+  geom_density(fill = "blue", alpha = 0.3) +  # Density plot with fill color
+  labs(title = "Density Plot", x = "y", y = "Density") +
+  theme_minimal()
+
+# Hyperparameters
+mu0 <- 0
+sig2mu0 <- 10
+H <- 2
+a0h <- rep(1/H, H)
+# MCMC parameters
+mcmc <- 1000
+burnin <- 500
+tot <- mcmc + burnin
+thin <- 2
+# Gibbs sampling functions
+Postmu <- function(yh){
+  Nh <- length(yh)
+  sig2mu <- (1/sig2mu0 + Nh)^(-1)
+  mun <- sig2mu*(mu0/sig2mu0 + sum(yh))
+  mu <- rnorm(1, mun, sig2mu^0.5)
+  return(mu)
+}
+
+PostPsi <- matrix(NA, tot, n)
+PostMu <- matrix(NA, tot, H)
+PostLambda <- rep(NA, tot)
+Id1 <- which(y <= 1) # 1 is from inspection of the density plot of y 
+Id2 <- which(y > 1)
+N1 <- length(Id1); N2 <- length(Id2)
+Lambda <- c(N1/n, N2/n)
+MU <- c(mean(y[Id1]), mean(y[Id2]))
+Psi <- rep(NA, n)
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+  for(i in 1:n){
+    lambdai <- NULL
+    for(h in 1:H){
+      lambdaih <- Lambda[h]*dnorm(y[i], MU[h], 1)
+      lambdai <- c(lambdai, lambdaih)
+    }
+    Psi[i] <- sample(1:H, 1, prob = lambdai)
+  }
+  PostPsi[s, ] <- Psi
+  for(h in 1:H){
+    idh <- which(Psi == h)
+    MU[h] <- Postmu(yh = y[idh])
+  }
+  PostMu[s,] <- MU 
+  Lambda <- MCMCpack::rdirichlet(1, a0h + table(Psi))
+  PostLambda[s] <- Lambda[1]
+  setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+keep <- seq(burnin, tot, thin)
+PosteriorMUs <- coda::mcmc(PostMu[keep,])
+summary(PosteriorMUs)
+plot(PosteriorMUs)
+dfMU <- data.frame(mu1 = PostMu[keep,1], mu2 = PostMu[keep,2])
+# Plot
+require(latex2exp)
+ggplot(dfMU) +
+  geom_density(aes(x = mu1, color = "mu1"), linewidth = 1) +  # First density plot
+  geom_density(aes(x = mu2, color = "mu2"), linewidth = 1) +  # Second density plot
+  labs(title = "Density Plot", x = TeX("$\\mu$"), y = "Density", color = "Variable") +
+  theme_minimal() +
+  scale_color_manual(values = c("mu1" = "blue", "mu2" = "red"))  # Custom colors
+
+PosteriorLAMBDA <- coda::mcmc(PostLambda[keep])
+summary(PosteriorLAMBDA)
+plot(PosteriorLAMBDA)
+
+###### Permutations ######
+rm(list = ls())
+set.seed(010101)
+library(ggplot2)
+
+# Simulate data from a 2-component mixture model
+n <- 500
+z <- rbinom(n, 1, 0.75)  # Latent class indicator
+y <- ifelse(z == 0, rnorm(n, 0.5, 1), rnorm(n, 1, 1))
+data <- data.frame(y)
+
+# Plot
+ggplot(data, aes(x = y)) +
+  geom_density(fill = "blue", alpha = 0.3) +  # Density plot with fill color
+  labs(title = "Density Plot", x = "y", y = "Density") +
+  theme_minimal()
+
+# Hyperparameters
+mu0 <- 0
+sig2mu0 <- 10
+H <- 2
+a0h <- rep(1/H, H)
+# MCMC parameters
+mcmc <- 2000
+burnin <- 500
+tot <- mcmc + burnin
+thin <- 2
+# Gibbs sampling functions
+Postmu <- function(yh){
+  Nh <- length(yh)
+  sig2mu <- (1/sig2mu0 + Nh)^(-1)
+  mun <- sig2mu*(mu0/sig2mu0 + sum(yh))
+  mu <- rnorm(1, mun, sig2mu^0.5)
+  return(mu)
+}
+
+PostPsi <- matrix(NA, tot, n)
+PostMu <- matrix(NA, tot, H)
+PostLambda <- rep(NA, tot)
+Id1 <- which(y <= 1) # 1 is from inspection of the density plot of y 
+Id2 <- which(y > 1)
+N1 <- length(Id1); N2 <- length(Id2)
+Lambda <- c(N1/n, N2/n)
+MU <- c(mean(y[Id1]), mean(y[Id2]))
+Psi <- rep(NA, n)
+per1 <- c(1,2)
+per2 <- c(2,1)
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+  for(i in 1:n){
+    lambdai <- NULL
+    for(h in 1:H){
+      lambdaih <- Lambda[h]*dnorm(y[i], MU[h], 1)
+      lambdai <- c(lambdai, lambdaih)
+    }
+    Psi[i] <- sample(1:H, 1, prob = lambdai)
+  }
+  for(h in 1:H){
+    idh <- which(Psi == h)
+    MU[h] <- Postmu(yh = y[idh])
+  }
+  Lambda <- MCMCpack::rdirichlet(1, a0h + table(Psi))
+  # Permutations
+  labels <- sample(1:2, 1, prob = c(0.5, 0.5))
+  if(labels == 2){
+    Lambda <- Lambda[per2]
+    MU <- MU[per2]
+    for(i in 1:n){
+      if(Psi[i] == 1){
+        Psi[i] <- 2
+      }else{
+        Psi[i] <- 1
+      }
+    }
+  }
+  PostPsi[s, ] <- Psi
+  PostMu[s,] <- MU 
+  PostLambda[s] <- Lambda[1]
+  setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+keep <- seq(burnin, tot, thin)
+PosteriorMUs <- coda::mcmc(PostMu[keep,])
+summary(PosteriorMUs)
+plot(PosteriorMUs)
+dfMU <- data.frame(mu1 = PostMu[keep,1], mu2 = PostMu[keep,2])
+# Plot
+require(latex2exp)
+ggplot(dfMU) +
+  geom_density(aes(x = mu1, color = "mu1"), linewidth = 1) +  # First density plot
+  geom_density(aes(x = mu2, color = "mu2"), linewidth = 1) +  # Second density plot
+  labs(title = "Density Plot", x = TeX("$\\mu$"), y = "Density", color = "Variable") +
+  theme_minimal() +
+  scale_color_manual(values = c("mu1" = "blue", "mu2" = "red"))  # Custom colors
+
+PosteriorLAMBDA <- coda::mcmc(PostLambda[keep])
+summary(PosteriorLAMBDA)
+plot(PosteriorLAMBDA)
+
 ########################## Simulation exercise: Gaussian mixture: 2 components ########################## 
 rm(list = ls())
 set.seed(010101)
@@ -76,12 +342,12 @@ PostBeta <- function(sig2h, Xh, yh){
   return(Beta)
 }
 
-PostBetas1 <- matrix(0, mcmc+burnin, 2)
-PostBetas2 <- matrix(0, mcmc+burnin, 2)
-PostSigma21 <- rep(0, mcmc+burnin)
-PostSigma22 <- rep(0, mcmc+burnin)
-PostPsi <- matrix(0, mcmc+burnin, n)
-PostLambda <- rep(0, mcmc+burnin)
+PostBetas1 <- matrix(0, tot, 2)
+PostBetas2 <- matrix(0, tot, 2)
+PostSigma21 <- rep(0, tot)
+PostSigma22 <- rep(0, tot)
+PostPsi <- matrix(0, tot, n)
+PostLambda <- rep(0, tot)
 Id1 <- which(y<1) # 1 is from inspection of the density plot of y 
 N1 <- length(Id1)
 Lambda1 <- N1/n
@@ -211,8 +477,8 @@ Postmu <- function(sig2h, Beta, Xh, yh){
   return(mu)
 }
 
-PostBetas <- matrix(0, mcmc+burnin, 2)
-PostPsi <- matrix(0, mcmc+burnin, n)
+PostBetas <- matrix(0, tot, 2)
+PostPsi <- matrix(0, tot, n)
 PostSigma2 <- list()
 PostMu <- list()
 PostLambda <- list()

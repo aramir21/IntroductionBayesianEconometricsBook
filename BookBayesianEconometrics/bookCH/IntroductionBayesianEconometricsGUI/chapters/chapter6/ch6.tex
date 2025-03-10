@@ -1265,7 +1265,7 @@ PostBeta <- function(Yl, sig2){
 	Beta <- MASS::mvrnorm(1, bn, Bn)
 	return(Beta)
 }
-PostYl <- function(Beta, L, U, i){
+PostYl <- function(Beta, sig2, L, U, i){
 	Ylmean <- X[i,]%*%Beta
 	if(y[i] == L){
 		Yli <- truncnorm::rtruncnorm(1, a = -Inf, b = L, mean = Ylmean, sd = sig2^0.5)
@@ -1290,8 +1290,8 @@ L <- log(1000000); U <- Inf
 # create progress bar in case that you want to see iterations progress
 pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
 for(s in 1:tot){
-	Yl <- sapply(1:N, function(i){PostYl(Beta = Beta, L = L, U = U, i)})
-	Beta <- PostBeta(Yl = Yl, sig2)
+	Yl <- sapply(1:N, function(i){PostYl(Beta = Beta, sig2 = sig2, L = L, U = U, i)})
+	Beta <- PostBeta(Yl = Yl, sig2 = sig2)
 	sig2 <- PostSig2(Beta = Beta, Yl = Yl) 
 	PostBetas[s,] <- Beta; PostSigma2[s] <- sig2
 	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0), "% done"))
