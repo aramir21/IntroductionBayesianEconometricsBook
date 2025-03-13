@@ -17,21 +17,21 @@ In addition, mixture models help capture unobserved heterogeneity. That is, as d
 
 \subsection{Finite Gaussian mixtures}\label{sec11_11}
 A finite Gaussian mixture model for regression with \( H \) known components assumes that a sample 
-\( \bm{y}=\left[y_1 \ y_2 \ \dots \ y_N\right]^{\top} \) consists of observations \( y_i \), 
+\( \boldsymbol{y}=\left[y_1 \ y_2 \ \dots \ y_N\right]^{\top} \) consists of observations \( y_i \), 
 for \( i=1,2,\dots,N \), where each \( y_i \) is generated from one of the \( H \) components, 
-\( h=1,2,\dots,H \), conditional on the regressors \( \bm{x}_i \). Specifically, we assume  
+\( h=1,2,\dots,H \), conditional on the regressors \( \boldsymbol{x}_i \). Specifically, we assume  
 \[
-y_i \mid \bm{x}_i \sim N(\bm{x}_i^{\top}\bm{\beta}_h, \sigma_h^2).
+y_i \mid \boldsymbol{x}_i \sim N(\boldsymbol{x}_i^{\top}\boldsymbol{\beta}_h, \sigma_h^2).
 \]
 
 Thus, the sampling distribution of \( y_i \) is given by  
 \[
-p(y_i \mid \{\lambda_h, \bm{\beta}_h, \sigma_h^2\}_{h=1}^H, \bm{x}_i) = 
-\sum_{h=1}^H \lambda_h \phi(y_i \mid \bm{x}_i^{\top}\bm{\beta}_h, \sigma_h^2),
+p(y_i \mid \{\lambda_h, \boldsymbol{\beta}_h, \sigma_h^2\}_{h=1}^H, \boldsymbol{x}_i) = 
+\sum_{h=1}^H \lambda_h \phi(y_i \mid \boldsymbol{x}_i^{\top}\boldsymbol{\beta}_h, \sigma_h^2),
 \]
 
-where \( \phi(y_i \mid \bm{x}_i^{\top}\bm{\beta}_h, \sigma_h^2) \) is the Gaussian density with mean 
-\( \bm{x}_i^{\top}\bm{\beta}_h \) and variance \( \sigma_h^2 \), \( 0 < \lambda_h < 1 \) represents 
+where \( \phi(y_i \mid \boldsymbol{x}_i^{\top}\boldsymbol{\beta}_h, \sigma_h^2) \) is the Gaussian density with mean 
+\( \boldsymbol{x}_i^{\top}\boldsymbol{\beta}_h \) and variance \( \sigma_h^2 \), \( 0 < \lambda_h < 1 \) represents 
 the proportion of the population belonging to subpopulation \( h \), and the weights satisfy 
 \( \sum_{h=1}^H \lambda_h = 1 \).
 
@@ -50,62 +50,66 @@ Thus, \( P(\psi_{ih}=1) = \lambda_h \) for all clusters \( h=1,2,\dots,H \) and 
 
 This setting implies that  
 \[
-\bm{\psi}_i = [\psi_{i1} \  \psi_{i2} \ \dots \ \psi_{iH}]^{\top} \sim \text{Categorical}(\bm{\lambda}),
+\boldsymbol{\psi}_i = [\psi_{i1} \  \psi_{i2} \ \dots \ \psi_{iH}]^{\top} \sim \text{Categorical}(\boldsymbol{\lambda}),
 \] 
   
-where \( \bm{\lambda} = [\lambda_1 \  \lambda_2 \  \dots \ \lambda_H]^{\top} \) represents the event probabilities.
+where \( \boldsymbol{\lambda} = [\lambda_1 \  \lambda_2 \  \dots \ \lambda_H]^{\top} \) represents the event probabilities.
 
 We know from Subsection \ref{sec421} that the Dirichlet prior distribution is conjugate to the multinomial distribution, where the categorical distribution is a special case in which the number of trials is one. Thus, we assume that  
 \[
-\pi(\bm{\lambda}) \sim \text{Dir}(\bm{\alpha}_0),
+\pi(\boldsymbol{\lambda}) \sim \text{Dir}(\boldsymbol{\alpha}_0),
 \]  
 
-where \( \bm{\alpha}_0 = [\alpha_{10} \ \alpha_{20} \ \dots \ \alpha_{H0}]^{\top} \), $\alpha_{h0}=1/H$ is recommended by \cite[p.~535]{gelman2021bayesian}.  
+where \( \boldsymbol{\alpha}_0 = [\alpha_{10} \ \alpha_{20} \ \dots \ \alpha_{H0}]^{\top} \), $\alpha_{h0}=1/H$ is recommended by \cite[p.~535]{gelman2021bayesian}.  
 
-Observe that we are using a hierarchical structure, as we specify a prior on \( \bm{\lambda} \), which serves as the hyperparameter for the cluster indicators. In addition, we can assume conjugate families for the location and scale parameters to facilitate computation, that is, $\bm \beta_h\sim N(\bm{\beta}_{h0},\bm{B}_{h0})$ and $\sigma_h^2\sim IG(\alpha_{h0}/2,\delta_{h0}/2)$.
+Observe that we are using a hierarchical structure, as we specify a prior on \( \boldsymbol{\lambda} \), which serves as the hyperparameter for the cluster indicators. In addition, we can assume conjugate families for the location and scale parameters to facilitate computation, that is, $\boldsymbol \beta_h\sim N(\boldsymbol{\beta}_{h0},\boldsymbol{B}_{h0})$ and $\sigma_h^2\sim IG(\alpha_{h0}/2,\delta_{h0}/2)$.
 
-This setting allows to obtain standard conditional posterior distributions: $$\bm{\beta}_{h}\sim N(\bm{\beta}_{hn},\bm{B}_{hn}),$$ where $\bm{B}_{hn}=(\bm{B}_{h0}^{-1}+\sigma_h^{-2}\sum_{\left\{i:  \psi_{ih}=1\right\}}\bm{x}_i\bm{x}_i^{\top})^{-1}$ and $\bm{\beta}_{hn}=\bm{B}_{hn}(\bm{B}_{h0}^{-1}\bm{\beta}_{h0}+\sigma_h^{-2}\sum_{\left\{i:  \psi_{ih}=1\right\}}\bm{x}_iy_i)$.
+This setting allows to obtain standard conditional posterior distributions: $$\boldsymbol{\beta}_{h}\sim N(\boldsymbol{\beta}_{hn},\boldsymbol{B}_{hn}),$$ where $\boldsymbol{B}_{hn}=(\boldsymbol{B}_{h0}^{-1}+\sigma_h^{-2}\sum_{\left\{i:  \psi_{ih}=1\right\}}\boldsymbol{x}_i\boldsymbol{x}_i^{\top})^{-1}$ and $\boldsymbol{\beta}_{hn}=\boldsymbol{B}_{hn}(\boldsymbol{B}_{h0}^{-1}\boldsymbol{\beta}_{h0}+\sigma_h^{-2}\sum_{\left\{i:  \psi_{ih}=1\right\}}\boldsymbol{x}_iy_i)$.
 $$\sigma_h^2\sim IG(\alpha_{hn}/2,\delta_{hn}/2),$$
 
-where $\alpha_{hn}=\alpha_{h0}+N_h$, $\delta_{hn}=\delta_{h0}+\sum_{\left\{i:  \psi_{ih}=1\right\}}(y_i-\bm{x}_i^{\top}\bm{\beta}_h)^2$, and $N_h$ is the number of units in cluster $h$.
+where $\alpha_{hn}=\alpha_{h0}+N_h$, $\delta_{hn}=\delta_{h0}+\sum_{\left\{i:  \psi_{ih}=1\right\}}(y_i-\boldsymbol{x}_i^{\top}\boldsymbol{\beta}_h)^2$, and $N_h$ is the number of units in cluster $h$.
 
-$$\bm{\lambda}\sim \text{Dir}(\bm{\alpha}_n),$$   
-where $\bm{\alpha}_n=[\alpha_{1n} \  \alpha_{2n} \ \dots \ \alpha_{Hn}]^{\top}$, and $\alpha_{hn}=\alpha_{h0}+N_h$.
+$$\boldsymbol{\lambda}\sim \text{Dir}(\boldsymbol{\alpha}_n),$$   
+where $\boldsymbol{\alpha}_n=[\alpha_{1n} \  \alpha_{2n} \ \dots \ \alpha_{Hn}]^{\top}$, and $\alpha_{hn}=\alpha_{h0}+N_h$.
 
-$$\bm{\psi}_{in}\sim \text{Categorical}(\bm{\lambda}_n),$$
-where $P(\psi_{ih}=1)=\frac{\lambda_{h}\phi(y_i \mid \bm{x}_i^{\top}\bm{\beta}_h,\sigma_h^2)}{\sum_{j=1}^H\lambda_{j}\phi(y_i \mid \bm{x}_i^{\top}\bm{\beta}_j,\sigma_j^2)}$.
+$$\boldsymbol{\psi}_{in}\sim \text{Categorical}(\boldsymbol{\lambda}_n),$$
+where $P(\psi_{ih}=1)=\frac{\lambda_{h}\phi(y_i \mid \boldsymbol{x}_i^{\top}\boldsymbol{\beta}_h,\sigma_h^2)}{\sum_{j=1}^H\lambda_{j}\phi(y_i \mid \boldsymbol{x}_i^{\top}\boldsymbol{\beta}_j,\sigma_j^2)}$.
 
-Mixture models have the label-switching identification problem, meaning they are nonidentifiable because the distribution remains unchanged if the group labels are permuted \cite{van2011bayesian}. For instance, a mixture model with two components can be characterized by $\left\{\lambda_1,\bm{\beta}_1,\sigma_1^2\right\}$ for the first cluster and $\left\{1-\lambda_1,\bm{\beta}_2,\sigma_2^2\right\}$ for the second. However, an alternative characterization is $\left\{1-\lambda_1,\bm{\beta}_2,\sigma_2^2\right\}$ for cluster 1 and $\left\{\lambda_1,\bm{\beta}_1,\sigma_1^2\right\}$ for cluster 2. This parametrization yields exactly the same likelihood as the first one, meaning any permutation of the cluster labels leaves the likelihood unchanged. Consequently, the posterior draws of each component-specific parameter target the same distribution.
+In general, it is always safer to perform inference in mixture models using informative priors, as non-informative priors may have unintended consequences on posterior inference. One way to facilitate prior elicitation is to work with standardized data, as this removes dependence on measurement units. Another useful approach is to specify the model in log-log form so that the coefficients can be interpreted as elasticities or semi-elasticities. As always in Bayesian inference, it makes sense to perform a sensitivity analysis with respect to the hyperparameters.
+
+Mixture models have the label-switching identification problem, meaning they are nonidentifiable because the distribution remains unchanged if the group labels are permuted \cite{van2011bayesian}. For instance, a mixture model with two components can be characterized by $\left\{\lambda_1,\boldsymbol{\beta}_1,\sigma_1^2\right\}$ for the first cluster and $\left\{1-\lambda_1,\boldsymbol{\beta}_2,\sigma_2^2\right\}$ for the second. However, an alternative characterization is $\left\{1-\lambda_1,\boldsymbol{\beta}_2,\sigma_2^2\right\}$ for cluster 1 and $\left\{\lambda_1,\boldsymbol{\beta}_1,\sigma_1^2\right\}$ for cluster 2. This parametrization yields exactly the same likelihood as the first one, meaning any permutation of the cluster labels leaves the likelihood unchanged. Consequently, the posterior draws of each component-specific parameter target the same distribution.
 
 Label switching may pose challenges when performing inference on specific mixture components, such as in the regression analysis presented here. However, it is not an issue when inference on specific components is unnecessary, as in cases where mixtures are used to model stochastic errors in semi-parametric settings. In the former case, post-processing strategies can mitigate the issue, such as \textit{random permutation of latent classes} (see \cite[p.~534]{gelman2021bayesian} and Algorithm 3.5 in \cite[p.~82]{fruhwirth2006finite}). 
 
 A semi-parametric regression imposes a specific structure in part of the model and uses flexible assumptions in another part, for instance
 
 \begin{align*}
-	y_i&=\bm{x}_i^{\top}\bm{\beta}+\mu_i\\
+	y_i&=\boldsymbol{x}_i^{\top}\boldsymbol{\beta}+\mu_i\\
 	p(\mu_i \mid \left\{\lambda_h,\mu_h,\sigma_h^2\right\}_{h=1}^H)&=\sum_{h=1}^H\lambda_h\phi(\mu_i\mid \mu_h,\sigma_h^2) 
 \end{align*}
 
 Thus, the distribution of the stochastic error is a finite Gaussian mixture. Note that the mean of the stochastic error is not equal to zero; consequently, the intercept in the regression should be removed, as these two parameters are not separately identifiable \cite{van2011bayesian}. Additionally, this approach allows for multiple modes and asymmetric distributions of the stochastic errors, providing greater flexibility.
 
-We can use a Gibbs sampling algorithm in this semi-parametric specification if we assume conjugate families. The difference from the previous setting is that we have the same slope parameters; thus, $\bm{\beta} \sim N(\bm{\beta}_{0},\bm{B}_{0})$. Additionally, we must specify the prior distribution for the means of the stochastic errors, given by $\mu_h \sim N(\mu_{h0},\sigma^2_{\mu 0})$. Then, the posterior distributions are:
+We can use a Gibbs sampling algorithm in this semi-parametric specification if we assume conjugate families. The difference from the previous setting is that we have the same slope parameters; thus, $\boldsymbol{\beta} \sim N(\boldsymbol{\beta}_{0},\boldsymbol{B}_{0})$. Additionally, we must specify the prior distribution for the means of the stochastic errors, given by $\mu_h \sim N(\mu_{h0},\sigma^2_{\mu 0})$. Then, the posterior distributions are:
 
-$$\bm{\beta}\sim N(\bm{\beta}_{n},\bm{B}_{n}),$$ where $\bm{B}_{n}=(\bm{B}_{0}^{-1}+\sum_{h=1}^H\sum_{\left\{i:  \psi_{ih}=1\right\}}\sigma_h^{-2}\bm{x}_i\bm{x}_i^{\top})^{-1}$ and $\bm{\beta}_{n}=\bm{B}_{n}(\bm{B}_{0}^{-1}\bm{\beta}_{0}+\sum_{h=1}^H\sum_{\left\{i:  \psi_{ih}=1\right\}}\sigma_h^{-2}\bm{x}_i(y_i-\mu_h))$.
+$$\boldsymbol{\beta}\sim N(\boldsymbol{\beta}_{n},\boldsymbol{B}_{n}),$$ where $\boldsymbol{B}_{n}=(\boldsymbol{B}_{0}^{-1}+\sum_{h=1}^H\sum_{\left\{i:  \psi_{ih}=1\right\}}\sigma_h^{-2}\boldsymbol{x}_i\boldsymbol{x}_i^{\top})^{-1}$ and $\boldsymbol{\beta}_{n}=\boldsymbol{B}_{n}(\boldsymbol{B}_{0}^{-1}\boldsymbol{\beta}_{0}+\sum_{h=1}^H\sum_{\left\{i:  \psi_{ih}=1\right\}}\sigma_h^{-2}\boldsymbol{x}_i(y_i-\mu_h))$.
 $$\sigma_h^2\sim IG(\alpha_{hn}/2,\delta_{hn}/2),$$
 
-where $\alpha_{hn}=\alpha_{h0}+N_h$, $\delta_{hn}=\delta_{h0}+\sum_{\left\{i:  \psi_{ih}=1\right\}}(y_i-\mu_h-\bm{x}_i^{\top}\bm{\beta}_h)^2$, and $N_h$ is the number of units in cluster $h$.
+where $\alpha_{hn}=\alpha_{h0}+N_h$, $\delta_{hn}=\delta_{h0}+\sum_{\left\{i:  \psi_{ih}=1\right\}}(y_i-\mu_h-\boldsymbol{x}_i^{\top}\boldsymbol{\beta}_h)^2$, and $N_h$ is the number of units in cluster $h$.
 
 $$\mu_h\sim N(\mu_{hn},\sigma_{hn}^2),$$
 
-where $\sigma_{hn}^2=\left(\frac{1}{\sigma_{h}^{2}}+\frac{N_h}{\sigma_{h}^2}\right)^{-1}$ and $\mu_{hn}=\sigma_{hn}^2\left(\frac{\mu_{h0}}{\sigma_{\mu0}^2}+\frac{\sum_{\left\{i:\psi_{ih}=1\right\}} (y_i-\bm{x}_i\bm{\beta})}{\sigma_h^2}\right)$.
+where $\sigma_{hn}^2=\left(\frac{1}{\sigma_{h}^{2}}+\frac{N_h}{\sigma_{h}^2}\right)^{-1}$ and $\mu_{hn}=\sigma_{hn}^2\left(\frac{\mu_{h0}}{\sigma_{\mu0}^2}+\frac{\sum_{\left\{i:\psi_{ih}=1\right\}} (y_i-\boldsymbol{x}_i\boldsymbol{\beta})}{\sigma_h^2}\right)$.
 
-$$\bm{\lambda}\sim \text{Dir}(\bm{\alpha}_n),$$   
-where $\bm{\alpha}_n=[\alpha_{1n} \  \alpha_{2n} \ \dots \ \alpha_{Hn}]^{\top}$, and $\alpha_{hn}=\alpha_{h0}+N_h$.
+$$\boldsymbol{\lambda}\sim \text{Dir}(\boldsymbol{\alpha}_n),$$   
+where $\boldsymbol{\alpha}_n=[\alpha_{1n} \  \alpha_{2n} \ \dots \ \alpha_{Hn}]^{\top}$, and $\alpha_{hn}=\alpha_{h0}+N_h$.
 
-$$\bm{\psi}_{in}\sim \text{Categorical}(\bm{\lambda}_n),$$
-where $P(\psi_{ih}=1)=\frac{\lambda_{h}\phi(y_i-\bm{x}_i^{\top}\bm{\beta} \mid \mu_h,\sigma_h^2)}{\sum_{j=1}^H\lambda_{j}\phi(y_i-\bm{x}_i^{\top} \mid \mu_j,\sigma_j^2)}$.
+$$\boldsymbol{\psi}_{in}\sim \text{Categorical}(\boldsymbol{\lambda}_n),$$
+where $P(\psi_{ih}=1)=\frac{\lambda_{h}\phi(y_i-\boldsymbol{x}_i^{\top}\boldsymbol{\beta} \mid \mu_h,\sigma_h^2)}{\sum_{j=1}^H\lambda_{j}\phi(y_i-\boldsymbol{x}_i^{\top} \mid \mu_j,\sigma_j^2)}$.
  
-A potential limitation of finite mixture models is the need to specify the number of components in advance. One approach is to estimate the model for different values of $H$ and then compute the marginal likelihood to select the model best supported by the data. However, this procedure can be tedious. A simpler strategy is to set $H$ large enough (e.g., 10 components), assign $\alpha_{h0} = 1/H$, and perform an initial run of the algorithm. If we are not interested in the specific composition of clusters, this approach is sufficient. Otherwise, the posterior distribution of $H$ can be obtained by tracking the number of nonempty clusters in each iteration. In a second run, $H$ can then be fixed at the mode of this posterior distribution. An alternative is to avoid pre-specifying the number of components altogether by using a Dirichlet process mixture (DPM).\\
+A potential limitation of finite mixture models is the need to specify the number of components in advance. One approach is to estimate the model for different values of $H$ and then compute the marginal likelihood to select the model best supported by the data. However, this procedure can be tedious. A simpler strategy is to set $H$ large enough (e.g., 10 components), assign $\alpha_{h0} = 1/H$, and perform an initial run of the algorithm. If we are not interested in the specific composition of clusters, this approach is sufficient. Otherwise, the posterior distribution of $H$ can be obtained by tracking the number of nonempty clusters in each iteration. In a second run, $H$ can then be fixed at the mode of this posterior distribution. 
+
+However, the previous approaches ultimately fix the number of components. Consequently, finite mixtures cannot be considered a non-parametric method \cite{rossi2014bayesian}, as they lack an automatic mechanism to increase \( H \) as the sample size grows. An alternative is to avoid pre-specifying the number of components altogether by using a Dirichlet process mixture (DPM). This is the topic of the next section.\\
 
 \textbf{Example: Simulation exercises}
 
@@ -188,7 +192,7 @@ ggplot(dfMU) + geom_density(aes(x = mu1, color = "mu1"), linewidth = 1) + geom_d
 	\end{VF}
 \end{tcolorbox}
 
-Figure \ref{figMean1} shows the posterior densities of the location parameters. The posterior means are 0.42 and 2.50, with 95\% credible intervals of (0.07, 0.71) and (2.34, 2.65), respectively. The posterior mean of the probability is 0.27, with a 95\% credible interval of (0.19, 0.35).  
+Figure \ref{figMean1} shows the posterior densities of the location parameters. The posterior means are 0.42 and 2.50, with 95\% credible intervals of (0.07, 0.71) and (2.34, 2.65), respectively. The posterior mean of the probability is 0.27, with a 95\% credible interval of (0.19, 0.35). Note that in this simple simulation exercise, we did not observe unintended consequences from using non-informative priors and not standardizing the data. However, real-world applications should take these aspects into account. 
 
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter11/figures/Sim1LSI.png}
@@ -202,9 +206,9 @@ We perform the same exercise assuming $\beta_{01}=0.5$ and $\beta_{02}=1$. Figur
 	\caption[List of figure caption goes here]{Posterior distributions: Mean parameters, population values $\beta_{01}=0.5$ and $\beta_{02}=1$.}\label{figMean2}
 \end{figure}
 
-In the second setting, the posterior draws of the Gibbs sampler can switch between the two means because they are relatively close. This situation contrasts with the first example, where there is a relatively large separation between the means. The key point is that, given a sufficiently large number of Gibbs sampler iterations, the algorithm should eventually explore the entire parameter space and encounter the label-switching issue. This occurs because the true posterior distribution is bimodal, meaning that both posterior chains should exhibit similar behavior. 
+In the second setting, the posterior draws of the Gibbs sampler can switch between the two means because they are relatively close. This situation contrasts with the first example, where there is a relatively large separation between the means, resulting in a region of the parameter space with zero probability (see the flat region between the two posterior distributions in Figure \ref{figMean1}). The key point is that, given a sufficiently large number of Gibbs sampler iterations, the algorithm should eventually explore the entire parameter space and encounter the label-switching issue. This occurs because both posterior chains should exhibit similar behavior, as they are targeting the same distribution. 
 
-We can implement \textit{random permutation of latent classes} to address this issue. This involves sampling a random permutation of the labels at each iteration of the MCMC algorithm. For example, with three clusters, there are $3! = 6$ possible label permutations. Let the permutations be labeled as $\bm{p}_k=\left\{p_k(1),p_k(2),\dots,p_k(H)\right\}, k=1,2,\dots,H!$. At the end of each iteration in the MCMC algorithm, we randomly select one of the permutations $\bm{p}_k$ and replace the cluster probabilities $\lambda_1^{(s)},\dots,\lambda_H^{(s)}$ with $\lambda_{p_k(1)}^{(s)},\dots,\lambda_{p_k(H)}^{(s)}$. We apply the same permutation to $\bm{\beta}^{(s)}$, $\sigma^{2(s)}$, and $\bm{\psi}_{i}^{(s)}$, for $i=1,2,\dots,n$. The following algorithm illustrates how to implement this in our simple example.
+We can implement \textit{random permutation of latent classes} to address this issue. This involves sampling a random permutation of the labels at each iteration of the MCMC algorithm. For example, with three clusters, there are $3! = 6$ possible label permutations. Let the permutations be labeled as $\boldsymbol{p}_k=\left\{p_k(1),p_k(2),\dots,p_k(H)\right\}, k=1,2,\dots,H!$. At the end of each iteration in the MCMC algorithm, we randomly select one of the permutations $\boldsymbol{p}_k$ and replace the cluster probabilities $\lambda_1^{(s)},\dots,\lambda_H^{(s)}$ with $\lambda_{p_k(1)}^{(s)},\dots,\lambda_{p_k(H)}^{(s)}$. We apply the same permutation to $\boldsymbol{\beta}^{(s)}$, $\sigma^{2(s)}$, and $\boldsymbol{\psi}_{i}^{(s)}$, for $i=1,2,\dots,n$. The following algorithm illustrates how to implement this in our simple example.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -302,12 +306,12 @@ Figure \ref{figMeanPerm} shows the posterior distributions from the random permu
 \end{figure}
  
 In the following setting we simulate a simple regression mixture with two components such that $\psi_{i1}\sim \text{Ber}(0.5)$, consequently, $\psi_{i2}=1-\psi_{i1}$, and assume one regressor, $x_i\sim N(0,1)$, $i=1,2,\dots,1,000$. Then, 
-$$p(y_i \mid \bm{x}_i) = 
+$$p(y_i \mid \boldsymbol{x}_i) = 
 0.5 \phi(y_i \mid 2+1.5x_i,1^2)+0.5 \phi(y_i \mid -1+0.5x_i,0.8^2).$$
 
 The following code shows how to perform inference in this model, assuming $N(0,5)$ and $N(0,2)$ priors for the intercepts and slopes, respectively. Additionally, we use a $Cauchy(0,2)$ prior truncated at 0 for the standard deviations, and a $Dirichlet(1,1)$ prior for the probabilities. We use the \textit{brms} package in \textbf{R}, which in turn uses \textit{Stan}, setting number of MCMC iterations 2,000, a burn-in (warm-up) equal to 1,000, and 4 chains. Remember that \textit{Stan} software uses Hamiltonian Monte Carlo.
 
-The following code performs inference in this simulation from scratch using Gibbs sampling. We do not implement the random permutation of latent classes algorithm for facilitating exposition and comparability with the results from the package \textit{brms}. We use non-informative priors, setting $\alpha_{h0}=\delta_{h0}=0.01$, $\bm{\beta}_{h0}=\bm{0}_2$, $\bm{B}_{h0}=\bm{I}_2$, and $\bm{\alpha}_0=[1/2 \ 1/2]^{\top}$. The number of MCMC iterations is 5,000, the burn-in is 1,000, and the thinning parameter is 2. In general, the Gibbs sampler appears to yield good posterior results as all 95\% intervals encompass the population parameters. 
+The following code performs inference in this simulation from scratch using Gibbs sampling. We do not implement the random permutation of latent classes algorithm for facilitating exposition and comparability with the results from the package \textit{brms}. We use non-informative priors, setting $\alpha_{h0}=\delta_{h0}=0.01$, $\boldsymbol{\beta}_{h0}=\boldsymbol{0}_2$, $\boldsymbol{B}_{h0}=\boldsymbol{I}_2$, and $\boldsymbol{\alpha}_0=[1/2 \ 1/2]^{\top}$. The number of MCMC iterations is 5,000, the burn-in is 1,000, and the thinning parameter is 2. In general, the Gibbs sampler appears to yield good posterior results as all 95\% intervals encompass the population parameters. 
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -457,7 +461,7 @@ Let's perform another simulation exercise in which we conduct a semi-parametric 
 \begin{align*}
 	y_i &= 1 - 0.5x_{i1} + 1.5x_{i2} + \mu_i, \ i=1,2,\dots,500.
 \end{align*}
-The variables $x_{i1}$ and $x_{i2}$ are standard normally distributed. Let's set $H=5$, and use non-informative priors setting $\alpha_{h0}=\delta_{h0}=0.01$, $\bm{\beta}_0=\bm{0}_2$, $\bm{B}_0=\bm{I}_2$, $\mu_{h0}=0$, $\sigma^2_{\mu 0}=10$ and $\bm{\alpha}_0=[1/H \ \dots \ 1/H]^{\top}$. Use 6,000 MCMC iterations, burn-in equal to 4,000, and thinning parameter equal to 2. In this exercise, there is no need to address the label-switching issue, as we are not specifically interested in the individual components of the posterior distributions of the clusters. 
+The variables $x_{i1}$ and $x_{i2}$ are standard normally distributed. Let's set $H=5$, and use non-informative priors setting $\alpha_{h0}=\delta_{h0}=0.01$, $\boldsymbol{\beta}_0=\boldsymbol{0}_2$, $\boldsymbol{B}_0=\boldsymbol{I}_2$, $\mu_{h0}=0$, $\sigma^2_{\mu 0}=10$ and $\boldsymbol{\alpha}_0=[1/H \ \dots \ 1/H]^{\top}$. Use 6,000 MCMC iterations, burn-in equal to 4,000, and thinning parameter equal to 2. In this exercise, there is no need to address the label-switching issue, as we are not specifically interested in the individual components of the posterior distributions of the clusters. Exercise 1 asks how to get the posterior density of the stochastic errors in this semi-parametric specifications. 
 
 We can see from the posterior estimates that three components disappear after the burn-in iterations. The 95\% credible intervals encompass the population values of the slope parameters. The 95\% credible intervals for the probabilities are (0.70, 0.89) and (0.11, 0.30), and the 95\% credible interval for the weighted average of the intercepts encompasses the population parameter.
 
@@ -611,6 +615,303 @@ summary(coda::mcmc(PosteriorLAMBDA))
 
 \subsection{Direchlet processes}\label{sec11_12}
 
+A Dirichlet process (DP) is a probability distribution over probability distributions, and a generalization of the Dirichlet distribution. It was introduced by \cite{Ferguson1973}, and it is commonly used as a prior for unknown distributions, making it particularly useful in non-parametric settings. Unlike finite Gaussian mixture models, a Dirichlet process does not require pre-specifying the number of components, allowing for greater flexibility in modeling complex data structures. In this sense, DPs can be viewed as the limiting case of finite mixtures when the number of components approaches infinity. 
+
+A Dirichlet process $G\sim DP(\alpha G_0)$ is defined by a precision parameter $\alpha>0$, and a base probability measure $G_0$ on a probability space $\Omega$.\footnote{Measurability ensures that we can compute probabilities and expectations properly. If a set is not measurable, we cannot define its probability meaningfully.} The DP assigns probability $G(B)$ to any (measurable) set $B$ in $\Omega$ such that for any finite (measurable) partition $\left\{B_1, B_2, \dots, B_k\right\}$ of $\Omega$,  
+
+\[
+G(B_1), G(B_2), \dots, G(B_k) \sim \text{Dirichlet}(\alpha G_0(B_1), \alpha G_0(B_2), \dots, \alpha G_0(B_k)).
+\]
+
+In particular, $\mathbb{E}\left[G(B)\right]=G_0(B)$ and $\mathbb{V}ar\left[G(B)\right]=G_0(B)\left[1-G_0(B)\right]/(1+\alpha)$ \cite[p.~8]{Muller2015}. Observe that as $\alpha  \rightarrow \infty$, $G$ concentrates at $G_0$, which is why $\alpha$ is called the precision parameter.
+
+A key property of the DP is its discrete nature, which allows it to be expressed as  
+\[
+G(\cdot)=\sum_{h=1}^{\infty}\lambda_h\delta_{\boldsymbol{\theta}_h}(\cdot),
+\]
+where $\lambda_h$ is the probability mass at $\boldsymbol{\theta}_h$, and $\delta_{\boldsymbol{\theta}_h}(\cdot)$ denotes the Dirac measure that assigns mass one to the atom $\boldsymbol{\theta}_h$.\footnote{An atom is a set that has positive probability but cannot be further decomposed into smaller sets with strictly smaller probability.} Given this property, a particularly useful construction of the DP is the \textit{stick-breaking} representation \cite{Sethuraman1994}, which is given by  
+\begin{align*}
+	G(\cdot)&=\sum_{h=1}^{\infty}\lambda_h\delta_{\boldsymbol{\theta}_h}(\cdot),\\
+	\lambda_h&=V_h\prod_{m<h}(1-V_m), \quad V_h\sim \text{Beta}(1,\alpha),\\
+	\boldsymbol{\theta}_h&\stackrel{iid}{\sim} G_0.
+\end{align*}  
+
+The intuition behind this representation is straightforward. We begin with a stick of length 1 and break off a random proportion $V_1$ drawn from a $\text{Beta}(1,\alpha)$ distribution. This assigns a probability mass of $\lambda_1=V_1$ to $\boldsymbol{\theta}_1$, which is sampled from $G_0$. Next, from the remaining stick of length $(1-V_1)$, we break off a fraction proportional to $V_2 \sim \text{Beta}(1,\alpha)$, assigning a probability mass of $\lambda_2=V_2(1-V_1)$ to a new draw $\boldsymbol{\theta}_2$ from $G_0$. This process continues indefinitely. 
+
+Since $\mathbb{E}(V_h) = \frac{1}{1+\alpha}$, as $\alpha \rightarrow \infty$, we have $\mathbb{E}(V_h) \rightarrow 0$. Consequently, the DP places mass on a large number of atoms, leading to convergence to the base distribution $G_0$.  
+
+An important limitation of the DP is that its realizations are discrete distributions, which poses challenges when working with continuous distributions. One way to overcome this limitation is to use the DP as a mixing distribution for simple parametric distributions, such as the normal distribution \cite{Escobar1995}. This leads to Dirichlet process mixtures (DPM), which are defined as  
+\begin{align*}
+	f_G(y) &= \int f_{\boldsymbol{\theta}}(y) dG(\boldsymbol{\theta}).
+\end{align*}
+
+Observe that the mixing measure $G$ is discrete when a DP is the prior, with mass concentrated at an infinite number of atoms $\boldsymbol{\theta}_h$. Consequently, if $f_{\boldsymbol{\theta}}(y)$ follows a Gaussian distribution, the resulting mixture resembles a finite Gaussian mixture. However, unlike finite mixtures, the DP-based approach eliminates the need to pre-specify the number of components, as it provides an automatic mechanism for determining them.
+
+Thus, if we assume $y\sim N(\boldsymbol{x}_i^{\top}\boldsymbol{\beta},\sigma^2)$, then the DPM is 
+\[
+p(y_i \mid \{\lambda_h, \boldsymbol{\beta}_h, \sigma_h^2\}_{h=1}^{\infty}, \boldsymbol{x}_i) = 
+\sum_{h=1}^{\infty} \lambda_h \phi(y_i \mid \boldsymbol{x}_i^{\top}\boldsymbol{\beta}_h, \sigma_h^2),
+\]
+where $\lambda_h$ are drawn from the stick-breaking representation of the DP, and $\boldsymbol{\theta}_h=[\boldsymbol{\beta}_h^{\top} \ \sigma^2_h]^{\top}$.
+
+This mixture model can be expressed in a hierarchical structure:
+\begin{align*}
+	y_i\mid \boldsymbol{\theta}_i & \stackrel{ind}{\sim}f_{\boldsymbol{\theta}_i}\\
+	\boldsymbol{\theta}_i \mid G & \stackrel{iid}{\sim} G\\
+	G \mid \alpha,G_0 & \sim DP(\alpha G_0).
+\end{align*}
+
+Note that the hierarchical representation induces specific unit parameters, leading to a probabilistic clustering model \cite{Antoniak1974}, similar to a finite Gaussian mixture. However, the DPM is not consistent in estimating the number of clusters, it tends to overestimate the number of clusters (see simulation exercise below); although there is posterior asymptotic concentration in the other model components \cite{Miller2014}.
+
+The hierarchical representation implies that there are latent assignment variables \( s_i = h \), such that when \( \boldsymbol{\theta}_i \) is equal to the \( h \)-th unique \( \boldsymbol{\theta}_h^* \) — that is, \( \boldsymbol{\theta}_i = \boldsymbol{\theta}_h^* \)— then \( s_i = h \). Then,
+\begin{align*}
+	s_i&\sim \sum_{h=0}^{\infty}\lambda_h\delta_h,\\
+	y_i\mid s_i, \boldsymbol{\theta}_{s_i}&\sim N(\boldsymbol{x}_i^{\top}\boldsymbol{\beta}_{s_i},\sigma^2_{s_i}),
+\end{align*} 
+where $\lambda_h=P(\boldsymbol{\theta}_{i}=\boldsymbol{\theta}_{h}^*)$.
+
+This latent assignment structure, the \textit{Pólya urn} representation of the DP \cite{Blackwell1973}, which is obtained when \( G \) is marginalized out to avoid infinite atoms, and the use of conjugate priors allow for convenient computational inference in DPM.
+
+Specifically, we assume $\boldsymbol{\beta}_i\mid \sigma^2_i\sim N(\boldsymbol{\beta}_0, \sigma^2_i\boldsymbol{B}_0)$ and $\sigma_i^2\sim IG(\alpha_0/2,\delta_0/2)$. In addition, we can add a layer in the hierarchical representation, $\alpha\sim G(a,b)$ such that introducing the latent variable $\xi|\alpha,N\sim Be(\alpha+1,N)$, allows to easily sample the posterior draws of  $\alpha|\xi,H,\pi_{\xi}\sim\pi_{\xi}{G}(a+H,b-log(\xi))+(1-\pi_{\xi}){G}(a+H-1,b-log(\xi))$, where $\frac{\pi_{\xi}}{1-\pi_{\xi}}=\frac{a+H-1}{N(b-log(\xi))}$, $H$ is the number of atoms (mixture components) \cite{Escobar1995}. 
+
+The conditional posterior distribution of $\boldsymbol\theta_i$ is
+\begin{align*}
+	\boldsymbol\theta_i|\left\{\boldsymbol\theta_{i'},\boldsymbol s_{i'}:i'\neq i\right\}, y_i, \alpha & \sim \sum_{i'\neq i}\frac{N_m^{(i)}}{\alpha+N-1}f_N(y_i|\boldsymbol{x}_i^{\top}\boldsymbol{\beta}_h,\sigma_h^2)\\
+	& +\frac{\alpha}{\alpha+N-1}\int_{\mathcal{R}^K}\int_{0}^{\infty}f_N(y_i|\boldsymbol{x}_i^{\top}\boldsymbol{\beta},\sigma^2)f_N\left(\boldsymbol\beta\Big|\boldsymbol\beta_0,\sigma^2\boldsymbol B_0\right)f_{IG}(\sigma^2|\alpha_0,\delta_0)d\sigma^2 d\boldsymbol\beta,
+\end{align*}
+where $N_m^{(i)}$ is the number of observations such that $s_{i'}=h$, $i'\neq i$.
+
+Observe that the probability of belonging to a particular cluster has a reinforcement property, as it increases with the cluster size; therefore, a DPM exhibits a self-reinforcing property, the more often a given value has been sampled in the past, the more likely it is to be sampled again.
+
+Observe that the integral in the previous equation has exactly the same form as in the marginal likelihood presented in Section \ref{sec43}. Thus,
+\begin{align*}
+	p(y_i)&=\int_{\mathcal{R}^K}\int_{0}^{\infty}f_N(y_i|\boldsymbol{x}_i^{\top}\boldsymbol{\beta},\sigma^2)f_N\left(\boldsymbol\beta\Big|\boldsymbol\beta_0,\sigma^2\boldsymbol B_0\right)f_{IG}(\sigma^2|\alpha_0,\delta_0)d\sigma^2 d\boldsymbol\beta\\
+	&=\frac{1}{\pi^{1/2}}\frac{\delta_0^{\alpha_0/2}}{\delta_n^{\alpha_n/2}}\frac{|{\boldsymbol{B}}_n|^{1/2}}{|{\boldsymbol{B}}_0|^{1/2}}\frac{\Gamma(\alpha_n/2)}{\Gamma(\alpha_0/2)}, 
+\end{align*}
+where $\alpha_n=1+\alpha_0$, $\delta_n=\delta_0 + y^{\top}y + \boldsymbol{\beta}_0^{\top}{\boldsymbol{B}}_0^{-1}\boldsymbol{\beta}_0 - \boldsymbol{\beta}_n^{\top}{\boldsymbol{B}}_n^{-1}\boldsymbol{\beta}_n$,  $\boldsymbol{B}_n = (\boldsymbol{B}_0^{-1} + \boldsymbol{x}\boldsymbol{x}^{\top})^{-1}$ and $\boldsymbol{\beta}_n = \boldsymbol{B}_n(\boldsymbol{B}_0^{-1}\boldsymbol{\beta}_0 + \boldsymbol{x}y)$.
+
+Therefore, we sample $s_i$ as follows,
+\begin{equation*}
+	s_i|\left\{\boldsymbol\beta_{i'},\sigma_{i'}^2,\boldsymbol s_{i'}:i'\neq i\right\}, y_i, \alpha\sim\begin{Bmatrix}P(s_i=0|\cdot)=q_0^*\\
+		P(s_i=h|\cdot)=q_h^*, h=1,2,\dots,H^{(i)}\end{Bmatrix},
+\end{equation*}
+
+where $H^{(i)}$ is the number of clusters excluding $i$, which may have its own cluster (singleton cluster), $q^*_c=\frac{q_c}{q_0+\sum_h q_h}$, $q_c=\left\{q_0,q_h\right\}$, $q_h=\frac{N_h^{(i)}}{\alpha+N-1}f_N(y_i|\boldsymbol{x}_i^{\top}\boldsymbol\beta_h,\sigma_h^2)$ and $q_0=\frac{\alpha}{\alpha+N-1}p(y_i)$.
+
+If $s_i=0$ is sampled, then $s_i=H+1$, and a new $\sigma_h^2$ is sampled from $IG\left(\alpha_n/2,\delta_n/2\right)$, a new $\boldsymbol\beta_h$ is sample from $N(\boldsymbol\beta_n,\sigma_h^2\boldsymbol B_n)$.
+
+Discarding $\boldsymbol\theta_h$'s from last step, we use $\boldsymbol s$ and total number of components to sample $\sigma_h^2$ from 
+
+\begin{equation*}
+	IG\left(\frac{\alpha_0+N_m}{2},\frac{\delta_0+\boldsymbol y_h^{\top}\boldsymbol y_h+\boldsymbol{\beta}_0^{\top}{\boldsymbol{B}}_0^{-1}\boldsymbol{\beta}_0-\boldsymbol{\beta}_{hn}^{\top}{\boldsymbol{B}}_{hn}^{-1}\boldsymbol{\beta}_{hn}}{2}\right),
+\end{equation*}
+
+where $\boldsymbol{B}_{hn}=(\boldsymbol{B}_0^{-1}+\boldsymbol{X}_h^{\top}\boldsymbol{X}_h)^{-1}$ and $\boldsymbol{\beta}_{hn}=\boldsymbol{B}_{hn}(\boldsymbol{B}_0^{-1}\boldsymbol{\beta}_0+\boldsymbol{X}_h^{\top}\boldsymbol{y}_h)$, $\boldsymbol{X}_h$ and $\boldsymbol{y}_h$ have the $\boldsymbol{x}_i$ and $y_i$ of individuals in component $h$. We sample $\boldsymbol\beta_h$ from
+\begin{equation*}
+	N\left({\boldsymbol\beta}_{hn},\sigma_h^2\boldsymbol B_{hn}\right),
+\end{equation*}
+$h=1,2,\dots,H$.
+
+In Exercise 3 we ask to get the posterior sampler in the semi-parameteric setting, that is,
+\begin{align*}
+	y_i&=\boldsymbol{x}_i^{\top}\boldsymbol{\beta}+e_i\\
+	e_i\mid \mu_i,\sigma_i^2 &\stackrel{iid}{\sim} N(\mu_i,\sigma_i^2).
+\end{align*}
+We should not include the intercept in $\boldsymbol{\beta}$ to get flexibility in the distribution of the stochastic errors. 
+
+To sum up, a Dirichlet process mixture is a flexible way to model non-parametrically a distribution using an infinite weighted sum of discrete distributions, where each individual weight increases with the number of observations that belongs to it.
+
+\textbf{Example: Simulation exercises}
+
+Let's simulate again the simple regression mixture with two components such that $\psi_{i1}\sim \text{Ber}(0.5)$, consequently, $\psi_{i2}=1-\psi_{i1}$, and assume one regressor, $x_i\sim N(0,1)$, $i=1,2,\dots,1,000$. Then, 
+$$p(y_i \mid \boldsymbol{x}_i) = 
+0.5 \phi(y_i \mid 2+1.5x_i,1^2)+0.5 \phi(y_i \mid -1+0.5x_i,0.8^2).$$
+
+We use non-informative priors again, setting $\alpha_{0}=\delta_{0}=0.01$, $\boldsymbol{\beta}_{0}=\boldsymbol{0}_2$, $\boldsymbol{B}_{0}=\boldsymbol{I}_2$, and $a=b=0.1$. The number of MCMC iterations is 5,000, the burn-in is 1,000, and the thinning parameter is 2. However, we do not have to fix in advance the number of clusters using the DPM.
+
+The following code demonstrates how to perform inference using the stated Gibbs sampler for the DPM in the \textbf{R} package.
+
+We see from the results that the DPM overestimates the number of clusters. After the burn-in period, there are typically three clusters, occasionally four. However, most units belong to clusters 2 and 3. Additionally, the posterior plots illustrate the label-switching problem. Eventually, the posterior chains of clusters 2 and 3 reach different posterior modes, causing issues in the summary statistics. In Exercise 5, we address how to fix this issue.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Dirichlet process mixture using Gibbs sampling}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls())
+set.seed(010101)
+# Simulate data from a 2-component mixture model
+N <- 1000; x <- rnorm(N); z <- rbinom(N, 1, 0.5)
+y <- ifelse(z == 0, rnorm(N, 2 + 1.5*x, 1), rnorm(N, -1 + 0.5*x, 0.8))
+X <- cbind(1, x)
+k <- 2
+data <- data.frame(y, x); Reg <- lm(y ~ x)
+SumReg <- summary(Reg)
+# Hyperparameters
+a0 <- 0.001; d0 <- 0.001
+b0 <- rep(0, k); B0 <- diag(k)
+B0i <- solve(B0)
+a <- 0.1; b <- 0.1
+# MCMC parameters
+mcmc <- 5000; burnin <- 1000
+tot <- mcmc + burnin; thin <- 2
+# Gibbs sampling functions
+PostSig2 <- function(Xh, yh){
+	Nh <- length(yh)
+	yh <- matrix(yh, Nh, 1)
+	if(Nh == 1){
+		Xh <- matrix(Xh, k, 1)
+		Bn <- solve(Xh%*%t(Xh) + B0i)
+		bn <- Bn%*%(B0i%*%b0 + Xh%*%yh)
+	}else{
+		Xh <- matrix(Xh, Nh, k)
+		Bn <- solve(t(Xh)%*%Xh + B0i)
+		bn <- Bn%*%(B0i%*%b0 + t(Xh)%*%yh)
+	}
+	Bni <- solve(Bn)
+	an <- a0 + Nh
+	dn <- d0 + t(yh)%*%yh + t(b0)%*%B0i%*%b0 - t(bn)%*%Bni%*%bn 
+	sig2 <- invgamma::rinvgamma(1, shape = an/2, rate = dn/2)
+	return(sig2)
+}
+PostBeta <- function(sig2h, Xh, yh){
+	Nh <- length(yh)
+	yh <- matrix(yh, Nh, 1)
+	if(Nh == 1){
+		Xh <- matrix(Xh, k, 1)
+		Bn <- solve(Xh%*%t(Xh) + B0i)
+		bn <- Bn%*%(B0i%*%b0 + Xh%*%yh)
+	}else{
+		Xh <- matrix(Xh, Nh, k)
+		Bn <- solve(t(Xh)%*%Xh + B0i)
+		bn <- Bn%*%(B0i%*%b0 + t(Xh)%*%yh)
+	}
+	Beta <- MASS::mvrnorm(1, bn, sig2h*Bn)
+	return(Beta)
+}
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Dirichlet process mixture using Gibbs sampling}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+PostAlpha <- function(s, alpha){
+	H <- length(unique(s))
+	psi <- rbeta(1, alpha + 1, N)
+	pi.ratio <- (a + H - 1) / (N * (b - log(psi)))
+	pi <- pi.ratio / (1 + pi.ratio)
+	components <- sample(1:2, prob = c(pi, (1 - pi)), size = 1)
+	cs <- c(a + H, a + H - 1)
+	ds <- b - log(psi)
+	alpha <- rgamma(1, cs[components], ds)
+	return(alpha)
+}
+LogMarLikLM <- function(xh, yh){
+	xh <- matrix(xh, k, 1)
+	Bn <- solve(xh%*%t(xh) + B0i)
+	Bni <- solve(Bn)
+	bn <- Bn%*%(B0i%*%b0 + xh%*%yh)
+	an <- a0 + 1
+	dn <- d0 + yh^2 + t(b0)%*%B0i%*%b0 - t(bn)%*%Bni%*%bn 
+	# Log marginal likelihood
+	logpy <- (1/2)*log(1/pi)+(a0/2)*log(d0)-(an/2)*log(dn) + 0.5*log(det(Bn)/det(B0)) + lgamma(an/2)-lgamma(a0/2)
+	return(logpy)
+}
+PostS <- function(BETA, SIGMA, Alpha, s, i){
+	Nl <- table(s[-i]); H <- length(Nl)
+	qh <- sapply(1:H, function(h){(Nl[h]/(N+Alpha-1))*dnorm(y[i], mean = t(X[i,])%*%BETA[,h], sd = SIGMA[h])})
+	qh <- c(qh, (Alpha/(N+Alpha-1))*exp(LogMarLikLM(xh = X[i,], yh = y[i])))
+	si <- sample(1:length(qh), 1, prob = qh)
+	if(si == (H + 1)){
+		Sig2New <- PostSig2(Xh = X[i,], yh = y[i])
+		SIGMA = c(SIGMA, Sig2New^0.5)
+		BetaNew <- PostBeta(sig2h = Sig2New, Xh = X[i,], yh = y[i])
+		BETA = cbind(BETA, BetaNew)
+	}
+	return(list(si = si, BETA = BETA, SIGMA = SIGMA))
+}
+PostBetas <- list(); PostSigma <- list()
+Posts <- matrix(0, tot, N); PostAlphas <- rep(0, tot)
+S <- sample(1:3, N, replace = T, prob = c(0.5, 0.3, 0.2))
+BETA <- cbind(Reg$coefficients, Reg$coefficients, Reg$coefficients)
+SIGMA <- rep(SumReg$sigma, 3)
+Alpha <- rgamma(1, a, b)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Dirichlet process mixture using Gibbs sampling}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+	for(i in 1:N){
+		Rests <- PostS(BETA = BETA, SIGMA = SIGMA, Alpha = Alpha, s = S, i = i)
+		S[i] <- Rests$si
+		BETA <- Rests$BETA; SIGMA <- Rests$SIGMA
+	}
+	Alpha <- PostAlpha(s = S, alpha = Alpha)
+	Nl <- table(S); H <- length(Nl)
+	SIGMA <- rep(NA, H)
+	BETA <- matrix(NA, k, H)
+	l <- 1
+	for(h in unique(S)){
+		Idh <- which(S == h)
+		SIGMA[l] <- (PostSig2(Xh = X[Idh, ], yh = y[Idh]))^0.5
+		BETA[,l] <- PostBeta(sig2h = SIGMA[l]^2, Xh = X[Idh, ], yh = y[Idh])
+		l <- l + 1
+	}
+	PostBetas[[s]] <- BETA
+	PostSigma[[s]] <- SIGMA
+	Posts[s, ] <- S
+	PostAlphas[s] <- Alpha
+	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+keep <- seq((burnin+1), tot, thin)
+PosteriorS<- Posts[keep,]
+Clusters <- sapply(1:length(keep), function(i){length(table(PosteriorS[i,]))})
+table(Clusters)
+NClus <- 3; l <- 1
+PosteriorSIGMA <- matrix(NA, length(keep), NClus)
+for (s in keep){
+	PosteriorSIGMA[l,] <- PostSigma[[s]][1:NClus]
+	l <- l + 1
+}
+summary(coda::mcmc(PosteriorSIGMA))
+PosteriorBeta2 <- matrix(NA, length(keep), k)
+j <- 1
+for(s in keep){
+	PosteriorBeta2[j,] <- PostBetas[[s]][,2]
+	j <- j + 1
+}
+print(summary(coda::mcmc(PosteriorBeta2)))
+plot(coda::mcmc(PosteriorBeta2))
+PosteriorBeta3 <- matrix(NA, length(keep), k)
+j <- 1
+for(s in keep){
+	PosteriorBeta3[j,] <- PostBetas[[s]][,3]
+	j <- j + 1
+}
+print(summary(coda::mcmc(PosteriorBeta3)))
+plot(coda::mcmc(PosteriorBeta3))
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\textbf{Example: Consumption of marijuana in Colombia}
+
+Let's use the dataset \textit{MarijuanaColombia.csv} from our GitHub repository to perform inference on the demand for marijuana in Colombia. This dataset contains information on the (log) monthly demand in 2019 from the National Survey of the Consumption of Psychoactive Substances. It includes variables such as the presence of a drug dealer in the neighborhood (\textit{Dealer}), gender (\textit{Female}), indicators of good physical and mental health (\textit{PhysicalHealthGood} and \textit{MentalHealthGood}), age (\textit{Age} and \textit{Age2}), and (log) prices of marijuana, cocaine, and crack by individual (\textit{LogPriceMarijuana}, \textit{LogPriceCocaine}, and \textit{LogPriceCrack}). The sample size is 1,156.
+
+In Exercise 2 we ask to estimate a finite Gaussian mixture regression starting with five potential clusters. Here we perform inference using a Dirichlet process mixture. 
+
+
+
 \section{Non-parametric generalized additive models}\label{sec11_2}
 %\section{Additive non-parametric structure}\label{sec11_1}
 %\subsection{Partial linear model}\label{sec11_21}
@@ -626,11 +927,26 @@ summary(coda::mcmc(PosteriorLAMBDA))
 		p(\mu_i) &= 
 		0.3 \phi(\mu_i \mid -0.5,0.5^2) + 0.7 \phi(\mu_i \mid 1,0.8^2).		
 	\end{align*}
-	Assume that $x_{i1}$ and $x_{i2}$ follow a standard normal distribution and that the sample size is 1,000. Perform inference in this model assuming that the number of components is unknown. Start with $H=5$ and use non-informative priors, setting $\alpha_{h0}=\delta_{h0}=0.01$, $\bm{\beta}_0=\bm{0}_2$, $\bm{B}_0=\bm{I}_2$, $\mu_{h0}=0$, $\sigma^2_{\mu 0}=10$, and $\bm{\alpha}_0=[1/H \ \dots \ 1/H]^{\top}$. Use 6,000 MCMC iterations, a burn-in period of 4,000, and a thinning parameter of 2. Compare the population parameters with the posterior estimates and plot the population density along with the posterior density estimate of $\bm{\mu}$ (the mean, and the 95\% credible interval).
+	Assume that $x_{i1}$ and $x_{i2}$ follow a standard normal distribution and that the sample size is 1,000. Perform inference in this model assuming that the number of components is unknown. Start with $H=5$ and use non-informative priors, setting $\alpha_{h0}=\delta_{h0}=0.01$, $\boldsymbol{\beta}_0=\boldsymbol{0}_2$, $\boldsymbol{B}_0=\boldsymbol{I}_2$, $\mu_{h0}=0$, $\sigma^2_{\mu 0}=10$, and $\boldsymbol{\alpha}_0=[1/H \ \dots \ 1/H]^{\top}$. Use 6,000 MCMC iterations, a burn-in period of 4,000, and a thinning parameter of 2. Compare the population parameters with the posterior estimates and plot the population density along with the posterior density estimate of $\boldsymbol{\mu}$ (the mean, and the 95\% credible interval).
 	
-	\item 
+	\item \textbf{Example: Consumption of marijuana in Colombia continues}
 	
-
+	Use the dataset \textit{MarijuanaColombia.csv} from our GitHub repository to perform inference on the demand for marijuana in Colombia. This dataset contains information on the (log) monthly demand in 2019 from the National Survey of the Consumption of Psychoactive Substances. It includes variables such as the presence of a drug dealer in the neighborhood (\textit{Dealer}), gender (\textit{Female}), indicators of good physical and mental health (\textit{PhysicalHealthGood} and \textit{MentalHealthGood}), age (\textit{Age} and \textit{Age2}), and (log) prices of marijuana, cocaine, and crack by individual (\textit{LogPriceMarijuana}, \textit{LogPriceCocaine}, and \textit{LogPriceCrack}). The sample size is 1,156.
+	
+	Estimate a finite Gaussian mixture regression using non-informative priors, starting with five potential clusters. Obtain the posterior distribution of the own-price elasticity of marijuana and the cross-price elasticities of marijuana demand with respect to the prices of cocaine and crack.
+	
+	\item Get the posterior sampler in the semi-parametric setting using a Dirichlet process mixture:
+	\begin{align*}
+		y_i&=\boldsymbol{x}_i^{\top}\boldsymbol{\beta}+e_i\\
+		e_i\mid \mu_i,\sigma_i^2 &\stackrel{iid}{\sim} N(\mu_i,\sigma_i^2),
+	\end{align*}
+	Do not include the intercept in $\boldsymbol{\beta}$ to get flexibility in the distribution of the stochastic errors.
+	
+	\item  Perform inference in the simulation of the semi-parametric model of Exercise 1 using the sampler of Exercise 3. 
+	
+	\item \textbf{Example: Simulation exercise continues}
+	
+	Fix the label-switching problem of the simulation exercise of the DPM.
   
 \end{enumerate}
 

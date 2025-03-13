@@ -191,5 +191,193 @@ plot_filtering_estimates(DataDens)
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter11/figures/DensEstSE.png}
 	\caption[List of figure caption goes here]{Posterior density estimate: Stochastic errors.}\label{figPMPDens}
 \end{figure}
+
+\item Use the dataset \textit{MarijuanaColombia.csv} from our GitHub repository to perform inference on the demand for marijuana in Colombia. This dataset contains information on the (log) monthly demand in 2019 from the National Survey of the Consumption of Psychoactive Substances. It includes variables such as the presence of a drug dealer in the neighborhood (\textit{Dealer}), gender (\textit{Female}), indicators of good physical and mental health (\textit{PhysicalHealthGood} and \textit{MentalHealthGood}), age (\textit{Age} and \textit{Age2}), and (log) prices of marijuana, cocaine, and crack by individual (\textit{LogPriceMarijuana}, \textit{LogPriceCocaine}, and \textit{LogPriceCrack}). The sample size is 1,156.
+
+Estimate a finite Gaussian mixture regression using non-informative priors, starting with five potential clusters. Obtain the posterior distribution of the own-price elasticity of marijuana and the cross-price elasticities of marijuana demand with respect to the prices of cocaine and crack.\\
+
+\textbf{Answer:}
+
+The following code demonstrates how to perform inference in this model using 2,000 MCMC iterations, with a burn-in period of 500 and a thinning parameter of 2. The results indicate the presence of two clusters, with mean probabilities of 0.73 and 0.27, and 95\% credible intervals of (0.66, 0.80) and (0.20, 0.34), respectively.  
+
+The 95\% posterior credible intervals for the own-price elasticities are $(-0.69, -0.38)$ and $(-0.08, 0.30)$. Additionally, the 95\% credible intervals for the cross-price elasticities with respect to cocaine are $(0.12, 0.48)$ and $(-0.24, 0.18)$, while those with respect to crack are $(0.20, 0.60)$ and $(0.11, 0.50)$.  
+
+These results suggest substitution between marijuana and both cocaine and crack: an increase in the prices of these drugs leads to higher marijuana demand, particularly in the first cluster of individuals. However, these findings should be interpreted with caution due to potential endogeneity issues that must be addressed for a rigorous scientific analysis. The primary goal of this exercise is pedagogical.  
+ 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Semi-parametric Gaussian mixture}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+Data <- read.csv("https://raw.githubusercontent.com/BEsmarter-consultancy/BSTApp/refs/heads/master/DataApp/MarijuanaColombia.csv")
+attach(Data)
+y <- LogMarijuana; X <- as.matrix(cbind(1, Data[,-1]))
+Reg <- lm(y ~ X - 1); summary(Reg)
+k <- dim(X)[2]; N <- dim(X)[1]
+# Plot
+library(ggplot2)
+ggplot(Data, aes(x = LogMarijuana)) + geom_density(fill = "blue", alpha = 0.3) + labs(title = "Density Plot", x = "y", y = "Density") + theme_minimal()
+# Hyperparameters
+d0 <- 0.001; a0 <- 0.001
+b0 <- rep(0, k); B0 <- diag(k); B0i <- solve(B0)
+H <- 5; a0h <- rep(1/H, H)
+# MCMC parameters
+mcmc <- 2000; burnin <- 500
+tot <- mcmc + burnin; thin <- 2
+# Gibbs sampling functions
+PostSig2 <- function(Betah, Xh, yh){
+	Nh <- length(yh); an <- a0 + Nh
+	dn <- d0 + t(yh - Xh%*%Betah)%*%(yh - Xh%*%Betah)
+	sig2 <- invgamma::rinvgamma(1, shape = an/2, rate = dn/2)
+	return(sig2)
+}
+PostBeta <- function(sig2h, Xh, yh){
+	if(length(yh) == 1){
+		Xh <- matrix(Xh, k, 1)
+		Bn <- solve(B0i + sig2h^(-1)*Xh%*%t(Xh))
+		bn <- Bn%*%(B0i%*%b0 + sig2h^(-1)*Xh%*%yh)
+	}else{
+		Bn <- solve(B0i + sig2h^(-1)*t(Xh)%*%Xh)
+		bn <- Bn%*%(B0i%*%b0 + sig2h^(-1)*t(Xh)%*%yh)
+	}
+	Beta <- MASS::mvrnorm(1, bn, Bn)
+	return(Beta)
+}
+PostBetas <- list(); PostSigma2 <- list(); PostLambda <- list()
+PostPsi <- matrix(0, tot, N); Psi <- sample(1:H, N, replace = TRUE, prob = a0h)
+Beta <- matrix(rep(Reg$coefficients, H), k, H); Hs <- H
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Semi-parametric Gaussian mixture}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+	Sig2 <- rep(NA, Hs)
+	for(h in 1:Hs){
+		idh <- which(Psi == h)
+		Sig2[h] <- PostSig2(Betah = Beta[, h], Xh = X[idh,], yh = y[idh])
+	}
+	Hs <- length(Sig2)
+	Beta <- matrix(NA, k, Hs)
+	for(h in 1:Hs){
+		idh <- which(Psi == h)
+		Beta[, h] <- PostBeta(sig2h = Sig2[h], Xh = X[idh,], yh = y[idh])
+	}
+	Lambda <- sort(MCMCpack::rdirichlet(1, a0h[1:Hs] + table(Psi)), decreasing = TRUE)
+	for(i in 1:N){
+		lambdai <- NULL
+		for(h in 1:Hs){
+			idh <- which(Psi == h)
+			lambdaih <- Lambda[h]*dnorm(y[i], X[i,]%*%Beta[,h], Sig2[h]^0.5)
+			lambdai <- c(lambdai, lambdaih)
+		}
+		Psi[i] <- sample(1:Hs, 1, prob = lambdai)
+	}
+	Hs <- length(table(Psi))
+	PostBetas[[s]] <- Beta; PostSigma2[[s]] <- Sig2
+	PostLambda[[s]] <- Lambda; PostPsi[s, ] <- Psi
+	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+keep <- seq((burnin+1), tot, thin)
+PosteriorPsi <- PostPsi[keep,]
+Clusters <- sapply(1:length(keep), function(i){length(table(PosteriorPsi[i,]))})
+NClus <- 2
+# Clusters <- sapply(1:length(keep), function(i){print(table(PosteriorPsi[i,]))})
+PosteriorSIGMA <- matrix(NA, length(keep), NClus)
+PosteriorBETA <- array(NA, c(k,NClus,length(keep)))
+PosteriorLAMBDA <- matrix(NA, length(keep), NClus)
+l <- 1
+for (s in keep){
+	PosteriorSIGMA[l,] <- PostSigma2[[s]][1:NClus]
+	PosteriorLAMBDA[l,] <- PostLambda[[s]][1:NClus]
+	PosteriorBETA[,,l] <- PostBetas[[s]]
+	l <- l + 1
+}
+summary(coda::mcmc(PosteriorSIGMA)); summary(coda::mcmc(PosteriorLAMBDA))
+for(l in 1:NClus){
+	PosteriorBeta <- t(PosteriorBETA[,l,])
+	colnames(PosteriorBeta) <- c("Ct", names(Data[,-1]))
+	print(summary(coda::mcmc(PosteriorBeta)))
+}
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+	\item Get the posterior sampler in the semi-parametric setting using a Dirichlet process mixture:
+\begin{align*}
+	y_i&=\boldsymbol{x}_i^{\top}\boldsymbol{\beta}+e_i\\
+	e_i\mid \mu_i,\sigma_i^2 &\stackrel{iid}{\sim} N(\mu_i,\sigma_i^2),
+\end{align*}
+Do not include the intercept in $\boldsymbol{\beta}$ to get flexibility in the distribution of the stochastic errors.
+
+\textbf{Answer:}
+
+This mixture model can be expressed in a hierarchical structure:
+\begin{align*}
+	e_i\mid \boldsymbol{\theta}_i & \stackrel{ind}{\sim}f_{\boldsymbol{\theta}_i}\\
+	\boldsymbol{\theta}_i \mid G & \stackrel{iid}{\sim} G\\
+	G \mid \alpha,G_0 & \sim DP(\alpha G_0),
+\end{align*}
+where $e_i=y_i-\bm{x}_i^{\top}\bm{\beta}$. 
+
+Thus, 
+
+\begin{align*}
+	s_i&\sim \sum_{h=0}^{\infty}\lambda_h\delta_h,\\
+	e_i\mid s_i, \boldsymbol{\theta}_{s_i}&\sim N(\mu_{s_i},\sigma^2_{s_i}),
+\end{align*} 
+where $\lambda_h=P(\boldsymbol{\theta}_{i}=\boldsymbol{\theta}_{h}^*)$.
+
+Let's assume $\boldsymbol{\beta}_i\mid \sigma^2_i\sim N(\boldsymbol{\beta}_0, \sigma^2_i\boldsymbol{B}_0)$, $\sigma_i^2\sim IG(\alpha_0/2,\delta_0/2)$, $\mu_i\sim N(\mu_0,\sigma_i^2/\beta_0)$, $\alpha\sim G(a,b)$ such that introducing the latent variable $\xi|\alpha,N\sim Be(\alpha+1,N)$, allows to easily sample the posterior draws of  $\alpha|\xi,H,\pi_{\xi}\sim\pi_{\xi}{G}(a+H,b-log(\xi))+(1-\pi_{\xi}){G}(a+H-1,b-log(\xi))$, where $\frac{\pi_{\xi}}{1-\pi_{\xi}}=\frac{a+H-1}{N(b-log(\xi))}$, $H$ is the number of atoms (mixture components). 
+
+The conditional posterior distribution of $\boldsymbol\theta_i$ is
+\begin{align*}
+	\boldsymbol\theta_i|\left\{\boldsymbol\theta_{i'},\boldsymbol s_{i'}:i'\neq i\right\}, y_i, \alpha & \sim \sum_{i'\neq i}\frac{N_m^{(i)}}{\alpha+N-1}f_N(y_i|\boldsymbol{x}_i^{\top}\boldsymbol{\beta}_h,\sigma_h^2)\\
+	& +\frac{\alpha}{\alpha+N-1}\int_{\mathcal{R}^K}\int_{0}^{\infty}f_N(y_i|\boldsymbol{x}_i^{\top}\boldsymbol{\beta},\sigma^2)f_N\left(\boldsymbol\beta\Big|\boldsymbol\beta_0,\sigma^2\boldsymbol B_0\right)f_{IG}(\sigma^2|\alpha_0,\delta_0)d\sigma^2 d\boldsymbol\beta,
+\end{align*}
+where $N_m^{(i)}$ is the number of observations such that $s_{i'}=h$, $i'\neq i$.
+
+Observe that the probability of belonging to a particular cluster has a reinforcement property, as it increases with the cluster size; therefore, a DPM exhibits a self-reinforcing property, the more often a given value has been sampled in the past, the more likely it is to be sampled again.
+
+Observe that the integral in the previous equation has exactly the same form as in the marginal likelihood presented in Section \ref{sec43}. Thus,
+\begin{align*}
+	p(y_i)&=\int_{\mathcal{R}^K}\int_{0}^{\infty}f_N(y_i|\boldsymbol{x}_i^{\top}\boldsymbol{\beta},\sigma^2)f_N\left(\boldsymbol\beta\Big|\boldsymbol\beta_0,\sigma^2\boldsymbol B_0\right)f_{IG}(\sigma^2|\alpha_0,\delta_0)d\sigma^2 d\boldsymbol\beta\\
+	&=\frac{1}{\pi^{1/2}}\frac{\delta_0^{\alpha_0/2}}{\delta_n^{\alpha_n/2}}\frac{|{\boldsymbol{B}}_n|^{1/2}}{|{\boldsymbol{B}}_0|^{1/2}}\frac{\Gamma(\alpha_n/2)}{\Gamma(\alpha_0/2)}, 
+\end{align*}
+where $\alpha_n=1+\alpha_0$, $\delta_n=\delta_0 + y^{\top}y + \boldsymbol{\beta}_0^{\top}{\boldsymbol{B}}_0^{-1}\boldsymbol{\beta}_0 - \boldsymbol{\beta}_n^{\top}{\boldsymbol{B}}_n^{-1}\boldsymbol{\beta}_n$,  $\boldsymbol{B}_n = (\boldsymbol{B}_0^{-1} + \boldsymbol{x}\boldsymbol{x}^{\top})^{-1}$ and $\boldsymbol{\beta}_n = \boldsymbol{B}_n(\boldsymbol{B}_0^{-1}\boldsymbol{\beta}_0 + \boldsymbol{x}y)$.
+
+Therefore, we sample $s_i$ as follows,
+\begin{equation*}
+	s_i|\left\{\boldsymbol\beta_{i'},\sigma_{i'}^2,\boldsymbol s_{i'}:i'\neq i\right\}, y_i, \alpha\sim\begin{Bmatrix}P(s_i=0|\cdot)=q_0^*\\
+		P(s_i=h|\cdot)=q_h^*, h=1,2,\dots,H^{(i)}\end{Bmatrix},
+\end{equation*}
+
+where $H^{(i)}$ is the number of clusters excluding $i$, which may have its own cluster (singleton cluster), $q^*_c=\frac{q_c}{q_0+\sum_h q_h}$, $q_c=\left\{q_0,q_h\right\}$, $q_h=\frac{N_h^{(i)}}{\alpha+N-1}f_N(y_i|\boldsymbol{x}_i^{\top}\boldsymbol\beta_h,\sigma_h^2)$ and $q_0=\frac{\alpha}{\alpha+N-1}p(y_i)$.
+
+If $s_i=0$ is sampled, then $s_i=H+1$, and a new $\sigma_h^2$ is sampled from $IG\left(\alpha_n/2,\delta_n/2\right)$, a new $\boldsymbol\beta_h$ is sample from $N(\boldsymbol\beta_n,\sigma_h^2\boldsymbol B_n)$.
+
+Discarding $\boldsymbol\theta_h$'s from last step, we use $\boldsymbol s$ and total number of components to sample $\sigma_h^2$ from 
+
+\begin{equation*}
+	IG\left(\frac{\alpha_0+N_m}{2},\frac{\delta_0+\boldsymbol y_h^{\top}\boldsymbol y_h+\boldsymbol{\beta}_0^{\top}{\boldsymbol{B}}_0^{-1}\boldsymbol{\beta}_0-\boldsymbol{\beta}_{hn}^{\top}{\boldsymbol{B}}_{hn}^{-1}\boldsymbol{\beta}_{hn}}{2}\right),
+\end{equation*}
+
+where $\boldsymbol{B}_{hn}=(\boldsymbol{B}_0^{-1}+\boldsymbol{X}_h^{\top}\boldsymbol{X}_h)^{-1}$ and $\boldsymbol{\beta}_{hn}=\boldsymbol{B}_{hn}(\boldsymbol{B}_0^{-1}\boldsymbol{\beta}_0+\boldsymbol{X}_h^{\top}\boldsymbol{y}_h)$, $\boldsymbol{X}_h$ and $\boldsymbol{y}_h$ have the $\boldsymbol{x}_i$ and $y_i$ of individuals in component $h$. We sample $\boldsymbol\beta_h$ from
+\begin{equation*}
+	N\left({\boldsymbol\beta}_{hn},\sigma_h^2\boldsymbol B_{hn}\right),
+\end{equation*}
+$h=1,2,\dots,H$.
+
+
+\item  Perform inference in the simulation of the semi-parametric model of Exercise 1 using the sampler of Exercise 3. 
+
  
 \end{enumerate}

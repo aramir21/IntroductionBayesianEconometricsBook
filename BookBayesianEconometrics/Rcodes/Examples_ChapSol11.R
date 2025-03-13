@@ -176,10 +176,9 @@ plot_filtering_estimates <- function(df) {
 }
 plot_filtering_estimates(DataDens)
 
-########################## Mixture model: Censured model football players ########################## 
+########################## Mixture model: Demand of marijuana ########################## 
 rm(list = ls()); set.seed(010101)
-# Data <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/1ValueFootballPlayers.csv", sep = ",", header = TRUE, quote = "")
-Data <- read.csv("C:/Users/aramir21/Desktop/BookBayesianInference/IntroductionBayesianEconometricsBook/BookBayesianEconometrics/Rcodes/DataApplications/MarijuanaColombia.csv")
+Data <- read.csv("https://raw.githubusercontent.com/BEsmarter-consultancy/BSTApp/refs/heads/master/DataApp/MarijuanaColombia.csv")
 attach(Data)
 y <- LogMarijuana
 X <- as.matrix(cbind(1, Data[,-1]))
@@ -188,6 +187,7 @@ summary(Reg)
 k <- dim(X)[2]
 N <- dim(X)[1]
 # Plot
+library(ggplot2)
 ggplot(Data, aes(x = LogMarijuana)) +
   geom_density(fill = "blue", alpha = 0.3) +  # Density plot with fill color
   labs(title = "Density Plot", x = "y", y = "Density") +
@@ -282,8 +282,8 @@ close(pb)
 keep <- seq((burnin+1), tot, thin)
 PosteriorPsi <- PostPsi[keep,]
 Clusters <- sapply(1:length(keep), function(i){length(table(PosteriorPsi[i,]))})
-NClus <- 4
-Clusters <- sapply(1:length(keep), function(i){print(table(PosteriorPsi[i,]))})
+NClus <- 2
+# Clusters <- sapply(1:length(keep), function(i){print(table(PosteriorPsi[i,]))})
 PosteriorSIGMA <- matrix(NA, length(keep), NClus)
 PosteriorBETA <- array(NA, c(k,NClus,length(keep)))
 PosteriorLAMBDA <- matrix(NA, length(keep), NClus)
@@ -302,4 +302,11 @@ for(l in 1:NClus){
   colnames(PosteriorBeta) <- c("Ct", names(Data[,-1]))
   print(summary(coda::mcmc(PosteriorBeta)))
 }
+PosteriorBeta1 <- t(PosteriorBETA[,1,])
+colnames(PosteriorBeta1) <- c("Ct", names(Data[,-1]))
+plot(coda::mcmc(PosteriorBeta1))
+
+PosteriorBeta2 <- t(PosteriorBETA[,2,])
+colnames(PosteriorBeta2) <- c("Ct", names(Data[,-1]))
+plot(coda::mcmc(PosteriorBeta2))
 
