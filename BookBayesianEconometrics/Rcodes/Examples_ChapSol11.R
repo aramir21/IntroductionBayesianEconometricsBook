@@ -202,8 +202,8 @@ B0i <- solve(B0)
 H <- 5
 a0h <- rep(1/H, H)
 # MCMC parameters
-mcmc <- 2000
-burnin <- 500
+mcmc <- 5000
+burnin <- 1000
 tot <- mcmc + burnin
 thin <- 2
 # Gibbs sampling functions
@@ -226,19 +226,6 @@ PostBeta <- function(sig2h, Xh, yh){
   Beta <- MASS::mvrnorm(1, bn, Bn)
   return(Beta)
 }
-# PostYl <- function(Betah, sig2h, L, U, i){
-#   Ylmean <- X[i,]%*%Betah
-#   if(y[i] == L){
-#     Yli <- truncnorm::rtruncnorm(1, a = -Inf, b = L, mean = Ylmean, sd = sig2h^0.5)
-#   }else{
-#     if(y[i] == U){
-#       Yli <- truncnorm::rtruncnorm(1, a = U, b = Inf, mean = Ylmean, sd = sig2h^0.5)
-#     }else{
-#       Yli <- y[i]
-#     }
-#   }
-#   return(Yli)
-# }
 
 PostBetas <- list()
 PostSigma2 <- list()
@@ -296,7 +283,9 @@ for (s in keep){
 }
 
 summary(coda::mcmc(PosteriorSIGMA))
+plot(coda::mcmc(PosteriorSIGMA))
 summary(coda::mcmc(PosteriorLAMBDA))
+plot(coda::mcmc(PosteriorLAMBDA))
 for(l in 1:NClus){
   PosteriorBeta <- t(PosteriorBETA[,l,])
   colnames(PosteriorBeta) <- c("Ct", names(Data[,-1]))
@@ -310,3 +299,221 @@ PosteriorBeta2 <- t(PosteriorBETA[,2,])
 colnames(PosteriorBeta2) <- c("Ct", names(Data[,-1]))
 plot(coda::mcmc(PosteriorBeta2))
 
+########### Dirichlet process mixture: Semi-parametric simulation ###############
+rm(list = ls())
+set.seed(010101)
+# Simulate data from a 2-component mixture model
+n <- 1000
+x1 <- rnorm(n); x2 <- rnorm(n)
+B <- c(0.5, -1.2)
+X <- cbind(x1, x2)
+z <- rbinom(n, 1, 0.3)  # Latent class indicator
+mu <- ifelse(z == 0, rnorm(n, -0.5, 0.5), rnorm(n, 1, 0.8))
+y <- X%*%B + mu
+k <- dim(X)[2]
+N <- dim(X)[1]
+# Hyperparameters
+a0 <- 0.001; d0 <- 0.001
+b0 <- rep(0, k); B0 <- diag(k)
+B0i <- solve(B0)
+a <- 0.1; b <- 0.1
+mu0 <- 0
+sig2mu0 <- 10
+beta0 <- 0.1
+# MCMC parameters
+mcmc <- 5000; burnin <- 1000
+tot <- mcmc + burnin; thin <- 2
+# Gibbs sampling functions
+PostSig2 <- function(Xh, yh, Beta){
+  Nh <- length(yh)
+  if(Nh == 1){
+    Xh <- matrix(Xh, k, 1)
+    XhB <- t(Xh)%*%Beta
+  }else{
+    Xh <- matrix(Xh, Nh, k)
+    XhB <- Xh%*%Beta
+  }
+  eh <- matrix(yh, Nh, 1) - XhB
+  an <- a0 + Nh
+  dn <- d0 + sum((eh - mean(eh))^2) + beta0*Nh/(beta0 + Nh)*(mean(eh) - mu0)^2
+  sig2 <- invgamma::rinvgamma(1, shape = an/2, rate = dn/2)
+  return(sig2)
+}
+Postmu <- function(sig2h, Beta, Xh, yh){
+  Nh <- length(yh)
+  if(Nh == 1){
+    Xh <- matrix(Xh, k, 1)
+    XhB <- t(Xh)%*%Beta
+  }else{
+    Xh <- matrix(Xh, Nh, k)
+    XhB <- Xh%*%Beta
+  }
+  eh <- matrix(yh, Nh, 1) - XhB
+  sig2mu <- sig2h/(beta0 + Nh)
+  mun <- (beta0*mu0 + Nh*mean(eh))/(beta0 + Nh)
+  mu <- rnorm(1, mun, sig2mu^0.5)
+  return(mu)
+}
+PostBeta <- function(sig2, mu, X, y, Clust){
+  XtX <- matrix(0, k, k)
+  Xty <- matrix(0, k, 1)
+  Hs <- length(mu)
+  for(h in 1:Hs){
+    idh <- which(Clust == h)
+    if(length(idh) == 1){
+      Xh <- matrix(X[idh,], 1, 2)
+      XtXh <- sig2[h]^(-1)*t(Xh)%*%Xh
+      yh <- y[idh]
+      Xtyh <- sig2[h]^(-1)*t(Xh)%*%(yh - mu[h])
+    }else{
+      Xh <- X[idh,]
+      XtXh <- sig2[h]^(-1)*t(Xh)%*%Xh
+      yh <- y[idh]
+      Xtyh <- sig2[h]^(-1)*t(Xh)%*%(yh - mu[h])
+    }
+    XtX <- XtX + XtXh
+    Xty <- Xty + Xtyh
+  }
+  Bn <- solve(B0i + XtX)
+  bn <- Bn%*%(B0i%*%b0 + Xty)
+  Beta <- MASS::mvrnorm(1, bn, Bn)
+  return(Beta)
+}
+
+
+
+
+
+PostBeta <- function(sig2h, Xh, yh){
+  Nh <- length(yh)
+  yh <- matrix(yh, Nh, 1)
+  if(Nh == 1){
+    Xh <- matrix(Xh, k, 1)
+    Bn <- solve(Xh%*%t(Xh) + B0i)
+    bn <- Bn%*%(B0i%*%b0 + Xh%*%yh)
+  }else{
+    Xh <- matrix(Xh, Nh, k)
+    Bn <- solve(t(Xh)%*%Xh + B0i)
+    bn <- Bn%*%(B0i%*%b0 + t(Xh)%*%yh)
+  }
+  Beta <- MASS::mvrnorm(1, bn, sig2h*Bn)
+  return(Beta)
+}
+PostAlpha <- function(s, alpha){
+  H <- length(unique(s))
+  psi <- rbeta(1, alpha + 1, N)
+  pi.ratio <- (a + H - 1) / (N * (b - log(psi)))
+  pi <- pi.ratio / (1 + pi.ratio)
+  components <- sample(1:2, prob = c(pi, (1 - pi)), size = 1)
+  cs <- c(a + H, a + H - 1)
+  ds <- b - log(psi)
+  alpha <- rgamma(1, cs[components], ds)
+  return(alpha)
+}
+LogMarLikLM <- function(xh, yh){
+  xh <- matrix(xh, k, 1)
+  Bn <- solve(xh%*%t(xh) + B0i)
+  Bni <- solve(Bn)
+  bn <- Bn%*%(B0i%*%b0 + xh%*%yh)
+  an <- a0 + 1
+  dn <- d0 + yh^2 + t(b0)%*%B0i%*%b0 - t(bn)%*%Bni%*%bn 
+  # Log marginal likelihood
+  logpy <- (1/2)*log(1/pi)+(a0/2)*log(d0)-(an/2)*log(dn) + 0.5*log(det(Bn)/det(B0)) + lgamma(an/2)-lgamma(a0/2)
+  return(logpy)
+}
+PostS <- function(BETA, SIGMA, Alpha, s, i){
+  Nl <- table(s[-i]); H <- length(Nl)
+  qh <- sapply(1:H, function(h){(Nl[h]/(N+Alpha-1))*dnorm(y[i], mean = t(X[i,])%*%BETA[,h], sd = SIGMA[h])})
+  qh <- c(qh, (Alpha/(N+Alpha-1))*exp(LogMarLikLM(xh = X[i,], yh = y[i])))
+  si <- sample(1:length(qh), 1, prob = qh)
+  if(si == (H + 1)){
+    Sig2New <- PostSig2(Xh = X[i,], yh = y[i])
+    SIGMA = c(SIGMA, Sig2New^0.5)
+    BetaNew <- PostBeta(sig2h = Sig2New, Xh = X[i,], yh = y[i])
+    BETA = cbind(BETA, BetaNew)
+  }
+  return(list(si = si, BETA = BETA, SIGMA = SIGMA))
+}
+PostBetas <- list(); PostSigma <- list()
+Posts <- matrix(0, tot, N); PostAlphas <- rep(0, tot)
+S <- sample(1:3, N, replace = T, prob = c(0.5, 0.3, 0.2))
+BETA <- cbind(Reg$coefficients, Reg$coefficients, Reg$coefficients)
+SIGMA <- rep(SumReg$sigma, 3)
+Alpha <- rgamma(1, a, b)
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+  for(i in 1:N){
+    Rests <- PostS(BETA = BETA, SIGMA = SIGMA, Alpha = Alpha, s = S, i = i)
+    S[i] <- Rests$si
+    BETA <- Rests$BETA; SIGMA <- Rests$SIGMA
+  }
+  Alpha <- PostAlpha(s = S, alpha = Alpha)
+  Nl <- table(S); H <- length(Nl)
+  SIGMA <- rep(NA, H)
+  BETA <- matrix(NA, k, H)
+  l <- 1
+  for(h in unique(S)){
+    Idh <- which(S == h)
+    SIGMA[l] <- (PostSig2(Xh = X[Idh, ], yh = y[Idh]))^0.5
+    BETA[,l] <- PostBeta(sig2h = SIGMA[l]^2, Xh = X[Idh, ], yh = y[Idh])
+    l <- l + 1
+  }
+  PostBetas[[s]] <- BETA
+  PostSigma[[s]] <- SIGMA
+  Posts[s, ] <- S
+  PostAlphas[s] <- Alpha
+  setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+ResultsDPMmarijuana <- list(Clusters = Posts, Location = PostBetas, Scales = PostSigma)
+save(ResultsDPMmarijuana, file = "ResultsDPMmarijuana.RData")
+# load(file = "ResultsDPMmarijuana.RData")
+keep <- seq((burnin+1), tot, thin)
+PosteriorS<- Posts[keep,]
+Clusters <- sapply(1:length(keep), function(i){length(table(PosteriorS[i,]))})
+table(Clusters)
+NClus <- 3
+sapply(1:length(keep), function(i){print(table(PosteriorS[i,]))})
+PosteriorSIGMA <- matrix(NA, length(keep), NClus)
+l <- 1
+for (s in keep){
+  PosteriorSIGMA[l,] <- PostSigma[[s]][1:NClus]
+  l <- l + 1
+}
+summary(coda::mcmc(PosteriorSIGMA))
+plot(coda::mcmc(PosteriorSIGMA))
+PosteriorBeta1 <- matrix(NA, length(keep), k)
+j <- 1
+for(s in keep){
+  PosteriorBeta1[j,] <- PostBetas[[s]][,1]
+  j <- j + 1
+}
+colnames(PosteriorBeta1) <- c("Ct", names(Data[,-1]))
+HDI <- HDInterval::hdi(PosteriorBeta1, credMass = 0.95)
+HDI
+print(summary(coda::mcmc(PosteriorBeta1)))
+plot(coda::mcmc(PosteriorBeta1))
+
+PosteriorBeta2 <- matrix(NA, length(keep), k)
+j <- 1
+for(s in keep){
+  PosteriorBeta2[j,] <- PostBetas[[s]][,2]
+  j <- j + 1
+}
+colnames(PosteriorBeta2) <- c("Ct", names(Data[,-1]))
+HDI <- HDInterval::hdi(PosteriorBeta2, credMass = 0.95)
+HDI
+print(summary(coda::mcmc(PosteriorBeta2)))
+plot(coda::mcmc(PosteriorBeta2))
+
+PosteriorBeta3 <- matrix(NA, length(keep), k)
+j <- 1
+for(s in keep){
+  PosteriorBeta3[j,] <- PostBetas[[s]][,3]
+  j <- j + 1
+}
+colnames(PosteriorBeta3) <- c("Ct", names(Data[,-1]))
+HDI <- HDInterval::hdi(PosteriorBeta3, credMass = 0.95)
+HDI
+print(summary(coda::mcmc(PosteriorBeta3)))
+plot(coda::mcmc(PosteriorBeta3))

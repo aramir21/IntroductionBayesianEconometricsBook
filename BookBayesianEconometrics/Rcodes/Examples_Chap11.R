@@ -59,7 +59,7 @@ for(s in 1:tot){
     MU[h] <- Postmu(yh = y[idh])
   }
   PostMu[s,] <- MU 
-  Lambda <- MCMCpack::rdirichlet(1, a0h + table(Psi))
+  Lambda <- sort(MCMCpack::rdirichlet(1, a0h + table(Psi)), decreasing = TRUE)
   PostLambda[s] <- Lambda[1]
   setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
 }
@@ -142,7 +142,7 @@ for(s in 1:tot){
     MU[h] <- Postmu(yh = y[idh])
   }
   PostMu[s,] <- MU 
-  Lambda <- MCMCpack::rdirichlet(1, a0h + table(Psi))
+  Lambda <- sort(MCMCpack::rdirichlet(1, a0h + table(Psi)), decreasing = TRUE)
   PostLambda[s] <- Lambda[1]
   setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
 }
@@ -166,32 +166,16 @@ summary(PosteriorLAMBDA)
 plot(PosteriorLAMBDA)
 
 ###### Permutations ######
-rm(list = ls())
-set.seed(010101)
-library(ggplot2)
-
+rm(list = ls()); set.seed(010101); library(ggplot2)
 # Simulate data from a 2-component mixture model
 n <- 500
 z <- rbinom(n, 1, 0.75)  # Latent class indicator
-y <- ifelse(z == 0, rnorm(n, 0.5, 1), rnorm(n, 1, 1))
-data <- data.frame(y)
-
-# Plot
-ggplot(data, aes(x = y)) +
-  geom_density(fill = "blue", alpha = 0.3) +  # Density plot with fill color
-  labs(title = "Density Plot", x = "y", y = "Density") +
-  theme_minimal()
-
+y <- ifelse(z == 0, rnorm(n, 0.5, 1), rnorm(n, 2.5, 1))
 # Hyperparameters
-mu0 <- 0
-sig2mu0 <- 10
-H <- 2
-a0h <- rep(1/H, H)
+mu0 <- 0; sig2mu0 <- 10; H <- 2; a0h <- rep(1/H, H)
 # MCMC parameters
-mcmc <- 2000
-burnin <- 500
-tot <- mcmc + burnin
-thin <- 2
+mcmc <- 2000; burnin <- 500
+tot <- mcmc + burnin; thin <- 2
 # Gibbs sampling functions
 Postmu <- function(yh){
   Nh <- length(yh)
@@ -200,18 +184,12 @@ Postmu <- function(yh){
   mu <- rnorm(1, mun, sig2mu^0.5)
   return(mu)
 }
-
-PostPsi <- matrix(NA, tot, n)
-PostMu <- matrix(NA, tot, H)
+PostPsi <- matrix(NA, tot, n); PostMu <- matrix(NA, tot, H)
 PostLambda <- rep(NA, tot)
-Id1 <- which(y <= 1) # 1 is from inspection of the density plot of y 
-Id2 <- which(y > 1)
+Id1 <- which(y <= 1); Id2 <- which(y > 1)
 N1 <- length(Id1); N2 <- length(Id2)
-Lambda <- c(N1/n, N2/n)
-MU <- c(mean(y[Id1]), mean(y[Id2]))
-Psi <- rep(NA, n)
-per1 <- c(1,2)
-per2 <- c(2,1)
+Lambda <- c(N1/n, N2/n); MU <- c(mean(y[Id1]), mean(y[Id2]))
+Psi <- rep(NA, n); per1 <- c(1,2); per2 <- c(2,1)
 pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
 for(s in 1:tot){
   for(i in 1:n){
@@ -233,19 +211,16 @@ for(s in 1:tot){
     Lambda <- Lambda[per2]
     MU <- MU[per2]
     for(i in 1:n){
-      if(Psi[i] == 1){
-        Psi[i] <- 2
-      }else{
-        Psi[i] <- 1
-      }
+      if(Psi[i] == 1){Psi[i] <- 2
+      }else{Psi[i] <- 1}
     }
   }
-  PostPsi[s, ] <- Psi
-  PostMu[s,] <- MU 
+  PostPsi[s, ] <- Psi; PostMu[s,] <- MU
   PostLambda[s] <- Lambda[1]
   setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
 }
 close(pb)
+
 keep <- seq(burnin, tot, thin)
 PosteriorMUs <- coda::mcmc(PostMu[keep,])
 summary(PosteriorMUs)
@@ -259,7 +234,6 @@ ggplot(dfMU) +
   labs(title = "Density Plot", x = TeX("$\\mu$"), y = "Density", color = "Variable") +
   theme_minimal() +
   scale_color_manual(values = c("mu1" = "blue", "mu2" = "red"))  # Custom colors
-
 PosteriorLAMBDA <- coda::mcmc(PostLambda[keep])
 summary(PosteriorLAMBDA)
 plot(PosteriorLAMBDA)
@@ -364,6 +338,7 @@ Beta2 <- Reg2$coefficients
 sig22 <- SumReg2$sigma^2
 X <- cbind(1, x)
 Psi <- rep(NA, n)
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
 for(s in 1:tot){
   for(i in 1:n){
     lambdai1 <- Lambda1*dnorm(y[i], X[i,]%*%Beta1, sig21^0.5)
@@ -381,10 +356,12 @@ for(s in 1:tot){
   Beta2 <- PostBeta(sig2h = sig22, Xh = X[Id2, ], yh = y[Id2])
   PostBetas1[s,] <- Beta1
   PostBetas2[s,] <- Beta2
-  Lambda <- MCMCpack::rdirichlet(1, c(a01 + N1, a02 + N2))
+  Lambda <- sort(MCMCpack::rdirichlet(1, c(a01 + N1, a02 + N2)), decreasing = TRUE)
   Lambda1 <- Lambda[1]; Lambda2 <- Lambda[2]
   PostLambda[s] <- Lambda1 
+  setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
 }
+close(pb)
 keep <- seq((burnin+1), tot, thin)
 PosteriorBetas1 <- coda::mcmc(PostBetas1[keep,])
 summary(PosteriorBetas1)
@@ -544,7 +521,7 @@ summary(coda::mcmc(PosteriorSIGMA))
 summary(coda::mcmc(PosteriorMU))
 summary(coda::mcmc(PosteriorLAMBDA))
 
-########### Dirichlet process mixture ###############
+########### Dirichlet process mixture: Simulation ###############
 rm(list = ls())
 set.seed(010101)
 # Simulate data from a 2-component mixture model
@@ -554,6 +531,208 @@ X <- cbind(1, x)
 k <- 2
 data <- data.frame(y, x); Reg <- lm(y ~ x)
 SumReg <- summary(Reg)
+# Hyperparameters
+a0 <- 0.001; d0 <- 0.001
+b0 <- rep(0, k); B0 <- diag(k)
+B0i <- solve(B0)
+a <- 0.1; b <- 0.1
+# MCMC parameters
+mcmc <- 5000; burnin <- 1000
+tot <- mcmc + burnin; thin <- 2
+# Gibbs sampling functions
+PostSig2 <- function(Xh, yh){
+  Nh <- length(yh)
+  yh <- matrix(yh, Nh, 1)
+  if(Nh == 1){
+    Xh <- matrix(Xh, k, 1)
+    Bn <- solve(Xh%*%t(Xh) + B0i)
+    bn <- Bn%*%(B0i%*%b0 + Xh%*%yh)
+  }else{
+    Xh <- matrix(Xh, Nh, k)
+    Bn <- solve(t(Xh)%*%Xh + B0i)
+    bn <- Bn%*%(B0i%*%b0 + t(Xh)%*%yh)
+  }
+  Bni <- solve(Bn)
+  an <- a0 + Nh
+  dn <- d0 + t(yh)%*%yh + t(b0)%*%B0i%*%b0 - t(bn)%*%Bni%*%bn 
+  sig2 <- invgamma::rinvgamma(1, shape = an/2, rate = dn/2)
+  return(sig2)
+}
+PostBeta <- function(sig2h, Xh, yh){
+  Nh <- length(yh)
+  yh <- matrix(yh, Nh, 1)
+  if(Nh == 1){
+    Xh <- matrix(Xh, k, 1)
+    Bn <- solve(Xh%*%t(Xh) + B0i)
+    bn <- Bn%*%(B0i%*%b0 + Xh%*%yh)
+  }else{
+    Xh <- matrix(Xh, Nh, k)
+    Bn <- solve(t(Xh)%*%Xh + B0i)
+    bn <- Bn%*%(B0i%*%b0 + t(Xh)%*%yh)
+  }
+  Beta <- MASS::mvrnorm(1, bn, sig2h*Bn)
+  return(Beta)
+}
+PostAlpha <- function(s, alpha){
+  H <- length(unique(s))
+  psi <- rbeta(1, alpha + 1, N)
+  pi.ratio <- (a + H - 1) / (N * (b - log(psi)))
+  pi <- pi.ratio / (1 + pi.ratio)
+  components <- sample(1:2, prob = c(pi, (1 - pi)), size = 1)
+  cs <- c(a + H, a + H - 1)
+  ds <- b - log(psi)
+  alpha <- rgamma(1, cs[components], ds)
+  return(alpha)
+}
+LogMarLikLM <- function(xh, yh){
+  xh <- matrix(xh, k, 1)
+  Bn <- solve(xh%*%t(xh) + B0i)
+  Bni <- solve(Bn)
+  bn <- Bn%*%(B0i%*%b0 + xh%*%yh)
+  an <- a0 + 1
+  dn <- d0 + yh^2 + t(b0)%*%B0i%*%b0 - t(bn)%*%Bni%*%bn 
+  # Log marginal likelihood
+  logpy <- (1/2)*log(1/pi)+(a0/2)*log(d0)-(an/2)*log(dn) + 0.5*log(det(Bn)/det(B0)) + lgamma(an/2)-lgamma(a0/2)
+  return(logpy)
+}
+PostS <- function(BETA, SIGMA, Alpha, s, i){
+  Nl <- table(s[-i]); H <- length(Nl)
+  qh <- sapply(1:H, function(h){(Nl[h]/(N+Alpha-1))*dnorm(y[i], mean = t(X[i,])%*%BETA[,h], sd = SIGMA[h])})
+  q0 <- (Alpha/(N+Alpha-1))*exp(LogMarLikLM(xh = X[i,], yh = y[i]))
+  # qh <- c(qh, q0)
+  qh <- c(q0, qh)
+  # si <- sample(1:length(qh), 1, prob = qh)
+  Clust <- as.numeric(names(Nl))
+  # si <- sample(1:length(qh), 1, prob = qh)
+  si <- sample(c(0, Clust), 1, prob = qh)
+  # if(si == (H + 1)){
+  if(si == 0){
+    si <- Clust[H] + 1
+    Sig2New <- PostSig2(Xh = X[i,], yh = y[i])
+    SIGMA <- c(SIGMA, Sig2New^0.5)
+    BetaNew <- PostBeta(sig2h = Sig2New, Xh = X[i,], yh = y[i])
+    BETA <- cbind(BETA, BetaNew)
+  }
+  else {
+    si == si
+  }
+  # return(si)
+  return(list(si = si, BETA = BETA, SIGMA = SIGMA))
+}
+PostBetas <- list(); PostSigma <- list()
+Posts <- matrix(0, tot, N); PostAlphas <- rep(0, tot)
+S <- sample(1:3, N, replace = T, prob = c(0.5, 0.3, 0.2))
+BETA <- cbind(Reg$coefficients, Reg$coefficients, Reg$coefficients)
+SIGMA <- rep(SumReg$sigma, 3)
+Alpha <- rgamma(1, a, b)
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+  # for(i in 1:N){
+  #   Rests <- PostS(BETA = BETA, SIGMA = SIGMA, Alpha = Alpha, s = S, i = i)
+  #   S[i] <- Rests$si
+  #   BETA <- Rests$BETA; SIGMA <- Rests$SIGMA
+  # }
+  for(i in 1:N){
+    Rests <- PostS(BETA = BETA, SIGMA = SIGMA, Alpha = Alpha, s = S, i = i)
+    S[i] <- Rests$si
+    BETA <- Rests$BETA; SIGMA <- Rests$SIGMA
+    # S[i] <- Rests
+  }
+  sFreq <- table(S)
+  lt <- 1
+  for(li in as.numeric(names(sFreq))){
+    Index <- which(S == li)
+    if(li == lt){
+      S[Index] <- li
+    } else {
+      S[Index] <- lt
+    }
+    lt <- lt + 1
+  }
+  Alpha <- PostAlpha(s = S, alpha = Alpha)
+  Nl <- table(S); H <- length(Nl)
+  SIGMA <- rep(NA, H)
+  BETA <- matrix(NA, k, H)
+  l <- 1
+  for(h in unique(S)){
+    Idh <- which(S == h)
+    SIGMA[l] <- (PostSig2(Xh = X[Idh, ], yh = y[Idh]))^0.5
+    BETA[,l] <- PostBeta(sig2h = SIGMA[l]^2, Xh = X[Idh, ], yh = y[Idh])
+    l <- l + 1
+  }
+  # SIGMA <- list()
+  # BETA <- list()
+  # for(h in unique(S)){
+  #   Idh <- which(S == h)
+  #   SIGMA[[h]] <- (PostSig2(Xh = X[Idh, ], yh = y[Idh]))^0.5
+  #   BETA[[h]] <- PostBeta(sig2h = SIGMA[[h]]^2, Xh = X[Idh, ], yh = y[Idh])
+  # }
+  PostBetas[[s]] <- BETA
+  PostSigma[[s]] <- SIGMA
+  Posts[s, ] <- S
+  PostAlphas[s] <- Alpha
+  setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+keep <- seq((burnin+1), tot, thin)
+PosteriorS<- Posts[keep,]
+Clusters <- sapply(1:length(keep), function(i){length(table(PosteriorS[i,]))})
+table(Clusters)
+NClus <- 3
+sapply(1:length(keep), function(i){print(table(PosteriorS[i,]))})
+PosteriorSIGMA <- matrix(NA, length(keep), NClus)
+l <- 1
+for (s in keep){
+  PosteriorSIGMA[l,] <- PostSigma[[s]][1:NClus]
+  l <- l + 1
+}
+summary(coda::mcmc(PosteriorSIGMA))
+plot(coda::mcmc(PosteriorSIGMA))
+PosteriorBeta2 <- matrix(NA, length(keep), k)
+j <- 1
+for(s in keep){
+  PosteriorBeta2[j,] <- PostBetas[[s]][,2]
+  j <- j + 1
+}
+print(summary(coda::mcmc(PosteriorBeta2)))
+plot(coda::mcmc(PosteriorBeta2))
+
+PosteriorBeta3 <- matrix(NA, length(keep), k)
+j <- 1
+for(s in keep){
+  PosteriorBeta3[j,] <- PostBetas[[s]][,3]
+  j <- j + 1
+}
+print(summary(coda::mcmc(PosteriorBeta3)))
+plot(coda::mcmc(PosteriorBeta3))
+
+PosteriorBeta1 <- matrix(NA, length(keep), k)
+j <- 1
+for(s in keep){
+  PosteriorBeta1[j,] <- PostBetas[[s]][,1]
+  j <- j + 1
+}
+print(summary(coda::mcmc(PosteriorBeta1)))
+plot(coda::mcmc(PosteriorBeta1))
+
+########### Dirichlet process mixture: Application (Marijuana consumption in Colombia) ###############
+rm(list = ls()); set.seed(010101)
+Data <- read.csv("https://raw.githubusercontent.com/BEsmarter-consultancy/BSTApp/refs/heads/master/DataApp/MarijuanaColombia.csv")
+attach(Data)
+y <- LogMarijuana
+X <- as.matrix(cbind(1, Data[,-1]))
+Reg <- lm(y ~ X - 1)
+SumReg <- summary(Reg)
+SumReg
+k <- dim(X)[2]
+N <- dim(X)[1]
+# Plot
+library(ggplot2)
+ggplot(Data, aes(x = LogMarijuana)) +
+  geom_density(fill = "blue", alpha = 0.3) +  # Density plot with fill color
+  labs(title = "Density Plot: Marijuana (log) monthly consumption in Colombia", x = "y", y = "Density") +
+  theme_minimal()
+
 # Hyperparameters
 a0 <- 0.001; d0 <- 0.001
 b0 <- rep(0, k); B0 <- diag(k)
@@ -662,6 +841,9 @@ for(s in 1:tot){
   setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
 }
 close(pb)
+ResultsDPMmarijuana <- list(Clusters = Posts, Location = PostBetas, Scales = PostSigma)
+save(ResultsDPMmarijuana, file = "ResultsDPMmarijuana.RData")
+# load(file = "ResultsDPMmarijuana.RData")
 keep <- seq((burnin+1), tot, thin)
 PosteriorS<- Posts[keep,]
 Clusters <- sapply(1:length(keep), function(i){length(table(PosteriorS[i,]))})
@@ -675,6 +857,18 @@ for (s in keep){
   l <- l + 1
 }
 summary(coda::mcmc(PosteriorSIGMA))
+plot(coda::mcmc(PosteriorSIGMA))
+PosteriorBeta1 <- matrix(NA, length(keep), k)
+j <- 1
+for(s in keep){
+  PosteriorBeta1[j,] <- PostBetas[[s]][,1]
+  j <- j + 1
+}
+colnames(PosteriorBeta1) <- c("Ct", names(Data[,-1]))
+HDI <- HDInterval::hdi(PosteriorBeta1, credMass = 0.95)
+HDI
+print(summary(coda::mcmc(PosteriorBeta1)))
+plot(coda::mcmc(PosteriorBeta1))
 
 PosteriorBeta2 <- matrix(NA, length(keep), k)
 j <- 1
@@ -682,6 +876,9 @@ for(s in keep){
   PosteriorBeta2[j,] <- PostBetas[[s]][,2]
   j <- j + 1
 }
+colnames(PosteriorBeta2) <- c("Ct", names(Data[,-1]))
+HDI <- HDInterval::hdi(PosteriorBeta2, credMass = 0.95)
+HDI
 print(summary(coda::mcmc(PosteriorBeta2)))
 plot(coda::mcmc(PosteriorBeta2))
 
@@ -691,17 +888,92 @@ for(s in keep){
   PosteriorBeta3[j,] <- PostBetas[[s]][,3]
   j <- j + 1
 }
+colnames(PosteriorBeta3) <- c("Ct", names(Data[,-1]))
+HDI <- HDInterval::hdi(PosteriorBeta3, credMass = 0.95)
+HDI
 print(summary(coda::mcmc(PosteriorBeta3)))
 plot(coda::mcmc(PosteriorBeta3))
 
-PosteriorBeta1 <- matrix(NA, length(keep), k)
-j <- 1
-for(s in keep){
-  PosteriorBeta1[j,] <- PostBetas[[s]][,1]
-  j <- j + 1
-}
-print(summary(coda::mcmc(PosteriorBeta1)))
-plot(coda::mcmc(PosteriorBeta1))
+DataElast <- data.frame(Marijuana = PosteriorBeta1[,8], Cocaine = PosteriorBeta1[,9],
+                        Crack = PosteriorBeta1[,10]) 
 
+dens1 <- ggplot(DataElast, aes(x = Marijuana)) +
+  geom_density(fill = "blue", alpha = 0.3) +  # Density plot with fill color
+  labs(x = "Marijuana", y = "Density") +
+  theme_minimal()
 
+dens2 <- ggplot(DataElast, aes(x = Cocaine)) +
+  geom_density(fill = "blue", alpha = 0.3) +  # Density plot with fill color
+  labs(x = "Cocaine", y = "Density") +
+  theme_minimal()
+
+dens3 <- ggplot(DataElast, aes(x = Crack)) +
+  geom_density(fill = "blue", alpha = 0.3) +  # Density plot with fill color
+  labs(x = "Crack", y = "Density") +
+  theme_minimal()
+
+library(ggpubr)
+ggarrange(dens1, dens2, dens3,
+          labels = c(
+            "A", "B", "C"
+          ),
+          ncol = 3, nrow = 1,
+          legend = "bottom",
+          common.legend = TRUE
+)
+
+############## Basis functions: Estimates using brms package #################
+# Load necessary libraries
+library(brms)
+library(ggplot2)
+library(dplyr)
+
+# Simulate data
+set.seed(123)
+n <- 200
+x <- runif(n, -2, 2)  # Predictor with non-linear effect
+z1 <- rnorm(n)        # Additional regressor 1
+z2 <- rnorm(n)        # Additional regressor 2
+epsilon <- rnorm(n, 0, 0.5)  # Noise term
+
+# True nonlinear function for x
+f_x <- sin(2 * pi * x) 
+
+# Generate response variable
+y <- f_x + 0.5 * z1 - 0.3 * z2 + 0.2 * z1 * z2 + epsilon
+
+# Combine into a dataframe
+mydata <- data.frame(y, x, z1, z2)
+
+# Fit Bayesian regression using brms
+fit <- brm(y ~ s(x) + z1 + z2 + z1:z2, 
+           data = mydata, 
+           family = gaussian(), 
+           chains = 4, iter = 2000, warmup = 1000, 
+           control = list(adapt_delta = 0.95))
+
+# Summary of the model
+summary(fit)
+
+# Extract fitted smooth effect of x
+smooth_pred <- conditional_smooths(fit)
+smooth_data <- as.data.frame(smooth_pred$s_x)
+
+# Create the population curve
+pop_curve <- data.frame(x = seq(-2, 2, length.out = 200)) %>%
+  mutate(true_fx = sin(2 * pi * x))
+
+# Plot estimated smooth effect with population curve
+ggplot() +
+  geom_ribbon(data = smooth_data, aes(x = x, ymin = Q2.5, ymax = Q97.5, fill = "Credible Interval"), 
+              alpha = 0.2) +  # Posterior uncertainty
+  geom_line(data = smooth_data, aes(x = x, y = Estimate, color = "Estimated Smooth"), linewidth = 1.2) +  # Estimated smooth
+  geom_line(data = pop_curve, aes(x = x, y = true_fx, color = "True Function"), linetype = "dashed", size = 1.2) +  # True function
+  scale_color_manual(name = "Lines",
+                     values = c("Estimated Smooth" = "blue", "True Function" = "red")) +
+  scale_fill_manual(name = "Shaded Area", values = c("Credible Interval" = "blue")) +
+  labs(title = "Estimated Smooth Effect of x vs. True Function",
+       x = "x", y = "f(x)",
+       caption = "Blue: Estimated | Red Dashed: True Function") +
+  theme_minimal()
 

@@ -194,7 +194,7 @@ plot_filtering_estimates(DataDens)
 
 \item Use the dataset \textit{MarijuanaColombia.csv} from our GitHub repository to perform inference on the demand for marijuana in Colombia. This dataset contains information on the (log) monthly demand in 2019 from the National Survey of the Consumption of Psychoactive Substances. It includes variables such as the presence of a drug dealer in the neighborhood (\textit{Dealer}), gender (\textit{Female}), indicators of good physical and mental health (\textit{PhysicalHealthGood} and \textit{MentalHealthGood}), age (\textit{Age} and \textit{Age2}), and (log) prices of marijuana, cocaine, and crack by individual (\textit{LogPriceMarijuana}, \textit{LogPriceCocaine}, and \textit{LogPriceCrack}). The sample size is 1,156.
 
-Estimate a finite Gaussian mixture regression using non-informative priors, starting with five potential clusters. Obtain the posterior distribution of the own-price elasticity of marijuana and the cross-price elasticities of marijuana demand with respect to the prices of cocaine and crack.\\
+Estimate a finite Gaussian mixture regression using non-informative priors, that is, $\alpha_{0}=\delta_{0}=0.01$, $\boldsymbol{\beta}_{0}=\boldsymbol{0}_K$, $\boldsymbol{B}_{0}=\boldsymbol{I}_K$, and $a=b=0.1$, $K$ is the number of regressors, 10 including the intercept. The number of MCMC iterations is 5,000, the burn-in is 1,000, and the thinning parameter is 2. Start with five potential clusters. Obtain the posterior distribution of the own-price elasticity of marijuana and the cross-price elasticities of marijuana demand with respect to the prices of cocaine and crack.\\
 
 \textbf{Answer:}
 
@@ -318,6 +318,8 @@ for(l in 1:NClus){
 \end{align*}
 Do not include the intercept in $\boldsymbol{\beta}$ to get flexibility in the distribution of the stochastic errors.
 
+Let's assume $\boldsymbol{\beta}\sim N(\boldsymbol{\beta}_0,\boldsymbol{B}_0)$, $\sigma_i^2\sim IG(\alpha_0/2,\delta_0/2)$, $\mu_i\sim N(\mu_0,\sigma_i^2/\beta_0)$, $\alpha\sim G(a,b)$ such that introducing the latent variable $\xi|\alpha,N\sim Be(\alpha+1,N)$, allows to easily sample the posterior draws of  $\alpha|\xi,H,\pi_{\xi}\sim\pi_{\xi}{G}(a+H,b-log(\xi))+(1-\pi_{\xi}){G}(a+H-1,b-log(\xi))$, where $\frac{\pi_{\xi}}{1-\pi_{\xi}}=\frac{a+H-1}{N(b-log(\xi))}$, $H$ is the number of atoms (mixture components). 
+
 \textbf{Answer:}
 
 This mixture model can be expressed in a hierarchical structure:
@@ -326,58 +328,54 @@ This mixture model can be expressed in a hierarchical structure:
 	\boldsymbol{\theta}_i \mid G & \stackrel{iid}{\sim} G\\
 	G \mid \alpha,G_0 & \sim DP(\alpha G_0),
 \end{align*}
-where $e_i=y_i-\bm{x}_i^{\top}\bm{\beta}$. 
+where $e_i=y_i-\bm{x}_i^{\top}\bm{\beta}$ and $\boldsymbol{\theta}_i=[\mu_i \ \sigma_i^2]^{\top}$. 
 
 Thus, 
-
 \begin{align*}
 	s_i&\sim \sum_{h=0}^{\infty}\lambda_h\delta_h,\\
 	e_i\mid s_i, \boldsymbol{\theta}_{s_i}&\sim N(\mu_{s_i},\sigma^2_{s_i}),
 \end{align*} 
 where $\lambda_h=P(\boldsymbol{\theta}_{i}=\boldsymbol{\theta}_{h}^*)$.
 
-Let's assume $\boldsymbol{\beta}_i\mid \sigma^2_i\sim N(\boldsymbol{\beta}_0, \sigma^2_i\boldsymbol{B}_0)$, $\sigma_i^2\sim IG(\alpha_0/2,\delta_0/2)$, $\mu_i\sim N(\mu_0,\sigma_i^2/\beta_0)$, $\alpha\sim G(a,b)$ such that introducing the latent variable $\xi|\alpha,N\sim Be(\alpha+1,N)$, allows to easily sample the posterior draws of  $\alpha|\xi,H,\pi_{\xi}\sim\pi_{\xi}{G}(a+H,b-log(\xi))+(1-\pi_{\xi}){G}(a+H-1,b-log(\xi))$, where $\frac{\pi_{\xi}}{1-\pi_{\xi}}=\frac{a+H-1}{N(b-log(\xi))}$, $H$ is the number of atoms (mixture components). 
-
 The conditional posterior distribution of $\boldsymbol\theta_i$ is
 \begin{align*}
-	\boldsymbol\theta_i|\left\{\boldsymbol\theta_{i'},\boldsymbol s_{i'}:i'\neq i\right\}, y_i, \alpha & \sim \sum_{i'\neq i}\frac{N_m^{(i)}}{\alpha+N-1}f_N(y_i|\boldsymbol{x}_i^{\top}\boldsymbol{\beta}_h,\sigma_h^2)\\
-	& +\frac{\alpha}{\alpha+N-1}\int_{\mathcal{R}^K}\int_{0}^{\infty}f_N(y_i|\boldsymbol{x}_i^{\top}\boldsymbol{\beta},\sigma^2)f_N\left(\boldsymbol\beta\Big|\boldsymbol\beta_0,\sigma^2\boldsymbol B_0\right)f_{IG}(\sigma^2|\alpha_0,\delta_0)d\sigma^2 d\boldsymbol\beta,
+	\boldsymbol\theta_i|\left\{\boldsymbol\theta_{i'},\boldsymbol s_{i'}:i'\neq i\right\}, e_i, \alpha & \sim \sum_{i'\neq i}\frac{N_h^{(i)}}{\alpha+N-1}f_N(e_i|\mu_h,\sigma_h^2)\\
+	& +\frac{\alpha}{\alpha+N-1}\int_{\mathcal{R}}\int_{0}^{\infty}f_N(e_i|\mu,\sigma^2)f_N\left(\mu\Big|\mu_0,\frac{\sigma^2}{\beta_0}\right)f_{IG}(\sigma^2|\alpha_0,\delta_0)d\sigma^2 d\mu,
 \end{align*}
-where $N_m^{(i)}$ is the number of observations such that $s_{i'}=h$, $i'\neq i$.
+where $N_h^{(i)}$ is the number of observations such that $s_{i'}=h$, $i'\neq i$.
 
-Observe that the probability of belonging to a particular cluster has a reinforcement property, as it increases with the cluster size; therefore, a DPM exhibits a self-reinforcing property, the more often a given value has been sampled in the past, the more likely it is to be sampled again.
-
-Observe that the integral in the previous equation has exactly the same form as in the marginal likelihood presented in Section \ref{sec43}. Thus,
+Observe that the integral in the previous equation has exactly the same form as in the marginal likelihood presented in Section 3.2 in the book in the normal-normal/inverse gamma model. Thus,
 \begin{align*}
-	p(y_i)&=\int_{\mathcal{R}^K}\int_{0}^{\infty}f_N(y_i|\boldsymbol{x}_i^{\top}\boldsymbol{\beta},\sigma^2)f_N\left(\boldsymbol\beta\Big|\boldsymbol\beta_0,\sigma^2\boldsymbol B_0\right)f_{IG}(\sigma^2|\alpha_0,\delta_0)d\sigma^2 d\boldsymbol\beta\\
-	&=\frac{1}{\pi^{1/2}}\frac{\delta_0^{\alpha_0/2}}{\delta_n^{\alpha_n/2}}\frac{|{\boldsymbol{B}}_n|^{1/2}}{|{\boldsymbol{B}}_0|^{1/2}}\frac{\Gamma(\alpha_n/2)}{\Gamma(\alpha_0/2)}, 
+	p(e_i)&=\int_{\mathcal{R}}\int_{0}^{\infty}f_N(e_i|\mu,\sigma^2)f_N\left(\mu\Big|\mu_0,\frac{\sigma^2}{\beta_0}\right)f_{IG}(\sigma^2|\alpha_0,\delta_0)d\sigma^2 d\mu\\
+	&=\frac{\Gamma\left(\frac{\alpha_n}{2}\right)}{\Gamma\left(\frac{\alpha_0}{2}\right)}\frac{(\delta_0/2)^{\alpha_0/2}}{(\delta_n/2)^{\alpha_n/2}}\left(\frac{\beta_0}{\beta_n}\right)^{1/2}(\pi)^{-1/2}, 
 \end{align*}
-where $\alpha_n=1+\alpha_0$, $\delta_n=\delta_0 + y^{\top}y + \boldsymbol{\beta}_0^{\top}{\boldsymbol{B}}_0^{-1}\boldsymbol{\beta}_0 - \boldsymbol{\beta}_n^{\top}{\boldsymbol{B}}_n^{-1}\boldsymbol{\beta}_n$,  $\boldsymbol{B}_n = (\boldsymbol{B}_0^{-1} + \boldsymbol{x}\boldsymbol{x}^{\top})^{-1}$ and $\boldsymbol{\beta}_n = \boldsymbol{B}_n(\boldsymbol{B}_0^{-1}\boldsymbol{\beta}_0 + \boldsymbol{x}y)$.
-
+where $\alpha_n=1+\alpha_0$, $\delta_n=\delta_0 + \frac{\beta_0}{1+\beta_0}(e_i-\mu_0)^2$ and $\beta_n = 1+\beta_0$.
 Therefore, we sample $s_i$ as follows,
 \begin{equation*}
-	s_i|\left\{\boldsymbol\beta_{i'},\sigma_{i'}^2,\boldsymbol s_{i'}:i'\neq i\right\}, y_i, \alpha\sim\begin{Bmatrix}P(s_i=0|\cdot)=q_0^*\\
+	s_i|\left\{\mu_{i'},\sigma_{i'}^2,\boldsymbol s_{i'}:i'\neq i\right\}, e_i, \alpha\sim\begin{Bmatrix}P(s_i=0|\cdot)=q_0^*\\
 		P(s_i=h|\cdot)=q_h^*, h=1,2,\dots,H^{(i)}\end{Bmatrix},
 \end{equation*}
 
-where $H^{(i)}$ is the number of clusters excluding $i$, which may have its own cluster (singleton cluster), $q^*_c=\frac{q_c}{q_0+\sum_h q_h}$, $q_c=\left\{q_0,q_h\right\}$, $q_h=\frac{N_h^{(i)}}{\alpha+N-1}f_N(y_i|\boldsymbol{x}_i^{\top}\boldsymbol\beta_h,\sigma_h^2)$ and $q_0=\frac{\alpha}{\alpha+N-1}p(y_i)$.
+where $H^{(i)}$ is the number of clusters excluding $i$, which may have its own cluster (singleton cluster), $q^*_c=\frac{q_c}{q_0+\sum_h q_h}$, $q_c=\left\{q_0,q_h\right\}$, $q_h=\frac{N_h^{(i)}}{\alpha+N-1}f_N(e_i|\mu_h,\sigma_h^2)$ and $q_0=\frac{\alpha}{\alpha+N-1}p(e_i)$.
 
-If $s_i=0$ is sampled, then $s_i=H+1$, and a new $\sigma_h^2$ is sampled from $IG\left(\alpha_n/2,\delta_n/2\right)$, a new $\boldsymbol\beta_h$ is sample from $N(\boldsymbol\beta_n,\sigma_h^2\boldsymbol B_n)$.
+If $s_i=0$ is sampled, then $s_i=H+1$, and a new $\sigma_h^2$ is sampled from $IG\left(\alpha_n/2,\delta_n/2\right)$, a new $\mu_h$ is sample from $N(\mu_i,\sigma_h^2/\beta_n)$, where $\mu_i=\frac{e_i+\beta_0\mu_0}{1+\beta_0}$.
 
 Discarding $\boldsymbol\theta_h$'s from last step, we use $\boldsymbol s$ and total number of components to sample $\sigma_h^2$ from 
 
 \begin{equation*}
-	IG\left(\frac{\alpha_0+N_m}{2},\frac{\delta_0+\boldsymbol y_h^{\top}\boldsymbol y_h+\boldsymbol{\beta}_0^{\top}{\boldsymbol{B}}_0^{-1}\boldsymbol{\beta}_0-\boldsymbol{\beta}_{hn}^{\top}{\boldsymbol{B}}_{hn}^{-1}\boldsymbol{\beta}_{hn}}{2}\right),
+	IG\left(\frac{\alpha_0+N_h}{2},\frac{\delta_0+\sum_{i\in \mathcal{C}_h} (e_i-\bar{e})^2+\frac{\beta_0N_h}{\beta_0+N_h}(\bar{e}-\mu_0)^2}{2}\right),
 \end{equation*}
 
-where $\boldsymbol{B}_{hn}=(\boldsymbol{B}_0^{-1}+\boldsymbol{X}_h^{\top}\boldsymbol{X}_h)^{-1}$ and $\boldsymbol{\beta}_{hn}=\boldsymbol{B}_{hn}(\boldsymbol{B}_0^{-1}\boldsymbol{\beta}_0+\boldsymbol{X}_h^{\top}\boldsymbol{y}_h)$, $\boldsymbol{X}_h$ and $\boldsymbol{y}_h$ have the $\boldsymbol{x}_i$ and $y_i$ of individuals in component $h$. We sample $\boldsymbol\beta_h$ from
-\begin{equation*}
-	N\left({\boldsymbol\beta}_{hn},\sigma_h^2\boldsymbol B_{hn}\right),
-\end{equation*}
-$h=1,2,\dots,H$.
+where $\bar{e}=\frac{\sum_{i\in \mathcal{C}_h} e_i}{N_h}$, that is, the mean uses individuals in cluster $\mathcal{C}_h$. Note that when $N_h=1$, $\delta_0+\sum_{i\in \mathcal{C}_h} (e_i-\bar{e})^2+\frac{\beta_0N_h}{\beta_0+N_h}(\bar{e}-\mu_0)^2$ is equal to $\delta_n$. 
+
+We sample $\mu_h\mid \sigma^2_h,\bm{e}\sim N \left(\mu_{hn}, \frac{\sigma_{h}^2}{\beta_0+N_h}\right)$, where $\mu_{hn}=\frac{\beta_0\mu_0+N_h\bar{e}}{\beta_0+N_h}$,
+$h=1,2,\dots,H$. Note that $\mu_{hn}$ is equal to $\mu_i$ when $N_h=1$.  
+
+The posterior distribution of $\boldsymbol{\beta}$ is given by 
+$$\boldsymbol{\beta}\sim N(\boldsymbol{\beta}_{n},\boldsymbol{B}_{n}),$$ where $\boldsymbol{B}_{n}=(\boldsymbol{B}_{0}^{-1}+\sum_{h=1}^H\sum_{i\in \mathcal{C}_h}\sigma_h^{-2}\boldsymbol{x}_i\boldsymbol{x}_i^{\top})^{-1}$ and $\boldsymbol{\beta}_{n}=\boldsymbol{B}_{n}(\boldsymbol{B}_{0}^{-1}\boldsymbol{\beta}_{0}+\sum_{h=1}^H\sum_{i\in \mathcal{C}_h}\sigma_h^{-2}\boldsymbol{x}_i(y_i-\mu_h))$.
 
 
-\item  Perform inference in the simulation of the semi-parametric model of Exercise 1 using the sampler of Exercise 3. 
+\item  Perform inference in the simulation of the semi-parametric model of Exercise 1 using the sampler of Exercise 3. In particular, use non-informative priors, setting $\alpha_{h0}=\delta_{h0}=0.01$, $\bm{\beta}_0=\bm{0}_2$, $\bm{B}_0=\bm{I}_2$, $\mu_{h0}=0$, $\sigma^2_{\mu 0}=10$, and $\beta_0 = 0.1$. Use 6,000 MCMC iterations, a burn-in period of 4,000, and a thinning parameter of 2. Compare the population parameters with the posterior estimates and plot the population density along with the posterior density estimate of $\bm{\mu}$ (the mean, and the 95\% credible interval).\\ 
 
  
 \end{enumerate}

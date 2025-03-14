@@ -167,7 +167,8 @@ for(s in 1:tot){
 	for(h in 1:H){
 		idh <- which(Psi == h); 		MU[h] <- Postmu(yh = y[idh])
 	}
-	PostMu[s,] <- MU; Lambda <- MCMCpack::rdirichlet(1, a0h + table(Psi))
+	PostMu[s,] <- MU; 
+	Lambda <- sort(MCMCpack::rdirichlet(1, a0h + table(Psi)), decreasing = TRUE)
 	PostLambda[s] <- Lambda[1]
 	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
 }
@@ -421,6 +422,7 @@ X <- cbind(1, x); Psi <- rep(NA, n)
 	\textit{R code. Simulation exercise: Gaussian mixture with 2 components using Gibbs sampling}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
 for(s in 1:tot){
 	for(i in 1:n){
 		lambdai1 <- Lambda1*dnorm(y[i], X[i,]%*%Beta1, sig21^0.5)
@@ -436,10 +438,12 @@ for(s in 1:tot){
 	Beta1 <- PostBeta(sig2h = sig21, Xh = X[Id1, ], yh = y[Id1])
 	Beta2 <- PostBeta(sig2h = sig22, Xh = X[Id2, ], yh = y[Id2])
 	PostBetas1[s,] <- Beta1; PostBetas2[s,] <- Beta2
-	Lambda <- MCMCpack::rdirichlet(1, c(a01 + N1, a02 + N2))
+	Lambda <- sort(MCMCpack::rdirichlet(1, c(a01 + N1, a02 + N2)), decreasing = TRUE)
 	Lambda1 <- Lambda[1]; Lambda2 <- Lambda[2]
 	PostLambda[s] <- Lambda1 
+  setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
 }
+close(pb)
 keep <- seq((burnin+1), tot, thin)
 PosteriorBetas1 <- coda::mcmc(PostBetas1[keep,])
 summary(PosteriorBetas1)
@@ -676,10 +680,10 @@ Specifically, we assume $\boldsymbol{\beta}_i\mid \sigma^2_i\sim N(\boldsymbol{\
 
 The conditional posterior distribution of $\boldsymbol\theta_i$ is
 \begin{align*}
-	\boldsymbol\theta_i|\left\{\boldsymbol\theta_{i'},\boldsymbol s_{i'}:i'\neq i\right\}, y_i, \alpha & \sim \sum_{i'\neq i}\frac{N_m^{(i)}}{\alpha+N-1}f_N(y_i|\boldsymbol{x}_i^{\top}\boldsymbol{\beta}_h,\sigma_h^2)\\
+	\boldsymbol\theta_i|\left\{\boldsymbol\theta_{i'},\boldsymbol s_{i'}:i'\neq i\right\}, y_i, \alpha & \sim \sum_{i'\neq i}\frac{N_h^{(i)}}{\alpha+N-1}f_N(y_i|\boldsymbol{x}_i^{\top}\boldsymbol{\beta}_h,\sigma_h^2)\\
 	& +\frac{\alpha}{\alpha+N-1}\int_{\mathcal{R}^K}\int_{0}^{\infty}f_N(y_i|\boldsymbol{x}_i^{\top}\boldsymbol{\beta},\sigma^2)f_N\left(\boldsymbol\beta\Big|\boldsymbol\beta_0,\sigma^2\boldsymbol B_0\right)f_{IG}(\sigma^2|\alpha_0,\delta_0)d\sigma^2 d\boldsymbol\beta,
 \end{align*}
-where $N_m^{(i)}$ is the number of observations such that $s_{i'}=h$, $i'\neq i$.
+where $N_h^{(i)}$ is the number of observations such that $s_{i'}=h$, $i'\neq i$.
 
 Observe that the probability of belonging to a particular cluster has a reinforcement property, as it increases with the cluster size; therefore, a DPM exhibits a self-reinforcing property, the more often a given value has been sampled in the past, the more likely it is to be sampled again.
 
@@ -731,7 +735,7 @@ We use non-informative priors again, setting $\alpha_{0}=\delta_{0}=0.01$, $\bol
 
 The following code demonstrates how to perform inference using the stated Gibbs sampler for the DPM in the \textbf{R} package.
 
-We see from the results that the DPM overestimates the number of clusters. After the burn-in period, there are typically three clusters, occasionally four. However, most units belong to clusters 2 and 3. Additionally, the posterior plots illustrate the label-switching problem. Eventually, the posterior chains of clusters 2 and 3 reach different posterior modes, causing issues in the summary statistics. In Exercise 5, we address how to fix this issue.
+We see from the results that the DPM overestimates the number of clusters. After the burn-in period, there are typically three clusters, occasionally four. Additionally, the posterior plots illustrate the label-switching problem. Eventually, the posterior chains of clusters reach different posterior modes, causing a high variability of the posterior draws. In Exercise 5, we ask to fix this issue using \textit{random permutation of latent classes}.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -906,9 +910,193 @@ plot(coda::mcmc(PosteriorBeta3))
 
 \textbf{Example: Consumption of marijuana in Colombia}
 
-Let's use the dataset \textit{MarijuanaColombia.csv} from our GitHub repository to perform inference on the demand for marijuana in Colombia. This dataset contains information on the (log) monthly demand in 2019 from the National Survey of the Consumption of Psychoactive Substances. It includes variables such as the presence of a drug dealer in the neighborhood (\textit{Dealer}), gender (\textit{Female}), indicators of good physical and mental health (\textit{PhysicalHealthGood} and \textit{MentalHealthGood}), age (\textit{Age} and \textit{Age2}), and (log) prices of marijuana, cocaine, and crack by individual (\textit{LogPriceMarijuana}, \textit{LogPriceCocaine}, and \textit{LogPriceCrack}). The sample size is 1,156.
+Let's use the dataset \textit{MarijuanaColombia.csv} from our GitHub repository to perform inference on the demand for marijuana in Colombia. This dataset contains information on the (log) monthly demand in 2019 from the National Survey of the Consumption of Psychoactive Substances. It includes variables such as the presence of a drug dealer in the neighborhood (\textit{Dealer}), gender (\textit{Female}), indicators of good physical and mental health (\textit{PhysicalHealthGood} and \textit{MentalHealthGood}), age (\textit{Age} and \textit{Age2}), and (log) prices of marijuana, cocaine, and crack by individual (\textit{LogPriceMarijuana}, \textit{LogPriceCocaine}, and \textit{LogPriceCrack}). The sample size is 1,156. 
 
-In Exercise 2 we ask to estimate a finite Gaussian mixture regression starting with five potential clusters. Here we perform inference using a Dirichlet process mixture. 
+We are interested in the own-price and cross-price elasticities of marijuana demand. However, there is a potential endogeneity issue between price and demand due to strategic provider search (omission of a relevant regressor) or measurement errors in self-reported prices. Endogeneity should be properly addressed for rigorous scientific analysis. This example is purely illustrative.
+
+In Exercise 2 we ask to perform inference using a finite Gaussian mixture regression starting with five potential clusters. Here we perform inference using a Dirichlet process mixture.
+
+The following code shows how to perform this analysis using non-informative priors, setting $\alpha_{0}=\delta_{0}=0.01$, $\boldsymbol{\beta}_{0}=\boldsymbol{0}_K$, $\boldsymbol{B}_{0}=\boldsymbol{I}_K$, and $a=b=0.1$, $K$ is the number of regressors, 10 including the intercept. The number of MCMC iterations is 5,000, the burn-in is 1,000, and the thinning parameter is 2.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Demand of marijuana in Colombia: Dirichlet process mixture}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+Data <- read.csv("https://raw.githubusercontent.com/BEsmarter-consultancy/BSTApp/refs/heads/master/DataApp/MarijuanaColombia.csv")
+attach(Data)
+y <- LogMarijuana; X <- as.matrix(cbind(1, Data[,-1]))
+Reg <- lm(y ~ X - 1); SumReg <- summary(Reg)
+SumReg
+k <- dim(X)[2]; N <- dim(X)[1]
+library(ggplot2)
+ggplot(Data, aes(x = LogMarijuana)) + geom_density(fill = "blue", alpha = 0.3) + labs(title = "Density Plot: Marijuana (log) monthly consumption in Colombia", x = "y", y = "Density") + theme_minimal()
+a0 <- 0.001; d0 <- 0.001; b0 <- rep(0, k)
+B0 <- diag(k); B0i <- solve(B0); a <- 0.1; b <- 0.1
+mcmc <- 5000; burnin <- 1000
+tot <- mcmc + burnin; thin <- 2
+# Gibbs sampling functions
+PostSig2 <- function(Xh, yh){
+	Nh <- length(yh); yh <- matrix(yh, Nh, 1)
+	if(Nh == 1){
+		Xh <- matrix(Xh, k, 1); Bn <- solve(Xh%*%t(Xh) + B0i)
+		bn <- Bn%*%(B0i%*%b0 + Xh%*%yh)
+	}else{
+		Xh <- matrix(Xh, Nh, k); Bn <- solve(t(Xh)%*%Xh + B0i)
+		bn <- Bn%*%(B0i%*%b0 + t(Xh)%*%yh)
+	}
+	Bni <- solve(Bn); an <- a0 + Nh
+	dn <- d0 + t(yh)%*%yh + t(b0)%*%B0i%*%b0 - t(bn)%*%Bni%*%bn 
+	sig2 <- invgamma::rinvgamma(1, shape = an/2, rate = dn/2)
+	return(sig2)
+}
+PostBeta <- function(sig2h, Xh, yh){
+	Nh <- length(yh); yh <- matrix(yh, Nh, 1)
+	if(Nh == 1){
+		Xh <- matrix(Xh, k, 1); Bn <- solve(Xh%*%t(Xh) + B0i)
+		bn <- Bn%*%(B0i%*%b0 + Xh%*%yh)
+	}else{
+		Xh <- matrix(Xh, Nh, k); Bn <- solve(t(Xh)%*%Xh + B0i)
+		bn <- Bn%*%(B0i%*%b0 + t(Xh)%*%yh)
+	}
+	Beta <- MASS::mvrnorm(1, bn, sig2h*Bn)
+	return(Beta)
+}
+PostAlpha <- function(s, alpha){
+	H <- length(unique(s)); psi <- rbeta(1, alpha + 1, N)
+	pi.ratio <- (a + H - 1) / (N * (b - log(psi)))
+	pi <- pi.ratio / (1 + pi.ratio)
+	components <- sample(1:2, prob=c(pi,(1 - pi)), size = 1)
+	cs <- c(a + H, a + H - 1); ds <- b - log(psi)
+	alpha <- rgamma(1, cs[components], ds)
+	return(alpha)
+}
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+ 
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Demand of marijuana in Colombia: Dirichlet process mixture}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+LogMarLikLM <- function(xh, yh){
+	xh <- matrix(xh, k, 1)
+	Bn <- solve(xh%*%t(xh) + B0i); Bni <- solve(Bn)
+	bn <- Bn%*%(B0i%*%b0 + xh%*%yh)
+	an <- a0 + 1
+	dn <- d0 + yh^2 + t(b0)%*%B0i%*%b0 - t(bn)%*%Bni%*%bn 
+	logpy <- (1/2)*log(1/pi)+(a0/2)*log(d0)-(an/2)*log(dn) + 0.5*log(det(Bn)/det(B0)) + lgamma(an/2)-lgamma(a0/2)
+	return(logpy)
+}
+PostS <- function(BETA, SIGMA, Alpha, s, i){
+	Nl <- table(s[-i]); H <- length(Nl)
+	qh <- sapply(1:H, function(h){(Nl[h]/(N+Alpha-1))*dnorm(y[i], mean = t(X[i,])%*%BETA[,h], sd = SIGMA[h])})
+	qh <- c(qh, (Alpha/(N+Alpha-1))*exp(LogMarLikLM(xh = X[i,], yh = y[i])))
+	si <- sample(1:length(qh), 1, prob = qh)
+	if(si == (H + 1)){
+		Sig2New <- PostSig2(Xh = X[i,], yh = y[i])
+		SIGMA = c(SIGMA, Sig2New^0.5)
+		BetaNew <- PostBeta(sig2h = Sig2New, Xh = X[i,], yh = y[i]); BETA = cbind(BETA, BetaNew)
+	}
+	return(list(si = si, BETA = BETA, SIGMA = SIGMA))
+}
+PostBetas <- list(); PostSigma <- list()
+Posts <- matrix(0, tot, N); PostAlphas <- rep(0, tot)
+S <- sample(1:3, N, replace = T, prob = c(0.5, 0.3, 0.2))
+BETA <- cbind(Reg$coefficients, Reg$coefficients, Reg$coefficients)
+SIGMA <- rep(SumReg$sigma, 3); Alpha <- rgamma(1, a, b)
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+	for(i in 1:N){
+		Rests <- PostS(BETA = BETA, SIGMA = SIGMA, Alpha = Alpha, s = S, i = i)
+		S[i] <- Rests$si
+		BETA <- Rests$BETA; SIGMA <- Rests$SIGMA
+	}
+	Alpha <- PostAlpha(s = S, alpha = Alpha)
+	Nl <- table(S); H <- length(Nl)
+	SIGMA <- rep(NA, H); BETA <- matrix(NA, k, H)
+	l <- 1
+	for(h in unique(S)){
+		Idh <- which(S == h)
+		SIGMA[l] <- (PostSig2(Xh = X[Idh, ], yh = y[Idh]))^0.5
+		BETA[,l] <- PostBeta(sig2h = SIGMA[l]^2, Xh = X[Idh, ], yh = y[Idh])
+		l <- l + 1
+	}
+	PostBetas[[s]] <- BETA; PostSigma[[s]] <- SIGMA
+	Posts[s, ] <- S; PostAlphas[s] <- Alpha
+	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Demand of marijuana in Colombia: Dirichlet process mixture}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+keep <- seq((burnin+1), tot, thin)
+PosteriorS<- Posts[keep,]
+Clusters <- sapply(1:length(keep), function(i){length(table(PosteriorS[i,]))})
+table(Clusters)
+NClus <- 3
+sapply(1:length(keep), function(i){print(table(PosteriorS[i,]))})
+PosteriorSIGMA <- matrix(NA, length(keep), NClus)
+l <- 1
+for (s in keep){
+	PosteriorSIGMA[l,] <- PostSigma[[s]][1:NClus]
+	l <- l + 1
+}
+summary(coda::mcmc(PosteriorSIGMA))
+plot(coda::mcmc(PosteriorSIGMA))
+PosteriorBeta1 <- matrix(NA, length(keep), k)
+j <- 1
+for(s in keep){
+	PosteriorBeta1[j,] <- PostBetas[[s]][,1]
+	j <- j + 1
+}
+colnames(PosteriorBeta1) <- c("Ct", names(Data[,-1]))
+print(summary(coda::mcmc(PosteriorBeta1)))
+plot(coda::mcmc(PosteriorBeta1))
+PosteriorBeta2 <- matrix(NA, length(keep), k)
+j <- 1
+for(s in keep){
+	PosteriorBeta2[j,] <- PostBetas[[s]][,2]
+	j <- j + 1
+}
+colnames(PosteriorBeta2) <- c("Ct", names(Data[,-1]))
+print(summary(coda::mcmc(PosteriorBeta2)))
+plot(coda::mcmc(PosteriorBeta2))
+PosteriorBeta3 <- matrix(NA, length(keep), k)
+j <- 1
+for(s in keep){
+	PosteriorBeta3[j,] <- PostBetas[[s]][,3]
+	j <- j + 1
+}
+colnames(PosteriorBeta3) <- c("Ct", names(Data[,-1]))
+print(summary(coda::mcmc(PosteriorBeta3)))
+plot(coda::mcmc(PosteriorBeta3))
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+In this application, there are three clusters after the burn-in period, with individuals in the sample relatively evenly allocated between them. The posterior density plots of the elasticities associated with the three clusters appear very similar. Consequently, Figure \ref{figElastDrugs} presents the posterior density estimates of the demand price elasticities of marijuana in Colombia for the first cluster.
+
+Panel A of Figure \ref{figElastDrugs} shows that the own-price elasticity of marijuana demand is bimodal. The first mode suggests that some individuals have an elasticity near -0.5, meaning that a 1\% increase in the price of marijuana leads to a 0.5\% decrease in their demand. The second mode is near 0, indicating that these individuals do not adjust their marijuana consumption in response to price changes. 
+
+Panel B presents the cross-price elasticity of marijuana demand with respect to the price of cocaine. This posterior distribution is also bimodal. The first mode suggests that some individuals do not change their marijuana demand in response to cocaine price variations. The second mode indicates that marijuana and cocaine are substitutes: a 1\% increase in the price of cocaine leads to an approximately 0.25\% increase in marijuana demand.
+
+Panel C shows that marijuana and crack are also substitutes. This posterior distribution is unimodal, indicating that most individuals increase their marijuana consumption when the price of crack rises. On average, a 1\% increase in the price of crack results in a 0.3\% increase in marijuana demand.
+
+These results seem plausible. However, they should be interpreted with caution, as potential endogeneity issues may affect the estimates.
+ 
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter11/figures/ElastDrugs.png}
+	\caption[List of figure caption goes here]{Posterior distributions: Elasticities of marijuana consumption in Colombia.}\label{figElastDrugs}
+\end{figure}
 
 
 
@@ -933,7 +1121,7 @@ In Exercise 2 we ask to estimate a finite Gaussian mixture regression starting w
 	
 	Use the dataset \textit{MarijuanaColombia.csv} from our GitHub repository to perform inference on the demand for marijuana in Colombia. This dataset contains information on the (log) monthly demand in 2019 from the National Survey of the Consumption of Psychoactive Substances. It includes variables such as the presence of a drug dealer in the neighborhood (\textit{Dealer}), gender (\textit{Female}), indicators of good physical and mental health (\textit{PhysicalHealthGood} and \textit{MentalHealthGood}), age (\textit{Age} and \textit{Age2}), and (log) prices of marijuana, cocaine, and crack by individual (\textit{LogPriceMarijuana}, \textit{LogPriceCocaine}, and \textit{LogPriceCrack}). The sample size is 1,156.
 	
-	Estimate a finite Gaussian mixture regression using non-informative priors, starting with five potential clusters. Obtain the posterior distribution of the own-price elasticity of marijuana and the cross-price elasticities of marijuana demand with respect to the prices of cocaine and crack.
+	Estimate a finite Gaussian mixture regression using non-informative priors, that is, $\alpha_{0}=\delta_{0}=0.01$, $\boldsymbol{\beta}_{0}=\boldsymbol{0}_K$, $\boldsymbol{B}_{0}=\boldsymbol{I}_K$, and $a=b=0.1$, $K$ is the number of regressors, 10 including the intercept. The number of MCMC iterations is 5,000, the burn-in is 1,000, and the thinning parameter is 2. Start with five potential clusters. Obtain the posterior distribution of the own-price elasticity of marijuana and the cross-price elasticities of marijuana demand with respect to the prices of cocaine and crack.
 	
 	\item Get the posterior sampler in the semi-parametric setting using a Dirichlet process mixture:
 	\begin{align*}
@@ -942,11 +1130,13 @@ In Exercise 2 we ask to estimate a finite Gaussian mixture regression starting w
 	\end{align*}
 	Do not include the intercept in $\boldsymbol{\beta}$ to get flexibility in the distribution of the stochastic errors.
 	
+	Let's assume $\boldsymbol{\beta}\sim N(\boldsymbol{\beta}_0,\boldsymbol{B}_0)$, $\sigma_i^2\sim IG(\alpha_0/2,\delta_0/2)$, $\mu_i\sim N(\mu_0,\sigma_i^2/\beta_0)$, $\alpha\sim G(a,b)$ such that introducing the latent variable $\xi|\alpha,N\sim Be(\alpha+1,N)$, allows to easily sample the posterior draws of  $\alpha|\xi,H,\pi_{\xi}\sim\pi_{\xi}{G}(a+H,b-log(\xi))+(1-\pi_{\xi}){G}(a+H-1,b-log(\xi))$, where $\frac{\pi_{\xi}}{1-\pi_{\xi}}=\frac{a+H-1}{N(b-log(\xi))}$, $H$ is the number of atoms (mixture components). 
+	
 	\item  Perform inference in the simulation of the semi-parametric model of Exercise 1 using the sampler of Exercise 3. 
 	
 	\item \textbf{Example: Simulation exercise continues}
 	
-	Fix the label-switching problem of the simulation exercise of the DPM.
+	Fix the label-switching problem of the simulation exercise of the DPM using \textit{random permutation of latent classes}.
   
 \end{enumerate}
 
