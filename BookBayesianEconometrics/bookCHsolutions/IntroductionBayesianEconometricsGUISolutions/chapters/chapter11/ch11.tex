@@ -17,7 +17,7 @@ We can see from the posterior estimates that three components disappear after th
  
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Semi-parametric Gaussian mixture}
+	\textit{R code. Simulation: Semi-parametric Gaussian mixture}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
 rm(list = ls()); set.seed(010101)
@@ -78,7 +78,7 @@ PostBeta <- function(sig2, mu, X, y, Psi){
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Semi-parametric Gaussian mixture}
+	\textit{R code. Simulation: Semi-parametric Gaussian mixture}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
 Postmu <- function(sig2h, Beta, Xh, yh){
@@ -136,7 +136,7 @@ close(pb)
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Semi-parametric Gaussian mixture}
+	\textit{R code. Simulation: Semi-parametric Gaussian mixture}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
 keep <- seq(burnin, tot, thin)
@@ -157,7 +157,6 @@ for (s in keep){
 summary(coda::mcmc(PosteriorSIGMA))
 summary(coda::mcmc(PosteriorMU))
 summary(coda::mcmc(PosteriorLAMBDA))
-# Posterior density estimate #
 mus <- seq(-3, 4, 0.01)
 DensityEst <- function(par, eval){
 	lambda1 <- par[1]; lambda2 <- par[2]
@@ -207,7 +206,7 @@ These results suggest substitution between marijuana and both cocaine and crack:
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Semi-parametric Gaussian mixture}
+	\textit{R code. Marijuana in Colombia: Gaussian mixture}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
 rm(list = ls()); set.seed(010101)
@@ -254,7 +253,7 @@ Beta <- matrix(rep(Reg$coefficients, H), k, H); Hs <- H
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Semi-parametric Gaussian mixture}
+	\textit{R code. Marijuana in Colombia: Gaussian mixture}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
 pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
@@ -290,7 +289,6 @@ keep <- seq((burnin+1), tot, thin)
 PosteriorPsi <- PostPsi[keep,]
 Clusters <- sapply(1:length(keep), function(i){length(table(PosteriorPsi[i,]))})
 NClus <- 2
-# Clusters <- sapply(1:length(keep), function(i){print(table(PosteriorPsi[i,]))})
 PosteriorSIGMA <- matrix(NA, length(keep), NClus)
 PosteriorBETA <- array(NA, c(k,NClus,length(keep)))
 PosteriorLAMBDA <- matrix(NA, length(keep), NClus)
@@ -374,8 +372,227 @@ $h=1,2,\dots,H$. Note that $\mu_{hn}$ is equal to $\mu_i$ when $N_h=1$.
 The posterior distribution of $\boldsymbol{\beta}$ is given by 
 $$\boldsymbol{\beta}\sim N(\boldsymbol{\beta}_{n},\boldsymbol{B}_{n}),$$ where $\boldsymbol{B}_{n}=(\boldsymbol{B}_{0}^{-1}+\sum_{h=1}^H\sum_{i\in \mathcal{C}_h}\sigma_h^{-2}\boldsymbol{x}_i\boldsymbol{x}_i^{\top})^{-1}$ and $\boldsymbol{\beta}_{n}=\boldsymbol{B}_{n}(\boldsymbol{B}_{0}^{-1}\boldsymbol{\beta}_{0}+\sum_{h=1}^H\sum_{i\in \mathcal{C}_h}\sigma_h^{-2}\boldsymbol{x}_i(y_i-\mu_h))$.
 
+\item  \textbf{Example: Exercise 1 and 3 continue}
 
-\item  Perform inference in the simulation of the semi-parametric model of Exercise 1 using the sampler of Exercise 3. In particular, use non-informative priors, setting $\alpha_{h0}=\delta_{h0}=0.01$, $\bm{\beta}_0=\bm{0}_2$, $\bm{B}_0=\bm{I}_2$, $\mu_{h0}=0$, $\sigma^2_{\mu 0}=10$, and $\beta_0 = 0.1$. Use 6,000 MCMC iterations, a burn-in period of 4,000, and a thinning parameter of 2. Compare the population parameters with the posterior estimates and plot the population density along with the posterior density estimate of $\bm{\mu}$ (the mean, and the 95\% credible interval).\\ 
+Perform inference in the simulation of the semi-parametric model of Exercise 1 using the sampler of Exercise 3. Use non-informative priors, setting $\alpha_{0}=\delta_{0}=0.01$, $\boldsymbol{\beta}_{0}=\boldsymbol{0}_2$, $\boldsymbol{B}_{0}=\boldsymbol{I}_2$, and $a=b=0.1$. The number of MCMC iterations is 5,000, the burn-in is 1,000, and the thinning parameter is 2.\\ 
 
- 
+\textbf{Answer:}
+
+The following code implements the Gibbs sampling algorithm to perform inference using the DPM in the semi-parametric simulation. From the summary statistics of the posterior chains, we can see that the 95\% credible intervals encompass the population values. Figure \ref{figDMPSemi} shows the posterior density of the intercept associated with the second cluster. We observe bimodality, with the two modes located around the population means of the clusters.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation: Semi-parametric Dirichlet process mixture}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls())
+set.seed(010101)
+# Simulate data from a 2-component mixture model
+n <- 1000
+x1 <- rnorm(n); x2 <- rnorm(n)
+B <- c(0.5, -1.2)
+X <- cbind(x1, x2)
+z <- rbinom(n, 1, 0.3)  # Latent class indicator
+mu <- ifelse(z == 0, rnorm(n, -0.5, 0.5), rnorm(n, 1, 0.8))
+y <- X%*%B + mu
+k <- dim(X)[2]
+N <- dim(X)[1]
+# Hyperparameters
+a0 <- 0.001; d0 <- 0.001
+b0 <- rep(0, k); B0 <- diag(k)
+B0i <- solve(B0)
+a <- 0.1; b <- 0.1
+mu0 <- 0
+sig2mu0 <- 10
+beta0 <- 0.1
+# MCMC parameters
+mcmc <- 5000; burnin <- 1000
+tot <- mcmc + burnin; thin <- 2
+# Gibbs sampling functions
+PostSig2 <- function(Xh, yh, Beta){
+	Nh <- length(yh)
+	if(Nh == 1){
+		Xh <- matrix(Xh, k, 1)
+		XhB <- t(Xh)%*%Beta
+	}else{
+		Xh <- matrix(Xh, Nh, k)
+		XhB <- Xh%*%Beta
+	}
+	eh <- matrix(yh, Nh, 1) - XhB
+	an <- a0 + Nh
+	dn <- d0 + sum((eh - mean(eh))^2) + beta0*Nh/(beta0 + Nh)*(mean(eh) - mu0)^2
+	sig2 <- invgamma::rinvgamma(1, shape = an/2, rate = dn/2)
+	return(sig2)
+}
+Postmu <- function(sig2h, Beta, Xh, yh){
+	Nh <- length(yh)
+	if(Nh == 1){
+		Xh <- matrix(Xh, k, 1)
+		XhB <- t(Xh)%*%Beta
+	}else{
+		Xh <- matrix(Xh, Nh, k)
+		XhB <- Xh%*%Beta
+	}
+	eh <- matrix(yh, Nh, 1) - XhB
+	sig2mu <- sig2h/(beta0 + Nh)
+	mun <- (beta0*mu0 + Nh*mean(eh))/(beta0 + Nh)
+	mu <- rnorm(1, mun, sig2mu^0.5)
+	return(mu)
+}
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation: Semi-parametric Dirichlet process mixture}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+PostBeta <- function(sig2, mu, X, y, Clust){
+	XtX <- matrix(0, k, k); Xty <- matrix(0, k, 1)
+	Hs <- length(mu)
+	for(h in 1:Hs){
+		idh <- which(Clust == h)
+		if(length(idh) == 1){
+			Xh <- matrix(X[idh,], k, 1); XtXh <- sig2[h]^(-1)*Xh%*%t(Xh)
+			yh <- y[idh]; Xtyh <- sig2[h]^(-1)*Xh%*%(yh - mu[h])
+		}else{
+			Xh <- X[idh,]; XtXh <- sig2[h]^(-1)*t(Xh)%*%Xh
+			yh <- y[idh]; Xtyh <- sig2[h]^(-1)*t(Xh)%*%(yh - mu[h])
+		}
+		XtX <- XtX + XtXh; Xty <- Xty + Xtyh
+	}
+	Bn <- solve(B0i + XtX); bn <- Bn%*%(B0i%*%b0 + Xty)
+	Beta <- MASS::mvrnorm(1, bn, Bn)
+	return(Beta)
+}
+PostAlpha <- function(Clust, alpha){
+	H <- length(unique(Clust))
+	psi <- rbeta(1, alpha + 1, N)
+	pi.ratio <- (a + H - 1) / (N * (b - log(psi)))
+	pi <- pi.ratio / (1 + pi.ratio)
+	components <- sample(1:2, prob = c(pi, (1 - pi)), size = 1)
+	cs <- c(a + H, a + H - 1); ds <- b - log(psi)
+	alpha <- rgamma(1, cs[components], ds)
+	return(alpha)
+}
+LogMarLikLM <- function(xh, yh, Beta){
+	xh <- matrix(xh, k, 1); ei <- c(yh - t(xh)%*%Beta)
+	betan <- beta0 + 1; an <- a0 + 1
+	dn <- d0 +beta0/(beta0 + 1)*(ei - mu0)^2  
+	logpy <- (1/2)*log(1/pi)+(a0/2)*log(d0)-(an/2)*log(dn) + 0.5*log(beta0/betan) + lgamma(an/2)-lgamma(a0/2)
+	return(logpy)
+}
+PostS <- function(Beta, SIGMA, MU, Alpha, Clust, i){
+	Nl <- table(Clust[-i]); H <- length(Nl)
+	ei <- c(y[i] - t(X[i,])%*%Beta)
+	qh <- sapply(1:H, function(h){(Nl[h]/(N+Alpha-1))*dnorm(ei, mean = MU[h], sd = SIGMA[h])})
+	q0 <- (Alpha/(N+Alpha-1))*exp(LogMarLikLM(xh = X[i,], yh = y[i], Beta = Beta))
+	qh <- c(q0, qh)
+	Clust <- as.numeric(names(Nl))
+	si <- sample(c(0, Clust), 1, prob = qh)
+	if(si == 0){si <- Clust[H] + 1
+		Sig2New <- PostSig2(Xh = X[i,], yh = y[i], Beta = Beta)
+		SIGMA <- c(SIGMA, Sig2New^0.5)
+		MuNew <- Postmu(sig2h = Sig2New, Beta = Beta, Xh = X[i,], yh = y[i])
+		MU <- cbind(MU, MuNew)
+	}else{si == si}
+	return(list(si = si, MU = MU, SIGMA = SIGMA))
+}
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation: Semi-parametric Dirichlet process mixture}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+PostBetas <- matrix(NA, tot, k)
+PostSigma <- list(); PostMu <- list()
+Posts <- matrix(0, tot, N); PostAlphas <- rep(0, tot)
+Clust <- sample(1:3, N, replace=T, prob = c(0.5, 0.3, 0.2))
+Reg <- lm(y ~ X)
+SumReg <- summary(Reg)
+BETA <- Reg$coefficients[-1]
+SIGMA <- rep(SumReg$sigma, 3)
+MU <- rep(Reg$coefficients[1], 3)
+Alpha <- rgamma(1, a, b)
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+	for(i in 1:N){
+		Rests <- PostS(Beta = BETA, SIGMA = SIGMA, MU = MU, Alpha = Alpha, Clust = Clust, i = i)
+		Clust[i] <- Rests$si
+		MU <- Rests$MU; SIGMA <- Rests$SIGMA
+	}
+	sFreq <- table(Clust)
+	lt <- 1
+	for(li in as.numeric(names(sFreq))){
+		Index <- which(Clust == li)
+		if(li == lt){Clust[Index] <- li
+		} else {Clust[Index] <- lt
+		}
+		lt <- lt + 1
+	}
+	Alpha <- PostAlpha(Clust = Clust, alpha = Alpha)
+	Nl <- table(Clust); H <- length(Nl)
+	SIGMA <- rep(NA, H)
+	MU <- rep(NA, H)
+	l <- 1
+	for(h in unique(Clust)){
+		Idh <- which(Clust == h)
+		SIGMA[l] <- (PostSig2(Beta = BETA, Xh = X[Idh, ], yh = y[Idh]))^0.5
+		MU[l] <- Postmu(Beta = BETA, sig2h = SIGMA[l]^2, Xh = X[Idh, ], yh = y[Idh])
+		l <- l + 1
+	}
+	BETA <- PostBeta(sig2 = SIGMA, mu = MU, X = X, y = y, Clust = Clust) 
+	PostBetas[s,] <- BETA
+	PostSigma[[s]] <- SIGMA
+	PostMu[[s]] <- MU
+	Posts[s, ] <- Clust
+	PostAlphas[s] <- Alpha
+	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation: Semi-parametric Dirichlet process mixture}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+keep <- seq(burnin, tot, thin)
+PosteriorBetas <- coda::mcmc(PostBetas[keep,])
+summary(PosteriorBetas)
+plot(PosteriorBetas)
+PosteriorPsi <- Posts[keep,]
+Clusters <- sapply(1:length(keep), function(i){length(table(PosteriorPsi[i,]))})
+table(Clusters)
+PosteriorSIGMA <- matrix(NA, length(keep), 2)
+PosteriorMU <- matrix(NA, length(keep), 2)
+l <- 1
+for (s in keep){
+	PosteriorSIGMA[l,] <- PostSigma[[s]][1:2]
+	PosteriorMU[l,] <- PostMu[[s]][1:2]
+	l <- l + 1
+}
+summary(coda::mcmc(PosteriorSIGMA))
+summary(coda::mcmc(PosteriorMU))
+plot(coda::mcmc(PosteriorMU))
+DataMU2 <- data.frame(Posterior = PosteriorMU[,2]) 
+library(ggplot2)
+densMU <- ggplot(DataMU2, aes(x = Posterior)) + geom_density(fill = "blue", alpha = 0.3) + labs(x = "Intercept", y = "Density") + theme_minimal()
+densMU 
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter11/figures/DMPSemi.png}
+	\caption[List of figure caption goes here]{Posterior density estimate: Mean of the stochastic errors.}\label{figDMPSemi}
+\end{figure}
+
+
 \end{enumerate}

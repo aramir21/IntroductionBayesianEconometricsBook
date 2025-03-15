@@ -627,16 +627,10 @@ SIGMA <- rep(SumReg$sigma, 3)
 Alpha <- rgamma(1, a, b)
 pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
 for(s in 1:tot){
-  # for(i in 1:N){
-  #   Rests <- PostS(BETA = BETA, SIGMA = SIGMA, Alpha = Alpha, s = S, i = i)
-  #   S[i] <- Rests$si
-  #   BETA <- Rests$BETA; SIGMA <- Rests$SIGMA
-  # }
   for(i in 1:N){
     Rests <- PostS(BETA = BETA, SIGMA = SIGMA, Alpha = Alpha, s = S, i = i)
     S[i] <- Rests$si
     BETA <- Rests$BETA; SIGMA <- Rests$SIGMA
-    # S[i] <- Rests
   }
   sFreq <- table(S)
   lt <- 1
@@ -660,13 +654,6 @@ for(s in 1:tot){
     BETA[,l] <- PostBeta(sig2h = SIGMA[l]^2, Xh = X[Idh, ], yh = y[Idh])
     l <- l + 1
   }
-  # SIGMA <- list()
-  # BETA <- list()
-  # for(h in unique(S)){
-  #   Idh <- which(S == h)
-  #   SIGMA[[h]] <- (PostSig2(Xh = X[Idh, ], yh = y[Idh]))^0.5
-  #   BETA[[h]] <- PostBeta(sig2h = SIGMA[[h]]^2, Xh = X[Idh, ], yh = y[Idh])
-  # }
   PostBetas[[s]] <- BETA
   PostSigma[[s]] <- SIGMA
   Posts[s, ] <- S
@@ -688,6 +675,15 @@ for (s in keep){
 }
 summary(coda::mcmc(PosteriorSIGMA))
 plot(coda::mcmc(PosteriorSIGMA))
+PosteriorBeta1 <- matrix(NA, length(keep), k)
+j <- 1
+for(s in keep){
+  PosteriorBeta1[j,] <- PostBetas[[s]][,1]
+  j <- j + 1
+}
+print(summary(coda::mcmc(PosteriorBeta1)))
+plot(coda::mcmc(PosteriorBeta1))
+
 PosteriorBeta2 <- matrix(NA, length(keep), k)
 j <- 1
 for(s in keep){
@@ -705,15 +701,6 @@ for(s in keep){
 }
 print(summary(coda::mcmc(PosteriorBeta3)))
 plot(coda::mcmc(PosteriorBeta3))
-
-PosteriorBeta1 <- matrix(NA, length(keep), k)
-j <- 1
-for(s in keep){
-  PosteriorBeta1[j,] <- PostBetas[[s]][,1]
-  j <- j + 1
-}
-print(summary(coda::mcmc(PosteriorBeta1)))
-plot(coda::mcmc(PosteriorBeta1))
 
 ########### Dirichlet process mixture: Application (Marijuana consumption in Colombia) ###############
 rm(list = ls()); set.seed(010101)
@@ -800,13 +787,17 @@ LogMarLikLM <- function(xh, yh){
 PostS <- function(BETA, SIGMA, Alpha, s, i){
   Nl <- table(s[-i]); H <- length(Nl)
   qh <- sapply(1:H, function(h){(Nl[h]/(N+Alpha-1))*dnorm(y[i], mean = t(X[i,])%*%BETA[,h], sd = SIGMA[h])})
-  qh <- c(qh, (Alpha/(N+Alpha-1))*exp(LogMarLikLM(xh = X[i,], yh = y[i])))
-  si <- sample(1:length(qh), 1, prob = qh)
-  if(si == (H + 1)){
+  q0 <- (Alpha/(N+Alpha-1))*exp(LogMarLikLM(xh = X[i,], yh = y[i]))
+  qh <- c(q0, qh)
+  Clust <- as.numeric(names(Nl))
+  si <- sample(c(0, Clust), 1, prob = qh)
+  if(si == 0){
+    si <- Clust[H] + 1
     Sig2New <- PostSig2(Xh = X[i,], yh = y[i])
-    SIGMA = c(SIGMA, Sig2New^0.5)
+    SIGMA <- c(SIGMA, Sig2New^0.5)
     BetaNew <- PostBeta(sig2h = Sig2New, Xh = X[i,], yh = y[i])
-    BETA = cbind(BETA, BetaNew)
+    BETA <- cbind(BETA, BetaNew)
+  }else{si == si
   }
   return(list(si = si, BETA = BETA, SIGMA = SIGMA))
 }
@@ -822,6 +813,15 @@ for(s in 1:tot){
     Rests <- PostS(BETA = BETA, SIGMA = SIGMA, Alpha = Alpha, s = S, i = i)
     S[i] <- Rests$si
     BETA <- Rests$BETA; SIGMA <- Rests$SIGMA
+  }
+  sFreq <- table(S)
+  lt <- 1
+  for(li in as.numeric(names(sFreq))){
+    Index <- which(S == li)
+    if(li == lt){S[Index] <- li
+    } else {S[Index] <- lt
+    }
+    lt <- lt + 1
   }
   Alpha <- PostAlpha(s = S, alpha = Alpha)
   Nl <- table(S); H <- length(Nl)
@@ -921,9 +921,7 @@ ggarrange(dens1, dens2, dens3,
           legend = "bottom",
           common.legend = TRUE
 )
-
 ############## Basis functions: Estimates using brms package #################
-# Load necessary libraries
 library(brms)
 library(ggplot2)
 library(dplyr)
@@ -952,12 +950,14 @@ fit <- brm(y ~ s(x) + z1 + z2 + z1:z2,
            chains = 4, iter = 2000, warmup = 1000, 
            control = list(adapt_delta = 0.95))
 
+prior_summary(fit) # Summary of priors
+
 # Summary of the model
 summary(fit)
 
 # Extract fitted smooth effect of x
 smooth_pred <- conditional_smooths(fit)
-smooth_data <- as.data.frame(smooth_pred$s_x)
+smooth_data <- as.data.frame(smooth_pred[["mu: s(x)"]])
 
 # Create the population curve
 pop_curve <- data.frame(x = seq(-2, 2, length.out = 200)) %>%
@@ -965,9 +965,9 @@ pop_curve <- data.frame(x = seq(-2, 2, length.out = 200)) %>%
 
 # Plot estimated smooth effect with population curve
 ggplot() +
-  geom_ribbon(data = smooth_data, aes(x = x, ymin = Q2.5, ymax = Q97.5, fill = "Credible Interval"), 
+  geom_ribbon(data = smooth_data, aes(x = x, ymin = lower__, ymax = upper__, fill = "Credible Interval"), 
               alpha = 0.2) +  # Posterior uncertainty
-  geom_line(data = smooth_data, aes(x = x, y = Estimate, color = "Estimated Smooth"), linewidth = 1.2) +  # Estimated smooth
+  geom_line(data = smooth_data, aes(x = x, y = estimate__, color = "Estimated Smooth"), linewidth = 1.2) +  # Estimated smooth
   geom_line(data = pop_curve, aes(x = x, y = true_fx, color = "True Function"), linetype = "dashed", size = 1.2) +  # True function
   scale_color_manual(name = "Lines",
                      values = c("Estimated Smooth" = "blue", "True Function" = "red")) +
@@ -977,3 +977,15 @@ ggplot() +
        caption = "Blue: Estimated | Red Dashed: True Function") +
   theme_minimal()
 
+##### B-splines ######
+require(stats); require(graphics); require(splines)
+SPB <- bs(women$height, df = 3)
+X <- cbind(1, SPB)
+solve(t(X)%*%X)%*%t(X)%*%women$weight
+summary(fm1 <- lm(weight ~ bs(height, df = 3), data = women))
+
+## example of safe prediction
+plot(women, xlab = "Height (in)", ylab = "Weight (lb)")
+ht <- seq(58, 72, length.out = 200)
+lines(ht, predict(fm1, data.frame(height = ht)))
+X

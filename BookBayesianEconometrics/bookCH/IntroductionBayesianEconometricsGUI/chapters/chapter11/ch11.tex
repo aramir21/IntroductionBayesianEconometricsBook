@@ -316,7 +316,7 @@ The following code performs inference in this simulation from scratch using Gibb
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Simulation exercise: Gaussian mixture with 2 components using Hamiltonian Monte Carlo}
+	\textit{R code. Simulation exercise: Gaussian mixture with 2 components using brms package}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
 ####### Simulation exercise: Gaussian mixture: 2 components #############
@@ -735,7 +735,7 @@ We use non-informative priors again, setting $\alpha_{0}=\delta_{0}=0.01$, $\bol
 
 The following code demonstrates how to perform inference using the stated Gibbs sampler for the DPM in the \textbf{R} package.
 
-We see from the results that the DPM overestimates the number of clusters. After the burn-in period, there are typically three clusters, occasionally four. Additionally, the posterior plots illustrate the label-switching problem. Eventually, the posterior chains of clusters reach different posterior modes, causing a high variability of the posterior draws. In Exercise 5, we ask to fix this issue using \textit{random permutation of latent classes}.
+We see from the results that the DPM overestimates the number of clusters. After the burn-in period, there are typically three clusters. Additionally, the posterior plots illustrate the label-switching problem. Eventually, the posterior chains of clusters reach different posterior modes, causing a high variability of the posterior draws. In Exercise 5, we ask to fix this issue using \textit{random permutation of latent classes}.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -827,16 +827,20 @@ LogMarLikLM <- function(xh, yh){
 PostS <- function(BETA, SIGMA, Alpha, s, i){
 	Nl <- table(s[-i]); H <- length(Nl)
 	qh <- sapply(1:H, function(h){(Nl[h]/(N+Alpha-1))*dnorm(y[i], mean = t(X[i,])%*%BETA[,h], sd = SIGMA[h])})
-	qh <- c(qh, (Alpha/(N+Alpha-1))*exp(LogMarLikLM(xh = X[i,], yh = y[i])))
-	si <- sample(1:length(qh), 1, prob = qh)
-	if(si == (H + 1)){
-		Sig2New <- PostSig2(Xh = X[i,], yh = y[i])
-		SIGMA = c(SIGMA, Sig2New^0.5)
-		BetaNew <- PostBeta(sig2h = Sig2New, Xh = X[i,], yh = y[i])
-		BETA = cbind(BETA, BetaNew)
+	q0 <- (Alpha/(N+Alpha-1))*exp(LogMarLikLM(xh = X[i,], yh = y[i]))
+	qh <- c(q0, qh)
+	Clust <- as.numeric(names(Nl))
+	si <- sample(c(0, Clust), 1, prob = qh)
+		if(si == 0){
+			si <- Clust[H] + 1
+			Sig2New <- PostSig2(Xh = X[i,], yh = y[i])
+			SIGMA <- c(SIGMA, Sig2New^0.5)
+			BetaNew <- PostBeta(sig2h = Sig2New, Xh = X[i,], yh = y[i])
+			BETA <- cbind(BETA, BetaNew)
+		}else{si == si
+		}
+		return(list(si = si, BETA = BETA, SIGMA = SIGMA))
 	}
-	return(list(si = si, BETA = BETA, SIGMA = SIGMA))
-}
 PostBetas <- list(); PostSigma <- list()
 Posts <- matrix(0, tot, N); PostAlphas <- rep(0, tot)
 S <- sample(1:3, N, replace = T, prob = c(0.5, 0.3, 0.2))
@@ -858,6 +862,15 @@ for(s in 1:tot){
 		Rests <- PostS(BETA = BETA, SIGMA = SIGMA, Alpha = Alpha, s = S, i = i)
 		S[i] <- Rests$si
 		BETA <- Rests$BETA; SIGMA <- Rests$SIGMA
+	}
+  	sFreq <- table(S)
+	lt <- 1
+	for(li in as.numeric(names(sFreq))){
+		Index <- which(S == li)
+		if(li == lt){S[Index] <- li
+		} else {S[Index] <- lt
+		}
+		lt <- lt + 1
 	}
 	Alpha <- PostAlpha(s = S, alpha = Alpha)
 	Nl <- table(S); H <- length(Nl)
@@ -881,29 +894,21 @@ keep <- seq((burnin+1), tot, thin)
 PosteriorS<- Posts[keep,]
 Clusters <- sapply(1:length(keep), function(i){length(table(PosteriorS[i,]))})
 table(Clusters)
-NClus <- 3; l <- 1
-PosteriorSIGMA <- matrix(NA, length(keep), NClus)
-for (s in keep){
-	PosteriorSIGMA[l,] <- PostSigma[[s]][1:NClus]
-	l <- l + 1
-}
-summary(coda::mcmc(PosteriorSIGMA))
-PosteriorBeta2 <- matrix(NA, length(keep), k)
-j <- 1
+PosteriorBeta1 <- matrix(NA, length(keep), k); j <- 1
 for(s in keep){
-	PosteriorBeta2[j,] <- PostBetas[[s]][,2]
-	j <- j + 1
+	PosteriorBeta1[j,] <- PostBetas[[s]][,1]; j <- j + 1
+}
+print(summary(coda::mcmc(PosteriorBeta1)))
+PosteriorBeta2 <- matrix(NA, length(keep), k);j <- 1
+for(s in keep){
+	PosteriorBeta2[j,] <- PostBetas[[s]][,2]; j <- j + 1
 }
 print(summary(coda::mcmc(PosteriorBeta2)))
-plot(coda::mcmc(PosteriorBeta2))
-PosteriorBeta3 <- matrix(NA, length(keep), k)
-j <- 1
+PosteriorBeta3 <- matrix(NA, length(keep), k); j <- 1
 for(s in keep){
-	PosteriorBeta3[j,] <- PostBetas[[s]][,3]
-	j <- j + 1
+	PosteriorBeta3[j,] <- PostBetas[[s]][,3]; j <- j + 1
 }
 print(summary(coda::mcmc(PosteriorBeta3)))
-plot(coda::mcmc(PosteriorBeta3))
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
@@ -928,49 +933,50 @@ Data <- read.csv("https://raw.githubusercontent.com/BEsmarter-consultancy/BSTApp
 attach(Data)
 y <- LogMarijuana; X <- as.matrix(cbind(1, Data[,-1]))
 Reg <- lm(y ~ X - 1); SumReg <- summary(Reg)
-SumReg
-k <- dim(X)[2]; N <- dim(X)[1]
+k <- dim(X)[2]
+N <- dim(X)[1]
 library(ggplot2)
 ggplot(Data, aes(x = LogMarijuana)) + geom_density(fill = "blue", alpha = 0.3) + labs(title = "Density Plot: Marijuana (log) monthly consumption in Colombia", x = "y", y = "Density") + theme_minimal()
-a0 <- 0.001; d0 <- 0.001; b0 <- rep(0, k)
-B0 <- diag(k); B0i <- solve(B0); a <- 0.1; b <- 0.1
+a0 <- 0.001; d0 <- 0.001
+b0 <- rep(0, k); B0 <- diag(k)
+B0i <- solve(B0)
+a <- 0.1; b <- 0.1
+# MCMC parameters
 mcmc <- 5000; burnin <- 1000
 tot <- mcmc + burnin; thin <- 2
 # Gibbs sampling functions
 PostSig2 <- function(Xh, yh){
-	Nh <- length(yh); yh <- matrix(yh, Nh, 1)
+	Nh <- length(yh)
+	yh <- matrix(yh, Nh, 1)
 	if(Nh == 1){
-		Xh <- matrix(Xh, k, 1); Bn <- solve(Xh%*%t(Xh) + B0i)
+		Xh <- matrix(Xh, k, 1)
+		Bn <- solve(Xh%*%t(Xh) + B0i)
 		bn <- Bn%*%(B0i%*%b0 + Xh%*%yh)
 	}else{
-		Xh <- matrix(Xh, Nh, k); Bn <- solve(t(Xh)%*%Xh + B0i)
+		Xh <- matrix(Xh, Nh, k)
+		Bn <- solve(t(Xh)%*%Xh + B0i)
 		bn <- Bn%*%(B0i%*%b0 + t(Xh)%*%yh)
 	}
-	Bni <- solve(Bn); an <- a0 + Nh
+	Bni <- solve(Bn)
+	an <- a0 + Nh
 	dn <- d0 + t(yh)%*%yh + t(b0)%*%B0i%*%b0 - t(bn)%*%Bni%*%bn 
 	sig2 <- invgamma::rinvgamma(1, shape = an/2, rate = dn/2)
 	return(sig2)
 }
 PostBeta <- function(sig2h, Xh, yh){
-	Nh <- length(yh); yh <- matrix(yh, Nh, 1)
+	Nh <- length(yh)
+	yh <- matrix(yh, Nh, 1)
 	if(Nh == 1){
-		Xh <- matrix(Xh, k, 1); Bn <- solve(Xh%*%t(Xh) + B0i)
+		Xh <- matrix(Xh, k, 1)
+		Bn <- solve(Xh%*%t(Xh) + B0i)
 		bn <- Bn%*%(B0i%*%b0 + Xh%*%yh)
 	}else{
-		Xh <- matrix(Xh, Nh, k); Bn <- solve(t(Xh)%*%Xh + B0i)
+		Xh <- matrix(Xh, Nh, k)
+		Bn <- solve(t(Xh)%*%Xh + B0i)
 		bn <- Bn%*%(B0i%*%b0 + t(Xh)%*%yh)
 	}
 	Beta <- MASS::mvrnorm(1, bn, sig2h*Bn)
 	return(Beta)
-}
-PostAlpha <- function(s, alpha){
-	H <- length(unique(s)); psi <- rbeta(1, alpha + 1, N)
-	pi.ratio <- (a + H - 1) / (N * (b - log(psi)))
-	pi <- pi.ratio / (1 + pi.ratio)
-	components <- sample(1:2, prob=c(pi,(1 - pi)), size = 1)
-	cs <- c(a + H, a + H - 1); ds <- b - log(psi)
-	alpha <- rgamma(1, cs[components], ds)
-	return(alpha)
 }
 \end{lstlisting}
 	\end{VF}
@@ -981,9 +987,21 @@ PostAlpha <- function(s, alpha){
 	\textit{R code. Demand of marijuana in Colombia: Dirichlet process mixture}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
+PostAlpha <- function(s, alpha){
+	H <- length(unique(s))
+	psi <- rbeta(1, alpha + 1, N)
+	pi.ratio <- (a + H - 1) / (N * (b - log(psi)))
+	pi <- pi.ratio / (1 + pi.ratio)
+	components <- sample(1:2, prob = c(pi, (1 - pi)), size = 1)
+	cs <- c(a + H, a + H - 1)
+	ds <- b - log(psi)
+	alpha <- rgamma(1, cs[components], ds)
+	return(alpha)
+}
 LogMarLikLM <- function(xh, yh){
 	xh <- matrix(xh, k, 1)
-	Bn <- solve(xh%*%t(xh) + B0i); Bni <- solve(Bn)
+	Bn <- solve(xh%*%t(xh) + B0i)
+	Bni <- solve(Bn)
 	bn <- Bn%*%(B0i%*%b0 + xh%*%yh)
 	an <- a0 + 1
 	dn <- d0 + yh^2 + t(b0)%*%B0i%*%b0 - t(bn)%*%Bni%*%bn 
@@ -993,12 +1011,17 @@ LogMarLikLM <- function(xh, yh){
 PostS <- function(BETA, SIGMA, Alpha, s, i){
 	Nl <- table(s[-i]); H <- length(Nl)
 	qh <- sapply(1:H, function(h){(Nl[h]/(N+Alpha-1))*dnorm(y[i], mean = t(X[i,])%*%BETA[,h], sd = SIGMA[h])})
-	qh <- c(qh, (Alpha/(N+Alpha-1))*exp(LogMarLikLM(xh = X[i,], yh = y[i])))
-	si <- sample(1:length(qh), 1, prob = qh)
-	if(si == (H + 1)){
+	q0 <- (Alpha/(N+Alpha-1))*exp(LogMarLikLM(xh = X[i,], yh = y[i]))
+	qh <- c(q0, qh)
+	Clust <- as.numeric(names(Nl))
+	si <- sample(c(0, Clust), 1, prob = qh)
+	if(si == 0){
+		si <- Clust[H] + 1
 		Sig2New <- PostSig2(Xh = X[i,], yh = y[i])
-		SIGMA = c(SIGMA, Sig2New^0.5)
-		BetaNew <- PostBeta(sig2h = Sig2New, Xh = X[i,], yh = y[i]); BETA = cbind(BETA, BetaNew)
+		SIGMA <- c(SIGMA, Sig2New^0.5)
+		BetaNew <- PostBeta(sig2h = Sig2New, Xh = X[i,], yh = y[i])
+		BETA <- cbind(BETA, BetaNew)
+	}else{si == si
 	}
 	return(list(si = si, BETA = BETA, SIGMA = SIGMA))
 }
@@ -1006,29 +1029,9 @@ PostBetas <- list(); PostSigma <- list()
 Posts <- matrix(0, tot, N); PostAlphas <- rep(0, tot)
 S <- sample(1:3, N, replace = T, prob = c(0.5, 0.3, 0.2))
 BETA <- cbind(Reg$coefficients, Reg$coefficients, Reg$coefficients)
-SIGMA <- rep(SumReg$sigma, 3); Alpha <- rgamma(1, a, b)
+SIGMA <- rep(SumReg$sigma, 3)
+Alpha <- rgamma(1, a, b)
 pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
-for(s in 1:tot){
-	for(i in 1:N){
-		Rests <- PostS(BETA = BETA, SIGMA = SIGMA, Alpha = Alpha, s = S, i = i)
-		S[i] <- Rests$si
-		BETA <- Rests$BETA; SIGMA <- Rests$SIGMA
-	}
-	Alpha <- PostAlpha(s = S, alpha = Alpha)
-	Nl <- table(S); H <- length(Nl)
-	SIGMA <- rep(NA, H); BETA <- matrix(NA, k, H)
-	l <- 1
-	for(h in unique(S)){
-		Idh <- which(S == h)
-		SIGMA[l] <- (PostSig2(Xh = X[Idh, ], yh = y[Idh]))^0.5
-		BETA[,l] <- PostBeta(sig2h = SIGMA[l]^2, Xh = X[Idh, ], yh = y[Idh])
-		l <- l + 1
-	}
-	PostBetas[[s]] <- BETA; PostSigma[[s]] <- SIGMA
-	Posts[s, ] <- S; PostAlphas[s] <- Alpha
-	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
-}
-close(pb)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
@@ -1038,6 +1041,39 @@ close(pb)
 	\textit{R code. Demand of marijuana in Colombia: Dirichlet process mixture}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
+for(s in 1:tot){
+	for(i in 1:N){
+		Rests <- PostS(BETA = BETA, SIGMA = SIGMA, Alpha = Alpha, s = S, i = i)
+		S[i] <- Rests$si
+		BETA <- Rests$BETA; SIGMA <- Rests$SIGMA
+	}
+	sFreq <- table(S)
+	lt <- 1
+	for(li in as.numeric(names(sFreq))){
+		Index <- which(S == li)
+		if(li == lt){S[Index] <- li
+		} else {S[Index] <- lt
+		}
+		lt <- lt + 1
+	}
+	Alpha <- PostAlpha(s = S, alpha = Alpha)
+	Nl <- table(S); H <- length(Nl)
+	SIGMA <- rep(NA, H)
+	BETA <- matrix(NA, k, H)
+	l <- 1
+	for(h in unique(S)){
+		Idh <- which(S == h)
+		SIGMA[l] <- (PostSig2(Xh = X[Idh, ], yh = y[Idh]))^0.5
+		BETA[,l] <- PostBeta(sig2h = SIGMA[l]^2, Xh = X[Idh, ], yh = y[Idh])
+		l <- l + 1
+	}
+	PostBetas[[s]] <- BETA
+	PostSigma[[s]] <- SIGMA
+	Posts[s, ] <- S
+	PostAlphas[s] <- Alpha
+	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
 keep <- seq((burnin+1), tot, thin)
 PosteriorS<- Posts[keep,]
 Clusters <- sapply(1:length(keep), function(i){length(table(PosteriorS[i,]))})
@@ -1052,6 +1088,22 @@ for (s in keep){
 }
 summary(coda::mcmc(PosteriorSIGMA))
 plot(coda::mcmc(PosteriorSIGMA))
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Demand of marijuana in Colombia: Dirichlet process mixture}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+l <- 1
+for (s in keep){
+	PosteriorSIGMA[l,] <- PostSigma[[s]][1:NClus]
+	l <- l + 1
+}
+summary(coda::mcmc(PosteriorSIGMA))
+plot(coda::mcmc(PosteriorSIGMA))
 PosteriorBeta1 <- matrix(NA, length(keep), k)
 j <- 1
 for(s in keep){
@@ -1059,6 +1111,7 @@ for(s in keep){
 	j <- j + 1
 }
 colnames(PosteriorBeta1) <- c("Ct", names(Data[,-1]))
+HDI <- HDInterval::hdi(PosteriorBeta1, credMass = 0.95)
 print(summary(coda::mcmc(PosteriorBeta1)))
 plot(coda::mcmc(PosteriorBeta1))
 PosteriorBeta2 <- matrix(NA, length(keep), k)
@@ -1068,6 +1121,7 @@ for(s in keep){
 	j <- j + 1
 }
 colnames(PosteriorBeta2) <- c("Ct", names(Data[,-1]))
+HDI <- HDInterval::hdi(PosteriorBeta2, credMass = 0.95)
 print(summary(coda::mcmc(PosteriorBeta2)))
 plot(coda::mcmc(PosteriorBeta2))
 PosteriorBeta3 <- matrix(NA, length(keep), k)
@@ -1077,13 +1131,23 @@ for(s in keep){
 	j <- j + 1
 }
 colnames(PosteriorBeta3) <- c("Ct", names(Data[,-1]))
+HDI <- HDInterval::hdi(PosteriorBeta3, credMass = 0.95)
 print(summary(coda::mcmc(PosteriorBeta3)))
 plot(coda::mcmc(PosteriorBeta3))
+DataElast <- data.frame(Marijuana = PosteriorBeta1[,8], Cocaine = PosteriorBeta1[,9],
+Crack = PosteriorBeta1[,10]) 
+dens1 <- ggplot(DataElast, aes(x = Marijuana)) + geom_density(fill = "blue", alpha = 0.3) + labs(x = "Marijuana", y = "Density") + theme_minimal()
+dens2 <- ggplot(DataElast, aes(x = Cocaine)) + geom_density(fill = "blue", alpha = 0.3) +  labs(x = "Cocaine", y = "Density") + theme_minimal()
+dens3 <- ggplot(DataElast, aes(x = Crack)) + geom_density(fill = "blue", alpha = 0.3) + 
+labs(x = "Crack", y = "Density") + theme_minimal()
+library(ggpubr)
+ggarrange(dens1, dens2, dens3, labels = c("A", "B", "C"), ncol = 3, nrow = 1, legend = "bottom", common.legend = TRUE)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
 
-In this application, there are three clusters after the burn-in period, with individuals in the sample relatively evenly allocated between them. The posterior density plots of the elasticities associated with the three clusters appear very similar. Consequently, Figure \ref{figElastDrugs} presents the posterior density estimates of the demand price elasticities of marijuana in Colombia for the first cluster.
+
+In this application, there are three clusters after the burn-in period, with individuals in the sample relatively evenly allocated between them. The posterior density plots of the elasticities associated with the three clusters appear very similar, which implies that the posterior draws associated with each cluster are targeting the same posterior distribution. Consequently, Figure \ref{figElastDrugs} presents the posterior density estimates of the demand price elasticities of marijuana in Colombia for the first cluster.
 
 Panel A of Figure \ref{figElastDrugs} shows that the own-price elasticity of marijuana demand is bimodal. The first mode suggests that some individuals have an elasticity near -0.5, meaning that a 1\% increase in the price of marijuana leads to a 0.5\% decrease in their demand. The second mode is near 0, indicating that these individuals do not adjust their marijuana consumption in response to price changes. 
 
@@ -1100,7 +1164,7 @@ These results seem plausible. However, they should be interpreted with caution, 
 
 
 
-\section{Non-parametric generalized additive models}\label{sec11_2}
+\section{Splines}\label{sec11_2}
 %\section{Additive non-parametric structure}\label{sec11_1}
 %\subsection{Partial linear model}\label{sec11_21}
 
@@ -1132,7 +1196,9 @@ These results seem plausible. However, they should be interpreted with caution, 
 	
 	Let's assume $\boldsymbol{\beta}\sim N(\boldsymbol{\beta}_0,\boldsymbol{B}_0)$, $\sigma_i^2\sim IG(\alpha_0/2,\delta_0/2)$, $\mu_i\sim N(\mu_0,\sigma_i^2/\beta_0)$, $\alpha\sim G(a,b)$ such that introducing the latent variable $\xi|\alpha,N\sim Be(\alpha+1,N)$, allows to easily sample the posterior draws of  $\alpha|\xi,H,\pi_{\xi}\sim\pi_{\xi}{G}(a+H,b-log(\xi))+(1-\pi_{\xi}){G}(a+H-1,b-log(\xi))$, where $\frac{\pi_{\xi}}{1-\pi_{\xi}}=\frac{a+H-1}{N(b-log(\xi))}$, $H$ is the number of atoms (mixture components). 
 	
-	\item  Perform inference in the simulation of the semi-parametric model of Exercise 1 using the sampler of Exercise 3. 
+	\item  \textbf{Example: Exercise 1 and 3 continue}
+	
+	Perform inference in the simulation of the semi-parametric model of Exercise 1 using the sampler of Exercise 3. Use non-informative priors, setting $\alpha_{0}=\delta_{0}=0.01$, $\boldsymbol{\beta}_{0}=\boldsymbol{0}_2$, $\boldsymbol{B}_{0}=\boldsymbol{I}_2$, and $a=b=0.1$. The number of MCMC iterations is 5,000, the burn-in is 1,000, and the thinning parameter is 2. 
 	
 	\item \textbf{Example: Simulation exercise continues}
 	
