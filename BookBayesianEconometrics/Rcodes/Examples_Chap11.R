@@ -988,11 +988,11 @@ X <- cbind(1, SPB)
 solve(t(X)%*%X)%*%t(X)%*%women$weight
 summary(fm1 <- lm(weight ~ SPB, data = women))
 
-## example of safe prediction
-plot(women, xlab = "Height (in)", ylab = "Weight (lb)")
-ht <- seq(58, 72, length.out = 200)
-lines(ht, predict(fm1, data.frame(height = ht)))
-X
+# ## example of safe prediction
+# plot(women, xlab = "Height (in)", ylab = "Weight (lb)")
+# ht <- seq(58, 72, length.out = 200)
+# lines(ht, predict(fm1, data.frame(height = ht)))
+# X
 
 
 # Cubic B-spline function from scratch
@@ -1070,7 +1070,6 @@ matplot(y, bs_matrix_matrix, type = "l", lty = 1, col = rainbow(ncol(basis_matri
 # legend("topright", legend = paste("B", 1:ncol(basis_matrix), sep=""), col = rainbow(ncol(basis_matrix)), lty = 1)
 
 
-
 SplineAndres <- function(x, knots, delta){
   # delta <- knots[5] - knots[1]
   if(knots[1] <= x & x < knots[2]){
@@ -1102,8 +1101,8 @@ xA <- seq(2, 8, 0.1)
 # par(mfrow = c(1,2))
 Ens <- sapply(xA, function(xi) {SplineAndres(xi, knots = knotsA, delta = delta)})
 plot(xA, Ens)
-lines(xA, BSfunc[,4], col = "red")
 BSfunc <- bs(xA, knots = knotsA, degree = 3)
+lines(xA, BSfunc[,4], col = "red")
 dim(BSfunc)
 matplot(xA, BSfunc, col = "red", type = "l")
 # cbind(Ens, BSfunc[,4])
