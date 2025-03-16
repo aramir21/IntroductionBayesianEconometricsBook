@@ -979,13 +979,144 @@ ggplot() +
 
 ##### B-splines ######
 require(stats); require(graphics); require(splines)
-SPB <- bs(women$height, df = 3)
+y <- women$height
+knots <- c(quantile(y, seq(0, 1, 0.1)))
+# splineDesign(knots, x = y)
+SPB <- bs(y, knots = quantile(y, seq(0.25, 0.75, 0.25)), degree = 3, Boundary.knots = range(y), intercept = FALSE)
+SPB
 X <- cbind(1, SPB)
 solve(t(X)%*%X)%*%t(X)%*%women$weight
-summary(fm1 <- lm(weight ~ bs(height, df = 3), data = women))
+summary(fm1 <- lm(weight ~ SPB, data = women))
 
 ## example of safe prediction
 plot(women, xlab = "Height (in)", ylab = "Weight (lb)")
 ht <- seq(58, 72, length.out = 200)
 lines(ht, predict(fm1, data.frame(height = ht)))
 X
+
+
+# Cubic B-spline function from scratch
+cubic_bspline <- function(x, knots, degree = 3) {
+  # Add boundary knots manually
+  extended_knots <- c(rep(knots[1], degree), knots, rep(knots[length(knots)], degree))
+  
+  # Number of basis functions
+  num_basis <- length(knots) + degree - 1  
+  # This number of internal knots (including external) + polynomial degree - 1 
+  
+  # Initialize the basis matrix
+  basis_matrix <- matrix(0, nrow = length(x), ncol = num_basis)
+  
+  # Function to compute B-spline basis recursively
+  b_spline_basis <- function(x, degree, i, knots) {
+    if (degree == 0) {
+      return(ifelse(x >= knots[i] & x < knots[i + 1], 1, 0))
+    } else {
+      left_num <- (x - knots[i])
+      left_den <- (knots[i + degree] - knots[i])
+      left <- ifelse(left_den != 0, (left_num / left_den) * b_spline_basis(x, degree - 1, i, knots), 0)
+      
+      right_num <- (knots[i + degree + 1] - x)
+      right_den <- (knots[i + degree + 1] - knots[i + 1])
+      right <- ifelse(right_den != 0, (right_num / right_den) * b_spline_basis(x, degree - 1, i + 1, knots), 0)
+      
+      return(left + right)
+    }
+  }
+  
+  # Fill the basis matrix
+  for (i in 1:num_basis) {
+    basis_matrix[, i] <- sapply(x, function(xi) b_spline_basis(xi, degree, i, extended_knots))
+  }
+  if(x[length(x)] == knots[length(knots)]){
+    basis_matrix[length(x), num_basis] <- 1
+  }
+  
+  return(basis_matrix)
+}
+
+# Define knots (internal knots)
+# knots <- c(0, 2, 4, 6, 8, 10)
+
+# Define evaluation points
+# x_values <- seq(0, 10, length.out = 50)
+
+# Compute B-spline basis matrix
+# basis_matrix <- cubic_bspline(x_values, knots, degree = 3)
+knots <- quantile(y, c(0, 0.25, 0.5, 0.75, 1))
+basis_matrix <- cubic_bspline(y, knots = knots, degree = 3)
+# Check the number of basis functions
+dim(basis_matrix)  # Should return (50, 9)
+
+# Compare with the `bs()` function
+library(splines)
+# bs_matrix <- bs(x_values, knots = knots[-c(1, length(knots))], degree = 3, intercept = TRUE, Boundary.knots = range(knots))
+bs_matrix <- bs(y, knots = knots[-c(1, length(knots))], degree = 3, intercept = TRUE, Boundary.knots = range(knots))
+
+# Extract the matrix of the B-splines from the 'bs' object
+bs_matrix_matrix <- as.matrix(bs_matrix)
+
+# Check the number of basis functions from `bs()` function
+dim(bs_matrix_matrix)  # Should return (50, 9)
+
+# Compare matrices
+# all.equal(basis_matrix, as.matrix(bs_matrix_matrix))  # Should return TRUE or close to TRUE
+
+par(mfrow = c(1,2))
+matplot(y, basis_matrix, type = "l", lty = 1, col = rainbow(ncol(basis_matrix)), ylab = "B-spline Basis", xlab = "x")
+# legend("topright", legend = paste("B", 1:ncol(basis_matrix), sep=""), col = rainbow(ncol(basis_matrix)), lty = 1)
+
+matplot(y, bs_matrix_matrix, type = "l", lty = 1, col = rainbow(ncol(basis_matrix)), ylab = "B-spline Basis", xlab = "x")
+# legend("topright", legend = paste("B", 1:ncol(basis_matrix), sep=""), col = rainbow(ncol(basis_matrix)), lty = 1)
+
+
+
+SplineAndres <- function(x, knots, delta){
+  # delta <- knots[5] - knots[1]
+  if(knots[1] <= x & x < knots[2]){
+    u <- (x - knots[1])/delta
+    b <- u^3/6
+  }else{
+    if(knots[2] <= x & x < knots[3]){
+      u <- (x - knots[2])/delta
+      b <- (1/6)*(1 + 3*u + 3*u^2 - 3*u^3)
+    }else{
+      if(knots[3] <= x & x < knots[4]){
+        u <- (x - knots[3])/delta
+        b <- (1/6)*(4 - 6*u^2 + 3*u^3)
+      }else{
+        if(knots[4] <= x & x < knots[5]){
+          u <- (x - knots[4])/delta
+          b <- (1/6)*(1 - 3*u + 3*u^2 - u^3)
+        }else{
+          b <- 0
+        }
+      }
+    }
+  }
+  return(b)
+}
+delta <- 1
+knotsA <- seq(2, 8, delta)
+xA <- seq(2, 8, 0.1)
+# par(mfrow = c(1,2))
+Ens <- sapply(xA, function(xi) {SplineAndres(xi, knots = knotsA, delta = delta)})
+plot(xA, Ens)
+lines(xA, BSfunc[,4], col = "red")
+BSfunc <- bs(xA, knots = knotsA, degree = 3)
+dim(BSfunc)
+matplot(xA, BSfunc, col = "red", type = "l")
+# cbind(Ens, BSfunc[,4])
+# plot(xA, BSfunc[,4])
+
+knotsAnew <- c(rep(xA[1], 3), knotsA, rep(xA[length(xA)], 3))
+Ensnew <- matrix(NA, length(xA), 3 + length(knotsA))
+for(i in 1:(3 + length(knotsA))){
+  Ensnew[,i] <- sapply(xA, function(xi) {SplineAndres(xi, knots = knotsAnew[i:(length(knotsA)+i-1)], delta = delta)})
+}
+
+Ens <- sapply(xA, function(xi) {SplineAndres(xi, knots = knotsAnew[2:11], delta = delta)})
+plot(xA, Ens)
+lines(xA, BSfunc[,1], col = "red")
+
+
