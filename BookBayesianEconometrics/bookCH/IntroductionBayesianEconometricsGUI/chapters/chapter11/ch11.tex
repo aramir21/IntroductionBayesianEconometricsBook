@@ -1164,15 +1164,21 @@ These results seem plausible. However, they should be interpreted with caution, 
 
 
 
-\section{B-Splines}\label{sec11_2}
+\section{Splines}\label{sec11_2}
 
-To fix ideas, let's start in a simple univariate case; thus, the point of departure of B-splines is to assume that $y_i=f(x_{i})+\mu_i$, where $\mu_i\sim N(0,\sigma^2)$ is independent of the regressor $x_{i}$, and $f(x_{i})$ is a smooth function such that nearby points in the support of $x_{k}$ should have similar values, $i=1,2,\dots N$ is the index of the observations. 
+To clarify ideas, let's begin with a simple univariate case. The starting point is to assume that  
+\[
+y_i = f(x_{i}) + \mu_i,
+\]  
+where \(\mu_i \sim N(0, \sigma^2)\) is independent of the regressor \(x_{i}\), and \(f(x_{i})\) is a smooth function such that nearby points in the support of \(x_{i}\) should have similar values. The index \(i = 1,2,\dots, N\) represents the observations.  
 
-The splines approach sets 
+The spline approach defines  
 \begin{align}\label{eq11_1}
-	f(x_{i})=\beta_{1}b_1(x_{i})+\beta_{2}b_2(x_{i})+\dots,+\beta_{kH}b_H(x_{i})=\boldsymbol{b}(x_{i})^{\top}\boldsymbol{\beta}
-\end{align}
-where $\boldsymbol{\beta}=[\beta_{1} \ \beta_{2} \ \dots \ \beta_{H}]^{\top}$ and $\boldsymbol{b}(x_{i})=[b_1(x_{i}) \ b_2(x_{i}) \ \dots \ b_H(x_{i})]^{\top}$ are the vector of parameters and the values of the splines at $(x_{i})$, respectively. Note that in this particular setting, there is one regressor; however, there are $H$ location parameters. Given $N$ observations, we have the design matrix:
+	f(x_{i}) = \beta_{1}b_1(x_{i}) + \beta_{2}b_2(x_{i}) + \dots + \beta_{H}b_H(x_{i}) = \boldsymbol{b}(x_{i})^{\top}\boldsymbol{\beta},
+\end{align}  
+where \(\boldsymbol{\beta} = [\beta_{1} \ \beta_{2} \ \dots \ \beta_{H}]^{\top}\) and \(\boldsymbol{b}(x_{i}) = [b_1(x_{i}) \ b_2(x_{i}) \ \dots \ b_H(x_{i})]^{\top}\) are the vector of parameters and the vector of spline basis (B-splines) function values at \(x_{i}\), respectively.  
+
+Note that in this setting, there is only one regressor; however, there are \(H\) location parameters. Given \(N\) observations, the design matrix is:
 \begin{align*}
 	\boldsymbol{W}=\begin{bmatrix}
 		b_1(x_{1}) & b_2(x_{1}) & \dots & b_H(x_{1})\\
@@ -1183,18 +1189,205 @@ where $\boldsymbol{\beta}=[\beta_{1} \ \beta_{2} \ \dots \ \beta_{H}]^{\top}$ an
 \end{align*} 
 Thus, we have a standard linear model where we can proceed as in Chapter \ref{chap4}.
 
-Actually, Equation \ref{eq11_1} is the representation of the basis function approach, where $\boldsymbol{b}(x_{i})$ is a specified set of basis functions such as splines, but other functions such Gaussian radial, wavelets, etc can be used. We study here the most popular case, the cubic B-splines, but same ideas apply to other basis functions. In particular, cubic B-splines provides de lowest degree to generate enough smoothness curves (first and second derivatives are nor zero, that it is no the case with constant and linear splines)\cite{BMCP2021}.
+Actually, Equation \ref{eq11_1} represents the basis function approach, where \(\boldsymbol{b}(x_{i})\) is a specified set of basis functions, such as B-splines. However, other functions derived from the Fourier transform, Gaussian radial basis functions, wavelets, etc., can also be used. Here, we focus on the most popular case: cubic B-splines. However, the same ideas apply to other basis functions. In particular, cubic B-splines provide the lowest degree necessary to generate sufficiently smooth curves; the first and second derivatives are nonzero, which is not the case with constant and linear splines \cite{BMCP2021}.  
 
-Thus, we can see from Equation \ref{eq11_1} that a spline is a linear combination of $H$ basis splines (B-splines). The latter are polynomials of some degree, for instances, polynomials.
+Thus, from Equation \ref{eq11_1}, we see that a spline is a linear combination of \(H\) B-splines. The latter are polynomials of a certain degree, meaning that splines are piecewise polynomial functions. Any spline function of order \(n\) can be expressed as a linear combination of B-splines of order \(n\), and B-splines serve as the basis functions for the spline function space.
+%(https://en.wikipedia.org/wiki/B-spline#Cubic\_B-Splines)
+The cubic B-spline is 
+\begin{align*}
+	b_{h,3}(x_i)=\begin{Bmatrix}
+		\frac{u^3}{6} & x_h \leq x_i < x_{h+1}, & u=(x_i-x_h)/\delta\\
+		\frac{1+3u+3u^2-3u^3}{6} & x_{h+1} \leq x_i < x_{h+2}, & u=(x_i-x_{h+1})/\delta\\
+		\frac{4-6u^2+3u^3}{6} & x_{h+2} \leq x_i < x_{h+3}, & u=(x_i-x_{h+2})/\delta\\
+		\frac{1-3u+3u^2-3u^3}{6} & x_{h+3} \leq x_i < x_{h+4}, & u=(x_i-x_{h+3})/\delta\\
+		0 & \text{otherwise}
+	\end{Bmatrix},
+\end{align*}
+where \(x_{h+k}\) are called the knots, for \(k=0,1,\dots,4\). These are the points in the domain of the function where the pieces of the spline join, satisfying \(x_{h+k} \leq x_{h+k+1}\). The knots control the shape and flexibility of the spline curve; more knots imply greater flexibility but less smoothness. Note that \(\delta\) determines the distance between the knots. This expression clearly shows that the cubic B-spline is a piecewise polynomial function.
 
-Any spline function of order $n$ can be expressed as a linear combination of B-splines of order $n$. B-splines play the role of basis functions for the spline function space %(https://en.wikipedia.org/wiki/B-spline#Cubic\_B-Splines).
+The following code implements this function in \textbf{R} using a delta of 1.5 and 5 knots \( \left\{2, 3.5, 5, 6.5, 8\right\} \). The knots \( \left\{2, 8\right\} \) are called external knots, and the knots \( \left\{3.5, 5, 6.5\right\} \) are called internal knots. B-splines with evenly distributed knots are called uniform B-splines. However, this is not always the case.
 
-dimension is degree of polynomial plus number of knots 
+Figure \ref{figCubicBspline} compares the results of our own function (black circles) with those obtained using the \textit{bs} function from the \textit{splines} package (red line).
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. B-spline}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+SplineOwn <- function(x, knots, delta){
+	if(knots[1] <= x & x < knots[2]){
+		u <- (x - knots[1])/delta
+		b <- u^3/6
+	}else{
+		if(knots[2] <= x & x < knots[3]){
+			u <- (x - knots[2])/delta
+			b <- (1/6)*(1 + 3*u + 3*u^2 - 3*u^3)
+		}else{
+			if(knots[3] <= x & x < knots[4]){
+				u <- (x - knots[3])/delta
+				b <- (1/6)*(4 - 6*u^2 + 3*u^3)
+			}else{
+				if(knots[4] <= x & x < knots[5]){
+					u <- (x - knots[4])/delta
+					b <- (1/6)*(1 - 3*u + 3*u^2 - u^3)
+				}else{
+					b <- 0
+				}
+			}
+		}
+	}
+	return(b)
+}
+delta <- 1.5
+knotsA <- seq(2, 8, delta)
+xA <- seq(2, 8, 0.1)
+Ens <- sapply(xA, function(xi) {SplineOwn(xi, knots = knotsA, delta = delta)})
+plot(xA, Ens, xlab = "x", ylab = "B-spline", main = "Cubic B-spline comparison: own function vs bs")
+require(splines)
+BSfunc <- bs(xA, knots = knotsA, degree = 3)
+lines(xA, BSfunc[,4], col = "red")
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter11/figures/CubicBspline.png}
+	\caption[List of figure caption goes here]{Cubic B-spline comparison.}\label{figCubicBspline}
+\end{figure}
+
+Figure \ref{figCubicBspline} shows a particular cubic B-spline, but \( f(x_i) \) in Equation \ref{eq11_1} involves \( H \) splines over the range of potential values of \( x \), as we need to evaluate the splines centered at different knots. Here, we should clarify that to avoid issues with the use of splines at boundary regions, it is essential to artificially increase the number of external knots by repeating the external knots as many times as the degree of the polynomial. For instance, in our example, the final set of knots is \( \left\{2, 2, 2, 2, 3.5, 5, 6.5, 8, 8, 8, 8\right\} \). %However, the number of B-splines is based on the original set of knots. 
+%. The number of B-splines is given by the number of knots plus the polynomial degree minus one (see Equation \ref{eq11_2} below)
+%\footnote{In B-splines, the intercept (constant term) is generally not uniquely identified. Therefore, the common practice is to calculate the B-splines without the intercept and add the intercept in the regression (Equation \ref{eq11_1}). This implies using minus 2, rather than minus 1.}
+
+The set of B-splines can be constructed using the Cox–de Boor recursion formula. The starting point is the B-spline of degree 0,
+\begin{align*}
+		b_{h,0}(x_i)=\begin{Bmatrix}
+		1 & x_h \leq x_i < x_{h+1}, & u=(x_i-x_h)/\delta\\
+		0 & \text{otherwise}
+	\end{Bmatrix},
+\end{align*}
+and then, the other B-splines are defined by the recursion
+\begin{align}\label{eq11_2}
+	b_{h,p}(x_i)=\frac{x_i-x_{h}}{x_{h+p}-x_h}b_{h,p-1}(x_i)+\frac{x_{h+p+1}-x_i}{x_{h+p+1}-x_{h+1}}b_{h+1,p-1}(x_i).
+\end{align}
+The following code demonstrates how to perform this recursion using the same settings as in the previous code and compares the results with the \textit{bs} function from the \textit{splines} package. As shown in Figure \ref{figBsplines}, we obtain the same results. We will continue using the \textit{bs} function from the \textit{splines} package for convenience in the process, but it seems that we have gained some understanding of the underlying process.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Splines}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+cubic_bspline <- function(x, knots, degree = 3) {
+	extended_knots <- c(rep(knots[1], degree), knots, rep(knots[length(knots)], degree))
+	num_basis <- length(knots) + degree - 1  
+	basis_matrix <- matrix(0, nrow = length(x), ncol = num_basis)
+	# Function to compute B-spline basis recursively
+	b_spline_basis <- function(x, degree, i, knots) {
+		if (degree == 0) {
+			return(ifelse(x >= knots[i] & x < knots[i + 1], 1, 0))
+		} else {
+			left_num <- (x - knots[i])
+			left_den <- (knots[i + degree] - knots[i])
+			left <- ifelse(left_den != 0, (left_num / left_den) * b_spline_basis(x, degree - 1, i, knots), 0)
+			
+			right_num <- (knots[i + degree + 1] - x)
+			right_den <- (knots[i + degree + 1] - knots[i + 1])
+			right <- ifelse(right_den != 0, (right_num / right_den) * b_spline_basis(x, degree - 1, i + 1, knots), 0)
+			
+			return(left + right)
+		}
+	}
+	
+	for (i in 1:num_basis) {
+		basis_matrix[, i] <- sapply(x, function(xi) b_spline_basis(xi, degree, i, extended_knots))
+	}
+	if(x[length(x)] == knots[length(knots)]){
+		basis_matrix[length(x), num_basis] <- 1
+	}
+	return(basis_matrix)
+}
+delta <- 1.5
+knotsA <- seq(2, 8, delta)
+xA <- seq(2, 8, 0.1)
+basis_matrix <- cubic_bspline(xA, knots = knotsA, degree = 3)
+library(splines)
+bs_matrix <- bs(xA, knots = knotsA[-c(1, length(knotsA))], degree = 3, intercept = TRUE, Boundary.knots = range(knotsA))
+bs_matrix_matrix <- as.matrix(bs_matrix)
+par(mfrow = c(1,2))
+matplot(xA, basis_matrix, type = "l", lty = 1, col = rainbow(ncol(basis_matrix)), ylab = "B-spline Basis", xlab = "x", main = "Own function")
+matplot(xA, bs_matrix_matrix, type = "l", lty = 1, col = rainbow(ncol(basis_matrix)), ylab = "B-spline Basis", xlab = "x", main = "bs function")
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter11/figures/Bsplines.png}
+	\caption[List of figure caption goes here]{Sequence of cubic B-splines comparison.}\label{figBsplines}
+\end{figure}
+
+The idea in splines is to calculate the linear combination of the $H$ B-splines, as those shown in Figure \ref{figBsplines}, that bets fit the dependent variable. Let's perform a simulation exercise to fix ideas.\\
+
+\textbf{Simulation exercise: Splines}
+
+Let's assume that the data generating process is
+\begin{align*}
+	y_i & = 0.4 + 0.25\sin(8x_i - 5) + 0.4\exp(-16(4x_i - 2.5)^2) + \mu_i,
+\end{align*}
+where $\mu_i \sim N(0,0.15^2)$, and $x_i$ is a sequence in $(0,1)$, with 100 random draws of the pairs $(x_i, y_i)$. In addition, we choose the knots $\left\{0, 0.25, 0.5, 0.75, 1\right\}$. We then calculate the cubic B-splines, where the last column is 0, and the last two columns generate multicollinearity issues. Therefore, we exclude them when generating random realizations of splines by drawing the coefficients from $N(0, 0.35^2)$. The intercept is fixed to maintain the scale in Figure \ref{figRealizationBsplines}, where we can observe the data points, $f(x)$, and the different splines associated with various random realizations of the coefficients. The following code demonstrates how to perform this simulation.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Realizations of splines}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+########### Simulation: B-splines ###########
+rm(list = ls())
+library(ggplot2); library(splines)
+set.seed(010101)
+x <- seq(0, 1, 0.001)
+ysignal <- 0.4 + 0.25*sin(8*x - 5) + 0.4*exp(-16*(4*x - 2.5)^2)
+sig <- 0.15
+e <- rnorm(length(ysignal), 0, sd = sig)
+y <- ysignal + e
+N <- 100
+ids <- sort(sample(1:length(ysignal), N))
+xobs <- x[ids]
+yobs <- y[ids]
+knots <- seq(0, 1, 0.25)
+BS <- bs(xobs, knots = knots, degree = 3, Boundary.knots = range(x), intercept = FALSE)
+# Splines
+Spline1 <- 0.56 + BS[,-c(7:8)] %*% rnorm(6, 0, 0.35)
+Spline2 <- 0.56 + BS[,-c(7:8)] %*% rnorm(6, 0, 0.35)
+Spline3 <- 0.56 + BS[,-c(7:8)] %*% rnorm(6, 0, 0.35)
+Spline4 <- 0.56 + BS[,-c(7:8)] %*% rnorm(6, 0, 0.35)
+# Create data frames for the true signal, observed data, and Splines
+data_true_signal <- data.frame(x = x, y = ysignal, Type = "True Signal")
+data_obs <- data.frame(x = xobs, y = yobs, Type = "Observed Data")
+# Create separate data frames for each Spline
+data_Spline1 <- data.frame(x = xobs, y = Spline1, Type = "Spline 1")
+data_Spline2 <- data.frame(x = xobs, y = Spline2, Type = "Spline 2")
+data_Spline3 <- data.frame(x = xobs, y = Spline3, Type = "Spline 3")
+data_Spline4 <- data.frame(x = xobs, y = Spline4, Type = "Spline 4")
+data <- rbind(data_true_signal, data_obs, data_Spline1, data_Spline2, data_Spline3, data_Spline4)
+ggplot(data, aes(x = x, y = y)) + geom_line(data = subset(data, Type == "True Signal"), aes(color = "True Signal"), linewidth = 1) + geom_point(data = subset(data, Type == "Observed Data"), aes(color = "Observed Data"), shape = 16) + geom_line(data = subset(data, Type == "Spline 1"), aes(color = "Splines"), linewidth = 1, linetype = "solid") + geom_line(data = subset(data, Type == "Spline 2"), aes(color = "Splines"), linewidth = 1, linetype = "solid") + geom_line(data = subset(data, Type == "Spline 3"), aes(color = "Splines"), linewidth = 1, linetype = "solid") + geom_line(data = subset(data, Type == "Spline 4"), aes(color = "Splines"), linewidth = 1, linetype = "solid") + scale_color_manual(values = c("True Signal" = "black", "Observed Data" = "red", "Splines" = "blue")) + labs(y = "y", color = "Legend") + theme_minimal() +
+theme(legend.position = "top")
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter11/figures/RealizationsSplines.png}
+	\caption[List of figure caption goes here]{Different realizations of splines.}\label{figRealizationBsplines}
+\end{figure}
+
+We also can use this simulation to see the effect of changing the knots. The following code performs the fit using least squares, which is equivalent to use a non-informative prior under the Bayesian approach in the linear regression framework.
+
+
 \begin{itemize}
 	\item Show cubic B-spline (own function using Equation 20.2 in \cite{gelman2021bayesian})
 	\item Show sequence of cubic B-splines (function from chatGPB and bs function)
-	\item Simulate splines with draws from normal distribution (first do next to know reasonable values)
-	\item Simulate function in $f(x_i)=0.4+0.25 \sin(8x_i-5)+0.4\exp\left\{-16(4x_i-2.5)^2\right\}$ \cite{Otsu2017} or page 251 \cite{koop2003bayesian}, and check performance with different knots
+	\item Then using bs function from R. Simulate splines with draws from normal distribution (first do next to know reasonable values)
+	\item Simulate function in $f(x_i)=0.4+0.25 \sin(8x_i-5)+0.4\exp\left\{-16(4x_i-2.5)^2\right\}$ \cite{Otsu2017} or page 251 \cite{koop2003bayesian}, and check performance with different knots, figure 5.10 in \cite{BMCP2021}
 	\item Selection of $\delta$, or check section 20.2 in \cite{gelman2021bayesian}, and 5.5 and 5.6 in \cite{BMCP2021}
 	\item Partial linear model due to curse of dimensionality. Check \cite{koop2003bayesian}
 	\item Application marijuana, own price elasticity	
