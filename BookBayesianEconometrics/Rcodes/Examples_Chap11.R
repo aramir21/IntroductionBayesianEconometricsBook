@@ -1046,9 +1046,11 @@ ggplot(data, aes(x = x, y = y)) +
 
 ######## Efects of different knots #########
 rm(list = ls())
-library(ggplot2); library(splines)
-# Data generation (same as your original code)
-set.seed(010101)
+library(ggplot2)
+library(splines)
+
+# Data generation
+set.seed(10101)
 x <- seq(0, 1, 0.001)
 ysignal <- 0.4 + 0.25*sin(8*x - 5) + 0.4*exp(-16*(4*x - 2.5)^2)
 sig <- 0.15
@@ -1058,153 +1060,97 @@ N <- 100
 ids <- sort(sample(1:length(ysignal), N))
 xobs <- x[ids]
 yobs <- y[ids]
-knots <- seq(0, 1, 0.33)
-BS <- bs(xobs, knots = knots, degree = 3, Boundary.knots = range(x), intercept = FALSE)
-summary(fm1 <- lm(yobs ~ BS))
-Pred1 <- predict(fm1)
-knots <- seq(0, 1, 0.25)
-BS <- bs(xobs, knots = knots, degree = 3, Boundary.knots = range(x), intercept = FALSE)
-summary(fm1 <- lm(yobs ~ BS))
-Pred2 <- predict(fm1)
-knots <- seq(0, 1, 0.2)
-BS <- bs(xobs, knots = knots, degree = 3, Boundary.knots = range(x), intercept = FALSE)
-summary(fm1 <- lm(yobs ~ BS))
-Pred3 <- predict(fm1)
-knots <- seq(0, 1, 0.1)
-BS <- bs(xobs, knots = knots, degree = 3, Boundary.knots = range(x), intercept = FALSE)
-summary(fm1 <- lm(yobs ~ BS))
-Pred4 <- predict(fm1)
-plot(x,ysignal, type = "l", ylim = c(-0.2, 1.2))
-points(xobs, yobs, col = "red")
-lines(xobs, Pred1, col = "blue")
-lines(xobs, Pred2, col = "green")
-lines(xobs, Pred3, col = "orange")
-lines(xobs, Pred4, col = "purple")
 
+# Generate Fits with different knot placements
+knots_list <- list(seq(0, 1, 0.33), seq(0, 1, 0.25), seq(0, 1, 0.2), seq(0, 1, 0.1))
+Fits <- list()
 
-
-
-library(brms)
-library(ggplot2)
-library(dplyr)
-
-# Simulate data
-set.seed(123)
-n <- 200
-x <- runif(n, -2, 2)  # Predictor with non-linear effect
-z1 <- rnorm(n)        # Additional regressor 1
-z2 <- rnorm(n)        # Additional regressor 2
-epsilon <- rnorm(n, 0, 0.5)  # Noise term
-
-# True nonlinear function for x
-f_x <- sin(2 * pi * x) 
-
-# Generate response variable
-y <- f_x + 0.5 * z1 - 0.3 * z2 + 0.2 * z1 * z2 + epsilon
-
-# Combine into a dataframe
-mydata <- data.frame(y, x, z1, z2)
-
-# Fit Bayesian regression using brms
-fit <- brm(y ~ s(x) + z1 + z2 + z1:z2, 
-           data = mydata, 
-           family = gaussian(), 
-           chains = 4, iter = 2000, warmup = 1000, 
-           control = list(adapt_delta = 0.95))
-
-prior_summary(fit) # Summary of priors
-
-# Summary of the model
-summary(fit)
-
-# Extract fitted smooth effect of x
-smooth_pred <- conditional_smooths(fit)
-smooth_data <- as.data.frame(smooth_pred[["mu: s(x)"]])
-
-# Create the population curve
-pop_curve <- data.frame(x = seq(-2, 2, length.out = 200)) %>%
-  mutate(true_fx = sin(2 * pi * x))
-
-# Plot estimated smooth effect with population curve
-ggplot() +
-  geom_ribbon(data = smooth_data, aes(x = x, ymin = lower__, ymax = upper__, fill = "Credible Interval"), 
-              alpha = 0.2) +  # Posterior uncertainty
-  geom_line(data = smooth_data, aes(x = x, y = estimate__, color = "Estimated Smooth"), linewidth = 1.2) +  # Estimated smooth
-  geom_line(data = pop_curve, aes(x = x, y = true_fx, color = "True Function"), linetype = "dashed", size = 1.2) +  # True function
-  scale_color_manual(name = "Lines",
-                     values = c("Estimated Smooth" = "blue", "True Function" = "red")) +
-  scale_fill_manual(name = "Shaded Area", values = c("Credible Interval" = "blue")) +
-  labs(title = "Estimated Smooth Effect of x vs. True Function",
-       x = "x", y = "f(x)",
-       caption = "Blue: Estimated | Red Dashed: True Function") +
-  theme_minimal()
-
-##### B-splines ######
-require(stats); require(graphics); require(splines)
-y <- women$height
-knots <- c(quantile(y, seq(0, 1, 0.1)))
-# splineDesign(knots, x = y)
-SPB <- bs(y, knots = quantile(y, seq(0.25, 0.75, 0.25)), degree = 3, Boundary.knots = range(y), intercept = FALSE)
-SPB
-X <- cbind(1, SPB)
-solve(t(X)%*%X)%*%t(X)%*%women$weight
-summary(fm1 <- lm(weight ~ SPB, data = women))
-
-# ## example of safe prediction
-# plot(women, xlab = "Height (in)", ylab = "Weight (lb)")
-# ht <- seq(58, 72, length.out = 200)
-# lines(ht, predict(fm1, data.frame(height = ht)))
-# X
-
-
-
-SplineAndres <- function(x, knots, delta){
-  # delta <- knots[5] - knots[1]
-  if(knots[1] <= x & x < knots[2]){
-    u <- (x - knots[1])/delta
-    b <- u^3/6
-  }else{
-    if(knots[2] <= x & x < knots[3]){
-      u <- (x - knots[2])/delta
-      b <- (1/6)*(1 + 3*u + 3*u^2 - 3*u^3)
-    }else{
-      if(knots[3] <= x & x < knots[4]){
-        u <- (x - knots[3])/delta
-        b <- (1/6)*(4 - 6*u^2 + 3*u^3)
-      }else{
-        if(knots[4] <= x & x < knots[5]){
-          u <- (x - knots[4])/delta
-          b <- (1/6)*(1 - 3*u + 3*u^2 - u^3)
-        }else{
-          b <- 0
-        }
-      }
-    }
-  }
-  return(b)
-}
-delta <- 1.5
-knotsA <- seq(2, 8, delta)
-xA <- seq(2, 8, 0.1)
-Ens <- sapply(xA, function(xi) {SplineAndres(xi, knots = knotsA, delta = delta)})
-plot(xA, Ens, xlab = "x", ylab = "B-spline", main = "B-spline comparison: own function vs bs")
-require(splines)
-BSfunc <- bs(xA, knots = knotsA, degree = 3)
-lines(xA, BSfunc[,4], col = "red")
-dim(BSfunc)
-# par(mfrow = c(1,2))
-matplot(xA, BSfunc, col = "red", type = "l")
-# cbind(Ens, BSfunc[,4])
-# plot(xA, BSfunc[,4])
-
-knotsAnew <- c(rep(xA[1], 3), knotsA, rep(xA[length(xA)], 3))
-Ensnew <- matrix(NA, length(xA), 3 + length(knotsA))
-for(i in 1:(3 + length(knotsA))){
-  Ensnew[,i] <- sapply(xA, function(xi) {SplineAndres(xi, knots = knotsAnew[i:(length(knotsA)+i-1)], delta = delta)})
+for (i in 1:4) {
+  BS <- bs(xobs, knots = knots_list[[i]], degree = 3, Boundary.knots = range(x), intercept = FALSE)
+  fm <- lm(yobs ~ BS)
+  Fits[[i]] <- predict(fm)
 }
 
-Ens <- sapply(xA, function(xi) {SplineAndres(xi, knots = knotsAnew[2:11], delta = delta)})
-plot(xA, Ens)
-lines(xA, BSfunc[,1], col = "red")
+# Create data frames
+data_true_signal <- data.frame(x = x, y = ysignal, Type = "True Signal")
+data_obs <- data.frame(x = xobs, y = yobs, Type = "Observed Data")
+data_preds <- data.frame(
+  x = rep(xobs, 4),
+  y = c(Fits[[1]], Fits[[2]], Fits[[3]], Fits[[4]]),
+  Type = rep(c("Fit 1", "Fit 2", "Fit 3", "Fit 4"), each = length(xobs))
+)
 
+# Combine data
+data <- rbind(data_true_signal, data_obs, data_preds)
+
+# Create ggplot
+ggplot(data, aes(x = x, y = y, color = Type)) +
+  geom_line(data = subset(data, Type == "True Signal"), linewidth = 1) +
+  geom_point(data = subset(data, Type == "Observed Data"), shape = 16, size = 2) +
+  geom_line(data = subset(data, grepl("Fit", Type)), linewidth = 1, linetype = "solid") +
+  scale_color_manual(values = c("True Signal" = "black", 
+                                "Observed Data" = "red", 
+                                "Fit 1" = "blue", 
+                                "Fit 2" = "green", 
+                                "Fit 3" = "orange", 
+                                "Fit 4" = "purple")) +
+  labs(y = "y", color = "Legend") +
+  theme_minimal() +
+  theme(legend.position = "top")
+
+###### Splines using Stan ########
+# library(brms)
+# library(ggplot2)
+# library(dplyr)
+# 
+# # Simulate data
+# set.seed(123)
+# n <- 200
+# x <- runif(n, -2, 2)  # Predictor with non-linear effect
+# z1 <- rnorm(n)        # Additional regressor 1
+# z2 <- rnorm(n)        # Additional regressor 2
+# epsilon <- rnorm(n, 0, 0.5)  # Noise term
+# 
+# # True nonlinear function for x
+# f_x <- sin(2 * pi * x) 
+# 
+# # Generate response variable
+# y <- f_x + 0.5 * z1 - 0.3 * z2 + 0.2 * z1 * z2 + epsilon
+# 
+# # Combine into a dataframe
+# mydata <- data.frame(y, x, z1, z2)
+# 
+# # Fit Bayesian regression using brms
+# fit <- brm(y ~ s(x) + z1 + z2 + z1:z2, 
+#            data = mydata, 
+#            family = gaussian(), 
+#            chains = 4, iter = 2000, warmup = 1000, 
+#            control = list(adapt_delta = 0.95))
+# 
+# prior_summary(fit) # Summary of priors
+# 
+# # Summary of the model
+# summary(fit)
+# 
+# # Extract fitted smooth effect of x
+# smooth_pred <- conditional_smooths(fit)
+# smooth_data <- as.data.frame(smooth_pred[["mu: s(x)"]])
+# 
+# # Create the population curve
+# pop_curve <- data.frame(x = seq(-2, 2, length.out = 200)) %>%
+#   mutate(true_fx = sin(2 * pi * x))
+# 
+# # Plot estimated smooth effect with population curve
+# ggplot() +
+#   geom_ribbon(data = smooth_data, aes(x = x, ymin = lower__, ymax = upper__, fill = "Credible Interval"), 
+#               alpha = 0.2) +  # Posterior uncertainty
+#   geom_line(data = smooth_data, aes(x = x, y = estimate__, color = "Estimated Smooth"), linewidth = 1.2) +  # Estimated smooth
+#   geom_line(data = pop_curve, aes(x = x, y = true_fx, color = "True Function"), linetype = "dashed", size = 1.2) +  # True function
+#   scale_color_manual(name = "Lines",
+#                      values = c("Estimated Smooth" = "blue", "True Function" = "red")) +
+#   scale_fill_manual(name = "Shaded Area", values = c("Credible Interval" = "blue")) +
+#   labs(title = "Estimated Smooth Effect of x vs. True Function",
+#        x = "x", y = "f(x)",
+#        caption = "Blue: Estimated | Red Dashed: True Function") +
+#   theme_minimal()
 

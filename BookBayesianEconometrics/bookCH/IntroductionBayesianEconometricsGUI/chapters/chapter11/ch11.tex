@@ -1380,15 +1380,70 @@ theme(legend.position = "top")
 	\caption[List of figure caption goes here]{Different realizations of splines.}\label{figRealizationBsplines}
 \end{figure}
 
-We also can use this simulation to see the effect of changing the knots. The following code performs the fit using least squares, which is equivalent to use a non-informative prior under the Bayesian approach in the linear regression framework.
+We can also use this simulation to examine the effect of changing the knots. The following code performs the fit using least squares, which is equivalent to using a non-informative prior in a Bayesian linear regression framework.
 
+Figure \ref{figFitBsplines} illustrates the fit of different splines based on varying numbers of knots. We observe that increasing the number of knots enhances the flexibility of the spline, providing better local control. However, too many knots can result in a wiggly, overly complex fit that captures noise rather than the true underlying trend and may also increase multicollinearity. Therefore, selecting an appropriate number of knots is a crucial aspect of spline modeling. To address this issue, we can apply the strategies discussed in Chapter \ref{chap10}, and the strategies that will be discussed in Section \ref{sec13_2} in the next chapter. 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Fit using splines: Different knots}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls())
+library(ggplot2); library(splines)
+# Data generation
+set.seed(10101)
+x <- seq(0, 1, 0.001)
+ysignal <- 0.4 + 0.25*sin(8*x - 5) + 0.4*exp(-16*(4*x - 2.5)^2)
+sig <- 0.15; e <- rnorm(length(ysignal), 0, sd = sig)
+y <- ysignal + e; N <- 100
+ids <- sort(sample(1:length(ysignal), N))
+xobs <- x[ids]
+yobs <- y[ids]
+# Generate Fits with different knot placements
+knots_list <- list(seq(0, 1, 0.33), seq(0, 1, 0.25), seq(0, 1, 0.2), seq(0, 1, 0.1))
+Fits <- list()
+for (i in 1:4) {
+	BS <- bs(xobs, knots = knots_list[[i]], degree = 3, Boundary.knots = range(x), intercept = FALSE)
+	fm <- lm(yobs ~ BS)
+	Fits[[i]] <- predict(fm)
+}
+# Create data frames
+data_true_signal <- data.frame(x = x, y = ysignal, Type = "True Signal")
+data_obs <- data.frame(x = xobs, y = yobs, Type = "Observed Data")
+data_preds <- data.frame(
+x = rep(xobs, 4),
+y = c(Fits[[1]], Fits[[2]], Fits[[3]], Fits[[4]]),
+Type = rep(c("Fit 1", "Fit 2", "Fit 3", "Fit 4"), each = length(xobs))
+)
+data <- rbind(data_true_signal, data_obs, data_preds)
+
+# Create ggplot
+ggplot(data, aes(x = x, y = y, color = Type)) + geom_line(data = subset(data, Type == "True Signal"), linewidth = 1) + geom_point(data = subset(data, Type == "Observed Data"), shape = 16, size = 2) + geom_line(data = subset(data, grepl("Fit", Type)), linewidth = 1, linetype = "solid") + scale_color_manual(values = c("True Signal" = "black", "Observed Data" = "red", "Fit 1" = "blue", "Fit 2" = "green", "Fit 3" = "orange", "Fit 4" = "purple")) + labs(y = "y", color = "Legend") +
+theme_minimal() + theme(legend.position = "top")
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter11/figures/SplineFit.png}
+	\caption[List of figure caption goes here]{Different fits of splines.}\label{figFitBsplines}
+\end{figure}
+
+Note that splines use local information to perform the fit. This implies the \textit{curse of dimensionality} issue, where increasing the number of variables leads to more dispersed regions in the regressor space. In other words, the observations become increasingly further apart as we have more regressors. As a result, splines become less reliable in high-dimensional spaces.
+
+A strategy to overcome the curse of dimensionality is to specify the \textit{partial linear model}: 
+\begin{align*} 
+	y_i & = \boldsymbol{z}_i^{\top}\boldsymbol{\gamma} + f(x_i) + \mu_i. 
+\end{align*} 
+In this specification, some regressors enter in a linear way, while the most relevant regressor — the one under primary investigation — enters in a non-parametric way. Note that we only need to increase the dimension of the matrix $\boldsymbol{W}$ by adding the columns from $\boldsymbol{z}$, and proceed as we did previously.
 
 \begin{itemize}
 	\item Show cubic B-spline (own function using Equation 20.2 in \cite{gelman2021bayesian})
 	\item Show sequence of cubic B-splines (function from chatGPB and bs function)
 	\item Then using bs function from R. Simulate splines with draws from normal distribution (first do next to know reasonable values)
 	\item Simulate function in $f(x_i)=0.4+0.25 \sin(8x_i-5)+0.4\exp\left\{-16(4x_i-2.5)^2\right\}$ \cite{Otsu2017} or page 251 \cite{koop2003bayesian}, and check performance with different knots, figure 5.10 in \cite{BMCP2021}
-	\item Selection of $\delta$, or check section 20.2 in \cite{gelman2021bayesian}, and 5.5 and 5.6 in \cite{BMCP2021}
+	\item Selection of $H$, or check section 20.2 in \cite{gelman2021bayesian}, and 5.5 and 5.6 in \cite{BMCP2021}. Selection of $H$ is a problem of variable selection (regressors uncertainty), and can be handle using the approach in Chapter 10. Other approaches, like the ones in the regularization section in the following chapter can be used (Bayesian LASSO, SSVS, etc.) 
 	\item Partial linear model due to curse of dimensionality. Check \cite{koop2003bayesian}
 	\item Application marijuana, own price elasticity	
 \end{itemize}
@@ -1410,7 +1465,7 @@ We also can use this simulation to see the effect of changing the knots. The fol
 	\end{align*}
 	Assume that $x_{i1}$ and $x_{i2}$ follow a standard normal distribution and that the sample size is 1,000. Perform inference in this model assuming that the number of components is unknown. Start with $H=5$ and use non-informative priors, setting $\alpha_{h0}=\delta_{h0}=0.01$, $\boldsymbol{\beta}_0=\boldsymbol{0}_2$, $\boldsymbol{B}_0=\boldsymbol{I}_2$, $\mu_{h0}=0$, $\sigma^2_{\mu 0}=10$, and $\boldsymbol{\alpha}_0=[1/H \ \dots \ 1/H]^{\top}$. Use 6,000 MCMC iterations, a burn-in period of 4,000, and a thinning parameter of 2. Compare the population parameters with the posterior estimates and plot the population density along with the posterior density estimate of $\boldsymbol{\mu}$ (the mean, and the 95\% credible interval).
 	
-	\item \textbf{Example: Consumption of marijuana in Colombia continues}
+	\item \textbf{Example: Consumption of marijuana in Colombia continues I}
 	
 	Use the dataset \textit{MarijuanaColombia.csv} from our GitHub repository to perform inference on the demand for marijuana in Colombia. This dataset contains information on the (log) monthly demand in 2019 from the National Survey of the Consumption of Psychoactive Substances. It includes variables such as the presence of a drug dealer in the neighborhood (\textit{Dealer}), gender (\textit{Female}), indicators of good physical and mental health (\textit{PhysicalHealthGood} and \textit{MentalHealthGood}), age (\textit{Age} and \textit{Age2}), and (log) prices of marijuana, cocaine, and crack by individual (\textit{LogPriceMarijuana}, \textit{LogPriceCocaine}, and \textit{LogPriceCrack}). The sample size is 1,156.
 	
@@ -1432,6 +1487,17 @@ We also can use this simulation to see the effect of changing the knots. The fol
 	\item \textbf{Example: Simulation exercise continues}
 	
 	Fix the label-switching problem of the simulation exercise of the DPM using \textit{random permutation of latent classes}.
+	
+	\item \textbf{Example: Consumption of marijuana in Colombia continues II}
+	
+	Perform the application of marijuana consumption with the following specification:
+	\begin{align*}
+		y_i & = \boldsymbol{z}_i^{\top} \boldsymbol{\gamma} + f(\log(p)_{im}) + f(\log(p)_{ic}) + f(\log(p)_{ib}) + \mu_i,
+	\end{align*}
+	where $\boldsymbol{z}_i$ represents the presence of a drug dealer in the neighborhood (\textit{Dealer}), gender (\textit{Female}), indicators of good physical and mental health (\textit{PhysicalHealthGood} and \textit{MentalHealthGood}), and age (\textit{Age} and \textit{Age2}), and $\log(p)_{im}$, $\log(p)_{ic}$, and $\log(p)_{ib}$ are the (log) prices of marijuana, cocaine, and crack by individual.
+	
+	Implement a strategy that retains the drug prices in the regression, selects the number of knots using the BIC approximation, and also uses the BIC approximation to select the other regressors.
+	
   
 \end{enumerate}
 
