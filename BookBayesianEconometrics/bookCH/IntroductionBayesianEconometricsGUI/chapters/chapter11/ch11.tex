@@ -705,7 +705,7 @@ where $H^{(i)}$ is the number of clusters excluding $i$, which may have its own 
 
 If $s_i=0$ is sampled, then $s_i=H+1$, and a new $\sigma_h^2$ is sampled from $IG\left(\alpha_n/2,\delta_n/2\right)$, a new $\boldsymbol\beta_h$ is sample from $N(\boldsymbol\beta_n,\sigma_h^2\boldsymbol B_n)$.
 
-Discarding $\boldsymbol\theta_h$'s from last step, we use $\boldsymbol s$ and total number of components to sample $\sigma_h^2$ from 
+Discarding $\boldsymbol\theta_h$'s from last step, we use $\boldsymbol s$ and the total number of components to sample $\sigma_h^2$ from 
 
 \begin{equation*}
 	IG\left(\frac{\alpha_0+N_m}{2},\frac{\delta_0+\boldsymbol y_h^{\top}\boldsymbol y_h+\boldsymbol{\beta}_0^{\top}{\boldsymbol{B}}_0^{-1}\boldsymbol{\beta}_0-\boldsymbol{\beta}_{hn}^{\top}{\boldsymbol{B}}_{hn}^{-1}\boldsymbol{\beta}_{hn}}{2}\right),
@@ -717,14 +717,14 @@ where $\boldsymbol{B}_{hn}=(\boldsymbol{B}_0^{-1}+\boldsymbol{X}_h^{\top}\boldsy
 \end{equation*}
 $h=1,2,\dots,H$.
 
-We can also use DPM in a semi-parametric setting, as we did in the finite Gaussian mixtures. In Exercise 3 we ask to get the posterior sampler in this setting, that is,
+We can also use DPMs in a semi-parametric setting, as we did in the finite Gaussian mixtures case. In Exercise 3, we ask to get the posterior sampler in this setting, that is,
 \begin{align*}
 	y_i&=\boldsymbol{x}_i^{\top}\boldsymbol{\beta}+e_i\\
 	e_i\mid \mu_i,\sigma_i^2 &\stackrel{iid}{\sim} N(\mu_i,\sigma_i^2).
 \end{align*}
-We should not include the intercept in $\boldsymbol{\beta}$ to get flexibility in the distribution of the stochastic errors. 
+We should not include the intercept in $\boldsymbol{\beta}$, such that $\mu_i$ allows to get flexibility in the distribution of the stochastic errors. 
 
-To sum up, a Dirichlet process mixture is a flexible way to model non-parametrically a distribution using an infinite weighted sum of discrete distributions, where each individual weight increases with the number of observations that belongs to it.
+To sum up, a Dirichlet process mixture is a flexible way to model non-parametrically a distribution using an infinite weighted sum of discrete distributions, where each individual weight increases with the number of observations that belongs to it.\\
 
 \textbf{Example: Simulation exercises}
 
@@ -1163,10 +1163,10 @@ These results seem plausible. However, they should be interpreted with caution, 
 	\caption[List of figure caption goes here]{Posterior distributions: Elasticities of marijuana consumption in Colombia.}\label{figElastDrugs}
 \end{figure}
 
-
-
 \section{Splines}\label{sec11_2}
 
+Another common approach to performing non-parametric or semi-parametric inference is using splines. These are piecewise polynomial functions that allow for approximating complex relationships in data.
+  
 To clarify ideas, let's begin with a simple univariate case. The starting point is to assume that  
 \[
 y_i = f(x_{i}) + \mu_i,
@@ -1204,7 +1204,7 @@ The cubic B-spline is
 		0 & \text{otherwise}
 	\end{Bmatrix},
 \end{align*}
-where \(x_{h+k}\) are called the knots, for \(k=0,1,\dots,4\). These are the points in the domain of the function where the pieces of the spline join, satisfying \(x_{h+k} \leq x_{h+k+1}\). The knots control the shape and flexibility of the spline curve; more knots imply greater flexibility but less smoothness. Note that \(\delta\) determines the distance between the knots. This expression clearly shows that the cubic B-spline is a piecewise polynomial function.
+where \(x_{h+k}\) are called the knots, for \(k=0,1,\dots,4\). These are the points in the domain of the function where the pieces of the spline join, satisfying \(x_{h+k} \leq x_{h+k+1}\). The knots control the shape and flexibility of the spline curve; more knots imply greater flexibility but less smoothness. Note that \(\delta\) determines the distance between the knots, and that this expression clearly shows that the cubic B-spline is a piecewise polynomial function.
 
 The following code implements this function in \textbf{R} using a delta of 1.5 and 5 knots \( \left\{2, 3.5, 5, 6.5, 8\right\} \). The knots \( \left\{2, 8\right\} \) are called boundary knots, which can be given by the range of $x$, and the knots \( \left\{3.5, 5, 6.5\right\} \) are called internal knots. B-splines with evenly distributed knots are called uniform B-splines. However, this is not always the case.
 
@@ -1336,7 +1336,7 @@ Let's assume that the data generating process is
 \begin{align*}
 	y_i & = 0.4 + 0.25\sin(8x_i - 5) + 0.4\exp(-16(4x_i - 2.5)^2) + \mu_i,
 \end{align*}
-where $\mu_i \sim N(0,0.15^2)$, and $x_i$ is a sequence in $(0,1)$, with 100 random draws of the pairs $(x_i, y_i)$. In addition, we choose the knots $\left\{0, 0.25, 0.5, 0.75, 1\right\}$. We then calculate the cubic B-splines, where the last column is 0, and the last two columns generate multicollinearity issues. Therefore, we exclude them when generating random realizations of splines by drawing the coefficients from $N(0, 0.35^2)$. The intercept is fixed to maintain the scale in Figure \ref{figRealizationBsplines}, where we can observe the data points, $f(x)$, and the different splines associated with various random realizations of the coefficients. The following code demonstrates how to perform this simulation.
+where $\mu_i \sim N(0,0.15^2)$, and $x_i$ is a sequence in $(0,1)$, with 100 random draws of the pairs $(x_i, y_i)$. In addition, we choose the knots $\left\{0, 0.25, 0.5, 0.75, 1\right\}$. We then calculate the cubic B-splines; however, we should take into account that the last two B-spline columns generate multicollinearity issues. Therefore, we exclude them when generating random realizations of the splines by drawing the coefficients from $N(0, 0.35^2)$. The intercept is fixed to maintain the scale in Figure \ref{figRealizationBsplines}, where we observe the data points, $f(x)$, and the different splines associated with various random realizations of the coefficients. The following code demonstrates how to perform this simulation.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -1389,7 +1389,7 @@ Figure \ref{figFitBsplines} illustrates the fit of different splines based on va
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Fit using splines: Different knots}
+	\textit{R code. Demand of marijuana in Colombia: Splines in age}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
 rm(list = ls())
@@ -1502,7 +1502,10 @@ The previous code illustrates the procedure. The posterior 95\% credible interva
 Figure \ref{figAgeMarijuana} shows the fitted spline, specifically the mean (blue line) and the 95\% credible intervals (shaded blue). Notice that there is a lot of wiggliness due to the use of many knots, suggesting that this relationship could be expressed in a more parsimonious way. In Exercise 6, we ask to use variable selection methods, such as the BIC approximation presented in Chapter \ref{chap10}, to perform regressor selection, particularly for the splines.
 
 In general, the selection of $H$ is a problem of variable selection (regressor uncertainty) and can be handled using other approaches, such as those discussed in the regularization section \ref{sec13_2} of the following chapter.
+
 \section{Summary}\label{sec11_3}
+
+In this chapter, we introduce the most common Bayesian methods for inference in non-parametric and semi-parametric models. Finite Gaussian and Dirichlet process mixtures, as well as splines, are highly flexible methods; however, they also have limitations, such as the label-switching issue in mixtures and potential multicollinearity in splines. Additionally, it is wise to elicit informative priors and conduct sensitivity analyses to assess the robustness of the results in real-world applications.
 
 \section{Exercises}\label{sec11_4}
 
@@ -1519,7 +1522,7 @@ In general, the selection of $H$ is a problem of variable selection (regressor u
 	
 	Use the dataset \textit{MarijuanaColombia.csv} from our GitHub repository to perform inference on the demand for marijuana in Colombia. This dataset contains information on the (log) monthly demand in 2019 from the National Survey of the Consumption of Psychoactive Substances. It includes variables such as the presence of a drug dealer in the neighborhood (\textit{Dealer}), gender (\textit{Female}), indicators of good physical and mental health (\textit{PhysicalHealthGood} and \textit{MentalHealthGood}), age (\textit{Age} and \textit{Age2}), years of schooling (\textit{YearsEducation}), and (log) prices of marijuana, cocaine, and crack by individual (\textit{LogPriceMarijuana}, \textit{LogPriceCocaine}, and \textit{LogPriceCrack}). The sample size is 1,156.
 	
-	Estimate a finite Gaussian mixture regression using non-informative priors, that is, $\alpha_{0}=\delta_{0}=0.01$, $\boldsymbol{\beta}_{0}=\boldsymbol{0}_K$, $\boldsymbol{B}_{0}=\boldsymbol{I}_K$, and $a=b=0.1$, $K$ is the number of regressors, 10 including the intercept. The number of MCMC iterations is 5,000, the burn-in is 1,000, and the thinning parameter is 2. Start with five potential clusters. Obtain the posterior distribution of the own-price elasticity of marijuana and the cross-price elasticities of marijuana demand with respect to the prices of cocaine and crack.
+	Estimate a finite Gaussian mixture regression using non-informative priors, that is, $\alpha_{0}=\delta_{0}=0.01$, $\boldsymbol{\beta}_{0}=\boldsymbol{0}_K$, $\boldsymbol{B}_{0}=\boldsymbol{I}_K$, and and $\boldsymbol{\alpha}_0=[1/H \ \dots \ 1/H]^{\top}$, $K$ is the number of regressors, 11 including the intercept. The number of MCMC iterations is 5,000, the burn-in is 1,000, and the thinning parameter is 2. Start with five potential clusters. Obtain the posterior distribution of the own-price elasticity of marijuana and the cross-price elasticities of marijuana demand with respect to the prices of cocaine and crack.
 	
 	\item Get the posterior sampler in the semi-parametric setting using a Dirichlet process mixture:
 	\begin{align*}
