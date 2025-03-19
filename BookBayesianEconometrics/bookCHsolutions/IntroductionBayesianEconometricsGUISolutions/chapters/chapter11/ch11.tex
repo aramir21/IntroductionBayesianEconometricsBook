@@ -191,17 +191,17 @@ plot_filtering_estimates(DataDens)
 	\caption[List of figure caption goes here]{Posterior density estimate: Stochastic errors.}\label{figPMPDens}
 \end{figure}
 
-\item Use the dataset \textit{MarijuanaColombia.csv} from our GitHub repository to perform inference on the demand for marijuana in Colombia. This dataset contains information on the (log) monthly demand in 2019 from the National Survey of the Consumption of Psychoactive Substances. It includes variables such as the presence of a drug dealer in the neighborhood (\textit{Dealer}), gender (\textit{Female}), indicators of good physical and mental health (\textit{PhysicalHealthGood} and \textit{MentalHealthGood}), age (\textit{Age} and \textit{Age2}), and (log) prices of marijuana, cocaine, and crack by individual (\textit{LogPriceMarijuana}, \textit{LogPriceCocaine}, and \textit{LogPriceCrack}). The sample size is 1,156.
+\item Use the dataset \textit{MarijuanaColombia.csv} from our GitHub repository to perform inference on the demand for marijuana in Colombia. This dataset contains information on the (log) monthly demand in 2019 from the National Survey of the Consumption of Psychoactive Substances. It includes variables such as the presence of a drug dealer in the neighborhood (\textit{Dealer}), gender (\textit{Female}), indicators of good physical and mental health (\textit{PhysicalHealthGood} and \textit{MentalHealthGood}), age (\textit{Age} and \textit{Age2}), years of schooling (\textit{YearsEducation}), and (log) prices of marijuana, cocaine, and crack by individual (\textit{LogPriceMarijuana}, \textit{LogPriceCocaine}, and \textit{LogPriceCrack}). The sample size is 1,156.
 
-Estimate a finite Gaussian mixture regression using non-informative priors, that is, $\alpha_{0}=\delta_{0}=0.01$, $\boldsymbol{\beta}_{0}=\boldsymbol{0}_K$, $\boldsymbol{B}_{0}=\boldsymbol{I}_K$, and $a=b=0.1$, $K$ is the number of regressors, 10 including the intercept. The number of MCMC iterations is 5,000, the burn-in is 1,000, and the thinning parameter is 2. Start with five potential clusters. Obtain the posterior distribution of the own-price elasticity of marijuana and the cross-price elasticities of marijuana demand with respect to the prices of cocaine and crack.\\
+Estimate a finite Gaussian mixture regression using non-informative priors, that is, $\alpha_{0}=\delta_{0}=0.01$, $\boldsymbol{\beta}_{0}=\boldsymbol{0}_K$, $\boldsymbol{B}_{0}=\boldsymbol{I}_K$, and $a=b=0.1$, $K$ is the number of regressors, 11 including the intercept. The number of MCMC iterations is 5,000, the burn-in is 1,000, and the thinning parameter is 2. Start with five potential clusters. Obtain the posterior distribution of the own-price elasticity of marijuana and the cross-price elasticities of marijuana demand with respect to the prices of cocaine and crack.\\
 
 \textbf{Answer:}
 
-The following code demonstrates how to perform inference in this model using 2,000 MCMC iterations, with a burn-in period of 500 and a thinning parameter of 2. The results indicate the presence of two clusters, with mean probabilities of 0.73 and 0.27, and 95\% credible intervals of (0.66, 0.80) and (0.20, 0.34), respectively.  
+The following code demonstrates how to perform inference in this model. The results indicate the presence of four clusters, with mean probabilities of 0.64, 0.14, 0.12 and 0.10, and 95\% credible intervals of (0.60, 0.67), (0.12,0.16), (0.10,0.14) and (0.08, 0.12), respectively.  
 
-The 95\% posterior credible intervals for the own-price elasticities are $(-0.69, -0.38)$ and $(-0.08, 0.30)$. Additionally, the 95\% credible intervals for the cross-price elasticities with respect to cocaine are $(0.12, 0.48)$ and $(-0.24, 0.18)$, while those with respect to crack are $(0.20, 0.60)$ and $(0.11, 0.50)$.  
+The 95\% posterior credible interval for the own-price elasticities of the most representative group, which comprises two-thirds of the sample, is $(-0.55, -0.26)$. Additionally, the 95\% credible interval for the cross-price elasticities with respect to cocaine is $(0.01, 0.35)$, while that with respect to crack is $(0.07, 0.43)$.
 
-These results suggest substitution between marijuana and both cocaine and crack: an increase in the prices of these drugs leads to higher marijuana demand, particularly in the first cluster of individuals. However, these findings should be interpreted with caution due to potential endogeneity issues that must be addressed for a rigorous scientific analysis. The primary goal of this exercise is pedagogical.  
+These results suggest that marijuana is an inelastic good for these individuals and that there is substitution between marijuana and both cocaine and crack: an increase in the prices of the latter leads to higher marijuana demand in the most representative cluster of individuals. However, these findings should be interpreted with caution due to potential endogeneity issues that must be addressed for a rigorous scientific analysis. The primary goal of this exercise is pedagogical. 
  
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
@@ -288,7 +288,7 @@ close(pb)
 keep <- seq((burnin+1), tot, thin)
 PosteriorPsi <- PostPsi[keep,]
 Clusters <- sapply(1:length(keep), function(i){length(table(PosteriorPsi[i,]))})
-NClus <- 2
+NClus <- 4
 PosteriorSIGMA <- matrix(NA, length(keep), NClus)
 PosteriorBETA <- array(NA, c(k,NClus,length(keep)))
 PosteriorLAMBDA <- matrix(NA, length(keep), NClus)
@@ -594,5 +594,80 @@ densMU
 	\caption[List of figure caption goes here]{Posterior density estimate: Mean of the stochastic errors.}\label{figDMPSemi}
 \end{figure}
 
+	\item \textbf{Example: Consumption of marijuana in Colombia continues II}
+
+Perform the application of marijuana consumption with the following specification:
+\begin{align*}
+	y_i & = \boldsymbol{z}_i^{\top} \boldsymbol{\gamma} + f(Age_{i}) + \mu_i,
+\end{align*}
+where $y_i$ is the (log) marijuana monthly consumption, $\boldsymbol{z}_i$ represents the presence of a drug dealer in the neighborhood (\textit{Dealer}), gender (\textit{Female}), indicators of good physical and mental health (\textit{PhysicalHealthGood} and \textit{MentalHealthGood}), years of education (\textit{YearsEducation}), and the (log) prices of marijuana, cocaine, and crack by individual.
+
+Initially, set the knots as the percentiles $\left\{0,0.05,\dots,0.95,1\right\}$ of age and use cubic B-splines. Then, apply the BIC approximation to perform variable selection in this model with non-informative conjugate priors, 5,000 MCMC iterations, and 5,000 burn-in iterations.
+
+Do you think that using a linear regression with a second-degree polynomial in age provides a good approximation to the relationship found using splines in this application?
+
+\textbf{Answer:}
+
+The following code illustrates this exercise. We use the function \textit{bicreg} from the package \textit{BMA} to perform variable selection. Initially, we construct the design matrix, excluding the B-splines that cause perfect multicollinearity, and then select the variables with a posterior inclusion probability greater than 50\%. This also corresponds to the model with the highest posterior probability.
+
+After this, we proceed with inference using a linear regression with conjugate prior distributions. Figure \ref{figAgeMarijuana} shows the fit, with the mean (blue line) and 95\% credible intervals (shaded blue). This curve is simpler than the one using all the B-splines: there appears to be a hook-shaped pattern at the beginning, where teenagers consume less marijuana than individuals in their 20s to 50s. After age 55, consumption decreases significantly. Given this pattern, assuming a second-degree polynomial appears to be a reasonable choice.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation: Semi-parametric Dirichlet process mixture}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101) 
+library(splines); library(ggplot2)
+Data <- read.csv("https://raw.githubusercontent.com/BEsmarter-consultancy/BSTApp/refs/heads/master/DataApp/MarijuanaColombia.csv")
+attach(Data)
+IdOrd <- order(Age); y <- LogMarijuana[IdOrd]
+Z <- as.matrix(cbind(Data[IdOrd,-c(1, 6, 7)]))
+x <- Age[IdOrd] 
+knots <- quantile(x, seq(0, 1, 0.05))
+BS <- bs(x, knots = knots, degree = 3, Boundary.knots = range(x), intercept = FALSE)
+matplot(x, BS, type = "l", lty = 1, col = rainbow(ncol(BS)))
+# Function to check if a column is constant
+is_constant <- function(col) {
+	return(length(unique(col)) == 1)
+}
+constant_columns <- apply(BS, 2, is_constant)
+X <- cbind(BS[,-c(which(constant_columns == TRUE))], Z)
+BMAglm <- BMA::bicreg(X, y, strict = FALSE, OR = 50) 
+summary(BMAglm)
+idReg <- c(2, 23, 24, 27:29) # Relevant regressors, PIP > 0.5
+Xnew <- cbind(1, X[, idReg])
+N <- dim(Xnew)[1]; k <- dim(Xnew)[2]
+# Hyperparameters
+d0 <- 0.001; a0 <- 0.001
+b0 <- rep(0, k); c0 <- 1000
+B0 <- c0*diag(k); B0i <- solve(B0)
+# MCMC parameters
+mcmc <- 5000; burnin <- 5000
+tot <- mcmc + burnin; thin <- 1
+posterior  <- MCMCpack::MCMCregress(y~Xnew-1, b0=b0, B0 = B0i, c0 = a0, d0 = d0, burnin = burnin, mcmc = mcmc, thin = thin)
+summary(coda::mcmc(posterior))
+# Predict values with 95% credible intervals
+xfit <- seq(min(x), max(x), 0.2); H <- length(xfit)
+i <- 675 # Pick a particular individual
+idfit <- sample(1:N, H)
+BSfit <- bs(xfit, knots = knots, degree = 3, Boundary.knots = range(x), intercept = FALSE)
+Xfit <- cbind(1, BSfit[,c(2,23)], Z[rep(i, H),c(1,4:6)]) # Relevant regressors, PIP > 0.5
+Fit <- matrix(NA, mcmc, H)
+for(s in 1:mcmc){
+	Fit[s,] <- Xfit%*%posterior[s,1:7]
+}
+plot_data <- data.frame(x = xfit, fit = colMeans(Fit), liminf = apply(Fit, 2, quantile, 0.025), limsup = apply(Fit, 2, quantile, 0.975))
+
+ggplot() + geom_line(data = plot_data, aes(x, fit), color = "blue", linewidth = 1) + geom_ribbon(data = plot_data, aes(x, ymin = liminf, ymax = limsup), fill = "blue", alpha = 0.2) + labs(title = "B-Spline Regression with 95% Confidence Interval", x = "Age",
+y = "Log Marijuana") + theme_minimal()
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter11/figures/AgeMarijuana.png}
+	\caption[List of figure caption goes here]{Spline: Marijuana monthly consumption vs age.}\label{figAgeMarijuana}
+\end{figure}
 
 \end{enumerate}

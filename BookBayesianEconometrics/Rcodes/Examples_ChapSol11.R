@@ -269,7 +269,7 @@ close(pb)
 keep <- seq((burnin+1), tot, thin)
 PosteriorPsi <- PostPsi[keep,]
 Clusters <- sapply(1:length(keep), function(i){length(table(PosteriorPsi[i,]))})
-NClus <- 2
+NClus <- 4
 # Clusters <- sapply(1:length(keep), function(i){print(table(PosteriorPsi[i,]))})
 PosteriorSIGMA <- matrix(NA, length(keep), NClus)
 PosteriorBETA <- array(NA, c(k,NClus,length(keep)))
@@ -488,3 +488,69 @@ densMU <- ggplot(DataMU2, aes(x = Posterior)) +
   labs(x = "Intercept", y = "Density") +
   theme_minimal()
 densMU 
+
+########### Dirichlet process mixture: Application (Marijuana consumption in Colombia) ###############
+rm(list = ls()); 
+library(splines); library(ggplot2)
+set.seed(010101)
+Data <- read.csv("https://raw.githubusercontent.com/BEsmarter-consultancy/BSTApp/refs/heads/master/DataApp/MarijuanaColombia.csv")
+attach(Data)
+IdOrd <- order(Age) 
+y <- LogMarijuana[IdOrd]
+Z <- as.matrix(cbind(Data[IdOrd,-c(1, 6, 7)]))
+x <- Age[IdOrd] 
+knots <- quantile(x, seq(0, 1, 0.05))
+BS <- bs(x, knots = knots, degree = 3, Boundary.knots = range(x), intercept = FALSE)
+matplot(x, BS, type = "l", lty = 1, col = rainbow(ncol(BS)))
+# Function to check if a column is constant
+is_constant <- function(col) {
+  return(length(unique(col)) == 1)
+}
+constant_columns <- apply(BS, 2, is_constant)
+constant_columns
+X <- cbind(BS[,-c(which(constant_columns == TRUE))], Z)
+BMAglm <- BMA::bicreg(X, y, strict = FALSE, OR = 50) 
+summary(BMAglm)
+idReg <- c(2, 23, 24, 27:29) # Relevant regressors, PIP > 0.5
+Xnew <- cbind(1, X[, idReg])
+N <- dim(Xnew)[1]
+k <- dim(Xnew)[2]
+# Hyperparameters
+d0 <- 0.001
+a0 <- 0.001
+b0 <- rep(0, k)
+c0 <- 1000
+B0 <- c0*diag(k)
+B0i <- solve(B0)
+# MCMC parameters
+mcmc <- 5000
+burnin <- 5000
+tot <- mcmc + burnin
+thin <- 1
+# Posterior distributions using packages: MCMCpack sets the model in terms of the precision matrix
+posterior  <- MCMCpack::MCMCregress(y~Xnew-1, b0=b0, B0 = B0i, c0 = a0, d0 = d0, burnin = burnin, mcmc = mcmc, thin = thin)
+summary(coda::mcmc(posterior))
+# Predict values with 95% credible intervals
+xfit <- seq(min(x), max(x), 0.2)
+H <- length(xfit)
+i <- 675
+idfit <- sample(1:N, H)
+BSfit <- bs(xfit, knots = knots, degree = 3, Boundary.knots = range(x), intercept = FALSE)
+Xfit <- cbind(1, BSfit[,c(2,23)], Z[rep(i, H),c(1,4:6)]) # Relevant regressors, PIP > 0.5
+Fit <- matrix(NA, mcmc, H)
+# posterior[posterior > 0] <- 0
+for(s in 1:mcmc){
+  Fit[s,] <- Xfit%*%posterior[s,1:7]
+}
+# Create a data frame for ggplot
+plot_data <- data.frame(x = xfit, fit = colMeans(Fit), liminf = apply(Fit, 2, quantile, 0.025), 
+                        limsup = apply(Fit, 2, quantile, 0.975))
+
+ggplot() +
+  geom_line(data = plot_data, aes(x, fit), color = "blue", linewidth = 1) +  # Regression line
+  geom_ribbon(data = plot_data, aes(x, ymin = liminf, ymax = limsup), fill = "blue", alpha = 0.2) +  # Confidence interval
+  labs(title = "B-Spline Regression with 95% Confidence Interval",
+       x = "Age",
+       y = "Log Marijuana") +
+  theme_minimal()
+

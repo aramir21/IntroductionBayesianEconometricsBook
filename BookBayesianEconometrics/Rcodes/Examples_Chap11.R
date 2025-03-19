@@ -894,8 +894,8 @@ HDI
 print(summary(coda::mcmc(PosteriorBeta3)))
 plot(coda::mcmc(PosteriorBeta3))
 
-DataElast <- data.frame(Marijuana = PosteriorBeta1[,8], Cocaine = PosteriorBeta1[,9],
-                        Crack = PosteriorBeta1[,10]) 
+DataElast <- data.frame(Marijuana = PosteriorBeta1[,2], Cocaine = PosteriorBeta1[,3],
+                        Crack = PosteriorBeta1[,4]) 
 
 dens1 <- ggplot(DataElast, aes(x = Marijuana)) +
   geom_density(fill = "blue", alpha = 0.3) +  # Density plot with fill color
@@ -921,7 +921,7 @@ ggarrange(dens1, dens2, dens3,
           legend = "bottom",
           common.legend = TRUE
 )
-############## Basis functions: Estimates using brms package #################
+############## Basis functions #################
 SplineOwn <- function(x, knots, delta){
   if(knots[1] <= x & x < knots[2]){
     u <- (x - knots[1])/delta
@@ -1097,6 +1097,60 @@ ggplot(data, aes(x = x, y = y, color = Type)) +
   labs(y = "y", color = "Legend") +
   theme_minimal() +
   theme(legend.position = "top")
+
+########### Dirichlet process mixture: Application (Marijuana consumption in Colombia) ###############
+rm(list = ls()); 
+library(splines); library(ggplot2)
+set.seed(010101)
+Data <- read.csv("https://raw.githubusercontent.com/BEsmarter-consultancy/BSTApp/refs/heads/master/DataApp/MarijuanaColombia.csv")
+attach(Data)
+IdOrd <- order(Age) # order(LogPriceMarijuana)
+y <- LogMarijuana[IdOrd]
+Z <- as.matrix(cbind(Data[IdOrd,-c(1, 6, 7)]))
+x <- Age[IdOrd] # LogPriceMarijuana[IdOrd]
+knots <- quantile(x, seq(0, 1, 0.05))
+BS <- bs(x, knots = knots, degree = 3, Boundary.knots = range(x), intercept = FALSE)
+matplot(x, BS, type = "l", lty = 1, col = rainbow(ncol(BS)))
+X <- cbind(1, BS[,1:22], Z)
+k <- dim(X)[2]
+N <- dim(X)[1]
+# Hyperparameters
+d0 <- 0.001
+a0 <- 0.001
+b0 <- rep(0, k)
+c0 <- 1000
+B0 <- c0*diag(k)
+B0i <- solve(B0)
+# MCMC parameters
+mcmc <- 5000
+burnin <- 5000
+tot <- mcmc + burnin
+thin <- 1
+# Posterior distributions using packages: MCMCpack sets the model in terms of the precision matrix
+posterior  <- MCMCpack::MCMCregress(y~X-1, b0=b0, B0 = B0i, c0 = a0, d0 = d0, burnin = burnin, mcmc = mcmc, thin = thin)
+summary(coda::mcmc(posterior))
+# Predict values with 95% credible intervals
+xfit <- seq(min(x), max(x), 0.2)
+H <- length(xfit)
+i <- sample(1:N, 1)
+idfit <- sample(1:N, H)
+BSfit <- bs(xfit, knots = knots, degree = 3, Boundary.knots = range(x), intercept = FALSE)
+Xfit <- cbind(1, BSfit[,1:22], Z[rep(i, H),]) # Relevant regressors, PIP > 0.5
+Fit <- matrix(NA, mcmc, H)
+# posterior[posterior > 0] <- 0
+for(s in 1:mcmc){
+  Fit[s,] <- Xfit%*%posterior[s,1:31]
+}
+# Create a data frame for ggplot
+plot_data <- data.frame(x = xfit, fit = colMeans(Fit), liminf = apply(Fit, 2, quantile, 0.025), 
+                        limsup = apply(Fit, 2, quantile, 0.975))
+ggplot() +
+  geom_line(data = plot_data, aes(x, fit), color = "blue", linewidth = 1) +  # Regression line
+  geom_ribbon(data = plot_data, aes(x, ymin = liminf, ymax = limsup), fill = "blue", alpha = 0.2) +  # Confidence interval
+  labs(title = "B-Spline Regression with 95% Confidence Interval",
+       x = "Age",
+       y = "Log Marijuana") +
+  theme_minimal()
 
 ###### Splines using Stan ########
 # library(brms)

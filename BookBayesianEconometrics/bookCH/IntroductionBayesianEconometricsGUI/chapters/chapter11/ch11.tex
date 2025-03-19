@@ -4,7 +4,9 @@ Non-parametric models are characterized by making minimal assumptions about the 
 
 Semi-parametric methods, on the other hand, combine parametric assumptions for part of the model with non-parametric assumptions for the rest. This approach offers a balance between flexibility, tractability and applicability.
 
-In this chapter, we introduce finite Gaussian mixture models (GM) and Dirichlet mixture processes (DMP), the latter representing an infinite mixture. Both can be used to specify an entire statistical model (non-parametric specification) or to model stochastic error distributions in a semi-parametric framework. Additionally, we present non-parametric generalized additive models (GAM), where the outcome depends linearly on smooth non-parametric functions. This method mitigates the curse of dimensionality while remaining interpretable and flexible for practical applications. 
+In this chapter, we introduce finite Gaussian mixture models (GMM) and Dirichlet mixture processes (DMP), the latter representing an infinite mixture. Both can be used to specify an entire statistical model (nonparametric specification) or to model stochastic error distributions in a semiparametric framework.
+
+Additionally, we present spline models, where the outcome depends linearly on smooth nonparametric functions. To address the curse of dimensionality, we introduce partially linear models, which mitigate this issue while remaining interpretable and flexible for practical applications.
 
 We let other useful Bayesian non-parametric approaches like Bayesian additive random trees (BART) and Gaussian process (GP) for Chapter \ref{chap13}. 
 
@@ -79,13 +81,12 @@ In general, it is always safer to perform inference in mixture models using info
 
 Mixture models have the label-switching identification problem, meaning they are nonidentifiable because the distribution remains unchanged if the group labels are permuted \cite{van2011bayesian}. For instance, a mixture model with two components can be characterized by $\left\{\lambda_1,\boldsymbol{\beta}_1,\sigma_1^2\right\}$ for the first cluster and $\left\{1-\lambda_1,\boldsymbol{\beta}_2,\sigma_2^2\right\}$ for the second. However, an alternative characterization is $\left\{1-\lambda_1,\boldsymbol{\beta}_2,\sigma_2^2\right\}$ for cluster 1 and $\left\{\lambda_1,\boldsymbol{\beta}_1,\sigma_1^2\right\}$ for cluster 2. This parametrization yields exactly the same likelihood as the first one, meaning any permutation of the cluster labels leaves the likelihood unchanged. Consequently, the posterior draws of each component-specific parameter target the same distribution.
 
-Label switching may pose challenges when performing inference on specific mixture components, such as in the regression analysis presented here. However, it is not an issue when inference on specific components is unnecessary, as in cases where mixtures are used to model stochastic errors in semi-parametric settings. In the former case, post-processing strategies can mitigate the issue, such as \textit{random permutation of latent classes} (see \cite[p.~534]{gelman2021bayesian} and Algorithm 3.5 in \cite[p.~82]{fruhwirth2006finite}). 
+Label switching may pose challenges when performing inference on specific mixture components, such as in the regression analysis presented here. However, it is not an issue when inference on specific components is unnecessary, as in cases where mixtures are used to model stochastic errors in semi-parametric settings. In the former case, post-processing strategies can mitigate the issue, such as \textit{random permutation of latent classes} (see the simulation exercise below, \cite[p.~534]{gelman2021bayesian} and Algorithm 3.5 in \cite[p.~82]{fruhwirth2006finite}). 
 
 A semi-parametric regression imposes a specific structure in part of the model and uses flexible assumptions in another part, for instance
-
 \begin{align*}
-	y_i&=\boldsymbol{x}_i^{\top}\boldsymbol{\beta}+\mu_i\\
-	p(\mu_i \mid \left\{\lambda_h,\mu_h,\sigma_h^2\right\}_{h=1}^H)&=\sum_{h=1}^H\lambda_h\phi(\mu_i\mid \mu_h,\sigma_h^2) 
+	y_i&=\boldsymbol{x}_i^{\top}\boldsymbol{\beta}+\mu_i,\\
+	p(\mu_i \mid \left\{\lambda_h,\mu_h,\sigma_h^2\right\}_{h=1}^H)&=\sum_{h=1}^H\lambda_h\phi(\mu_i\mid \mu_h,\sigma_h^2). 
 \end{align*}
 
 Thus, the distribution of the stochastic error is a finite Gaussian mixture. Note that the mean of the stochastic error is not equal to zero; consequently, the intercept in the regression should be removed, as these two parameters are not separately identifiable \cite{van2011bayesian}. Additionally, this approach allows for multiple modes and asymmetric distributions of the stochastic errors, providing greater flexibility.
@@ -105,7 +106,7 @@ $$\boldsymbol{\lambda}\sim \text{Dir}(\boldsymbol{\alpha}_n),$$
 where $\boldsymbol{\alpha}_n=[\alpha_{1n} \  \alpha_{2n} \ \dots \ \alpha_{Hn}]^{\top}$, and $\alpha_{hn}=\alpha_{h0}+N_h$.
 
 $$\boldsymbol{\psi}_{in}\sim \text{Categorical}(\boldsymbol{\lambda}_n),$$
-where $P(\psi_{ih}=1)=\frac{\lambda_{h}\phi(y_i-\boldsymbol{x}_i^{\top}\boldsymbol{\beta} \mid \mu_h,\sigma_h^2)}{\sum_{j=1}^H\lambda_{j}\phi(y_i-\boldsymbol{x}_i^{\top} \mid \mu_j,\sigma_j^2)}$.
+where $P(\psi_{ih}=1)=\frac{\lambda_{h}\phi(y_i-\mu_h-\boldsymbol{x}_i^{\top}\boldsymbol{\beta} \mid \mu_h,\sigma_h^2,\boldsymbol{\beta})}{\sum_{j=1}^H\lambda_{j}\phi(y_i-\mu_j-\boldsymbol{x}_i^{\top}\boldsymbol{\beta} \mid \mu_j,\sigma_j^2,\boldsymbol{\beta})}$.
  
 A potential limitation of finite mixture models is the need to specify the number of components in advance. One approach is to estimate the model for different values of $H$ and then compute the marginal likelihood to select the model best supported by the data. However, this procedure can be tedious. A simpler strategy is to set $H$ large enough (e.g., 10 components), assign $\alpha_{h0} = 1/H$, and perform an initial run of the algorithm. If we are not interested in the specific composition of clusters, this approach is sufficient. Otherwise, the posterior distribution of $H$ can be obtained by tracking the number of nonempty clusters in each iteration. In a second run, $H$ can then be fixed at the mode of this posterior distribution. 
 
@@ -197,7 +198,7 @@ Figure \ref{figMean1} shows the posterior densities of the location parameters. 
 
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter11/figures/Sim1LSI.png}
-	\caption[List of figure caption goes here]{Posterior distributions: Mean parameters, population values $\beta_{01}=0.5$ and $\beta_{02}=1$.}\label{figMean1}
+	\caption[List of figure caption goes here]{Posterior distributions: Mean parameters, population values $\beta_{01}=0.5$ and $\beta_{02}=2.5$.}\label{figMean1}
 \end{figure}
 
 We perform the same exercise assuming $\beta_{01}=0.5$ and $\beta_{02}=1$. Figure \ref{figMean2} shows the posterior densities, where we observe significant overlap. The posterior means are 0.77 in both cases, with 95\% credible intervals of (0.40, 1.05) and (-0.44, 1.71). The posterior mean of the probability is 0.84. 
@@ -299,7 +300,7 @@ plot(PosteriorLAMBDA)
 	\end{VF}
 \end{tcolorbox}
 
-Figure \ref{figMeanPerm} shows the posterior distributions from the random permutation of latent classes in the first simulation setting. We observe that both posterior distributions look similar.
+Figure \ref{figMeanPerm} shows the posterior distributions from the random permutation of latent classes in the first simulation setting. We observe that both posterior distributions look similar, as both are targeting a bimodal distribution given by two clusters.
 
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter11/figures/Permutation.png}
@@ -465,7 +466,7 @@ Let's perform another simulation exercise in which we conduct a semi-parametric 
 \begin{align*}
 	y_i &= 1 - 0.5x_{i1} + 1.5x_{i2} + \mu_i, \ i=1,2,\dots,500.
 \end{align*}
-The variables $x_{i1}$ and $x_{i2}$ are standard normally distributed. Let's set $H=5$, and use non-informative priors setting $\alpha_{h0}=\delta_{h0}=0.01$, $\boldsymbol{\beta}_0=\boldsymbol{0}_2$, $\boldsymbol{B}_0=\boldsymbol{I}_2$, $\mu_{h0}=0$, $\sigma^2_{\mu 0}=10$ and $\boldsymbol{\alpha}_0=[1/H \ \dots \ 1/H]^{\top}$. Use 6,000 MCMC iterations, burn-in equal to 4,000, and thinning parameter equal to 2. In this exercise, there is no need to address the label-switching issue, as we are not specifically interested in the individual components of the posterior distributions of the clusters. Exercise 1 asks how to get the posterior density of the stochastic errors in this semi-parametric specifications. 
+The variables $x_{i1}$ and $x_{i2}$ are standard normally distributed. Let's set $H=5$, and use non-informative priors setting $\alpha_{h0}=\delta_{h0}=0.01$, $\boldsymbol{\beta}_0=\boldsymbol{0}_2$, $\boldsymbol{B}_0=\boldsymbol{I}_2$, $\mu_{h0}=0$, $\sigma^2_{\mu 0}=10$ and $\boldsymbol{\alpha}_0=[1/H \ \dots \ 1/H]^{\top}$. Use 6,000 MCMC iterations, burn-in equal to 4,000, and thinning parameter equal to 2. In this exercise, there is no need to address the label-switching issue, as we are not specifically interested in the individual components of the posterior distributions of the clusters. Exercise 1 asks how to get the posterior density of the stochastic errors in semi-parametric specifications. 
 
 We can see from the posterior estimates that three components disappear after the burn-in iterations. The 95\% credible intervals encompass the population values of the slope parameters. The 95\% credible intervals for the probabilities are (0.70, 0.89) and (0.11, 0.30), and the 95\% credible interval for the weighted average of the intercepts encompasses the population parameter.
 
@@ -644,7 +645,7 @@ The intuition behind this representation is straightforward. We begin with a sti
 
 Since $\mathbb{E}(V_h) = \frac{1}{1+\alpha}$, as $\alpha \rightarrow \infty$, we have $\mathbb{E}(V_h) \rightarrow 0$. Consequently, the DP places mass on a large number of atoms, leading to convergence to the base distribution $G_0$.  
 
-An important limitation of the DP is that its realizations are discrete distributions, which poses challenges when working with continuous distributions. One way to overcome this limitation is to use the DP as a mixing distribution for simple parametric distributions, such as the normal distribution \cite{Escobar1995}. This leads to Dirichlet process mixtures (DPM), which are defined as  
+Note that DPs give as realizations discrete distributions, this poses challenges when working with continuous distributions. One way to overcome this limitation is to use the DP as a mixing distribution for simple parametric distributions, such as the normal distribution \cite{Escobar1995}. This leads to Dirichlet process mixtures (DPM), which are defined as  
 \begin{align*}
 	f_G(y) &= \int f_{\boldsymbol{\theta}}(y) dG(\boldsymbol{\theta}).
 \end{align*}
@@ -716,7 +717,7 @@ where $\boldsymbol{B}_{hn}=(\boldsymbol{B}_0^{-1}+\boldsymbol{X}_h^{\top}\boldsy
 \end{equation*}
 $h=1,2,\dots,H$.
 
-In Exercise 3 we ask to get the posterior sampler in the semi-parameteric setting, that is,
+We can also use DPM in a semi-parametric setting, as we did in the finite Gaussian mixtures. In Exercise 3 we ask to get the posterior sampler in this setting, that is,
 \begin{align*}
 	y_i&=\boldsymbol{x}_i^{\top}\boldsymbol{\beta}+e_i\\
 	e_i\mid \mu_i,\sigma_i^2 &\stackrel{iid}{\sim} N(\mu_i,\sigma_i^2).
@@ -915,7 +916,7 @@ print(summary(coda::mcmc(PosteriorBeta3)))
 
 \textbf{Example: Consumption of marijuana in Colombia}
 
-Let's use the dataset \textit{MarijuanaColombia.csv} from our GitHub repository to perform inference on the demand for marijuana in Colombia. This dataset contains information on the (log) monthly demand in 2019 from the National Survey of the Consumption of Psychoactive Substances. It includes variables such as the presence of a drug dealer in the neighborhood (\textit{Dealer}), gender (\textit{Female}), indicators of good physical and mental health (\textit{PhysicalHealthGood} and \textit{MentalHealthGood}), age (\textit{Age} and \textit{Age2}), and (log) prices of marijuana, cocaine, and crack by individual (\textit{LogPriceMarijuana}, \textit{LogPriceCocaine}, and \textit{LogPriceCrack}). The sample size is 1,156. 
+Let's use the dataset \textit{MarijuanaColombia.csv} from our GitHub repository to perform inference on the demand for marijuana in Colombia. This dataset contains information on the (log) monthly demand in 2019 from the National Survey of the Consumption of Psychoactive Substances. It includes variables such as the presence of a drug dealer in the neighborhood (\textit{Dealer}), gender (\textit{Female}), indicators of good physical and mental health (\textit{PhysicalHealthGood} and \textit{MentalHealthGood}), age (\textit{Age} and \textit{Age2}), years of schooling (\textit{YearsEducation}), and (log) prices of marijuana, cocaine, and crack by individual (\textit{LogPriceMarijuana}, \textit{LogPriceCocaine}, and \textit{LogPriceCrack}). The sample size is 1,156. 
 
 We are interested in the own-price and cross-price elasticities of marijuana demand. However, there is a potential endogeneity issue between price and demand due to strategic provider search (omission of a relevant regressor) or measurement errors in self-reported prices. Endogeneity should be properly addressed for rigorous scientific analysis. This example is purely illustrative.
 
@@ -1134,8 +1135,8 @@ colnames(PosteriorBeta3) <- c("Ct", names(Data[,-1]))
 HDI <- HDInterval::hdi(PosteriorBeta3, credMass = 0.95)
 print(summary(coda::mcmc(PosteriorBeta3)))
 plot(coda::mcmc(PosteriorBeta3))
-DataElast <- data.frame(Marijuana = PosteriorBeta1[,8], Cocaine = PosteriorBeta1[,9],
-Crack = PosteriorBeta1[,10]) 
+DataElast <- data.frame(Marijuana = PosteriorBeta1[,2], Cocaine = PosteriorBeta1[,3],
+Crack = PosteriorBeta1[,4]) 
 dens1 <- ggplot(DataElast, aes(x = Marijuana)) + geom_density(fill = "blue", alpha = 0.3) + labs(x = "Marijuana", y = "Density") + theme_minimal()
 dens2 <- ggplot(DataElast, aes(x = Cocaine)) + geom_density(fill = "blue", alpha = 0.3) +  labs(x = "Cocaine", y = "Density") + theme_minimal()
 dens3 <- ggplot(DataElast, aes(x = Crack)) + geom_density(fill = "blue", alpha = 0.3) + 
@@ -1149,16 +1150,16 @@ ggarrange(dens1, dens2, dens3, labels = c("A", "B", "C"), ncol = 3, nrow = 1, le
 
 In this application, there are three clusters after the burn-in period, with individuals in the sample relatively evenly allocated between them. The posterior density plots of the elasticities associated with the three clusters appear very similar, which implies that the posterior draws associated with each cluster are targeting the same posterior distribution. Consequently, Figure \ref{figElastDrugs} presents the posterior density estimates of the demand price elasticities of marijuana in Colombia for the first cluster.
 
-Panel A of Figure \ref{figElastDrugs} shows that the own-price elasticity of marijuana demand is bimodal. The first mode suggests that some individuals have an elasticity near -0.5, meaning that a 1\% increase in the price of marijuana leads to a 0.5\% decrease in their demand. The second mode is near 0, indicating that these individuals do not adjust their marijuana consumption in response to price changes. 
+Panel A of Figure \ref{figElastDrugs} shows that the own-price elasticity of marijuana demand is bimodal. The first mode suggests that some individuals have an elasticity near -0.5, meaning that a 10\% increase in the price of marijuana leads to a 5\% decrease in their demand. The second mode is near 0, indicating that these individuals do not adjust their marijuana consumption in response to price changes. 
 
-Panel B presents the cross-price elasticity of marijuana demand with respect to the price of cocaine. This posterior distribution is also bimodal. The first mode suggests that some individuals do not change their marijuana demand in response to cocaine price variations. The second mode indicates that marijuana and cocaine are substitutes: a 1\% increase in the price of cocaine leads to an approximately 0.25\% increase in marijuana demand.
+Panel B presents the cross-price elasticity of marijuana demand with respect to the price of cocaine. This posterior distribution is also bimodal. The first mode suggests that some individuals do not change their marijuana demand in response to cocaine price variations. The second mode indicates that marijuana and cocaine are substitutes: a 10\% increase in the price of cocaine leads to an approximately 2.5\% increase in marijuana demand.
 
-Panel C shows that marijuana and crack are also substitutes. This posterior distribution is unimodal, indicating that most individuals increase their marijuana consumption when the price of crack rises. On average, a 1\% increase in the price of crack results in a 0.3\% increase in marijuana demand.
+Panel C shows that marijuana and crack are also substitutes. This posterior distribution is unimodal, indicating that most individuals increase their marijuana consumption when the price of crack rises. On average, a 10\% increase in the price of crack results in an approximately 3\% increase in marijuana demand.
 
 These results seem plausible. However, they should be interpreted with caution, as potential endogeneity issues may affect the estimates.
  
 \begin{figure}[!h]
-	\includegraphics[width=340pt, height=200pt]{Chapters/chapter11/figures/ElastDrugs.png}
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter11/figures/ElastDrugsNew.png}
 	\caption[List of figure caption goes here]{Posterior distributions: Elasticities of marijuana consumption in Colombia.}\label{figElastDrugs}
 \end{figure}
 
@@ -1170,7 +1171,7 @@ To clarify ideas, let's begin with a simple univariate case. The starting point 
 \[
 y_i = f(x_{i}) + \mu_i,
 \]  
-where \(\mu_i \sim N(0, \sigma^2)\) is independent of the regressor \(x_{i}\), and \(f(x_{i})\) is a smooth function such that nearby points in the support of \(x_{i}\) should have similar values. The index \(i = 1,2,\dots, N\) represents the observations.  
+where \(\mu_i \sim N(0, \sigma^2)\) is independent of the regressor \(x_{i}\), and \(f(x_{i})\) is a smooth function such that nearby points in the support of \(x_{i}\) should have similar values. Observe that this means we must always sort the data in increasing order according to $x_i$. This has no effect, as we assume a random sample. The index \(i = 1,2,\dots, N\) represents the observations.   
 
 The spline approach defines  
 \begin{align}\label{eq11_1}
@@ -1205,7 +1206,7 @@ The cubic B-spline is
 \end{align*}
 where \(x_{h+k}\) are called the knots, for \(k=0,1,\dots,4\). These are the points in the domain of the function where the pieces of the spline join, satisfying \(x_{h+k} \leq x_{h+k+1}\). The knots control the shape and flexibility of the spline curve; more knots imply greater flexibility but less smoothness. Note that \(\delta\) determines the distance between the knots. This expression clearly shows that the cubic B-spline is a piecewise polynomial function.
 
-The following code implements this function in \textbf{R} using a delta of 1.5 and 5 knots \( \left\{2, 3.5, 5, 6.5, 8\right\} \). The knots \( \left\{2, 8\right\} \) are called external knots, and the knots \( \left\{3.5, 5, 6.5\right\} \) are called internal knots. B-splines with evenly distributed knots are called uniform B-splines. However, this is not always the case.
+The following code implements this function in \textbf{R} using a delta of 1.5 and 5 knots \( \left\{2, 3.5, 5, 6.5, 8\right\} \). The knots \( \left\{2, 8\right\} \) are called boundary knots, which can be given by the range of $x$, and the knots \( \left\{3.5, 5, 6.5\right\} \) are called internal knots. B-splines with evenly distributed knots are called uniform B-splines. However, this is not always the case.
 
 Figure \ref{figCubicBspline} compares the results of our own function (black circles) with those obtained using the \textit{bs} function from the \textit{splines} package (red line).
 
@@ -1255,7 +1256,7 @@ lines(xA, BSfunc[,4], col = "red")
 	\caption[List of figure caption goes here]{Cubic B-spline comparison.}\label{figCubicBspline}
 \end{figure}
 
-Figure \ref{figCubicBspline} shows a particular cubic B-spline, but \( f(x_i) \) in Equation \ref{eq11_1} involves \( H \) splines over the range of potential values of \( x \), as we need to evaluate the splines centered at different knots. Here, we should clarify that to avoid issues with the use of splines at boundary regions, it is essential to artificially increase the number of external knots by repeating the external knots as many times as the degree of the polynomial. For instance, in our example, the final set of knots is \( \left\{2, 2, 2, 2, 3.5, 5, 6.5, 8, 8, 8, 8\right\} \). %However, the number of B-splines is based on the original set of knots. 
+Figure \ref{figCubicBspline} shows a particular cubic B-spline, but \( f(x_i) \) in Equation \ref{eq11_1} involves \( H \) splines over the range of potential values of \( x \), as we need to evaluate the splines centered at different knots. Here, we should clarify that to avoid issues with the use of splines at boundary regions, it is essential to artificially increase the number of boundary knots by repeating these knots as many times as the degree of the polynomial. For instance, in our example, the final set of knots is \( \left\{2, 2, 2, 2, 3.5, 5, 6.5, 8, 8, 8, 8\right\} \). %However, the number of B-splines is based on the original set of knots. 
 %. The number of B-splines is given by the number of knots plus the polynomial degree minus one (see Equation \ref{eq11_2} below)
 %\footnote{In B-splines, the intercept (constant term) is generally not uniquely identified. Therefore, the common practice is to calculate the B-splines without the intercept and add the intercept in the regression (Equation \ref{eq11_1}). This implies using minus 2, rather than minus 1.}
 
@@ -1270,6 +1271,8 @@ and then, the other B-splines are defined by the recursion
 \begin{align}\label{eq11_2}
 	b_{h,p}(x_i)=\frac{x_i-x_{h}}{x_{h+p}-x_h}b_{h,p-1}(x_i)+\frac{x_{h+p+1}-x_i}{x_{h+p+1}-x_{h+1}}b_{h+1,p-1}(x_i).
 \end{align}
+Note that B-splines are defined by their degree and their knots.
+
 The following code demonstrates how to perform this recursion using the same settings as in the previous code and compares the results with the \textit{bs} function from the \textit{splines} package. As shown in Figure \ref{figBsplines}, we obtain the same results. We will continue using the \textit{bs} function from the \textit{splines} package for convenience in the process, but it seems that we have gained some understanding of the underlying process.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
@@ -1433,25 +1436,72 @@ theme_minimal() + theme(legend.position = "top")
 Note that splines use local information to perform the fit. This implies the \textit{curse of dimensionality} issue, where increasing the number of variables leads to more dispersed regions in the regressor space. In other words, the observations become increasingly further apart as we have more regressors. As a result, splines become less reliable in high-dimensional spaces.
 
 A strategy to overcome the curse of dimensionality is to specify the \textit{partial linear model}: 
-\begin{align*} 
+\begin{align}\label{eq11_3} 
 	y_i & = \boldsymbol{z}_i^{\top}\boldsymbol{\gamma} + f(x_i) + \mu_i. 
-\end{align*} 
-In this specification, some regressors enter in a linear way, while the most relevant regressor — the one under primary investigation — enters in a non-parametric way. Note that we only need to increase the dimension of the matrix $\boldsymbol{W}$ by adding the columns from $\boldsymbol{z}$, and proceed as we did previously.
+\end{align} 
+In this specification, some regressors enter in a linear way, while potentially the most relevant regressor — the one under primary investigation — enters in a non-parametric way. Note that we only need to increase the dimension of the matrix $\boldsymbol{W}$ by adding the columns from $\boldsymbol{z}$, and proceed as we did previously.\\
 
-\begin{itemize}
-	\item Show cubic B-spline (own function using Equation 20.2 in \cite{gelman2021bayesian})
-	\item Show sequence of cubic B-splines (function from chatGPB and bs function)
-	\item Then using bs function from R. Simulate splines with draws from normal distribution (first do next to know reasonable values)
-	\item Simulate function in $f(x_i)=0.4+0.25 \sin(8x_i-5)+0.4\exp\left\{-16(4x_i-2.5)^2\right\}$ \cite{Otsu2017} or page 251 \cite{koop2003bayesian}, and check performance with different knots, figure 5.10 in \cite{BMCP2021}
-	\item Selection of $H$, or check section 20.2 in \cite{gelman2021bayesian}, and 5.5 and 5.6 in \cite{BMCP2021}. Selection of $H$ is a problem of variable selection (regressors uncertainty), and can be handle using the approach in Chapter 10. Other approaches, like the ones in the regularization section in the following chapter can be used (Bayesian LASSO, SSVS, etc.) 
-	\item Partial linear model due to curse of dimensionality. Check \cite{koop2003bayesian}
-	\item Application marijuana, own price elasticity	
-\end{itemize}
+\textbf{Example: Consumption of marijuana in Colombia continues}
 
+Let's continue using the dataset \textit{MarijuanaColombia.csv} to perform a partial linear model as in Equation \ref{eq11_3}, where $y_i$ is the (log) marijuana monthly consumption, $\boldsymbol{z}_i$ represents the presence of a drug dealer in the neighborhood (\textit{Dealer}), gender (\textit{Female}), indicators of good physical and mental health (\textit{PhysicalHealthGood} and \textit{MentalHealthGood}), years of education (\textit{YearsEducation}), and the (log) prices of marijuana, cocaine, and crack by individual.
 
+We set the knots as the percentiles $\left\{0,0.05,\dots,0.95,1\right\}$ of age, use cubic B-splines, non-informative conjugate priors in the linear regression model, 5,000 MCMC iterations, and 5,000 burn-in iterations.
 
-%\subsection{Partial linear model}\label{sec11_21}
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Fit using splines: Different knots}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+library(splines); library(ggplot2)
+Data <- read.csv("https://raw.githubusercontent.com/BEsmarter-consultancy/BSTApp/refs/heads/master/DataApp/MarijuanaColombia.csv")
+attach(Data)
+IdOrd <- order(Age) 
+y <- LogMarijuana[IdOrd]
+Z <- as.matrix(cbind(Data[IdOrd,-c(1, 6, 7)]))
+x <- Age[IdOrd] 
+knots <- quantile(x, seq(0, 1, 0.05))
+BS <- bs(x, knots = knots, degree = 3, Boundary.knots = range(x), intercept = FALSE)
+matplot(x, BS, type = "l", lty = 1, col = rainbow(ncol(BS)))
+X <- cbind(1, BS[,1:22], Z) # Get B-splines without multicollinearity issues
+k <- dim(X)[2]; N <- dim(X)[1]
+# Hyperparameters
+d0 <- 0.001; a0 <- 0.001
+b0 <- rep(0, k); c0 <- 1000; B0 <- c0*diag(k); B0i <- solve(B0)
+# MCMC parameters
+mcmc <- 5000; burnin <- 5000
+tot <- mcmc + burnin; thin <- 1
+posterior  <- MCMCpack::MCMCregress(y~X-1, b0=b0, B0 = B0i, c0 = a0, d0 = d0, burnin = burnin, mcmc = mcmc, thin = thin)
+summary(coda::mcmc(posterior))
+# Predict values with 95% credible intervals
+xfit <- seq(min(x), max(x), 0.2)
+H <- length(xfit)
+i <- sample(1:N, 1)
+idfit <- sample(1:N, H)
+BSfit <- bs(xfit, knots = knots, degree = 3, Boundary.knots = range(x), intercept = FALSE)
+Xfit <- cbind(1, BSfit[,1:22], Z[rep(i, H),]) # Relevant regressors, PIP > 0.5
+Fit <- matrix(NA, mcmc, H)
+# posterior[posterior > 0] <- 0
+for(s in 1:mcmc){
+	Fit[s,] <- Xfit%*%posterior[s,1:31]
+}
+# Create a data frame for ggplot
+plot_data <- data.frame(x = xfit, fit = colMeans(Fit), liminf = apply(Fit, 2, quantile, 0.025), limsup = apply(Fit, 2, quantile, 0.975))
+ggplot() + geom_line(data = plot_data, aes(x, fit), color = "blue", linewidth = 1) + geom_ribbon(data = plot_data, aes(x, ymin = liminf, ymax = limsup), fill = "blue", alpha = 0.2) + labs(title = "B-Spline Regression with 95% Confidence Interval", x = "Age", y = "Log Marijuana") + theme_minimal()
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
 
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter11/figures/AgeMarijuana.png}
+	\caption[List of figure caption goes here]{Spline: Marijuana monthly consumption vs age.}\label{figAgeMarijuana}
+\end{figure}
+
+The previous code illustrates the procedure. The posterior 95\% credible intervals indicate that marijuana is an inelastic good, there is substitution between marijuana and crack, more educated female individuals consume less, and the presence of a drug dealer in the neighborhood increases consumption.
+
+Figure \ref{figAgeMarijuana} shows the fitted spline, specifically the mean (blue line) and the 95\% credible intervals (shaded blue). Notice that there is a lot of wiggliness due to the use of many knots, suggesting that this relationship could be expressed in a more parsimonious way. In Exercise 6, we ask to use variable selection methods, such as the BIC approximation presented in Chapter \ref{chap10}, to perform regressor selection, particularly for the splines.
+
+In general, the selection of $H$ is a problem of variable selection (regressor uncertainty) and can be handled using other approaches, such as those discussed in the regularization section \ref{sec13_2} of the following chapter.
 \section{Summary}\label{sec11_3}
 
 \section{Exercises}\label{sec11_4}
@@ -1467,7 +1517,7 @@ In this specification, some regressors enter in a linear way, while the most rel
 	
 	\item \textbf{Example: Consumption of marijuana in Colombia continues I}
 	
-	Use the dataset \textit{MarijuanaColombia.csv} from our GitHub repository to perform inference on the demand for marijuana in Colombia. This dataset contains information on the (log) monthly demand in 2019 from the National Survey of the Consumption of Psychoactive Substances. It includes variables such as the presence of a drug dealer in the neighborhood (\textit{Dealer}), gender (\textit{Female}), indicators of good physical and mental health (\textit{PhysicalHealthGood} and \textit{MentalHealthGood}), age (\textit{Age} and \textit{Age2}), and (log) prices of marijuana, cocaine, and crack by individual (\textit{LogPriceMarijuana}, \textit{LogPriceCocaine}, and \textit{LogPriceCrack}). The sample size is 1,156.
+	Use the dataset \textit{MarijuanaColombia.csv} from our GitHub repository to perform inference on the demand for marijuana in Colombia. This dataset contains information on the (log) monthly demand in 2019 from the National Survey of the Consumption of Psychoactive Substances. It includes variables such as the presence of a drug dealer in the neighborhood (\textit{Dealer}), gender (\textit{Female}), indicators of good physical and mental health (\textit{PhysicalHealthGood} and \textit{MentalHealthGood}), age (\textit{Age} and \textit{Age2}), years of schooling (\textit{YearsEducation}), and (log) prices of marijuana, cocaine, and crack by individual (\textit{LogPriceMarijuana}, \textit{LogPriceCocaine}, and \textit{LogPriceCrack}). The sample size is 1,156.
 	
 	Estimate a finite Gaussian mixture regression using non-informative priors, that is, $\alpha_{0}=\delta_{0}=0.01$, $\boldsymbol{\beta}_{0}=\boldsymbol{0}_K$, $\boldsymbol{B}_{0}=\boldsymbol{I}_K$, and $a=b=0.1$, $K$ is the number of regressors, 10 including the intercept. The number of MCMC iterations is 5,000, the burn-in is 1,000, and the thinning parameter is 2. Start with five potential clusters. Obtain the posterior distribution of the own-price elasticity of marijuana and the cross-price elasticities of marijuana demand with respect to the prices of cocaine and crack.
 	
@@ -1492,12 +1542,13 @@ In this specification, some regressors enter in a linear way, while the most rel
 	
 	Perform the application of marijuana consumption with the following specification:
 	\begin{align*}
-		y_i & = \boldsymbol{z}_i^{\top} \boldsymbol{\gamma} + f(\log(p)_{im}) + f(\log(p)_{ic}) + f(\log(p)_{ib}) + \mu_i,
+		y_i & = \boldsymbol{z}_i^{\top} \boldsymbol{\gamma} + f(Age_{i}) + \mu_i,
 	\end{align*}
-	where $\boldsymbol{z}_i$ represents the presence of a drug dealer in the neighborhood (\textit{Dealer}), gender (\textit{Female}), indicators of good physical and mental health (\textit{PhysicalHealthGood} and \textit{MentalHealthGood}), and age (\textit{Age} and \textit{Age2}), and $\log(p)_{im}$, $\log(p)_{ic}$, and $\log(p)_{ib}$ are the (log) prices of marijuana, cocaine, and crack by individual.
+	where $y_i$ is the (log) marijuana monthly consumption, $\boldsymbol{z}_i$ represents the presence of a drug dealer in the neighborhood (\textit{Dealer}), gender (\textit{Female}), indicators of good physical and mental health (\textit{PhysicalHealthGood} and \textit{MentalHealthGood}), years of education (\textit{YearsEducation}), and the (log) prices of marijuana, cocaine, and crack by individual.
 	
-	Implement a strategy that retains the drug prices in the regression, selects the number of knots using the BIC approximation, and also uses the BIC approximation to select the other regressors.
+	Initially, set the knots as the percentiles $\left\{0,0.05,\dots,0.95,1\right\}$ of age and use cubic B-splines. Then, apply the BIC approximation to perform variable selection in this model with non-informative conjugate priors, 5,000 MCMC iterations, and 5,000 burn-in iterations.
 	
+	Do you think that using a linear regression with a second-degree polynomial in age provides a good approximation to the relationship found using splines in this application?
   
 \end{enumerate}
 
