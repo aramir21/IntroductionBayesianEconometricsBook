@@ -489,7 +489,146 @@ densMU <- ggplot(DataMU2, aes(x = Posterior)) +
   theme_minimal()
 densMU 
 
-########### Dirichlet process mixture: Application (Marijuana consumption in Colombia) ###############
+############### Dirichlet process solution switching label issue using finite mixtures #######################
+rm(list = ls())
+set.seed(010101)
+# Simulate data from a 2-component mixture model
+n <- 1000
+x <- rnorm(n)
+z <- rbinom(n, 1, 0.5)  # Latent class indicator
+y <- ifelse(z == 0, rnorm(n, 2 + 1.5*x, 1), rnorm(n, -1 + 0.5*x, 0.8))
+data <- data.frame(y, x)
+# Hyperparameters
+d0 <- 0.001
+a0 <- 0.001
+b0 <- rep(0, 2)
+B0 <- diag(2)
+B0i <- solve(B0)
+H <- 3
+a0h <- rep(1/H, H)
+# MCMC parameters
+mcmc <- 10000
+burnin <- 2000
+tot <- mcmc + burnin
+thin <- 2
+# Gibbs sampling functions
+PostSig2 <- function(Betah, Xh, yh){
+  Nh <- length(yh)
+  an <- a0 + Nh
+  dn <- d0 + t(yh - Xh%*%Betah)%*%(yh - Xh%*%Betah)
+  sig2 <- invgamma::rinvgamma(1, shape = an/2, rate = dn/2)
+  return(sig2)
+}
+PostBeta <- function(sig2h, Xh, yh){
+  Bn <- solve(B0i + sig2h^(-1)*t(Xh)%*%Xh)
+  bn <- Bn%*%(B0i%*%b0 + sig2h^(-1)*t(Xh)%*%yh)
+  Beta <- MASS::mvrnorm(1, bn, Bn)
+  return(Beta)
+}
+
+PostBetas1 <- matrix(0, tot, 2)
+PostBetas2 <- matrix(0, tot, 2)
+PostBetas3 <- matrix(0, tot, 2)
+PostSigma2 <- matrix(0, tot, H)
+PostPsi <- matrix(0, tot, n)
+PostLambda <- matrix(0, tot, H)
+Reg <- lm(y ~ x)
+SumReg <- summary(Reg)
+BETA <- cbind(Reg$coefficients, Reg$coefficients, Reg$coefficients)
+SIG2 <- rep(SumReg$sigma, H)
+X <- cbind(1, x)
+Psi <- rep(NA, n)
+Lambda1 <- 1/H; Lambda2 <- 1/H; Lambda3 <- 1/H
+perutatms <- gtools::permutations(3, 3, 1:H)
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+  for(i in 1:n){
+    lambdai1 <- Lambda1*dnorm(y[i], X[i,]%*%BETA[,1], SIG2[1]^0.5)
+    lambdai2 <- Lambda2*dnorm(y[i], X[i,]%*%BETA[,2], SIG2[2]^0.5)
+    lambdai3 <- Lambda3*dnorm(y[i], X[i,]%*%BETA[,3], SIG2[3]^0.5)
+    Psi[i] <- sample(1:H, 1, prob = c(lambdai1, lambdai2, lambdai3))
+  }
+  NH <- NULL
+  for(h in 1:H){
+    Idh <- which(Psi == h)
+    Nh <- length(Idh)
+    NH <- c(NH, Nh)
+    SIG2[h] <- PostSig2(Betah = BETA[,h], Xh = X[Idh, ], yh = y[Idh])
+    BETA[,h] <- PostBeta(sig2h = SIG2[h], Xh = X[Idh, ], yh = y[Idh])
+  }
+  Lambda <- sort(MCMCpack::rdirichlet(1, a0h + NH), decreasing = TRUE)
+  IndPer <- sample(1:dim(perutatms)[1], 1)
+  Clust <- perutatms[IndPer, ]
+  SIG2 <- SIG2[Clust]
+  BETA <- BETA[,Clust]
+  Lambda <- Lambda[Clust]
+  for(i in 1:n){
+    if(Psi[i] == 1){
+      Psi[i] <- Clust[1]
+    }else{
+      if(Psi[i] == 2){
+        Psi[i] <- Clust[2]
+      }else{
+        Psi[i] <- Clust[3]
+      }
+    }
+  }
+  Lambda1 <- Lambda[1]; Lambda2 <- Lambda[2]; Lambda3 <- Lambda[3]
+  PostPsi[s, ] <- Psi
+  PostSigma2[s, ] <- SIG2
+  PostBetas1[s,] <- BETA[,1]
+  PostBetas2[s,] <- BETA[,2]
+  PostBetas3[s,] <- BETA[,3]
+  PostLambda[s,] <- Lambda 
+  setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+keep <- seq((burnin+1), tot, thin)
+PosteriorBetas1 <- coda::mcmc(PostBetas1[keep,])
+summary(PosteriorBetas1)
+plot(PosteriorBetas1)
+PosteriorBetas2 <- coda::mcmc(PostBetas2[keep,])
+summary(PosteriorBetas2)
+plot(PosteriorBetas2)
+PosteriorBetas3 <- coda::mcmc(PostBetas3[keep,])
+summary(PosteriorBetas3)
+plot(PosteriorBetas3)
+PosteriorSigma2 <- coda::mcmc(PostSigma2[keep,])
+summary(PosteriorSigma2)
+plot(PosteriorSigma2)
+PosteriorLambda <- coda::mcmc(PostLambda[keep,])
+summary(PosteriorLambda)
+plot(PosteriorLambda)
+
+DataBetas <- data.frame(Cluster1 = as.numeric(PosteriorBetas1[,2]), Cluster2 = as.numeric(PosteriorBetas2[,2]),
+                        Cluster3 = as.numeric(PosteriorBetas3[,2])) 
+library(ggplot2)
+dens1 <- ggplot(DataBetas, aes(x = Cluster1)) +
+  geom_density(fill = "blue", alpha = 0.3) +  # Density plot with fill color
+  labs(x = "Cluster 1", y = "Density") +
+  theme_minimal()
+
+dens2 <- ggplot(DataBetas, aes(x = Cluster2)) +
+  geom_density(fill = "blue", alpha = 0.3) +  # Density plot with fill color
+  labs(x = "Cluster 2", y = "Density") +
+  theme_minimal()
+
+dens3 <- ggplot(DataBetas, aes(x = Cluster3)) +
+  geom_density(fill = "blue", alpha = 0.3) +  # Density plot with fill color
+  labs(x = "Cluster 3", y = "Density") +
+  theme_minimal()
+
+library(ggpubr)
+ggarrange(dens1, dens2, dens3,
+          labels = c(
+            "A", "B", "C"
+          ),
+          ncol = 3, nrow = 1,
+          legend = "bottom",
+          common.legend = TRUE
+)
+
+########### Splines: Application (Marijuana consumption in Colombia) ###############
 rm(list = ls()); 
 library(splines); library(ggplot2)
 set.seed(010101)
