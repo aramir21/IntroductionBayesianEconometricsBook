@@ -120,7 +120,7 @@ $$p(y_i) = 0.75 \phi(y_i \mid \beta_{01},1^2) + 0.25 \phi(y_i \mid \beta_{02},1^
 
 Initially, we set $\beta_{01} = 0.5$ and $\beta_{02} = 2.5$. We perform 1,000 MCMC iterations, with a burn-in period of 500 and a thinning factor of 2. The following code demonstrates how to implement the Gibbs sampler using a prior normal distribution with mean 0 and variance 10, with the hyperparameters of the Dirichlet distribution set to $1/2$.
 
-```{r, eval=FALSE}
+```{r}
 rm(list = ls()); set.seed(010101); library(ggplot2)
 # Simulate data from a 2-component mixture model
 n <- 500
@@ -182,7 +182,7 @@ The figure shows the posterior densities of the location parameters. The posteri
 
 We perform the same exercise assuming $\beta_{01}=0.5$ and $\beta_{02}=1$. The figure shows the posterior densities, where we observe significant overlap. The posterior means are 0.77 in both cases, with 95\% credible intervals of (0.40, 1.05) and (-0.44, 1.71). The posterior mean of the probability is 0.84.
 
-```{r, eval=FALSE}
+```{r}
 rm(list = ls()); set.seed(010101); library(ggplot2)
 # Simulate data from a 2-component mixture model
 n <- 500
@@ -244,7 +244,7 @@ In the second setting, the posterior draws of the Gibbs sampler can switch betwe
 
 We can implement *random permutation of latent classes* to address this issue. This involves sampling a random permutation of the labels at each iteration of the MCMC algorithm. For example, with three clusters, there are $3! = 6$ possible label permutations. Let the permutations be labeled as $\boldsymbol{p}_k=\left\{p_k(1),p_k(2),\dots,p_k(H)\right\}, k=1,2,\dots,H!$. At the end of each iteration in the MCMC algorithm, we randomly select one of the permutations $\boldsymbol{p}_k$ and replace the cluster probabilities $\lambda_1^{(s)},\dots,\lambda_H^{(s)}$ with $\lambda_{p_k(1)}^{(s)},\dots,\lambda_{p_k(H)}^{(s)}$. We apply the same permutation to $\boldsymbol{\beta}^{(s)}$, $\sigma^{2(s)}$, and $\boldsymbol{\psi}_{i}^{(s)}$, for $i=1,2,\dots,n$. The following algorithm illustrates how to implement this in our simple example.
 
-```{r, eval=FALSE}
+```{r}
 ###### Permutations ######
 rm(list = ls()); set.seed(010101); library(ggplot2)
 # Simulate data from a 2-component mixture model
@@ -310,9 +310,7 @@ require(latex2exp)
 ggplot(dfMU) +
 geom_density(aes(x = mu1, color = "mu1"), linewidth = 1) +  # First density plot
 geom_density(aes(x = mu2, color = "mu2"), linewidth = 1) +  # Second density plot
-labs(title = "Density Plot", x = TeX("$\\mu$"), y = "Density", color = "Variable") +
-theme_minimal() +
-scale_color_manual(values = c("mu1" = "blue", "mu2" = "red"))  # Custom colors
+labs(title = "Density Plot", x = TeX("$\\mu$"), y = "Density", color = "Variable") + theme_minimal() + scale_color_manual(values = c("mu1" = "blue", "mu2" = "red"))
 PosteriorLAMBDA <- coda::mcmc(PostLambda[keep])
 summary(PosteriorLAMBDA)
 plot(PosteriorLAMBDA)
@@ -326,7 +324,7 @@ $$p(y_i \mid \boldsymbol{x}_i) =
 
 The following code shows how to perform inference in this model, assuming $N(0,5)$ and $N(0,2)$ priors for the intercepts and slopes, respectively. Additionally, we use a $Cauchy(0,2)$ prior truncated at 0 for the standard deviations, and a $Dirichlet(1,1)$ prior for the probabilities. We use the *brms* package in **R**, which in turn uses *Stan*, setting number of MCMC iterations 2,000, a burn-in (warm-up) equal to 1,000, and 4 chains. Remember that *Stan* software uses Hamiltonian Monte Carlo.
 
-```{r, eval=FALSE}
+```{r}
 ####### Simulation exercise: Gaussian mixture: 2 components #############
 rm(list = ls())
 set.seed(010101)
@@ -369,7 +367,7 @@ summary(fit) # Summary of posterior draws
 plot(fit) # Plots of posterior draws
 ```
 The following code performs inference in this simulation from scratch using Gibbs sampling. We do not implement the random permutation of latent classes algorithm for facilitating exposition and comparability with the results from the package *brms*. We use non-informative priors, setting $\alpha_{h0}=\delta_{h0}=0.01$, $\boldsymbol{\beta}_{h0}=\boldsymbol{0}_2$, $\boldsymbol{B}_{h0}=\boldsymbol{I}_2$, and $\boldsymbol{\alpha}_0=[1/2 \ 1/2]^{\top}$. The number of MCMC iterations is 5,000, the burn-in is 1,000, and the thinning parameter is 2. In general, the Gibbs sampler appears to yield good posterior results as all 95\% intervals encompass the population parameters. 
-```{r, eval=FALSE}
+```{r}
 ########### Perform inference from scratch ###############
 rm(list = ls()); set.seed(010101)
 library(brms); library(ggplot2)
@@ -460,7 +458,7 @@ The variables $x_{i1}$ and $x_{i2}$ are standard normally distributed. Let's set
 
 We can see from the posterior estimates that three components disappear after the burn-in iterations. The 95\% credible intervals encompass the population values of the slope parameters. The 95\% credible intervals for the probabilities are (0.70, 0.89) and (0.11, 0.30), and the 95\% credible interval for the weighted average of the intercepts encompasses the population parameter.
 
-```{r, eval=FALSE}
+```{r}
 rm(list = ls()); set.seed(010101)
 library(ggplot2)
 # Simulate data from a 2-component mixture model
@@ -865,7 +863,7 @@ We are interested in the own-price and cross-price elasticities of marijuana dem
 
 In Exercise 2 we ask to perform inference using a finite Gaussian mixture regression starting with five potential clusters. Here we perform inference using a Dirichlet process mixture.
 
-The following code shows how to perform this analysis using non-informative priors, setting $\alpha_{0}=\delta_{0}=0.01$, $\boldsymbol{\beta}_{0}=\boldsymbol{0}_K$, $\boldsymbol{B}_{0}=\boldsymbol{I}_K$, and $a=b=0.1$, $K$ is the number of regressors, 10 including the intercept. The number of MCMC iterations is 5,000, the burn-in is 1,000, and the thinning parameter is 2.
+The following code shows how to perform this analysis using non-informative priors, setting $\alpha_{0}=\delta_{0}=0.01$, $\boldsymbol{\beta}_{0}=\boldsymbol{0}_K$, $\boldsymbol{B}_{0}=\boldsymbol{I}_K$, and $a=b=0.1$, $K$ is the number of regressors, 11 including the intercept. The number of MCMC iterations is 5,000, the burn-in is 1,000, and the thinning parameter is 2.
 
 ```{r}
 rm(list = ls()); set.seed(010101)
@@ -1000,23 +998,6 @@ keep <- seq((burnin+1), tot, thin)
 PosteriorS<- Posts[keep,]
 Clusters <- sapply(1:length(keep), function(i){length(table(PosteriorS[i,]))})
 table(Clusters)
-NClus <- 3
-sapply(1:length(keep), function(i){print(table(PosteriorS[i,]))})
-PosteriorSIGMA <- matrix(NA, length(keep), NClus)
-l <- 1
-for (s in keep){
-	PosteriorSIGMA[l,] <- PostSigma[[s]][1:NClus]
-	l <- l + 1
-}
-summary(coda::mcmc(PosteriorSIGMA))
-plot(coda::mcmc(PosteriorSIGMA))
-l <- 1
-for (s in keep){
-	PosteriorSIGMA[l,] <- PostSigma[[s]][1:NClus]
-	l <- l + 1
-}
-summary(coda::mcmc(PosteriorSIGMA))
-plot(coda::mcmc(PosteriorSIGMA))
 PosteriorBeta1 <- matrix(NA, length(keep), k)
 j <- 1
 for(s in keep){
@@ -1024,42 +1005,17 @@ for(s in keep){
 	j <- j + 1
 }
 colnames(PosteriorBeta1) <- c("Ct", names(Data[,-1]))
-HDI <- HDInterval::hdi(PosteriorBeta1, credMass = 0.95)
-print(summary(coda::mcmc(PosteriorBeta1)))
-plot(coda::mcmc(PosteriorBeta1))
-PosteriorBeta2 <- matrix(NA, length(keep), k)
-j <- 1
-for(s in keep){
-	PosteriorBeta2[j,] <- PostBetas[[s]][,2]
-	j <- j + 1
-}
-colnames(PosteriorBeta2) <- c("Ct", names(Data[,-1]))
-HDI <- HDInterval::hdi(PosteriorBeta2, credMass = 0.95)
-print(summary(coda::mcmc(PosteriorBeta2)))
-plot(coda::mcmc(PosteriorBeta2))
-PosteriorBeta3 <- matrix(NA, length(keep), k)
-j <- 1
-for(s in keep){
-	PosteriorBeta3[j,] <- PostBetas[[s]][,3]
-	j <- j + 1
-}
-colnames(PosteriorBeta3) <- c("Ct", names(Data[,-1]))
-HDI <- HDInterval::hdi(PosteriorBeta3, credMass = 0.95)
-print(summary(coda::mcmc(PosteriorBeta3)))
-plot(coda::mcmc(PosteriorBeta3))
-DataElast <- data.frame(Marijuana = PosteriorBeta1[,2], Cocaine = PosteriorBeta1[,3],
-Crack = PosteriorBeta1[,4]) 
+DataElast <- data.frame(Marijuana = PosteriorBeta1[,2], Cocaine = PosteriorBeta1[,3], Crack = PosteriorBeta1[,4]) 
 dens1 <- ggplot(DataElast, aes(x = Marijuana)) + geom_density(fill = "blue", alpha = 0.3) + labs(x = "Marijuana", y = "Density") + theme_minimal()
-dens2 <- ggplot(DataElast, aes(x = Cocaine)) + geom_density(fill = "blue", alpha = 0.3) +  labs(x = "Cocaine", y = "Density") + theme_minimal()
-dens3 <- ggplot(DataElast, aes(x = Crack)) + geom_density(fill = "blue", alpha = 0.3) + 
-labs(x = "Crack", y = "Density") + theme_minimal()
+dens2 <- ggplot(DataElast, aes(x = Cocaine)) + geom_density(fill = "blue", alpha = 0.3) + labs(x = "Cocaine", y = "Density") + theme_minimal()
+dens3 <- ggplot(DataElast, aes(x = Crack)) + geom_density(fill = "blue", alpha = 0.3) + labs(x = "Crack", y = "Density") + theme_minimal()
 library(ggpubr)
 ggarrange(dens1, dens2, dens3, labels = c("A", "B", "C"), ncol = 3, nrow = 1, legend = "bottom", common.legend = TRUE)
 ```
 
-In this application, there are three clusters after the burn-in period, with individuals in the sample relatively evenly allocated between them. The posterior density plots of the elasticities associated with the three clusters appear very similar, which implies that the posterior draws associated with each cluster are targeting the same posterior distribution. Consequently, Figure \ref{figElastDrugs} presents the posterior density estimates of the demand price elasticities of marijuana in Colombia for the first cluster.
+In this application, there are three clusters after the burn-in period, with individuals in the sample relatively evenly allocated between them. The posterior density plots of the elasticities associated with the three clusters appear very similar, which implies that the posterior draws associated with each cluster are targeting the same posterior distribution. Consequently, the figure presents the posterior density estimates of the demand price elasticities of marijuana in Colombia for the first cluster.
 
-Panel A of Figure \ref{figElastDrugs} shows that the own-price elasticity of marijuana demand is bimodal. The first mode suggests that some individuals have an elasticity near -0.5, meaning that a 10\% increase in the price of marijuana leads to a 5\% decrease in their demand. The second mode is near 0, indicating that these individuals do not adjust their marijuana consumption in response to price changes. 
+Panel A of the figure shows that the own-price elasticity of marijuana demand is bimodal. The first mode suggests that some individuals have an elasticity near -0.5, meaning that a 10\% increase in the price of marijuana leads to a 5\% decrease in their demand. The second mode is near 0, indicating that these individuals do not adjust their marijuana consumption in response to price changes. 
 
 Panel B presents the cross-price elasticity of marijuana demand with respect to the price of cocaine. This posterior distribution is also bimodal. The first mode suggests that some individuals do not change their marijuana demand in response to cocaine price variations. The second mode indicates that marijuana and cocaine are substitutes: a 10\% increase in the price of cocaine leads to an approximately 2.5\% increase in marijuana demand.
 
@@ -1067,4 +1023,344 @@ Panel C shows that marijuana and crack are also substitutes. This posterior dist
 
 These results seem plausible. However, they should be interpreted with caution, as potential endogeneity issues may affect the estimates.
 
+## Splines {#sec11_2}
 
+Another common approach to performing non-parametric or semi-parametric inference is using splines. These are piecewise polynomial functions that allow for approximating complex relationships in data.
+  
+To clarify ideas, let's begin with a simple univariate case. The starting point is to assume that  
+\[
+y_i = f(x_{i}) + \mu_i,
+\]  
+where \(\mu_i \sim N(0, \sigma^2)\) is independent of the regressor \(x_{i}\), and \(f(x_{i})\) is a smooth function such that nearby points in the support of \(x_{i}\) should have similar values. Observe that this means we must always sort the data in increasing order according to $x_i$. This has no effect, as we assume a random sample. The index \(i = 1,2,\dots, N\) represents the observations.   
+
+The spline approach defines  
+\begin{align}
+	f(x_{i}) = \beta_{1}b_1(x_{i}) + \beta_{2}b_2(x_{i}) + \dots + \beta_{H}b_H(x_{i}) = \boldsymbol{b}(x_{i})^{\top}\boldsymbol{\beta},
+	(\#eq:1ch11)
+\end{align}  
+where \(\boldsymbol{\beta} = [\beta_{1} \ \beta_{2} \ \dots \ \beta_{H}]^{\top}\) and \(\boldsymbol{b}(x_{i}) = [b_1(x_{i}) \ b_2(x_{i}) \ \dots \ b_H(x_{i})]^{\top}\) are the vector of parameters and the vector of spline basis (B-splines) function values at \(x_{i}\), respectively.  
+
+Note that in this setting, there is only one regressor; however, there are \(H\) location parameters. Given \(N\) observations, the design matrix is:
+\begin{align*}
+	\boldsymbol{W}=\begin{bmatrix}
+		b_1(x_{1}) & b_2(x_{1}) & \dots & b_H(x_{1})\\
+		b_1(x_{2}) & b_2(x_{2}) & \dots & b_H(x_{2})\\
+		\vdots & \vdots & \ddots & \vdots \\
+		b_1(x_{N}) & b_2(x_{N}) & \dots & b_H(x_{N})\\
+	\end{bmatrix}.
+\end{align*} 
+Thus, we have a standard linear model where we can proceed as in Chapter \@ref(Chap3).
+
+Actually, Equation \@ref(eq:1ch11) represents the basis function approach, where \(\boldsymbol{b}(x_{i})\) is a specified set of basis functions, such as B-splines. However, other functions derived from the Fourier transform, Gaussian radial basis functions, wavelets, etc., can also be used. Here, we focus on the most popular case: cubic B-splines. However, the same ideas apply to other basis functions. In particular, cubic B-splines provide the lowest degree necessary to generate sufficiently smooth curves; the first and second derivatives are nonzero, which is not the case with constant and linear splines [@BMCP2021].  
+
+Thus, from Equation \@ref(eq:1ch11), we see that a spline is a linear combination of \(H\) B-splines. The latter are polynomials of a certain degree, meaning that splines are piecewise polynomial functions. Any spline function of order \(n\) can be expressed as a linear combination of B-splines of order \(n\), and B-splines serve as the basis functions for the spline function space.
+
+The cubic B-spline is 
+\begin{align*}
+	b_{h,3}(x_i)=\begin{Bmatrix}
+		\frac{u^3}{6} & x_h \leq x_i < x_{h+1}, & u=(x_i-x_h)/\delta\\
+		\frac{1+3u+3u^2-3u^3}{6} & x_{h+1} \leq x_i < x_{h+2}, & u=(x_i-x_{h+1})/\delta\\
+		\frac{4-6u^2+3u^3}{6} & x_{h+2} \leq x_i < x_{h+3}, & u=(x_i-x_{h+2})/\delta\\
+		\frac{1-3u+3u^2-3u^3}{6} & x_{h+3} \leq x_i < x_{h+4}, & u=(x_i-x_{h+3})/\delta\\
+		0 & \text{otherwise}
+	\end{Bmatrix},
+\end{align*}
+where \(x_{h+k}\) are called the knots, for \(k=0,1,\dots,4\). These are the points in the domain of the function where the pieces of the spline join, satisfying \(x_{h+k} \leq x_{h+k+1}\). The knots control the shape and flexibility of the spline curve; more knots imply greater flexibility but less smoothness. Note that \(\delta\) determines the distance between the knots, and that this expression clearly shows that the cubic B-spline is a piecewise polynomial function.
+
+The following code implements this function in **R** using a delta of 1.5 and 5 knots \( \left\{2, 3.5, 5, 6.5, 8\right\} \). The knots \( \left\{2, 8\right\} \) are called boundary knots, which can be given by the range of $x$, and the knots \( \left\{3.5, 5, 6.5\right\} \) are called internal knots. B-splines with evenly distributed knots are called uniform B-splines. However, this is not always the case.
+
+The figure compares the results of our own function (black circles) with those obtained using the *bs* function from the *splines* package (red line).
+
+```{r}
+SplineOwn <- function(x, knots, delta){
+	if(knots[1] <= x & x < knots[2]){
+		u <- (x - knots[1])/delta
+		b <- u^3/6
+	}else{
+		if(knots[2] <= x & x < knots[3]){
+			u <- (x - knots[2])/delta
+			b <- (1/6)*(1 + 3*u + 3*u^2 - 3*u^3)
+		}else{
+			if(knots[3] <= x & x < knots[4]){
+				u <- (x - knots[3])/delta
+				b <- (1/6)*(4 - 6*u^2 + 3*u^3)
+			}else{
+				if(knots[4] <= x & x < knots[5]){
+					u <- (x - knots[4])/delta
+					b <- (1/6)*(1 - 3*u + 3*u^2 - u^3)
+				}else{
+					b <- 0
+				}
+			}
+		}
+	}
+	return(b)
+}
+delta <- 1.5
+knotsA <- seq(2, 8, delta)
+xA <- seq(2, 8, 0.1)
+Ens <- sapply(xA, function(xi) {SplineOwn(xi, knots = knotsA, delta = delta)})
+plot(xA, Ens, xlab = "x", ylab = "B-spline", main = "Cubic B-spline comparison: own function vs bs")
+require(splines)
+BSfunc <- bs(xA, knots = knotsA, degree = 3)
+lines(xA, BSfunc[,4], col = "red")
+```
+
+The figure shows a particular cubic B-spline, but \( f(x_i) \) in Equation \@ref(eq:1ch11) involves \( H \) splines over the range of potential values of \( x \), as we need to evaluate the splines centered at different knots. Here, we should clarify that to avoid issues with the use of splines at boundary regions, it is essential to artificially increase the number of boundary knots by repeating these knots as many times as the degree of the polynomial. For instance, in our example, the final set of knots is \( \left\{2, 2, 2, 2, 3.5, 5, 6.5, 8, 8, 8, 8\right\} \). 
+The set of B-splines can be constructed using the Cox–de Boor recursion formula. The starting point is the B-spline of degree 0,
+\begin{align*}
+		b_{h,0}(x_i)=\begin{Bmatrix}
+		1 & x_h \leq x_i < x_{h+1}, & u=(x_i-x_h)/\delta\\
+		0 & \text{otherwise}
+	\end{Bmatrix},
+\end{align*}
+and then, the other B-splines are defined by the recursion
+\begin{align}
+	b_{h,p}(x_i)=\frac{x_i-x_{h}}{x_{h+p}-x_h}b_{h,p-1}(x_i)+\frac{x_{h+p+1}-x_i}{x_{h+p+1}-x_{h+1}}b_{h+1,p-1}(x_i).
+\end{align}
+Note that B-splines are defined by their degree and their knots.
+
+The following code demonstrates how to perform this recursion using the same settings as in the previous code and compares the results with the *bs* function from the *splines* package. As shown in the figure, we obtain the same results. We will continue using the *bs* function from the *splines* package for convenience in the process, but it seems that we have gained some understanding of the underlying process.
+
+```{r}
+cubic_bspline <- function(x, knots, degree = 3) {
+	extended_knots <- c(rep(knots[1], degree), knots, rep(knots[length(knots)], degree))
+	num_basis <- length(knots) + degree - 1  
+	basis_matrix <- matrix(0, nrow = length(x), ncol = num_basis)
+	# Function to compute B-spline basis recursively
+	b_spline_basis <- function(x, degree, i, knots) {
+		if (degree == 0) {
+			return(ifelse(x >= knots[i] & x < knots[i + 1], 1, 0))
+		} else {
+			left_num <- (x - knots[i])
+			left_den <- (knots[i + degree] - knots[i])
+			left <- ifelse(left_den != 0, (left_num / left_den) * b_spline_basis(x, degree - 1, i, knots), 0)
+			
+			right_num <- (knots[i + degree + 1] - x)
+			right_den <- (knots[i + degree + 1] - knots[i + 1])
+			right <- ifelse(right_den != 0, (right_num / right_den) * b_spline_basis(x, degree - 1, i + 1, knots), 0)
+			
+			return(left + right)
+		}
+	}
+	
+	for (i in 1:num_basis) {
+		basis_matrix[, i] <- sapply(x, function(xi) b_spline_basis(xi, degree, i, extended_knots))
+	}
+	if(x[length(x)] == knots[length(knots)]){
+		basis_matrix[length(x), num_basis] <- 1
+	}
+	return(basis_matrix)
+}
+delta <- 1.5
+knotsA <- seq(2, 8, delta)
+xA <- seq(2, 8, 0.1)
+basis_matrix <- cubic_bspline(xA, knots = knotsA, degree = 3)
+library(splines)
+bs_matrix <- bs(xA, knots = knotsA[-c(1, length(knotsA))], degree = 3, intercept = TRUE, Boundary.knots = range(knotsA))
+bs_matrix_matrix <- as.matrix(bs_matrix)
+par(mfrow = c(1,2))
+matplot(xA, basis_matrix, type = "l", lty = 1, col = rainbow(ncol(basis_matrix)), ylab = "B-spline Basis", xlab = "x", main = "Own function")
+matplot(xA, bs_matrix_matrix, type = "l", lty = 1, col = rainbow(ncol(basis_matrix)), ylab = "B-spline Basis", xlab = "x", main = "bs function")
+```
+
+The idea in splines is to calculate the linear combination of the $H$ B-splines, as those shown in the figure, that bets fit the dependent variable. Let's perform a simulation exercise to fix ideas.
+
+Splines can also be extended to non-linear models based on data augmentation, such as the probit and tobit models. Again, the basic idea is to incorporate splines into the implicit latent variables. @koop2003bayesian presents these extensions.
+
+**Simulation exercise: Splines**
+
+Let's assume that the data generating process is
+\begin{align*}
+	y_i & = 0.4 + 0.25\sin(8x_i - 5) + 0.4\exp(-16(4x_i - 2.5)^2) + \mu_i,
+\end{align*}
+where $\mu_i \sim N(0,0.15^2)$, and $x_i$ is a sequence in $(0,1)$, with 100 random draws of the pairs $(x_i, y_i)$. In addition, we choose the knots $\left\{0, 0.25, 0.5, 0.75, 1\right\}$. We then calculate the cubic B-splines; however, we should take into account that the last two B-spline columns generate multicollinearity issues. Therefore, we exclude them when generating random realizations of the splines by drawing the coefficients from $N(0, 0.35^2)$. The intercept is fixed to maintain the scale in the figure, where we observe the data points, $f(x)$, and the different splines associated with various random realizations of the coefficients. The following code demonstrates how to perform this simulation.
+
+```{r}
+########### Simulation: B-splines ###########
+rm(list = ls())
+library(ggplot2); library(splines)
+set.seed(010101)
+x <- seq(0, 1, 0.001)
+ysignal <- 0.4 + 0.25*sin(8*x - 5) + 0.4*exp(-16*(4*x - 2.5)^2)
+sig <- 0.15
+e <- rnorm(length(ysignal), 0, sd = sig)
+y <- ysignal + e
+N <- 100
+ids <- sort(sample(1:length(ysignal), N))
+xobs <- x[ids]
+yobs <- y[ids]
+knots <- seq(0, 1, 0.25)
+BS <- bs(xobs, knots = knots, degree = 3, Boundary.knots = range(x), intercept = FALSE)
+# Splines
+Spline1 <- 0.56 + BS[,-c(7:8)] %*% rnorm(6, 0, 0.35)
+Spline2 <- 0.56 + BS[,-c(7:8)] %*% rnorm(6, 0, 0.35)
+Spline3 <- 0.56 + BS[,-c(7:8)] %*% rnorm(6, 0, 0.35)
+Spline4 <- 0.56 + BS[,-c(7:8)] %*% rnorm(6, 0, 0.35)
+# Create data frames for the true signal, observed data, and Splines
+data_true_signal <- data.frame(x = x, y = ysignal, Type = "True Signal")
+data_obs <- data.frame(x = xobs, y = yobs, Type = "Observed Data")
+# Create separate data frames for each Spline
+data_Spline1 <- data.frame(x = xobs, y = Spline1, Type = "Spline 1")
+data_Spline2 <- data.frame(x = xobs, y = Spline2, Type = "Spline 2")
+data_Spline3 <- data.frame(x = xobs, y = Spline3, Type = "Spline 3")
+data_Spline4 <- data.frame(x = xobs, y = Spline4, Type = "Spline 4")
+data <- rbind(data_true_signal, data_obs, data_Spline1, data_Spline2, data_Spline3, data_Spline4)
+ggplot(data, aes(x = x, y = y)) + geom_line(data = subset(data, Type == "True Signal"), aes(color = "True Signal"), linewidth = 1) + geom_point(data = subset(data, Type == "Observed Data"), aes(color = "Observed Data"), shape = 16) + geom_line(data = subset(data, Type == "Spline 1"), aes(color = "Splines"), linewidth = 1, linetype = "solid") + geom_line(data = subset(data, Type == "Spline 2"), aes(color = "Splines"), linewidth = 1, linetype = "solid") + geom_line(data = subset(data, Type == "Spline 3"), aes(color = "Splines"), linewidth = 1, linetype = "solid") + geom_line(data = subset(data, Type == "Spline 4"), aes(color = "Splines"), linewidth = 1, linetype = "solid") + scale_color_manual(values = c("True Signal" = "black", "Observed Data" = "red", "Splines" = "blue")) + labs(y = "y", color = "Legend") + theme_minimal() +
+theme(legend.position = "top")
+```
+
+We can also use this simulation to examine the effect of changing the knots. The following code performs the fit using least squares, which is equivalent to using a non-informative prior in a Bayesian linear regression framework.
+
+The figure illustrates the fit of different splines based on varying numbers of knots. We observe that increasing the number of knots enhances the flexibility of the spline, providing better local control. However, too many knots can result in a wiggly, overly complex fit that captures noise rather than the true underlying trend and may also increase multicollinearity. Therefore, selecting an appropriate number of knots is a crucial aspect of spline modeling. To address this issue, we can apply the strategies discussed in Chapter \@ref(Chap10), and the strategies that will be discussed in the section of regularization in Chapter \@ref(Chap12). 
+
+```{r}
+rm(list = ls())
+library(ggplot2); library(splines)
+# Data generation
+set.seed(10101)
+x <- seq(0, 1, 0.001)
+ysignal <- 0.4 + 0.25*sin(8*x - 5) + 0.4*exp(-16*(4*x - 2.5)^2)
+sig <- 0.15; e <- rnorm(length(ysignal), 0, sd = sig)
+y <- ysignal + e; N <- 100
+ids <- sort(sample(1:length(ysignal), N))
+xobs <- x[ids]
+yobs <- y[ids]
+# Generate Fits with different knot placements
+knots_list <- list(seq(0, 1, 0.33), seq(0, 1, 0.25), seq(0, 1, 0.2), seq(0, 1, 0.1))
+Fits <- list()
+for (i in 1:4) {
+	BS <- bs(xobs, knots = knots_list[[i]], degree = 3, Boundary.knots = range(x), intercept = FALSE)
+	fm <- lm(yobs ~ BS)
+	Fits[[i]] <- predict(fm)
+}
+# Create data frames
+data_true_signal <- data.frame(x = x, y = ysignal, Type = "True Signal")
+data_obs <- data.frame(x = xobs, y = yobs, Type = "Observed Data")
+data_preds <- data.frame(
+x = rep(xobs, 4),
+y = c(Fits[[1]], Fits[[2]], Fits[[3]], Fits[[4]]),
+Type = rep(c("Fit 1", "Fit 2", "Fit 3", "Fit 4"), each = length(xobs))
+)
+data <- rbind(data_true_signal, data_obs, data_preds)
+
+# Create ggplot
+ggplot(data, aes(x = x, y = y, color = Type)) + geom_line(data = subset(data, Type == "True Signal"), linewidth = 1) + geom_point(data = subset(data, Type == "Observed Data"), shape = 16, size = 2) + geom_line(data = subset(data, grepl("Fit", Type)), linewidth = 1, linetype = "solid") + scale_color_manual(values = c("True Signal" = "black", "Observed Data" = "red", "Fit 1" = "blue", "Fit 2" = "green", "Fit 3" = "orange", "Fit 4" = "purple")) + labs(y = "y", color = "Legend") +
+theme_minimal() + theme(legend.position = "top")
+```
+
+Note that splines use local information to perform the fit. This implies the *curse of dimensionality* issue, where increasing the number of variables leads to more dispersed regions in the regressor space. In other words, the observations become increasingly further apart as we have more regressors. As a result, splines become less reliable in high-dimensional spaces.
+
+A strategy to overcome the curse of dimensionality is to specify the *partial linear model*: 
+\begin{align}
+	y_i & = \boldsymbol{z}_i^{\top}\boldsymbol{\gamma} + f(x_i) + \mu_i.
+	(\#eq:3ch11) 
+\end{align} 
+In this specification, some regressors enter in a linear way, while potentially the most relevant regressor — the one under primary investigation — enters in a non-parametric way. Note that we only need to increase the dimension of the matrix $\boldsymbol{W}$ by adding the columns from $\boldsymbol{z}$, and proceed as we did previously.
+
+**Example: Consumption of marijuana in Colombia continues**
+
+Let's continue using the dataset *MarijuanaColombia.csv* to perform a partial linear model as in Equation \@ref(eq:3ch11), where $y_i$ is the (log) marijuana monthly consumption, $\boldsymbol{z}_i$ represents the presence of a drug dealer in the neighborhood (*Dealer*), gender (*Female*), indicators of good physical and mental health (*PhysicalHealthGood* and *MentalHealthGood*), years of education (*YearsEducation*), and the (log) prices of marijuana, cocaine, and crack by individual.
+
+We set the knots as the percentiles $\left\{0,0.05,\dots,0.95,1\right\}$ of age, use cubic B-splines, non-informative conjugate priors in the linear regression model, 5,000 MCMC iterations, and 5,000 burn-in iterations.
+
+```{r}
+rm(list = ls()); set.seed(010101)
+library(splines); library(ggplot2)
+Data <- read.csv("https://raw.githubusercontent.com/BEsmarter-consultancy/BSTApp/refs/heads/master/DataApp/MarijuanaColombia.csv")
+attach(Data)
+IdOrd <- order(Age) 
+y <- LogMarijuana[IdOrd]
+Z <- as.matrix(cbind(Data[IdOrd,-c(1, 6, 7)]))
+x <- Age[IdOrd] 
+knots <- quantile(x, seq(0, 1, 0.05))
+BS <- bs(x, knots = knots, degree = 3, Boundary.knots = range(x), intercept = FALSE)
+matplot(x, BS, type = "l", lty = 1, col = rainbow(ncol(BS)))
+X <- cbind(1, BS[,1:22], Z) # Get B-splines without multicollinearity issues
+k <- dim(X)[2]; N <- dim(X)[1]
+# Hyperparameters
+d0 <- 0.001; a0 <- 0.001
+b0 <- rep(0, k); c0 <- 1000; B0 <- c0*diag(k); B0i <- solve(B0)
+# MCMC parameters
+mcmc <- 5000; burnin <- 5000
+tot <- mcmc + burnin; thin <- 1
+posterior  <- MCMCpack::MCMCregress(y~X-1, b0=b0, B0 = B0i, c0 = a0, d0 = d0, burnin = burnin, mcmc = mcmc, thin = thin)
+summary(coda::mcmc(posterior))
+# Predict values with 95% credible intervals
+xfit <- seq(min(x), max(x), 0.2)
+H <- length(xfit)
+i <- sample(1:N, 1)
+idfit <- sample(1:N, H)
+BSfit <- bs(xfit, knots = knots, degree = 3, Boundary.knots = range(x), intercept = FALSE)
+Xfit <- cbind(1, BSfit[,1:22], Z[rep(i, H),]) # Relevant regressors, PIP > 0.5
+Fit <- matrix(NA, mcmc, H)
+# posterior[posterior > 0] <- 0
+for(s in 1:mcmc){
+	Fit[s,] <- Xfit%*%posterior[s,1:31]
+}
+# Create a data frame for ggplot
+plot_data <- data.frame(x = xfit, fit = colMeans(Fit), liminf = apply(Fit, 2, quantile, 0.025), limsup = apply(Fit, 2, quantile, 0.975))
+ggplot() + geom_line(data = plot_data, aes(x, fit), color = "blue", linewidth = 1) + geom_ribbon(data = plot_data, aes(x, ymin = liminf, ymax = limsup), fill = "blue", alpha = 0.2) + labs(title = "B-Spline Regression with 95% Confidence Interval", x = "Age", y = "Log Marijuana") + theme_minimal()
+```
+
+The previous code illustrates the procedure. The posterior 95\% credible intervals indicate that marijuana is an inelastic good, there is substitution between marijuana and crack, more educated female individuals consume less, and the presence of a drug dealer in the neighborhood increases consumption.
+
+The figure shows the fitted spline, specifically the mean (blue line) and the 95\% credible intervals (shaded blue). Notice that there is a lot of wiggliness due to the use of many knots, suggesting that this relationship could be expressed in a more parsimonious way. In Exercise 7, we ask to use variable selection methods, such as the BIC approximation presented in Chapter \@ref(Chap10), to perform regressor selection, particularly for the splines.
+
+In general, the selection of $H$ is a problem of variable selection (regressor uncertainty) and can be handled using other approaches, such as those discussed in the regularization section of the following chapter.
+
+## Summary {#sec11_3}
+
+In this chapter, we introduce the most common Bayesian methods for inference in non-parametric and semi-parametric models. Finite Gaussian and Dirichlet process mixtures, as well as splines, are highly flexible methods; however, they also have limitations, such as the label-switching issue in mixtures and potential multicollinearity in splines. Additionally, it is wise to elicit informative priors and conduct sensitivity analyses to assess the robustness of the results in real-world applications.
+
+## Exercises {#sec11_4}
+
+1. Simulate a semi-parametric regression where  
+\begin{align*}
+	y_i &= 0.5x_{i1} - 1.2x_{i2} + \mu_i, \\
+	p(\mu_i) &= 
+	0.3 \phi(\mu_i \mid -0.5,0.5^2) + 0.7 \phi(\mu_i \mid 1,0.8^2).		
+\end{align*}
+
+  Assume that $x_{i1}$ and $x_{i2}$ follow a standard normal distribution and that the sample size is 1,000. Perform inference in this model assuming that the number of components is unknown. Start with $H=5$ and use non-informative priors, setting $\alpha_{h0}=\delta_{h0}=0.01$, $\boldsymbol{\beta}_0=\boldsymbol{0}_2$, $\boldsymbol{B}_0=\boldsymbol{I}_2$, $\mu_{h0}=0$, $\sigma^2_{\mu 0}=10$, and $\boldsymbol{\alpha}_0=[1/H \ \dots \ 1/H]^{\top}$. Use 6,000 MCMC iterations, a burn-in period of 4,000, and a thinning parameter of 2. Compare the population parameters with the posterior estimates and plot the population density along with the posterior density estimate of $\boldsymbol{\mu}$ (the mean, and the 95\% credible interval).
+
+2. **Example: Consumption of marijuana in Colombia continues I**
+	
+  Use the dataset *MarijuanaColombia.csv* from our GitHub repository to perform inference on the demand for marijuana in Colombia. This dataset contains information on the (log) monthly demand in 2019 from the National Survey of the Consumption of Psychoactive Substances. It includes variables such as the presence of a drug dealer in the neighborhood (*Dealer*), gender (*Female*), indicators of good physical and mental health (*PhysicalHealthGood* and *MentalHealthGood*), age (*Age* and *Age2*), years of schooling (*YearsEducation*), and (log) prices of marijuana, cocaine, and crack by individual (*LogPriceMarijuana*, *LogPriceCocaine*, and *LogPriceCrack*). The sample size is 1,156.
+  	
+  Estimate a finite Gaussian mixture regression using non-informative priors, that is, $\alpha_{0}=\delta_{0}=0.01$, $\boldsymbol{\beta}_{0}=\boldsymbol{0}_K$, $\boldsymbol{B}_{0}=\boldsymbol{I}_K$, and and $\boldsymbol{\alpha}_0=[1/H \ \dots \ 1/H]^{\top}$, $K$ is the number of regressors, 11 including the intercept. The number of MCMC iterations is 5,000, the burn-in is 1,000, and the thinning parameter is 2. Start with five potential clusters. Obtain the posterior distribution of the own-price elasticity of marijuana and the cross-price elasticities of marijuana demand with respect to the prices of cocaine and crack.
+	
+3. Get the posterior sampler in the semi-parametric setting using a Dirichlet process mixture:
+\begin{align*}
+	y_i&=\boldsymbol{x}_i^{\top}\boldsymbol{\beta}+e_i\\
+	e_i\mid \mu_i,\sigma_i^2 &\stackrel{iid}{\sim} N(\mu_i,\sigma_i^2),
+\end{align*}
+
+  Do not include the intercept in $\boldsymbol{\beta}$ to get flexibility in the distribution of the stochastic errors.
+  	
+  Let's assume $\boldsymbol{\beta}\sim N(\boldsymbol{\beta}_0,\boldsymbol{B}_0)$, $\sigma_i^2\sim IG(\alpha_0/2,\delta_0/2)$, $\mu_i\sim N(\mu_0,\sigma_i^2/\beta_0)$, $\alpha\sim G(a,b)$ such that introducing the latent variable $\xi|\alpha,N\sim Be(\alpha+1,N)$, allows to easily sample the posterior draws of  $\alpha|\xi,H,\pi_{\xi}\sim\pi_{\xi}{G}(a+H,b-log(\xi))+(1-\pi_{\xi}){G}(a+H-1,b-log(\xi))$, where $\frac{\pi_{\xi}}{1-\pi_{\xi}}=\frac{a+H-1}{N(b-log(\xi))}$, $H$ is the number of atoms (mixture components). 
+	
+4. **Example: Exercise 1 and 3 continue**
+	
+  Perform inference in the simulation of the semi-parametric model of Exercise 1 using the sampler of Exercise 3. Use non-informative priors, setting $\alpha_{0}=\delta_{0}=0.01$, $\boldsymbol{\beta}_{0}=\boldsymbol{0}_2$, $\boldsymbol{B}_{0}=\boldsymbol{I}_2$, and $a=b=0.1$. The number of MCMC iterations is 5,000, the burn-in is 1,000, and the thinning parameter is 2. 
+
+5. **Example: Simulation exercise continues I**
+	
+  Fix the label-switching problem of the simulation exercise of the DPM using *random permutation of latent classes*.
+  
+6. **Example: Simulation exercise continues II**
+
+Obtain the density estimate of $y$ in the simulation exercise of the DPM, evaluated at $x=0$.
+	
+7. **Example: Consumption of marijuana in Colombia continues II**
+	
+  Perform the application of marijuana consumption with the following specification:
+  \begin{align*}
+  	y_i & = \boldsymbol{z}_i^{\top} \boldsymbol{\gamma} + f(Age_{i}) + \mu_i,
+  \end{align*}
+  
+  where $y_i$ is the (log) marijuana monthly consumption, $\boldsymbol{z}_i$ represents the presence of a drug dealer in the neighborhood (*Dealer*), gender (*Female*), indicators of good physical and mental health (*PhysicalHealthGood* and *MentalHealthGood*), years of education (*YearsEducation*), and the (log) prices of marijuana, cocaine, and crack by individual.
+  	
+  Initially, set the knots as the percentiles $\left\{0,0.05,\dots,0.95,1\right\}$ of age and use cubic B-splines. Then, apply the BIC approximation to perform variable selection in this model with non-informative conjugate priors, 5,000 MCMC iterations, and 5,000 burn-in iterations.
+  	
+  Do you think that using a linear regression with a second-degree polynomial in age provides a good approximation to the relationship found using splines in this application?

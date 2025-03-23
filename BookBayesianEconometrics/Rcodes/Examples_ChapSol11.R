@@ -628,6 +628,190 @@ ggarrange(dens1, dens2, dens3,
           common.legend = TRUE
 )
 
+############### Dirichlet process: Density of y at x = x0 #######################
+rm(list = ls())
+set.seed(010101)
+# Simulate data from a 2-component mixture model
+N <- 1000; x <- rnorm(N); z <- rbinom(N, 1, 0.5)
+y <- ifelse(z == 0, rnorm(N, 2 + 1.5*x, 1), rnorm(N, -1 + 0.5*x, 0.8))
+plot(density(y))
+X <- cbind(1, x)
+k <- 2
+data <- data.frame(y, x); Reg <- lm(y ~ x)
+SumReg <- summary(Reg)
+# Hyperparameters
+a0 <- 0.001; d0 <- 0.001
+b0 <- rep(0, k); B0 <- diag(k)
+B0i <- solve(B0)
+a <- 0.1; b <- 0.1
+# MCMC parameters
+mcmc <- 5000; burnin <- 1000
+tot <- mcmc + burnin; thin <- 2
+# Gibbs sampling functions
+PostSig2 <- function(Xh, yh){
+  Nh <- length(yh)
+  yh <- matrix(yh, Nh, 1)
+  if(Nh == 1){
+    Xh <- matrix(Xh, k, 1)
+    Bn <- solve(Xh%*%t(Xh) + B0i)
+    bn <- Bn%*%(B0i%*%b0 + Xh%*%yh)
+  }else{
+    Xh <- matrix(Xh, Nh, k)
+    Bn <- solve(t(Xh)%*%Xh + B0i)
+    bn <- Bn%*%(B0i%*%b0 + t(Xh)%*%yh)
+  }
+  Bni <- solve(Bn)
+  an <- a0 + Nh
+  dn <- d0 + t(yh)%*%yh + t(b0)%*%B0i%*%b0 - t(bn)%*%Bni%*%bn 
+  sig2 <- invgamma::rinvgamma(1, shape = an/2, rate = dn/2)
+  return(sig2)
+}
+PostBeta <- function(sig2h, Xh, yh){
+  Nh <- length(yh)
+  yh <- matrix(yh, Nh, 1)
+  if(Nh == 1){
+    Xh <- matrix(Xh, k, 1)
+    Bn <- solve(Xh%*%t(Xh) + B0i)
+    bn <- Bn%*%(B0i%*%b0 + Xh%*%yh)
+  }else{
+    Xh <- matrix(Xh, Nh, k)
+    Bn <- solve(t(Xh)%*%Xh + B0i)
+    bn <- Bn%*%(B0i%*%b0 + t(Xh)%*%yh)
+  }
+  Beta <- MASS::mvrnorm(1, bn, sig2h*Bn)
+  return(Beta)
+}
+PostAlpha <- function(s, alpha){
+  H <- length(unique(s))
+  psi <- rbeta(1, alpha + 1, N)
+  pi.ratio <- (a + H - 1) / (N * (b - log(psi)))
+  pi <- pi.ratio / (1 + pi.ratio)
+  components <- sample(1:2, prob = c(pi, (1 - pi)), size = 1)
+  cs <- c(a + H, a + H - 1)
+  ds <- b - log(psi)
+  alpha <- rgamma(1, cs[components], ds)
+  return(alpha)
+}
+LogMarLikLM <- function(xh, yh){
+  xh <- matrix(xh, k, 1)
+  Bn <- solve(xh%*%t(xh) + B0i)
+  Bni <- solve(Bn)
+  bn <- Bn%*%(B0i%*%b0 + xh%*%yh)
+  an <- a0 + 1
+  dn <- d0 + yh^2 + t(b0)%*%B0i%*%b0 - t(bn)%*%Bni%*%bn 
+  # Log marginal likelihood
+  logpy <- (1/2)*log(1/pi)+(a0/2)*log(d0)-(an/2)*log(dn) + 0.5*log(det(Bn)/det(B0)) + lgamma(an/2)-lgamma(a0/2)
+  return(logpy)
+}
+PostS <- function(BETA, SIGMA, Alpha, s, i){
+  Nl <- table(s[-i]); H <- length(Nl)
+  qh <- sapply(1:H, function(h){(Nl[h]/(N+Alpha-1))*dnorm(y[i], mean = t(X[i,])%*%BETA[,h], sd = SIGMA[h])})
+  q0 <- (Alpha/(N+Alpha-1))*exp(LogMarLikLM(xh = X[i,], yh = y[i]))
+  qh <- c(q0, qh)
+  Clust <- as.numeric(names(Nl))
+  si <- sample(c(0, Clust), 1, prob = qh)
+  if(si == 0){
+    si <- Clust[H] + 1
+    Sig2New <- PostSig2(Xh = X[i,], yh = y[i])
+    SIGMA <- c(SIGMA, Sig2New^0.5)
+    BetaNew <- PostBeta(sig2h = Sig2New, Xh = X[i,], yh = y[i])
+    BETA <- cbind(BETA, BetaNew)
+  }else{si == si
+  }
+  return(list(si = si, BETA = BETA, SIGMA = SIGMA))
+}
+PostBetas <- list(); PostSigma <- list()
+Posts <- matrix(0, tot, N); PostAlphas <- rep(0, tot)
+S <- sample(1:3, N, replace = T, prob = c(0.5, 0.3, 0.2))
+BETA <- cbind(Reg$coefficients, Reg$coefficients, Reg$coefficients)
+SIGMA <- rep(SumReg$sigma, 3)
+Alpha <- rgamma(1, a, b)
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+  for(i in 1:N){
+    Rests <- PostS(BETA = BETA, SIGMA = SIGMA, Alpha = Alpha, s = S, i = i)
+    S[i] <- Rests$si
+    BETA <- Rests$BETA; SIGMA <- Rests$SIGMA
+  }
+  sFreq <- table(S)
+  lt <- 1
+  for(li in as.numeric(names(sFreq))){
+    Index <- which(S == li)
+    if(li == lt){S[Index] <- li
+    } else {S[Index] <- lt
+    }
+    lt <- lt + 1
+  }
+  Alpha <- PostAlpha(s = S, alpha = Alpha)
+  Nl <- table(S); H <- length(Nl)
+  SIGMA <- rep(NA, H)
+  BETA <- matrix(NA, k, H)
+  l <- 1
+  for(h in unique(S)){
+    Idh <- which(S == h)
+    SIGMA[l] <- (PostSig2(Xh = X[Idh, ], yh = y[Idh]))^0.5
+    BETA[,l] <- PostBeta(sig2h = SIGMA[l]^2, Xh = X[Idh, ], yh = y[Idh])
+    l <- l + 1
+  }
+  PostBetas[[s]] <- BETA
+  PostSigma[[s]] <- SIGMA
+  Posts[s, ] <- S
+  PostAlphas[s] <- Alpha
+  setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+keep <- seq((burnin+1), tot, thin)
+PosteriorS<- Posts[keep,]
+Clusters <- sapply(1:length(keep), function(i){length(table(PosteriorS[i,]))})
+table(Clusters)
+Clusters <- sapply(1:length(keep), function(i){table(PosteriorS[i,])})
+PosteriorBeta <- PostBetas[keep]
+PosteriorSigma <- PostSigma[keep]
+PosteriorAlpha <- PostAlphas[keep]
+
+DensityFunc <- function(yobs = 0, xobs = c(1, 0), s){
+  dens <- NULL
+  for(j in 1:length(Clusters[[s]])){
+    densj <- Clusters[[s]][j]/(PosteriorAlpha[s] + N + 1) * dnorm(yobs, t(PosteriorBeta[[s]][,j])%*%xobs, PosteriorSigma[[s]][j]) 
+    dens <- c(dens, densj)
+  }
+  dens <- c(dens, PosteriorAlpha[s]/(PosteriorAlpha[s] + N + 1)*exp(LogMarLikLM(yh = yobs, xh = xobs)))
+  return(sum(dens))
+}
+xobs <- c(1, 0)
+ys <- seq(-3, 5, 0.05)
+pdfy <- 0.5*dnorm(ys, 2 + 1.5*xobs[2], 1) + 0.5*dnorm(ys, -1 + 0.5*xobs[2], 0.8)
+plot(ys, pdfy, type = "l")
+
+DensEval <- matrix(NA, length(keep), length(ys))
+for(r in 1:length(ys)){
+  for(l in 1:length(keep)){
+    DensEval[l, r] <- DensityFunc(yobs = ys[r], xobs = xobs, s = l)
+  }
+}
+
+library(dplyr)
+library(ggplot2)
+require(latex2exp)
+DataDens <- tibble(t = ys,
+                   Pop = pdfy,
+                   lower = apply(DensEval, 2, quantile, probs = 0.025),
+                   upper = apply(DensEval, 2, quantile, probs = 0.975),
+                   meanT = colMeans(DensEval))
+plot_filtering_estimates <- function(df) {
+  p <- ggplot(data = df, aes(x = t)) +
+    geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1, fill = "lightblue") +
+    geom_line(aes(y = Pop, color = "True Value"), linewidth = 0.5) +
+    geom_line(aes(y = meanT, color = "Estimate"), linewidth = 0.5) +
+    scale_color_manual(values = c("True Value" = "black", "Estimate" = "blue")) +
+    xlab(TeX("y")) + 
+    ylab("Density") +
+    labs(title = "Density: Dependent variable", color = "") + # Label for legend
+    theme_minimal()
+  print(p)
+}
+plot_filtering_estimates(DataDens)
+
 ########### Splines: Application (Marijuana consumption in Colombia) ###############
 rm(list = ls()); 
 library(splines); library(ggplot2)
