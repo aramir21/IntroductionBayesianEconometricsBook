@@ -55,7 +55,122 @@ New developments in ABC have focused on using empirical measures calculated from
 
 \textbf{Example: g-and-k distribution for financial returns} 
 
-\textit{EasyABC} package in \textbf{R}.
+The g-and-k distribution is a highly flexible distribution capable of capturing skewness and heavy tails through its parameters. This makes it particularly useful for modeling real-world data that deviate from normality, especially in fields like finance, where outliers are common. However, this distribution lacks a closed-form expression for its density function.
+
+The g-and-k distribution is defined by its quantile function \cite{drovandi2011likelihood}. Specifically, it is specified through its inverse cumulative distribution function,
+
+\[
+Q(p\mid{\theta}) = F^{-1}(p\mid{\theta}),
+\]
+
+where \( F = P(U \leq u) \), and \( Q \) represents the \( p \)-quantile \cite{rayner2002numerical}. The quantile function of the g-and-k distribution is given by
+
+\[
+Q^{gk}\left\{z(p)\mid a, b, c, g, k\right\} = a + b\left[1 + c \frac{1 - \exp\left\{-gz(p)\right\}}{1 + \exp\left\{-gz(p)\right\}}\right] \left\{1 + z(p)^2\right\}^k z(p),
+\]
+
+where \( z(p) \) is the standard normal quantile function, and \( c = 0.8 \) is a commonly suggested value.
+
+\cite{drovandi2011likelihood} propose a moving average of order one using a g-and-k distribution to model exchange rate log returns. In particular,  
+\[
+z_t = \epsilon_t + \theta_1\epsilon_{t-1}, \quad t=1,\dots,524,
+\]  
+where \(\epsilon_t \sim N(0,1)\).  
+
+The values of \(z_t\) are then divided by \((1+\theta_1^2)^{1/2}\) to ensure that they marginally follow a standard normal distribution. Thus, simulating g-and-k data requires only substituting \(z_t\) into the quantile function.  
+
+We model exchange rate log daily returns from USD/EUR one year before and after the WHO declared the COVID-19 pandemic on 11 March 2020. We use twelve summary statistics: the seven octiles, the interquartile range, robust measures of skewness and kurtosis, and the autocorrelations of order one and two (see \cite{drovandi2011likelihood} and code below). We adopt the prior distributions proposed by \cite{ramirez2024testing}, 
+\begin{align*}
+	\theta_1\sim U(-1,1), \ a\sim U(0,5) \ b\sim U(0,5)\\
+	g\sim U(-5,5), \ k\sim U(-0.5, 5).
+\end{align*}
+
+We use the \textit{EasyABC} package in \textbf{R} to implement the ABC accept/reject (ABC-AR) algorithm using 100,000 prior draws with an acceptance rate of 1\%. We also apply the ABC Markov chain Monte Carlo (ABC-MCMC) method \cite{marjoram2003markov} and the sequential Monte Carlo ABC (ABC-SMC) method \cite{lenormand2013adaptive} to compare the results across different ABC algorithms. For these methods, we generate 10,000 samples and set the proportion of particles rejected at each step to 50\%, with a stopping criterion of 5\% in the latter algorithm.
+
+In Exercise 1, we ask to program the ABC accept/reject algorithm (Algorithm \ref{ABC0}) from scratch and compare the results with those obtained using the ABC-AR implementation in the \textit{EasyABC} package.
+
+The following code shows the results, and Figure \ref{figABCexc} shows a comparison of the posterior distributions of $\theta_1$, $g$ and $k$ using the three methods.
+
+ABC-AR, ABC-MCMC took 13.7, 2.7,  mins, 127.8 hours respectively.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Exchange rate log returns: Approximate Bayesian computation}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+######### ABC Exchange rate og returns: USD/EURO
+rm(list = ls()); set.seed(010101)
+library(EasyABC)
+dfExcRate <- read.csv(file = "https://raw.githubusercontent.com/BEsmarter-consultancy/BSTApp/refs/heads/master/DataApp/ExchangeRate.csv", sep = ",", header = T)
+attach(dfExcRate); n <- length(USDEUR)
+# Summary statistics
+SumSt <- function(y) {
+	Oct <- quantile(y, c(0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875))
+	eta1 <- Oct[6] - Oct[2]
+	eta2 <- (Oct[6] + Oct[2] - 2 * Oct[4]) / eta1
+	eta3 <- (Oct[7] - Oct[5] + Oct[3] - Oct[1]) / eta1
+	autocor <- acf(y, lag = 2, plot = FALSE)
+	autocor[["acf"]][2:3]
+	Etay <- c(Oct, eta1, eta2, eta3, autocor[["acf"]][2:3])
+	return(Etay)
+}
+# g-and-k distribution
+RGKnewSum <- function(par) {
+	z <- NULL
+	theta <- par[1]; a <- par[2]; b <- par[3]; g <- par[4]; k <- par[5]
+	e <- rnorm(n + 1)
+	for(t in 2:(n + 1)){
+		zt <- e[t] + theta * e[t-1]
+		z <- c(z, zt)
+	}
+	zs <- z / (1 + theta^2)^0.5
+	x <- a + b * (1 + 0.8 * (1 - exp(-g * zs)) / (1 + exp(-g * zs))) * (1 + zs^2)^k * zs
+	Etaz <- SumSt(x)
+	return(Etaz)
+}
+toy_prior <- list(c("unif",-1,1), c("unif",0,5), c("unif", 0,5), c("unif", -5,5), c("unif", -0.5,5))
+sum_stat_obs <- SumSt(USDEUR)
+tick <- Sys.time()
+ABC_AR <- ABC_rejection(model=RGKnewSum, prior=toy_prior, summary_stat_target = sum_stat_obs, nb_simul=100000, tol = 0.01,
+progress_bar = TRUE)
+tock <- Sys.time()
+tock - tick
+PostABCAR <- coda::mcmc(ABC_AR$param)
+summary(PostABCAR)
+tick <- Sys.time()
+ABC_MCMC <- ABC_mcmc(method="Marjoram", model=RGKnewSum, prior=toy_prior, summary_stat_target=sum_stat_obs, n_rec = 10000, progress_bar = TRUE)
+tock <- Sys.time()
+tock - tick
+PostABCMCMC <- coda::mcmc(ABC_MCMC[["param"]][order(ABC_MCMC[["dist"]])[1:1000],])
+summary(PostABCMCMC)
+tick <- Sys.time()
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Exchange rate log returns: Approximate Bayesian computation}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+ABC_SMC<-ABC_sequential(method="Lenormand", model=RGKnewSum, prior=toy_prior, summary_stat_target=sum_stat_obs, nb_simul = 10000, alpha = 0.5, p_acc_min = 0.05,
+progress_bar = TRUE)
+tock <- Sys.time()
+tock - tick
+PostABCSMC <- coda::mcmc(ABC_SMC[["param"]])
+		\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter15/figures/ABCexcrate.png}
+	\caption[List of figure caption goes here]{Approximate Bayesian computation: Exchange rate log returns USD/EURO.}\label{figABCexc}
+\end{figure}
+
+  
+
+
+
 
 \subsection{Bayesian synthetic likelihood}\label{sec15_13}
 
@@ -77,6 +192,17 @@ Even in situations where the likelihood function has an analytical expression, b
 \section{Exercises}\label{sec15_4}
 
 \begin{enumerate}
-	\item Simulation exercise in ABC: A model with endogeneity.
+	\item Program the ABC accept/reject algorithm (Algorithm \ref{ABC0}) from scratch and compare the results with those obtained using the ABC-AR implementation in the \textit{EasyABC} package.
+	
+	In this exercise, our algorithm takes 31 mins, whereas EasyABC 12 mins. Adjust number of replications to have similar time.
+	
+	\item Simulate a model $y_i=0.5 x_i+u_i, \ i=1,2,\dots,250$, where 
+	
+	$$v_i=Q^{gk}\left\{z(p)\mid a_i, b_j, c_j, g_j, k_j\right\}, \  v_j=(x_j,u_j), \ \begin{Bmatrix} z(p_x) \\ z(p_u)\end{Bmatrix}\sim N \begin{Bmatrix} \begin{pmatrix} 0\\ 0\end{pmatrix}, \begin{pmatrix} 1 & 0.5 \\ 0.5 & 1\end{pmatrix} \end{Bmatrix}.$$
+	
+	Note that in this model there endogeneity as $x_j$ and the stochastic errors ($u_j$) are no independent.
+	
+	We took into account values for $\rho =\left\{0,0.4,0.8\right\}$, $\rho\neq 0$ implies that inference should be based on the joint likelihood function, $y_{j}=0.5x_j+u_j$ where $a_x=a_u=0$, $b_x=b_u=1$, $c_x=c_u=0.8$, $g_x=g_u=2$, $k_x=k_u=1$, and $n=(500, 1000)$ in 50 simulation exercises. We perform inference regarding $\beta$ and $k$ in this example, and fixed $a, b$ and $g$ at their population values. We consider as the basis of our analysis the summary statistics $\eta_{1}({y})=\sum_{i=1}^{n}x_iy_i/\sum_{i=1}^{n}x_i^2$, $\eta_2({y})=L_3-L_1$, $\eta_3({y})=(L_3+L_1-2L_2)/\eta_2$  and $\eta_4({y})=(E_7-E_5+E_3-E_1)/\eta_2$ where $L_l$ is the $l$th quartile and $E_l$ is the $l$th octile of $y_j-x_j\eta_1({y})$ \cite{drovandi2011likelihood}.
+	
 \end{enumerate}
 
