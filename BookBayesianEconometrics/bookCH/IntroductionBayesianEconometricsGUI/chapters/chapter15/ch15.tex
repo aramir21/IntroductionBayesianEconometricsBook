@@ -21,7 +21,7 @@ Thus, what happens when the likelihood function does not have an analytical expr
 
 \textit{Approximate Bayesian Computation} (ABC) is designed to handle inferential situations where the likelihood function \( p(\boldsymbol{y} \mid \boldsymbol{\theta}) \) is intractable or highly complex. It was introduced in population genetics by \cite{tavare1997inferring, pritchard1999population} and later generalized by \cite{beaumont2002approximate}. The basic intuitive origin of ABC appears to have been introduced by \cite{rubin1984bayesianly}. A growing body of literature explores its applications in biology, cosmology, finance, economics, and other fields.
 
-The requirement in ABC is the ability to simulate from the parametric model. The process begins by drawing samples from the prior distribution \( \pi({\boldsymbol{\theta}}) \) multiple times, $\boldsymbol{\theta}\in\mathbb{R}^K$, and then simulating data from the model given each \( {\boldsymbol{\theta}^{(s)}}, s=1,2,\dots,S \). The resulting synthetic data, \( \boldsymbol{z}^{(s)} \in \mathbb{R}^n \) is used to compute summary statistics \( \boldsymbol{\eta}(\boldsymbol{z}^{(s)}) \in \mathbb{R}^L, L\geq K \).  
+The requirement in ABC is the ability to simulate from the parametric model. The process begins by drawing samples from the prior distribution \( \pi({\boldsymbol{\theta}}) \) multiple times, $\boldsymbol{\theta}\in\mathbb{R}^K$, and then simulating data from the model given each \( {\boldsymbol{\theta}^{(s)}}, s=1,2,\dots,S \). The resulting synthetic data, \( \boldsymbol{z}^{(s)} \in \mathbb{R}^n \) is used to compute summary statistics \( \boldsymbol{\eta}(\boldsymbol{z}^{(s)}) \in \mathbb{R}^L, L\geq K \). These summary statistics are crucial for the performance of ABC and should be selected based on a thorough understanding of the model.  
 
 Next, we compare the synthetic summary statistics with the observed summary statistics \( \boldsymbol{\eta}(\boldsymbol{y}) \) using a distance metric \( d\left\{ \boldsymbol\eta ({\boldsymbol y}),{\boldsymbol \eta }({\boldsymbol z}^{(s)})\right\} \), typically the Euclidean distance. We retain the prior draws that generate synthetic summary statistics closest to the observed ones, that is, \( d\left\{ \boldsymbol\eta ({\boldsymbol y}),{\boldsymbol \eta }({\boldsymbol z}^{(s)})\right\}\leq \epsilon \), forming an approximation of the posterior distribution \( \pi_{\epsilon}(\boldsymbol{\theta},\boldsymbol{z} \mid \boldsymbol{\eta}(\boldsymbol{y})) \).
 
@@ -47,7 +47,7 @@ Furthermore, \cite{frazier2018asymptotic} show in Theorems 1 and 2 that Bayesian
 
 We should note from these asymptotic results that ABC suffers from the \textit{curse of dimensionality}. Specifically, given a sample size of 1,000 and two parameters, the proportion of accepted draws should be 0.1\%, meaning we would require one million prior draws to obtain 1,000 posterior draws. On the other hand, if the number of parameters is three, we would require 31.62 million prior draws. This limitation of ABC has attracted attention; see Chapter 8 of \cite{sisson2018handbook} for some potential solutions.
 
-It is a common practice in ABC to perform a regression adjustment after retaining the draws \cite{beaumont2002approximate, leuenberger2010bayesian, sisson2018handbook}. This adjustment reduces bias in posterior draws by performing a simple linear regression between the selected draws and the discrepancy between the observed and simulated summary statistics, \( \boldsymbol{\theta}^{(s)} = \alpha + \beta \left(\boldsymbol{\eta}(\boldsymbol{y}) - \boldsymbol{\eta}(\boldsymbol{z}^{(s)})\right) + \mu^{(s)} \). Then, the posterior draws are adjusted using the slope estimate \( \boldsymbol{\theta}^{\text{adj},(s)} = \boldsymbol{\theta}^{(s)} - \hat{\beta} \left(\boldsymbol{\eta}(\boldsymbol{y}) - \boldsymbol{\eta}(\boldsymbol{z}^{(s)})\right) \).
+It is a common practice in ABC to perform a regression adjustment after retaining the draws \cite{beaumont2002approximate, leuenberger2010bayesian, sisson2018handbook}. This adjustment reduces bias in posterior draws by performing a simple linear regression between the selected draws and the discrepancy between the observed and simulated summary statistics, \( {\theta}^{(s)}_k = \alpha + \left(\boldsymbol{\eta}(\boldsymbol{y}) - \boldsymbol{\eta}(\boldsymbol{z}^{(s)})\right)^{\top}\boldsymbol{\beta} + \mu^{(s)}, \ k=1,2,\dots,K \). Then, the posterior draws are adjusted using the slope estimate \( {\theta}^{\text{adj},(s)}_k = {\theta}^{(s)} - \left(\boldsymbol{\eta}(\boldsymbol{y}) - \boldsymbol{\eta}(\boldsymbol{z}^{(s)})\right)^{\top}\hat{\boldsymbol{\beta}} \). Other regression adjustment strategies are also used, such as local linear regression, ridge regression, and neural networks. See the \textit{abc} package in \textbf{R}.
 
 The accept/reject ABC algorithm is inefficient, as all draws are independent; thus, there is no learning from previous draws. This intensifies the computational burden. Therefore, \cite{marjoram2003markov, wegmann2009efficient} introduced Markov Chain Monte Carlo ABC (ABC-MCMC) algorithms, and \cite{sisson2007sequential, drovandi2011estimation, del2012adaptive, lenormand2013adaptive} proposed sequential Monte Carlo approaches (ABC-SMC). However, results comparing ABC-MCMC and ABC-SMC with ABC-AR are controversial regarding computational efficiency \cite{bertorelle2010abc}. In addition, ABC-AR is very simple and easily allows parallel computing \cite{frazier2019approximate}. Nevertheless, ABC-SMC is now the recommended approach, as it does not require tuning the algorithm's tolerance \cite{martin2024approximating}, and there are open-source implementations that facilitate its use.
 
@@ -71,6 +71,8 @@ Q^{gk}\left\{z(p)\mid a, b, c, g, k\right\} = a + b\left[1 + c \frac{1 - \exp\le
 
 where \( z(p) \) is the standard normal quantile function, and \( c = 0.8 \) is a commonly suggested value.
 
+In the g-and-k distribution, \( a \) is the location parameter, and \( b \) is the scale parameter, controlling the dispersion. The parameters \( g \) and \( k \) determine the levels of skewness and kurtosis, respectively, while \( c \) modifies the impact of skewness, and is typically set to 0.8.
+
 \cite{drovandi2011likelihood} propose a moving average of order one using a g-and-k distribution to model exchange rate log returns. In particular,  
 \[
 z_t = \epsilon_t + \theta_1\epsilon_{t-1}, \quad t=1,\dots,524,
@@ -79,19 +81,17 @@ where \(\epsilon_t \sim N(0,1)\).
 
 The values of \(z_t\) are then divided by \((1+\theta_1^2)^{1/2}\) to ensure that they marginally follow a standard normal distribution. Thus, simulating g-and-k data requires only substituting \(z_t\) into the quantile function.  
 
-We model exchange rate log daily returns from USD/EUR one year before and after the WHO declared the COVID-19 pandemic on 11 March 2020. We use twelve summary statistics: the seven octiles, the interquartile range, robust measures of skewness and kurtosis, and the autocorrelations of order one and two (see \cite{drovandi2011likelihood} and code below). We adopt the prior distributions proposed by \cite{ramirez2024testing}, 
+We model exchange rate log daily returns from USD/EUR one year before and after the WHO declared the COVID-19 pandemic on 11 March 2020. We use the dataset \textit{ExchangeRate.csv} from our GitHub repository. Our ABC implementation uses twelve summary statistics: the seven octiles, the interquartile range, robust measures of skewness and kurtosis, and the autocorrelations of order one and two (see \cite{drovandi2011likelihood} and code below). We adopt the prior distributions proposed by \cite{ramirez2024testing}, 
 \begin{align*}
 	\theta_1\sim U(-1,1), \ a\sim U(0,5) \ b\sim U(0,5)\\
 	g\sim U(-5,5), \ k\sim U(-0.5, 5).
 \end{align*}
 
-We use the \textit{EasyABC} package in \textbf{R} to implement the ABC accept/reject (ABC-AR) algorithm using 100,000 prior draws with an acceptance rate of 1\%. We also apply the ABC Markov chain Monte Carlo (ABC-MCMC) method \cite{marjoram2003markov} and the sequential Monte Carlo ABC (ABC-SMC) method \cite{lenormand2013adaptive} to compare the results across different ABC algorithms. For these methods, we generate 10,000 samples and set the proportion of particles rejected at each step to 50\%, with a stopping criterion of 5\% in the latter algorithm.
+We use the \textit{EasyABC} package in \textbf{R} to implement the ABC accept/reject (ABC-AR) algorithm using 150,000 prior draws with an acceptance rate of 0.67\%. We also apply the ABC Markov chain Monte Carlo (ABC-MCMC) method \cite{marjoram2003markov} and the sequential Monte Carlo ABC (ABC-SMC) method \cite{lenormand2013adaptive} to compare the results across different ABC algorithms.\footnote{Note that this setting does not satisfy the asymptotic requirements for Bayesian consistency. However, it serves as a pedagogical exercise.} We generate 100,000 samples and retain 1\% in ABC-MCMC, and 30,000 samples, keeping 3.4\%, with a stopping criterion of 5\% in ABC-SMC. These settings imply that the three algorithms require approximately the same computational time. Users can refer to the cited references for algorithmic details.
 
 In Exercise 1, we ask to program the ABC accept/reject algorithm (Algorithm \ref{ABC0}) from scratch and compare the results with those obtained using the ABC-AR implementation in the \textit{EasyABC} package.
 
-The following code shows the results, and Figure \ref{figABCexc} shows a comparison of the posterior distributions of $\theta_1$, $g$ and $k$ using the three methods.
-
-ABC-AR, ABC-MCMC took 13.7, 2.7,  mins, 127.8 hours respectively.
+The following code presents the results, and Figure \ref{figABCexc} compares the posterior distributions of $\theta_1$, $g$, and $k$ using the three methods. In this figure, we observe that ABC-MCMC (red) and ABC-SMC (green) exhibit similar performance, and both approaches provide more information than ABC-AR (blue). There is marginal positive evidence that the moving average coefficient is positive, and the three algorithms yield similar means, although ABC-AR exhibits lower precision. Since the posterior distribution of $g$ is centered around zero, the distribution appears to be symmetric around its median. Meanwhile, a positive $k$ indicates that the distribution has heavier tails than a normal distribution, implying a higher likelihood of extreme values (outliers) in the exchange rate USD/EURO.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -131,14 +131,14 @@ RGKnewSum <- function(par) {
 toy_prior <- list(c("unif",-1,1), c("unif",0,5), c("unif", 0,5), c("unif", -5,5), c("unif", -0.5,5))
 sum_stat_obs <- SumSt(USDEUR)
 tick <- Sys.time()
-ABC_AR <- ABC_rejection(model=RGKnewSum, prior=toy_prior, summary_stat_target = sum_stat_obs, nb_simul=100000, tol = 0.01,
+ABC_AR <- ABC_rejection(model=RGKnewSum, prior=toy_prior, summary_stat_target = sum_stat_obs, nb_simul=150000, tol = 0.0067,
 progress_bar = TRUE)
 tock <- Sys.time()
 tock - tick
 PostABCAR <- coda::mcmc(ABC_AR$param)
 summary(PostABCAR)
 tick <- Sys.time()
-ABC_MCMC <- ABC_mcmc(method="Marjoram", model=RGKnewSum, prior=toy_prior, summary_stat_target=sum_stat_obs, n_rec = 10000, progress_bar = TRUE)
+ABC_MCMC <- ABC_mcmc(method="Marjoram", model=RGKnewSum, prior=toy_prior, summary_stat_target=sum_stat_obs, n_rec = 100000, progress_bar = TRUE)
 tock <- Sys.time()
 tock - tick
 PostABCMCMC <- coda::mcmc(ABC_MCMC[["param"]][order(ABC_MCMC[["dist"]])[1:1000],])
@@ -153,8 +153,9 @@ tick <- Sys.time()
 	\textit{R code. Exchange rate log returns: Approximate Bayesian computation}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-ABC_SMC<-ABC_sequential(method="Lenormand", model=RGKnewSum, prior=toy_prior, summary_stat_target=sum_stat_obs, nb_simul = 10000, alpha = 0.5, p_acc_min = 0.05,
+ABC_SMC<-ABC_sequential(method="Lenormand", model=RGKnewSum, prior=toy_prior, summary_stat_target=sum_stat_obs, nb_simul = 30000, alpha = 0.034, p_acc_min = 0.05,
 progress_bar = TRUE)
+summary(PostABCSMC)
 tock <- Sys.time()
 tock - tick
 PostABCSMC <- coda::mcmc(ABC_SMC[["param"]])
@@ -167,12 +168,9 @@ PostABCSMC <- coda::mcmc(ABC_SMC[["param"]])
 	\caption[List of figure caption goes here]{Approximate Bayesian computation: Exchange rate log returns USD/EURO.}\label{figABCexc}
 \end{figure}
 
-  
-
-
-
-
 \subsection{Bayesian synthetic likelihood}\label{sec15_13}
+
+In Bayesian synthetic likelihood (BSL) adopts a Gaussian parametric approximation to 
 
 \section{Optimization approaches}\label{sec15_2}
 
@@ -192,10 +190,17 @@ Even in situations where the likelihood function has an analytical expression, b
 \section{Exercises}\label{sec15_4}
 
 \begin{enumerate}
-	\item Program the ABC accept/reject algorithm (Algorithm \ref{ABC0}) from scratch and compare the results with those obtained using the ABC-AR implementation in the \textit{EasyABC} package.
+	\item \textbf{g-and-k distribution for financial returns continues}
 	
-	In this exercise, our algorithm takes 31 mins, whereas EasyABC 12 mins. Adjust number of replications to have similar time.
+	Simulate a dataset following the specification given in the g-and-k distribution for financial returns example. Set $\theta_1 = 0.8$, $a = 1$, $b = 0.5$, $g = -1$, and $k = 1$, with a sample size of 500, and use the same prior as in this example. Implement the ABC accept/reject algorithm from scratch using one million prior draws, selecting the 1,000 draws with the smallest distance.\footnote{Note that this setting does not satisfy the asymptotic requirements for Bayesian consistency. However, it serves as a pedagogical exercise.}
 	
+	\begin{itemize}
+		\item Perform a linear regression adjustment using the posterior draws of our ABC-AR algorithm (ABC-AR-Adj).
+		\item Compare the results with those obtained using the ABC-AR implementation in the \textit{EasyABC} package, ensuring that the computational time is relatively similar between both implementations.
+		\item Compare the posterior results of ABC-AR, ABC-AR-Adj and EasyABC with the population values.
+	\end{itemize}
+	
+	\begin{comment}
 	\item Simulate a model $y_i=0.5 x_i+u_i, \ i=1,2,\dots,250$, where 
 	
 	$$v_i=Q^{gk}\left\{z(p)\mid a_i, b_j, c_j, g_j, k_j\right\}, \  v_j=(x_j,u_j), \ \begin{Bmatrix} z(p_x) \\ z(p_u)\end{Bmatrix}\sim N \begin{Bmatrix} \begin{pmatrix} 0\\ 0\end{pmatrix}, \begin{pmatrix} 1 & 0.5 \\ 0.5 & 1\end{pmatrix} \end{Bmatrix}.$$
@@ -203,6 +208,9 @@ Even in situations where the likelihood function has an analytical expression, b
 	Note that in this model there endogeneity as $x_j$ and the stochastic errors ($u_j$) are no independent.
 	
 	We took into account values for $\rho =\left\{0,0.4,0.8\right\}$, $\rho\neq 0$ implies that inference should be based on the joint likelihood function, $y_{j}=0.5x_j+u_j$ where $a_x=a_u=0$, $b_x=b_u=1$, $c_x=c_u=0.8$, $g_x=g_u=2$, $k_x=k_u=1$, and $n=(500, 1000)$ in 50 simulation exercises. We perform inference regarding $\beta$ and $k$ in this example, and fixed $a, b$ and $g$ at their population values. We consider as the basis of our analysis the summary statistics $\eta_{1}({y})=\sum_{i=1}^{n}x_iy_i/\sum_{i=1}^{n}x_i^2$, $\eta_2({y})=L_3-L_1$, $\eta_3({y})=(L_3+L_1-2L_2)/\eta_2$  and $\eta_4({y})=(E_7-E_5+E_3-E_1)/\eta_2$ where $L_l$ is the $l$th quartile and $E_l$ is the $l$th octile of $y_j-x_j\eta_1({y})$ \cite{drovandi2011likelihood}.
+	\end{comment}
+
+\item 
 	
 \end{enumerate}
 

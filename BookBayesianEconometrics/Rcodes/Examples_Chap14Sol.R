@@ -1,4 +1,4 @@
-# g-and-k distribution
+############ g-and-k distribution using ABC ############
 rm(list = ls()); set.seed(010101)
 # Simulate g-and-k data
 RGKnew <- function(par) {
@@ -25,9 +25,9 @@ SumSt <- function(y) {
   return(Etay)
 }
 # Population parameters
-theta1 <- 0.6; a <- 1; b <- 0.5; g <- -1; k <- 1
+theta1 <- 0.8; a <- 1; b <- 0.5; g <- -1; k <- 1
 parpop <- c(theta1, a, b, g, k)
-n <- 250
+n <- 500
 y <- RGKnew(par = parpop) 
 plot(y, type = "l")
 ##### ABC Function#####
@@ -45,11 +45,21 @@ ABC <- function(S, a, y) {
   return(list(SelPrior = SelPrior, SelSumSt = SelSumSt))
 }
 S <- 1000000
+a <- 0.001
 tick <- Sys.time()
 ResABC <- ABC(S = S, a = 0.001, y = y)
 tock <- Sys.time()
 tock - tick
 PostABC_ARown <- ResABC[["SelPrior"]]
+# Regression adjusted ABC
+X <- ResABC[["SelSumSt"]]-matrix(SumSt(y), S*a, 12, byrow = TRUE)
+PostABC_ARownRegAd <- PostABC_ARown
+for(j in 1:5){
+  Reg <- lm(PostABC_ARown[,j] ~ X)
+  # Coefficient of regressor 9 is na.
+  PostABC_ARownRegAd[,j] <- PostABC_ARown[,j] - X[,-9]%*%Reg$coefficients[-c(1,9)]
+}
+
 RGKnewSum <- function(par) {
   z <- NULL
   theta <- par[1]; a <- par[2]; b <- par[3]; g <- par[4]; k <- par[5]
@@ -68,42 +78,96 @@ toy_prior <- list(c("unif",-1,1), c("unif",0,5), c("unif", 0,5), c("unif", -5,5)
 library(EasyABC)
 tick <- Sys.time()
 ABC_AR <- ABC_rejection(model=RGKnewSum, prior=toy_prior,
-                        summary_stat_target = sum_stat_obs, nb_simul=100000, tol = 0.01,
+                        summary_stat_target = sum_stat_obs, nb_simul=260000, tol = 0.00385,
                         progress_bar = TRUE)
 tock <- Sys.time()
 tock - tick
 PostABC_AR <- coda::mcmc(ABC_AR$param)
 
-# Figures 
 library(ggplot2); library(latex2exp)
+Sp <- 1000
 df1 <- data.frame(
-  Value = c(PostABC_AR[,1], PostABC_ARown[,1]),
-  Distribution = factor(c(rep("EasyABC", 1000), rep("Own", 1000))))
+  Value = c(PostABC_AR[1:Sp,1], PostABC_ARown[1:Sp,1], PostABC_ARownRegAd[1:Sp,1]),
+  Distribution = factor(c(rep("EasyABC", Sp), rep("ABC", Sp), rep("ABCAdj", Sp))))
 
-dentheta <- ggplot(df1, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) +  
-  labs(title = TeX("Density plot posterior: $theta$"), x = TeX("$theta$"), y = "Posterior density") +
-  scale_color_manual(values = c("blue", "red")) +  theme_minimal() +
+dentheta <- ggplot(df1, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) + 
+  geom_vline(xintercept = theta1, linetype = "dashed", color = "red", linewidth = 1) +
+  labs(title = TeX("Posterior density plot: $theta$"), x = TeX("$theta$"), y = "Posterior density") +
+  scale_color_manual(values = c("blue", "red", "green")) +  theme_minimal() +
   theme(legend.title = element_blank())
 
 df2 <- data.frame(
-  Value = c(PostABC_AR[,4], PostABC_ARown[,4]),
-  Distribution = factor(c(rep("EasyABC", 1000), rep("Own", 1000))))
+  Value = c(PostABC_AR[1:Sp,4], PostABC_ARown[1:Sp,4], PostABC_ARownRegAd[1:Sp,4]),
+  Distribution = factor(c(rep("EasyABC", Sp), rep("ABC", Sp), rep("ABCAdj", Sp))))
 
-deng <- ggplot(df2, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) +  
-  labs(title = TeX("Density plot posterior: g"), x = TeX("$g$"), y = "Posterior density") +
-  scale_color_manual(values = c("blue", "red")) +  theme_minimal() +
+deng <- ggplot(df2, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) + 
+  geom_vline(xintercept = g, linetype = "dashed", color = "red", linewidth = 1) +
+  labs(title = TeX("Posterior density plot: g"), x = TeX("$g$"), y = "Posterior density") +
+  scale_color_manual(values = c("blue", "red", "green")) +  theme_minimal() +
   theme(legend.title = element_blank())
 
 df3 <- data.frame(
-  Value = c(PostABC_AR[,5], PostABC_ARown[,5]),
-  Distribution = factor(c(rep("EasyABC", 1000), rep("Own", 1000))))
+  Value = c(PostABC_AR[1:Sp,5], PostABC_ARown[1:Sp,5], PostABC_ARownRegAd[1:Sp,5]),
+  Distribution = factor(c(rep("EasyABC", Sp), rep("ABC", Sp), rep("ABCAdj", Sp))))
 
-denk <- ggplot(df3, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) +  
-  labs(title = TeX("Density plot posterior: k"), x = TeX("$k$"), y = "Posterior density") +
-  scale_color_manual(values = c("blue", "red")) +  theme_minimal() +
+denk <- ggplot(df3, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) +
+  geom_vline(xintercept = k, linetype = "dashed", color = "red", linewidth = 1) +
+  labs(title = TeX("Posterior density plot: k"), x = TeX("$k$"), y = "Posterior density") +
+  scale_color_manual(values = c("blue", "red", "green")) +  theme_minimal() +
   theme(legend.title = element_blank())
 
 library(ggpubr)
 ggarrange(dentheta, deng, denk, labels = c("A", "B", "C"), ncol = 3, nrow = 1,
           legend = "bottom", common.legend = TRUE)
 
+summary(coda::mcmc(PostABC_ARown))
+summary(coda::mcmc(PostABC_ARownRegAd))
+summary(coda::mcmc(PostABC_AR))
+
+#### Adding results from abc package. It gives similar results to EasyABC
+library(abc)
+S <- 100000
+a <- 0.01
+prior <- cbind(runif(S,-1,1), runif(S,0,5), runif(S,0,5), runif(S,-5,5), runif(S,-0.5,5))
+Z <- apply(prior, 1, RGKnew)
+EtasZ <- apply(Z, 2, SumSt)
+ABC_ARabc <- abc(target = sum_stat_obs, param = prior, sumstat = t(EtasZ), tol = a,
+                 method = "loclinear")
+PostABC_ARabc <- ABC_ARabc[["unadj.values"]]
+PostABC_ARabc <- ABC_ARabc[["adj.values"]]
+# Figures 
+library(ggplot2); library(latex2exp)
+Sp <- 1000
+df1 <- data.frame(
+  Value = c(PostABC_AR[1:Sp,1], PostABC_ARown[1:Sp,1], PostABC_ARownRegAd[1:Sp,1], PostABC_ARabc[1:Sp,1]),
+  Distribution = factor(c(rep("EasyABC", Sp), rep("ABC", Sp), rep("ABCRegAd", Sp), rep("ABCabc", Sp))))
+
+dentheta <- ggplot(df1, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) + 
+  geom_vline(xintercept = theta1, linetype = "dashed", color = "red", linewidth = 1) +
+  labs(title = TeX("Posterior density plot: $theta$"), x = TeX("$theta$"), y = "Posterior density") +
+  scale_color_manual(values = c("blue", "red", "green", "purple")) +  theme_minimal() +
+  theme(legend.title = element_blank())
+
+df2 <- data.frame(
+  Value = c(PostABC_AR[1:Sp,4], PostABC_ARown[1:Sp,4], PostABC_ARownRegAd[1:Sp,4], PostABC_ARabc[1:Sp,4]),
+  Distribution = factor(c(rep("EasyABC", Sp), rep("Own", Sp), rep("ABCRegAd", Sp), rep("ABCabc", Sp))))
+
+deng <- ggplot(df2, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) + 
+  geom_vline(xintercept = g, linetype = "dashed", color = "red", linewidth = 1) +
+  labs(title = TeX("Posterior density plot: g"), x = TeX("$g$"), y = "Posterior density") +
+  scale_color_manual(values = c("blue", "red", "green", "purple")) +  theme_minimal() +
+  theme(legend.title = element_blank())
+
+df3 <- data.frame(
+  Value = c(PostABC_AR[1:Sp,5], PostABC_ARown[1:Sp,5], PostABC_ARownRegAd[1:Sp,5], PostABC_ARabc[1:Sp,4]),
+  Distribution = factor(c(rep("EasyABC", Sp), rep("Own", Sp), rep("ABCRegAd", Sp), rep("ABCabc", Sp))))
+
+denk <- ggplot(df3, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) +
+  geom_vline(xintercept = k, linetype = "dashed", color = "red", linewidth = 1) +
+  labs(title = TeX("Posterior density plot: k"), x = TeX("$k$"), y = "Posterior density") +
+  scale_color_manual(values = c("blue", "red", "green", "purple")) +  theme_minimal() +
+  theme(legend.title = element_blank())
+
+library(ggpubr)
+ggarrange(dentheta, deng, denk, labels = c("A", "B", "C"), ncol = 3, nrow = 1,
+          legend = "bottom", common.legend = TRUE)

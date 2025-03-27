@@ -37,17 +37,16 @@ toy_prior <- list(c("unif",-1,1), c("unif",0,5), c("unif", 0,5), c("unif", -5,5)
 sum_stat_obs <- SumSt(USDEUR)
 tick <- Sys.time()
 ABC_AR <- ABC_rejection(model=RGKnewSum, prior=toy_prior,
-                      summary_stat_target = sum_stat_obs, nb_simul=1000000, tol = 0.001,
+                      summary_stat_target = sum_stat_obs, nb_simul=150000, tol = 0.0067,
                       progress_bar = TRUE)
 tock <- Sys.time()
 tock - tick
 PostABCAR <- coda::mcmc(ABC_AR$param)
 summary(PostABCAR)
-
 tick <- Sys.time()
 ABC_MCMC <- ABC_mcmc(method="Marjoram", model=RGKnewSum,
                    prior=toy_prior, summary_stat_target=sum_stat_obs,
-                   n_rec = 500000, progress_bar = TRUE)
+                   n_rec = 100000, progress_bar = TRUE)
 tock <- Sys.time()
 tock - tick
 PostABCMCMC <- coda::mcmc(ABC_MCMC[["param"]][order(ABC_MCMC[["dist"]])[1:1000],])
@@ -56,17 +55,18 @@ summary(PostABCMCMC)
 tick <- Sys.time()
 ABC_SMC <- ABC_sequential(method="Lenormand", model=RGKnewSum,
                         prior=toy_prior, summary_stat_target=sum_stat_obs,
-                        nb_simul = 10000, alpha = 0.1, p_acc_min = 0.05,
+                        nb_simul = 30000, alpha = 0.034, p_acc_min = 0.05,
                         progress_bar = TRUE)
 tock <- Sys.time()
 tock - tick
 PostABCSMC <- coda::mcmc(ABC_SMC[["param"]])
-
+summary(PostABCSMC)
 # Figures 
 library(ggplot2); library(latex2exp)
+Sp <- 1000
 df1 <- data.frame(
-  Value = c(PostABCAR[,1], PostABCMCMC[,1], PostABCSMC[,1]),
-  Distribution = factor(c(rep("AR", 1000), rep("MCMC", 1000), rep("SMC", 1000)))
+  Value = c(PostABCAR[1:Sp,1], PostABCMCMC[1:Sp,1], PostABCSMC[1:Sp,1]),
+  Distribution = factor(c(rep("AR", Sp), rep("MCMC", Sp), rep("SMC", Sp)))
 )
 
 dentheta <- ggplot(df1, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) +  
@@ -75,8 +75,8 @@ dentheta <- ggplot(df1, aes(x = Value, color = Distribution)) +   geom_density(l
   theme(legend.title = element_blank())
 
 df2 <- data.frame(
-  Value = c(PostABCAR[,4], PostABCMCMC[,4], PostABCSMC[,4]),
-  Distribution = factor(c(rep("AR", 1000), rep("MCMC", 1000), rep("SMC", 1000)))
+  Value = c(PostABCAR[1:Sp,4], PostABCMCMC[1:Sp,4], PostABCSMC[1:Sp,4]),
+  Distribution = factor(c(rep("AR", Sp), rep("MCMC", Sp), rep("SMC", Sp)))
 )
 
 deng <- ggplot(df2, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) +  
@@ -85,8 +85,8 @@ deng <- ggplot(df2, aes(x = Value, color = Distribution)) +   geom_density(linew
   theme(legend.title = element_blank())
 
 df3 <- data.frame(
-  Value = c(PostABCAR[,5], PostABCMCMC[,5], PostABCSMC[,5]),
-  Distribution = factor(c(rep("AR", 1000), rep("MCMC", 1000), rep("SMC", 1000)))
+  Value = c(PostABCAR[1:Sp,5], PostABCMCMC[1:Sp,5], PostABCSMC[1:Sp,5]),
+  Distribution = factor(c(rep("AR", Sp), rep("MCMC", Sp), rep("SMC", Sp)))
 )
 
 denk <- ggplot(df3, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) +  
