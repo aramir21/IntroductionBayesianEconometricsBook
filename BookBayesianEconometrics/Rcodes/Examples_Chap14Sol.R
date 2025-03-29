@@ -171,3 +171,12 @@ denk <- ggplot(df3, aes(x = Value, color = Distribution)) +   geom_density(linew
 library(ggpubr)
 ggarrange(dentheta, deng, denk, labels = c("A", "B", "C"), ncol = 3, nrow = 1,
           legend = "bottom", common.legend = TRUE)
+
+######## BSL: Financial returns application ############
+rm(list = ls()); set.seed(010101)
+library(EasyABC)
+dfExcRate <- read.csv(file = "https://raw.githubusercontent.com/BEsmarter-consultancy/BSTApp/refs/heads/master/DataApp/ExchangeRate.csv", sep = ",", header = T)
+attach(dfExcRate)
+str(dfExcRate)
+Day <- as.Date(Date, format = "%d/%m/%Y")
+n <- length(USDEUR)

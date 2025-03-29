@@ -32,7 +32,7 @@ The simplest algorithm is the accept/reject approximate Bayesian computation (AB
 	\begin{algorithmic}[1]
 		\For{\texttt{$s=1,\dots,S$}}
 		\State Draw ${\boldsymbol {\theta} }^{s}$ from $\pi({ \boldsymbol{\theta} }),$
-		\State Simulate ${\boldsymbol z}^{s}=(z_{1}^{s},z_{2}^{s},...,z_{n}^{s})^{\top}$from the model, $p(\cdot|{\boldsymbol{\theta} }^{s})$
+		\State Simulate ${\boldsymbol z}^{s}=(z_{1}^{s},z_{2}^{s},...,z_{n}^{s})^{\top}$ from the model, $p(\cdot|{\boldsymbol{\theta} }^{s})$
 		\State Calculate
 		$d_{(s)}=d\{{\boldsymbol\eta }({\boldsymbol y}),{\boldsymbol \eta }({\boldsymbol z}^{s})\}$
 		\EndFor
@@ -41,13 +41,13 @@ The simplest algorithm is the accept/reject approximate Bayesian computation (AB
 	\end{algorithmic}
 \end{algorithm}
 
-Note that the posterior distribution is conditional on the summary statistics \( \boldsymbol{\eta}(\boldsymbol{y}) \) and the tolerance parameter \( \epsilon \). This implies that we obtain an approximation to the target distribution \( \pi(\boldsymbol{\theta} \mid \boldsymbol{y}) \) because \( \boldsymbol{\eta}(\boldsymbol{y}) \) is not a sufficient statistic in most cases, and \( \epsilon > 0 \), these conditions introduce bias \cite{blum2010approximate}. However, ABC performs well compared to full-likelihood approaches in low-dimensional parameter spaces \cite{beaumont2002approximate}.
+Note that the posterior distribution is conditional on the summary statistics \( \boldsymbol{\eta}(\boldsymbol{y}) \) and the tolerance parameter \( \epsilon \). This implies that we obtain an approximation to the target distribution \( \pi(\boldsymbol{\theta} \mid \boldsymbol{y}) \), that is \( \pi(\boldsymbol{\theta} \mid \boldsymbol{\eta}(\boldsymbol{y})) \), because \( \boldsymbol{\eta}(\boldsymbol{y}) \) is not a sufficient statistic in most cases, and \( \epsilon > 0 \), these conditions introduce bias \cite{blum2010approximate}. However, ABC performs well compared to full-likelihood approaches in low-dimensional parameter spaces \cite{beaumont2002approximate}.
 
-Furthermore, \cite{frazier2018asymptotic} show in Theorems 1 and 2 that Bayesian consistency and asymptotic normality hold, provided that \( \epsilon \to 0 \) fast enough as \( n \to +\infty \). In particular, the requirement is that the proportion of accepted draws converges to 0 at a rate of \( n^{-K / 2} \). Additionally, Theorem 2 in \cite{frazier2018asymptotic} shows that \( 100(1 -\alpha)\% \) Bayesian credible regions using ABC have frequentist coverage of \( 100(1 -\alpha)\% \). 
+Furthermore, \cite{frazier2018asymptotic} show in Theorems 1 and 2 that Bayesian consistency and asymptotic normality hold, provided that \( \epsilon \to 0 \) fast enough as \( n \to +\infty \). In particular, the requirement is that the proportion of accepted draws converges to 0 at a rate faster than \( n^{-K / 2} \). Additionally, Theorem 2 in \cite{frazier2018asymptotic} shows that \( 100(1 -\alpha)\% \) Bayesian credible regions using ABC have frequentist coverage of \( 100(1 -\alpha)\% \). 
 
 We should note from these asymptotic results that ABC suffers from the \textit{curse of dimensionality}. Specifically, given a sample size of 1,000 and two parameters, the proportion of accepted draws should be 0.1\%, meaning we would require one million prior draws to obtain 1,000 posterior draws. On the other hand, if the number of parameters is three, we would require 31.62 million prior draws. This limitation of ABC has attracted attention; see Chapter 8 of \cite{sisson2018handbook} for some potential solutions.
 
-It is a common practice in ABC to perform a regression adjustment after retaining the draws \cite{beaumont2002approximate, leuenberger2010bayesian, sisson2018handbook}. This adjustment reduces bias in posterior draws by performing a simple linear regression between the selected draws and the discrepancy between the observed and simulated summary statistics, \( {\theta}^{(s)}_k = \alpha + \left(\boldsymbol{\eta}(\boldsymbol{y}) - \boldsymbol{\eta}(\boldsymbol{z}^{(s)})\right)^{\top}\boldsymbol{\beta} + \mu^{(s)}, \ k=1,2,\dots,K \). Then, the posterior draws are adjusted using the slope estimate \( {\theta}^{\text{adj},(s)}_k = {\theta}^{(s)} - \left(\boldsymbol{\eta}(\boldsymbol{y}) - \boldsymbol{\eta}(\boldsymbol{z}^{(s)})\right)^{\top}\hat{\boldsymbol{\beta}} \). Other regression adjustment strategies are also used, such as local linear regression, ridge regression, and neural networks. See the \textit{abc} package in \textbf{R}.
+It is a common practice in ABC to perform a regression adjustment after retaining the draws \cite{beaumont2002approximate, leuenberger2010bayesian, sisson2018handbook}. This adjustment reduces bias in posterior draws by performing a simple linear regression between the selected draws and the discrepancy between the observed and simulated summary statistics, \( {\theta}^{(s)}_k = \alpha_k + \left(\boldsymbol{\eta}(\boldsymbol{y}) - \boldsymbol{\eta}(\boldsymbol{z}^{(s)})\right)^{\top}\boldsymbol{\beta}_k + \mu^{(s)}_k, \ k=1,2,\dots,K \). Then, the posterior draws are adjusted using the slope estimate \( {\theta}^{\text{adj},(s)}_k = {\theta}^{(s)}_k - \left(\boldsymbol{\eta}(\boldsymbol{y}) - \boldsymbol{\eta}(\boldsymbol{z}^{(s)})\right)^{\top}\hat{\boldsymbol{\beta}}_k \). Other regression adjustment strategies are also used, such as local linear regression, ridge regression, and neural networks. See the \textit{abc} package in \textbf{R}.
 
 The favorable asymptotic sampling properties of ABC rely on correct model specification. However, \cite{frazier2020model} demonstrate that when the assumed model is misspecified, the asymptotic behavior of ABC can deteriorate. In particular, the posterior shape becomes asymptotically non-Gaussian, and the behavior of the posterior mean remains generally unknown. Additionally, regression adjustment approaches can produce posteriors that differ significantly from their simpler accept/reject counterparts.
 
@@ -174,9 +174,69 @@ PostABCSMC <- coda::mcmc(ABC_SMC[["param"]])
 
 \subsection{Bayesian synthetic likelihood}\label{sec15_13}
 
-Note that in ABC in most cases we are targeting the posterior distribution $\pi(\boldsymbol{\theta}\mid \boldsymbol{\eta}(\boldsymbol{y}))$ rather than $\pi(\boldsymbol{\theta}\mid \boldsymbol{y})$ as $\boldsymbol{\eta}(\boldsymbol{y})$ is not a sufficient statistic. This can be good as discarding information can improve the behaviour of the likelihood or make the inference more robust to misspecification \cite{price2018bayesian}.  
+Note that in ABC, in most cases, we target the posterior distribution $\pi(\boldsymbol{\theta} \mid \boldsymbol{\eta}(\boldsymbol{y}))$ rather than $\pi(\boldsymbol{\theta} \mid \boldsymbol{y})$, as $\boldsymbol{\eta}(\boldsymbol{y})$ is not a sufficient statistic. This can be beneficial since discarding information may improve the behavior of the likelihood or make the inference more robust to model misspecification \cite{price2018bayesian}. Given the intractability of $p(\boldsymbol{y} \mid \boldsymbol{\theta})$, it is highly likely that $p(\boldsymbol{\eta}(\boldsymbol{y}) \mid \boldsymbol{\theta})$ is also intractable. \cite{wood2010statistical} addressed this issue by introducing an auxiliary model for the summary statistics, assuming $p_a(\boldsymbol{\eta}(\boldsymbol{y})\mid \boldsymbol{\theta}) = N(\boldsymbol{\mu}_{\boldsymbol{\theta}}, \boldsymbol{\Sigma}_{\boldsymbol{\theta}})$.
 
-In Bayesian synthetic likelihood (BSL) adopts a Gaussian parametric approximation to 
+Bayesian synthetic likelihood (BSL) arises when this auxiliary likelihood is combined with a prior distribution on the parameter \cite{drovandi2015bayesian,price2018bayesian},
+\begin{align*} 
+	\pi_{a}(\boldsymbol{\theta} \mid \boldsymbol{\eta}(\boldsymbol{y})) &\propto p_{a}(\boldsymbol{\eta}(\boldsymbol{y})\mid \boldsymbol{\theta}) \pi(\boldsymbol{\theta}), 
+\end{align*}
+
+where the subscript \( a \) indicates that this is an approximation due to the Gaussian assumption. This is referred to as the idealized BSL posterior. However, note that \( p_a(\boldsymbol{\eta}(\boldsymbol{y})\mid \boldsymbol{\theta}) \) is rarely available, as \( \boldsymbol{\mu}_{\boldsymbol{\theta}} \) and \( \boldsymbol{\Sigma}_{\boldsymbol{\theta}} \) are generally unknown. Therefore, we estimate these quantities using simulations from the model, following the same steps as in ABC:\footnote{There are other ways to calculate the covariance matrix \cite{nott2023bayesian}.}
+\begin{align*} 
+	\widehat{\boldsymbol{\mu}}_{\boldsymbol{\theta}} &= \frac{1}{M} \sum_{m=1}^{M} \boldsymbol{\eta}(\boldsymbol{z}^{(m)}),\\
+	\widehat{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}} &= \frac{1}{M-1} \sum_{m=1}^{M} (\boldsymbol{\eta}(\boldsymbol{z}^{(m)}) - \boldsymbol{\mu}_{\boldsymbol{\theta}})(\boldsymbol{\eta}(\boldsymbol{z}^{(m)}) - \boldsymbol{\mu}_{\boldsymbol{\theta}})^{\top}. 
+\end{align*}
+
+Then, we have 
+\begin{align*} 
+	\pi_{a,M}(\boldsymbol{\theta} \mid \boldsymbol{\eta}(\boldsymbol{y})) &\propto p_{a,M}(\boldsymbol{\eta}(\boldsymbol{y})\mid \boldsymbol{\theta}) \pi(\boldsymbol{\theta}), 
+\end{align*}
+where $p_{a,M}(\boldsymbol{\eta}(\boldsymbol{y}))$ uses the estimates, which in turn depends on the number of draws $M$ to calculate $\widehat{\boldsymbol{\mu}}_{\boldsymbol{\theta}}$ and $\widehat{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}}$. Note that although we can have unbiased estimators of these object, in general, $N(\boldsymbol{\eta}(\boldsymbol{y})\mid \widehat{\boldsymbol{\mu}}_{\boldsymbol{\theta}},\widehat{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}})$ is not an unbiased estimator of $N(\boldsymbol{\eta}(\boldsymbol{y})\mid {\boldsymbol{\mu}}_{\boldsymbol{\theta}},{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}})$. \cite{an2022bsl} show an unbiased estimator for BSL. 
+
+\cite{nott2023bayesian} show that \( \pi_{a,M}(\boldsymbol{\theta}) \) converges asymptotically to a Gaussian distribution and that the \( 100(1-\alpha)\% \) Bayesian credible regions using BSL have frequentist coverage of \( 100(1-\alpha)\% \). In addition, the posterior mean from BSL is also asymptotically Gaussian. These results require convenient estimation of the covariance matrix and that \( M \to \infty \) as \( n \to \infty \). However, \cite{nott2023bayesian} show that the choice of \( M \) does not drastically affect the desirable asymptotic properties of BSL, and \cite{price2018bayesian} find in their examples that posterior inference depends only weakly on \( M \). Thus, \( M \) can be chosen to balance computational efficiency. 
+
+A critical aspect of BSL is the estimation of the covariance matrix, which can be computationally demanding in high-dimensional settings. However, \cite{nott2023bayesian} propose an adjusted approach to BSL that allows the use of a simple, though potentially misspecified, estimator of the covariance matrix (see Equation 5 and the related discussion in their paper for details).
+
+If the normality assumption for summary statistics is too restrictive, \cite{an2020robust} propose a robust BSL method based on a semi-parametric approach. Additionally, \cite{frazier2021robust} show that when the model is misspecified, i.e., there is no compatibility between the assumed statistical model and the true data-generating process, BSL can lead to unreliable parameter inference. To address this issue, they propose a new BSL method that detects model misspecification and provides more reliable inference.
+
+
+%BSL is a specific case of parametric Bayesian indirect likelihood \cite{drovandi2015bayesian} and can be interpreted as a form of pseudo-marginal MCMC \cite{martin2024approximating}. In addition, 
+
+
+We can perform BSL using the Algorithm \ref{BSL0}.
+
+\begin{algorithm}
+	\caption{Bayesian synthetic likelihood}\label{BSL0}
+	\begin{algorithmic}[1]
+		\For{\texttt{$s=1,\dots,S$}}
+			\State Draw $\boldsymbol{\theta}^c\sim q(\boldsymbol{\theta}\mid \boldsymbol{\theta}^{s-1})$
+			\For{\texttt{$m=1,\dots,M$}}
+				\State Simulate ${\boldsymbol z}^{m}=(z_{1}^{m},z_{2}^{m},...,z_{m}^{s})^{\top}$ from the model, $p(\cdot|{\boldsymbol{\theta} }^c)$
+				\State Calculate $\boldsymbol{\eta}(\boldsymbol{z}^{(m)})$
+			\EndFor 			 
+			\State Calculate $\boldsymbol{\mu}_{\boldsymbol{\theta}^c}$ and $\boldsymbol{\Sigma}_{\boldsymbol{\theta}^c}$
+			\State Compute $p_a^c(\boldsymbol{\eta}(\boldsymbol{y})\mid \boldsymbol{\theta}^c) = N(\boldsymbol{\mu}_{\boldsymbol{\theta}^c}, \boldsymbol{\Sigma}_{\boldsymbol{\theta}^c})$ and $p_a^{s-1}(\boldsymbol{\eta}(\boldsymbol{y})\mid \boldsymbol{\theta}^{s-1}) = N(\boldsymbol{\mu}_{\boldsymbol{\theta}^{s-1}}, \boldsymbol{\Sigma}_{\boldsymbol{\theta}^{s-1}})$
+			\State Compute the acceptance probability
+			$$\alpha(\boldsymbol{\theta}^{s-1},\boldsymbol{\theta}^c)=\min\left\{\frac{p_a^c(\boldsymbol{\eta}(\boldsymbol{y})\mid \boldsymbol{\theta}^c)\pi(\boldsymbol{\theta}^c)q(\boldsymbol{\theta}^{s-1}\mid \boldsymbol{\theta}^{c})}{p_a^{s-1}(\boldsymbol{\eta}(\boldsymbol{y})\mid \boldsymbol{\theta}^{s-1})\pi(\boldsymbol{\theta}^{s-1})q(\boldsymbol{\theta}^{c}\mid \boldsymbol{\theta}^{s-1})}\right\}$$
+			\State Draw $u$ from $U(0,1)$
+			\If{$u<\alpha$}
+				\State Set $\boldsymbol{\theta}^{s}=\boldsymbol{\theta}^{c}$, $\boldsymbol{\mu}_{\boldsymbol{\theta}^{s}}=\boldsymbol{\mu}_{\boldsymbol{\theta}^c}$ and $\boldsymbol{\Sigma}_{\boldsymbol{\theta}^s}=\boldsymbol{\Sigma}_{\boldsymbol{\theta}^c}$
+			\Else
+				\State Set $\boldsymbol{\theta}^{s}=\boldsymbol{\theta}^{s-1}$, $\boldsymbol{\mu}_{\boldsymbol{\theta}^{s}}=\boldsymbol{\mu}_{\boldsymbol{\theta}^{s-1}}$ and $\boldsymbol{\Sigma}_{\boldsymbol{\theta}^s}=\boldsymbol{\Sigma}_{\boldsymbol{\theta}^{s-1}}$
+			\EndIf  
+		\EndFor
+	\end{algorithmic}
+\end{algorithm}
+
+An advantage of BSL over ABC is that it does not require selecting a tolerance parameter $\epsilon$. Furthermore, BSL is more computationally efficient than ABC when dealing with a high-dimensional vector of summary statistics as the acceptance rate of the former is asymptotically non-vanishing \cite{nott2023bayesian}.  
+
+On the other hand, ABC is asymptotically more efficient than BSL, and it imposes very weak requirements on the choice of summary statistics, whereas BSL requires summary statistics that satisfy central limit theorems (CLTs), and consistent estimators of the covariance matrix. However, asymptotically, both approaches are equivalent, provided their respective requirements are met \cite{martin2024approximating}.  
+
+In practice, BSL may be more convenient than ABC when the summary statistics are high-dimensional and satisfy CLT conditions. Otherwise, ABC may be the better alternative.\\    
+
+\textbf{Example: Simulation exercise}
+
+Simulate a dataset following the specification given in the g-and-k distribution for financial returns example. Set $\theta_1 = 0.8$, $a = 1$, $b = 0.5$, $g = -1$, and $k = 1$, with a sample size of 500, and use the same priors as in that example. Implement the BSL algorithm from scratch setting $M=100$ and $S=10000$ using a random walk proposal distribution.
 
 \section{Optimization approaches}\label{sec15_2}
 
@@ -196,15 +256,18 @@ Even in situations where the likelihood function has an analytical expression, b
 \section{Exercises}\label{sec15_4}
 
 \begin{enumerate}
-	\item \textbf{g-and-k distribution for financial returns continues}
+	\item \textbf{g-and-k distribution for financial returns continues I}
 	
-	Simulate a dataset following the specification given in the g-and-k distribution for financial returns example. Set $\theta_1 = 0.8$, $a = 1$, $b = 0.5$, $g = -1$, and $k = 1$, with a sample size of 500, and use the same prior as in this example. Implement the ABC accept/reject algorithm from scratch using one million prior draws, selecting the 1,000 draws with the smallest distance.\footnote{Note that this setting does not satisfy the asymptotic requirements for Bayesian consistency. However, it serves as a pedagogical exercise.}
+	Simulate a dataset following the specification given in the g-and-k distribution for financial returns example. Set $\theta_1 = 0.8$, $a = 1$, $b = 0.5$, $g = -1$, and $k = 1$, with a sample size of 500, and use the same priors as in that example. Implement the ABC accept/reject algorithm from scratch using one million prior draws, selecting the 1,000 draws with the smallest distance.\footnote{Note that this setting does not satisfy the asymptotic requirements for Bayesian consistency. However, it serves as a pedagogical exercise.}
 	
 	\begin{itemize}
 		\item Perform a linear regression adjustment using the posterior draws of our ABC-AR algorithm (ABC-AR-Adj).
 		\item Compare the results with those obtained using the ABC-AR implementation in the \textit{EasyABC} package, ensuring that the computational time is relatively similar between both implementations.
 		\item Compare the posterior results of ABC-AR, ABC-AR-Adj and EasyABC with the population values.
 	\end{itemize}
+
+	\item \textbf{g-and-k distribution for financial returns continues II}
+	Perform inference in the financial return example using Bayesian synthetic likelihood setting $M=100$ and $s=10000$ using a random walk proposal distribution in the \textit{BSL} package in \textbf{R} software.  
 	
 	\begin{comment}
 	\item Simulate a model $y_i=0.5 x_i+u_i, \ i=1,2,\dots,250$, where 
