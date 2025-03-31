@@ -19,6 +19,11 @@ The following code implements our ABC-AR algorithm, following the steps outlined
 
 Figure \ref{figABCown} presents the posterior distributions of $\theta_1$, $g$, and $k$ using both our ABC implementations and the \textit{EasyABC} package. We observe that our algorithms provide less information about $\theta_1$ compared to the \textit{EasyABC} implementation. Conversely, our algorithms offer more information about $g$ and $k$ than the \textit{EasyABC} function. Additionally, regression adjustment helps center the posterior distributions of $g$ and $k$ around the population parameters. But, this is no the case regarding $\theta_1$. Moreover, applying regression adjustment introduces a degree of smoothness to the distributions. Overall, in all implementations, the 95\% credible intervals encompass the population values.
 
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter15/figures/ABCown.png}
+	\caption[List of figure caption goes here]{Approximate Bayesian computation accept/reject: g-and-k distribution.}\label{figABCown}
+\end{figure}
+
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 	\textit{R code. Approximate Bayesian computation accept/reject algorithm: g-and-k distribution simulation}
@@ -152,9 +157,48 @@ legend = "bottom", common.legend = TRUE)
 	\end{VF}
 \end{tcolorbox}
 
+\item \textbf{g-and-k distribution for financial returns continues II}
+
+Perform inference in the financial returns example using Bayesian synthetic likelihood, setting $M=500$, $S=11,000$, a burn-in of 1,000, and a thinning parameter of 10. This setting results in a similar computational time to the ABC algorithm. Use a random walk proposal distribution in the \textit{BSL} package in \textbf{R}, and compare the results with those from ABC.
+
+\textbf{Answer:}
+
+The following code shows how to perform inference in this exercise, and Figure \ref{figSBLexcrate} shows the posterior plots. We find that there is marginal positive evidence that the moving average coefficient is positive. Since the posterior distribution of $g$ is centered around zero, the distribution appears to be symmetric around its median. Meanwhile, a positive $k$ indicates that the distribution has heavier tails than a normal distribution, implying a higher likelihood of extreme values (outliers) in the exchange rate USD/EURO. 
+
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter15/figures/ABCown.png}
-	\caption[List of figure caption goes here]{Approximate Bayesian computation accept/reject: g-and-k distribution.}\label{figABCown}
+	\caption[List of figure caption goes here]{Bayesian synthetic likelihood: Financial returns USD/EURO example.}\label{figSBLexcrate}
 \end{figure}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Approximate Bayesian computation accept/reject algorithm: g-and-k distribution simulation}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+			library(ggplot2); library(latex2exp)
+			Sp <- 1000
+			
+			df1 <- data.frame(Value = c(PostABC_AR[1:Sp,1], PostABC_ARown[1:Sp,1], PostABC_ARownRegAd[1:Sp,1]), Distribution = factor(c(rep("EasyABC", Sp), rep("ABC", Sp), rep("ABCAdj", Sp))))
+			dentheta <- ggplot(df1, aes(x = Value, color = Distribution)) + geom_density(linewidth = 1) + geom_vline(xintercept = theta1, linetype = "dashed", color = "red", linewidth = 1) +
+			labs(title = TeX("Posterior density plot: $theta$"), x = TeX("$theta$"), y = "Posterior density") + scale_color_manual(values = c("blue", "red", "green")) +  theme_minimal() +
+			theme(legend.title = element_blank())
+			
+			df2 <- data.frame(Value = c(PostABC_AR[1:Sp,4], PostABC_ARown[1:Sp,4], PostABC_ARownRegAd[1:Sp,4]), Distribution = factor(c(rep("EasyABC", Sp), rep("ABC", Sp), rep("ABCAdj", Sp))))
+			deng <- ggplot(df2, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) + geom_vline(xintercept = g, linetype = "dashed", color = "red", linewidth = 1) + labs(title = TeX("Posterior density plot: g"), x = TeX("$g$"), y = "Posterior density") +
+			scale_color_manual(values = c("blue", "red", "green")) +  theme_minimal() + theme(legend.title = element_blank())
+			
+			df3 <- data.frame(Value = c(PostABC_AR[1:Sp,5], PostABC_ARown[1:Sp,5], PostABC_ARownRegAd[1:Sp,5]), Distribution = factor(c(rep("EasyABC", Sp), rep("ABC", Sp), rep("ABCAdj", Sp))))
+			denk <- ggplot(df3, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) + geom_vline(xintercept = k, linetype = "dashed", color = "red", linewidth = 1) +
+			labs(title = TeX("Posterior density plot: k"), x = TeX("$k$"), y = "Posterior density") +
+			scale_color_manual(values = c("blue", "red", "green")) +  theme_minimal() + theme(legend.title = element_blank())
+			
+			library(ggpubr)
+			ggarrange(dentheta, deng, denk, labels = c("A", "B", "C"), ncol = 3, nrow = 1,
+			legend = "bottom", common.legend = TRUE)
+		\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+
 
 \end{enumerate}
