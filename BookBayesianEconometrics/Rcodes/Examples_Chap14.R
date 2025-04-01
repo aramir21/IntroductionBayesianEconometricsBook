@@ -137,7 +137,7 @@ K <- 5
 n <- 500
 y <- RGKnew(par = parpop)
 # Algorithm parameters
-M <- 50 # Number of iterations to calculate mu and sigma
+M <- 200 # Number of iterations to calculate mu and sigma
 S <- 11000 # Number of MCMC iterations
 burnin <- 1000 # Burn in iterations
 thin <- 10 # Thining parameter
@@ -159,7 +159,7 @@ Lims <- matrix(c(-1, 0, 0, -5, -0.5, 1, rep(5, 4)), 5, 2)
 parPost <- matrix(NA, S, K)
 parPost[1,] <- par0 # arpop # par0
 EtaY <- SumSt(y = y)
-Zsl <- replicate(M, RGKnew(par = parPost[1,]))
+Zsl <- replicate(20, RGKnew(par = parPost[1,]))
 EtasZsl <- t(apply(Zsl, 2, SumSt))
 Usl <- colMeans(EtasZsl)
 SIGMAsl <- var(EtasZsl)
@@ -218,6 +218,7 @@ tock1 - tick1
 mean(accept)
 PostChainOwn <- coda::mcmc(parPost[keep,])
 summary(PostChainOwn)
+plot(PostChainOwn)
 #### BSL package
 tick <- Sys.time()
 Resultsgk <- bsl(y = y, n = M, M = S, model = Modelgk, covRandWalk = CoVarRW,
@@ -226,6 +227,7 @@ tock <- Sys.time()
 tock - tick
 PostChain <- coda::mcmc(Resultsgk@theta[keep,])
 summary(PostChain)
+plot(PostChain)
 Resultsgk@acceptanceRate
 plot(Resultsgk@loglike[keep], type = "l")
 sd(Resultsgk@loglike[keep])

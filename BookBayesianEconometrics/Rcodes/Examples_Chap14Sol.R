@@ -178,7 +178,6 @@ library(BSL)
 dfExcRate <- read.csv(file = "https://raw.githubusercontent.com/BEsmarter-consultancy/BSTApp/refs/heads/master/DataApp/ExchangeRate.csv", sep = ",", header = T)
 attach(dfExcRate)
 str(dfExcRate)
-Day <- as.Date(Date, format = "%d/%m/%Y")
 y <- USDEUR
 n <- length(y)
 # Simulate g-and-k data
@@ -307,3 +306,87 @@ ggarrange(dentheta, deng, denk, labels = c("A", "B", "C"), ncol = 3, nrow = 1,
 
 
 
+# Algorithm parameters
+K <- 5
+M <- 250 # Number of iterations to calculate mu and sigma
+S <- 5000 # Number of MCMC iterations
+burnin <- 1000 # Burn in iterations
+thin <- 2 # Thining parameter
+keep <- seq(burnin + 1, S, thin)
+par0 <- c(0.5, 2, 1, 0, 1) 
+Modelgk <- newModel(fnSim = RGKnew, fnSum = SumSt, theta0 = par0, fnLogPrior = LogPrior, verbose = FALSE)
+validObject(Modelgk)
+# Check if the summary statistics are roughly normal
+simgk <- simulation(Modelgk, n = M, theta = par0, seed = 10)
+par(mfrow = c(4, 3))
+for (i in 1:12){
+  eval <- seq(min(simgk$ssx[, i]), max(simgk$ssx[, i]), 0.001)
+  densnorm <- dnorm(eval, mean = mean(simgk$ssx[, i]), sd(simgk$ssx[, i])) 
+  plot(density(simgk$ssx[, i]), main = "", xlab = "")
+  lines(eval, densnorm, col = "red")
+}
+##### Program from scratch #######
+Lims <- matrix(c(-1, 0, 0, -5, -0.5, 1, rep(5, 4)), 5, 2)
+parPost <- matrix(NA, S, K)
+parPost[1,] <- par0 # arpop # par0
+EtaY <- SumSt(y = y)
+Zsl <- replicate(20, RGKnew(par = parPost[1,]))
+EtasZsl <- t(apply(Zsl, 2, SumSt))
+Usl <- colMeans(EtasZsl)
+SIGMAsl <- var(EtasZsl)
+dnormsl <- mvtnorm::dmvnorm(EtaY, Usl, SIGMAsl, log = TRUE)
+tune <- 0.005 # Tuning parameter RW MH
+CoVarRW <- tune*diag(K)
+accept <- rep(0, S)
+tick1 <- Sys.time()
+pb <- winProgressBar(title = "progress bar", min = 0, max = S, width = 300)
+for (s in 2:S){
+  parc <- MASS::mvrnorm(1, mu = parPost[s-1,], Sigma = CoVarRW)
+  RestCheck <- NULL
+  for(j in 1:K){
+    if(parc[j] < Lims[j,1] | parc[j] > Lims[j,2]){
+      Rej <- 1
+    }else{
+      Rej <- 0
+    }
+    RestCheck <- c(RestCheck, Rej)
+  }
+  if(sum(RestCheck) != 0){
+    parPost[s,] <- parPost[s-1,]
+    accept[s] <- 0
+  }else{
+    Z <- replicate(M, RGKnew(par = parc))
+    EtasZ <- t(apply(Z, 2, SumSt))
+    Um <- colMeans(EtasZ)
+    SIGMAm <- var(EtasZ)
+    dnormc <- mvtnorm::dmvnorm(EtaY, Um, SIGMAm, log = TRUE)
+    if(s > round(0.1*S, 0) & s < round(0.2*S, 0)){
+      CoVarRW <- var(parPost, na.rm = TRUE)
+    }
+    if(dnormc == -Inf){
+      parPost[s,] <- parPost[s-1,]
+      accept[s] <- 0
+    }else{
+      alpha <- min(1, exp(dnormc - dnormsl))
+      U <- runif(1)
+      if(U <= alpha){
+        parPost[s,] <- parc
+        Usl <- Um
+        SIGMAsl <- SIGMAm
+        dnormsl <- dnormc
+        accept[s] <- 1
+      }else{
+        parPost[s,] <- parPost[s-1,]
+        accept[s] <- 0
+      }
+    }
+  }
+  setWinProgressBar(pb, s, title=paste( round(s/S*100, 0),"% done"))
+}
+close(pb)
+tock1 <- Sys.time()
+tock1 - tick1
+mean(accept)
+PostChainOwn <- coda::mcmc(parPost[keep,])
+summary(PostChainOwn)
+plot(PostChainOwn)

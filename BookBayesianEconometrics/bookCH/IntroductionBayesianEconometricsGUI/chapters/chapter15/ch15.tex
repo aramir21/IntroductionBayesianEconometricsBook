@@ -19,9 +19,9 @@ Thus, what happens when the likelihood function does not have an analytical expr
 
 \subsection{Approximate Bayesian computation}\label{sec15_12}
 
-\textit{Approximate Bayesian Computation} (ABC) is designed to handle inferential situations where the likelihood function \( p(\boldsymbol{y} \mid \boldsymbol{\theta}) \) is intractable or highly complex. It was introduced in population genetics by \cite{tavare1997inferring, pritchard1999population} and later generalized by \cite{beaumont2002approximate}. The basic intuitive origin of ABC appears to have been introduced by \cite{rubin1984bayesianly}. A growing body of literature explores its applications in biology, cosmology, finance, economics, and other fields.
+\textit{Approximate Bayesian Computation} (ABC) is designed to handle inferential situations where the likelihood function \( p(\boldsymbol{y} \mid \boldsymbol{\theta}) \) is intractable or highly complex, $\boldsymbol{y}\in \mathbb{R}^N$. It was introduced in population genetics by \cite{tavare1997inferring, pritchard1999population} and later generalized by \cite{beaumont2002approximate}. The basic intuitive origin of ABC appears to have been introduced by \cite{rubin1984bayesianly}. A growing body of literature explores its applications in biology, cosmology, finance, economics, and other fields.
 
-The requirement in ABC is the ability to simulate from the parametric model. The process begins by drawing samples from the prior distribution \( \pi({\boldsymbol{\theta}}) \) multiple times, $\boldsymbol{\theta}\in\mathbb{R}^K$, and then simulating data from the model given each \( {\boldsymbol{\theta}^{(s)}}, s=1,2,\dots,S \). The resulting synthetic data, \( \boldsymbol{z}^{(s)} \in \mathbb{R}^n \) is used to compute summary statistics \( \boldsymbol{\eta}(\boldsymbol{z}^{(s)}) \in \mathbb{R}^L, L\geq K \). These summary statistics are crucial for the performance of ABC and should be selected based on a thorough understanding of the model.  
+The requirement in ABC is the ability to simulate from the parametric model. The process begins by drawing samples from the prior distribution \( \pi({\boldsymbol{\theta}}) \) multiple times, $\boldsymbol{\theta}\in\mathbb{R}^K$, and then simulating data from the model given each \( {\boldsymbol{\theta}^{(s)}}, s=1,2,\dots,S \). The resulting synthetic data, \( \boldsymbol{z}^{(s)} \in \mathbb{R}^N \) is used to compute summary statistics \( \boldsymbol{\eta}(\boldsymbol{z}^{(s)}) \in \mathbb{R}^L, L\geq K \). These summary statistics are crucial for the performance of ABC and should be selected based on a thorough understanding of the model.  
 
 Next, we compare the synthetic summary statistics with the observed summary statistics \( \boldsymbol{\eta}(\boldsymbol{y}) \) using a distance metric \( d\left\{ \boldsymbol\eta ({\boldsymbol y}),{\boldsymbol \eta }({\boldsymbol z}^{(s)})\right\} \), typically the Euclidean distance. We retain the prior draws that generate synthetic summary statistics closest to the observed ones, that is, \( d\left\{ \boldsymbol\eta ({\boldsymbol y}),{\boldsymbol \eta }({\boldsymbol z}^{(s)})\right\}\leq \epsilon \), forming an approximation of the posterior distribution \( \pi_{\epsilon}(\boldsymbol{\theta},\boldsymbol{z} \mid \boldsymbol{\eta}(\boldsymbol{y})) \).
 
@@ -49,7 +49,7 @@ We should note from these asymptotic results that ABC suffers from the \textit{c
 
 It is a common practice in ABC to perform a regression adjustment after retaining the draws \cite{beaumont2002approximate, leuenberger2010bayesian, sisson2018handbook}. This adjustment reduces bias in posterior draws by performing a simple linear regression between the selected draws and the discrepancy between the observed and simulated summary statistics, \( {\theta}^{(s)}_k = \alpha_k + \left(\boldsymbol{\eta}(\boldsymbol{y}) - \boldsymbol{\eta}(\boldsymbol{z}^{(s)})\right)^{\top}\boldsymbol{\beta}_k + \mu^{(s)}_k, \ k=1,2,\dots,K \). Then, the posterior draws are adjusted using the slope estimate \( {\theta}^{\text{adj},(s)}_k = {\theta}^{(s)}_k - \left(\boldsymbol{\eta}(\boldsymbol{y}) - \boldsymbol{\eta}(\boldsymbol{z}^{(s)})\right)^{\top}\hat{\boldsymbol{\beta}}_k \). Other regression adjustment strategies are also used, such as local linear regression, ridge regression, and neural networks. See the \textit{abc} package in \textbf{R}.
 
-The favorable asymptotic sampling properties of ABC rely on correct model specification. However, \cite{frazier2020model} demonstrate that when the assumed model is misspecified, the asymptotic behavior of ABC can deteriorate. In particular, the posterior shape becomes asymptotically non-Gaussian, and the behavior of the posterior mean remains generally unknown. Additionally, regression adjustment approaches can produce posteriors that differ significantly from their simpler accept/reject counterparts.
+The favorable asymptotic sampling properties of ABC rely on correct model specification. \cite{frazier2020model} demonstrate that when the assumed model is misspecified, the asymptotic behavior of ABC can deteriorate. In particular, the posterior shape becomes asymptotically non-Gaussian, and the behavior of the posterior mean remains generally unknown. Additionally, regression adjustment approaches can produce posteriors that differ significantly from their simpler accept/reject counterparts.
 
 Given these concerns, testing model specification in ABC is essential. This can be done using simulated goodness-of-fit statistics \cite{bertorelle2010abc,lintusaari2017fundamentals}, predictive p-values \cite{bertorelle2010abc}, discrepancy diagnostics \cite{frazier2020model}, and asymptotic tests \cite{ramirez2024testing} to evaluate model adequacy.
 
@@ -169,22 +169,22 @@ PostABCSMC <- coda::mcmc(ABC_SMC[["param"]])
 
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter15/figures/ABCexcrate.png}
-	\caption[List of figure caption goes here]{Approximate Bayesian computation: Exchange rate log returns USD/EURO.}\label{figABCexc}
+	\caption[List of figure caption goes here]{Posterior distributions using approximate Bayesian computation: Exchange rate log returns USD/EURO.}\label{figABCexc}
 \end{figure}
 
 \subsection{Bayesian synthetic likelihood}\label{sec15_13}
 
-Note that in ABC, in most cases, we target the posterior distribution $\pi(\boldsymbol{\theta} \mid \boldsymbol{\eta}(\boldsymbol{y}))$ rather than $\pi(\boldsymbol{\theta} \mid \boldsymbol{y})$, as $\boldsymbol{\eta}(\boldsymbol{y})$ is not a sufficient statistic. This can be beneficial since discarding information may improve the behavior of the likelihood or make the inference more robust to model misspecification \cite{price2018bayesian}. Given the intractability of $p(\boldsymbol{y} \mid \boldsymbol{\theta})$, it is highly likely that $p(\boldsymbol{\eta}(\boldsymbol{y}) \mid \boldsymbol{\theta})$ is also intractable. \cite{wood2010statistical} addressed this issue by introducing an auxiliary model for the summary statistics, assuming $p_a(\boldsymbol{\eta}(\boldsymbol{y})\mid \boldsymbol{\theta}) = N(\boldsymbol{\mu}_{\boldsymbol{\theta}}, \boldsymbol{\Sigma}_{\boldsymbol{\theta}})$.
+Note that in ABC, in most cases, we target the posterior distribution $\pi(\boldsymbol{\theta} \mid \boldsymbol{\eta}(\boldsymbol{y}))$ rather than $\pi(\boldsymbol{\theta} \mid \boldsymbol{y})$, as $\boldsymbol{\eta}(\boldsymbol{y})$ is not a sufficient statistic, $\boldsymbol{y}\in \mathbb{R}^N$, $\boldsymbol{\theta}\in \mathbb{R}^K, \ \boldsymbol{\eta}(\boldsymbol{y})\in \mathbb{R}^L, \ L\geq K$. This can be beneficial since discarding information may improve the behavior of the likelihood or make the inference more robust to model misspecification \cite{price2018bayesian}. Given the intractability of $p(\boldsymbol{y} \mid \boldsymbol{\theta})$, it is highly likely that $p(\boldsymbol{\eta}(\boldsymbol{y}) \mid \boldsymbol{\theta})$ is also intractable. \cite{wood2010statistical} addressed this issue by introducing an auxiliary model for the summary statistics, assuming $p_a(\boldsymbol{\eta}(\boldsymbol{y})\mid \boldsymbol{\theta}) = N(\boldsymbol{\mu}_{\boldsymbol{\theta}}, \boldsymbol{\Sigma}_{\boldsymbol{\theta}})$.
 
 Bayesian synthetic likelihood (BSL) arises when this auxiliary likelihood is combined with a prior distribution on the parameter \cite{drovandi2015bayesian,price2018bayesian},
 \begin{align*} 
 	\pi_{a}(\boldsymbol{\theta} \mid \boldsymbol{\eta}(\boldsymbol{y})) &\propto p_{a}(\boldsymbol{\eta}(\boldsymbol{y})\mid \boldsymbol{\theta}) \pi(\boldsymbol{\theta}), 
 \end{align*}
 
-where the subscript \( a \) indicates that this is an approximation due to the Gaussian assumption. This is referred to as the idealized BSL posterior. However, note that \( p_a(\boldsymbol{\eta}(\boldsymbol{y})\mid \boldsymbol{\theta}) \) is rarely available, as \( \boldsymbol{\mu}_{\boldsymbol{\theta}} \) and \( \boldsymbol{\Sigma}_{\boldsymbol{\theta}} \) are generally unknown. Therefore, we estimate these quantities using simulations from the model, following the same steps as in ABC:\footnote{There are other ways to calculate the covariance matrix \cite{nott2023bayesian}.}
+where the subscript \( a \) indicates that this is an approximation due to the Gaussian assumption. This is referred to as the idealized BSL posterior. However, note that \( p_a(\boldsymbol{\eta}(\boldsymbol{y})\mid \boldsymbol{\theta}) \) is rarely available, as \( \boldsymbol{\mu}_{\boldsymbol{\theta}} \) and \( \boldsymbol{\Sigma}_{\boldsymbol{\theta}} \) are generally unknown. Therefore, we estimate these quantities using simulations from the model, following the same steps as in ABC:\footnote{There are better ways to calculate the covariance matrix, see \cite{nott2023bayesian}.}
 \begin{align*} 
 	\widehat{\boldsymbol{\mu}}_{\boldsymbol{\theta}} &= \frac{1}{M} \sum_{m=1}^{M} \boldsymbol{\eta}(\boldsymbol{z}^{(m)}),\\
-	\widehat{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}} &= \frac{1}{M-1} \sum_{m=1}^{M} (\boldsymbol{\eta}(\boldsymbol{z}^{(m)}) - \boldsymbol{\mu}_{\boldsymbol{\theta}})(\boldsymbol{\eta}(\boldsymbol{z}^{(m)}) - \boldsymbol{\mu}_{\boldsymbol{\theta}})^{\top}. 
+	\widehat{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}} &= \frac{1}{M-1} \sum_{m=1}^{M} (\boldsymbol{\eta}(\boldsymbol{z}^{(m)}) - \widehat{\boldsymbol{\mu}}_{\boldsymbol{\theta}})(\boldsymbol{\eta}(\boldsymbol{z}^{(m)}) - \widehat{\boldsymbol{\mu}}_{\boldsymbol{\theta}})^{\top}. 
 \end{align*}
 
 Then, we have 
@@ -193,15 +193,11 @@ Then, we have
 \end{align*}
 where $p_{a,M}(\boldsymbol{\eta}(\boldsymbol{y}))$ uses the estimates, which in turn depends on the number of draws $M$ to calculate $\widehat{\boldsymbol{\mu}}_{\boldsymbol{\theta}}$ and $\widehat{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}}$. Note that although we can have unbiased estimators of these object, in general, $N(\boldsymbol{\eta}(\boldsymbol{y})\mid \widehat{\boldsymbol{\mu}}_{\boldsymbol{\theta}},\widehat{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}})$ is not an unbiased estimator of $N(\boldsymbol{\eta}(\boldsymbol{y})\mid {\boldsymbol{\mu}}_{\boldsymbol{\theta}},{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}})$. \cite{an2022bsl} show an unbiased estimator for BSL. 
 
-\cite{nott2023bayesian} show that \( \pi_{a,M}(\boldsymbol{\theta}) \) converges asymptotically to a Gaussian distribution and that the \( 100(1-\alpha)\% \) Bayesian credible regions using BSL have frequentist coverage of \( 100(1-\alpha)\% \). In addition, the posterior mean from BSL is also asymptotically Gaussian. These results require convenient estimation of the covariance matrix and that \( M \to \infty \) as \( n \to \infty \). However, \cite{nott2023bayesian} show that the choice of \( M \) does not drastically affect the desirable asymptotic properties of BSL, and \cite{price2018bayesian} find in their examples that posterior inference depends only weakly on \( M \). Thus, \( M \) can be chosen to balance computational efficiency such that the standard deviation of the log synthetic likelihood is between 1 and 3 \cite{an2019accelerating}. 
+\cite{nott2023bayesian} show that \( \pi_{a,M}(\boldsymbol{\theta}) \) converges asymptotically to a Gaussian distribution and that the \( 100(1-\alpha)\% \) Bayesian credible regions using BSL have frequentist coverage of \( 100(1-\alpha)\% \). In addition, the posterior mean from BSL is also asymptotically Gaussian. These results require convenient estimation of the covariance matrix and that \( M \to \infty \) as \( N \to \infty \), $M=C\lfloor N^{\gamma} \rfloor, \ C>0, \ \gamma > 0$ and $\lfloor x \rfloor$ denoting the integer floor of $x$. Thus, the choice of \( M \) does not drastically affect the desirable asymptotic properties of BSL \cite{nott2023bayesian}. In addition, \cite{price2018bayesian} find in their examples that posterior inference depends only weakly on \( M \). Thus, \( M \) can be chosen to balance computational efficiency such that the standard deviation of the log synthetic likelihood is between 1 and 3 \cite{an2019accelerating}. 
 
 A critical aspect of BSL is the estimation of the covariance matrix, which can be computationally demanding in high-dimensional settings. However, \cite{nott2023bayesian} propose an adjusted approach to BSL that allows the use of a simple, though potentially misspecified, estimator of the covariance matrix (see Equation 5 and the related discussion in their paper for details).
 
 If the normality assumption for summary statistics is too restrictive, \cite{an2020robust} propose a robust BSL method based on a semi-parametric approach. Additionally, \cite{frazier2021robust} show that when the model is misspecified, i.e., there is no compatibility between the assumed statistical model and the true data-generating process, BSL can lead to unreliable parameter inference. To address this issue, they propose a new BSL method that detects model misspecification and provides more reliable inference.
-
-
-%BSL is a specific case of parametric Bayesian indirect likelihood \cite{drovandi2015bayesian} and can be interpreted as a form of pseudo-marginal MCMC \cite{martin2024approximating}. In addition, 
-
 
 We can perform BSL using the Algorithm \ref{BSL0}. We can use a random walk Metropolis-Hastings to set the proposal distribution. The covariance matrix of the random walk proposal can be tuned using an initial pilot run.
 
@@ -236,25 +232,19 @@ In practice, BSL may be more convenient than ABC when the summary statistics are
 
 \textbf{Example: Simulation exercise}
 
-We simulate a dataset following the specification of the g-and-k distribution for the financial returns example, setting $\theta_1 = 0.8$, $a = 1$, $b = 0.5$, $g = -1$, and $k = 1$, with a sample size of 500. We use the same priors and summary statistics as in that example.  
+We simulate a dataset following the specification of the g-and-k distribution for the financial returns example, setting $\theta_1 = 0.8$, $a = 1$, $b = 0.5$, $g = -1$, and $k = 1$, with a sample size of 500. We use the same priors and summary statistics as in that example.
 
-We use the \textit{BSL} package in \textbf{R} to perform posterior inference using BSL. Additionally, we implement our own BSL sampler to compare the results with the vanilla algorithm from the package. We run the BSL algorithms with $M=500$, $S=11,000$, a burn-in of 1,000, and a thinning parameter of 10, using a random walk proposal distribution with a tuning parameter of 0.005. This setting results in a similar computational time compared to the ABC implementation in Exercise 1.  
+We use the \textit{BSL} package in \textbf{R} to perform posterior inference using BSL. Additionally, we implement our own BSL sampler to compare the results with the vanilla algorithm from the package. We run the BSL algorithms with $M=200$, $S=11,000$, a burn-in of 1,000, and a thinning parameter of 10, using a random walk proposal distribution. This setting results in similar computational times between the two implementations (scratch and package) and is also comparable to the ABC implementation in Exercise 1.
 
-The following code demonstrates this procedure. The summary statistics appear to be approximately normally distributed. Figure \ref{figBSL} displays the posterior distributions from both algorithms. In general, the 95\% credible intervals encompass the population parameters. Compared to ABC, BSL appears to produce more irregular posterior distributions, with more modes and less centering around the population values. 
+The following code demonstrates this procedure. The summary statistics appear to be approximately normally distributed, as shown in Figure \ref{figDensSum}, where the red line represents the normal density and the black line represents the estimated density of the summary statistic. Figure \ref{figBSL} displays the posterior distributions from both algorithms for $\theta_1$, $g$, and $k$. In general, the 95\% credible intervals encompass the true parameter values. However, the posterior draws from the \textit{BSL} package are more informative compared to our implementation of Algorithm \ref{BSL0}. Additionally, BSL outperforms the results of ABC in Exercise 1, yielding more precise posterior distributions. This pattern has been observed in other settings \cite{drovandi2022comparison,martin2024approximating}. Both ABC and BSL produce posterior distributions centered at the true parameter values, although the posterior distribution of $\theta_1$ deviates from this pattern.
 
-\begin{figure}[!h]
-	\includegraphics[width=340pt, height=200pt]{Chapters/chapter15/figures/BSLexcrate.png}
-	\caption[List of figure caption goes here]{Bayesian synthetic likelihood: g-and-k simulation.}\label{figBSL}
-\end{figure}
-   
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 	\textit{R code. g-and-k simulation: Bayesian synthetic likelihood}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
 ######## BSL: g-and-k simulation ############
-rm(list = ls()); set.seed(010101)
-library(BSL)
+rm(list = ls()); set.seed(010101); library(BSL)
 # Simulate g-and-k data
 RGKnew <- function(par) {
 	z <- NULL
@@ -287,36 +277,97 @@ LogPrior <- function(par){
 # Population parameters
 theta1 <- 0.8; a <- 1; b <- 0.5; g <- -1; k <- 1
 parpop <- c(theta1, a, b, g, k)
+K <- 5
 n <- 500
-y <- RGKnew(par = parpop) 
-par0 <- c(0.5, 2, 1, 0, 1) 
-Modelgk <- newModel(fnSim = RGKnew, fnSum = SumSt, theta0 = par0, fnLogPrior = LogPrior, verbose = FALSE)
-validObject(Modelgk)
-M <- 500 # Number of iterations to calculate mu and sigma
+y <- RGKnew(par = parpop)
+# Algorithm parameters
+M <- 200 # Number of iterations to calculate mu and sigma
 S <- 11000 # Number of MCMC iterations
 burnin <- 1000 # Burn in iterations
 thin <- 10 # Thining parameter
 keep <- seq(burnin + 1, S, thin)
-tune <- 0.005 # Tuning parameter RW MH
+par0 <- c(0.5, 2, 1, 0, 1) 
+Modelgk <- newModel(fnSim = RGKnew, fnSum = SumSt, theta0 = par0, fnLogPrior = LogPrior, verbose = FALSE)
+validObject(Modelgk)
+# Check if the summary statistics are roughly normal
+simgk <- simulation(Modelgk, n = M, theta = par0, seed = 10)
+par(mfrow = c(4, 3))
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
+
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 	\textit{R code. g-and-k simulation: Bayesian synthetic likelihood}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-# Check if the summary statistics are roughly normal
-simgk <- simulation(Modelgk, n = M, theta = par0, seed = 10)
-par(mfrow = c(4, 3))
 for (i in 1:12){
 	eval <- seq(min(simgk$ssx[, i]), max(simgk$ssx[, i]), 0.001)
 	densnorm <- dnorm(eval, mean = mean(simgk$ssx[, i]), sd(simgk$ssx[, i])) 
 	plot(density(simgk$ssx[, i]), main = "", xlab = "")
 	lines(eval, densnorm, col = "red")
 }
-Resultsgk <- bsl(y = y, n = M, M = S, model = Modelgk, covRandWalk = tune*diag(5),
+##### Program from scratch #######
+Lims <- matrix(c(-1, 0, 0, -5, -0.5, 1, rep(5, 4)), 5, 2)
+parPost <- matrix(NA, S, K); parPost[1,] <- par0 ; EtaY <- SumSt(y = y)
+Zsl <- replicate(M, RGKnew(par = parPost[1,]))
+EtasZsl <- t(apply(Zsl, 2, SumSt))
+Usl <- colMeans(EtasZsl); SIGMAsl <- var(EtasZsl)
+dnormsl <- mvtnorm::dmvnorm(EtaY, Usl, SIGMAsl, log = TRUE)
+tune <- 0.005; CoVarRW <- tune*diag(K)
+accept <- rep(0, S); tick1 <- Sys.time()
+pb <- winProgressBar(title = "progress bar", min = 0, max = S, width = 300)
+for (s in 2:S){
+	parc <- MASS::mvrnorm(1, mu = parPost[s-1,], Sigma = CoVarRW)
+	RestCheck <- NULL
+	for(j in 1:K){
+		if(parc[j] < Lims[j,1] | parc[j] > Lims[j,2]){
+			Rej <- 1
+		}else{Rej <- 0}
+		RestCheck <- c(RestCheck, Rej)
+	}
+	if(sum(RestCheck) != 0){
+		parPost[s,] <- parPost[s-1,]; accept[s] <- 0
+	}else{
+		Z <- replicate(M, RGKnew(par = parc))
+		EtasZ <- t(apply(Z, 2, SumSt))
+		Um <- colMeans(EtasZ); SIGMAm <- var(EtasZ)
+		dnormc <- mvtnorm::dmvnorm(EtaY, Um, SIGMAm, log = TRUE)
+		if(s > round(0.1*S, 0) & s < round(0.2*S, 0)){
+			CoVarRW <- var(parPost, na.rm = TRUE)
+		}
+		if(dnormc == -Inf){
+			parPost[s,] <- parPost[s-1,]; accept[s] <- 0
+		}else{
+			alpha <- min(1, exp(dnormc - dnormsl)); U <- runif(1)
+			if(U <= alpha){
+				parPost[s,] <- parc; Usl <- Um; SIGMAsl <- SIGMAm
+				dnormsl <- dnormc; accept[s] <- 1
+			}else{
+				parPost[s,] <- parPost[s-1,]; accept[s] <- 0
+			}
+		}
+	}
+	setWinProgressBar(pb, s, title=paste( round(s/S*100, 0),"% done"))
+}
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. g-and-k simulation: Bayesian synthetic likelihood}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+close(pb); tock1 <- Sys.time(); tock1 - tick1
+mean(accept)
+PostChainOwn <- coda::mcmc(parPost[keep,])
+summary(PostChainOwn)
+#### BSL package
+tick <- Sys.time()
+Resultsgk <- bsl(y = y, n = M, M = S, model = Modelgk, covRandWalk = CoVarRW,
 method = "BSL", thetaNames = expression(theta, a, b, g, k), plotOnTheFly = TRUE)
+tock <- Sys.time(); tock - tick
 PostChain <- coda::mcmc(Resultsgk@theta[keep,])
 summary(PostChain)
 Resultsgk@acceptanceRate
@@ -325,24 +376,36 @@ sd(Resultsgk@loglike[keep])
 # Figures 
 library(ggplot2); library(latex2exp)
 Sp <- length(keep)
-df1 <- data.frame(Value = c(PostChain[,1]), Distribution = factor(c(rep("BSL", Sp))))
-dentheta <- ggplot(df1, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) + labs(title = TeX("Posterior density plot: $theta$"), x = TeX("$theta$"), y = "Posterior density") + scale_color_manual(values = c("blue")) +  theme_minimal() + theme(legend.title = element_blank())
-df2 <- data.frame(Value = c(PostChain[,4]), Distribution = factor(c(rep("BSL", Sp))))
-deng <- ggplot(df2, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) + labs(title = "Posterior density plot: g", x = "g", y = "Posterior density") +
-scale_color_manual(values = c("blue")) +  theme_minimal() + theme(legend.title = element_blank())
-df3 <- data.frame(Value = c(PostChain[,5]), Distribution = factor(c(rep("BSL", Sp))))
-denk <- ggplot(df3, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) + labs(title = "Posterior density plot: k", x = "k", y = "Posterior density") +
-scale_color_manual(values = c("blue")) +  theme_minimal() + theme(legend.title = element_blank())
+df1 <- data.frame(Value = c(PostChain[,1], PostChainOwn[,1]), Distribution = factor(c(rep("BSL", Sp), rep("BSLscratch", Sp))))
+dentheta <- ggplot(df1, aes(x = Value, color = Distribution)) + geom_density(linewidth = 1) + labs(title = TeX("Posterior density plot: $theta$"), x = TeX("$theta$"), y = "Posterior density") + geom_vline(xintercept = theta1, linetype = "dashed", color = "red", linewidth = 1) + scale_color_manual(values = c("blue", "red")) +  theme_minimal() +
+theme(legend.title = element_blank())
+df2 <- data.frame(Value = c(PostChain[,4], PostChainOwn[,4]), Distribution = factor(c(rep("BSL", Sp), rep("BSLscratch", Sp))))
+deng <- ggplot(df2, aes(x = Value, color = Distribution)) + geom_density(linewidth = 1) + labs(title = "Posterior density plot: g", x = "g", y = "Posterior density") +
+geom_vline(xintercept = g, linetype = "dashed", color = "red", linewidth = 1) +
+scale_color_manual(values = c("blue", "red")) + theme_minimal() + theme(legend.title = element_blank())
+df3 <- data.frame(Value = c(PostChain[,5], PostChainOwn[,5]), Distribution = factor(c(rep("BSL", Sp), rep("BSLscratch", Sp))))
+denk <- ggplot(df3, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) + labs(title = "Posterior density plot: k", x = "k", y = "Posterior density") + geom_vline(xintercept = k, linetype = "dashed", color = "red", linewidth = 1) + scale_color_manual(values = c("blue", "red")) +  theme_minimal() + theme(legend.title = element_blank())
 library(ggpubr)
 ggarrange(dentheta, deng, denk, labels = c("A", "B", "C"), ncol = 3, nrow = 1,
 legend = "bottom", common.legend = TRUE)
-		\end{lstlisting}
+\end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
 
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter15/figures/DensitiesSum.png}
+	\caption[List of figure caption goes here]{Density estimates of summary statistics: g-and-k simulation.}\label{figDensSum}
+\end{figure} 
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter15/figures/BSLgksim.png}
+	\caption[List of figure caption goes here]{Posterior distributions using Bayesian synthetic likelihood: g-and-k simulation.}\label{figBSL}
+\end{figure}
+
+
 \section{Optimization approaches}\label{sec15_2}
 
-Even in situations where the likelihood function has an analytical expression, but there are huge datasets, MCMC and IS algorithms require pointwise evaluation of the likelihood function. This implies a huge number of operations, and these methods are not designed to be \textit{scalable}. Further, if there is a large parameter space, these methods are neither \textit{scalable} in the number of parameters.
+MCMC and IS algorithms require pointwise evaluation of the likelihood function, which implies a massive number of operations when dealing with very large datasets. Unfortunately, these algorithms are not designed to be \textit{scalable}. Moreover, if the parameter space is large, these methods are also not \textit{scalable} in the number of parameters. Therefore, approximation methods should be used even when the likelihood function has an analytical expression.
 
 \textit{Optimization approaches} are designed to scale to high parameter spaces and large datasets. The trick is to change simulation with optimization. 
 
@@ -350,7 +413,48 @@ Even in situations where the likelihood function has an analytical expression, b
 \textit{Integrated nested Laplace approximations} approximates $\pi(\boldsymbol{\theta} \mid \mathbf{y})$ by a combination of low-dimensional deterministic integration and optimization steps. 
 
 \subsection{Variational Bayes}\label{sec15_22}
-\textit{Variational Bayes} replaces $\pi(\boldsymbol{\theta} \mid \mathbf{y})$ by an approximation produced by calculus of variations. 
+\textit{Variational Bayes} (VB) is a method from machine learning \cite{jordan1999introduction,wainwright2008graphical} that replaces $\pi(\boldsymbol{\theta} \mid \mathbf{y})$ by an approximation produced by optimization using calculus of variations, that is why the method is called \textit{variational} Bayes. This can happen because the posterior distribution is very complicated, for instance multimodal, or there is a high-dimensional problem that would take too long to solve using MCMC or IS algorithms. 
+
+Thus, the aim in VB is to approximate the posterior distribution using $q(\boldsymbol{\theta})$ that belongs to the variational family $\mathcal{Q}$, where this should be a family of distributions that would be computationally easy to work with, but flexible enough to get a good approximation of the posterior distribution \cite{blei2017variational}. Then, $q$ is called the \textit{variational approximation} to the posterior distribution, and a particular $q$ in $\mathcal{Q}$ is specified by obtaining a particular set of \textit{variational parameters}. This is commonly performed minimizing the Kullback-Leibler divergence between $q(\boldsymbol{\theta})$ and $\pi(\boldsymbol{\theta} \mid \mathbf{y})$,
+\begin{align}\label{eq:VB1}
+	q^*(\boldsymbol{\theta}):=\underset{q \in \mathcal{Q}}{\argmin} \  \text{KL}(q(\boldsymbol{\theta})||\pi(\boldsymbol{\theta} \mid \mathbf{y})),
+\end{align}  
+where $\text{KL}(q(\boldsymbol{\theta})||\pi(\boldsymbol{\theta} \mid \mathbf{y}))=\mathbb{E}_q\left[\log\left(\frac{q(\boldsymbol{\theta})}{\pi(\boldsymbol{\theta} \mid \mathbf{y})}\right)\right]$. 
+
+Note that in relatively complex models the optimization in \ref{eq:VB1}  is not computable due to depending on the marginal likelihood $p(\boldsymbol{y})$, which is normally unknown due to the implicit integral does not have analytical solution. In particular,
+\begin{align*}
+	\log(p(\boldsymbol{y}))&=\log\left(\int_{\boldsymbol{\Theta}}p(\boldsymbol{y}\mid \boldsymbol{\theta})\pi(\boldsymbol{\theta})d\boldsymbol{\theta}\right)\\
+	&=\log\left(\int_{\boldsymbol{\Theta}}p(\boldsymbol{y}, \boldsymbol{\theta})d\boldsymbol{\theta}\right)\\
+	&=\log\left(\int_{\boldsymbol{\Theta}}\frac{p(\boldsymbol{y}, \boldsymbol{\theta})}{q(\boldsymbol{\theta})}q(\boldsymbol{\theta})d\boldsymbol{\theta}\right)\\
+	&=\log \mathbb{E}_q\left(\frac{p(\boldsymbol{y}, \boldsymbol{\theta})}{q(\boldsymbol{\theta})}\right)\\
+	&\geq \mathbb{E}_q\log\left(\frac{p(\boldsymbol{y}, \boldsymbol{\theta})}{q(\boldsymbol{\theta})}\right)\\
+	&=\mathbb{E}_q\log(p(\boldsymbol{y}, \boldsymbol{\theta}))-\mathbb{E}_q\log(q(\boldsymbol{\theta}))\\
+	&=\text{ELBO}(q(\boldsymbol{\theta})),
+\end{align*}
+where the inequality is from the Jensen's inequality. The last term is the evidence lower bound (ELBO), which is a lower bound of the marginal likelihood.
+Note that the gap between the marginal likelihood and the ELBO is given by
+\begin{align*}
+	\log(p(\boldsymbol{y})) - \text{ELBO}(q(\boldsymbol{\theta})) & = \log(p(\boldsymbol{y})) - \mathbb{E}_q\log(p(\boldsymbol{y}, \boldsymbol{\theta}))+\mathbb{E}_q\log(q(\boldsymbol{\theta}))\\
+	&=\mathbb{E}_q\left(\log(q(\boldsymbol{\theta}))-\log\left(\frac{p(\boldsymbol{y}, \boldsymbol{\theta})}{p(\boldsymbol{y})}\right)\right)\\
+	&=\mathbb{E}_q\left(\log(q(\boldsymbol{\theta}))-\log(\pi(\boldsymbol{\theta}\mid \boldsymbol{y}))\right)\\
+	&=\text{KL}(q(\boldsymbol{\theta})||\pi(\boldsymbol{\theta} \mid \mathbf{y})).	 
+\end{align*}
+Then,
+\begin{align*}
+	\log(p(\boldsymbol{y})) = \text{KL}(q(\boldsymbol{\theta})||\pi(\boldsymbol{\theta} \mid \mathbf{y})) + \text{ELBO}(q(\boldsymbol{\theta})),  
+\end{align*} 
+which implies that maximizing the ELBO with respect to $q(\boldsymbol{\theta})$ implies minimizing the KL divergence due to $\log(p(\boldsymbol{y}))$ does not depend on $q(\boldsymbol{\theta})$. This avoids calculating the marginal likelihood, and consequently is easier to solve the variational problem, as well as offering a lower bound for the marginal likelihood. Thus, the solution of the problem \ref{eq:VB1} is equivalent to solve
+\begin{align*}
+	q^*(\boldsymbol{\theta}):=\underset{q \in \mathcal{Q}}{\argmax} \  \text{ELBO}(q(\boldsymbol{\theta})).
+\end{align*} 
+
+The most common approach to set $q(\boldsymbol{\theta})$ is assuming independence in some blocks of $(\boldsymbol{\theta})$, that is, $q(\boldsymbol{\theta})=\prod_{l=1}^L q_l(\boldsymbol{\theta}_l), \ l\leq K, \ \boldsymbol{\theta}\in\mathbb{R}^K$. This is called the mean-field approximation, the name comes from statistical physics. Each $q_l(\boldsymbol{\theta}_l)$ is function of a set of \textit{variational parameters}, and optimization is with respect to them.  
+
+Note that the method is deterministic, rather than stochastic, that is, it does not require approximating the posterior distribution by draws from other simpler distributions. This makes VB faster than other methods. It requires to solve a deterministic optimization problem to find the \textit{best variational distribution} in a particular simple family, normally in the exponential family, by finding the parameters of this distribution such that minimize the KL divergence to the posterior distribution. Once the \textit{variational parameters} are found, we can sample from the simple \textit{variational distribution} to perform estimation, hypothesis testing, prediction, etc.  
+
+Gibbs sampler iterates between random draws of conditional posterior distributions, whereas VB determiniscaly iterates between distributions. Thus, VB works directly with distributions rather than with draws, it is approximate, but faster. The aim in expectation propagation is to minimize $\text{KL}\pi(\boldsymbol{\theta} \mid \mathbf{y})||q(\boldsymbol{\theta}))$ rather than $\pi(\boldsymbol{\theta} \mid \mathbf{y})$.  
+
+VB overestimates the precision of the posterior distribution, but not necessarily suffers in accuracy \cite{blei2017variational}.
 
 \section{Summary}\label{sec15_3}
 \textit{Simulation-based algorithms} suffer from the \textit{curse of dimensionality} in parameter space, whereas \textit{Optimization approaches} require evaluation of the likelihood functions. Thus, recent approaches mix these two approaches to overcome situations where both phenomena are present.
