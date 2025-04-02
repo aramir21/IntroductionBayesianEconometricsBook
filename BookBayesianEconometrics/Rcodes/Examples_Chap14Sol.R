@@ -236,9 +236,10 @@ tock <- Sys.time()
 tock - tick
 PostChain <- coda::mcmc(Resultsgk@theta[keep,])
 summary(PostChain)
-M <- 50 # 500 Number of iterations to calculate mu and sigma
-S <- 1100 # 11000 Number of MCMC iterations
-burnin <- 100 # 1000 # Burn in iterations
+CovarRWnew <- var(PostChain)
+M <- 200 # Number of iterations to calculate mu and sigma
+S <- 3000 # 11000 # 11000 Number of MCMC iterations
+burnin <- 1000 # 1000 # Burn in iterations
 thin <- 2 # 10 # Thining parameter
 keep <- seq(burnin + 1, S, thin)
 tune <- 1 # Tuning parameter RW MH
@@ -256,22 +257,73 @@ for(j in 1:5){
   ParTrans[,j] <- logitTransform(par = PostChain[,j], a = Lims[j,1], b = Lims[j,2])
 }
 CovarRW <- var(ParTrans)
+# The acceptance rate is really low in this setting!!!
+# tick <- Sys.time()
+# ResultsgkNew <- bsl(y = y, n = M, M = S, model = ModelgkNew, covRandWalk = tune*CovarRW,
+#                     method = "BSL", thetaNames = expression(theta, a, b, g, k), 
+#                     logitTransformBound = Lims, plotOnTheFly = TRUE)
+# tock <- Sys.time()
+# tock - tick
+# PostChain <- coda::mcmc(ResultsgkNew@theta[keep,])
+# plot(PostChain)
+# ResultsgkNew@acceptanceRate
+# plot(ResultsgkNew@loglike[keep], type = "l")
+# sd(ResultsgkNew@loglike[keep])
+
+# These two didn't work in this example!!!
+# tick <- Sys.time()
+# ResultsgkuBLS <- bsl(y = y, n = M, M = S, model = ModelgkNew, covRandWalk = tune*CovarRW,
+#                     method = "uBSL", thetaNames = expression(theta, a, b, g, k), 
+#                     logitTransformBound = Lims, plotOnTheFly = TRUE)
+# tock <- Sys.time()
+# tock - tick
+# PostChainuBLS <- coda::mcmc(ResultsgkuBLS@theta[keep,])
+# plot(PostChainuBLS)
+# ResultsgkuBLS@acceptanceRate
+# plot(ResultsgkuBLS@loglike[keep], type = "l")
+# sd(ResultsgkuBLS@loglike[keep])
+# 
+# tick <- Sys.time()
+# ResultsgksemiBLS <- bsl(y = y, n = M, M = S, model = ModelgkNew, covRandWalk = tune*CovarRW,
+#                      method = "semiBSL", thetaNames = expression(theta, a, b, g, k), 
+#                      logitTransformBound = Lims, plotOnTheFly = TRUE)
+# tock <- Sys.time()
+# tock - tick
+# PostChainsemiBLS <- coda::mcmc(ResultsgksemiBLS@theta[keep,])
+# plot(PostChainsemiBLS)
+# ResultsgksemiBLS@acceptanceRate
+# plot(ResultsgksemiBLS@loglike[keep], type = "l")
+# sd(ResultsgksemiBLS@loglike[keep])
+
+# The acceptance rate in this is really low!!!
+# tick <- Sys.time()
+# ResultsgkmisspecBLS <- bsl(y = y, n = M, M = S, model = ModelgkNew, covRandWalk = tune*CovarRW,
+#                         method = "BSLmisspec", thetaNames = expression(theta, a, b, g, k), 
+#                         logitTransformBound = Lims, misspecType = "mean", tau = 0.5, plotOnTheFly = TRUE)
+# tock <- Sys.time()
+# tock - tick
+# PostChainmisspecBLS <- coda::mcmc(ResultsgkmisspecBLS@theta[keep,])
+# plot(PostChainmisspecBLS)
+# ResultsgkmisspecBLS@acceptanceRate
+# plot(ResultsgkmisspecBLS@loglike[keep], type = "l")
+# sd(ResultsgkmisspecBLS@loglike[keep])
+
 tick <- Sys.time()
-ResultsgkNew <- bsl(y = y, n = M, M = S, model = ModelgkNew, covRandWalk = tune*CovarRW,
-                    method = "BSL", thetaNames = expression(theta, a, b, g, k), 
-                    logitTransformBound = Lims, plotOnTheFly = TRUE)
+ResultsgkmisspecBLSvar <- bsl(y = y, n = M, M = S, model = ModelgkNew, covRandWalk = tune*CovarRW,
+                           method = "BSLmisspec", thetaNames = expression(theta, a, b, g, k), 
+                           logitTransformBound = Lims, misspecType = "variance", tau = 0.5, plotOnTheFly = TRUE)
 tock <- Sys.time()
 tock - tick
-PostChain <- coda::mcmc(ResultsgkNew@theta[keep,])
-plot(PostChain)
-ResultsgkNew@acceptanceRate
-plot(ResultsgkNew@loglike[keep], type = "l")
-sd(ResultsgkNew@loglike[keep])
+PostChainmisspecBLSvar <- coda::mcmc(ResultsgkmisspecBLSvar@theta[keep,])
+plot(PostChainmisspecBLSvar)
+ResultsgkmisspecBLSvar@acceptanceRate
+plot(ResultsgkmisspecBLSvar@loglike[keep], type = "l")
+sd(ResultsgkmisspecBLSvar@loglike[keep])
 # Figures 
 library(ggplot2); library(latex2exp)
 Sp <- length(keep)
 df1 <- data.frame(
-  Value = c(PostChain[,1]),
+  Value = c(PostChainmisspecBLSvar[,1]),
   Distribution = factor(c(rep("BSL", Sp)))
 )
 
@@ -281,7 +333,7 @@ dentheta <- ggplot(df1, aes(x = Value, color = Distribution)) +   geom_density(l
   theme(legend.title = element_blank())
 
 df2 <- data.frame(
-  Value = c(PostChain[,4]),
+  Value = c(PostChainmisspecBLSvar[,4]),
   Distribution = factor(c(rep("BSL", Sp)))
 )
 
@@ -291,7 +343,7 @@ deng <- ggplot(df2, aes(x = Value, color = Distribution)) +   geom_density(linew
   theme(legend.title = element_blank())
 
 df3 <- data.frame(
-  Value = c(PostChain[,5]),
+  Value = c(PostChainmisspecBLSvar[,5]),
   Distribution = factor(c(rep("BSL", Sp)))
 )
 
@@ -304,89 +356,52 @@ library(ggpubr)
 ggarrange(dentheta, deng, denk, labels = c("A", "B", "C"), ncol = 3, nrow = 1,
           legend = "bottom", common.legend = TRUE)
 
+tick <- Sys.time()
+ResultsgkmisspecBLSvarnew <- bsl(y = y, n = M, M = S, model = ModelgkNew, covRandWalk = tune*CovarRWnew,
+                              method = "BSLmisspec", thetaNames = expression(theta, a, b, g, k), 
+                              misspecType = "variance", tau = 0.5, plotOnTheFly = TRUE)
+tock <- Sys.time()
+tock - tick
+keep <- seq(burnin + 1, S, thin) # keep <- seq(burnin + 1, S, thin)
+PostChainmisspecBLSvarnew <- coda::mcmc(ResultsgkmisspecBLSvarnew@theta[keep,])
+plot(PostChainmisspecBLSvarnew)
+ResultsgkmisspecBLSvarnew@acceptanceRate
+plot(ResultsgkmisspecBLSvarnew@loglike[keep], type = "l")
+sd(ResultsgkmisspecBLSvarnew@loglike[keep])
 
+# Figures 
+library(ggplot2); library(latex2exp)
+Sp <- length(keep)
+df1 <- data.frame(
+  Value = c(PostChainmisspecBLSvarnew[,1]),
+  Distribution = factor(c(rep("BSL", Sp)))
+)
 
-# Algorithm parameters
-K <- 5
-M <- 250 # Number of iterations to calculate mu and sigma
-S <- 5000 # Number of MCMC iterations
-burnin <- 1000 # Burn in iterations
-thin <- 2 # Thining parameter
-keep <- seq(burnin + 1, S, thin)
-par0 <- c(0.5, 2, 1, 0, 1) 
-Modelgk <- newModel(fnSim = RGKnew, fnSum = SumSt, theta0 = par0, fnLogPrior = LogPrior, verbose = FALSE)
-validObject(Modelgk)
-# Check if the summary statistics are roughly normal
-simgk <- simulation(Modelgk, n = M, theta = par0, seed = 10)
-par(mfrow = c(4, 3))
-for (i in 1:12){
-  eval <- seq(min(simgk$ssx[, i]), max(simgk$ssx[, i]), 0.001)
-  densnorm <- dnorm(eval, mean = mean(simgk$ssx[, i]), sd(simgk$ssx[, i])) 
-  plot(density(simgk$ssx[, i]), main = "", xlab = "")
-  lines(eval, densnorm, col = "red")
-}
-##### Program from scratch #######
-Lims <- matrix(c(-1, 0, 0, -5, -0.5, 1, rep(5, 4)), 5, 2)
-parPost <- matrix(NA, S, K)
-parPost[1,] <- par0 # arpop # par0
-EtaY <- SumSt(y = y)
-Zsl <- replicate(20, RGKnew(par = parPost[1,]))
-EtasZsl <- t(apply(Zsl, 2, SumSt))
-Usl <- colMeans(EtasZsl)
-SIGMAsl <- var(EtasZsl)
-dnormsl <- mvtnorm::dmvnorm(EtaY, Usl, SIGMAsl, log = TRUE)
-tune <- 0.005 # Tuning parameter RW MH
-CoVarRW <- tune*diag(K)
-accept <- rep(0, S)
-tick1 <- Sys.time()
-pb <- winProgressBar(title = "progress bar", min = 0, max = S, width = 300)
-for (s in 2:S){
-  parc <- MASS::mvrnorm(1, mu = parPost[s-1,], Sigma = CoVarRW)
-  RestCheck <- NULL
-  for(j in 1:K){
-    if(parc[j] < Lims[j,1] | parc[j] > Lims[j,2]){
-      Rej <- 1
-    }else{
-      Rej <- 0
-    }
-    RestCheck <- c(RestCheck, Rej)
-  }
-  if(sum(RestCheck) != 0){
-    parPost[s,] <- parPost[s-1,]
-    accept[s] <- 0
-  }else{
-    Z <- replicate(M, RGKnew(par = parc))
-    EtasZ <- t(apply(Z, 2, SumSt))
-    Um <- colMeans(EtasZ)
-    SIGMAm <- var(EtasZ)
-    dnormc <- mvtnorm::dmvnorm(EtaY, Um, SIGMAm, log = TRUE)
-    if(s > round(0.1*S, 0) & s < round(0.2*S, 0)){
-      CoVarRW <- var(parPost, na.rm = TRUE)
-    }
-    if(dnormc == -Inf){
-      parPost[s,] <- parPost[s-1,]
-      accept[s] <- 0
-    }else{
-      alpha <- min(1, exp(dnormc - dnormsl))
-      U <- runif(1)
-      if(U <= alpha){
-        parPost[s,] <- parc
-        Usl <- Um
-        SIGMAsl <- SIGMAm
-        dnormsl <- dnormc
-        accept[s] <- 1
-      }else{
-        parPost[s,] <- parPost[s-1,]
-        accept[s] <- 0
-      }
-    }
-  }
-  setWinProgressBar(pb, s, title=paste( round(s/S*100, 0),"% done"))
-}
-close(pb)
-tock1 <- Sys.time()
-tock1 - tick1
-mean(accept)
-PostChainOwn <- coda::mcmc(parPost[keep,])
-summary(PostChainOwn)
-plot(PostChainOwn)
+dentheta <- ggplot(df1, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) +  
+  labs(title = TeX("Posterior density plot: $theta$"), x = TeX("$theta$"), y = "Posterior density") +
+  scale_color_manual(values = c("blue")) +  theme_minimal() +
+  theme(legend.title = element_blank())
+
+df2 <- data.frame(
+  Value = c(PostChainmisspecBLSvarnew[,4]),
+  Distribution = factor(c(rep("BSL", Sp)))
+)
+
+deng <- ggplot(df2, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) +  
+  labs(title = "Posterior density plot: g", x = "g", y = "Posterior density") +
+  scale_color_manual(values = c("blue")) +  theme_minimal() +
+  theme(legend.title = element_blank())
+
+df3 <- data.frame(
+  Value = c(PostChainmisspecBLSvarnew[,5]),
+  Distribution = factor(c(rep("BSL", Sp)))
+)
+
+denk <- ggplot(df3, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) +  
+  labs(title = "Posterior density plot: k", x = "k", y = "Posterior density") +
+  scale_color_manual(values = c("blue")) +  theme_minimal() +
+  theme(legend.title = element_blank())
+
+library(ggpubr)
+ggarrange(dentheta, deng, denk, labels = c("A", "B", "C"), ncol = 3, nrow = 1,
+          legend = "bottom", common.legend = TRUE)

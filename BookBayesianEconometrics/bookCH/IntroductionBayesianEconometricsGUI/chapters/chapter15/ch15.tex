@@ -419,9 +419,9 @@ Thus, the aim in VB is to approximate the posterior distribution using $q(\bolds
 \begin{align}\label{eq:VB1}
 	q^*(\boldsymbol{\theta}):=\underset{q \in \mathcal{Q}}{\argmin} \  \text{KL}(q(\boldsymbol{\theta})||\pi(\boldsymbol{\theta} \mid \mathbf{y})),
 \end{align}  
-where $\text{KL}(q(\boldsymbol{\theta})||\pi(\boldsymbol{\theta} \mid \mathbf{y}))=\mathbb{E}_q\left[\log\left(\frac{q(\boldsymbol{\theta})}{\pi(\boldsymbol{\theta} \mid \mathbf{y})}\right)\right]$. 
+where $\text{KL}(q(\boldsymbol{\theta})||\pi(\boldsymbol{\theta} \mid \mathbf{y}))=\mathbb{E}_q\left[\log\left(\frac{q(\boldsymbol{\theta})}{\pi(\boldsymbol{\theta} \mid \mathbf{y})}\right)\right]$.\footnote{The Kullback-Leibler divergence, also known as the relative entropy, is non-negative, equal 0 when $q(\boldsymbol{\theta})=\pi(\boldsymbol{\theta} \mid \mathbf{y})$, otherwise is positive. However, it does not satisfy the triangular inequality nor is symmetric, that is, $\text{KL}(q(\boldsymbol{\theta})||\pi(\boldsymbol{\theta} \mid \mathbf{y}))\neq \text{KL}(\pi(\boldsymbol{\theta} \mid \mathbf{y})||q(\boldsymbol{\theta}))$, that is why it is not a distance (metric).} 
 
-Note that in relatively complex models the optimization in \ref{eq:VB1}  is not computable due to depending on the marginal likelihood $p(\boldsymbol{y})$, which is normally unknown due to the implicit integral does not have analytical solution. In particular,
+Note that in relatively complex models the optimization in \ref{eq:VB1}  is not computable due to depending on the marginal likelihood $p(\boldsymbol{y})$, which is normally unknown due to the implicit integral does not have analytical solution. However, there is a solution to this situation. Let's see,
 \begin{align*}
 	\log(p(\boldsymbol{y}))&=\log\left(\int_{\boldsymbol{\Theta}}p(\boldsymbol{y}\mid \boldsymbol{\theta})\pi(\boldsymbol{\theta})d\boldsymbol{\theta}\right)\\
 	&=\log\left(\int_{\boldsymbol{\Theta}}p(\boldsymbol{y}, \boldsymbol{\theta})d\boldsymbol{\theta}\right)\\
@@ -431,11 +431,12 @@ Note that in relatively complex models the optimization in \ref{eq:VB1}  is not 
 	&=\mathbb{E}_q\log(p(\boldsymbol{y}, \boldsymbol{\theta}))-\mathbb{E}_q\log(q(\boldsymbol{\theta}))\\
 	&=\text{ELBO}(q(\boldsymbol{\theta})),
 \end{align*}
-where the inequality is from the Jensen's inequality. The last term is the evidence lower bound (ELBO), which is a lower bound of the marginal likelihood.
+where the inequality is from the Jensen's inequality, and $\log(\cdot)$ is concave. The last term is the evidence lower bound (ELBO), which is a lower bound of the marginal likelihood.
 Note that the gap between the marginal likelihood and the ELBO is given by
 \begin{align*}
 	\log(p(\boldsymbol{y})) - \text{ELBO}(q(\boldsymbol{\theta})) & = \log(p(\boldsymbol{y})) - \mathbb{E}_q\log(p(\boldsymbol{y}, \boldsymbol{\theta}))+\mathbb{E}_q\log(q(\boldsymbol{\theta}))\\
 	&=\mathbb{E}_q\left(\log(q(\boldsymbol{\theta}))-\log\left(\frac{p(\boldsymbol{y}, \boldsymbol{\theta})}{p(\boldsymbol{y})}\right)\right)\\
+	&=\mathbb{E}_q\left(\log(q(\boldsymbol{\theta}))-\log\left(\frac{p(\boldsymbol{y}\mid \boldsymbol{\theta})\pi( \boldsymbol{\theta})}{p(\boldsymbol{y})}\right)\right)\\
 	&=\mathbb{E}_q\left(\log(q(\boldsymbol{\theta}))-\log(\pi(\boldsymbol{\theta}\mid \boldsymbol{y}))\right)\\
 	&=\text{KL}(q(\boldsymbol{\theta})||\pi(\boldsymbol{\theta} \mid \mathbf{y})).	 
 \end{align*}
@@ -443,18 +444,71 @@ Then,
 \begin{align*}
 	\log(p(\boldsymbol{y})) = \text{KL}(q(\boldsymbol{\theta})||\pi(\boldsymbol{\theta} \mid \mathbf{y})) + \text{ELBO}(q(\boldsymbol{\theta})),  
 \end{align*} 
-which implies that maximizing the ELBO with respect to $q(\boldsymbol{\theta})$ implies minimizing the KL divergence due to $\log(p(\boldsymbol{y}))$ does not depend on $q(\boldsymbol{\theta})$. This avoids calculating the marginal likelihood, and consequently is easier to solve the variational problem, as well as offering a lower bound for the marginal likelihood. Thus, the solution of the problem \ref{eq:VB1} is equivalent to solve
-\begin{align*}
+which implies that maximizing the ELBO with respect to $q(\boldsymbol{\theta})$ implies minimizing the KL divergence due to $\log(p(\boldsymbol{y}))$ does not depend on $q(\boldsymbol{\theta})$. This avoids calculating the marginal likelihood, and consequently is easier to solve the variational problem. In addition, it gives a lower bound for the marginal likelihood, which potentially can be used for model choice. Thus, the solution of the problem \ref{eq:VB1} is equivalent to solve
+\begin{align}\label{eq:VB2}
 	q^*(\boldsymbol{\theta}):=\underset{q \in \mathcal{Q}}{\argmax} \  \text{ELBO}(q(\boldsymbol{\theta})).
+\end{align}
+
+Note that the ELBO can be also expressed as 
+\begin{align*}
+	\text{ELBO}(q(\boldsymbol{\theta}))&=\mathbb{E}_q\log(p(\boldsymbol{y}, \boldsymbol{\theta}))-\mathbb{E}_q\log(q(\boldsymbol{\theta}))\\
+	&=\mathbb{E}_q\log(p(\boldsymbol{y}\mid \boldsymbol{\theta}))+\mathbb{E}_q\log(\pi(\boldsymbol{\theta}))-\mathbb{E}_q\log(q(\boldsymbol{\theta}))\\
+	&=\mathbb{E}_q\log(p(\boldsymbol{y}\mid \boldsymbol{\theta}))-\text{KL}(q(\boldsymbol{\theta})||\pi(\boldsymbol{\theta})).
 \end{align*} 
+This means that when maximizing the ELBO, we look for $\boldsymbol{\theta}$ that maximizes the likelihood, and minimizes the KL divergence between the variational distribution and the prior. Thus, we are looking for a balance between the prior and the likelihood, which is what we do when obtaining the posterior distribution.
 
-The most common approach to set $q(\boldsymbol{\theta})$ is assuming independence in some blocks of $(\boldsymbol{\theta})$, that is, $q(\boldsymbol{\theta})=\prod_{l=1}^L q_l(\boldsymbol{\theta}_l), \ l\leq K, \ \boldsymbol{\theta}\in\mathbb{R}^K$. This is called the mean-field approximation, the name comes from statistical physics. Each $q_l(\boldsymbol{\theta}_l)$ is function of a set of \textit{variational parameters}, and optimization is with respect to them.  
+The most common approach to set $q(\boldsymbol{\theta})$ is assuming independence in some blocks of $\boldsymbol{\theta}$, that is, $q(\boldsymbol{\theta})=\prod_{l=1}^K q_l(\boldsymbol{\theta}_l)$. This is called the mean-field variational family, the name comes from statistical physics. Each $q_l(\boldsymbol{\theta}_l)$ is function of a set of \textit{variational parameters}, and optimization is with respect to them. Note that the mean-field approximation does not capture dependencies between the parameters; although, it can capture the marginal densities.
 
-Note that the method is deterministic, rather than stochastic, that is, it does not require approximating the posterior distribution by draws from other simpler distributions. This makes VB faster than other methods. It requires to solve a deterministic optimization problem to find the \textit{best variational distribution} in a particular simple family, normally in the exponential family, by finding the parameters of this distribution such that minimize the KL divergence to the posterior distribution. Once the \textit{variational parameters} are found, we can sample from the simple \textit{variational distribution} to perform estimation, hypothesis testing, prediction, etc.  
+Let's decompose the ELBO under the mean-field variational family \cite{nguyen2023depth},
+\begin{align*}
+		\text{ELBO}(q(\boldsymbol{\theta}))&=\mathbb{E}_q\log(p(\boldsymbol{y}, \boldsymbol{\theta}))-\mathbb{E}_q\log(q(\boldsymbol{\theta}))\\
+	&=\int_{\mathbb{R}^L} \log(p(\boldsymbol{y}, \boldsymbol{\theta}))q(\boldsymbol{\theta})d\boldsymbol{\theta}-\int_{\mathbb{R}^L}\log(q(\boldsymbol{\theta}))q(\boldsymbol{\theta})d\boldsymbol{\theta}\\
+	&=\int_{\mathbb{R}^L} \log\left(p(\boldsymbol{y}, \boldsymbol{\theta})\right)\prod_{l=1}^K q_l(\boldsymbol{\theta}_l)d\boldsymbol{\theta}_l-\int_{\mathbb{R}^L}\log\left(\prod_{l=1}^K q_l(\boldsymbol{\theta}_l)\right)\prod_{l=1}^K q_l(\boldsymbol{\theta}_l)d\boldsymbol{\theta}_l\\
+	&=\int_{\mathbb{R}} \underbrace{\left(\int_{\mathbb{R}^{K-1}}\log\left(p(\boldsymbol{y}, \boldsymbol{\theta})\right)\prod_{l\neq k} q_l(\boldsymbol{\theta}_l)d\boldsymbol{\theta}_l\right)}_{\mathbb{E}_{-k}(\log\left(p(\boldsymbol{y}, \boldsymbol{\theta})\right))}q_k(\boldsymbol{\theta}_k)d\boldsymbol{\theta}_k\\ 
+	&-\int_{\mathbb{R}}\log(q_k(\boldsymbol{\theta}_k))q_k(\boldsymbol{\theta}_k)d\boldsymbol{\theta}_k-\sum_{l\neq k}\int_{\mathbb{R}}\log(q_l(\boldsymbol{\theta}_l))q_l(\boldsymbol{\theta}_l)d\boldsymbol{\theta}_l\\
+	&=\int_{\mathbb{R}}\log\left\{\exp\left(\mathbb{E}_{-k}(\log\left(p(\boldsymbol{y}, \boldsymbol{\theta})\right))\right)\right\}q_k(\boldsymbol{\theta}_k)d\boldsymbol{\theta}_k\\ 
+	&-\int_{\mathbb{R}}\log(q_k(\boldsymbol{\theta}_k))q_k(\boldsymbol{\theta}_k)d\boldsymbol{\theta}_k-\sum_{l\neq k}\int_{\mathbb{R}}\log(q_l(\boldsymbol{\theta}_l))q_l(\boldsymbol{\theta}_l)d\boldsymbol{\theta}_l\\
+	&=\int_{\mathbb{R}}\log\left\{\frac{\exp\left(\mathbb{E}_{-k}(\log\left(p(\boldsymbol{y}, \boldsymbol{\theta})\right))\right)}{q_k(\boldsymbol{\theta}_k)}\right\}q_k(\boldsymbol{\theta}_k)d\boldsymbol{\theta}_k\\
+	&-\sum_{l\neq k}\int_{\mathbb{R}}\log(q_l(\boldsymbol{\theta}_l))q_l(\boldsymbol{\theta}_l)d\boldsymbol{\theta}_l\\ 
+	&=-\text{KL}(q_k(\boldsymbol{\theta}_k)||\exp\left(\mathbb{E}_{-k}(\log\left(p(\boldsymbol{y}, \boldsymbol{\theta})\right))\right))-\sum_{l\neq k}\int_{\mathbb{R}}\log(q_l(\boldsymbol{\theta}_l))q_l(\boldsymbol{\theta}_l)d\boldsymbol{\theta}_l\\
+	&\leq -\sum_{l\neq k}\int_{\mathbb{R}}\log(q_l(\boldsymbol{\theta}_l))q_l(\boldsymbol{\theta}_l)d\boldsymbol{\theta}_l,
+\end{align*} 
+where $\mathbb{E}_{-k}$ denotes expectation with respect to the distribution $\prod_{l\neq k}q(\boldsymbol{\theta}_l)$.
 
-Gibbs sampler iterates between random draws of conditional posterior distributions, whereas VB determiniscaly iterates between distributions. Thus, VB works directly with distributions rather than with draws, it is approximate, but faster. The aim in expectation propagation is to minimize $\text{KL}\pi(\boldsymbol{\theta} \mid \mathbf{y})||q(\boldsymbol{\theta}))$ rather than $\pi(\boldsymbol{\theta} \mid \mathbf{y})$.  
+Note that we maximize the ELBO when $\text{KL}(q_k(\boldsymbol{\theta}_k)||\exp\left(\mathbb{E}_{-k}(\log\left(p(\boldsymbol{y}, \boldsymbol{\theta})\right))\right))$ equals 0, that is, when
+\begin{align}\label{eq:VB3}
+	q_k^*(\boldsymbol{\theta}_k)&\propto\exp\left(\mathbb{E}_{-k}(\log\left(p(\boldsymbol{y}, \boldsymbol{\theta})\right))\right)\\
+	&=\exp\left(\mathbb{E}_{-k}(\log\left(p(\boldsymbol{y}, \boldsymbol{\theta}_{-k},\boldsymbol{\theta}_k)\right))\right)\\
+	&=\exp\left(\mathbb{E}_{-k}(\log\left(p({\boldsymbol{\theta}}_{k}\mid\boldsymbol{y},\boldsymbol\theta_{-k})p(\boldsymbol{y},\boldsymbol\theta_{-k})\right))\right)\\
+	&\propto \exp\left(\mathbb{E}_{-k}(\log\left(p(\boldsymbol{\theta}_{k}\mid\boldsymbol{y},\boldsymbol\theta_{-k})\right))\right), k=1,2,\dots,L.
+\end{align}
+
+Note the circular dependency nature of $q_k^*(\boldsymbol{\theta}_k)$, that is, $q_k^*(\boldsymbol{\theta}_k)$ depend on $q_{-k}^*(\boldsymbol{\theta}_{-k})$ (see example belong for clarity). Thus, there is need to solve this situation algorithmically. Probably, one of the most common algorithm to solve the optimization problem in \ref{eq:VB2} using \ref{eq:VB3} is coordinate ascent variational inference (CAVI) \cite{bishop2006pattern}. The algorithm departs from an initial solution, and then, cycles through $q_k^*(\boldsymbol{\theta}_k), k=1,2,\dots,L$ updating each component in turn. Algorithm \ref{VB0} shows the basis of the CAVI algorithm. 
+
+\begin{algorithm}
+	\caption{Variational Bayes: Coordinate ascent variational inference}\label{VB0}
+	\begin{algorithmic}[1]
+		\State Initialize the variational factors $q_l^*(\boldsymbol{\theta}_l), l=1,2,\dots,K$
+		\While{ELBO $>\epsilon$, $\epsilon$ small} 
+			\For{$l=1,2,\dots,L$} 
+				\State Set $q_l^*(\boldsymbol{\theta}_l)\propto \exp\left(\mathbb{E}_{-l}(\log\left(p({\theta}_{l}\mid\boldsymbol{y},\boldsymbol\theta_{-l})\right))\right)$
+			\EndFor
+		\State Compute $\text{ELBO}(q)=\mathbb{E}_q\log(p(\boldsymbol{y}, \boldsymbol{\theta}))-\mathbb{E}_q\log(q(\boldsymbol{\theta}))$
+		\EndWhile 
+		\State Return $q(\boldsymbol{\theta})$ 
+	\end{algorithmic}
+\end{algorithm}
+ 
+We should say that the CAVI algorithm is sensitive to the initial variational due to the algorithm garanties convergence to a local maximum that can be sensitive to the point of initialization. This issue can be metigated using different initialization points and selecting the one with the highest ELBO \cite{blei2006variational}.
+
+ 
+Note that the method is deterministic, rather than stochastic, that is, it does not require approximating the posterior distribution by draws from other simpler distributions. This makes VB faster in many cases compared to MCMC methods, which are stochastic. It requires to solve a deterministic optimization problem to find the \textit{best variational distribution} in a particular simple family, normally in the exponential family, by finding the parameters of this distribution such that minimize the KL divergence to the posterior distribution. Once the \textit{variational parameters} are found, we can sample from the simple \textit{variational distribution} to perform estimation, hypothesis testing, prediction, etc.  
+
+Gibbs sampler iterates between random draws of conditional posterior distributions, whereas VB determiniscaly iterates between distributions. Thus, VB works directly with distributions rather than with draws, it is approximate, but faster. The aim in expectation propagation is to minimize $\text{KL}(\pi(\boldsymbol{\theta} \mid \mathbf{y})||q(\boldsymbol{\theta}))$ rather than $\text{KL}(q(\boldsymbol{\theta})||\pi(\boldsymbol{\theta} \mid \mathbf{y}))$.  
 
 VB overestimates the precision of the posterior distribution, but not necessarily suffers in accuracy \cite{blei2017variational}.
+
+\cite{zhang2020convergence} analyzes the asymptotic properties of VB posterior decomposing the convergence rates of VB in the convergence rate of the true posterior and the approximation error induced by the variational family. These authors show that the VB posterior concentrates entirely in a neighborhood of the true posterior distribution. In addition, if the loss function is convex, there exists a point estimator that converges at the same rate. \cite{zhang2020convergence} also show for specific cases, like sparse linear models, the concentration rate of the VB posterior is faster than the concentration rate of the exact posterior.  
 
 \section{Summary}\label{sec15_3}
 \textit{Simulation-based algorithms} suffer from the \textit{curse of dimensionality} in parameter space, whereas \textit{Optimization approaches} require evaluation of the likelihood functions. Thus, recent approaches mix these two approaches to overcome situations where both phenomena are present.
