@@ -209,7 +209,7 @@ LogPrior <- function(par){
   LogPi <- log(par[1] > -1 & par[1] < 1 & par[2] > 0 & par[2] < 5 & par[3] > 0 & par[3] < 5 & par[4] > -5 & par[4] < 5 & par[5] > -0.5 & par[5] < 5)
   return(LogPi)
 }
-par0 <- c(0.5, 2, 1, 0, 1) 
+par0 <- c(0.2, 1, 1, 0, 0.8) # c(0.5, 2, 1, 0, 1) 
 Modelgk <- newModel(fnSim = RGKnew, fnSum = SumSt, theta0 = par0, fnLogPrior = LogPrior, verbose = FALSE)
 validObject(Modelgk)
 M <- 200 # 500 Number of iterations to calculate mu and sigma
@@ -237,17 +237,18 @@ tock - tick
 PostChain <- coda::mcmc(Resultsgk@theta[keep,])
 summary(PostChain)
 CovarRWnew <- var(PostChain)
-M <- 200 # Number of iterations to calculate mu and sigma
-S <- 3000 # 11000 # 11000 Number of MCMC iterations
-burnin <- 1000 # 1000 # Burn in iterations
-thin <- 2 # 10 # Thining parameter
+M <- 500 # Number of iterations to calculate mu and sigma
+S <- 30000 # 11000 # 11000 Number of MCMC iterations
+burnin <- 10000 # 1000 # Burn in iterations
+thin <- 10 # 10 # Thining parameter
 keep <- seq(burnin + 1, S, thin)
 tune <- 1 # Tuning parameter RW MH
 get_mode <- function(x) {
   uniq_vals <- unique(x)
   uniq_vals[which.max(tabulate(match(x, uniq_vals)))]
 }
-ModelgkNew <- newModel(fnSim = RGKnew, fnSum = SumSt, theta0 = apply(PostChain, 2, get_mode), fnLogPrior = LogPrior, verbose = FALSE)
+# apply(PostChain, 2, get_mode)
+ModelgkNew <- newModel(fnSim = RGKnew, fnSum = SumSt, theta0 = par0, fnLogPrior = LogPrior, verbose = FALSE)
 logitTransform <- function(par, a, b){
   logtrans <- log((par - a)/(b - par))
   return(logtrans)
@@ -315,10 +316,10 @@ ResultsgkmisspecBLSvar <- bsl(y = y, n = M, M = S, model = ModelgkNew, covRandWa
 tock <- Sys.time()
 tock - tick
 PostChainmisspecBLSvar <- coda::mcmc(ResultsgkmisspecBLSvar@theta[keep,])
-plot(PostChainmisspecBLSvar)
-ResultsgkmisspecBLSvar@acceptanceRate
-plot(ResultsgkmisspecBLSvar@loglike[keep], type = "l")
-sd(ResultsgkmisspecBLSvar@loglike[keep])
+# plot(PostChainmisspecBLSvar)
+# ResultsgkmisspecBLSvar@acceptanceRate
+# plot(ResultsgkmisspecBLSvar@loglike[keep], type = "l")
+# sd(ResultsgkmisspecBLSvar@loglike[keep])
 # Figures 
 library(ggplot2); library(latex2exp)
 Sp <- length(keep)
@@ -356,6 +357,8 @@ library(ggpubr)
 ggarrange(dentheta, deng, denk, labels = c("A", "B", "C"), ncol = 3, nrow = 1,
           legend = "bottom", common.legend = TRUE)
 
+
+#####################################################################
 tick <- Sys.time()
 ResultsgkmisspecBLSvarnew <- bsl(y = y, n = M, M = S, model = ModelgkNew, covRandWalk = tune*CovarRWnew,
                               method = "BSLmisspec", thetaNames = expression(theta, a, b, g, k), 
@@ -364,10 +367,10 @@ tock <- Sys.time()
 tock - tick
 keep <- seq(burnin + 1, S, thin) # keep <- seq(burnin + 1, S, thin)
 PostChainmisspecBLSvarnew <- coda::mcmc(ResultsgkmisspecBLSvarnew@theta[keep,])
-plot(PostChainmisspecBLSvarnew)
-ResultsgkmisspecBLSvarnew@acceptanceRate
-plot(ResultsgkmisspecBLSvarnew@loglike[keep], type = "l")
-sd(ResultsgkmisspecBLSvarnew@loglike[keep])
+# plot(PostChainmisspecBLSvarnew)
+# ResultsgkmisspecBLSvarnew@acceptanceRate
+# plot(ResultsgkmisspecBLSvarnew@loglike[keep], type = "l")
+# sd(ResultsgkmisspecBLSvarnew@loglike[keep])
 
 # Figures 
 library(ggplot2); library(latex2exp)

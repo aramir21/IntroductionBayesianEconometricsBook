@@ -501,8 +501,42 @@ Note the circular dependency nature of $q_k^*(\boldsymbol{\theta}_k)$, that is, 
  
 We should say that the CAVI algorithm is sensitive to the initial variational due to the algorithm garanties convergence to a local maximum that can be sensitive to the point of initialization. This issue can be metigated using different initialization points and selecting the one with the highest ELBO \cite{blei2006variational}.
 
+Note that the method is deterministic, rather than stochastic, that is, it does not require approximating the posterior distribution by draws from other simpler distributions. This makes VB faster in many cases compared to MCMC methods, which are stochastic. It requires to solve a deterministic optimization problem to find the \textit{best variational distribution} in a particular simple family, normally in the exponential family, by finding the parameters of this distribution such that minimize the KL divergence to the posterior distribution. Once the \textit{variational parameters} are found, we can sample from the simple \textit{variational distribution} to perform estimation, hypothesis testing, prediction, etc.
  
-Note that the method is deterministic, rather than stochastic, that is, it does not require approximating the posterior distribution by draws from other simpler distributions. This makes VB faster in many cases compared to MCMC methods, which are stochastic. It requires to solve a deterministic optimization problem to find the \textit{best variational distribution} in a particular simple family, normally in the exponential family, by finding the parameters of this distribution such that minimize the KL divergence to the posterior distribution. Once the \textit{variational parameters} are found, we can sample from the simple \textit{variational distribution} to perform estimation, hypothesis testing, prediction, etc.  
+A limitation of the CAVI algorithm is that we have to evaluate it at each data point. This means that the algorithm is no scalable in large data settings. In this situations, we can use stochastic variational inference (SVI) \cite{hoffman2013stochastic}, an algorithm that optimizes the ELBO  combining natural gradients and stochastic optimization. This algorithm is useful when each complete conditional is in the exponential family (see Section \ref{sec41}), which covers most of the models in this book, and we have conditionally conjugate models where some parameters are \textit{local} latent variables ($\boldsymbol{z}_i$) associated with their specific data points, and other parameters are \textit{global} ($\boldsymbol{\phi}$) to the entire dataset, that is, $\boldsymbol\theta=[\boldsymbol{z}^{\top} \ \boldsymbol{\phi}^{\top}]^{\top}$. For instance, this is the case of the probit model where we use data augmentation \cite{Tanner1987}.
+
+The SVI focuses on the global parameters updating them using the ELBO natural gradients with respect to these parameters, which by the way are easily calculated in exponential families (see \cite{blei2017variational}). In particular, at each iteration, the current global parameters are weighted averages of the previous global parameters and global variational update. However, calculating this update implies using all the data set, which is computationally burdensome. Thus, we should use stochastic optimization that follows noisy, but cheap-to-compute unbiased gradients to optimize the function. The trick is to build the natural gradient using only one random draw from the dataset, and scale it (multiply by the sample size) to approximate the sample information. Finally, the weights to update the global parameters is given by 
+\begin{align*}
+	\epsilon_t&=t^{\kappa}, \ 0.5 < \kappa \leq 1.
+\end{align*} 
+This setting satisfies the Robbins and Monro conditions necessary for stochastic optimization \cite{robbins1951stochastic}.
+
+Algorithm \ref{VB1} shows the stochastic variational inference algorithm. 
+
+\begin{algorithm}
+	\caption{Variational Bayes: Stochastic variational inference}\label{VB1}
+	\begin{algorithmic}[1]
+		\State Initialize the variational global parameter $\boldsymbol{\phi}_0$
+		\State Set the step size (weight) schedule $\epsilon_t$
+		\While{TRUE} 
+		\State Choose randomly a data point $\boldsymbol{y}_i$ using a discrete uniform distribution, $i\sim U(1,2,\dots,N)$
+		\State Optimize its local variational parameters $\boldsymbol{\psi}_i^*=\mathbb{E}_{\boldsymbol{\xi}_{t-1}}[\boldsymbol{\eta(\boldsymbol{\phi},y_i)}]$
+		\State Compute the coordinates updates as though $y_i$ were repeated $N$ times, $\hat{\boldsymbol{\xi}}=\boldsymbol{\alpha}+N(\mathbb{E}_{\boldsymbol{\psi}_i^*}[t(\boldsymbol{z}_i,\boldsymbol{y}_i)]^{\top},1)^{\top}$
+		\State Update the global variational parameters, $\boldsymbol{\xi}_t=(1-\epsilon_t)\boldsymbol{\xi}_{t-1}+\epsilon_t\hat{\boldsymbol{\xi}}$  
+		\EndWhile 
+		\State Return $q_{\boldsymbol{\lambda}}(\boldsymbol{\phi})$ 
+	\end{algorithmic}
+\end{algorithm} 
+
+Given that each complete conditional is in the exponential family, we have 
+\begin{align*}
+	q_l^*(\boldsymbol{\theta}_l)&\propto \exp\left(\mathbb{E}_{-l}(\log\left(p({\theta}_{l}\mid\boldsymbol{y},\boldsymbol\theta_{-l})\right))\right)\\
+	&=\exp\left(\mathbb{E}_{-l}(\log\left(h(\boldsymbol{\theta}_l)\exp\left\{\eta_l(\boldsymbol{y},\boldsymbol\theta_{-l})^{\top}\boldsymbol{\theta}_l-B(\eta_l(\boldsymbol{y},\boldsymbol\theta_{-l}))\right\}\right))\right)\\
+	&\propto h(\boldsymbol{\theta}_l) \exp\left(\mathbb{E}_{-l}(\eta_l(\boldsymbol{y},\boldsymbol\theta_{-l})^{\top}\boldsymbol{\theta}_l)\right).
+\end{align*}
+This means that each optimal variational factor is in the same exponential family as each complete conditional. Then, we update each factor taking into account that each set of variational parameters ($\boldsymbol{\lambda}_l$) is equal to its expected value $\boldsymbol{\lambda}_l=\mathbb{E}_{-l}[\eta_l(\boldsymbol{y},\boldsymbol\theta_{-l})]$ due to properties of the exponential family (see Section \ref{sec41}). This expression facilitates computation in variational Bayes algorithms.
+
+Given the global-local structure, the joint distribution can be expressed as $p(\boldsymbol{\phi},\boldsymbol{z},\boldsymbol{y})=\pi(\boldsymbol{\phi})\prod_{i=1}^{N}p(\boldsymbol{z}_i,\boldsymbol{y}_i\mid \boldsymbol{\phi})$ 
 
 Gibbs sampler iterates between random draws of conditional posterior distributions, whereas VB determiniscaly iterates between distributions. Thus, VB works directly with distributions rather than with draws, it is approximate, but faster. The aim in expectation propagation is to minimize $\text{KL}(\pi(\boldsymbol{\theta} \mid \mathbf{y})||q(\boldsymbol{\theta}))$ rather than $\text{KL}(q(\boldsymbol{\theta})||\pi(\boldsymbol{\theta} \mid \mathbf{y}))$.  
 
