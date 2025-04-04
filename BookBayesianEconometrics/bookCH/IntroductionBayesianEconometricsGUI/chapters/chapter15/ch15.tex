@@ -405,23 +405,23 @@ legend = "bottom", common.legend = TRUE)
 
 \section{Optimization approaches}\label{sec15_2}
 
-MCMC and IS algorithms require pointwise evaluation of the likelihood function, which implies a massive number of operations when dealing with very large datasets. Unfortunately, these algorithms are not designed to be \textit{scalable}. Moreover, if the parameter space is large, these methods are also not \textit{scalable} in the number of parameters. Therefore, approximation methods should be used even when the likelihood function has an analytical expression.
+MCMC and IS algorithms require pointwise evaluation of the likelihood function, which involves a massive number of operations when applied to very large datasets. Unfortunately, these algorithms are not designed to be \textit{scalable}. Moreover, if the parameter space is large, they also lack \textit{scalability} in the number of parameters. Therefore, approximation methods should be considered even when the likelihood function has an analytical expression.
 
-\textit{Optimization approaches} are designed to scale to high parameter spaces and large datasets. The trick is to change simulation with optimization. 
+\textit{Optimization approaches} are designed to scale efficiently with high-dimensional parameter spaces and large datasets. The key idea is to replace simulation with optimization. In this section, we introduce the most common optimization approaches within the Bayesian inferential framework. 
 
 \subsection{Integrated nested Laplace approximations}\label{sec15_21}
 \textit{Integrated nested Laplace approximations} approximates $\pi(\boldsymbol{\theta} \mid \mathbf{y})$ by a combination of low-dimensional deterministic integration and optimization steps. 
 
 \subsection{Variational Bayes}\label{sec15_22}
-\textit{Variational Bayes} (VB) is a method from machine learning \cite{jordan1999introduction,wainwright2008graphical} that replaces $\pi(\boldsymbol{\theta} \mid \mathbf{y})$ by an approximation produced by optimization using calculus of variations, that is why the method is called \textit{variational} Bayes. This can happen because the posterior distribution is very complicated, for instance multimodal, or there is a high-dimensional problem that would take too long to solve using MCMC or IS algorithms. 
+\textit{Variational Bayes} (VB) is a method from machine learning \cite{jordan1999introduction, wainwright2008graphical} that replaces $\pi(\boldsymbol{\theta} \mid \mathbf{y})$ with an approximation obtained through optimization using the calculus of variations, hence the name \textit{variational} Bayes. This approach is useful when the posterior distribution is complex (e.g., multimodal) or when the parameter space is high-dimensional, making MCMC or IS algorithms computationally expensive.
 
-Thus, the aim in VB is to approximate the posterior distribution using $q(\boldsymbol{\theta})$ that belongs to the variational family $\mathcal{Q}$, where this should be a family of distributions that would be computationally easy to work with, but flexible enough to get a good approximation of the posterior distribution \cite{blei2017variational}. Then, $q$ is called the \textit{variational approximation} to the posterior distribution, and a particular $q$ in $\mathcal{Q}$ is specified by obtaining a particular set of \textit{variational parameters}. This is commonly performed minimizing the Kullback-Leibler divergence between $q(\boldsymbol{\theta})$ and $\pi(\boldsymbol{\theta} \mid \mathbf{y})$,
+The goal in VB is to approximate the posterior distribution using a distribution $q(\boldsymbol{\theta})$ from a variational family $\mathcal{Q}$ —a class of distributions that is computationally convenient yet flexible enough to closely approximate the true posterior \cite{blei2017variational}-. The distribution $q$ is called the \textit{variational approximation} to the posterior, and a particular $q$ in $\mathcal{Q}$ is defined by a specific set of \textit{variational parameters}. Typically, this approximation is obtained by minimizing the Kullback–Leibler (KL) divergence between $q(\boldsymbol{\theta})$ and $\pi(\boldsymbol{\theta} \mid \mathbf{y})$.
 \begin{align}\label{eq:VB1}
 	q^*(\boldsymbol{\theta}):=\underset{q \in \mathcal{Q}}{\argmin} \  \text{KL}(q(\boldsymbol{\theta})||\pi(\boldsymbol{\theta} \mid \mathbf{y})),
 \end{align}  
-where $\text{KL}(q(\boldsymbol{\theta})||\pi(\boldsymbol{\theta} \mid \mathbf{y}))=\mathbb{E}_q\left[\log\left(\frac{q(\boldsymbol{\theta})}{\pi(\boldsymbol{\theta} \mid \mathbf{y})}\right)\right]$.\footnote{The Kullback-Leibler divergence, also known as the relative entropy, is non-negative, equal 0 when $q(\boldsymbol{\theta})=\pi(\boldsymbol{\theta} \mid \mathbf{y})$, otherwise is positive. However, it does not satisfy the triangular inequality nor is symmetric, that is, $\text{KL}(q(\boldsymbol{\theta})||\pi(\boldsymbol{\theta} \mid \mathbf{y}))\neq \text{KL}(\pi(\boldsymbol{\theta} \mid \mathbf{y})||q(\boldsymbol{\theta}))$, that is why it is not a distance (metric).} 
+where $\text{KL}(q(\boldsymbol{\theta}) \| \pi(\boldsymbol{\theta} \mid \mathbf{y})) = \mathbb{E}_q\left[\log\left(\frac{q(\boldsymbol{\theta})}{\pi(\boldsymbol{\theta} \mid \mathbf{y})}\right)\right]$.\footnote{The Kullback–Leibler (KL) divergence, also known as relative entropy, is non-negative: it equals 0 when $q(\boldsymbol{\theta}) = \pi(\boldsymbol{\theta} \mid \mathbf{y})$, and is positive otherwise. However, it does not satisfy the triangle inequality and is not symmetric, that is, $\text{KL}(q(\boldsymbol{\theta}) \| \pi(\boldsymbol{\theta} \mid \mathbf{y})) \neq \text{KL}(\pi(\boldsymbol{\theta} \mid \mathbf{y}) \| q(\boldsymbol{\theta}))$. Therefore, it is not a true distance (metric).}
 
-Note that in relatively complex models the optimization in \ref{eq:VB1}  is not computable due to depending on the marginal likelihood $p(\boldsymbol{y})$, which is normally unknown due to the implicit integral does not have analytical solution. However, there is a solution to this situation. Let's see,
+Note that in relatively complex models, the optimization in Equation~\ref{eq:VB1} is not computable because it depends on the marginal likelihood $p(\boldsymbol{y})$, which is typically unknown due to the intractability of the integral involved. However, there is a solution to this problem. Let’s see:
 \begin{align*}
 	\log(p(\boldsymbol{y}))&=\log\left(\int_{\boldsymbol{\Theta}}p(\boldsymbol{y}\mid \boldsymbol{\theta})\pi(\boldsymbol{\theta})d\boldsymbol{\theta}\right)\\
 	&=\log\left(\int_{\boldsymbol{\Theta}}p(\boldsymbol{y}, \boldsymbol{\theta})d\boldsymbol{\theta}\right)\\
@@ -431,8 +431,7 @@ Note that in relatively complex models the optimization in \ref{eq:VB1}  is not 
 	&=\mathbb{E}_q\log(p(\boldsymbol{y}, \boldsymbol{\theta}))-\mathbb{E}_q\log(q(\boldsymbol{\theta}))\\
 	&=\text{ELBO}(q(\boldsymbol{\theta})),
 \end{align*}
-where the inequality is from the Jensen's inequality, and $\log(\cdot)$ is concave. The last term is the evidence lower bound (ELBO), which is a lower bound of the marginal likelihood.
-Note that the gap between the marginal likelihood and the ELBO is given by
+where the inequality follows from Jensen's inequality, since $\log(\cdot)$ is concave. The last term is the \textit{evidence lower bound} (ELBO), which serves as a lower bound for the marginal likelihood. Note that the gap between the marginal likelihood and the ELBO is given by
 \begin{align*}
 	\log(p(\boldsymbol{y})) - \text{ELBO}(q(\boldsymbol{\theta})) & = \log(p(\boldsymbol{y})) - \mathbb{E}_q\log(p(\boldsymbol{y}, \boldsymbol{\theta}))+\mathbb{E}_q\log(q(\boldsymbol{\theta}))\\
 	&=\mathbb{E}_q\left(\log(q(\boldsymbol{\theta}))-\log\left(\frac{p(\boldsymbol{y}, \boldsymbol{\theta})}{p(\boldsymbol{y})}\right)\right)\\
@@ -444,7 +443,7 @@ Then,
 \begin{align*}
 	\log(p(\boldsymbol{y})) = \text{KL}(q(\boldsymbol{\theta})||\pi(\boldsymbol{\theta} \mid \mathbf{y})) + \text{ELBO}(q(\boldsymbol{\theta})),  
 \end{align*} 
-which implies that maximizing the ELBO with respect to $q(\boldsymbol{\theta})$ implies minimizing the KL divergence due to $\log(p(\boldsymbol{y}))$ does not depend on $q(\boldsymbol{\theta})$. This avoids calculating the marginal likelihood, and consequently is easier to solve the variational problem. In addition, it gives a lower bound for the marginal likelihood, which potentially can be used for model choice. Thus, the solution of the problem \ref{eq:VB1} is equivalent to solve
+which implies that maximizing the ELBO with respect to $q(\boldsymbol{\theta})$ is equivalent to minimizing the KL divergence, since $\log(p(\boldsymbol{y}))$ does not depend on $q(\boldsymbol{\theta})$. This avoids the need to compute the marginal likelihood and, consequently, makes the variational problem easier to solve. In addition, it provides a lower bound for the marginal likelihood, which can potentially be used for model selection. Thus, solving problem \ref{eq:VB1} is equivalent to solving
 \begin{align}\label{eq:VB2}
 	q^*(\boldsymbol{\theta}):=\underset{q \in \mathcal{Q}}{\argmax} \  \text{ELBO}(q(\boldsymbol{\theta})).
 \end{align}
@@ -455,15 +454,15 @@ Note that the ELBO can be also expressed as
 	&=\mathbb{E}_q\log(p(\boldsymbol{y}\mid \boldsymbol{\theta}))+\mathbb{E}_q\log(\pi(\boldsymbol{\theta}))-\mathbb{E}_q\log(q(\boldsymbol{\theta}))\\
 	&=\mathbb{E}_q\log(p(\boldsymbol{y}\mid \boldsymbol{\theta}))-\text{KL}(q(\boldsymbol{\theta})||\pi(\boldsymbol{\theta})).
 \end{align*} 
-This means that when maximizing the ELBO, we look for $\boldsymbol{\theta}$ that maximizes the likelihood, and minimizes the KL divergence between the variational distribution and the prior. Thus, we are looking for a balance between the prior and the likelihood, which is what we do when obtaining the posterior distribution.
+This means that when maximizing the ELBO, we seek the distribution $q(\boldsymbol{\theta})$ that both maximizes the likelihood and minimizes the KL divergence between the variational distribution and the prior. In other words, we aim to strike a balance between the prior and the likelihood, which aligns with the core principle of Bayesian inference deriving the posterior distribution.
 
-The most common approach to set $q(\boldsymbol{\theta})$ is assuming independence in some blocks of $\boldsymbol{\theta}$, that is, $q(\boldsymbol{\theta})=\prod_{l=1}^K q_l(\boldsymbol{\theta}_l)$. This is called the mean-field variational family, the name comes from statistical physics. Each $q_l(\boldsymbol{\theta}_l)$ is function of a set of \textit{variational parameters}, and optimization is with respect to them. Note that the mean-field approximation does not capture dependencies between the parameters; although, it can capture the marginal densities.
+The most common approach for specifying $q(\boldsymbol{\theta})$ is to assume independence across blocks of $\boldsymbol{\theta}$, i.e., $q(\boldsymbol{\theta}) = \prod_{l=1}^K q_l(\boldsymbol{\theta}_l)$. This is known as the \textit{mean-field variational family}, a term that originates from statistical physics. Each $q_l(\boldsymbol{\theta}_l)$ is parameterized by a set of \textit{variational parameters}, and optimization is performed with respect to these parameters. Note that the mean-field approximation does not capture dependencies between parameters, although it can approximate the marginal distributions.
 
-Let's decompose the ELBO under the mean-field variational family \cite{nguyen2023depth},
+Let us now decompose the ELBO under the mean-field variational family \cite{nguyen2023depth},
 \begin{align*}
 		\text{ELBO}(q(\boldsymbol{\theta}))&=\mathbb{E}_q\log(p(\boldsymbol{y}, \boldsymbol{\theta}))-\mathbb{E}_q\log(q(\boldsymbol{\theta}))\\
-	&=\int_{\mathbb{R}^L} \log(p(\boldsymbol{y}, \boldsymbol{\theta}))q(\boldsymbol{\theta})d\boldsymbol{\theta}-\int_{\mathbb{R}^L}\log(q(\boldsymbol{\theta}))q(\boldsymbol{\theta})d\boldsymbol{\theta}\\
-	&=\int_{\mathbb{R}^L} \log\left(p(\boldsymbol{y}, \boldsymbol{\theta})\right)\prod_{l=1}^K q_l(\boldsymbol{\theta}_l)d\boldsymbol{\theta}_l-\int_{\mathbb{R}^L}\log\left(\prod_{l=1}^K q_l(\boldsymbol{\theta}_l)\right)\prod_{l=1}^K q_l(\boldsymbol{\theta}_l)d\boldsymbol{\theta}_l\\
+	&=\int_{\mathbb{R}^K} \log(p(\boldsymbol{y}, \boldsymbol{\theta}))q(\boldsymbol{\theta})d\boldsymbol{\theta}-\int_{\mathbb{R}^K}\log(q(\boldsymbol{\theta}))q(\boldsymbol{\theta})d\boldsymbol{\theta}\\
+	&=\int_{\mathbb{R}^K} \log\left(p(\boldsymbol{y}, \boldsymbol{\theta})\right)\prod_{l=1}^K q_l(\boldsymbol{\theta}_l)d\boldsymbol{\theta}_l-\int_{\mathbb{R}^K}\log\left(\prod_{l=1}^K q_l(\boldsymbol{\theta}_l)\right)\prod_{l=1}^K q_l(\boldsymbol{\theta}_l)d\boldsymbol{\theta}_l\\
 	&=\int_{\mathbb{R}} \underbrace{\left(\int_{\mathbb{R}^{K-1}}\log\left(p(\boldsymbol{y}, \boldsymbol{\theta})\right)\prod_{l\neq k} q_l(\boldsymbol{\theta}_l)d\boldsymbol{\theta}_l\right)}_{\mathbb{E}_{-k}(\log\left(p(\boldsymbol{y}, \boldsymbol{\theta})\right))}q_k(\boldsymbol{\theta}_k)d\boldsymbol{\theta}_k\\ 
 	&-\int_{\mathbb{R}}\log(q_k(\boldsymbol{\theta}_k))q_k(\boldsymbol{\theta}_k)d\boldsymbol{\theta}_k-\sum_{l\neq k}\int_{\mathbb{R}}\log(q_l(\boldsymbol{\theta}_l))q_l(\boldsymbol{\theta}_l)d\boldsymbol{\theta}_l\\
 	&=\int_{\mathbb{R}}\log\left\{\exp\left(\mathbb{E}_{-k}(\log\left(p(\boldsymbol{y}, \boldsymbol{\theta})\right))\right)\right\}q_k(\boldsymbol{\theta}_k)d\boldsymbol{\theta}_k\\ 
@@ -477,14 +476,13 @@ where $\mathbb{E}_{-k}$ denotes expectation with respect to the distribution $\p
 
 Note that we maximize the ELBO when $\text{KL}(q_k(\boldsymbol{\theta}_k)||\exp\left(\mathbb{E}_{-k}(\log\left(p(\boldsymbol{y}, \boldsymbol{\theta})\right))\right))$ equals 0, that is, when
 \begin{align}\label{eq:VB3}
-	q_k^*(\boldsymbol{\theta}_k)&\propto\exp\left(\mathbb{E}_{-k}(\log\left(p(\boldsymbol{y}, \boldsymbol{\theta})\right))\right)\\
-	&=\exp\left(\mathbb{E}_{-k}(\log\left(p(\boldsymbol{y}, \boldsymbol{\theta}_{-k},\boldsymbol{\theta}_k)\right))\right)\\
-	&=\exp\left(\mathbb{E}_{-k}(\log\left(p({\boldsymbol{\theta}}_{k}\mid\boldsymbol{y},\boldsymbol\theta_{-k})p(\boldsymbol{y},\boldsymbol\theta_{-k})\right))\right)\\
-	&\propto \exp\left(\mathbb{E}_{-k}(\log\left(p(\boldsymbol{\theta}_{k}\mid\boldsymbol{y},\boldsymbol\theta_{-k})\right))\right), k=1,2,\dots,L.
+	q_k^*(\boldsymbol{\theta}_k)&\propto\exp\left(\mathbb{E}_{-k}(\log\left(p(\boldsymbol{y}, \boldsymbol{\theta})\right))\right)\nonumber\\
+	&=\exp\left(\mathbb{E}_{-k}(\log\left(p(\boldsymbol{y}, \boldsymbol{\theta}_{-k},\boldsymbol{\theta}_k)\right))\right)\nonumber\\
+	&=\exp\left(\mathbb{E}_{-k}(\log\left(p({\boldsymbol{\theta}}_{k}\mid\boldsymbol{y},\boldsymbol\theta_{-k})p(\boldsymbol{y},\boldsymbol\theta_{-k})\right))\right)\nonumber\\
+	&\propto \exp\left(\mathbb{E}_{-k}(\log\left(p(\boldsymbol{\theta}_{k}\mid\boldsymbol{y},\boldsymbol\theta_{-k})\right))\right), k=1,2,\dots,K.
 \end{align}
 
-Note the circular dependency nature of $q_k^*(\boldsymbol{\theta}_k)$, that is, $q_k^*(\boldsymbol{\theta}_k)$ depend on $q_{-k}^*(\boldsymbol{\theta}_{-k})$ (see example belong for clarity). Thus, there is need to solve this situation algorithmically. Probably, one of the most common algorithm to solve the optimization problem in \ref{eq:VB2} using \ref{eq:VB3} is coordinate ascent variational inference (CAVI) \cite{bishop2006pattern}. The algorithm departs from an initial solution, and then, cycles through $q_k^*(\boldsymbol{\theta}_k), k=1,2,\dots,L$ updating each component in turn. Algorithm \ref{VB0} shows the basis of the CAVI algorithm. 
-
+Note the circular dependency inherent in $q_k^*(\boldsymbol{\theta}_k)$: it depends on $q_{-k}^*(\boldsymbol{\theta}_{-k})$. Therefore, this situation must be addressed algorithmically. One of the most common algorithms used to solve the optimization problem in \ref{eq:VB2} using \ref{eq:VB3} is the \textit{coordinate ascent variational inference} (CAVI) algorithm \cite{bishop2006pattern}. The algorithm starts from an initial solution and iteratively cycles through each $q_k^*(\boldsymbol{\theta}_k)$, for $k = 1, 2, \dots, K$, updating each component in turn. Algorithm \ref{VB0} outlines the basic structure of the CAVI algorithm.
 \begin{algorithm}
 	\caption{Variational Bayes: Coordinate ascent variational inference}\label{VB0}
 	\begin{algorithmic}[1]
@@ -499,50 +497,68 @@ Note the circular dependency nature of $q_k^*(\boldsymbol{\theta}_k)$, that is, 
 	\end{algorithmic}
 \end{algorithm}
  
-We should say that the CAVI algorithm is sensitive to the initial variational due to the algorithm garanties convergence to a local maximum that can be sensitive to the point of initialization. This issue can be metigated using different initialization points and selecting the one with the highest ELBO \cite{blei2006variational}.
+We should note that the CAVI algorithm is sensitive to the initial variational factors because it guarantees convergence to a local maximum, which may depend heavily on the initialization point. This issue can be mitigated by using multiple starting points and selecting the solution with the highest ELBO \cite{blei2006variational}. In addition, it is well known that VB tends to overestimate the precision of the posterior distribution, although it does not necessarily suffer in terms of accuracy \cite{blei2017variational}.
 
-Note that the method is deterministic, rather than stochastic, that is, it does not require approximating the posterior distribution by draws from other simpler distributions. This makes VB faster in many cases compared to MCMC methods, which are stochastic. It requires to solve a deterministic optimization problem to find the \textit{best variational distribution} in a particular simple family, normally in the exponential family, by finding the parameters of this distribution such that minimize the KL divergence to the posterior distribution. Once the \textit{variational parameters} are found, we can sample from the simple \textit{variational distribution} to perform estimation, hypothesis testing, prediction, etc.
- 
-A limitation of the CAVI algorithm is that we have to evaluate it at each data point. This means that the algorithm is no scalable in large data settings. In this situations, we can use stochastic variational inference (SVI) \cite{hoffman2013stochastic}, an algorithm that optimizes the ELBO  combining natural gradients and stochastic optimization. This algorithm is useful when each complete conditional is in the exponential family (see Section \ref{sec41}), which covers most of the models in this book, and we have conditionally conjugate models where some parameters are \textit{local} latent variables ($\boldsymbol{z}_i$) associated with their specific data points, and other parameters are \textit{global} ($\boldsymbol{\phi}$) to the entire dataset, that is, $\boldsymbol\theta=[\boldsymbol{z}^{\top} \ \boldsymbol{\phi}^{\top}]^{\top}$. For instance, this is the case of the probit model where we use data augmentation \cite{Tanner1987}.
+An important feature of the method is that it is deterministic rather than stochastic; that is, it does not require approximating the posterior distribution via sampling from simpler distributions. This often makes VB faster than MCMC methods, which are inherently stochastic. Instead, VB solves a deterministic optimization problem to find the \textit{best variational distribution} within a chosen family, typically from the exponential family, by optimizing the variational parameters to minimize the KL divergence from the posterior distribution. Once the \textit{variational parameters} are obtained, we can sample from the \textit{variational distribution} to conduct estimation, hypothesis testing, prediction, and other tasks.
 
-The SVI focuses on the global parameters updating them using the ELBO natural gradients with respect to these parameters, which by the way are easily calculated in exponential families (see \cite{blei2017variational}). In particular, at each iteration, the current global parameters are weighted averages of the previous global parameters and global variational update. However, calculating this update implies using all the data set, which is computationally burdensome. Thus, we should use stochastic optimization that follows noisy, but cheap-to-compute unbiased gradients to optimize the function. The trick is to build the natural gradient using only one random draw from the dataset, and scale it (multiply by the sample size) to approximate the sample information. Finally, the weights to update the global parameters is given by 
+A limitation of the CAVI algorithm is that it requires evaluation at each data point, making it non-scalable in large data settings. In such situations, we can use \textit{stochastic variational inference} (SVI) \cite{hoffman2013stochastic}, an algorithm that optimizes the ELBO using natural gradients combined with stochastic optimization. SVI is particularly effective when each complete conditional belongs to the exponential family (see Section~\ref{sec41}), which includes most of the models discussed in this book. It is especially useful for conditionally conjugate models that include \textit{local} latent variables ($\boldsymbol{z}_i$) associated with specific data points, and \textit{global} parameters ($\boldsymbol{\phi}$) shared across the entire dataset. That is, we define $\boldsymbol\theta = [\boldsymbol{z}^{\top} \ \boldsymbol{\phi}^{\top}]^{\top}$. An example is the probit model using data augmentation \cite{Tanner1987}.
+
+Given the global-local exchangeable structure, the joint distribution can be expressed as $p(\boldsymbol{\phi}, \boldsymbol{z}, \boldsymbol{y}) = \pi(\boldsymbol{\phi} \mid \boldsymbol{\alpha}) \prod_{i=1}^{N} p(\boldsymbol{z}_i, \boldsymbol{y}_i \mid \boldsymbol{\phi})$, where $\boldsymbol{\alpha} = [\boldsymbol{\alpha}_1^{\top} \ \alpha_2]^{\top}$ represents the hyperparameters of the prior distribution of the global parameters $\boldsymbol{\phi}$.
+
+Assuming that the joint distribution $p(\boldsymbol{z}_i, \boldsymbol{y}_i \mid \boldsymbol{\phi})$ is in the canonical form of the exponential family, and that each prior distribution is conjugate, the complete conditional distribution of the global parameters is also in the exponential family. The posterior parameters are given by $\boldsymbol{\alpha}_n = [\boldsymbol{\alpha}_1^{\top} + \sum_{i=1}^N t(\boldsymbol{z}_i, \boldsymbol{y}_i)^{\top} \ \alpha_2 + N]^{\top}$, where $t(\boldsymbol{z}_i, \boldsymbol{y}_i)$ is a sufficient statistic of $\boldsymbol{z}_i$ and $\boldsymbol{y}_i$ (see Section \ref{sec42}).
+
+Additionally, the structure of the model implies that $\boldsymbol{z}_i$ is independent of $\boldsymbol{z}_{-i}$ and $\boldsymbol{y}_{-i}$ given $\boldsymbol{y}_i$ and $\boldsymbol{\phi}$. Thus, if $p(\boldsymbol{z}_i \mid \boldsymbol{y}_i, \boldsymbol{\phi})$ is in the canonical form of the exponential family, then the local variational update is given by $\boldsymbol{\psi}_i = \mathbb{E}_{\boldsymbol{\xi}}[\boldsymbol{\eta}(\boldsymbol{\phi}, \boldsymbol{y}_i)]$, where the parameter set $\boldsymbol{\eta}(\boldsymbol{\phi}, \boldsymbol{y}_i)$ is a function of the conditional set, $\boldsymbol{\xi}$, and $\boldsymbol{\psi}_i$ are the variational parameters of the variational approximations $q(\boldsymbol{\phi} \mid \boldsymbol{\xi})$ and $q(\boldsymbol{z}_i \mid \boldsymbol{\psi}_i)$ for the posterior distributions of $\boldsymbol{\phi}$ and $\boldsymbol{z}_i$, respectively. The global variational update is given by $\boldsymbol{\xi} = [\boldsymbol{\alpha}_1^{\top} + \sum_{i=1}^N \mathbb{E}_{\boldsymbol{\psi}_i} t(\boldsymbol{z}_i, \boldsymbol{y}_i)^{\top} \ \alpha_2 + N]^{\top}$.
+
+SVI focuses on the global parameters, updating them using the ELBO natural gradients with respect to $\boldsymbol{\xi}$, where natural gradients are the usual gradients premultiplied by the inverse covariance of the sufficient statistic. These gradients are easily calculated in exponential families. In particular, the updates are given by
 \begin{align*}
-	\epsilon_t&=t^{\kappa}, \ 0.5 < \kappa \leq 1.
+	\boldsymbol{\xi}_t=\boldsymbol{\xi}_{t-1}+\epsilon_t g(\boldsymbol{\xi}_{t-1}),
 \end{align*} 
-This setting satisfies the Robbins and Monro conditions necessary for stochastic optimization \cite{robbins1951stochastic}.
+where $\epsilon_t$ is the step size, and $g(\boldsymbol{\xi}_t)=\mathbb{E}_{\boldsymbol{\psi}_i}[\boldsymbol{\alpha}_n-\boldsymbol{\xi}_t]$ is the natural gradient of the global variational parameters  \cite{blei2017variational}. Consequently,
+\begin{align*}
+	\boldsymbol{\xi}_t=(1-\epsilon_t)\boldsymbol{\xi}_{t-1}+\epsilon_t \mathbb{E}_{\boldsymbol{\psi}_i}[\boldsymbol{\alpha}_n].
+\end{align*}    
 
-Algorithm \ref{VB1} shows the stochastic variational inference algorithm. 
+However, calculating this update requires using the entire dataset, which is computationally burdensome. Therefore, we should use stochastic optimization, which follows noisy but cheap-to-compute unbiased gradients to optimize the function. The key idea is to construct the natural gradient using only one random draw from the dataset, and then scale it (by multiplying it with the sample size) to approximate the sample information:
+\begin{align*}
+	\hat{\boldsymbol{\xi}}&=\boldsymbol{\alpha}+N(\mathbb{E}_{\boldsymbol{\psi}_i^*}[t(\boldsymbol{z}_i,\boldsymbol{y}_i)]^{\top},1)^{\top}\\
+	\boldsymbol{\xi}_t&=(1-\epsilon_t)\boldsymbol{\xi}_{t-1}+\epsilon_t\hat{\boldsymbol{\xi}},
+\end{align*}
+where $(\boldsymbol{z}_i, \boldsymbol{y}_i)$ is a random draw from the sample and its corresponding latent variable. Finally, the step size schedule to update the global parameters are given by
+\begin{align*}
+	\epsilon_t&=t^{-\kappa}, \ 0.5 < \kappa \leq 1.
+\end{align*} 
+This step size schedule satisfies the Robbins and Monro conditions necessary for stochastic optimization \cite{robbins1951stochastic}.
+
+Algorithm \ref{VB1} shows the stochastic variational inference algorithm.
 
 \begin{algorithm}
 	\caption{Variational Bayes: Stochastic variational inference}\label{VB1}
 	\begin{algorithmic}[1]
 		\State Initialize the variational global parameter $\boldsymbol{\phi}_0$
-		\State Set the step size (weight) schedule $\epsilon_t$
+		\State Set the step size schedule $\epsilon_t=t^{-\kappa}, \ 0.5<\kappa\leq 1$
 		\While{TRUE} 
 		\State Choose randomly a data point $\boldsymbol{y}_i$ using a discrete uniform distribution, $i\sim U(1,2,\dots,N)$
 		\State Optimize its local variational parameters $\boldsymbol{\psi}_i^*=\mathbb{E}_{\boldsymbol{\xi}_{t-1}}[\boldsymbol{\eta(\boldsymbol{\phi},y_i)}]$
-		\State Compute the coordinates updates as though $y_i$ were repeated $N$ times, $\hat{\boldsymbol{\xi}}=\boldsymbol{\alpha}+N(\mathbb{E}_{\boldsymbol{\psi}_i^*}[t(\boldsymbol{z}_i,\boldsymbol{y}_i)]^{\top},1)^{\top}$
+		\State Compute the coordinates updates as though $\boldsymbol{y}_i$ were repeated $N$ times, $\hat{\boldsymbol{\xi}}=\boldsymbol{\alpha}+N(\mathbb{E}_{\boldsymbol{\psi}_i^*}[t(\boldsymbol{z}_i,\boldsymbol{y}_i)]^{\top},1)^{\top}$
 		\State Update the global variational parameters, $\boldsymbol{\xi}_t=(1-\epsilon_t)\boldsymbol{\xi}_{t-1}+\epsilon_t\hat{\boldsymbol{\xi}}$  
 		\EndWhile 
-		\State Return $q_{\boldsymbol{\lambda}}(\boldsymbol{\phi})$ 
+		\State Return $q_{\boldsymbol{\xi}}(\boldsymbol{\phi})$ 
 	\end{algorithmic}
 \end{algorithm} 
-
-Given that each complete conditional is in the exponential family, we have 
+\begin{comment}
+	Given that each complete conditional is in the exponential family, we have 
 \begin{align*}
 	q_l^*(\boldsymbol{\theta}_l)&\propto \exp\left(\mathbb{E}_{-l}(\log\left(p({\theta}_{l}\mid\boldsymbol{y},\boldsymbol\theta_{-l})\right))\right)\\
 	&=\exp\left(\mathbb{E}_{-l}(\log\left(h(\boldsymbol{\theta}_l)\exp\left\{\eta_l(\boldsymbol{y},\boldsymbol\theta_{-l})^{\top}\boldsymbol{\theta}_l-B(\eta_l(\boldsymbol{y},\boldsymbol\theta_{-l}))\right\}\right))\right)\\
 	&\propto h(\boldsymbol{\theta}_l) \exp\left(\mathbb{E}_{-l}(\eta_l(\boldsymbol{y},\boldsymbol\theta_{-l})^{\top}\boldsymbol{\theta}_l)\right).
 \end{align*}
 This means that each optimal variational factor is in the same exponential family as each complete conditional. Then, we update each factor taking into account that each set of variational parameters ($\boldsymbol{\lambda}_l$) is equal to its expected value $\boldsymbol{\lambda}_l=\mathbb{E}_{-l}[\eta_l(\boldsymbol{y},\boldsymbol\theta_{-l})]$ due to properties of the exponential family (see Section \ref{sec41}). This expression facilitates computation in variational Bayes algorithms.
+\end{comment}
 
-Given the global-local structure, the joint distribution can be expressed as $p(\boldsymbol{\phi},\boldsymbol{z},\boldsymbol{y})=\pi(\boldsymbol{\phi})\prod_{i=1}^{N}p(\boldsymbol{z}_i,\boldsymbol{y}_i\mid \boldsymbol{\phi})$ 
 
-Gibbs sampler iterates between random draws of conditional posterior distributions, whereas VB determiniscaly iterates between distributions. Thus, VB works directly with distributions rather than with draws, it is approximate, but faster. The aim in expectation propagation is to minimize $\text{KL}(\pi(\boldsymbol{\theta} \mid \mathbf{y})||q(\boldsymbol{\theta}))$ rather than $\text{KL}(q(\boldsymbol{\theta})||\pi(\boldsymbol{\theta} \mid \mathbf{y}))$.  
+%Note that VB iterates between distributions, whereas Gibbs sampler iterates between random draws of conditional posterior distributions. Thus, VB works directly with distributions rather than with draws, it is approximate, but faster. However, it is well-known that VB overestimates the precision of the posterior distribution, but not necessarily suffers in accuracy \cite{blei2017variational}. The aim in expectation propagation is to minimize $\text{KL}(\pi(\boldsymbol{\theta} \mid \mathbf{y})||q(\boldsymbol{\theta}))$ rather than $\text{KL}(q(\boldsymbol{\theta})||\pi(\boldsymbol{\theta} \mid \mathbf{y}))$.  
 
-VB overestimates the precision of the posterior distribution, but not necessarily suffers in accuracy \cite{blei2017variational}.
-
-\cite{zhang2020convergence} analyzes the asymptotic properties of VB posterior decomposing the convergence rates of VB in the convergence rate of the true posterior and the approximation error induced by the variational family. These authors show that the VB posterior concentrates entirely in a neighborhood of the true posterior distribution. In addition, if the loss function is convex, there exists a point estimator that converges at the same rate. \cite{zhang2020convergence} also show for specific cases, like sparse linear models, the concentration rate of the VB posterior is faster than the concentration rate of the exact posterior.  
+\cite{zhang2020convergence} analyzes the asymptotic properties of the VB posterior by decomposing the convergence rates of VB into the convergence rate of the true posterior and the approximation error induced by the variational family. These authors show that the VB posterior concentrates entirely in a neighborhood of the true posterior distribution. In addition, if the loss function is convex, there exists a point estimator that converges at the same rate. \cite{zhang2020convergence} also shows that, for specific cases such as sparse linear models, the concentration rate of the VB posterior is faster than the concentration rate of the exact posterior.
 
 \section{Summary}\label{sec15_3}
 \textit{Simulation-based algorithms} suffer from the \textit{curse of dimensionality} in parameter space, whereas \textit{Optimization approaches} require evaluation of the likelihood functions. Thus, recent approaches mix these two approaches to overcome situations where both phenomena are present.
