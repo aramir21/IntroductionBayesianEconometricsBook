@@ -157,53 +157,168 @@ legend = "bottom", common.legend = TRUE)
 	\end{VF}
 \end{tcolorbox}
 
-\item \textbf{g-and-k distribution for financial returns continues II}
+\item \textbf{Simulation: g-and-k distribution continues}
 
-Perform inference in the financial returns example using Bayesian synthetic likelihood, setting $M=500$, $S=11,000$, a burn-in of 1,000, and a thinning parameter of 10. This setting results in a similar computational time to the ABC algorithm. Use a random walk proposal distribution in the \textit{BSL} package in \textbf{R}, and compare the results with those from ABC.
+Perform the simulation example of the Bayesian synthetic likelihood presented in the book, using the same population parameters and setting $M=500$, $S=6{,}000$, with burn-in and thinning parameters set to 1,000 and 5, respectively. Use the \textit{BSL} package in \textbf{R} to perform inference using the vanilla, unbiased, semi-parametric, and misspecified (mean and variance) versions of BSL. Compare the posterior distributions of the methods with the true population parameters.
 
 \textbf{Answer:}
 
-The following code shows how to perform inference in this exercise, and Figure \ref{figSBLexcrate} shows the posterior plots. We find that there is marginal positive evidence that the moving average coefficient is positive. Since the posterior distribution of $g$ is centered around zero, the distribution appears to be symmetric around its median. Meanwhile, a positive $k$ indicates that the distribution has heavier tails than a normal distribution, implying a higher likelihood of extreme values (outliers) in the exchange rate USD/EURO. 
+The following code shows how to perform inference in this exercise. The results using the semi-parametric and misspecified settings in mean are very different compared to the other methods. In general, the performance of these methods are not good in this particular exercise and setting.
+
+Figure \ref{figSBLsimgk} shows the posterior plots of the vanilla, unbiased and misspecified in variance settings. All the 95\% credible intervals encompass the population variables; the posterior distributions of $a$, $b$ and $k$ are really good. 
 
 \begin{figure}[!h]
-	\includegraphics[width=340pt, height=200pt]{Chapters/chapter15/figures/ABCown.png}
-	\caption[List of figure caption goes here]{Posterior distributions using Bayesian synthetic likelihood: Financial returns USD/EURO example.}\label{figSBLexcrate}
-\end{figure}
-
-\begin{figure}[!h]
-	\includegraphics[width=340pt, height=200pt]{Chapters/chapter15/figures/SimExerBSLgk.png}
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter15/figures/BLSgkSim.png}
 	\caption[List of figure caption goes here]{Posterior distributions using Bayesian synthetic likelihood: Simulation exercise g-and-k distribution.}\label{figSBLsimgk}
 \end{figure}
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Bayesian synthetic likelihood: Financial log returns USD/EURO}
+	\textit{R code. Bayesian synthetic likelihood: Simulation exercise g-and-k distribution.}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-			library(ggplot2); library(latex2exp)
-			Sp <- 1000
-			
-			df1 <- data.frame(Value = c(PostABC_AR[1:Sp,1], PostABC_ARown[1:Sp,1], PostABC_ARownRegAd[1:Sp,1]), Distribution = factor(c(rep("EasyABC", Sp), rep("ABC", Sp), rep("ABCAdj", Sp))))
-			dentheta <- ggplot(df1, aes(x = Value, color = Distribution)) + geom_density(linewidth = 1) + geom_vline(xintercept = theta1, linetype = "dashed", color = "red", linewidth = 1) +
-			labs(title = TeX("Posterior density plot: $theta$"), x = TeX("$theta$"), y = "Posterior density") + scale_color_manual(values = c("blue", "red", "green")) +  theme_minimal() +
-			theme(legend.title = element_blank())
-			
-			df2 <- data.frame(Value = c(PostABC_AR[1:Sp,4], PostABC_ARown[1:Sp,4], PostABC_ARownRegAd[1:Sp,4]), Distribution = factor(c(rep("EasyABC", Sp), rep("ABC", Sp), rep("ABCAdj", Sp))))
-			deng <- ggplot(df2, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) + geom_vline(xintercept = g, linetype = "dashed", color = "red", linewidth = 1) + labs(title = TeX("Posterior density plot: g"), x = TeX("$g$"), y = "Posterior density") +
-			scale_color_manual(values = c("blue", "red", "green")) +  theme_minimal() + theme(legend.title = element_blank())
-			
-			df3 <- data.frame(Value = c(PostABC_AR[1:Sp,5], PostABC_ARown[1:Sp,5], PostABC_ARownRegAd[1:Sp,5]), Distribution = factor(c(rep("EasyABC", Sp), rep("ABC", Sp), rep("ABCAdj", Sp))))
-			denk <- ggplot(df3, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) + geom_vline(xintercept = k, linetype = "dashed", color = "red", linewidth = 1) +
-			labs(title = TeX("Posterior density plot: k"), x = TeX("$k$"), y = "Posterior density") +
-			scale_color_manual(values = c("blue", "red", "green")) +  theme_minimal() + theme(legend.title = element_blank())
-			
-			library(ggpubr)
-			ggarrange(dentheta, deng, denk, labels = c("A", "B", "C"), ncol = 3, nrow = 1,
-			legend = "bottom", common.legend = TRUE)
-		\end{lstlisting}
+rm(list = ls()); set.seed(010101)
+library(BSL)
+# Simulate g-and-k data
+RGKnew <- function(par) {
+	z <- NULL
+	theta <- par[1]; a <- par[2]; b <- par[3]; g <- par[4]; k <- par[5]
+	e <- rnorm(n + 1)
+	for(t in 2:(n + 1)){
+		zt <- e[t] + theta * e[t-1]
+		z <- c(z, zt)
+	}
+	zs <- z / (1 + theta^2)^0.5
+	x <- a + b * (1 + 0.8 * (1 - exp(-g * zs)) / (1 + exp(-g * zs))) * (1 + zs^2)^k * zs
+	return(x)
+}
+# Summary statistics
+SumSt <- function(y) {
+	Oct <- quantile(y, c(0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875))
+	eta1 <- Oct[6] - Oct[2]
+	eta2 <- (Oct[6] + Oct[2] - 2 * Oct[4]) / eta1
+	eta3 <- (Oct[7] - Oct[5] + Oct[3] - Oct[1]) / eta1
+	autocor <- acf(y, lag = 2, plot = FALSE)
+	autocor[["acf"]][2:3]
+	Etay <- c(Oct[4], eta1, eta2, eta3, autocor[["acf"]][2:3])
+	return(Etay)
+}
+# Prior function
+LogPrior <- function(par){
+	LogPi <- log(par[1] > -1 & par[1] < 1 & par[2] > 0 & par[2] < 5 & par[3] > 0 & par[3] < 5 & par[4] > -5 & par[4] < 5 & par[5] > -0.5 & par[5] < 5)
+	return(LogPi)
+}
+# Population parameters
+theta1 <- 0.8; a <- 1; b <- 0.5; g <- -1; k <- 1
+parpop <- c(theta1, a, b, g, k)
+K <- 5
+n <- 500
+y <- RGKnew(par = parpop)
+# Algorithm parameters
+M <- 200 # Number of iterations to calculate mu and sigma
+S <- 1100 # Number of MCMC iterations
+burnin <- 100 # Burn in iterations
+thin <- 2 # Thining parameter
+keep <- seq(burnin + 1, S, thin)
+par0 <- c(0.5, 2, 1, 0, 1) 
+Modelgk <- newModel(fnSim = RGKnew, fnSum = SumSt, theta0 = par0, fnLogPrior = LogPrior, verbose = FALSE)
+validObject(Modelgk)
+keep <- seq(burnin + 1, S, thin)
+tune <- 0.1 # Tuning parameter RW MH
+simgk <- simulation(Modelgk, n = M, theta = par0, seed = 10)
+par(mfrow = c(2, 3))
+\end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
 
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Bayesian synthetic likelihood: Simulation exercise g-and-k distribution.}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+# Check if the summary statistics are roughly normal
+for (i in 1:6){
+	eval <- seq(min(simgk$ssx[, i]), max(simgk$ssx[, i]), 0.001)
+	densnorm <- dnorm(eval, mean = mean(simgk$ssx[, i]), sd(simgk$ssx[, i])) 
+	plot(density(simgk$ssx[, i]), main = "", xlab = "")
+	lines(eval, densnorm, col = "red")
+} 
+Lims <- matrix(c(-1, 0, 0, -5, -0.5, 1, rep(5, 4)), 5, 2)
+tick <- Sys.time()
+Resultsgk <- bsl(y = y, n = M, M = S, model = Modelgk, covRandWalk = tune*diag(5),
+method = "BSL", thetaNames = expression(theta, a, b, g, k), 
+logitTransformBound = Lims, plotOnTheFly = TRUE)
+tock <- Sys.time()
+tock - tick
+PostChain <- coda::mcmc(Resultsgk@theta[keep,])
+CovarRWnew <- var(PostChain)
+M <- 500 # Number of iterations to calculate mu and sigma
+S <- 6000 # Number of MCMC iterations
+burnin <- 1000 # Burn in iterations
+thin <- 5 # Thining parameter
+keep <- seq(burnin + 1, S, thin)
+tune <- 1 # Tuning parameter RW MH
+ModelgkNew <- newModel(fnSim = RGKnew, fnSum = SumSt, theta0 = par0, fnLogPrior = LogPrior, verbose = FALSE)
+logitTransform <- function(par, a, b){
+	logtrans <- log((par - a)/(b - par))
+	return(logtrans)
+}
+ParTrans <- matrix(NA, dim(PostChain)[1], 5)
+for(j in 1:5){
+	ParTrans[,j] <- logitTransform(par = PostChain[,j], a = Lims[j,1], b = Lims[j,2])
+}
+CovarRW <- var(ParTrans)
+# Vanilla BLS
+tick <- Sys.time()
+ResultsgkVanila <- bsl(y = y, n = M, M = S, model = ModelgkNew, covRandWalk = tune*CovarRW, method = "BSL", thetaNames = expression(theta, a, b, g, k), logitTransformBound = Lims, plotOnTheFly = TRUE)
+tock <- Sys.time()
+tock - tick
+# Unbiased BLS
+tick <- Sys.time()
+ResultsgkuBLS <- bsl(y = y, n = M, M = S, model = ModelgkNew, covRandWalk = tune*CovarRW,
+method = "uBSL", thetaNames = expression(theta, a, b, g, k),
+logitTransformBound = Lims, plotOnTheFly = TRUE)
+tock <- Sys.time()
+tock - tick
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
 
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Bayesian synthetic likelihood: Simulation exercise g-and-k distribution.}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+# Semi-parametric BLS
+tick <- Sys.time()
+ResultsgksemiBLS <- bsl(y = y, n = M, M = S, model = ModelgkNew, covRandWalk = tune*CovarRW, method = "semiBSL", thetaNames = expression(theta, a, b, g, k),
+logitTransformBound = Lims, plotOnTheFly = TRUE)
+tock <- Sys.time()
+tock - tick
+# Misspecified BLS in mean
+tick <- Sys.time()
+ResultsgkmisspecBLSmean <- bsl(y = y, n = M, M = S, model = ModelgkNew, covRandWalk = tune*CovarRW, method = "BSLmisspec", thetaNames = expression(theta, a, b, g, k),
+logitTransformBound = Lims, misspecType = "mean", tau = 0.5, plotOnTheFly = TRUE)
+tock <- Sys.time()
+tock - tick
+# Misspecified BLS in variance
+tick <- Sys.time()
+ResultsgkmisspecBLSvar <- bsl(y = y, n = M, M = S, model = ModelgkNew, covRandWalk = tune*CovarRW, method = "BSLmisspec", thetaNames = expression(theta, a, b, g, k), 
+logitTransformBound = Lims, misspecType = "variance", tau = 0.5, plotOnTheFly = TRUE)
+tock <- Sys.time()
+tock - tick
+# Summary all models
+gkResults <- list(ResultsgkVanila, ResultsgkuBLS, ResultsgksemiBLS, ResultsgkmisspecBLSmean, ResultsgkmisspecBLSvar)
+names(gkResults) <- c("BSL", "uBSL", "semiBLS", "missBSLmean", "missBSLvar")
+t(sapply(gkResults, summary))
+combinePlotsBSL(gkResults, which = 2, thetaTrue = parpop, thin = thin, options.linetype = list(values = 1:8), options.size = list(values = rep(1, 8)), options.theme = list(plot.margin = grid::unit(rep(0.03, 4), "npc"), axis.title = ggplot2::element_text(size = 12), axis.text = ggplot2::element_text(size = 8),
+legend.text = ggplot2::element_text(size = 12)))
+# semi BSL and miss BSL mean are totally diferent to other methods 
+gkResultsNew <- list(gkResults[["BSL"]], gkResults[["uBSL"]], gkResults[["missBSLvar"]])
+names(gkResultsNew) <- c("BSL", "uBSL", "missBSLvar")
+combinePlotsBSL(gkResultsNew, which = 2, thetaTrue = parpop, thin = thin, options.linetype = list(values = 1:8), options.size = list(values = rep(1, 8)), options.theme = list(plot.margin = grid::unit(rep(0.03, 4), "npc"), legend.text = ggplot2::element_text(size = 12)))
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
 
 \end{enumerate}

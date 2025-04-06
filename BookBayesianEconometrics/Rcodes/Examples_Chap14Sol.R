@@ -172,248 +172,6 @@ library(ggpubr)
 ggarrange(dentheta, deng, denk, labels = c("A", "B", "C"), ncol = 3, nrow = 1,
           legend = "bottom", common.legend = TRUE)
 
-######## BSL: Financial returns application ############
-rm(list = ls()); set.seed(010101)
-library(BSL)
-dfExcRate <- read.csv(file = "https://raw.githubusercontent.com/BEsmarter-consultancy/BSTApp/refs/heads/master/DataApp/ExchangeRate.csv", sep = ",", header = T)
-attach(dfExcRate)
-str(dfExcRate)
-y <- USDEUR
-n <- length(y)
-# Simulate g-and-k data
-RGKnew <- function(par) {
-  z <- NULL
-  theta <- par[1]; a <- par[2]; b <- par[3]; g <- par[4]; k <- par[5]
-  e <- rnorm(n + 1)
-  for(t in 2:(n + 1)){
-    zt <- e[t] + theta * e[t-1]
-    z <- c(z, zt)
-  }
-  zs <- z / (1 + theta^2)^0.5
-  x <- a + b * (1 + 0.8 * (1 - exp(-g * zs)) / (1 + exp(-g * zs))) * (1 + zs^2)^k * zs
-  return(x)
-}
-# Summary statistics
-SumSt <- function(y) {
-  Oct <- quantile(y, c(0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875))
-  eta1 <- Oct[6] - Oct[2]
-  eta2 <- (Oct[6] + Oct[2] - 2 * Oct[4]) / eta1
-  eta3 <- (Oct[7] - Oct[5] + Oct[3] - Oct[1]) / eta1
-  autocor <- acf(y, lag = 2, plot = FALSE)
-  autocor[["acf"]][2:3]
-  Etay <- c(Oct, eta1, eta2, eta3, autocor[["acf"]][2:3])
-  return(Etay)
-}
-# Prior function
-LogPrior <- function(par){
-  LogPi <- log(par[1] > -1 & par[1] < 1 & par[2] > 0 & par[2] < 5 & par[3] > 0 & par[3] < 5 & par[4] > -5 & par[4] < 5 & par[5] > -0.5 & par[5] < 5)
-  return(LogPi)
-}
-par0 <- c(0.2, 1, 1, 0, 0.8) # c(0.5, 2, 1, 0, 1) 
-Modelgk <- newModel(fnSim = RGKnew, fnSum = SumSt, theta0 = par0, fnLogPrior = LogPrior, verbose = FALSE)
-validObject(Modelgk)
-M <- 200 # 500 Number of iterations to calculate mu and sigma
-S <- 1100 # 11000 Number of MCMC iterations
-burnin <- 100 # 1000 # Burn in iterations
-thin <- 2 # 10 # Thining parameter
-keep <- seq(burnin + 1, S, thin)
-tune <- 0.01 # Tuning parameter RW MH
-simgk <- simulation(Modelgk, n = M, theta = par0, seed = 10)
-par(mfrow = c(4, 3))
-# Check if the summary statistics are roughly normal
-for (i in 1:12){
-  eval <- seq(min(simgk$ssx[, i]), max(simgk$ssx[, i]), 0.001)
-  densnorm <- dnorm(eval, mean = mean(simgk$ssx[, i]), sd(simgk$ssx[, i])) 
-  plot(density(simgk$ssx[, i]), main = "", xlab = "")
-  lines(eval, densnorm, col = "red")
-} 
-Lims <- matrix(c(-1, 0, 0, -5, -0.5, 1, rep(5, 4)), 5, 2)
-tick <- Sys.time()
-Resultsgk <- bsl(y = y, n = M, M = S, model = Modelgk, covRandWalk = tune*diag(5),
-                 method = "BSL", thetaNames = expression(theta, a, b, g, k), 
-                 logitTransformBound = Lims, plotOnTheFly = TRUE)
-tock <- Sys.time()
-tock - tick
-PostChain <- coda::mcmc(Resultsgk@theta[keep,])
-summary(PostChain)
-CovarRWnew <- var(PostChain)
-M <- 500 # Number of iterations to calculate mu and sigma
-S <- 15000 # 11000 # 11000 Number of MCMC iterations
-burnin <- 5000 # 1000 # Burn in iterations
-thin <- 10 # 10 # Thining parameter
-keep <- seq(burnin + 1, S, thin)
-tune <- 1 # Tuning parameter RW MH
-get_mode <- function(x) {
-  uniq_vals <- unique(x)
-  uniq_vals[which.max(tabulate(match(x, uniq_vals)))]
-}
-# apply(PostChain, 2, get_mode)
-ModelgkNew <- newModel(fnSim = RGKnew, fnSum = SumSt, theta0 = par0, fnLogPrior = LogPrior, verbose = FALSE)
-logitTransform <- function(par, a, b){
-  logtrans <- log((par - a)/(b - par))
-  return(logtrans)
-}
-ParTrans <- matrix(NA, dim(PostChain)[1], 5)
-for(j in 1:5){
-  ParTrans[,j] <- logitTransform(par = PostChain[,j], a = Lims[j,1], b = Lims[j,2])
-}
-CovarRW <- var(ParTrans)
-# The acceptance rate is really low in this setting!!!
-# tick <- Sys.time()
-# ResultsgkNew <- bsl(y = y, n = M, M = S, model = ModelgkNew, covRandWalk = tune*CovarRW,
-#                     method = "BSL", thetaNames = expression(theta, a, b, g, k), 
-#                     logitTransformBound = Lims, plotOnTheFly = TRUE)
-# tock <- Sys.time()
-# tock - tick
-# PostChain <- coda::mcmc(ResultsgkNew@theta[keep,])
-# plot(PostChain)
-# ResultsgkNew@acceptanceRate
-# plot(ResultsgkNew@loglike[keep], type = "l")
-# sd(ResultsgkNew@loglike[keep])
-
-# These two didn't work in this example!!!
-# tick <- Sys.time()
-# ResultsgkuBLS <- bsl(y = y, n = M, M = S, model = ModelgkNew, covRandWalk = tune*CovarRW,
-#                     method = "uBSL", thetaNames = expression(theta, a, b, g, k), 
-#                     logitTransformBound = Lims, plotOnTheFly = TRUE)
-# tock <- Sys.time()
-# tock - tick
-# PostChainuBLS <- coda::mcmc(ResultsgkuBLS@theta[keep,])
-# plot(PostChainuBLS)
-# ResultsgkuBLS@acceptanceRate
-# plot(ResultsgkuBLS@loglike[keep], type = "l")
-# sd(ResultsgkuBLS@loglike[keep])
-# 
-# tick <- Sys.time()
-# ResultsgksemiBLS <- bsl(y = y, n = M, M = S, model = ModelgkNew, covRandWalk = tune*CovarRW,
-#                      method = "semiBSL", thetaNames = expression(theta, a, b, g, k), 
-#                      logitTransformBound = Lims, plotOnTheFly = TRUE)
-# tock <- Sys.time()
-# tock - tick
-# PostChainsemiBLS <- coda::mcmc(ResultsgksemiBLS@theta[keep,])
-# plot(PostChainsemiBLS)
-# ResultsgksemiBLS@acceptanceRate
-# plot(ResultsgksemiBLS@loglike[keep], type = "l")
-# sd(ResultsgksemiBLS@loglike[keep])
-
-# The acceptance rate in this is really low!!!
-# tick <- Sys.time()
-# ResultsgkmisspecBLS <- bsl(y = y, n = M, M = S, model = ModelgkNew, covRandWalk = tune*CovarRW,
-#                         method = "BSLmisspec", thetaNames = expression(theta, a, b, g, k), 
-#                         logitTransformBound = Lims, misspecType = "mean", tau = 0.5, plotOnTheFly = TRUE)
-# tock <- Sys.time()
-# tock - tick
-# PostChainmisspecBLS <- coda::mcmc(ResultsgkmisspecBLS@theta[keep,])
-# plot(PostChainmisspecBLS)
-# ResultsgkmisspecBLS@acceptanceRate
-# plot(ResultsgkmisspecBLS@loglike[keep], type = "l")
-# sd(ResultsgkmisspecBLS@loglike[keep])
-
-tick <- Sys.time()
-ResultsgkmisspecBLSvar <- bsl(y = y, n = M, M = S, model = ModelgkNew, covRandWalk = tune*CovarRW,
-                           method = "BSLmisspec", thetaNames = expression(theta, a, b, g, k), 
-                           logitTransformBound = Lims, misspecType = "variance", tau = 0.5, plotOnTheFly = TRUE)
-tock <- Sys.time()
-tock - tick
-PostChainmisspecBLSvar <- coda::mcmc(ResultsgkmisspecBLSvar@theta[keep,])
-# plot(PostChainmisspecBLSvar)
-# ResultsgkmisspecBLSvar@acceptanceRate
-# plot(ResultsgkmisspecBLSvar@loglike[keep], type = "l")
-# sd(ResultsgkmisspecBLSvar@loglike[keep])
-# Figures 
-library(ggplot2); library(latex2exp)
-Sp <- length(keep)
-df1 <- data.frame(
-  Value = c(PostChainmisspecBLSvar[,1]),
-  Distribution = factor(c(rep("BSL", Sp)))
-)
-
-dentheta <- ggplot(df1, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) +  
-  labs(title = TeX("Posterior density plot: $theta$"), x = TeX("$theta$"), y = "Posterior density") +
-  scale_color_manual(values = c("blue")) +  theme_minimal() +
-  theme(legend.title = element_blank())
-
-df2 <- data.frame(
-  Value = c(PostChainmisspecBLSvar[,4]),
-  Distribution = factor(c(rep("BSL", Sp)))
-)
-
-deng <- ggplot(df2, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) +  
-  labs(title = "Posterior density plot: g", x = "g", y = "Posterior density") +
-  scale_color_manual(values = c("blue")) +  theme_minimal() +
-  theme(legend.title = element_blank())
-
-df3 <- data.frame(
-  Value = c(PostChainmisspecBLSvar[,5]),
-  Distribution = factor(c(rep("BSL", Sp)))
-)
-
-denk <- ggplot(df3, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) +  
-  labs(title = "Posterior density plot: k", x = "k", y = "Posterior density") +
-  scale_color_manual(values = c("blue")) +  theme_minimal() +
-  theme(legend.title = element_blank())
-
-library(ggpubr)
-ggarrange(dentheta, deng, denk, labels = c("A", "B", "C"), ncol = 3, nrow = 1,
-          legend = "bottom", common.legend = TRUE)
-
-
-#####################################################################
-tick <- Sys.time()
-ResultsgkmisspecBLSvarnew <- bsl(y = y, n = M, M = S, model = ModelgkNew, covRandWalk = tune*CovarRWnew,
-                              method = "BSLmisspec", thetaNames = expression(theta, a, b, g, k), 
-                              misspecType = "variance", tau = 0.5, plotOnTheFly = TRUE)
-tock <- Sys.time()
-tock - tick
-keep <- seq(burnin + 1, S, thin) # keep <- seq(burnin + 1, S, thin)
-PostChainmisspecBLSvarnew <- coda::mcmc(ResultsgkmisspecBLSvarnew@theta[keep,])
-# plot(PostChainmisspecBLSvarnew)
-# ResultsgkmisspecBLSvarnew@acceptanceRate
-# plot(ResultsgkmisspecBLSvarnew@loglike[keep], type = "l")
-# sd(ResultsgkmisspecBLSvarnew@loglike[keep])
-
-# Figures 
-library(ggplot2); library(latex2exp)
-Sp <- length(keep)
-df1 <- data.frame(
-  Value = c(PostChainmisspecBLSvarnew[,1]),
-  Distribution = factor(c(rep("BSL", Sp)))
-)
-
-dentheta <- ggplot(df1, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) +  
-  labs(title = TeX("Posterior density plot: $theta$"), x = TeX("$theta$"), y = "Posterior density") +
-  scale_color_manual(values = c("blue")) +  theme_minimal() +
-  theme(legend.title = element_blank())
-
-df2 <- data.frame(
-  Value = c(PostChainmisspecBLSvarnew[,4]),
-  Distribution = factor(c(rep("BSL", Sp)))
-)
-
-deng <- ggplot(df2, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) +  
-  labs(title = "Posterior density plot: g", x = "g", y = "Posterior density") +
-  scale_color_manual(values = c("blue")) +  theme_minimal() +
-  theme(legend.title = element_blank())
-
-df3 <- data.frame(
-  Value = c(PostChainmisspecBLSvarnew[,5]),
-  Distribution = factor(c(rep("BSL", Sp)))
-)
-
-denk <- ggplot(df3, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) +  
-  labs(title = "Posterior density plot: k", x = "k", y = "Posterior density") +
-  scale_color_manual(values = c("blue")) +  theme_minimal() +
-  theme(legend.title = element_blank())
-
-library(ggpubr)
-ggarrange(dentheta, deng, denk, labels = c("A", "B", "C"), ncol = 3, nrow = 1,
-          legend = "bottom", common.legend = TRUE)
-
-
-
-
-
-
 ######## BSL: g-and-k simulation ############
 rm(list = ls()); set.seed(010101)
 library(BSL)
@@ -456,15 +214,11 @@ y <- RGKnew(par = parpop)
 M <- 200 # Number of iterations to calculate mu and sigma
 S <- 1100 # Number of MCMC iterations
 burnin <- 100 # Burn in iterations
-thin <- 10 # Thining parameter
+thin <- 2 # Thining parameter
 keep <- seq(burnin + 1, S, thin)
 par0 <- c(0.5, 2, 1, 0, 1) 
 Modelgk <- newModel(fnSim = RGKnew, fnSum = SumSt, theta0 = par0, fnLogPrior = LogPrior, verbose = FALSE)
 validObject(Modelgk)
-M <- 200 # 500 Number of iterations to calculate mu and sigma
-S <- 1100 # 11000 Number of MCMC iterations
-burnin <- 100 # 1000 # Burn in iterations
-thin <- 2 # 10 # Thining parameter
 keep <- seq(burnin + 1, S, thin)
 tune <- 0.1 # Tuning parameter RW MH
 simgk <- simulation(Modelgk, n = M, theta = par0, seed = 10)
@@ -491,10 +245,10 @@ burnin <- 1000 # Burn in iterations
 thin <- 5 # Thining parameter
 keep <- seq(burnin + 1, S, thin)
 tune <- 1 # Tuning parameter RW MH
-get_mode <- function(x) {
-  uniq_vals <- unique(x)
-  uniq_vals[which.max(tabulate(match(x, uniq_vals)))]
-}
+# get_mode <- function(x) {
+#   uniq_vals <- unique(x)
+#   uniq_vals[which.max(tabulate(match(x, uniq_vals)))]
+# }
 # apply(PostChain, 2, get_mode)
 ModelgkNew <- newModel(fnSim = RGKnew, fnSum = SumSt, theta0 = par0, fnLogPrior = LogPrior, verbose = FALSE)
 logitTransform <- function(par, a, b){
@@ -506,7 +260,7 @@ for(j in 1:5){
   ParTrans[,j] <- logitTransform(par = PostChain[,j], a = Lims[j,1], b = Lims[j,2])
 }
 CovarRW <- var(ParTrans)
-# Vanila BLS
+# Vanilla BLS
 tick <- Sys.time()
 ResultsgkVanila <- bsl(y = y, n = M, M = S, model = ModelgkNew, covRandWalk = tune*CovarRW,
                        method = "BSL", thetaNames = expression(theta, a, b, g, k),
@@ -542,8 +296,25 @@ ResultsgkmisspecBLSvar <- bsl(y = y, n = M, M = S, model = ModelgkNew, covRandWa
 tock <- Sys.time()
 tock - tick
 # Summary all models
-gkResults <- list(ResultsgkVanila, ResultsgkuBLS, ResultsgksemiBLS, ResultsgkmisspecBLSmean, ResultsgkmisspecBLSvar)
-names(gkResults) <- c("BSL", "uBSL", "semiBSL", "missBSLmean", "missBSLvar")
+gkResults <- list(ResultsgkVanila, ResultsgkuBLS, ResultsgkmisspecBLSmean, ResultsgkmisspecBLSvar)
+names(gkResults) <- c("BSL", "uBSL", "missBSLmean", "missBSLvar")
 t(sapply(gkResults, summary))
 combinePlotsBSL(gkResults, which = 1, thin = thin, burnin = burnin)
 save(gkResults, file = "ExerBSLgk.RData")
+# load(file = "ExerBSLgk.RData")
+combinePlotsBSL(gkResults, which = 2, thetaTrue = parpop,
+                thin = thin, options.linetype = list(values = 1:8),
+                options.size = list(values = rep(1, 8)),
+                options.theme = list(plot.margin = grid::unit(rep(0.03, 4), "npc"),
+                axis.title = ggplot2::element_text(size = 12),
+                axis.text = ggplot2::element_text(size = 8),
+                legend.text = ggplot2::element_text(size = 12)))
+# semi BSL and miss BSL mean are totally diferent to other methods 
+gkResultsNew <- list(gkResults[["BSL"]], gkResults[["uBSL"]], gkResults[["missBSLvar"]])
+names(gkResultsNew) <- c("BSL", "uBSL", "missBSLvar")
+combinePlotsBSL(gkResultsNew, which = 2, thetaTrue = parpop,
+                thin = thin, options.linetype = list(values = 1:8),
+                options.size = list(values = rep(1, 8)),
+                options.theme = list(plot.margin = grid::unit(rep(0.03, 4), "npc"),
+                legend.text = ggplot2::element_text(size = 12)))
+# All 95% credible intervals encompass the population parameters.
