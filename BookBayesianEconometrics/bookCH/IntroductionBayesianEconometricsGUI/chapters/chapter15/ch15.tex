@@ -207,7 +207,7 @@ We can perform BSL using the Algorithm \ref{BSL0}. We can use a random walk Metr
 		\For{\texttt{$s=1,\dots,S$}}
 			\State Draw $\boldsymbol{\theta}^c\sim q(\boldsymbol{\theta}\mid \boldsymbol{\theta}^{s-1})$
 			\For{\texttt{$m=1,\dots,M$}}
-				\State Simulate ${\boldsymbol z}^{m}=(z_{1}^{m},z_{2}^{m},...,z_{m}^{s})^{\top}$ from the model, $p(\cdot|{\boldsymbol{\theta} }^c)$
+				\State Simulate ${\boldsymbol z}^{m}=(z_{1}^{m},z_{2}^{m},...,z_{m}^{s})^{\top}$ from the model, $p(\cdot\mid{\boldsymbol{\theta} }^c)$
 				\State Calculate $\boldsymbol{\eta}(\boldsymbol{z}^{(m)})$
 			\EndFor 			 
 			\State Calculate $\boldsymbol{\mu}_{\boldsymbol{\theta}^c}$ and $\boldsymbol{\Sigma}_{\boldsymbol{\theta}^c}$
@@ -558,7 +558,73 @@ This means that each optimal variational factor is in the same exponential famil
 
 %Note that VB iterates between distributions, whereas Gibbs sampler iterates between random draws of conditional posterior distributions. Thus, VB works directly with distributions rather than with draws, it is approximate, but faster. However, it is well-known that VB overestimates the precision of the posterior distribution, but not necessarily suffers in accuracy \cite{blei2017variational}. The aim in expectation propagation is to minimize $\text{KL}(\pi(\boldsymbol{\theta} \mid \mathbf{y})||q(\boldsymbol{\theta}))$ rather than $\text{KL}(q(\boldsymbol{\theta})||\pi(\boldsymbol{\theta} \mid \mathbf{y}))$.  
 
-\cite{zhang2020convergence} analyzes the asymptotic properties of the VB posterior by decomposing the convergence rates of VB into the convergence rate of the true posterior and the approximation error induced by the variational family. These authors show that the VB posterior concentrates entirely in a neighborhood of the true posterior distribution. In addition, if the loss function is convex, there exists a point estimator that converges at the same rate. \cite{zhang2020convergence} also shows that, for specific cases such as sparse linear models, the concentration rate of the VB posterior is faster than the concentration rate of the exact posterior.
+\cite{zhang2020convergence} analyzes the asymptotic properties of the VB posterior by decomposing the convergence rates of VB into the convergence rate of the true posterior and the approximation error induced by the variational family. These authors show that the VB posterior concentrates entirely in a neighborhood of the true posterior distribution. In addition, if the loss function is convex, there exists a point estimator that converges at the same rate. \cite{zhang2020convergence} also shows that, for specific cases such as sparse linear models, the concentration rate of the VB posterior is faster than the concentration rate of the exact posterior.\\
+
+\textbf{Example: Linear regression}
+
+Let's perform variational Bayes inference in the linear regression model with conjugate family. In particular, 
+\[
+\boldsymbol{y} = \boldsymbol{X} \boldsymbol{\beta} + \boldsymbol{\mu},
+\]
+
+where \( \boldsymbol{\mu} \sim N(\boldsymbol{0}, \sigma^2 \boldsymbol{I}) \). This implies that:
+\[
+\boldsymbol{y} \sim N(\boldsymbol{X} \boldsymbol{\beta}, \sigma^2 \boldsymbol{I}).\] 
+
+The conjugate priors for the parameters are
+\begin{align*}
+	\boldsymbol{\beta}\mid \sigma^2 & \sim N(\boldsymbol{\beta}_0, \sigma^2 {\boldsymbol{B}}_0),\\
+	\sigma^2 & \sim IG(\alpha_0/2, \delta_0/2).
+\end{align*}
+
+Then, the posterior distributions are $\boldsymbol{\beta}\mid \sigma^2, \boldsymbol{y}, \boldsymbol{X} \sim N(\boldsymbol{\beta}_n, \sigma^2\boldsymbol{B}_n)$, and 	$\sigma^2\mid  \boldsymbol{y}, \boldsymbol{X}\sim IG(\alpha_n/2, \delta_n/2)$, where $\boldsymbol{B}_n = (\boldsymbol{B}_0^{-1} + \boldsymbol{X}^{\top}\boldsymbol{X})^{-1}$, $\boldsymbol{\beta}_n = \boldsymbol{B}_n(\boldsymbol{B}_0^{-1}\boldsymbol{\beta}_0 + \boldsymbol{X}^{\top}\boldsymbol{X}\hat{\boldsymbol{\beta}})$, $\hat{\boldsymbol{\beta}}$ is the MLE, $\alpha_n = \alpha_0 + N$ and $\delta_n = \delta_0 + \boldsymbol{y}^{\top}\boldsymbol{y} + \boldsymbol{\beta}_0^{\top}\boldsymbol{B}_0^{-1}\boldsymbol{\beta}_0 - \boldsymbol{\beta}_n^{\top}\boldsymbol{B}_n^{-1}\boldsymbol{\beta}_n$ (see Section \ref{sec43}).
+
+Let's use the mean-field variational family $q(\boldsymbol{\beta},\sigma^2)=q(\boldsymbol{\beta})q(\sigma^2)\approx \pi(\boldsymbol{\beta},\sigma^2\mid\boldsymbol{y},\boldsymbol{X})$. Then,
+\begin{align*}
+	\log q^*(\boldsymbol{\beta})&\propto\mathbb{E}_{\sigma^2}[\log p(\boldsymbol{y},\boldsymbol{\beta},\sigma^2\mid\boldsymbol{X})]\\
+	&=\mathbb{E}_{\sigma^2}[\log p(\boldsymbol{y}\mid\boldsymbol{\beta},\sigma^2,\boldsymbol{X}) +\log \pi(\boldsymbol{\beta}\mid\sigma^2)+\log \pi(\sigma^2)]\\
+	&=\mathbb{E}_{\sigma^2}\left(-\frac{N}{2}\log\sigma^2-\frac{1}{2\sigma^2}(\boldsymbol{y}-\boldsymbol{X}\boldsymbol{\beta})^{\top}(\boldsymbol{y}-\boldsymbol{X}\boldsymbol{\beta})-\frac{K}{2}\log\sigma^2\right.\\
+	&\left.-\frac{1}{2\sigma^2}(\boldsymbol{\beta}-\boldsymbol{\beta}_0)^{\top}\boldsymbol{B}_0^{-1}(\boldsymbol{\beta}-\boldsymbol{\beta}_0)\right)+c_1\\
+	&=-0.5\mathbb{E}_{\sigma^2}\left(\frac{1}{\sigma^2}\right)[(\boldsymbol{\beta}-\boldsymbol{\beta}_n)^{\top}\boldsymbol{B}_n^{-1}(\boldsymbol{\beta}-\boldsymbol{\beta}_n)]+c_2.\\
+\end{align*}
+The last equality follows the same steps to obtain the posterior distribution of $\boldsymbol{\beta}$. This expression implies that $q^*(\boldsymbol{\beta})$ is $N\left(\boldsymbol{\beta}_n,\left(\mathbb{E}_{\sigma^2}\left(\frac{1}{\sigma^2}\right)\right)^{-1}\boldsymbol{B}_n\right)$.
+
+In addition,
+\begin{align*}
+	\log q^*(\sigma^2)&\propto\mathbb{E}_{\boldsymbol{\beta}}[\log p(\boldsymbol{y},\boldsymbol{\beta},\sigma^2\mid\boldsymbol{X})]\\
+	&=\mathbb{E}_{\boldsymbol{\beta}}[\log p(\boldsymbol{y}\mid\boldsymbol{\beta},\sigma^2,\boldsymbol{X}) +\log \pi(\boldsymbol{\beta}\mid\sigma^2)+\log \pi(\sigma^2)]\\
+	&=\mathbb{E}_{\boldsymbol{\beta}}\left(-\frac{N}{2}\log\sigma^2-\frac{1}{2\sigma^2}(\boldsymbol{y}-\boldsymbol{X}\boldsymbol{\beta})^{\top}(\boldsymbol{y}-\boldsymbol{X}\boldsymbol{\beta})-\frac{K}{2}\log\sigma^2\right.\\
+	&\left.-\frac{1}{2\sigma^2}(\boldsymbol{\beta}-\boldsymbol{\beta}_0)^{\top}\boldsymbol{B}_0^{-1}(\boldsymbol{\beta}-\boldsymbol{\beta}_0)-(\alpha_0/2+1)\log \sigma^2 -\frac{\delta_0}{2\sigma^2}\right)+c_1\\
+	&=-\mathbb{E}_{\boldsymbol{\beta}}\left[\frac{1}{2\sigma^2}(\boldsymbol{y}-\boldsymbol{X}\boldsymbol{\beta})^{\top}(\boldsymbol{y}-\boldsymbol{X}\boldsymbol{\beta})+(\boldsymbol{\beta}-\boldsymbol{\beta}_0)^{\top}\boldsymbol{B}_0^{-1}(\boldsymbol{\beta}-\boldsymbol{\beta}_0)+\delta_0\right]\\
+	&-\left(\frac{N+K+\alpha_0}{2}+1\right)\log\sigma^2+c_1.
+\end{align*}
+This means that $q^*(\sigma^2)$ is $IG(\alpha_n/2,\delta_n/2)$, where $\alpha_n=N+K+\alpha_0$, and
+\begin{align*}
+	\delta_n&=\mathbb{E}_{\boldsymbol{\beta}}\left[(\boldsymbol{y}-\boldsymbol{X}\boldsymbol{\beta})^{\top}(\boldsymbol{y}-\boldsymbol{X}\boldsymbol{\beta})+(\boldsymbol{\beta}-\boldsymbol{\beta}_0)^{\top}\boldsymbol{B}_0^{-1}(\boldsymbol{\beta}-\boldsymbol{\beta}_0)+\delta_0\right]\\
+	&=\mathbb{E}_{\boldsymbol{\beta}}\left[(\boldsymbol{\beta}-\boldsymbol{\beta}_n)^{\top}\boldsymbol{B}_n^{-1}(\boldsymbol{\beta}-\boldsymbol{\beta}_n)\right]-\boldsymbol{\beta}_n^{\top}\boldsymbol{B}_n^{-1}\boldsymbol{\beta}_n+\boldsymbol{y}^{\top}\boldsymbol{y}+\boldsymbol{\beta}_0^{\top}\boldsymbol{B}_0^{-1}\boldsymbol{\beta}_0+\delta_0.
+\end{align*} 
+This result implies that $\mathbb{E}_{\sigma^2}\left(\frac{1}{\sigma^2}\right)=\alpha_n/\delta_n$, as the inverse of a random variable that distributes gamma in the rate parametrization is inverse gamma.
+Note that
+\begin{align*}
+	\mathbb{E}_{\boldsymbol{\beta}}\left[(\boldsymbol{\beta}-\boldsymbol{\beta}_n)^{\top}\boldsymbol{B}_n^{-1}(\boldsymbol{\beta}-\boldsymbol{\beta}_n)\right]&=tr\left\{\mathbb{E}_{\boldsymbol{\beta}}\left[(\boldsymbol{\beta}-\boldsymbol{\beta}_n)^{\top}\boldsymbol{B}_n^{-1}(\boldsymbol{\beta}-\boldsymbol{\beta}_n)\right]\right\}\\
+	&=\mathbb{E}_{\boldsymbol{\beta}}\left\{tr\left[(\boldsymbol{\beta}-\boldsymbol{\beta}_n)^{\top}\boldsymbol{B}_n^{-1}(\boldsymbol{\beta}-\boldsymbol{\beta}_n)\right]\right\}\\
+	&=\mathbb{E}_{\boldsymbol{\beta}}\left\{tr\left[(\boldsymbol{\beta}-\boldsymbol{\beta}_n)(\boldsymbol{\beta}-\boldsymbol{\beta}_n)^{\top}\boldsymbol{B}_n^{-1}\right]\right\}\\
+	&=tr\left\{\mathbb{E}_{\boldsymbol{\beta}}\left[(\boldsymbol{\beta}-\boldsymbol{\beta}_n)(\boldsymbol{\beta}-\boldsymbol{\beta}_n)^{\top}\right]\boldsymbol{B}_n^{-1}\right\}\\
+	&=tr\left\{Var(\boldsymbol{\beta})\boldsymbol{B}_n^{-1}\right\},\\
+\end{align*}
+where we use that the trace of a scalar is a scalar, expectation and trace can be interchanged due to being linear operators, and the trace operator is invariant to cycling permutations.
+Then, $\delta_n=tr\left\{Var(\boldsymbol{\beta})\boldsymbol{B}_n^{-1}\right\}-\boldsymbol{\beta}_n^{\top}\boldsymbol{B}_n^{-1}\boldsymbol{\beta}_n+\boldsymbol{y}^{\top}\boldsymbol{y}+\boldsymbol{\beta}_0^{\top}\boldsymbol{B}_0^{-1}\boldsymbol{\beta}_0+\delta_0$.
+ 
+In addition (Exercise 3),
+\begin{align*}
+	\text{ELBO}(q(\boldsymbol{\beta},\sigma^2))&=\mathbb{E}_{\boldsymbol{\beta},\sigma^2}[log p(\boldsymbol{y},\boldsymbol{\beta},\sigma^2\mid\boldsymbol{X})]-\mathbb{E}_{\boldsymbol{\beta},\sigma^2}[q(\boldsymbol{\beta},\sigma^2)]\\
+	&=-\frac{N}{2}\log(2\pi)+\frac{\alpha_0}{2}\log(\delta_0/2)-\frac{\alpha_n}{2}\log(\delta_n/2)-0.5\log|\boldsymbol{B}_0|\\
+	&+0.5\log|\boldsymbol{B}_n|-\log\Gamma(\alpha_0/2)+\log\Gamma(\alpha_n/2)\\
+	&-K/2\log(\alpha_n/\delta_n)+0.5tr\left\{Var(\boldsymbol{\beta})\boldsymbol{B}_n^{-1}\right\}.
+\end{align*}
+Note that the first two lines of the ELBO have the same structure as the log marginal likelihood $p(\boldsymbol{y})$ in Section \ref{sec43}.
+ 
+ 
 
 \section{Summary}\label{sec15_3}
 \textit{Simulation-based algorithms} suffer from the \textit{curse of dimensionality} in parameter space, whereas \textit{Optimization approaches} require evaluation of the likelihood functions. Thus, recent approaches mix these two approaches to overcome situations where both phenomena are present.

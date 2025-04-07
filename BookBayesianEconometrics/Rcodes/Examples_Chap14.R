@@ -1,4 +1,4 @@
-######### ABC Exchange rate og returns: USD/EURO
+######### ABC Exchange rate log returns: USD/EURO
 rm(list = ls()); set.seed(010101)
 library(EasyABC)
 dfExcRate <- read.csv(file = "https://raw.githubusercontent.com/BEsmarter-consultancy/BSTApp/refs/heads/master/DataApp/ExchangeRate.csv", sep = ",", header = T)
@@ -259,3 +259,112 @@ denk <- ggplot(df3, aes(x = Value, color = Distribution)) +   geom_density(linew
 library(ggpubr)
 ggarrange(dentheta, deng, denk, labels = c("A", "B", "C"), ncol = 3, nrow = 1,
           legend = "bottom", common.legend = TRUE)
+
+######### Variational Bayes: Linear regression ##########
+set.seed(010101)
+library(LaplacesDemon)
+N <- 500; K <- 2
+sig2 <- 1; B <- rep(1, K + 1)
+X <- cbind(1, matrix(rnorm(N*K), N, K))
+e <- rnorm(N, 0, sig2^0.5)
+y <- X%*%B + e
+######################### Data List Preparation #########################
+mon.names <- "mu[1]"
+parm.names <- as.parm.names(list(beta=rep(0,K + 1), sigma2=0))
+pos.beta <- grep("beta", parm.names)
+pos.sigma2 <- grep("sigma2", parm.names)
+PGF <- function(Data) {
+  beta <- rnorm(Data$K)
+  sigma2 <- runif(1)
+  return(c(beta, sigma2))
+}
+MyData <- list(K=K, PGF=PGF, X=X, mon.names=mon.names,
+               parm.names=parm.names, pos.beta=pos.beta, pos.sigma2=pos.sigma2, y=y)
+########################## Model Specification ##########################
+b0 <- 0; B0 <- 1000; a0 <- 0.01; d0 <- 0.01
+Model <- function(parm, Data)
+{
+  ### Parameters
+  beta <- parm[Data$pos.beta]
+  sigma2 <- interval(parm[Data$pos.sigma2], 1e-100, Inf)
+  parm[Data$pos.sigma2] <- sigma2
+  ### Log-Prior
+  beta.prior <- sum(dnormv(beta, b0, B0, log=TRUE))
+  sigma2.prior <- dinvgamma(sigma2, a0/2, d0/2, log=TRUE)
+  ### Log-Likelihood
+  mu <- tcrossprod(Data$X, t(beta))
+  LL <- sum(dnorm(Data$y, mu, sigma2^0.5, log=TRUE))
+  ### Log-Posterior
+  LP <- LL + beta.prior + sigma2.prior
+  Modelout <- list(LP=LP, Dev=-2*LL, Monitor=mu[1],
+                   yhat=rnorm(length(mu), mu, sigma2^0.5), parm=parm)
+  return(Modelout)
+}
+Initial.Values <- rep(0,K+2); S <- 10000
+Fit <- VariationalBayes(Model, Initial.Values, Data=MyData, Covar=NULL, 
+                        Iterations=S, Method="Salimans2", Stop.Tolerance=1e-2, CPUs=1)
+print(Fit)
+PosteriorChecks(Fit)
+caterpillar.plot(Fit, Parms="beta")
+plot(Fit, MyData, PDF=FALSE)
+Pred <- predict(Fit, Model, MyData, CPUs=1)
+summary(Pred, Discrep="Chi-Square")
+
+####### MCMC #######
+# Posterior parameters
+b0 <- rep(b0, K+1); B0 <- B0*diag(K+1)
+bhat <- solve(t(X)%*%X)%*%t(X)%*%y
+Bn <- as.matrix(Matrix::forceSymmetric(solve(solve(B0) + t(X)%*%X))) # Force this matrix to be symmetric
+bn <- Bn%*%(solve(B0)%*%b0 + t(X)%*%X%*%bhat)
+dn <- as.numeric(d0 + t(y)%*%y+t(b0)%*%solve(B0)%*%b0-t(bn)%*%solve(Bn)%*%bn)
+an <- a0 + N
+Hn <- Bn*dn/an
+# Posterior draws
+sig2 <- MCMCpack::rinvgamma(S,an/2,dn/2)
+summary(coda::mcmc(sig2))
+Betas <- LaplacesDemon::rmvt(S, bn, Hn, an)
+summary(coda::mcmc(Betas))
+
+####### VB from scratch #######
+dnVB <- ((a0+N+K)/(a0+N))*dn 
+anVB <- a0 + N + K
+BnVB <- Bn
+bnVB <- bn
+sig2VB <- MCMCpack::rinvgamma(S,anVB/2,dnVB/2) 
+BetasVB <- MASS::mvrnorm(S, mu = bnVB, Sigma = (dn/an)*BnVB)
+summary(coda::mcmc(sig2VB))
+summary(coda::mcmc(BetasVB))
+ELBO <- -N/2*log(2*pi) + a0/2*log(d0/2) - anVB/2*log(dnVB/2) - 0.5*log(det(B0)) + 
+  0.5*log(det(BnVB)) - lgamma(a0/2) + lgamma(anVB/2) - K/2*log(anVB/dnVB) + K/2
+
+LogMarLik <- -N/2*log(2*pi) + a0/2*log(d0/2) - an/2*log(dn/2) - 0.5*log(det(B0)) + 
+  0.5*log(det(Bn)) - lgamma(a0/2) + lgamma(an/2) 
+
+ELBOfunc <- function(d,B){
+  ELBOi <- -N/2*log(2*pi) + a0/2*log(d0/2) - anVB/2*log(d/2) - 0.5*log(det(B0)) + 
+    0.5*log(det(B)) - lgamma(a0/2) + lgamma(anVB/2) - K/2*log(anVB/d) + 0.5*(anVB/d)*tr(B%*%solve(Bn))
+  return(ELBOi)
+}
+d <- 100; B <- diag(K) 
+ELBOfunc(d = d, B = Bn)
+Esig2inv <- anVB/d
+ELBOs <- rep(-Inf, S)
+epsilon <- 1e-5
+for(s in 2:S){
+  B <- Esig2inv^(-1)*Bn
+  EbQb <- tr(B%*%solve(Bn)) - t(bn)%*%solve(Bn)%*%bn + t(y)%*%y + t(b0)%*%solve(B0)%*%b0
+  d <- EbQb + d0
+  Esig2inv <- as.numeric(anVB/d)
+  ELBOs[s] <- ELBOfunc(d = d, B = B)
+  # Check if lower bound decreases
+  if (ELBOs[s] < ELBOs[s - 1]) { message("Lower bound decreases!\n")}
+  # Check for convergence
+  if (ELBOs[s] - ELBOs[s - 1] < epsilon) { break }
+  # Check if VB converged in the given maximum iterations
+  if (s == S) {warning("VB did not converge!\n")}
+}
+sig2VBscratch <- MCMCpack::rinvgamma(S,anVB/2,d/2) 
+BetasVBscratch <- MASS::mvrnorm(S, mu = bnVB, Sigma = B)
+summary(coda::mcmc(sig2VBscratch))
+summary(coda::mcmc(BetasVBscratch))
+
