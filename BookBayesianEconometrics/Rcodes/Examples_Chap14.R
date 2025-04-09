@@ -318,11 +318,10 @@ Bn <- as.matrix(Matrix::forceSymmetric(solve(solve(B0) + t(X)%*%X))) # Force thi
 bn <- Bn%*%(solve(B0)%*%b0 + t(X)%*%X%*%bhat)
 dn <- as.numeric(d0 + t(y)%*%y+t(b0)%*%solve(B0)%*%b0-t(bn)%*%solve(Bn)%*%bn)
 an <- a0 + N
-Hn <- Bn*dn/an
 # Posterior draws
 sig2 <- MCMCpack::rinvgamma(S,an/2,dn/2)
 summary(coda::mcmc(sig2))
-Betas <- LaplacesDemon::rmvt(S, bn, Hn, an)
+Betas <- t(sapply(1:S, function(s){MASS::mvrnorm(1, bn, sig2[s]*Bn)}))
 summary(coda::mcmc(Betas))
 
 ####### VB from scratch #######
@@ -339,7 +338,8 @@ ELBO <- -N/2*log(2*pi) + a0/2*log(d0/2) - anVB/2*log(dnVB/2) - 0.5*log(det(B0)) 
 
 LogMarLik <- -N/2*log(2*pi) + a0/2*log(d0/2) - an/2*log(dn/2) - 0.5*log(det(B0)) + 
   0.5*log(det(Bn)) - lgamma(a0/2) + lgamma(an/2) 
-
+ELBO; LogMarLik; ELBO < LogMarLik
+# CAVI
 ELBOfunc <- function(d,B){
   ELBOi <- -N/2*log(2*pi) + a0/2*log(d0/2) - anVB/2*log(d/2) - 0.5*log(det(B0)) + 
     0.5*log(det(B)) - lgamma(a0/2) + lgamma(anVB/2) - K/2*log(anVB/d) + 0.5*(anVB/d)*tr(B%*%solve(Bn))

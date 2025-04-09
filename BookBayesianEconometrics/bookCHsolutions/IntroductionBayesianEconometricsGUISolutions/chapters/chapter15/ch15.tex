@@ -320,5 +320,25 @@ combinePlotsBSL(gkResultsNew, which = 2, thetaTrue = parpop, thin = thin, option
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
+\item Get the expression for the ELBO in the linear regression model with conjugate family. 
 
+\textbf{Answer:}
+
+\begin{align*}
+	\text{ELBO}(q(\boldsymbol{\beta},\sigma^2))&=\mathbb{E}_{\boldsymbol{\beta},\sigma^2}[\log p(\boldsymbol{y},\boldsymbol{\beta},\sigma^2\mid\boldsymbol{X})]-\mathbb{E}_{\boldsymbol{\beta},\sigma^2}[\log q(\boldsymbol{\beta},\sigma^2)]\\
+	&=\mathbb{E}_{\boldsymbol{\beta},\sigma^2}[\log p(\boldsymbol{y}\mid\boldsymbol{\beta},\sigma^2,\boldsymbol{X})+\log \pi(\boldsymbol{\beta}\mid\sigma^2)+\log(\sigma^2)]\\
+	&-\mathbb{E}_{\boldsymbol{\beta},\sigma^2}[\log q(\boldsymbol{\beta}) + \log q(\sigma^2)]\\
+	&=\mathbb{E}_{\boldsymbol{\beta},\sigma^2}\left[-\frac{N}{2}\log (2\pi)-\frac{N}{2}\log\sigma^2 - \frac{1}{2\sigma^2}(\boldsymbol{y}-\boldsymbol{X}\boldsymbol{\beta})^{\top}(\boldsymbol{y}-\boldsymbol{X}\boldsymbol{\beta})\right.\\
+	&\left.-\frac{K}{2}\log(2\pi)-\frac{K}{2}\log(\sigma^2)-\frac{1}{2}\log|\boldsymbol{B}_0|-\frac{1}{2\sigma^2}(\boldsymbol{\beta}-\boldsymbol{\beta}_0)^{\top}\boldsymbol{B}_0^{-1}(\boldsymbol{\beta}-\boldsymbol{\beta}_0)\right.\\
+	&-\left.(\alpha_0/2+1)\log\sigma^2-\frac{\delta_0}{2\sigma^2}+\alpha_0/2\log(\delta_0/2)-\log\Gamma(\alpha_0/2)\right]\\
+	&-\left\{\mathbb{E}_{\boldsymbol{\beta},\sigma^2}\left[\frac{K}{2}\log\mathbb{E}_{{\sigma^2}}(1/\sigma^2)-\frac{1}{2}\log|\boldsymbol{B}_n|-\frac{1}{2}\mathbb{E}_{{\sigma^2}}(1/\sigma^2)(\boldsymbol{\beta}-\boldsymbol{\beta}_n)^{\top}\boldsymbol{B}_n^{-1}(\boldsymbol{\beta}-\boldsymbol{\beta}_n)\right.\right.\\
+	&\left.\left.-\frac{K}{2}\log(2\pi)-(\alpha_n/2+1)\log\sigma^2-\frac{\delta_n}{2\sigma^2}+\alpha_n/2\log(\delta_n/2)-\log\Gamma(\alpha_n/2)\right]\right\}\\
+	&=-\frac{N}{2}\log (2\pi)-\frac{1}{2}\log|\boldsymbol{B}_0|+\frac{1}{2}\log|\boldsymbol{B}_n|+\alpha_0/2\log(\delta_0/2)\\
+	&-\alpha_n/2\log(\delta_n/2)-\log\Gamma(\alpha_0/2)+\log\Gamma(\alpha_n/2)-\frac{K}{2}\log\mathbb{E}_{{\sigma^2}}(1/\sigma^2)\\
+	&+\frac{1}{2}\mathbb{E}_{{\sigma^2}}(1/\sigma^2)\mathbb{E}_{\boldsymbol{\beta}}\left[(\boldsymbol{\beta}-\boldsymbol{\beta}_n)^{\top}\boldsymbol{B}_n^{-1}(\boldsymbol{\beta}-\boldsymbol{\beta}_n)\right]\\
+	&=-\frac{N}{2}\log (2\pi)-\frac{1}{2}\log|\boldsymbol{B}_0|+\frac{1}{2}\log|\boldsymbol{B}_n|+\alpha_0/2\log(\delta_0/2)\\
+	&-\alpha_n/2\log(\delta_n/2)-\log\Gamma(\alpha_0/2)+\log\Gamma(\alpha_n/2)-\frac{K}{2}\log(\alpha_n/\delta_n)\\
+	&+0.5tr\left\{Var(\boldsymbol{\beta})\boldsymbol{B}_n^{-1}\right\}
+\end{align*}
+We take into account in the fourth equality that the terms collecting $\log\sigma^2$ and $\frac{1}{2\sigma^2}$ cancel out by the definitions of $\alpha_n$ and $\delta_n$, respectively.  
 \end{enumerate}
