@@ -340,5 +340,36 @@ combinePlotsBSL(gkResultsNew, which = 2, thetaTrue = parpop, thin = thin, option
 	&-\alpha_n/2\log(\delta_n/2)-\log\Gamma(\alpha_0/2)+\log\Gamma(\alpha_n/2)-\frac{K}{2}\log(\alpha_n/\delta_n)\\
 	&+0.5tr\left\{Var(\boldsymbol{\beta})\boldsymbol{B}_n^{-1}\right\}
 \end{align*}
-We take into account in the fourth equality that the terms collecting $\log\sigma^2$ and $\frac{1}{2\sigma^2}$ cancel out by the definitions of $\alpha_n$ and $\delta_n$, respectively.  
+We take into account in the fourth equality that the terms collecting $\log\sigma^2$ and $\frac{1}{2\sigma^2}$ cancel out by the definitions of $\alpha_n$ and $\delta_n$, respectively.
+
+\item Let's retake the mixture regression model of Chapter \ref{chap11}, that is, the simple regression mixture with two components such that $z_{i1}\sim \text{Ber}(0.5)$, consequently, $z_{i2}=1-z_{i1}$, and assume one regressor, $x_i\sim N(0,1)$, $i=1,2,\dots,1,000$. Then, 
+$$p(y_i \mid \boldsymbol{x}_i) = 
+0.5 \phi(y_i \mid 2+1.5x_i,1^2)+0.5 \phi(y_i \mid -1+0.5x_i,0.8^2).$$
+Let's set $\alpha_{h0}=\delta_{h0}=0.01$, $\boldsymbol{\beta}_{h0}=\boldsymbol{0}_2$, $\boldsymbol{B}_{h0}=\boldsymbol{I}_2$, and $\boldsymbol{a}_0=[1/2 \ 1/2]^{\top}$.
+
+\begin{itemize}
+	\item Perform VB inference in this model using the CAVI algorithm.
+	\item Perform VB inference in this model using the SVI algorithm.
+\end{itemize}
+
+\textbf{Answer:}
+
+The likelihood function in this model is $p(\bm{y}\mid \bm{z},\bm{\beta},\bm{\sigma}^2)=\prod_{i=1}^N\prod_{h=1}^H\phi(y_i\mid\bm{x}_i^{\top}\bm{\beta}_h,\sigma_h^2)^{z_{ih}}$, and $\pi(\bm{z}\mid\bm{\lambda})=\prod_{i=1}^N\prod_{h=1}^H\lambda_h^{z_{ih}}$, $\bm{\lambda}\sim Dir(\bm{a}_0)$, $\bm{\beta}_h\sim N(\bm{\beta}_{h0},\bm{B}_{h0})$ and $\sigma_h^2\sim IG(\alpha_{h0}/2,\delta_{h0}/2)$. Let's work with the mean-field variational family $q(\bm{z},\bm{\lambda},\bm{\beta},\bm{\sigma}^2)=q(\bm{z})q(\bm{\lambda})\prod_{h=1}^H q(\bm{\beta}_h)\prod_{h=1}^H q({\sigma}^2_h)$.
+
+Then,
+\begin{align*}
+	\log q(\bm{z})=&\mathbb{E}_{\bm{\lambda},\bm{\beta},\bm{\sigma}^2}\left[\log p(\bm{y},\bm{z},\bm{\beta},\bm{\sigma}^2)\right] + c_1\\
+	=&\mathbb{E}_{\bm{\lambda},\bm{\beta},\bm{\sigma}^2}\left[\log p(\bm{y}\mid\bm{z},\bm{\beta},\bm{\sigma}^2)+\log \pi(\bm{z}\mid\bm{\lambda})\right] + c_2\\
+	=&\mathbb{E}_{\bm{\lambda},\bm{\beta},\bm{\sigma}^2}\left[\sum_{i=1}^N\sum_{h=1}^H z_{ih}\left\{-0.5\log 2\pi - 0.5 \log \sigma^2_h - \right.\right.\\
+	&\left.\left.-\frac{1}{2\sigma^2_h}(y_i-\bm{x}_i\bm{\beta}_h)^2 + \log\lambda_h\right\}\right] + c_2\\
+	&=\sum_{i=1}^N\sum_{h=1}^H\psi_{ih}\log \rho_{ih} + c_2.
+\end{align*}
+Thus, $q(\bm{z})=\prod_{i=1}^N\prod_{h=1}^H r_{ih}^{z_{ih}}$,  
+where $r_{ih}=\frac{\rho_{ih}}{\sum_{j=1}^H\rho_{ij}}$, and
+\begin{align*}
+	\log \rho_{ih}&=-0.5\log 2\pi -0.5\mathbb{E}_{\sigma^2_h} \log \sigma_h^2 - 0.5 \mathbb{E}_{\sigma^2_h}\left(\frac{1}{\sigma^2_h}\right)\mathbb{E}_{\bm{\beta}_h}(y_i-\bm{x}_i^{\top}\bm{\beta}_h)^2 + \mathbb{E}_{\lambda_h}\log \lambda_h\\
+	&=-0.5\log 2\pi - 0.5(\log(\delta_{hn}/2)-\psi(\alpha_{hn}/2)) - 0.5(\alpha_{hn}/\delta_{hn})(y_i-\bm{x}_i^{\top}\bm{\beta}_{hn})^2\\
+	&+\bm{x}_i^{\top}\bm{B}_{hn}x_i^{\top} + \psi(a_{hn}) - \psi\left(\sum_{h=1}^Ha_{hn}\right).
+\end{align*}
+  
 \end{enumerate}

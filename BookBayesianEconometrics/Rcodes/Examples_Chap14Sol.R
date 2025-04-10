@@ -318,3 +318,403 @@ combinePlotsBSL(gkResultsNew, which = 2, thetaTrue = parpop,
                 options.theme = list(plot.margin = grid::unit(rep(0.03, 4), "npc"),
                 legend.text = ggplot2::element_text(size = 12)))
 # All 95% credible intervals encompass the population parameters.
+
+########################## Simulation exercise: Gaussian mixture: 2 components ########################## 
+rm(list = ls())
+set.seed(010101)
+# library(LaplacesDemon)
+# library(ggplot2)
+# Simulate data from a 2-component mixture model
+n <- 1000
+K <- 2; H <- 2
+x <- rnorm(n)
+z <- rbinom(n, 1, 0.3)  # Latent class indicator
+y <- ifelse(z == 0, rnorm(n, 2 + 1.5*x, 1), rnorm(n, -1 + 0.5*x, 0.8))
+data <- data.frame(y, x)
+X <- cbind(1,x)
+# Hyperparameters LaplacesDemon
+# b0h <- 0; B0h <- 1000; a0h <- 0.01; d0h <- 0.01; a0 <- rep(1/H, H)
+# Iterations
+S <- 10000
+
+# Data <- list(
+#   y = y,
+#   x = x,
+#   n = n,
+#   mon.names = "log-posterior",
+#   parm.names = c("beta11", "beta12", "beta21", "beta22", "log_sigma2_1", "log_sigma2_2", "eta")
+# )
+# 
+# Model <- function(parm, Data) {
+#   beta11 <- parm[1]
+#   beta12 <- parm[2]
+#   beta21 <- parm[3]
+#   beta22 <- parm[4]
+#   log_sigma2_1 <- parm[5]
+#   log_sigma2_2 <- parm[6]
+#   eta <- parm[7]
+#   
+#   sigma2_1 <- exp(log_sigma2_1)
+#   sigma2_2 <- exp(log_sigma2_2)
+#   
+#   pi1 <- exp(eta) / (1 + exp(eta))
+#   pi2 <- 1 - pi1
+#   
+#   mu1 <- beta11 + beta12 * Data$x
+#   mu2 <- beta21 + beta22 * Data$x
+#   
+#   # Mixture likelihood
+#   ll <- log(pi1 * dnorm(Data$y, mu1, sqrt(sigma2_1)) +
+#               pi2 * dnorm(Data$y, mu2, sqrt(sigma2_2)))
+#   log_likelihood <- sum(ll)
+#   
+#   # Priors
+#   log_prior <- dnorm(beta11, b0, B0, log=TRUE) +
+#     dnorm(beta12, b0, B0, log=TRUE) +
+#     dnorm(beta21, b0, B0, log=TRUE) +
+#     dnorm(beta22, b0, B0, log=TRUE) +
+#     dinvgamma(sigma2_1, a0/2, d0/2, log=TRUE) +
+#     dinvgamma(sigma2_2, a0/2, d0/2, log=TRUE) +
+#     dnorm(eta, b0, B0, log=TRUE)
+#   
+#   log_posterior <- log_likelihood + log_prior
+#   
+#   list(
+#     LP = log_posterior,
+#     Dev = -2 * log_likelihood,
+#     Monitor = log_posterior,
+#     yhat = pi1 * mu1 + pi2 * mu2,
+#     parm = parm
+#   )
+# }
+# 
+# Initial.Values <- c(beta11 = 0, beta12 = 0, beta21 = 0, beta22 = 0,
+#                     log_sigma2_1 = log(1),
+#                     log_sigma2_2 = log(1), eta = 0)
+# 
+# Fit <- VariationalBayes(Model, Initial.Values, Data=Data, Covar=NULL, 
+#                         Iterations=S, Method="Salimans2", Stop.Tolerance=1e-2, CPUs=1)
+# 
+# print(Fit)
+# PosteriorChecks(Fit)
+# caterpillar.plot(Fit, Parms="beta")
+# plot(Fit, MyData, PDF=FALSE)
+# Pred <- predict(Fit, Model, MyData, CPUs=1)
+# summary(Pred, Discrep="Chi-Square")
+
+##### From scratch ######
+# Hyperparameters
+b0h <- rep(0, K); B0h <- diag(1000,K); B0hi <- solve(B0h) 
+a0h <- 0.01; d0h <- 0.01; a0 <- rep(1/H, H)
+# Innitial values
+dhn <- c(50, 50); ahn <- c(500, 500)
+bhn <- matrix(c(2, 1.5, -1, 0.5), K, H)
+Bhn <- array(c(1,0,0,1,1,0,0,1), c(K, K, H))
+Ln <- c(0.5, 0.5); an <- c(500, 500)
+VarParPsi <- function(dhn, ahn, bhn, Bhn, Ln, an){
+  rhoih <- matrix(NA, n, H)
+  for(i in 1:n){
+    for(h in 1:H){
+      rhoih[i,h] <- -0.5*log(pi) - 0.5*(log(dhn[h]/2) - digamma(ahn[h]/2)) -
+        0.5*(ahn[h]/dhn[h])*(y[i]^2 - 2*t(bhn[,h])%*%X[i,]*y[i] + 
+                               t(X[i,])%*%(Bhn[,,h] + bhn[,h]%*%t(bhn[,h]))%*%X[i,]) +
+        digamma(Ln[h]) - digamma(sum(an))
+    }
+  }
+  rih <- rhoih / rowSums(rhoih)
+  return(rih)
+}
+Rih <- VarParPsi(dhn = dhn, ahn = ahn, bhn = bhn, Bhn = Bhn, Ln = Ln, an = an)
+VarParLambda <- function(rih){
+  an <- a0 + colSums(rih)
+  return(an)
+}
+VarParLambda(rih = Rih)
+VarParBetah <- function(ahn, dhn, rh){
+  rXX <- matrix(0, K, K)
+  rXy <- matrix(0, K, 1)
+  for(i in 1:n){
+    rXXi <- rh[i]*X[i,]%*%t(X[i,])
+    rXX <- rXX + rXXi
+    rXyi <- rh[i]*X[i,]*y[i]
+    rXy <- rXy + rXyi
+  }
+  Bhn <- solve(B0hi + ahn/dhn * rXX)
+  bhn <- Bhn%*%(B0hi%*%b0h + ahn/dhn * rXy)
+  return(list(bhn = bhn, Bhn = Bhn))
+}
+h <- 1
+EnsVarParBetah <- VarParBetah(ahn = ahn[h], dhn = dhn[h], rh = Rih[,h])
+VarParSigma2h <- function(bhn, Bhn, rh){
+  ahn <- a0h + sum(rh)
+  dhnterm <- 0
+  for(i in 1:n){
+    dhntermi <- rh[i]*(y[i]^2 - 2*t(bhn)%*%X[i,]*y[i] + 
+      t(X[i,])%*%(Bhn + bhn%*%t(bhn))%*%X[i,])
+    dhnterm <- dhnterm + dhntermi
+  }
+  dhn <- dhnterm + d0h
+  return(list(ahn = ahn, dhn = dhn))
+}
+EnsVarParSig2h <- VarParSigma2h(bhn = bhn[,h], Bhn = Bhn[,,h], rh = Rih[,h])
+# Auxiliar function to calculate the log multivariate beta function
+# Define Gamma and Beta functions
+multivariate_beta <- function(alpha) {
+  prod_gammas <- sum(sapply(alpha, lgamma))
+  sum_alpha <- sum(alpha)
+  gamma_sum_alpha <- lgamma(sum_alpha)
+  
+  return(prod_gammas - gamma_sum_alpha)
+}
+ELBO <- function(rih, dhn, ahn, bhn, Bhn, Ln, an){
+  LogLikh <- 0; LogPrioPsih <- 0
+  LogPriorBeta <- 0; LogPriorSig2 <- 0
+  for(h in 1:H){
+    for(i in 1:n){
+      LogLikih <- rih[i, h]*(-0.5*log(pi) - 0.5*(log(dhn[h]/2) - digamma(ahn[h]/2)) -
+        0.5*(ahn[h]/dhn[h])*(y[i]^2 - 2*t(bhn[,h])%*%X[i,]*y[i] + 
+                               t(X[i,])%*%(Bhn[,,h] + bhn[,h]%*%t(bhn[,h]))%*%X[i,]))
+      LogLikh <- LogLikh + LogLikih
+      LogPrioPsiih <- rih[i, h]*(digamma(Ln[h]) - digamma(sum(an)))
+      LogPrioPsih <- LogPrioPsih + LogPrioPsiih
+    }
+    LogPriorBetah <- -0.5*K*log(2*pi) - 0.5*log(det(B0h)) - tr(Bhn[,,h]%*%B0hi) -
+      t(bhn[,h] - b0h)%*%B0hi%*%(bhn[,h] - b0h)
+    LogPriorBeta <- LogPriorBeta + LogPriorBetah
+    LogPriorSig2h <- -(a0h/2+1)*(log(dhn[h]/2) - digamma(ahn[h]/2)) - 0.5*d0h*(ahn[h]/dhn[h]) +
+      (a0h/2)*log(d0h/2) - lgamma(a0h/2)
+    LogPriorSig2 <- LogPriorSig2 + LogPriorSig2h  
+  }
+  LogJoint <- LogLikh + LogPrioPsih + LogPriorBeta + LogPriorSig2
+  logqPsi <- 0; logqLambda <- 0 
+  logqBeta <- 0; logqSig2 <- 0
+  for(h in 1:H){
+    for(i in 1:n){
+      logqPsiih <- rih[i, h]*log(rih[i,h])
+      logqPsi <- logqPsi + logqPsiih
+    }
+    logqLambdah <- (an[h] - 1)*(digamma(Ln[h]) - digamma(sum(an)))
+    logqLambda <- logqLambda + logqLambdah
+    logqBetah <- -0.5*K*log(2*pi + 1) - 0.5*log(det(Bhn[,,h])) 
+    logqBeta <- logqBeta + logqBetah
+    logqSig2h <- -log(dhn[h]/2) + (ahn[h]/2+1)*digamma(ahn[h]/2) - ahn[h]/2 -
+      lgamma(ahn[h]/2)
+    logqSig2 <- logqSig2 + logqSig2h
+  }
+  logqLambda <- logqLambda - multivariate_beta(alpha = an)
+  logq <- logqPsi + logqLambda + logqBeta + logqSig2
+  ELBO <- LogJoint - logq
+  return(ELBO)
+}
+ELBO(rih = Rih, dhn = dhn, ahn = ahn, bhn = bhn, Bhn = Bhn, Ln = Ln, an = an)
+ELBOs <- rep(-Inf, S)
+epsilon <- 1e-5
+for(s in 2:S){
+  Rih <- VarParPsi(dhn = dhn, ahn = ahn, bhn = bhn, Bhn = Bhn, Ln = Ln, an = an)
+  an <- VarParLambda(rih = Rih)
+  # Ln <- an/sum(an)
+  bhn <- matrix(NA, K, H)
+  Bhn <- array(NA, c(K, K, H))
+  for(h in 1:H){
+    EnsVarParBetah <- VarParBetah(ahn = ahn[h], dhn = dhn[h], rh = Rih[,h])
+    bhn[,h] <- EnsVarParBetah[["bhn"]]
+    Bhn[,,h] <- EnsVarParBetah[["Bhn"]] 
+  }
+  ahn <- rep(NA, H)
+  dhn <- rep(NA, H)
+  for(h in 1:H){
+    EnsVarParSig2h <- VarParSigma2h(bhn = bhn[,h], Bhn = Bhn[,,h], rh = Rih[,h])
+    ahn[h] <- EnsVarParSig2h[["ahn"]]
+    dhn[h] <- EnsVarParSig2h[["dhn"]] 
+  }
+  ELBOs[s] <- ELBO(rih = Rih, dhn = dhn, ahn = ahn, bhn = bhn, Bhn = Bhn, Ln = Ln, an = an)
+  # Check if lower bound decreases
+  if (ELBOs[s] < ELBOs[s - 1]) { message("Lower bound decreases!\n")}
+  # Check for convergence
+  if (ELBOs[s] - ELBOs[s - 1] < epsilon) { break }
+  # Check if VB converged in the given maximum iterations
+  if (s == S) {warning("VB did not converge!\n")}
+}
+Sig21 <- MCMCpack::rinvgamma(S, ahn[1]/2, dhn[1]/2) 
+summary(coda::mcmc(Sig21))
+Sig22 <- MCMCpack::rinvgamma(S, ahn[2]/2, dhn[2]/2) 
+summary(coda::mcmc(Sig22))
+Beta1 <- MASS::mvrnorm(S, mu = bhn[,1], Sigma = Bhn[,,1])
+summary(coda::mcmc(Beta1))
+Beta2 <- MASS::mvrnorm(S, mu = bhn[,2], Sigma = Bhn[,,2])
+summary(coda::mcmc(Beta2))
+Lambda <- MCMCpack::rdirichlet(S, alpha = an)
+summary(coda::mcmc(Lambda))
+
+################################################################
+rm(list = ls())
+set.seed(010101)
+# Simulate data from a 2-component mixture model
+n <- 1000
+K <- 2; H <- 2
+x <- rnorm(n)
+z <- rbinom(n, 1, 0.5)  # Latent class indicator
+y <- ifelse(z == 0, rnorm(n, 2 + 1.5*x, 1), rnorm(n, -1 + 0.5*x, 0.8))
+X <- cbind(1,x)
+# Iterations
+S <- 10000
+##### From scratch ######
+# Hyperparameters
+b0h <- rep(0, K); B0h <- diag(1000,K); B0hi <- solve(B0h) 
+a0h <- 0.01; d0h <- 0.01; a0 <- rep(1/H, H)
+# Innitial values
+dhn <- c(50, 50); ahn <- c(500, 500)
+bhn <- matrix(c(2, 1.5, -1, 0.5), K, H)
+Bhn <- array(c(1,0,0,1,1,0,0,1), c(K, K, H))
+an <- c(500, 500)
+VarParPsi <- function(dhn, ahn, bhn, Bhn, an){
+  logrhoih <- matrix(NA, n, H)
+  for(i in 1:n){
+    for(h in 1:H){
+      logrhoih[i,h] <- -0.5*log(2*pi) - 0.5*(log(dhn[h]/2) - digamma(ahn[h]/2)) -
+        0.5*(ahn[h]/dhn[h])*((y[i] - t(X[i,])%*%bhn[,h])^2 + t(X[i,])%*%Bhn[,,h]%*%X[i,]) +
+        digamma(an[h]) - digamma(sum(an))
+    }
+  }
+  rhoih <- exp(logrhoih - apply(logrhoih, 1, max)) 
+  rih <- rhoih / rowSums(rhoih)
+  return(rih)
+}
+Rih <- VarParPsi(dhn = dhn, ahn = ahn, bhn = bhn, Bhn = Bhn, an = an)
+VarParLambda <- function(rih){
+  an <- a0 + colSums(rih)
+  return(an)
+}
+VarParLambda(rih = Rih)
+VarParBetah <- function(ahn, dhn, rh){
+  rXX <- matrix(0, K, K)
+  rXy <- matrix(0, K, 1)
+  for(i in 1:n){
+    rXXi <- rh[i]*X[i,]%*%t(X[i,])
+    rXX <- rXX + rXXi
+    rXyi <- rh[i]*X[i,]*y[i]
+    rXy <- rXy + rXyi
+  }
+  # Bhn <- solve(B0hi + ahn/dhn * rXX + diag(1e-8, K))
+  Bhn <- solve(B0hi + ahn/dhn * rXX)
+  bhn <- Bhn%*%(B0hi%*%b0h + ahn/dhn * rXy)
+  return(list(bhn = bhn, Bhn = Bhn))
+}
+h <- 2
+VarParBetah(ahn = ahn[h], dhn = dhn[h], rh = Rih[,h])
+VarParSigma2h <- function(bhn, Bhn, rh){
+  ahn <- a0h + sum(rh)
+  dhnterm <- 0
+  for(i in 1:n){
+    dhntermi <- rh[i]*((y[i] - t(X[i,])%*%bhn)^2 + t(X[i,])%*%Bhn%*%X[i,])
+    dhnterm <- dhnterm + dhntermi
+  }
+  dhn <- dhnterm + d0h
+  return(list(ahn = ahn, dhn = dhn))
+}
+h <- 1
+VarParSigma2h(bhn = bhn[,h], Bhn = Bhn[,,h], rh = Rih[,h])
+# Auxiliar function to calculate the log multivariate beta function
+# Define Gamma and Beta functions
+multivariate_beta <- function(alpha) {
+  prod_gammas <- sum(sapply(alpha, lgamma))
+  sum_alpha <- sum(alpha)
+  gamma_sum_alpha <- lgamma(sum_alpha)
+  return(prod_gammas - gamma_sum_alpha)
+}
+ELBO <- function(rih, dhn, ahn, bhn, Bhn, an){
+  LogLikh <- 0; LogPrioPsih <- 0
+  LogPriorBeta <- 0; LogPriorSig2 <- 0
+  for(h in 1:H){
+    for(i in 1:n){
+      LogLikih <- rih[i, h]*(-0.5*log(2*pi) - 0.5*(log(dhn[h]/2) - digamma(ahn[h]/2)) -
+                               0.5*(ahn[h]/dhn[h])*((y[i] - t(X[i,])%*%bhn[,h])^2 + 
+                                                      t(X[i,])%*%Bhn[,,h]%*%X[i,]))
+      LogLikh <- LogLikh + LogLikih
+      LogPrioPsiih <- rih[i, h]*(digamma(an[h]) - digamma(sum(an)))
+      LogPrioPsih <- LogPrioPsih + LogPrioPsiih
+    }
+    LogPriorBetah <- -0.5*K*log(2*pi) - 0.5*log(det(B0h)) - tr(Bhn[,,h]%*%B0hi) -
+      t(bhn[,h] - b0h)%*%B0hi%*%(bhn[,h] - b0h)
+    LogPriorBeta <- LogPriorBeta + LogPriorBetah
+    LogPriorSig2h <- -(a0h/2+1)*(log(dhn[h]/2) - digamma(ahn[h]/2)) - 0.5*d0h*(ahn[h]/dhn[h]) +
+      (a0h/2)*log(d0h/2) - lgamma(a0h/2)
+    LogPriorSig2 <- LogPriorSig2 + LogPriorSig2h  
+  }
+  LogJoint <- LogLikh + LogPrioPsih + LogPriorBeta + LogPriorSig2
+  logqPsi <- 0; logqLambda <- 0 
+  logqBeta <- 0; logqSig2 <- 0
+  for(h in 1:H){
+    for(i in 1:n){
+      logqPsiih <- rih[i, h] * log(rih[i, h])
+      logqPsi <- logqPsi + logqPsiih
+    }
+    logqLambdah <- (an[h] - 1)*(digamma(an[h]) - digamma(sum(an)))
+    logqLambda <- logqLambda + logqLambdah
+    logqBetah <- -0.5*K*log(2*pi + 1) - 0.5*log(det(Bhn[,,h])) 
+    logqBeta <- logqBeta + logqBetah
+    logqSig2h <- -log(dhn[h]/2) + (ahn[h]/2+1)*digamma(ahn[h]/2) - ahn[h]/2 -
+      lgamma(ahn[h]/2)
+    logqSig2 <- logqSig2 + logqSig2h
+  }
+  logqLambda <- logqLambda - multivariate_beta(alpha = an)
+  logq <- logqPsi + logqLambda + logqBeta + logqSig2
+  ELBO <- LogJoint - logq
+  return(ELBO)
+}
+ELBO(rih = Rih, dhn = dhn, ahn = ahn, bhn = bhn, Bhn = Bhn, an = an)
+# Initial values
+# Use rough values from data (not cheating, just guiding)
+fit_lm1 <- lm(y ~ x)
+bhn[,1] <- coef(fit_lm1)
+bhn[,2] <- coef(fit_lm1) + rnorm(K, 0, 0.5)  # small perturbation
+
+Bhn[,,1] <- diag(0.1, K)
+Bhn[,,2] <- diag(0.1, K)
+
+ahn <- rep(10, H)
+dhn <- rep(10, H)
+
+an <- c(300, 700)  # break symmetry (prior pseudo-counts)
+ELBOs <- rep(NA, S)
+ELBOs[1] <- ELBO(rih = Rih, dhn = dhn, ahn = ahn, bhn = bhn, Bhn = Bhn, an = an)
+epsilon <- 1e-5
+for(s in 2:S){
+  Rih <- VarParPsi(dhn = dhn, ahn = ahn, bhn = bhn, Bhn = Bhn, an = an)
+  an <- VarParLambda(rih = Rih)
+  bhn <- matrix(NA, K, H)
+  Bhn <- array(NA, c(K, K, H))
+  for(h in 1:H){
+    EnsVarParBetah <- VarParBetah(ahn = ahn[h], dhn = dhn[h], rh = Rih[,h])
+    bhn[,h] <- EnsVarParBetah[["bhn"]]
+    Bhn[,,h] <- EnsVarParBetah[["Bhn"]] 
+  }
+  ahn <- rep(NA, H)
+  dhn <- rep(NA, H)
+  for(h in 1:H){
+    EnsVarParSig2h <- VarParSigma2h(bhn = bhn[,h], Bhn = Bhn[,,h], rh = Rih[,h])
+    ahn[h] <- EnsVarParSig2h[["ahn"]]
+    dhn[h] <- EnsVarParSig2h[["dhn"]] 
+  }
+  ELBOs[s] <- ELBO(rih = Rih, dhn = dhn, ahn = ahn, bhn = bhn, Bhn = Bhn, an = an)
+  # Check if lower bound decreases
+  if (ELBOs[s] < ELBOs[s - 1]) { message("Lower bound decreases!\n")}
+  # Check for convergence
+  if (ELBOs[s] - ELBOs[s - 1] < epsilon) { break }
+  # Check if VB converged in the given maximum iterations
+  if (s == S) {warning("VB did not converge!\n")}
+}
+plot(ELBOs[1:s], type = "l", main = "ELBO over iterations", ylab = "ELBO", xlab = "Iteration")
+Sig21 <- MCMCpack::rinvgamma(S, ahn[1]/2, dhn[1]/2) 
+summary(coda::mcmc(Sig21))
+Sig22 <- MCMCpack::rinvgamma(S, ahn[2]/2, dhn[2]/2) 
+summary(coda::mcmc(Sig22))
+Beta1 <- MASS::mvrnorm(S, mu = bhn[,1], Sigma = Bhn[,,1])
+summary(coda::mcmc(Beta1))
+Beta2 <- MASS::mvrnorm(S, mu = bhn[,2], Sigma = Bhn[,,2])
+summary(coda::mcmc(Beta2))
+Lambda <- MCMCpack::rdirichlet(S, alpha = an)
+summary(coda::mcmc(Lambda))
+
+
+

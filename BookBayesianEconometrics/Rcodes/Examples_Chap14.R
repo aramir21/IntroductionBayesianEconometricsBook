@@ -309,7 +309,6 @@ caterpillar.plot(Fit, Parms="beta")
 plot(Fit, MyData, PDF=FALSE)
 Pred <- predict(Fit, Model, MyData, CPUs=1)
 summary(Pred, Discrep="Chi-Square")
-
 ####### MCMC #######
 # Posterior parameters
 b0 <- rep(b0, K+1); B0 <- B0*diag(K+1)
