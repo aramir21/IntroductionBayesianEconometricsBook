@@ -509,13 +509,13 @@ Assuming that the joint distribution $p(\boldsymbol{z}_i, \boldsymbol{y}_i \mid 
 
 Additionally, the structure of the model implies that $\boldsymbol{z}_i$ is independent of $\boldsymbol{z}_{-i}$ and $\boldsymbol{y}_{-i}$ given $\boldsymbol{y}_i$ and $\boldsymbol{\phi}$. Thus, if $p(\boldsymbol{z}_i \mid \boldsymbol{y}_i, \boldsymbol{\phi})$ is in the canonical form of the exponential family, then the local variational update is given by $\boldsymbol{\psi}_i = \mathbb{E}_{\boldsymbol{\xi}}[\boldsymbol{\eta}(\boldsymbol{\phi}, \boldsymbol{y}_i)]$, where the parameter set $\boldsymbol{\eta}(\boldsymbol{\phi}, \boldsymbol{y}_i)$ is a function of the conditional set, $\boldsymbol{\xi}$, and $\boldsymbol{\psi}_i$ are the variational parameters of the variational approximations $q(\boldsymbol{\phi} \mid \boldsymbol{\xi})$ and $q(\boldsymbol{z}_i \mid \boldsymbol{\psi}_i)$ for the posterior distributions of $\boldsymbol{\phi}$ and $\boldsymbol{z}_i$, respectively. The global variational update is given by $\boldsymbol{\xi} = [\boldsymbol{\alpha}_1^{\top} + \sum_{i=1}^N \mathbb{E}_{\boldsymbol{\psi}_i} t(\boldsymbol{z}_i, \boldsymbol{y}_i)^{\top} \ \alpha_2 + N]^{\top}$.
 
-SVI focuses on the global parameters, updating them using the ELBO natural gradients with respect to $\boldsymbol{\xi}$, where natural gradients are the usual gradients premultiplied by the inverse covariance of the sufficient statistic. These gradients are easily calculated in exponential families. In particular, the updates are given by
+SVI focuses on the global parameters, updating them using the ELBO natural gradients with respect to $\boldsymbol{\xi}$, where natural gradients are the usual gradients premultiplied by the inverse covariance matrix of the sufficient statistic. These gradients are easily calculated in exponential families. In particular, the updates are given by
 \begin{align*}
 	\boldsymbol{\xi}_t=\boldsymbol{\xi}_{t-1}+\epsilon_t g(\boldsymbol{\xi}_{t-1}),
 \end{align*} 
 where $\epsilon_t$ is the step size, and $g(\boldsymbol{\xi}_t)=\mathbb{E}_{\boldsymbol{\psi}_i}[\boldsymbol{\alpha}_n-\boldsymbol{\xi}_t]$ is the natural gradient of the global variational parameters  \cite{blei2017variational}. Consequently,
 \begin{align*}
-	\boldsymbol{\xi}_t=(1-\epsilon_t)\boldsymbol{\xi}_{t-1}+\epsilon_t \mathbb{E}_{\boldsymbol{\psi}_i}[\boldsymbol{\alpha}_n].
+	\boldsymbol{\xi}_t=(1-\epsilon_t)\boldsymbol{\xi}_{t-1}+\epsilon_t \mathbb{E}_{\boldsymbol{\psi}}[\boldsymbol{\alpha}_n].
 \end{align*}    
 
 However, calculating this update requires using the entire dataset, which is computationally burdensome. Therefore, we should use stochastic optimization, which follows noisy but cheap-to-compute unbiased gradients to optimize the function. The key idea is to construct the natural gradient using only one random draw from the dataset, and then scale it (by multiplying it with the sample size) to approximate the sample information:
