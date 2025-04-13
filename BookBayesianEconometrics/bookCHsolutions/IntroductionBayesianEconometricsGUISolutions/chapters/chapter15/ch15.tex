@@ -320,6 +320,7 @@ combinePlotsBSL(gkResultsNew, which = 2, thetaTrue = parpop, thin = thin, option
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
+
 \item Get the expression for the ELBO in the linear regression model with conjugate family. 
 
 \textbf{Answer:}
@@ -342,15 +343,96 @@ combinePlotsBSL(gkResultsNew, which = 2, thetaTrue = parpop, thin = thin, option
 \end{align*}
 We take into account in the fourth equality that the terms collecting $\log\sigma^2$ and $\frac{1}{2\sigma^2}$ cancel out by the definitions of $\alpha_n$ and $\delta_n$, respectively.
 
+\item \textbf{Linear regression continues}
+
+Perform inference in the linear regression example using stochastic variational inference via the automatic differentiation variational inference (ADVI) approach \cite{kucukelbir2017automatic}, implemented in \texttt{rstan} package. In particular, consider the model $y_i = \boldsymbol{x}_i^{\top} \boldsymbol{\beta} + \mu_i$, assuming non-informative independent priors: $\boldsymbol{\beta} \sim N(\boldsymbol{\beta}_0, \boldsymbol{B}_0)$ and $\sigma^2 \sim \mathrm{IG}(\alpha_0/2, \delta_0/2)$, where $\boldsymbol{\beta}_0 = \boldsymbol{0}_3$, $\boldsymbol{B}_0 = 1000\boldsymbol{I}_3$, and $\alpha_0 = \delta_0 = 0.01$. The sample size is one hundred thousand.
+
+\textbf{Answer:}
+
+The posterior mean values are very close to the population parameters, but the 95\% credible intervals are too narrow and do not contain the true values.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Stochastic variational inference: Simulation exercise linear regression.}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+library(rstan)
+# --- Simulated data ---
+N <- 100000; K <- 2; B <- rep(1, K + 1); sig2 <- 1
+X <- cbind(1, matrix(rnorm(N * K), N, K))
+y <- X %*% B + rnorm(N, 0, sig2^0.5)
+# --- Priors ---
+b0 <- 0; B0 <- 1000; a0 <- 0.01; d0 <- 0.01
+# --- Prepare data for Stan ---
+data_list <- list(
+N = N,
+K = K + 1,  # K+1 because of the intercept
+X = X,
+y = as.vector(y),
+b0 = b0,
+B0 = B0,
+a0 = a0,
+d0 = d0
+)
+# --- Stan model compilation ---
+stan_model_code <- "
+data {
+	int<lower=0> N;        // number of data points
+	int<lower=0> K;        // number of predictors
+	matrix[N, K] X;        // predictor matrix
+	vector[N] y;           // response vector
+	real b0;               // location parameter prior on beta
+	real<lower=0> B0;      // variance parameter prior on beta
+	real<lower=0> a0;      // shape parameter prior on sigma^2
+	real<lower=0> d0;      // rate parameter prior on sigma^2
+}
+parameters {
+	vector[K] beta;        // coefficients of the linear model
+	real<lower=0> sigma2;  // variance parameter (sigma^2)
+}
+model {
+	// Priors
+	beta ~ normal(b0, B0);       // Normal prior on beta
+	sigma2 ~ inv_gamma(a0/2, d0/2); // Inverse Gamma prior
+	
+	// Likelihood
+	y ~ normal(X * beta, sqrt(sigma2)); // Normal likelihood with linear predictor
+}
+generated quantities {
+	vector[N] y_pred;
+	for (n in 1:N) {
+		y_pred[n] = normal_rng(dot_product(X[n], beta), sqrt(sigma2));
+	}
+}
+"
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Stochastic variational inference: Simulation exercise linear regression.}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+# Compile Stan model
+stan_model <- stan_model(model_code = stan_model_code)
+# --- Perform Stochastic Variational Inference (SVI) ---
+fit <- vb(stan_model, data = data_list, algorithm = "meanfield", iter = 10000)
+# --- Extract the results ---
+mu_estimate <- extract(fit)$beta
+summary(coda::mcmc(mu_estimate))
+sigma2_estimate <- extract(fit)$sigma2
+summary(coda::mcmc(as.vector(sigma2_estimate)))
+		\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
 \item Let's retake the mixture regression model of Chapter \ref{chap11}, that is, the simple regression mixture with two components such that $z_{i1}\sim \text{Ber}(0.5)$, consequently, $z_{i2}=1-z_{i1}$, and assume one regressor, $x_i\sim N(0,1)$, $i=1,2,\dots,1,000$. Then, 
 $$p(y_i \mid \boldsymbol{x}_i) = 
 0.5 \phi(y_i \mid 2+1.5x_i,1^2)+0.5 \phi(y_i \mid -1+0.5x_i,0.8^2).$$
 Let's set $\alpha_{h0}=\delta_{h0}=0.01$, $\boldsymbol{\beta}_{h0}=\boldsymbol{0}_2$, $\boldsymbol{B}_{h0}=\boldsymbol{I}_2$, and $\boldsymbol{a}_0=[1/2 \ 1/2]^{\top}$.
 
-\begin{itemize}
-	\item Perform VB inference in this model using the CAVI algorithm.
-	\item Perform VB inference in this model using the SVI algorithm.
-\end{itemize}
+Perform VB inference in this model using the CAVI algorithm.\\
 
 \textbf{Answer:}
 
@@ -425,8 +507,7 @@ We use \begin{align*}
 	&=tr\left\{\bm{I}_K\right\}\\
 	&=K  
 \end{align*}
-
-The following code implements the CAVI algorithm.
+%The following code implements the CAVI algorithm.
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 	\textit{R code. Variational Bayes: Mixture Gaussian regression.}
@@ -517,7 +598,7 @@ ELBO <- function(rih, dhn, ahn, bhn, Bhn, an){
 			LogPrioPsiih <- rih[i, h]*(digamma(an[h]) - digamma(sum(an)))
 			LogPrioPsih <- LogPrioPsih + LogPrioPsiih
 		}
-		LogPriorBetah <- -0.5*K*log(2*pi) - 0.5*log(det(B0h)) - tr(Bhn[,,h]%*%B0hi) - t(bhn[,h] - b0h)%*%B0hi%*%(bhn[,h] - b0h)
+		LogPriorBetah <- -0.5*K*log(2*pi) - 0.5*log(det(B0h)) - sum(diag(Bhn[,,h]%*%B0hi)) - t(bhn[,h] - b0h)%*%B0hi%*%(bhn[,h] - b0h)
 		LogPriorBeta <- LogPriorBeta + LogPriorBetah
 		LogPriorSig2h <- -(a0h/2+1)*(log(dhn[h]/2) - digamma(ahn[h]/2)) - 0.5*d0h*(ahn[h]/dhn[h]) + (a0h/2)*log(d0h/2) - lgamma(a0h/2)
 		LogPriorSig2 <- LogPriorSig2 + LogPriorSig2h  

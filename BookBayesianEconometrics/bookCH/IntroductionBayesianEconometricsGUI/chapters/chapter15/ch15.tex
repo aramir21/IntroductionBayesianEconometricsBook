@@ -724,15 +724,14 @@ LogMarLik <- -N/2*log(2*pi) + a0/2*log(d0/2) - an/2*log(dn/2) - 0.5*log(det(B0))
 ELBO; LogMarLik; ELBO < LogMarLik 
 # CAVI
 ELBOfunc <- function(d,B){
-	ELBOi <- -N/2*log(2*pi) + a0/2*log(d0/2) - anVB/2*log(d/2) - 0.5*log(det(B0)) + 
-	0.5*log(det(B)) - lgamma(a0/2) + lgamma(anVB/2) - K/2*log(anVB/d) + 0.5*(anVB/d)*tr(B%*%solve(Bn))
+	ELBOi <- -N/2*log(2*pi) + a0/2*log(d0/2) - anVB/2*log(d/2) - 0.5*log(det(B0)) + 0.5*log(det(B)) - lgamma(a0/2) + lgamma(anVB/2) - K/2*log(anVB/d) + 0.5*(anVB/d)*sum(diag(B%*%solve(Bn)))
 	return(ELBOi)
 }
 d <- 100; B <- diag(K) 
 Esig2inv <- anVB/d; ELBOs <- rep(-Inf, S); epsilon <- 1e-5
 for(s in 2:S){
 	B <- Esig2inv^(-1)*Bn
-	EbQb <- tr(B%*%solve(Bn)) - t(bn)%*%solve(Bn)%*%bn + t(y)%*%y + t(b0)%*%solve(B0)%*%b0
+	EbQb <- sum(diag(B%*%solve(Bn))) - t(bn)%*%solve(Bn)%*%bn + t(y)%*%y + t(b0)%*%solve(B0)%*%b0
 	d <- EbQb + d0
 	Esig2inv <- as.numeric(anVB/d)
 	ELBOs[s] <- ELBOfunc(d = d, B = B)
@@ -782,6 +781,17 @@ summary(coda::mcmc(sig2VBscratch)); summary(coda::mcmc(BetasVBscratch))
 	
 	
 \item Get the expression for the ELBO in the linear regression model with conjugate family.
+
+\item \textbf{Linear regression continues}
+
+Perform inference in the linear regression example using stochastic variational inference via the automatic differentiation variational inference (ADVI) approach \cite{kucukelbir2017automatic}, implemented in \texttt{rstan} package. In particular, consider the model $y_i = \boldsymbol{x}_i^{\top} \boldsymbol{\beta} + \mu_i$, assuming non-informative independent priors: $\boldsymbol{\beta} \sim N(\boldsymbol{\beta}_0, \boldsymbol{B}_0)$ and $\sigma^2 \sim \mathrm{IG}(\alpha_0/2, \delta_0/2)$, where $\boldsymbol{\beta}_0 = \boldsymbol{0}_3$, $\boldsymbol{B}_0 = 1000\boldsymbol{I}_3$, and $\alpha_0 = \delta_0 = 0.01$. The sample size is one million.
+
+\item Let's retake the mixture regression model of Chapter \ref{chap11}, that is, the simple regression mixture with two components such that $z_{i1}\sim \text{Ber}(0.5)$, consequently, $z_{i2}=1-z_{i1}$, and assume one regressor, $x_i\sim N(0,1)$, $i=1,2,\dots,1,000$. Then, 
+$$p(y_i \mid \boldsymbol{x}_i) = 
+0.5 \phi(y_i \mid 2+1.5x_i,1^2)+0.5 \phi(y_i \mid -1+0.5x_i,0.8^2).$$
+Let's set $\alpha_{h0}=\delta_{h0}=0.01$, $\boldsymbol{\beta}_{h0}=\boldsymbol{0}_2$, $\boldsymbol{B}_{h0}=\boldsymbol{I}_2$, and $\boldsymbol{a}_0=[1/2 \ 1/2]^{\top}$.
+
+Perform VB inference in this model using the CAVI algorithm.  
 	
 \end{enumerate}
 

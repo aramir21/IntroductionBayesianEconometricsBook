@@ -351,7 +351,7 @@ ELBOs <- rep(-Inf, S)
 epsilon <- 1e-5
 for(s in 2:S){
   B <- Esig2inv^(-1)*Bn
-  EbQb <- tr(B%*%solve(Bn)) - t(bn)%*%solve(Bn)%*%bn + t(y)%*%y + t(b0)%*%solve(B0)%*%b0
+  EbQb <- sum(diag(B%*%solve(Bn))) - t(bn)%*%solve(Bn)%*%bn + t(y)%*%y + t(b0)%*%solve(B0)%*%b0
   d <- EbQb + d0
   Esig2inv <- as.numeric(anVB/d)
   ELBOs[s] <- ELBOfunc(d = d, B = B)
