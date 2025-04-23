@@ -1,8 +1,8 @@
 \chapter{Machine learning}\label{chap13}
 
-Machine learning approaches are characterized by high-dimensional parameter spaces that are implicit in non-parametric inference. Take into account that non-parametric inference refers to models of potentially infinite parameters, rather than absence of these ones.
+Machine learning (ML) approaches are characterized by high-dimensional parameter spaces that are implicit in non-parametric inference. Take into account that non-parametric inference refers to models of potentially infinite parameters, rather than absence of these ones. This is the \textit{wide problem}, where potentially there are more \textit{features}, and consequently, more parameters, than sample size. The other problem in ML is the \textit{tall problem}, where the sample size is huge. Inn this situation, it is require to have scalable algorithms.
 
-Variational Bayes is a method from machine learning \cite{wainwright2008graphical} that we present in Chapter \ref{chap15}.
+Variational Bayes is a method from machine learning \cite{wainwright2008graphical} that we present in Chapter \ref{chap15} that can address the large problem when implemented using its stochastic version.
 
 \section{Cross validation and Bayes factors}\label{sec13_1}
 The issue of overfitting in Bayesian inference is mitigated due to its inherent shrinkage property when proper priors are used. Remember that the posterior distributions is a compromise between the sample information and the prior information.
@@ -25,3 +25,64 @@ link: https://cran.r-project.org/web/packages/mombf/index.html
 \section{Gaussian processes}\label{13_4}
 
 Remember the relevance of GP in Bayesian optimization, and consequently, in pseudo-marginal MCMC, which is a case where the likelihood function cannot be evaluated exactly but can be estimated unbiasedly. This method is particularly useful in scenarios where latent variables or complex models make direct likelihood computations intractable.
+
+\section{Large data problems}
+Review \cite{bardenet2017markov}
+\begin{itemize}
+	\item Subsampling MCMC: Firefly Monte Carlo \cite{Maclaurin2015}
+	\item Stochastic Gradient MCMC (SG-MCMC): Stochastic Gradient Langevin Dynamics (SGLD) and Stochastic Gradient Hamiltonian Monte Carlo (SGHMC). See \cite{nemeth2021stochastic,song2020extended,baker2019sgmcmc,chen2014stochastic,welling2011bayesian}
+	\item Divide-and-Conquer MCMC \cite{quiroz2018subsampling,quiroz2019speeding}: Consensus Monte Carlo \cite{rendell2020global,scott2022bayes} and Weierstrass Sampler \cite{wu2017average}
+\end{itemize}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Stochastic Gradient MCMC (SG-MCMC): Linear regression}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+set.seed(123)
+
+# Simulated data
+n <- 10000  # Large n for SGLD to shine
+p <- 3
+X <- cbind(1, matrix(rnorm(n * (p - 1)), n, p - 1))  # design matrix
+beta_true <- c(1, -2, 0.5)
+sigma2 <- 1
+y <- X %*% beta_true + rnorm(n, 0, sqrt(sigma2))
+
+# SGLD settings
+iterations <- 2000
+batch_size <- 100
+stepsize <- 1e-4
+beta <- rep(0, p)  # initial value
+trace_beta <- matrix(NA, nrow = iterations, ncol = p)
+
+# Log posterior gradient function (Gaussian likelihood and prior)
+grad_log_post <- function(beta, X_batch, y_batch, n, sigma2) {
+	p <- length(beta)
+	grad_loglik <- t(X_batch) %*% (y_batch - X_batch %*% beta) / sigma2
+	grad_logprior <- -beta  # derivative of log N(0, I)
+	return((n / nrow(X_batch)) * grad_loglik + grad_logprior)
+}
+
+# SGLD algorithm
+for (t in 1:iterations) {
+	idx <- sample(1:n, batch_size)
+	X_batch <- X[idx, ]
+	y_batch <- y[idx]
+	
+	grad <- grad_log_post(beta, X_batch, y_batch, n, sigma2)
+	noise <- rnorm(p, 0, sqrt(stepsize))
+	beta <- beta + 0.5 * stepsize * grad + noise
+	trace_beta[t, ] <- beta
+}
+
+# Plot evolution of beta[2] (can change to others)
+plot(trace_beta[, 2], type = "l", col = "blue", lwd = 2,
+main = expression("SGLD: Evolution of " * beta[2]),
+xlab = "Iteration", ylab = expression(beta[2]))
+abline(h = beta_true[2], col = "red", lty = 2)
+legend("bottomright", legend = c("SGLD", "True value"),
+col = c("blue", "red"), lty = c(1, 2))
+		\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}

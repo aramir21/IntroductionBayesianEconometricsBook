@@ -1,6 +1,6 @@
 \chapter{Approximate Bayesian methods}\label{chap15}
 
-\textit{Approximate Bayesian methods} are a family of techniques designed to handle situations where the likelihood function lacks an analytical expression, is highly complex, or the problem has high dimensionality, whether due to a large parameter space or a massive dataset \cite{martin2024approximating}. In the former case, traditional Markov Chain Monte Carlo (MCMC) and importance sampling algorithms fail to provide a solution, while in the latter, these algorithms struggle to produce accurate estimates within a reasonable time.  
+\textit{Approximate Bayesian methods} are a family of techniques designed to handle situations where the likelihood function lacks an analytical expression, is highly complex, or the problem is high-dimensional, whether due to a large parameter space or a massive dataset \cite{martin2024approximating}. In the former case, traditional Markov Chain Monte Carlo (MCMC) and importance sampling algorithms fail to provide a solution. In the latter, these algorithms struggle to produce accurate estimates within a reasonable timeframe, unless users modify them (see Chapter~\ref{chap13}).
 
 However, there is no free lunch, \textit{Approximate Bayesian methods} address these challenges at the cost of providing an approximation to the posterior distribution rather than the \textit{exact} posterior. Nonetheless, asymptotic results show that the approximation improves as the sample size increases.
 
@@ -91,7 +91,7 @@ We model exchange rate log daily returns from USD/EUR one year before and after 
 	g\sim U(-5,5), \ k\sim U(-0.5, 5).
 \end{align*}
 
-We use the \textit{EasyABC} package in \textbf{R} to implement the ABC accept/reject (ABC-AR) algorithm using 150,000 prior draws with an acceptance rate of 0.67\%. We also apply the ABC Markov chain Monte Carlo (ABC-MCMC) method \cite{marjoram2003markov} and the sequential Monte Carlo ABC (ABC-SMC) method \cite{lenormand2013adaptive} to compare the results across different ABC algorithms.\footnote{Note that this setting does not satisfy the asymptotic requirements for Bayesian consistency. However, it serves as a pedagogical exercise.} We generate 100,000 samples and retain 1\% in ABC-MCMC, and 30,000 samples, keeping 3.4\%, with a stopping criterion of 5\% in ABC-SMC. These settings imply that the three algorithms require approximately the same computational time. Users can refer to the cited references for algorithmic details.
+We use the \textit{EasyABC} package in \textbf{R} to implement the ABC accept/reject (ABC-AR) algorithm using 150,000 prior draws with an acceptance rate of 0.67\%. We also apply the ABC Markov chain Monte Carlo (ABC-MCMC) method \cite{marjoram2003markov} and the sequential Monte Carlo ABC (ABC-SMC) method \cite{lenormand2013adaptive} to compare the results across different ABC algorithms.\footnote{Note that this setting does not satisfy the asymptotic requirements for Bayesian consistency. However, it serves as a pedagogical exercise.} We generate 100,000 samples and retain 1\% in ABC-MCMC, and 30,000 samples, keeping 3.4\%, with a stopping criterion of 5\% in ABC-SMC. These settings imply that the three algorithms require approximately the same computational time. As ABC is a simulation-based method, the computational burden is mostly driven by the speed of simulating the process; thus, the \textit{EasyABC} package has parallel computing algorithms to speed up the processes. Users can refer to the cited references for algorithmic details, and the \textit{EasyABC} package for parallel computing implementation. 
 
 In Exercise 1, we ask to program the ABC accept/reject algorithm (Algorithm \ref{ABC0}) from scratch and compare the results with those obtained using the ABC-AR implementation in the \textit{EasyABC} package.
 
@@ -181,7 +181,7 @@ Bayesian synthetic likelihood (BSL) arises when this auxiliary likelihood is com
 	\pi_{a}(\boldsymbol{\theta} \mid \boldsymbol{\eta}(\boldsymbol{y})) &\propto p_{a}(\boldsymbol{\eta}(\boldsymbol{y})\mid \boldsymbol{\theta}) \pi(\boldsymbol{\theta}), 
 \end{align*}
 
-where the subscript \( a \) indicates that this is an approximation due to the Gaussian assumption. This is referred to as the idealized BSL posterior. However, note that \( p_a(\boldsymbol{\eta}(\boldsymbol{y})\mid \boldsymbol{\theta}) \) is rarely available, as \( \boldsymbol{\mu}_{\boldsymbol{\theta}} \) and \( \boldsymbol{\Sigma}_{\boldsymbol{\theta}} \) are generally unknown. Therefore, we estimate these quantities using simulations from the model, following the same steps as in ABC:\footnote{There are better ways to calculate the covariance matrix, see \cite{nott2023bayesian}.}
+where the subscript \( a \) indicates that this is an approximation due to the Gaussian assumption. This is referred to as the idealized BSL posterior. However, note that \( p_a(\boldsymbol{\eta}(\boldsymbol{y})\mid \boldsymbol{\theta}) \) is rarely available, as \( \boldsymbol{\mu}_{\boldsymbol{\theta}} \) and \( \boldsymbol{\Sigma}_{\boldsymbol{\theta}} \) are generally unknown. Therefore, we estimate these quantities using simulations from the model given a realization of $\boldsymbol{\theta}$:\footnote{There are better ways to calculate the covariance matrix, see \cite{nott2023bayesian}.}
 \begin{align*} 
 	\widehat{\boldsymbol{\mu}}_{\boldsymbol{\theta}} &= \frac{1}{M} \sum_{m=1}^{M} \boldsymbol{\eta}(\boldsymbol{z}^{(m)}),\\
 	\widehat{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}} &= \frac{1}{M-1} \sum_{m=1}^{M} (\boldsymbol{\eta}(\boldsymbol{z}^{(m)}) - \widehat{\boldsymbol{\mu}}_{\boldsymbol{\theta}})(\boldsymbol{\eta}(\boldsymbol{z}^{(m)}) - \widehat{\boldsymbol{\mu}}_{\boldsymbol{\theta}})^{\top}. 
@@ -207,7 +207,7 @@ We can perform BSL using the Algorithm \ref{BSL0}. We can use a random walk Metr
 		\For{\texttt{$s=1,\dots,S$}}
 			\State Draw $\boldsymbol{\theta}^c\sim q(\boldsymbol{\theta}\mid \boldsymbol{\theta}^{s-1})$
 			\For{\texttt{$m=1,\dots,M$}}
-				\State Simulate ${\boldsymbol z}^{m}=(z_{1}^{m},z_{2}^{m},...,z_{m}^{s})^{\top}$ from the model, $p(\cdot\mid{\boldsymbol{\theta} }^c)$
+				\State Simulate ${\boldsymbol z}^{m}=(z_{1}^{m},z_{2}^{m},...,z_{n}^{m})^{\top}$ from the model, $p(\cdot\mid{\boldsymbol{\theta} }^c)$
 				\State Calculate $\boldsymbol{\eta}(\boldsymbol{z}^{(m)})$
 			\EndFor 			 
 			\State Calculate $\boldsymbol{\mu}_{\boldsymbol{\theta}^c}$ and $\boldsymbol{\Sigma}_{\boldsymbol{\theta}^c}$
@@ -226,7 +226,7 @@ We can perform BSL using the Algorithm \ref{BSL0}. We can use a random walk Metr
 
 An advantage of BSL over ABC is that it does not require selecting a tolerance parameter $\epsilon$. Furthermore, BSL is more computationally efficient than ABC when dealing with a high-dimensional vector of summary statistics as the acceptance rate of the former is asymptotically non-vanishing \cite{nott2023bayesian}.  
 
-On the other hand, ABC is asymptotically more efficient than BSL, and it imposes very weak requirements on the choice of summary statistics, whereas BSL requires summary statistics that satisfy central limit theorems (CLTs), and consistent estimators of the covariance matrix. However, asymptotically, both approaches are equivalent, provided their respective requirements are met \cite{martin2024approximating}.  
+On the other hand, ABC is asymptotically more efficient than BSL, and it imposes very weak requirements on the choice of summary statistics, whereas BSL requires summary statistics that satisfy central limit theorems (CLTs), and consistent estimators of the covariance matrix. However, asymptotically, both approaches provide reliable inference, provided their respective requirements are met \cite{martin2024approximating}.  
 
 In practice, BSL may be more convenient than ABC when the summary statistics are high-dimensional and satisfy CLT conditions. Otherwise, ABC may be the better alternative.\\    
 
@@ -234,7 +234,7 @@ In practice, BSL may be more convenient than ABC when the summary statistics are
 
 We simulate a dataset following the specification of the g-and-k distribution for the financial returns example, setting $\theta_1 = 0.8$, $a = 1$, $b = 0.5$, $g = -1$, and $k = 1$, with a sample size of 500. We use the same priors and summary statistics as in that example.
 
-We use the \textit{BSL} package in \textbf{R} to perform posterior inference using BSL. Additionally, we implement our own BSL sampler to compare the results with the vanilla algorithm from the package. We run the BSL algorithms with $M=200$, $S=11,000$, a burn-in of 1,000, and a thinning parameter of 10, using a random walk proposal distribution. This setting results in similar computational times between the two implementations (scratch and package) and is also comparable to the ABC implementation in Exercise 1.
+We use the \textit{BSL} package in \textbf{R} to perform posterior inference using BSL. Additionally, we implement our own BSL sampler to compare the results with the vanilla algorithm from the package. We run the BSL algorithms with $M=200$, $S=11,000$, a burn-in of 1,000, and a thinning parameter of 10, using a random walk proposal distribution. This setting results in similar computational times between the two implementations (scratch and package) and is also comparable to the ABC implementation in Exercise 1. Take into account that BSL is a simulation-based method; therefore, the computational burden is mostly driven by the speed of simulating the process. The \textit{BSL} package has parallel computing algorithms to speed up the processes, and users should refer to the \textit{BSL} package for details.
 
 The following code demonstrates this procedure. The summary statistics appear to be approximately normally distributed, as shown in Figure \ref{figDensSum}, where the red line represents the normal density and the black line represents the estimated density of the summary statistic. Figure \ref{figBSL} displays the posterior distributions from both algorithms for $\theta_1$, $g$, and $k$. In general, the 95\% credible intervals encompass the true parameter values. However, the posterior draws from the \textit{BSL} package are more informative compared to our implementation of Algorithm \ref{BSL0}. Additionally, BSL outperforms the results of ABC in Exercise 1, yielding more precise posterior distributions. This pattern has been observed in other settings \cite{drovandi2022comparison,martin2024approximating}. Both ABC and BSL produce posterior distributions centered at the true parameter values, although the posterior distribution of $\theta_1$ deviates from this pattern.
 
@@ -405,12 +405,93 @@ legend = "bottom", common.legend = TRUE)
 
 \section{Optimization approaches}\label{sec15_2}
 
-MCMC and IS algorithms require pointwise evaluation of the likelihood function, which involves a massive number of operations when applied to very large datasets. Unfortunately, these algorithms are not designed to be \textit{scalable}. Moreover, if the parameter space is large, they also lack \textit{scalability} in the number of parameters. Therefore, approximation methods should be considered even when the likelihood function has an analytical expression.
+Traditional MCMC and importance sampling (IS) algorithms require pointwise evaluation of the likelihood function, which entails a massive number of operations when applied to very large datasets. Unfortunately, these algorithms are not designed to be \textit{scalable}, at least in their standard form (see Chapter~\ref{chap13} for alternatives). Moreover, when the parameter space is large, they also lack \textit{scalability} with respect to the number of parameters. Therefore, approximation methods should be considered even when the likelihood function has an analytical expression.
 
 \textit{Optimization approaches} are designed to scale efficiently with high-dimensional parameter spaces and large datasets. The key idea is to replace simulation with optimization. In this section, we introduce the most common optimization approaches within the Bayesian inferential framework. 
 
 \subsection{Integrated nested Laplace approximations}\label{sec15_21}
-\textit{Integrated nested Laplace approximations} approximates $\pi(\boldsymbol{\theta} \mid \mathbf{y})$ by a combination of low-dimensional deterministic integration and optimization steps. 
+\textit{Integrated Nested Laplace Approximations} (INLA) is a deterministic approach for Bayesian inference in latent Gaussian models (LGMs) \cite{rue2009approximate}. In particular, INLA approximates the marginal posterior distributions using a combination of low-dimensional deterministic integration and optimization steps. The advantages of INLA compared to MCMC are that it is fast and does not suffer from poor mixing.
+
+The point of departure is a structured additive regression model, where the response variable $y_i$ belongs to the exponential family such that the mean $\mu_i$ is linked to a linear predictor $\eta_i$ through the link function $g(\cdot)$, that is, $\eta_i=g(\mu_i)$, where
+\begin{align*}
+	\mu_i&=\alpha+\boldsymbol{\beta}^{\top}\boldsymbol{x}_{i}+\sum_{j=1}^{J}f^{(j)}(u_{ji})+\epsilon_{i},
+\end{align*}
+where $\alpha$ is the general intercept, $f^{(j)}$ are unknown functions of the covariates $\boldsymbol{u}_i$, $\boldsymbol{\beta}$ is a $K$-dimensional vector of linear effects associated with regressors $\boldsymbol{x}_i$, and $\epsilon_{i}$ is the unstructured error.
+
+Note that latent Gaussian models encompass a wide range of relevant empirical models depending on the specific elements and structure involved in $f^{(j)}$, such as generalized linear models with unobserved heterogeneity, spatial and/or temporal dependence, and semi-parametric models.
+
+Latent Gaussian models assign a Gaussian prior to $\alpha$, $\boldsymbol{\beta}$, $f^{(j)}$, and $(\epsilon_{i}$. Let $\boldsymbol{z}$ denote the vector of all latent Gaussian variables $\left\{\alpha, \boldsymbol{\beta}, f^{(j)},\eta_{i}\right\}$, and let $\boldsymbol{\theta}$ be the $m$-dimensional vector of hyperparameters. Then, the density $\pi(\boldsymbol{z} \mid \boldsymbol{\theta}_1)$ is Gaussian with mean zero and precision matrix (i.e., the inverse of the covariance matrix) $\boldsymbol{Q}(\boldsymbol{\theta}_1)$.
+
+The distribution of $\boldsymbol{y}$ is $p(\boldsymbol{y}\mid \boldsymbol{z},\boldsymbol{\theta}_2)$ such that $y_i$ are conditional independent given $\boldsymbol{z}_i,\boldsymbol{\theta}_2$, $\boldsymbol{\theta}=[\boldsymbol{\theta}_1^{\top} \ \boldsymbol{\theta}_2^{\top}]^{\top}$, $i=1,2,\dots,N$. Thus, the posterior distribution is
+\begin{align}\label{eq:INLA1}
+	\pi(\boldsymbol{z},\boldsymbol{\theta}\mid \boldsymbol{y})&\propto \pi(\boldsymbol{\theta})\times \pi(\boldsymbol{z}\mid \boldsymbol{\theta}_1)\times \prod_{i=1}^{N}p(y_i\mid \boldsymbol{z},\boldsymbol{\theta}_2)\\
+	&\propto \pi(\boldsymbol{\theta})|\boldsymbol{Q}(\boldsymbol{\theta}_1)|^{1/2}\exp\left\{-\frac{1}{2}\boldsymbol{z}^{\top}\boldsymbol{Q}(\boldsymbol{\theta}_1)\boldsymbol{z}+\sum_{i=1}^N\log p(y_i\mid \boldsymbol{z}_i,\boldsymbol{\theta}_2)\right\}.\nonumber
+\end{align}
+Most models in INLA assume a conditional independence structure within the high-dimensional latent Gaussian field; that is, $\boldsymbol{z}$ is a Gaussian Markov random field (GMRF) with a sparse precision matrix $\boldsymbol{Q}(\boldsymbol{\theta}_1)$. A second key assumption is that the dimension of $\boldsymbol{\theta}$ is small, for instance, $m < 15$. These assumptions are essential for enabling fast approximate inference.
+
+The main aim in INLA is to approximate the marginal posterior distributions $\pi(\boldsymbol{z}_i\mid \boldsymbol{y})$ and $\pi(\theta_l\mid \boldsymbol{y})$, $l=1,2,\dots,m$.
+The posterior distribution of $\boldsymbol{\theta}$ is
+\begin{align*}	
+	\pi(\boldsymbol{\theta}\mid \boldsymbol{y})&=\frac{p(\boldsymbol{y},\boldsymbol{\theta})}{p(\boldsymbol{y})}\\
+	&=\frac{p(\boldsymbol{y},\boldsymbol{\theta})}{p(\boldsymbol{y})}\times \frac{\pi(\boldsymbol{z}\mid \boldsymbol{\theta},\boldsymbol{y})}{\pi(\boldsymbol{z}\mid\boldsymbol{\theta},\boldsymbol{y})}\\
+	&=\frac{p(\boldsymbol{z},\boldsymbol{\theta},\boldsymbol{y})}{p(\boldsymbol{y})\pi(\boldsymbol{z}\mid \boldsymbol{\theta},\boldsymbol{y})}\\
+	&\propto\frac{p(\boldsymbol{z},\boldsymbol{\theta},\boldsymbol{y})}{\pi(\boldsymbol{z}\mid \boldsymbol{\theta},\boldsymbol{y})}\\
+	&\propto\frac{p(\boldsymbol{y}\mid \boldsymbol{z},\boldsymbol{\theta})\pi(\boldsymbol{z}\mid\boldsymbol{\theta})\pi(\boldsymbol{\theta})}{\pi(\boldsymbol{z}\mid \boldsymbol{\theta},\boldsymbol{y})}.
+\end{align*}
+The numerator in the previous expression is easy to calculate (see Equation~\ref{eq:INLA1}), but the denominator is generally not available in closed form and is difficult to compute. Thus, INLA approximates it at specific values $\boldsymbol{\theta}_g$,
+\begin{align*}
+	\pi_a(\boldsymbol{\theta}_g\mid \boldsymbol{y})&\propto\frac{p(\boldsymbol{y}\mid \boldsymbol{z},\boldsymbol{\theta}_g)\pi(\boldsymbol{z}\mid\boldsymbol{\theta}_g)\pi(\boldsymbol{\theta}_g)}{\pi_{a,G}(\boldsymbol{z}\mid \boldsymbol{\theta}_g,\boldsymbol{y})},
+\end{align*} 
+where $\pi_{a,G}(\boldsymbol{z}_i \mid \boldsymbol{\theta}_g, \boldsymbol{y})$ is a Gaussian approximation matching the mode and covariance matrix of the full posterior $\pi(\boldsymbol{z} \mid \boldsymbol{\theta}, \boldsymbol{y})$. 
+
+The marginal posterior $\pi(\boldsymbol{z}_i \mid \boldsymbol{\theta}, \boldsymbol{y})$ is more challenging to compute due to the potentially high dimension of $\boldsymbol{z}$. It may seem intuitive to use the Gaussian approximation $\pi_{a,G}(\boldsymbol{z} \mid \boldsymbol{\theta}, \boldsymbol{y})$; however, this is often not sufficiently accurate due to its lack of skewness. An alternative is to use the following expression
+\begin{align*}
+	\pi(\boldsymbol{z}_i\mid \boldsymbol{\theta},\boldsymbol{y})&=\frac{p(\boldsymbol{z}_i,\boldsymbol{\theta},\boldsymbol{y})}{p(\boldsymbol{\theta},\boldsymbol{y})}\\
+	&=\frac{p(\boldsymbol{z}_i,\boldsymbol{\theta},\boldsymbol{y})}{p(\boldsymbol{\theta},\boldsymbol{y})}\times \frac{\pi(\boldsymbol{z}\mid\boldsymbol{\theta},\boldsymbol{y})}{\pi(\boldsymbol{z}\mid\boldsymbol{\theta},\boldsymbol{y})}\\
+	&=\frac{\pi(\boldsymbol{z}\mid\boldsymbol{\theta},\boldsymbol{y})}{p(\boldsymbol{z},\boldsymbol{\theta},\boldsymbol{y})}\times p(\boldsymbol{z}_i,\boldsymbol{\theta},\boldsymbol{y})\\
+	&=\frac{\pi(\boldsymbol{z}\mid\boldsymbol{\theta},\boldsymbol{y})}{\pi(\boldsymbol{z}_{-i}\mid\boldsymbol{z}_i,\boldsymbol{\theta},\boldsymbol{y})}\\
+	&\propto \frac{p(\boldsymbol{y}\mid \boldsymbol{z},\boldsymbol{\theta})\pi(\boldsymbol{z}\mid\boldsymbol{\theta})\pi(\boldsymbol{\theta})}{\pi(\boldsymbol{z}_{-i}\mid\boldsymbol{z}_i,\boldsymbol{\theta},\boldsymbol{y})}, 
+\end{align*}
+where the second-to-last equality follows from the identity $\pi(\boldsymbol{z}_{-i} \mid \boldsymbol{z}_i, \boldsymbol{\theta}, \boldsymbol{y}) = \frac{p(\boldsymbol{z}, \boldsymbol{\theta}, \boldsymbol{y})}{p(\boldsymbol{z}_i, \boldsymbol{\theta}, \boldsymbol{y})}$, $-i$ denotes all elements of $\boldsymbol{z}$ except the $i$-th, and approximating the denominator in the last expression using a simplified Laplace approximation, which corrects the Gaussian approximation for location and skewness via a Taylor series expansion about the mode of the Laplace approximation \cite{rue2009approximate}. 
+
+We can obtain the marginal posterior distributions integrating with respect to $\boldsymbol{\theta}$,
+\begin{align*}
+	\pi(\boldsymbol{z}_i\mid \boldsymbol{y})&=\int_{{\Theta}} \pi(\boldsymbol{z}_i\mid \boldsymbol{\theta},\boldsymbol{y})\pi(\boldsymbol{\theta}\mid\boldsymbol{y})d\boldsymbol{\theta}\\
+	\pi(\theta_l\mid\boldsymbol{y})&=\int_{{\Theta}} \pi(\boldsymbol{\theta}\mid \boldsymbol{y})d\boldsymbol{\theta}_{-l}.
+\end{align*}
+This integrals are solve numerically using a smart grid around the mode of $\pi_a(\boldsymbol{\theta}\mid\boldsymbol{y})$. In particular, 
+\begin{align*}
+	\pi_a(\boldsymbol{z}_i\mid \boldsymbol{y})&=\sum_{g=1}^G \pi_{a,G}(\boldsymbol{z}_i\mid \boldsymbol{\theta}_g,\boldsymbol{y})\pi_a(\boldsymbol{\theta}_g\mid \boldsymbol{y})\Delta_g.
+\end{align*}
+This is the sum over the values of $\boldsymbol{\theta}$ with area weights $\Delta_g$. If all support points are equidistant, then $\Delta_g = 1$.
+
+Algorithm~\ref{INLA0} presents the INLA algorithm. Note that stages 2 and 3 correspond to the nested Laplace approximations, whereas stage 4 involves the integration step.
+    
+\begin{algorithm}
+	\caption{Integrated nested Laplace approximations (INLA)}\label{INLA0}
+	\begin{algorithmic}[1]
+		\State Obtain the mode of $\pi_a(\boldsymbol{\theta}\mid \boldsymbol{y})$, that is $\boldsymbol{\theta}^*$, by maximizing $\log \pi_a(\boldsymbol{\theta}\mid \boldsymbol{y})$
+		\State Compute $\pi_a(\boldsymbol{\theta}_g\mid \boldsymbol{y})$ for a set of high density points $\boldsymbol{\theta}_g$, $g=1,2,\dots,G$
+		\State Compute the approximation $\pi_a(\boldsymbol{z}_i\mid \boldsymbol{\theta}_g,\boldsymbol{y})$, $g=1,2,\dots,G$
+		\State Compute $\pi_a(\boldsymbol{z}_i\mid \boldsymbol{y})$ and $\pi_a(\theta_l\mid\boldsymbol{y})$ using numerical integration
+		   
+%		\State Obtain the covariance matrix of $\boldsymbol{\theta}$, that is, $\boldsymbol{\Sigma}$, as the negative inverse of the Hessian matrix of $\log \pi_a(\boldsymbol{\theta}\mid \boldsymbol{y})$
+%		\State Perform the eigen value decomposition of $\boldsymbol{\Sigma}=\boldsymbol{V}\boldsymbol{\Lambda}\boldsymbol{V}^{\top}$, and defines $\boldsymbol{\theta}(\boldsymbol{e})=\boldsymbol{\theta}^*+\boldsymbol{V}\boldsymbol{\Lambda}^{1/2}\boldsymbol{e}$, where $\boldsymbol{e}\sim N(\boldsymbol{0},\boldsymbol{I}_m)$
+%		\State Explore $\pi_a(\boldsymbol{\theta}\mid \boldsymbol{y})$ starting at $\boldsymbol{\theta}^*$ and step lengths $\delta_e=1$ in all up and down direction for each of the $m$ coordinates as long as $|\log \pi_a(\boldsymbol{\theta}(\boldsymbol{0})\mid \boldsymbol{y})-\log \pi_a(\boldsymbol{\theta}(\boldsymbol{e})\mid \boldsymbol{y})|<\delta_{\pi}$, where $\delta_{\pi}=2.5$. Note that this implies that $\Delta_l$ are equal
+%		\State Use the previous explored points to interpolate and obtain an approximation $\pi_a(\boldsymbol{\theta}\mid \boldsymbol{y})$, and compute the marginals using numerical integration
+%		\State Approximate $\pi(\boldsymbol{z}_i\mid \boldsymbol{y})$ using Laplace approximations (see \cite{rue2009approximate} for details)       
+	\end{algorithmic}
+\end{algorithm}
+
+Thus, INLA can be used in LGMs that satisfy \cite{martino2019integrated}:
+\begin{enumerate}
+	\item There is conditional independence, that is, $y_i\perp y_s \mid \eta_i,\boldsymbol{\theta}$, such that $p(\boldsymbol{y}\mid \boldsymbol{z},\boldsymbol{\theta})=\prod_{i=1}^{N}p(y_i\mid \eta_i,\boldsymbol{\theta})$.
+	\item The dimension of $\boldsymbol{\theta}$ is small, less than 15.
+	\item $\boldsymbol{z}$ is a GMRF with sparse precision matrix.
+	\item The linear predictor depends linearly on the smooth unknown functions of covariates.
+	\item The inference is on the marginal posterior distributions $\pi(\boldsymbol{z}_i\mid \boldsymbol{y})$ and $\pi(\theta_l\mid \boldsymbol{y})$.  
+\end{enumerate} 
+
 
 \subsection{Variational Bayes}\label{sec15_22}
 \textit{Variational Bayes} (VB) is a method from machine learning \cite{jordan1999introduction, wainwright2008graphical} that replaces $\pi(\boldsymbol{\theta} \mid \mathbf{y})$ with an approximation obtained through optimization using the calculus of variations, hence the name \textit{variational} Bayes. This approach is useful when the posterior distribution is complex (e.g., multimodal) or when the parameter space is high-dimensional, making MCMC or IS algorithms computationally expensive.
