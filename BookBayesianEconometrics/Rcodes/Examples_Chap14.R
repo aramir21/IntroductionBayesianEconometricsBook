@@ -260,6 +260,69 @@ library(ggpubr)
 ggarrange(dentheta, deng, denk, labels = c("A", "B", "C"), ncol = 3, nrow = 1,
           legend = "bottom", common.legend = TRUE)
 
+######################### INLA ##########################
+# Install Rtools according to your R version: https://cran.r-project.org/bin/windows/Rtools/rtools45/rtools.html
+# Check Rtolls is properly installed using Sys.which("make")
+# You should get something like:
+# make 
+# "C:\\rtools45\\usr\\bin\\make.exe" 
+# Install INLA
+# install.packages("INLA",repos=c(getOption("repos"),INLA="https://inla.r-inla-download.org/R/stable"), dep=TRUE)
+rm(list = ls())
+library(INLA)
+set.seed(010101)
+n <- 10000
+x <- rnorm(n, sd = 1)
+u <- rnorm(n, sd = 0.5)
+intercept <- 1; beta <- 1
+id <- 1:n
+y <- rpois(n, lambda = exp(intercept + beta * x + u))
+my.data <- data.frame(y, x, id)
+formula <- y ~ 1 + x + f(id, model="iid")
+inla.sla <- inla(formula, data = my.data, family = "poisson", control.compute=list(return.marginals.predictor=TRUE))
+inla.ga <- inla(formula, data = my.data, family = "poisson",
+                control.inla = list(strategy = "gaussian", int.strategy = "eb"),
+                control.compute=list(return.marginals.predictor=TRUE))
+inla.la <- inla(formula, data = my.data, family = "poisson",
+                control.inla = list(strategy = "laplace",
+                                    int.strategy = "grid", dz=0.1, diff.logdens=20),
+                control.compute=list(return.marginals.predictor=TRUE))
+summary(inla.sla)
+marg_sla <- inla.sla$marginals.fixed$x
+marg_ga  <- inla.ga$marginals.fixed$x
+marg_la  <- inla.la$marginals.fixed$x
+plot(marg_sla, type = "l", col = "blue", lwd = 2,
+     xlab = expression(beta[x]), ylab = "Density",
+     main = "Posterior of βₓ under different INLA strategies")
+lines(marg_ga, col = "green", lwd = 2, lty = 2)
+lines(marg_la, col = "red", lwd = 2, lty = 3)
+abline(v = 1, col = "black", lty = 4, lwd = 2)
+legend("topright",
+       legend = c("Simplified Laplace", "Gaussian", "Full Laplace", "True βₓ = 1"),
+       col = c("blue", "green", "red", "black"),
+       lwd = 2, lty = c(1, 2, 3, 4), bty = "n")
+# Summary beta sla
+inla.qmarginal(c(0.025, 0.5, 0.975), marg_sla) # 95% credible interval
+
+# Variance
+marg.prec.sla <- inla.sla$marginals.hyperpar[["Precision for id"]]
+marg.prec.ga  <- inla.ga$marginals.hyperpar[["Precision for id"]]
+marg.prec.la  <- inla.la$marginals.hyperpar[["Precision for id"]]
+marg.var.sla <- inla.tmarginal(function(x) 1 / x, marg.prec.sla)
+marg.var.ga  <- inla.tmarginal(function(x) 1 / x, marg.prec.ga)
+marg.var.la  <- inla.tmarginal(function(x) 1 / x, marg.prec.la)
+# Base plot
+plot(marg.var.sla, type = "l", col = "blue", lwd = 2,
+     xlab = expression(sigma^2), ylab = "Density",
+     main = "Posterior of Random Effect Variance")
+lines(marg.var.ga, col = "green", lwd = 2, lty = 2)
+lines(marg.var.la, col = "red", lwd = 2, lty = 3)
+abline(v = 0.25, col = "black", lty = 4, lwd = 2)
+legend("topright", legend = c("Simplified Laplace", "Gaussian", "Full Laplace", "True Variance (0.25)"),
+       col = c("blue", "green", "red", "black"), lwd = 2, lty = c(1, 2, 3, 4), bty = "n")
+# Summary variance sla
+inla.qmarginal(c(0.025, 0.5, 0.975), marg.var.sla) # 95% credible interval
+
 ######### Variational Bayes: Linear regression ##########
 set.seed(010101)
 library(LaplacesDemon)

@@ -410,7 +410,7 @@ Traditional MCMC and importance sampling (IS) algorithms require pointwise evalu
 \textit{Optimization approaches} are designed to scale efficiently with high-dimensional parameter spaces and large datasets. The key idea is to replace simulation with optimization. In this section, we introduce the most common optimization approaches within the Bayesian inferential framework. 
 
 \subsection{Integrated nested Laplace approximations}\label{sec15_21}
-\textit{Integrated Nested Laplace Approximations} (INLA) is a deterministic approach for Bayesian inference in latent Gaussian models (LGMs) \cite{rue2009approximate}. In particular, INLA approximates the marginal posterior distributions using a combination of low-dimensional deterministic integration and optimization steps. The advantages of INLA compared to MCMC are that it is fast and does not suffer from poor mixing.
+\textit{Integrated Nested Laplace Approximations} (INLA) is a deterministic approach for Bayesian inference in latent Gaussian models (LGMs) \cite{rue2009approximate}. In particular, INLA approximates the marginal posterior distributions using a combination of Laplace approximations, low-dimensional deterministic integration and optimization steps in sparse covariance settings \cite{rue2017bayesian}. The advantages of INLA compared to MCMC are that it is fast and does not suffer from poor mixing.
 
 The point of departure is a structured additive regression model, where the response variable $y_i$ belongs to the exponential family such that the mean $\mu_i$ is linked to a linear predictor $\eta_i$ through the link function $g(\cdot)$, that is, $\eta_i=g(\mu_i)$, where
 \begin{align*}
@@ -420,16 +420,16 @@ where $\alpha$ is the general intercept, $f^{(j)}$ are unknown functions of the 
 
 Note that latent Gaussian models encompass a wide range of relevant empirical models depending on the specific elements and structure involved in $f^{(j)}$, such as generalized linear models with unobserved heterogeneity, spatial and/or temporal dependence, and semi-parametric models.
 
-Latent Gaussian models assign a Gaussian prior to $\alpha$, $\boldsymbol{\beta}$, $f^{(j)}$, and $(\epsilon_{i}$. Let $\boldsymbol{z}$ denote the vector of all latent Gaussian variables $\left\{\alpha, \boldsymbol{\beta}, f^{(j)},\eta_{i}\right\}$, and let $\boldsymbol{\theta}$ be the $m$-dimensional vector of hyperparameters. Then, the density $\pi(\boldsymbol{z} \mid \boldsymbol{\theta}_1)$ is Gaussian with mean zero and precision matrix (i.e., the inverse of the covariance matrix) $\boldsymbol{Q}(\boldsymbol{\theta}_1)$.
+Latent Gaussian models assign a Gaussian prior to $\alpha$, $\boldsymbol{\beta}$, $f^{(j)}$, and $(\epsilon_{i}$. Let $\boldsymbol{z}$ denote the vector of all latent Gaussian variables $\left\{\alpha, \boldsymbol{\beta}, f^{(j)},\eta_{i}\right\}$, where the dimension is potentially \( P = 1 + K + J + N \) (although this is not always the case), and let $\boldsymbol{\theta}$ be the $m$-dimensional vector of hyperparameters. Then, the density $\pi(\boldsymbol{z} \mid \boldsymbol{\theta}_1)$ is Gaussian with mean zero and precision matrix (i.e., the inverse of the covariance matrix) $\boldsymbol{Q}(\boldsymbol{\theta}_1)$.
 
-The distribution of $\boldsymbol{y}$ is $p(\boldsymbol{y}\mid \boldsymbol{z},\boldsymbol{\theta}_2)$ such that $y_i$ are conditional independent given $\boldsymbol{z}_i,\boldsymbol{\theta}_2$, $\boldsymbol{\theta}=[\boldsymbol{\theta}_1^{\top} \ \boldsymbol{\theta}_2^{\top}]^{\top}$, $i=1,2,\dots,N$. Thus, the posterior distribution is
+The distribution of $\boldsymbol{y}$ is $p(\boldsymbol{y}\mid \boldsymbol{z},\boldsymbol{\theta}_2)$ such that $y_i$ are conditional independent given $z_i,\boldsymbol{\theta}_2$, $\boldsymbol{\theta}=[\boldsymbol{\theta}_1^{\top} \ \boldsymbol{\theta}_2^{\top}]^{\top}$, $i=1,2,\dots,N$. Thus, the posterior distribution is
 \begin{align}\label{eq:INLA1}
 	\pi(\boldsymbol{z},\boldsymbol{\theta}\mid \boldsymbol{y})&\propto \pi(\boldsymbol{\theta})\times \pi(\boldsymbol{z}\mid \boldsymbol{\theta}_1)\times \prod_{i=1}^{N}p(y_i\mid \boldsymbol{z},\boldsymbol{\theta}_2)\\
-	&\propto \pi(\boldsymbol{\theta})|\boldsymbol{Q}(\boldsymbol{\theta}_1)|^{1/2}\exp\left\{-\frac{1}{2}\boldsymbol{z}^{\top}\boldsymbol{Q}(\boldsymbol{\theta}_1)\boldsymbol{z}+\sum_{i=1}^N\log p(y_i\mid \boldsymbol{z}_i,\boldsymbol{\theta}_2)\right\}.\nonumber
+	&\propto \pi(\boldsymbol{\theta})|\boldsymbol{Q}(\boldsymbol{\theta}_1)|^{1/2}\exp\left\{-\frac{1}{2}\boldsymbol{z}^{\top}\boldsymbol{Q}(\boldsymbol{\theta}_1)\boldsymbol{z}+\sum_{i=1}^N\log p(y_i\mid z_i,\boldsymbol{\theta}_2)\right\}.\nonumber
 \end{align}
 Most models in INLA assume a conditional independence structure within the high-dimensional latent Gaussian field; that is, $\boldsymbol{z}$ is a Gaussian Markov random field (GMRF) with a sparse precision matrix $\boldsymbol{Q}(\boldsymbol{\theta}_1)$. A second key assumption is that the dimension of $\boldsymbol{\theta}$ is small, for instance, $m < 15$. These assumptions are essential for enabling fast approximate inference.
 
-The main aim in INLA is to approximate the marginal posterior distributions $\pi(\boldsymbol{z}_i\mid \boldsymbol{y})$ and $\pi(\theta_l\mid \boldsymbol{y})$, $l=1,2,\dots,m$.
+The main aim in INLA is to approximate the marginal posterior distributions $\pi(z_i\mid \boldsymbol{y})$ and $\pi(\theta_l\mid \boldsymbol{y})$, $l=1,2,\dots,m$.
 The posterior distribution of $\boldsymbol{\theta}$ is
 \begin{align*}	
 	\pi(\boldsymbol{\theta}\mid \boldsymbol{y})&=\frac{p(\boldsymbol{y},\boldsymbol{\theta})}{p(\boldsymbol{y})}\\
@@ -442,28 +442,32 @@ The numerator in the previous expression is easy to calculate (see Equation~\ref
 \begin{align*}
 	\pi_a(\boldsymbol{\theta}_g\mid \boldsymbol{y})&\propto\frac{p(\boldsymbol{y}\mid \boldsymbol{z},\boldsymbol{\theta}_g)\pi(\boldsymbol{z}\mid\boldsymbol{\theta}_g)\pi(\boldsymbol{\theta}_g)}{\pi_{a,G}(\boldsymbol{z}\mid \boldsymbol{\theta}_g,\boldsymbol{y})},
 \end{align*} 
-where $\pi_{a,G}(\boldsymbol{z}_i \mid \boldsymbol{\theta}_g, \boldsymbol{y})$ is a Gaussian approximation matching the mode and covariance matrix of the full posterior $\pi(\boldsymbol{z} \mid \boldsymbol{\theta}, \boldsymbol{y})$. 
+where $\pi_{a,G}(z_i \mid \boldsymbol{\theta}_g, \boldsymbol{y})$ is a Gaussian approximation that matches the mode and covariance matrix of the full posterior $\pi(\boldsymbol{z} \mid \boldsymbol{\theta}, \boldsymbol{y})$. 
 
-The marginal posterior $\pi(\boldsymbol{z}_i \mid \boldsymbol{\theta}, \boldsymbol{y})$ is more challenging to compute due to the potentially high dimension of $\boldsymbol{z}$. It may seem intuitive to use the Gaussian approximation $\pi_{a,G}(\boldsymbol{z} \mid \boldsymbol{\theta}, \boldsymbol{y})$; however, this is often not sufficiently accurate due to its lack of skewness. An alternative is to use the following expression
+The approximation error of $\pi_a(\boldsymbol{\theta} \mid \boldsymbol{y})$ is \( O(N^{-1}) \) under standard conditions, meaning that the error, when multiplied by \( N \), remains bounded \cite{Tierney1986, rue2009approximate}. However, in many applications using INLA, the dimension of the latent Gaussian variables, \( P \), increases with the sample size. In such cases, the error rate becomes \( O(P/N) \). When \( P/N \rightarrow 1 \), which occurs in many models, the approximation error becomes \( O(1) \): bounded, but potentially large.
+
+Therefore, it is important to check the effective number of parameters, as the asymptotic error of $\pi_a(\boldsymbol{\theta} \mid \boldsymbol{y})$ depends on the dimension of $\boldsymbol{z}$. According to \cite{rue2009approximate}, in most of their applications the effective number of parameters is small relative to the sample size in regions near the mode of $\pi_a(\boldsymbol{\theta} \mid \boldsymbol{y})$. 
+
+The marginal posterior $\pi(z_i \mid \boldsymbol{\theta}, \boldsymbol{y})$ is more challenging to compute due to the potentially high dimension of $\boldsymbol{z}$. It may seem intuitive to use the Gaussian approximation $\pi_{a,G}(\boldsymbol{z} \mid \boldsymbol{\theta}, \boldsymbol{y})$; however, this is often not sufficiently accurate due to its lack of skewness. An alternative is to use the following expression
 \begin{align*}
-	\pi(\boldsymbol{z}_i\mid \boldsymbol{\theta},\boldsymbol{y})&=\frac{p(\boldsymbol{z}_i,\boldsymbol{\theta},\boldsymbol{y})}{p(\boldsymbol{\theta},\boldsymbol{y})}\\
-	&=\frac{p(\boldsymbol{z}_i,\boldsymbol{\theta},\boldsymbol{y})}{p(\boldsymbol{\theta},\boldsymbol{y})}\times \frac{\pi(\boldsymbol{z}\mid\boldsymbol{\theta},\boldsymbol{y})}{\pi(\boldsymbol{z}\mid\boldsymbol{\theta},\boldsymbol{y})}\\
-	&=\frac{\pi(\boldsymbol{z}\mid\boldsymbol{\theta},\boldsymbol{y})}{p(\boldsymbol{z},\boldsymbol{\theta},\boldsymbol{y})}\times p(\boldsymbol{z}_i,\boldsymbol{\theta},\boldsymbol{y})\\
-	&=\frac{\pi(\boldsymbol{z}\mid\boldsymbol{\theta},\boldsymbol{y})}{\pi(\boldsymbol{z}_{-i}\mid\boldsymbol{z}_i,\boldsymbol{\theta},\boldsymbol{y})}\\
-	&\propto \frac{p(\boldsymbol{y}\mid \boldsymbol{z},\boldsymbol{\theta})\pi(\boldsymbol{z}\mid\boldsymbol{\theta})\pi(\boldsymbol{\theta})}{\pi(\boldsymbol{z}_{-i}\mid\boldsymbol{z}_i,\boldsymbol{\theta},\boldsymbol{y})}, 
+	\pi(z_i\mid \boldsymbol{\theta},\boldsymbol{y})&=\frac{p(z_i,\boldsymbol{\theta},\boldsymbol{y})}{p(\boldsymbol{\theta},\boldsymbol{y})}\\
+	&=\frac{p(z_i,\boldsymbol{\theta},\boldsymbol{y})}{p(\boldsymbol{\theta},\boldsymbol{y})}\times \frac{\pi(\boldsymbol{z}\mid\boldsymbol{\theta},\boldsymbol{y})}{\pi(\boldsymbol{z}\mid\boldsymbol{\theta},\boldsymbol{y})}\\
+	&=\frac{\pi(\boldsymbol{z}\mid\boldsymbol{\theta},\boldsymbol{y})}{p(\boldsymbol{z},\boldsymbol{\theta},\boldsymbol{y})}\times p(z_i,\boldsymbol{\theta},\boldsymbol{y})\\
+	&=\frac{\pi(\boldsymbol{z}\mid\boldsymbol{\theta},\boldsymbol{y})}{\pi(\boldsymbol{z}_{-i}\mid z_i,\boldsymbol{\theta},\boldsymbol{y})}\\
+	&\propto \frac{p(\boldsymbol{y}\mid \boldsymbol{z},\boldsymbol{\theta})\pi(\boldsymbol{z}\mid\boldsymbol{\theta})\pi(\boldsymbol{\theta})}{\pi(\boldsymbol{z}_{-i}\mid z_i,\boldsymbol{\theta},\boldsymbol{y})}, 
 \end{align*}
-where the second-to-last equality follows from the identity $\pi(\boldsymbol{z}_{-i} \mid \boldsymbol{z}_i, \boldsymbol{\theta}, \boldsymbol{y}) = \frac{p(\boldsymbol{z}, \boldsymbol{\theta}, \boldsymbol{y})}{p(\boldsymbol{z}_i, \boldsymbol{\theta}, \boldsymbol{y})}$, $-i$ denotes all elements of $\boldsymbol{z}$ except the $i$-th, and approximating the denominator in the last expression using a simplified Laplace approximation, which corrects the Gaussian approximation for location and skewness via a Taylor series expansion about the mode of the Laplace approximation \cite{rue2009approximate}. 
+where the second-to-last equality follows from the identity $\pi(\boldsymbol{z}_{-i} \mid z_i, \boldsymbol{\theta}, \boldsymbol{y}) = \frac{p(\boldsymbol{z}, \boldsymbol{\theta}, \boldsymbol{y})}{p(z_i, \boldsymbol{\theta}, \boldsymbol{y})}$, $-i$ denotes all elements of $\boldsymbol{z}$ except the $i$-th, and approximating the denominator in the last expression using a simplified Laplace approximation, which corrects the Gaussian approximation for location and skewness via a Taylor series expansion about the mode of the Laplace approximation \cite{rue2009approximate}. This follows the spirit of the approximations developed by \cite{Tierney1986, tierney1989fully} for posterior moments and marginal densities, and is similar to those used in Chapter~\ref{chap10} when performing Bayesian model averaging (BMA) using the BIC information criterion. The discussion about the asymptotic error of the approximation $\pi_{a}(z_i \mid \boldsymbol{\theta}, \boldsymbol{y})$ follows the same arguments as those for $\pi_a(\boldsymbol{\theta} \mid \boldsymbol{y})$.
 
 We can obtain the marginal posterior distributions integrating with respect to $\boldsymbol{\theta}$,
 \begin{align*}
-	\pi(\boldsymbol{z}_i\mid \boldsymbol{y})&=\int_{{\Theta}} \pi(\boldsymbol{z}_i\mid \boldsymbol{\theta},\boldsymbol{y})\pi(\boldsymbol{\theta}\mid\boldsymbol{y})d\boldsymbol{\theta}\\
+	\pi(z_i\mid \boldsymbol{y})&=\int_{{\Theta}} \pi(z_i\mid \boldsymbol{\theta},\boldsymbol{y})\pi(\boldsymbol{\theta}\mid\boldsymbol{y})d\boldsymbol{\theta}\\
 	\pi(\theta_l\mid\boldsymbol{y})&=\int_{{\Theta}} \pi(\boldsymbol{\theta}\mid \boldsymbol{y})d\boldsymbol{\theta}_{-l}.
 \end{align*}
 This integrals are solve numerically using a smart grid around the mode of $\pi_a(\boldsymbol{\theta}\mid\boldsymbol{y})$. In particular, 
 \begin{align*}
-	\pi_a(\boldsymbol{z}_i\mid \boldsymbol{y})&=\sum_{g=1}^G \pi_{a,G}(\boldsymbol{z}_i\mid \boldsymbol{\theta}_g,\boldsymbol{y})\pi_a(\boldsymbol{\theta}_g\mid \boldsymbol{y})\Delta_g.
+	\pi_a(z_i\mid \boldsymbol{y})&=\sum_{g=1}^G \pi_{a}(z_i\mid \boldsymbol{\theta}_g,\boldsymbol{y})\pi_a(\boldsymbol{\theta}_g\mid \boldsymbol{y})\Delta_g,
 \end{align*}
-This is the sum over the values of $\boldsymbol{\theta}$ with area weights $\Delta_g$. If all support points are equidistant, then $\Delta_g = 1$.
+where $\pi_{a}(z_i\mid \boldsymbol{\theta}_g,\boldsymbol{y})$ is the approximation of $\pi(z_i\mid \boldsymbol{\theta},\boldsymbol{y})$ evaluated at $\boldsymbol{\theta}_g$. Then, we have the sum over the values of $\boldsymbol{\theta}$ with area weights $\Delta_g$. If all support points are equidistant, then $\Delta_g = 1$.
 
 Algorithm~\ref{INLA0} presents the INLA algorithm. Note that stages 2 and 3 correspond to the nested Laplace approximations, whereas stage 4 involves the integration step.
     
@@ -472,25 +476,109 @@ Algorithm~\ref{INLA0} presents the INLA algorithm. Note that stages 2 and 3 corr
 	\begin{algorithmic}[1]
 		\State Obtain the mode of $\pi_a(\boldsymbol{\theta}\mid \boldsymbol{y})$, that is $\boldsymbol{\theta}^*$, by maximizing $\log \pi_a(\boldsymbol{\theta}\mid \boldsymbol{y})$
 		\State Compute $\pi_a(\boldsymbol{\theta}_g\mid \boldsymbol{y})$ for a set of high density points $\boldsymbol{\theta}_g$, $g=1,2,\dots,G$
-		\State Compute the approximation $\pi_a(\boldsymbol{z}_i\mid \boldsymbol{\theta}_g,\boldsymbol{y})$, $g=1,2,\dots,G$
-		\State Compute $\pi_a(\boldsymbol{z}_i\mid \boldsymbol{y})$ and $\pi_a(\theta_l\mid\boldsymbol{y})$ using numerical integration
+		\State Compute the approximation $\pi_a(z_i\mid \boldsymbol{\theta}_g,\boldsymbol{y})$, $g=1,2,\dots,G$
+		\State Compute $\pi_a(z_i\mid \boldsymbol{y})$ and $\pi_a(\theta_l\mid\boldsymbol{y})$ using numerical integration
 		   
 %		\State Obtain the covariance matrix of $\boldsymbol{\theta}$, that is, $\boldsymbol{\Sigma}$, as the negative inverse of the Hessian matrix of $\log \pi_a(\boldsymbol{\theta}\mid \boldsymbol{y})$
 %		\State Perform the eigen value decomposition of $\boldsymbol{\Sigma}=\boldsymbol{V}\boldsymbol{\Lambda}\boldsymbol{V}^{\top}$, and defines $\boldsymbol{\theta}(\boldsymbol{e})=\boldsymbol{\theta}^*+\boldsymbol{V}\boldsymbol{\Lambda}^{1/2}\boldsymbol{e}$, where $\boldsymbol{e}\sim N(\boldsymbol{0},\boldsymbol{I}_m)$
 %		\State Explore $\pi_a(\boldsymbol{\theta}\mid \boldsymbol{y})$ starting at $\boldsymbol{\theta}^*$ and step lengths $\delta_e=1$ in all up and down direction for each of the $m$ coordinates as long as $|\log \pi_a(\boldsymbol{\theta}(\boldsymbol{0})\mid \boldsymbol{y})-\log \pi_a(\boldsymbol{\theta}(\boldsymbol{e})\mid \boldsymbol{y})|<\delta_{\pi}$, where $\delta_{\pi}=2.5$. Note that this implies that $\Delta_l$ are equal
 %		\State Use the previous explored points to interpolate and obtain an approximation $\pi_a(\boldsymbol{\theta}\mid \boldsymbol{y})$, and compute the marginals using numerical integration
-%		\State Approximate $\pi(\boldsymbol{z}_i\mid \boldsymbol{y})$ using Laplace approximations (see \cite{rue2009approximate} for details)       
+%		\State Approximate $\pi(z_i\mid \boldsymbol{y})$ using Laplace approximations (see \cite{rue2009approximate} for details)       
 	\end{algorithmic}
 \end{algorithm}
 
-Thus, INLA can be used in LGMs that satisfy \cite{martino2019integrated}:
+Thus, INLA can be used in LGMs that satisfy \cite{rue2017bayesian,martino2019integrated}:
 \begin{enumerate}
 	\item There is conditional independence, that is, $y_i\perp y_s \mid \eta_i,\boldsymbol{\theta}$, such that $p(\boldsymbol{y}\mid \boldsymbol{z},\boldsymbol{\theta})=\prod_{i=1}^{N}p(y_i\mid \eta_i,\boldsymbol{\theta})$.
 	\item The dimension of $\boldsymbol{\theta}$ is small, less than 15.
 	\item $\boldsymbol{z}$ is a GMRF with sparse precision matrix.
 	\item The linear predictor depends linearly on the smooth unknown functions of covariates.
-	\item The inference is on the marginal posterior distributions $\pi(\boldsymbol{z}_i\mid \boldsymbol{y})$ and $\pi(\theta_l\mid \boldsymbol{y})$.  
+	\item The inference is on the marginal posterior distributions $\pi(z_i\mid \boldsymbol{y})$ and $\pi(\theta_l\mid \boldsymbol{y})$.  
 \end{enumerate} 
+
+\cite{rue2009approximate} also discuss how to approximate the marginal likelihood and compute the deviance information criterion \cite{spiegelhalter2002bayesian} for model selection, as well as how to perform predictive analysis. 
+
+The point of departure for INLA is the class of latent Gaussian models (LGMs); consequently, discrete latent classes are not supported. In addition, since INLA is based on approximations around the mode, it may struggle with models exhibiting multimodality, as there is no global exploration of the parameter space. 
+
+Implementing INLA from scratch is a complex task \cite{martino2019integrated}; thus, applications are generally limited to the models implemented in the \texttt{INLA} package in \textbf{R}.\footnote{Visit https://www.r-inla.org/ for documentation.} However, there are new packages that implement specialized models, as well as recent developments that combine INLA with MCMC algorithms (see Table 2 in \cite{martino2019integrated} for details). 
+
+In particular, \cite{bivand2015spatial} developed the \textit{INLABMA} package to perform Bayesian model averaging (BMA) in spatial econometric models and MCMC-INLA. See also \cite{gomez2021estimating} for an application of INLA to spatial econometric models.\\
+
+\textbf{Example: Poisson model with unobserved heterogeneity}
+
+Let's simulate the model $Y_i \sim \text{Poisson}(\lambda_i)$, where $\lambda_i = \exp\left\{1 + x_i + \epsilon_i\right\}$, with $\epsilon_i \sim \mathcal{N}(0, 0.5^2)$ and $x_i \sim \mathcal{N}(0, 1^2)$ for $i = 1, 2, \dots, 10,\!000$. Note that $\epsilon_i$ represents the unobserved heterogeneity.
+
+The following code demonstrates how to perform inference on this model using the \textit{INLA} package. Keep in mind that INLA specifies Gaussian priors in terms of precision, which is the inverse of the variance.
+
+We present the results obtained using the three approximation strategies available in INLA: Simplified Laplace (default), Gaussian, and full Laplace. In this example, the results are practically identical across methods (see Figures~\ref{FigINLA1} and~\ref{FigINLA2}), and all 95\% credible intervals contain the true population parameters. Despite the large sample size, INLA performs inference in a matter of seconds.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Integrated Nested Laplace Approximations: Poisson model with unobserved heterogeneity}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+# Install Rtools according to your R version
+# Check Rtolls is properly installed
+# Install INLA
+# install.packages("INLA",repos=c(getOption("repos"),INLA="https://inla.r-inla-download.org/R/stable"), dep=TRUE)
+rm(list = ls()); set.seed(010101); library(INLA)
+n <- 10000; x <- rnorm(n, sd = 1); u <- rnorm(n, sd = 0.5)
+intercept <- 1; beta <- 1; id <- 1:n
+y <- rpois(n, lambda = exp(intercept + beta * x + u))
+my.data <- data.frame(y, x, id)
+formula <- y ~ 1 + x + f(id, model="iid")
+inla.sla <- inla(formula, data = my.data, family = "poisson", control.compute=list(return.marginals.predictor=TRUE))
+inla.ga <- inla(formula, data = my.data, family = "poisson", control.inla = list(strategy = "gaussian", int.strategy = "eb"), control.compute=list(return.marginals.predictor=TRUE))
+inla.la <- inla(formula, data = my.data, family = "poisson", control.inla = list(strategy = "laplace", int.strategy = "grid", dz=0.1, diff.logdens=20),
+control.compute=list(return.marginals.predictor=TRUE))
+summary(inla.sla)
+marg_sla <- inla.sla$marginals.fixed$x
+marg_ga  <- inla.ga$marginals.fixed$x
+marg_la  <- inla.la$marginals.fixed$x
+plot(marg_sla, type = "l", col = "blue", lwd = 2, xlab = expression(beta[x]), ylab = "Density", main = "Posterior of slope under different INLA strategies")
+lines(marg_ga, col = "green", lwd = 2, lty = 2)
+lines(marg_la, col = "red", lwd = 2, lty = 3)
+abline(v = 1, col = "black", lty = 4, lwd = 2)
+legend("topright", legend = c("Simplified Laplace", "Gaussian", "Full Laplace", "True = 1"), col = c("blue", "green", "red", "black"), lwd = 2, lty = c(1, 2, 3, 4), bty = "n")
+# Summary beta sla
+inla.qmarginal(c(0.025, 0.5, 0.975), marg_sla) # 95% credible interval
+# Variance
+marg.prec.sla <- inla.sla$marginals.hyperpar[["Precision for id"]]
+marg.prec.ga  <- inla.ga$marginals.hyperpar[["Precision for id"]]
+marg.prec.la  <- inla.la$marginals.hyperpar[["Precision for id"]]
+marg.var.sla <- inla.tmarginal(function(x) 1/x, marg.prec.sla)
+marg.var.ga  <- inla.tmarginal(function(x) 1/x, marg.prec.ga)
+marg.var.la  <- inla.tmarginal(function(x) 1/x, marg.prec.la)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Integrated Nested Laplace Approximations: Poisson model with unobserved heterogeneity}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+# Base plot
+plot(marg.var.sla, type = "l", col = "blue", lwd = 2, xlab = expression(sigma^2), ylab = "Density", main = "Posterior of Random Effect Variance")
+lines(marg.var.ga, col = "green", lwd = 2, lty = 2)
+lines(marg.var.la, col = "red", lwd = 2, lty = 3)
+abline(v = 0.25, col = "black", lty = 4, lwd = 2)
+legend("topright", legend = c("Simplified Laplace", "Gaussian", "Full Laplace", "True Variance (0.25)"), col = c("blue", "green", "red", "black"), lwd = 2, lty = c(1, 2, 3, 4), bty = "n")
+# Summary variance sla
+inla.qmarginal(c(0.025, 0.5, 0.975), marg.var.sla) # 95% credible interval
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter15/figures/FigINLA1.png}
+	\caption[List of figure caption goes here]{Density estimates of slope parameter: Three approximations in INLA.}\label{FigINLA1}
+\end{figure} 
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter15/figures/FigINLA2.png}
+	\caption[List of figure caption goes here]{Density estimates of variance: Three approximations in INLA.}\label{FigINLA2}
+\end{figure} 
 
 
 \subsection{Variational Bayes}\label{sec15_22}
