@@ -6,7 +6,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <title>8.1 State-space representation | Introduction to Bayesian Data Modeling</title>
   <meta name="description" content="The subject of this textbook is Bayesian data modeling, with the primary aim of providing an introduction to its theoretical foundations and facilitating the application of Bayesian inference using a GUI." />
-  <meta name="generator" content="bookdown 0.40 and GitBook 2.6.7" />
+  <meta name="generator" content="bookdown 0.43 and GitBook 2.6.7" />
 
   <meta property="og:title" content="8.1 State-space representation | Introduction to Bayesian Data Modeling" />
   <meta property="og:type" content="book" />
@@ -23,7 +23,7 @@
 <meta name="author" content="Andrés Ramírez-Hassan" />
 
 
-<meta name="date" content="2025-02-22" />
+<meta name="date" content="2025-04-25" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -52,13 +52,11 @@
 <link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
 <link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
 <script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
-<script src="libs/kePrint-0.0.1/kePrint.js"></script>
-<link href="libs/lightable-0.0.1/lightable.css" rel="stylesheet" />
 
 
 <style type="text/css">
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span { line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -68,7 +66,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
   { counter-reset: source-line 0; }
@@ -130,6 +128,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 div.csl-bib-body { }
 div.csl-entry {
   clear: both;
+  margin-bottom: 0em;
 }
 .hanging div.csl-entry {
   margin-left:2em;
@@ -164,8 +163,7 @@ div.csl-indent {
 <li><a href="./">Introduction to Bayesian Econometrics: A GUIded tour using R</a></li>
 
 <li class="divider"></li>
-<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Introduction</a></li>
-<li class="chapter" data-level="" data-path="preface.html"><a href="preface.html"><i class="fa fa-check"></i>Preface</a>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Introduction</a>
 <ul>
 <li class="chapter" data-level="" data-path="to-instructors-and-students.html"><a href="to-instructors-and-students.html"><i class="fa fa-check"></i>To instructors and students</a></li>
 <li class="chapter" data-level="" data-path="acknowledgments.html"><a href="acknowledgments.html"><i class="fa fa-check"></i>Acknowledgments</a></li>
@@ -298,9 +296,11 @@ div.csl-indent {
 <li class="chapter" data-level="11.1" data-path="sec11_1.html"><a href="sec11_1.html"><i class="fa fa-check"></i><b>11.1</b> Mixture models</a>
 <ul>
 <li class="chapter" data-level="11.1.1" data-path="sec11_1.html"><a href="sec11_1.html#sec11_11"><i class="fa fa-check"></i><b>11.1.1</b> Finite Gaussian mixtures</a></li>
-<li class="chapter" data-level="11.1.2" data-path="sec11_1.html"><a href="sec11_1.html#sec11_12"><i class="fa fa-check"></i><b>11.1.2</b> Dirichlet processes</a></li>
+<li class="chapter" data-level="11.1.2" data-path="sec11_1.html"><a href="sec11_1.html#sec11_12"><i class="fa fa-check"></i><b>11.1.2</b> Direchlet processes</a></li>
 </ul></li>
-<li class="chapter" data-level="11.2" data-path="sec11_2.html"><a href="sec11_2.html"><i class="fa fa-check"></i><b>11.2</b> Non-parametric generalized additive models</a></li>
+<li class="chapter" data-level="11.2" data-path="sec11_2.html"><a href="sec11_2.html"><i class="fa fa-check"></i><b>11.2</b> Splines</a></li>
+<li class="chapter" data-level="11.3" data-path="sec11_3.html"><a href="sec11_3.html"><i class="fa fa-check"></i><b>11.3</b> Summary</a></li>
+<li class="chapter" data-level="11.4" data-path="sec11_4.html"><a href="sec11_4.html"><i class="fa fa-check"></i><b>11.4</b> Exercises</a></li>
 </ul></li>
 <li class="chapter" data-level="12" data-path="Chap12.html"><a href="Chap12.html"><i class="fa fa-check"></i><b>12</b> Machine learning</a>
 <ul>
@@ -521,28 +521,28 @@ where <span class="math inline">\(\mu_t\sim N(0,\sigma^2)\)</span> and <span cla
 <p>We simulate the process <span class="math inline">\(y_t = \beta_{t1} + x_t \beta_{t2} + \mu_t\)</span> and <span class="math inline">\(\boldsymbol{\beta}_t = \boldsymbol{\beta}_{t-1} + \boldsymbol{w}_t\)</span>, <span class="math inline">\(t = 1, 2, \dots, 200\)</span>, where <span class="math inline">\(\boldsymbol{\beta}_t = [\beta_{t1} \ \beta_{t2}]^{\top}\)</span>, <span class="math inline">\(\mu_t \sim N(0, 0.5^2)\)</span>, <span class="math inline">\(\boldsymbol{w}_t \sim N(\boldsymbol{0}, \text{diag}\{0.2, 0.1\})\)</span>, <span class="math inline">\(x_t \sim N(1, 1)\)</span>, <span class="math inline">\(\boldsymbol{\beta}_0\)</span> and <span class="math inline">\(\boldsymbol{B}_0\)</span> are the OLS estimates and variance of the recursive OLS estimates (see below), respectively.</p>
 <p>The following algorithm demonstrates how to perform inference using <em>dlmGibbsDIG</em> and compares the results to those of the maximum likelihood estimator, which is based on the <em>dlmMLE</em> function. We also use the <em>dlmSvd2var</em> function, which is based on singular value decomposition, to calculate the variance of the smoothing states. All these functions are from the <em>dlm</em> package in <strong>R</strong>.</p>
 <p>Users can observe that we employ a straightforward strategy for setting the hyperparameters. First, we recursively estimate the model using ordinary least squares (OLS), progressively increasing the sample size, and save the location parameters. Next, we compute the covariance matrix of this sequence and use it to set the priors: the prior mean of the precision of the state vector is set equal to the inverse of the maximum element of the main diagonal of this covariance matrix (<em>a.theta</em>), and the prior variance is set equal to ten times this value (<em>b.theta</em>). For the observation equation, the prior mean of the precision is set equal to the inverse of the OLS variance estimate (<em>a.y</em>), and the prior variance is set equal to ten times this value (<em>b.y</em>). We perform some sensitivity analysis of the results regarding the hyperparameters, and it seems that the results are robust. However, we encourage giving more consideration to empirical Bayes methods for setting hyperparameters in <em>state-space models</em>.</p>
-<div class="sourceCode" id="cb306"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb306-1"><a href="sec81.html#cb306-1" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">010101</span>)</span>
-<span id="cb306-2"><a href="sec81.html#cb306-2" tabindex="-1"></a>T <span class="ot">&lt;-</span> <span class="dv">200</span>; sig2 <span class="ot">&lt;-</span> <span class="fl">0.5</span><span class="sc">^</span><span class="dv">2</span></span>
-<span id="cb306-3"><a href="sec81.html#cb306-3" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(T, <span class="at">mean =</span> <span class="dv">1</span>, <span class="at">sd =</span> <span class="dv">1</span>) </span>
-<span id="cb306-4"><a href="sec81.html#cb306-4" tabindex="-1"></a>X <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="dv">1</span>, x); B0 <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="fl">0.5</span>)</span>
-<span id="cb306-5"><a href="sec81.html#cb306-5" tabindex="-1"></a>K <span class="ot">&lt;-</span> <span class="fu">length</span>(B0)</span>
-<span id="cb306-6"><a href="sec81.html#cb306-6" tabindex="-1"></a>e <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(T, <span class="at">mean =</span> <span class="dv">0</span>, <span class="at">sd =</span> sig2<span class="sc">^</span><span class="fl">0.5</span>)</span>
-<span id="cb306-7"><a href="sec81.html#cb306-7" tabindex="-1"></a>Omega <span class="ot">&lt;-</span> <span class="fu">diag</span>(<span class="fu">c</span>(<span class="fl">0.2</span>, <span class="fl">0.1</span>))</span>
-<span id="cb306-8"><a href="sec81.html#cb306-8" tabindex="-1"></a>w <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">mvrnorm</span>(T, <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>), Omega)</span>
-<span id="cb306-9"><a href="sec81.html#cb306-9" tabindex="-1"></a>Bt <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="cn">NA</span>, T, K); Bt[<span class="dv">1</span>,] <span class="ot">&lt;-</span> B0</span>
-<span id="cb306-10"><a href="sec81.html#cb306-10" tabindex="-1"></a>yt <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="cn">NA</span>, T) </span>
-<span id="cb306-11"><a href="sec81.html#cb306-11" tabindex="-1"></a>yt[<span class="dv">1</span>] <span class="ot">&lt;-</span> X[<span class="dv">1</span>,]<span class="sc">%*%</span>B0 <span class="sc">+</span> e[<span class="dv">1</span>]</span>
-<span id="cb306-12"><a href="sec81.html#cb306-12" tabindex="-1"></a><span class="cf">for</span>(t <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>T){</span>
-<span id="cb306-13"><a href="sec81.html#cb306-13" tabindex="-1"></a>    <span class="cf">if</span>(t <span class="sc">==</span> <span class="dv">1</span>){</span>
-<span id="cb306-14"><a href="sec81.html#cb306-14" tabindex="-1"></a>        Bt[t,] <span class="ot">&lt;-</span> w[t,]</span>
-<span id="cb306-15"><a href="sec81.html#cb306-15" tabindex="-1"></a>    }<span class="cf">else</span>{</span>
-<span id="cb306-16"><a href="sec81.html#cb306-16" tabindex="-1"></a>        Bt[t,] <span class="ot">&lt;-</span> Bt[t<span class="dv">-1</span>,] <span class="sc">+</span> w[t,]</span>
-<span id="cb306-17"><a href="sec81.html#cb306-17" tabindex="-1"></a>    }</span>
-<span id="cb306-18"><a href="sec81.html#cb306-18" tabindex="-1"></a>    yt[t] <span class="ot">&lt;-</span> X[t,]<span class="sc">%*%</span>Bt[t,] <span class="sc">+</span> e[t]</span>
-<span id="cb306-19"><a href="sec81.html#cb306-19" tabindex="-1"></a>}</span>
-<span id="cb306-20"><a href="sec81.html#cb306-20" tabindex="-1"></a>RegLS <span class="ot">&lt;-</span> <span class="fu">lm</span>(yt <span class="sc">~</span> x)</span>
-<span id="cb306-21"><a href="sec81.html#cb306-21" tabindex="-1"></a>SumRegLS <span class="ot">&lt;-</span> <span class="fu">summary</span>(RegLS)</span>
-<span id="cb306-22"><a href="sec81.html#cb306-22" tabindex="-1"></a>SumRegLS; SumRegLS<span class="sc">$</span>sigma<span class="sc">^</span><span class="dv">2</span>  </span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="sec81.html#cb1-1" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">010101</span>)</span>
+<span id="cb1-2"><a href="sec81.html#cb1-2" tabindex="-1"></a>T <span class="ot">&lt;-</span> <span class="dv">200</span>; sig2 <span class="ot">&lt;-</span> <span class="fl">0.5</span><span class="sc">^</span><span class="dv">2</span></span>
+<span id="cb1-3"><a href="sec81.html#cb1-3" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(T, <span class="at">mean =</span> <span class="dv">1</span>, <span class="at">sd =</span> <span class="dv">1</span>) </span>
+<span id="cb1-4"><a href="sec81.html#cb1-4" tabindex="-1"></a>X <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="dv">1</span>, x); B0 <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="fl">0.5</span>)</span>
+<span id="cb1-5"><a href="sec81.html#cb1-5" tabindex="-1"></a>K <span class="ot">&lt;-</span> <span class="fu">length</span>(B0)</span>
+<span id="cb1-6"><a href="sec81.html#cb1-6" tabindex="-1"></a>e <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(T, <span class="at">mean =</span> <span class="dv">0</span>, <span class="at">sd =</span> sig2<span class="sc">^</span><span class="fl">0.5</span>)</span>
+<span id="cb1-7"><a href="sec81.html#cb1-7" tabindex="-1"></a>Omega <span class="ot">&lt;-</span> <span class="fu">diag</span>(<span class="fu">c</span>(<span class="fl">0.2</span>, <span class="fl">0.1</span>))</span>
+<span id="cb1-8"><a href="sec81.html#cb1-8" tabindex="-1"></a>w <span class="ot">&lt;-</span> MASS<span class="sc">::</span><span class="fu">mvrnorm</span>(T, <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>), Omega)</span>
+<span id="cb1-9"><a href="sec81.html#cb1-9" tabindex="-1"></a>Bt <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="cn">NA</span>, T, K); Bt[<span class="dv">1</span>,] <span class="ot">&lt;-</span> B0</span>
+<span id="cb1-10"><a href="sec81.html#cb1-10" tabindex="-1"></a>yt <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="cn">NA</span>, T) </span>
+<span id="cb1-11"><a href="sec81.html#cb1-11" tabindex="-1"></a>yt[<span class="dv">1</span>] <span class="ot">&lt;-</span> X[<span class="dv">1</span>,]<span class="sc">%*%</span>B0 <span class="sc">+</span> e[<span class="dv">1</span>]</span>
+<span id="cb1-12"><a href="sec81.html#cb1-12" tabindex="-1"></a><span class="cf">for</span>(t <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>T){</span>
+<span id="cb1-13"><a href="sec81.html#cb1-13" tabindex="-1"></a>    <span class="cf">if</span>(t <span class="sc">==</span> <span class="dv">1</span>){</span>
+<span id="cb1-14"><a href="sec81.html#cb1-14" tabindex="-1"></a>        Bt[t,] <span class="ot">&lt;-</span> w[t,]</span>
+<span id="cb1-15"><a href="sec81.html#cb1-15" tabindex="-1"></a>    }<span class="cf">else</span>{</span>
+<span id="cb1-16"><a href="sec81.html#cb1-16" tabindex="-1"></a>        Bt[t,] <span class="ot">&lt;-</span> Bt[t<span class="dv">-1</span>,] <span class="sc">+</span> w[t,]</span>
+<span id="cb1-17"><a href="sec81.html#cb1-17" tabindex="-1"></a>    }</span>
+<span id="cb1-18"><a href="sec81.html#cb1-18" tabindex="-1"></a>    yt[t] <span class="ot">&lt;-</span> X[t,]<span class="sc">%*%</span>Bt[t,] <span class="sc">+</span> e[t]</span>
+<span id="cb1-19"><a href="sec81.html#cb1-19" tabindex="-1"></a>}</span>
+<span id="cb1-20"><a href="sec81.html#cb1-20" tabindex="-1"></a>RegLS <span class="ot">&lt;-</span> <span class="fu">lm</span>(yt <span class="sc">~</span> x)</span>
+<span id="cb1-21"><a href="sec81.html#cb1-21" tabindex="-1"></a>SumRegLS <span class="ot">&lt;-</span> <span class="fu">summary</span>(RegLS)</span>
+<span id="cb1-22"><a href="sec81.html#cb1-22" tabindex="-1"></a>SumRegLS; SumRegLS<span class="sc">$</span>sigma<span class="sc">^</span><span class="dv">2</span>  </span></code></pre></div>
 <pre><code>## 
 ## Call:
 ## lm(formula = yt ~ x)
@@ -562,39 +562,39 @@ where <span class="math inline">\(\mu_t\sim N(0,\sigma^2)\)</span> and <span cla
 ## Multiple R-squared:  0.5277, Adjusted R-squared:  0.5253 
 ## F-statistic: 221.2 on 1 and 198 DF,  p-value: &lt; 2.2e-16</code></pre>
 <pre><code>## [1] 18.27024</code></pre>
-<div class="sourceCode" id="cb309"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb309-1"><a href="sec81.html#cb309-1" tabindex="-1"></a>Bp <span class="ot">&lt;-</span> <span class="fu">matrix</span>(RegLS<span class="sc">$</span>coefficients, T, K, <span class="at">byrow =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb309-2"><a href="sec81.html#cb309-2" tabindex="-1"></a>S <span class="ot">&lt;-</span> <span class="dv">20</span></span>
-<span id="cb309-3"><a href="sec81.html#cb309-3" tabindex="-1"></a><span class="cf">for</span>(t <span class="cf">in</span> S<span class="sc">:</span>T){</span>
-<span id="cb309-4"><a href="sec81.html#cb309-4" tabindex="-1"></a>    RegLSt <span class="ot">&lt;-</span> <span class="fu">lm</span>(yt[<span class="dv">1</span><span class="sc">:</span>t] <span class="sc">~</span> x[<span class="dv">1</span><span class="sc">:</span>t])</span>
-<span id="cb309-5"><a href="sec81.html#cb309-5" tabindex="-1"></a>    Bp[t,] <span class="ot">&lt;-</span> RegLSt<span class="sc">$</span>coefficients </span>
-<span id="cb309-6"><a href="sec81.html#cb309-6" tabindex="-1"></a>}</span>
-<span id="cb309-7"><a href="sec81.html#cb309-7" tabindex="-1"></a><span class="co"># plot(Bp[S:T,2], type = &quot;l&quot;)</span></span>
-<span id="cb309-8"><a href="sec81.html#cb309-8" tabindex="-1"></a>VarBp <span class="ot">&lt;-</span> <span class="fu">var</span>(Bp)</span>
-<span id="cb309-9"><a href="sec81.html#cb309-9" tabindex="-1"></a><span class="co"># State space model</span></span>
-<span id="cb309-10"><a href="sec81.html#cb309-10" tabindex="-1"></a>ModelReg <span class="ot">&lt;-</span> <span class="cf">function</span>(par){</span>
-<span id="cb309-11"><a href="sec81.html#cb309-11" tabindex="-1"></a>    Mod <span class="ot">&lt;-</span> dlm<span class="sc">::</span><span class="fu">dlmModReg</span>(x, <span class="at">dV =</span> <span class="fu">exp</span>(par[<span class="dv">1</span>]), <span class="at">dW =</span> <span class="fu">exp</span>(par[<span class="dv">2</span><span class="sc">:</span><span class="dv">3</span>]), <span class="at">m0 =</span> RegLS<span class="sc">$</span>coefficients, <span class="at">C0 =</span> VarBp)</span>
-<span id="cb309-12"><a href="sec81.html#cb309-12" tabindex="-1"></a>    <span class="fu">return</span>(Mod)</span>
-<span id="cb309-13"><a href="sec81.html#cb309-13" tabindex="-1"></a>}</span>
-<span id="cb309-14"><a href="sec81.html#cb309-14" tabindex="-1"></a>outMLEReg <span class="ot">&lt;-</span> dlm<span class="sc">::</span><span class="fu">dlmMLE</span>(yt, <span class="at">parm =</span> <span class="fu">rep</span>(<span class="dv">0</span>, K<span class="sc">+</span><span class="dv">1</span>), ModelReg)</span>
-<span id="cb309-15"><a href="sec81.html#cb309-15" tabindex="-1"></a><span class="fu">exp</span>(outMLEReg<span class="sc">$</span>par)</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="sec81.html#cb4-1" tabindex="-1"></a>Bp <span class="ot">&lt;-</span> <span class="fu">matrix</span>(RegLS<span class="sc">$</span>coefficients, T, K, <span class="at">byrow =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb4-2"><a href="sec81.html#cb4-2" tabindex="-1"></a>S <span class="ot">&lt;-</span> <span class="dv">20</span></span>
+<span id="cb4-3"><a href="sec81.html#cb4-3" tabindex="-1"></a><span class="cf">for</span>(t <span class="cf">in</span> S<span class="sc">:</span>T){</span>
+<span id="cb4-4"><a href="sec81.html#cb4-4" tabindex="-1"></a>    RegLSt <span class="ot">&lt;-</span> <span class="fu">lm</span>(yt[<span class="dv">1</span><span class="sc">:</span>t] <span class="sc">~</span> x[<span class="dv">1</span><span class="sc">:</span>t])</span>
+<span id="cb4-5"><a href="sec81.html#cb4-5" tabindex="-1"></a>    Bp[t,] <span class="ot">&lt;-</span> RegLSt<span class="sc">$</span>coefficients </span>
+<span id="cb4-6"><a href="sec81.html#cb4-6" tabindex="-1"></a>}</span>
+<span id="cb4-7"><a href="sec81.html#cb4-7" tabindex="-1"></a><span class="co"># plot(Bp[S:T,2], type = &quot;l&quot;)</span></span>
+<span id="cb4-8"><a href="sec81.html#cb4-8" tabindex="-1"></a>VarBp <span class="ot">&lt;-</span> <span class="fu">var</span>(Bp)</span>
+<span id="cb4-9"><a href="sec81.html#cb4-9" tabindex="-1"></a><span class="co"># State space model</span></span>
+<span id="cb4-10"><a href="sec81.html#cb4-10" tabindex="-1"></a>ModelReg <span class="ot">&lt;-</span> <span class="cf">function</span>(par){</span>
+<span id="cb4-11"><a href="sec81.html#cb4-11" tabindex="-1"></a>    Mod <span class="ot">&lt;-</span> dlm<span class="sc">::</span><span class="fu">dlmModReg</span>(x, <span class="at">dV =</span> <span class="fu">exp</span>(par[<span class="dv">1</span>]), <span class="at">dW =</span> <span class="fu">exp</span>(par[<span class="dv">2</span><span class="sc">:</span><span class="dv">3</span>]), <span class="at">m0 =</span> RegLS<span class="sc">$</span>coefficients, <span class="at">C0 =</span> VarBp)</span>
+<span id="cb4-12"><a href="sec81.html#cb4-12" tabindex="-1"></a>    <span class="fu">return</span>(Mod)</span>
+<span id="cb4-13"><a href="sec81.html#cb4-13" tabindex="-1"></a>}</span>
+<span id="cb4-14"><a href="sec81.html#cb4-14" tabindex="-1"></a>outMLEReg <span class="ot">&lt;-</span> dlm<span class="sc">::</span><span class="fu">dlmMLE</span>(yt, <span class="at">parm =</span> <span class="fu">rep</span>(<span class="dv">0</span>, K<span class="sc">+</span><span class="dv">1</span>), ModelReg)</span>
+<span id="cb4-15"><a href="sec81.html#cb4-15" tabindex="-1"></a><span class="fu">exp</span>(outMLEReg<span class="sc">$</span>par)</span></code></pre></div>
 <pre><code>## [1] 0.1880010 0.2773561 0.0785071</code></pre>
-<div class="sourceCode" id="cb311"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb311-1"><a href="sec81.html#cb311-1" tabindex="-1"></a>RegFilter <span class="ot">&lt;-</span> dlm<span class="sc">::</span><span class="fu">dlmFilter</span>(yt, <span class="fu">ModelReg</span>(outMLEReg<span class="sc">$</span>par))</span>
-<span id="cb311-2"><a href="sec81.html#cb311-2" tabindex="-1"></a>RegSmoth <span class="ot">&lt;-</span> dlm<span class="sc">::</span><span class="fu">dlmSmooth</span>(yt, <span class="fu">ModelReg</span>(outMLEReg<span class="sc">$</span>par))</span>
-<span id="cb311-3"><a href="sec81.html#cb311-3" tabindex="-1"></a>SmoothB2 <span class="ot">&lt;-</span> RegSmoth<span class="sc">$</span>s[<span class="sc">-</span><span class="dv">1</span>,<span class="dv">2</span>]</span>
-<span id="cb311-4"><a href="sec81.html#cb311-4" tabindex="-1"></a>VarSmooth <span class="ot">&lt;-</span> dlm<span class="sc">::</span><span class="fu">dlmSvd2var</span>(<span class="at">u =</span> RegSmoth[[<span class="st">&quot;U.S&quot;</span>]], RegSmoth[[<span class="st">&quot;D.S&quot;</span>]])</span>
-<span id="cb311-5"><a href="sec81.html#cb311-5" tabindex="-1"></a>SDVarSmoothB2 <span class="ot">&lt;-</span> <span class="fu">sapply</span>(<span class="dv">2</span><span class="sc">:</span>(T<span class="sc">+</span><span class="dv">1</span>), <span class="cf">function</span>(t){VarSmooth[[t]][K,K]<span class="sc">^</span><span class="fl">0.5</span>}) </span>
-<span id="cb311-6"><a href="sec81.html#cb311-6" tabindex="-1"></a>LimInfB2 <span class="ot">&lt;-</span> SmoothB2 <span class="sc">-</span> <span class="fu">qnorm</span>(<span class="fl">0.975</span>)<span class="sc">*</span>SDVarSmoothB2</span>
-<span id="cb311-7"><a href="sec81.html#cb311-7" tabindex="-1"></a>LimSupB2 <span class="ot">&lt;-</span> SmoothB2 <span class="sc">+</span> <span class="fu">qnorm</span>(<span class="fl">0.975</span>)<span class="sc">*</span>SDVarSmoothB2</span>
-<span id="cb311-8"><a href="sec81.html#cb311-8" tabindex="-1"></a><span class="co"># Gibbs</span></span>
-<span id="cb311-9"><a href="sec81.html#cb311-9" tabindex="-1"></a>MCMC <span class="ot">&lt;-</span> <span class="dv">2000</span>; burnin <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
-<span id="cb311-10"><a href="sec81.html#cb311-10" tabindex="-1"></a>a.y <span class="ot">&lt;-</span> (SumRegLS<span class="sc">$</span>sigma<span class="sc">^</span><span class="dv">2</span>)<span class="sc">^</span>(<span class="sc">-</span><span class="dv">1</span>); b.y <span class="ot">&lt;-</span> <span class="dv">10</span><span class="sc">*</span>a.y; a.theta <span class="ot">&lt;-</span> (<span class="fu">max</span>(<span class="fu">diag</span>(VarBp)))<span class="sc">^</span>(<span class="sc">-</span><span class="dv">1</span>); b.theta <span class="ot">&lt;-</span> <span class="dv">10</span><span class="sc">*</span>a.theta </span>
-<span id="cb311-11"><a href="sec81.html#cb311-11" tabindex="-1"></a>gibbsOut <span class="ot">&lt;-</span> dlm<span class="sc">::</span><span class="fu">dlmGibbsDIG</span>(yt, <span class="at">mod =</span> dlm<span class="sc">::</span><span class="fu">dlmModReg</span>(x), <span class="at">a.y =</span> a.y, <span class="at">b.y =</span> b.y, <span class="at">a.theta =</span> a.theta, <span class="at">b.theta =</span> b.theta, <span class="at">n.sample =</span> MCMC, <span class="at">thin =</span> <span class="dv">5</span>, <span class="at">save.states =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb311-12"><a href="sec81.html#cb311-12" tabindex="-1"></a>B2t <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span>, MCMC <span class="sc">-</span> burnin, T <span class="sc">+</span> <span class="dv">1</span>)</span>
-<span id="cb311-13"><a href="sec81.html#cb311-13" tabindex="-1"></a><span class="cf">for</span>(t <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>(T<span class="sc">+</span><span class="dv">1</span>)){</span>
-<span id="cb311-14"><a href="sec81.html#cb311-14" tabindex="-1"></a>    B2t[,t] <span class="ot">&lt;-</span> gibbsOut[[<span class="st">&quot;theta&quot;</span>]][t,<span class="dv">2</span>,<span class="sc">-</span><span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span>burnin)] </span>
-<span id="cb311-15"><a href="sec81.html#cb311-15" tabindex="-1"></a>}</span>
-<span id="cb311-16"><a href="sec81.html#cb311-16" tabindex="-1"></a>Lims <span class="ot">&lt;-</span> <span class="fu">apply</span>(B2t, <span class="dv">2</span>, <span class="cf">function</span>(x){<span class="fu">quantile</span>(x, <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>))})</span>
-<span id="cb311-17"><a href="sec81.html#cb311-17" tabindex="-1"></a><span class="fu">summary</span>(coda<span class="sc">::</span><span class="fu">mcmc</span>(gibbsOut[[<span class="st">&quot;dV&quot;</span>]]))</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="sec81.html#cb6-1" tabindex="-1"></a>RegFilter <span class="ot">&lt;-</span> dlm<span class="sc">::</span><span class="fu">dlmFilter</span>(yt, <span class="fu">ModelReg</span>(outMLEReg<span class="sc">$</span>par))</span>
+<span id="cb6-2"><a href="sec81.html#cb6-2" tabindex="-1"></a>RegSmoth <span class="ot">&lt;-</span> dlm<span class="sc">::</span><span class="fu">dlmSmooth</span>(yt, <span class="fu">ModelReg</span>(outMLEReg<span class="sc">$</span>par))</span>
+<span id="cb6-3"><a href="sec81.html#cb6-3" tabindex="-1"></a>SmoothB2 <span class="ot">&lt;-</span> RegSmoth<span class="sc">$</span>s[<span class="sc">-</span><span class="dv">1</span>,<span class="dv">2</span>]</span>
+<span id="cb6-4"><a href="sec81.html#cb6-4" tabindex="-1"></a>VarSmooth <span class="ot">&lt;-</span> dlm<span class="sc">::</span><span class="fu">dlmSvd2var</span>(<span class="at">u =</span> RegSmoth[[<span class="st">&quot;U.S&quot;</span>]], RegSmoth[[<span class="st">&quot;D.S&quot;</span>]])</span>
+<span id="cb6-5"><a href="sec81.html#cb6-5" tabindex="-1"></a>SDVarSmoothB2 <span class="ot">&lt;-</span> <span class="fu">sapply</span>(<span class="dv">2</span><span class="sc">:</span>(T<span class="sc">+</span><span class="dv">1</span>), <span class="cf">function</span>(t){VarSmooth[[t]][K,K]<span class="sc">^</span><span class="fl">0.5</span>}) </span>
+<span id="cb6-6"><a href="sec81.html#cb6-6" tabindex="-1"></a>LimInfB2 <span class="ot">&lt;-</span> SmoothB2 <span class="sc">-</span> <span class="fu">qnorm</span>(<span class="fl">0.975</span>)<span class="sc">*</span>SDVarSmoothB2</span>
+<span id="cb6-7"><a href="sec81.html#cb6-7" tabindex="-1"></a>LimSupB2 <span class="ot">&lt;-</span> SmoothB2 <span class="sc">+</span> <span class="fu">qnorm</span>(<span class="fl">0.975</span>)<span class="sc">*</span>SDVarSmoothB2</span>
+<span id="cb6-8"><a href="sec81.html#cb6-8" tabindex="-1"></a><span class="co"># Gibbs</span></span>
+<span id="cb6-9"><a href="sec81.html#cb6-9" tabindex="-1"></a>MCMC <span class="ot">&lt;-</span> <span class="dv">2000</span>; burnin <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
+<span id="cb6-10"><a href="sec81.html#cb6-10" tabindex="-1"></a>a.y <span class="ot">&lt;-</span> (SumRegLS<span class="sc">$</span>sigma<span class="sc">^</span><span class="dv">2</span>)<span class="sc">^</span>(<span class="sc">-</span><span class="dv">1</span>); b.y <span class="ot">&lt;-</span> <span class="dv">10</span><span class="sc">*</span>a.y; a.theta <span class="ot">&lt;-</span> (<span class="fu">max</span>(<span class="fu">diag</span>(VarBp)))<span class="sc">^</span>(<span class="sc">-</span><span class="dv">1</span>); b.theta <span class="ot">&lt;-</span> <span class="dv">10</span><span class="sc">*</span>a.theta </span>
+<span id="cb6-11"><a href="sec81.html#cb6-11" tabindex="-1"></a>gibbsOut <span class="ot">&lt;-</span> dlm<span class="sc">::</span><span class="fu">dlmGibbsDIG</span>(yt, <span class="at">mod =</span> dlm<span class="sc">::</span><span class="fu">dlmModReg</span>(x), <span class="at">a.y =</span> a.y, <span class="at">b.y =</span> b.y, <span class="at">a.theta =</span> a.theta, <span class="at">b.theta =</span> b.theta, <span class="at">n.sample =</span> MCMC, <span class="at">thin =</span> <span class="dv">5</span>, <span class="at">save.states =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb6-12"><a href="sec81.html#cb6-12" tabindex="-1"></a>B2t <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span>, MCMC <span class="sc">-</span> burnin, T <span class="sc">+</span> <span class="dv">1</span>)</span>
+<span id="cb6-13"><a href="sec81.html#cb6-13" tabindex="-1"></a><span class="cf">for</span>(t <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>(T<span class="sc">+</span><span class="dv">1</span>)){</span>
+<span id="cb6-14"><a href="sec81.html#cb6-14" tabindex="-1"></a>    B2t[,t] <span class="ot">&lt;-</span> gibbsOut[[<span class="st">&quot;theta&quot;</span>]][t,<span class="dv">2</span>,<span class="sc">-</span><span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span>burnin)] </span>
+<span id="cb6-15"><a href="sec81.html#cb6-15" tabindex="-1"></a>}</span>
+<span id="cb6-16"><a href="sec81.html#cb6-16" tabindex="-1"></a>Lims <span class="ot">&lt;-</span> <span class="fu">apply</span>(B2t, <span class="dv">2</span>, <span class="cf">function</span>(x){<span class="fu">quantile</span>(x, <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>))})</span>
+<span id="cb6-17"><a href="sec81.html#cb6-17" tabindex="-1"></a><span class="fu">summary</span>(coda<span class="sc">::</span><span class="fu">mcmc</span>(gibbsOut[[<span class="st">&quot;dV&quot;</span>]]))</span></code></pre></div>
 <pre><code>## 
 ## Iterations = 1:2000
 ## Thinning interval = 1 
@@ -611,7 +611,7 @@ where <span class="math inline">\(\mu_t\sim N(0,\sigma^2)\)</span> and <span cla
 ## 
 ##  2.5%   25%   50%   75% 97.5% 
 ## 21.94 24.92 26.81 29.02 33.26</code></pre>
-<div class="sourceCode" id="cb313"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb313-1"><a href="sec81.html#cb313-1" tabindex="-1"></a><span class="fu">summary</span>(coda<span class="sc">::</span><span class="fu">mcmc</span>(gibbsOut[[<span class="st">&quot;dW&quot;</span>]]))</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="sec81.html#cb8-1" tabindex="-1"></a><span class="fu">summary</span>(coda<span class="sc">::</span><span class="fu">mcmc</span>(gibbsOut[[<span class="st">&quot;dW&quot;</span>]]))</span></code></pre></div>
 <pre><code>## 
 ## Iterations = 1:2000
 ## Thinning interval = 1 
@@ -630,23 +630,24 @@ where <span class="math inline">\(\mu_t\sim N(0,\sigma^2)\)</span> and <span cla
 ##        2.5%     25%    50%    75%  97.5%
 ## W.1 0.03489 0.07248 0.1072 0.1605 0.3397
 ## W.2 0.03917 0.07601 0.1052 0.1485 0.2625</code></pre>
-<div class="sourceCode" id="cb315"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb315-1"><a href="sec81.html#cb315-1" tabindex="-1"></a><span class="co"># Figure</span></span>
-<span id="cb315-2"><a href="sec81.html#cb315-2" tabindex="-1"></a><span class="fu">require</span>(latex2exp) <span class="co"># LaTeX equations in figures</span></span>
-<span id="cb315-3"><a href="sec81.html#cb315-3" tabindex="-1"></a>xx <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span>(T<span class="sc">+</span><span class="dv">1</span>), (T<span class="sc">+</span><span class="dv">1</span>)<span class="sc">:</span><span class="dv">1</span>)</span>
-<span id="cb315-4"><a href="sec81.html#cb315-4" tabindex="-1"></a>yy <span class="ot">&lt;-</span> <span class="fu">c</span>(Lims[<span class="dv">1</span>,], <span class="fu">rev</span>(Lims[<span class="dv">2</span>,]))</span>
-<span id="cb315-5"><a href="sec81.html#cb315-5" tabindex="-1"></a><span class="fu">plot</span>   (xx, yy, <span class="at">type =</span> <span class="st">&quot;n&quot;</span>, <span class="at">xlab =</span> <span class="st">&quot;Time&quot;</span>, <span class="at">ylab =</span> <span class="fu">TeX</span>(<span class="st">&quot;$</span><span class="sc">\\</span><span class="st">beta_{t2}$&quot;</span>))</span>
-<span id="cb315-6"><a href="sec81.html#cb315-6" tabindex="-1"></a><span class="fu">polygon</span>(xx, yy, <span class="at">col =</span> <span class="st">&quot;lightblue&quot;</span>, <span class="at">border =</span> <span class="st">&quot;lightblue&quot;</span>)</span>
-<span id="cb315-7"><a href="sec81.html#cb315-7" tabindex="-1"></a>xxML <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span>T, T<span class="sc">:</span><span class="dv">1</span>)</span>
-<span id="cb315-8"><a href="sec81.html#cb315-8" tabindex="-1"></a>yyML <span class="ot">&lt;-</span> <span class="fu">c</span>(LimInfB2, <span class="fu">rev</span>(LimSupB2))</span>
-<span id="cb315-9"><a href="sec81.html#cb315-9" tabindex="-1"></a><span class="fu">polygon</span>(xxML, yyML, <span class="at">col =</span> <span class="st">&quot;blue&quot;</span>, <span class="at">border =</span> <span class="st">&quot;blue&quot;</span>)</span>
-<span id="cb315-10"><a href="sec81.html#cb315-10" tabindex="-1"></a><span class="fu">lines</span>(<span class="fu">colMeans</span>(B2t), <span class="at">col =</span> <span class="st">&quot;red&quot;</span>, <span class="at">lw =</span> <span class="dv">2</span>)</span>
-<span id="cb315-11"><a href="sec81.html#cb315-11" tabindex="-1"></a><span class="fu">lines</span>(Bt[,<span class="dv">2</span>], <span class="at">col =</span> <span class="st">&quot;black&quot;</span>, <span class="at">lw =</span> <span class="dv">2</span>)</span>
-<span id="cb315-12"><a href="sec81.html#cb315-12" tabindex="-1"></a><span class="fu">lines</span>(SmoothB2, <span class="at">col =</span> <span class="st">&quot;green&quot;</span>, <span class="at">lw =</span> <span class="dv">2</span>)</span>
-<span id="cb315-13"><a href="sec81.html#cb315-13" tabindex="-1"></a><span class="fu">title</span>(<span class="st">&quot;State vector: Slope parameter&quot;</span>)</span></code></pre></div>
-<p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-39-1.svg" width="672" /></p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="sec81.html#cb10-1" tabindex="-1"></a><span class="co"># Figure</span></span>
+<span id="cb10-2"><a href="sec81.html#cb10-2" tabindex="-1"></a><span class="fu">require</span>(latex2exp) <span class="co"># LaTeX equations in figures</span></span></code></pre></div>
+<pre><code>## Cargando paquete requerido: latex2exp</code></pre>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="sec81.html#cb12-1" tabindex="-1"></a>xx <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span>(T<span class="sc">+</span><span class="dv">1</span>), (T<span class="sc">+</span><span class="dv">1</span>)<span class="sc">:</span><span class="dv">1</span>)</span>
+<span id="cb12-2"><a href="sec81.html#cb12-2" tabindex="-1"></a>yy <span class="ot">&lt;-</span> <span class="fu">c</span>(Lims[<span class="dv">1</span>,], <span class="fu">rev</span>(Lims[<span class="dv">2</span>,]))</span>
+<span id="cb12-3"><a href="sec81.html#cb12-3" tabindex="-1"></a><span class="fu">plot</span>   (xx, yy, <span class="at">type =</span> <span class="st">&quot;n&quot;</span>, <span class="at">xlab =</span> <span class="st">&quot;Time&quot;</span>, <span class="at">ylab =</span> <span class="fu">TeX</span>(<span class="st">&quot;$</span><span class="sc">\\</span><span class="st">beta_{t2}$&quot;</span>))</span>
+<span id="cb12-4"><a href="sec81.html#cb12-4" tabindex="-1"></a><span class="fu">polygon</span>(xx, yy, <span class="at">col =</span> <span class="st">&quot;lightblue&quot;</span>, <span class="at">border =</span> <span class="st">&quot;lightblue&quot;</span>)</span>
+<span id="cb12-5"><a href="sec81.html#cb12-5" tabindex="-1"></a>xxML <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span>T, T<span class="sc">:</span><span class="dv">1</span>)</span>
+<span id="cb12-6"><a href="sec81.html#cb12-6" tabindex="-1"></a>yyML <span class="ot">&lt;-</span> <span class="fu">c</span>(LimInfB2, <span class="fu">rev</span>(LimSupB2))</span>
+<span id="cb12-7"><a href="sec81.html#cb12-7" tabindex="-1"></a><span class="fu">polygon</span>(xxML, yyML, <span class="at">col =</span> <span class="st">&quot;blue&quot;</span>, <span class="at">border =</span> <span class="st">&quot;blue&quot;</span>)</span>
+<span id="cb12-8"><a href="sec81.html#cb12-8" tabindex="-1"></a><span class="fu">lines</span>(<span class="fu">colMeans</span>(B2t), <span class="at">col =</span> <span class="st">&quot;red&quot;</span>, <span class="at">lw =</span> <span class="dv">2</span>)</span>
+<span id="cb12-9"><a href="sec81.html#cb12-9" tabindex="-1"></a><span class="fu">lines</span>(Bt[,<span class="dv">2</span>], <span class="at">col =</span> <span class="st">&quot;black&quot;</span>, <span class="at">lw =</span> <span class="dv">2</span>)</span>
+<span id="cb12-10"><a href="sec81.html#cb12-10" tabindex="-1"></a><span class="fu">lines</span>(SmoothB2, <span class="at">col =</span> <span class="st">&quot;green&quot;</span>, <span class="at">lw =</span> <span class="dv">2</span>)</span>
+<span id="cb12-11"><a href="sec81.html#cb12-11" tabindex="-1"></a><span class="fu">title</span>(<span class="st">&quot;State vector: Slope parameter&quot;</span>)</span></code></pre></div>
+<p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-1-1.svg" width="672" /></p>
 <p>The Figure shows the comparison between maximum likelihood (ML) and Bayesian inference. The light blue (Bayesian) and dark blue (maximum likelihood) shadows show the credible and confidence intervals at 95% for the state slope parameter (<span class="math inline">\(\beta_{t2}\)</span>). We see that the Bayesian interval encompass the ML interval. This is a reflection of the extra uncertainty of the unknown variances. The black line is the actual trajectory of <span class="math inline">\(\beta_{t2}\)</span>, the green and red lines are the <em>smoothing</em> recursions using the ML and Bayesian estimates (posterior mean), respectively.</p>
 <p><strong>Example: Effects of inflation on interest rate I</strong></p>
-<p>We use the dataset <em>16INTDEF.csv</em> provided by <span class="citation">Jeffrey M. Wooldridge (<a href="#ref-wooldridge2016introductory">2016</a>)</span> to study the effects of inflation on the interest rate. The specification is
+<p>We use the dataset <em>16INTDEF.csv</em> provided by <span class="citation">Wooldridge (<a href="#ref-wooldridge2016introductory">2016</a>)</span> to study the effects of inflation on the interest rate. The specification is
 <span class="math display">\[
 \Delta i_t = \beta_{t1} + \beta_{t2} \Delta \text{inf}_t + \beta_{t3} \Delta \text{def}_t + \mu_t
 \]</span>
@@ -657,12 +658,12 @@ and
 where <span class="math inline">\(\Delta z_t = z_t - z_{t-1}\)</span> is the difference operator, <span class="math inline">\(i_t\)</span> is the three-month T-bill rate, <span class="math inline">\(\text{inf}_t\)</span> is the annual inflation rate based on the consumer price index (CPI), and <span class="math inline">\(\text{def}_t\)</span> is the federal budget deficit as a percentage of gross domestic product (GDP) from 1948 to 2003 in the USA. In addition, <span class="math inline">\(\mu_t \sim N(0, \sigma^2)\)</span> and <span class="math inline">\(\boldsymbol{w}_t \sim N(\boldsymbol{0}, \text{diag}\{\omega_1^2, \omega_2^2\})\)</span>. We assume inverse-gamma distributions for the priors of the scale parameters and set 12,000 MCMC iterations, 2,000 as burn-in, and 10 as the thinning parameter.</p>
 <p>The following code shows how to perform this application. We use the variance of the recursive estimation of OLS to set the hyperparameters of the inverse-gamma distribution for the variances of <span class="math inline">\(\boldsymbol{w}_t\)</span>, and the OLS estimate of the variance of the model to set the hyperparameters of the distribution of <span class="math inline">\(\sigma^2\)</span>. Note that, as we are using the function <em>dlmGibbsDIG</em> from the <em>dlm</em> package, the hyperparameters are set in terms of precision parameters.</p>
 <p>The Figure shows the posterior results of the effect of inflation on the interest rate. This is a fan chart indicating deciles from 10% to 90%. The red shaded area shows the range around the median value, and the black line represents the mean value of the state associated with the annual change in inflation. We see that the annual changes in interest rates are weakly positively related to annual changes in inflation.</p>
-<div class="sourceCode" id="cb316"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb316-1"><a href="sec81.html#cb316-1" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">010101</span>)</span>
-<span id="cb316-2"><a href="sec81.html#cb316-2" tabindex="-1"></a>DataIntRate <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/16INTDEF.csv&quot;</span>, <span class="at">sep =</span> <span class="st">&quot;,&quot;</span>, <span class="at">header =</span> <span class="cn">TRUE</span>, <span class="at">quote =</span> <span class="st">&quot;&quot;</span>)</span>
-<span id="cb316-3"><a href="sec81.html#cb316-3" tabindex="-1"></a><span class="fu">attach</span>(DataIntRate); Xt <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="fu">diff</span>(inf), <span class="fu">diff</span>(def))</span>
-<span id="cb316-4"><a href="sec81.html#cb316-4" tabindex="-1"></a>K <span class="ot">&lt;-</span> <span class="fu">dim</span>(Xt)[<span class="dv">2</span>] <span class="sc">+</span> <span class="dv">1</span>; yt <span class="ot">&lt;-</span> <span class="fu">diff</span>(i3)</span>
-<span id="cb316-5"><a href="sec81.html#cb316-5" tabindex="-1"></a>T <span class="ot">&lt;-</span> <span class="fu">length</span>(yt); RegLS <span class="ot">&lt;-</span> <span class="fu">lm</span>(yt <span class="sc">~</span> Xt)</span>
-<span id="cb316-6"><a href="sec81.html#cb316-6" tabindex="-1"></a>SumRegLS <span class="ot">&lt;-</span> <span class="fu">summary</span>(RegLS); SumRegLS; SumRegLS<span class="sc">$</span>sigma<span class="sc">^</span><span class="dv">2</span>  </span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="sec81.html#cb13-1" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">010101</span>)</span>
+<span id="cb13-2"><a href="sec81.html#cb13-2" tabindex="-1"></a>DataIntRate <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/16INTDEF.csv&quot;</span>, <span class="at">sep =</span> <span class="st">&quot;,&quot;</span>, <span class="at">header =</span> <span class="cn">TRUE</span>, <span class="at">quote =</span> <span class="st">&quot;&quot;</span>)</span>
+<span id="cb13-3"><a href="sec81.html#cb13-3" tabindex="-1"></a><span class="fu">attach</span>(DataIntRate); Xt <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="fu">diff</span>(inf), <span class="fu">diff</span>(def))</span>
+<span id="cb13-4"><a href="sec81.html#cb13-4" tabindex="-1"></a>K <span class="ot">&lt;-</span> <span class="fu">dim</span>(Xt)[<span class="dv">2</span>] <span class="sc">+</span> <span class="dv">1</span>; yt <span class="ot">&lt;-</span> <span class="fu">diff</span>(i3)</span>
+<span id="cb13-5"><a href="sec81.html#cb13-5" tabindex="-1"></a>T <span class="ot">&lt;-</span> <span class="fu">length</span>(yt); RegLS <span class="ot">&lt;-</span> <span class="fu">lm</span>(yt <span class="sc">~</span> Xt)</span>
+<span id="cb13-6"><a href="sec81.html#cb13-6" tabindex="-1"></a>SumRegLS <span class="ot">&lt;-</span> <span class="fu">summary</span>(RegLS); SumRegLS; SumRegLS<span class="sc">$</span>sigma<span class="sc">^</span><span class="dv">2</span>  </span></code></pre></div>
 <pre><code>## 
 ## Call:
 ## lm(formula = yt ~ Xt)
@@ -683,30 +684,30 @@ where <span class="math inline">\(\Delta z_t = z_t - z_{t-1}\)</span> is the dif
 ## Multiple R-squared:  0.161,  Adjusted R-squared:  0.1237 
 ## F-statistic: 4.316 on 2 and 45 DF,  p-value: 0.01928</code></pre>
 <pre><code>## [1] 1.671989</code></pre>
-<div class="sourceCode" id="cb319"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb319-1"><a href="sec81.html#cb319-1" tabindex="-1"></a><span class="co"># Recursive OLS</span></span>
-<span id="cb319-2"><a href="sec81.html#cb319-2" tabindex="-1"></a>Bp <span class="ot">&lt;-</span> <span class="fu">matrix</span>(RegLS<span class="sc">$</span>coefficients, T, K, <span class="at">byrow =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb319-3"><a href="sec81.html#cb319-3" tabindex="-1"></a>S <span class="ot">&lt;-</span> <span class="dv">20</span></span>
-<span id="cb319-4"><a href="sec81.html#cb319-4" tabindex="-1"></a><span class="cf">for</span>(t <span class="cf">in</span> S<span class="sc">:</span>T){</span>
-<span id="cb319-5"><a href="sec81.html#cb319-5" tabindex="-1"></a>    RegLSt <span class="ot">&lt;-</span> <span class="fu">lm</span>(yt[<span class="dv">1</span><span class="sc">:</span>t] <span class="sc">~</span> Xt[<span class="dv">1</span><span class="sc">:</span>t,])</span>
-<span id="cb319-6"><a href="sec81.html#cb319-6" tabindex="-1"></a>    Bp[t,] <span class="ot">&lt;-</span> RegLSt<span class="sc">$</span>coefficients </span>
-<span id="cb319-7"><a href="sec81.html#cb319-7" tabindex="-1"></a>}</span>
-<span id="cb319-8"><a href="sec81.html#cb319-8" tabindex="-1"></a>VarBp <span class="ot">&lt;-</span> <span class="fu">var</span>(Bp)</span>
-<span id="cb319-9"><a href="sec81.html#cb319-9" tabindex="-1"></a><span class="co"># State space model</span></span>
-<span id="cb319-10"><a href="sec81.html#cb319-10" tabindex="-1"></a>ModelReg <span class="ot">&lt;-</span> <span class="cf">function</span>(par){</span>
-<span id="cb319-11"><a href="sec81.html#cb319-11" tabindex="-1"></a>    Mod <span class="ot">&lt;-</span> dlm<span class="sc">::</span><span class="fu">dlmModReg</span>(Xt, <span class="at">dV =</span> <span class="fu">exp</span>(par[<span class="dv">1</span>]), <span class="at">dW =</span> <span class="fu">exp</span>(par[<span class="dv">2</span><span class="sc">:</span>(K<span class="sc">+</span><span class="dv">1</span>)]), <span class="at">m0 =</span> RegLS<span class="sc">$</span>coefficients,</span>
-<span id="cb319-12"><a href="sec81.html#cb319-12" tabindex="-1"></a>    <span class="at">C0 =</span> <span class="fu">diag</span>(VarBp))</span>
-<span id="cb319-13"><a href="sec81.html#cb319-13" tabindex="-1"></a>    <span class="fu">return</span>(Mod)</span>
-<span id="cb319-14"><a href="sec81.html#cb319-14" tabindex="-1"></a>}</span>
-<span id="cb319-15"><a href="sec81.html#cb319-15" tabindex="-1"></a>MCMC <span class="ot">&lt;-</span> <span class="dv">12000</span>; burnin <span class="ot">&lt;-</span> <span class="dv">2000</span>; thin <span class="ot">&lt;-</span> <span class="dv">10</span></span>
-<span id="cb319-16"><a href="sec81.html#cb319-16" tabindex="-1"></a>a.y <span class="ot">&lt;-</span> (SumRegLS<span class="sc">$</span>sigma<span class="sc">^</span><span class="dv">2</span>)<span class="sc">^</span>(<span class="sc">-</span><span class="dv">1</span>); b.y <span class="ot">&lt;-</span> <span class="dv">10</span><span class="sc">*</span>a.y; a.theta <span class="ot">&lt;-</span> (<span class="fu">max</span>(<span class="fu">diag</span>(VarBp)))<span class="sc">^</span>(<span class="sc">-</span><span class="dv">1</span>); b.theta <span class="ot">&lt;-</span> <span class="dv">10</span><span class="sc">*</span>a.theta </span>
-<span id="cb319-17"><a href="sec81.html#cb319-17" tabindex="-1"></a>gibbsOut <span class="ot">&lt;-</span> dlm<span class="sc">::</span><span class="fu">dlmGibbsDIG</span>(yt, <span class="at">mod =</span> dlm<span class="sc">::</span><span class="fu">dlmModReg</span>(Xt), <span class="at">a.y =</span> a.y, <span class="at">b.y =</span> b.y, <span class="at">a.theta =</span> a.theta, <span class="at">b.theta =</span> b.theta, <span class="at">n.sample =</span> MCMC, <span class="at">thin =</span> <span class="dv">5</span>, <span class="at">save.states =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb319-18"><a href="sec81.html#cb319-18" tabindex="-1"></a>B2t <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span>, MCMC <span class="sc">-</span> burnin, T <span class="sc">+</span> <span class="dv">1</span>)</span>
-<span id="cb319-19"><a href="sec81.html#cb319-19" tabindex="-1"></a><span class="cf">for</span>(t <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>(T<span class="sc">+</span><span class="dv">1</span>)){</span>
-<span id="cb319-20"><a href="sec81.html#cb319-20" tabindex="-1"></a>    B2t[,t] <span class="ot">&lt;-</span> gibbsOut[[<span class="st">&quot;theta&quot;</span>]][t,<span class="dv">2</span>,<span class="sc">-</span><span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span>burnin)] </span>
-<span id="cb319-21"><a href="sec81.html#cb319-21" tabindex="-1"></a>}</span>
-<span id="cb319-22"><a href="sec81.html#cb319-22" tabindex="-1"></a>dV <span class="ot">&lt;-</span> coda<span class="sc">::</span><span class="fu">mcmc</span>(gibbsOut[[<span class="st">&quot;dV&quot;</span>]][<span class="sc">-</span><span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span>burnin)])</span>
-<span id="cb319-23"><a href="sec81.html#cb319-23" tabindex="-1"></a>dW <span class="ot">&lt;-</span> coda<span class="sc">::</span><span class="fu">mcmc</span>(gibbsOut[[<span class="st">&quot;dW&quot;</span>]][<span class="sc">-</span><span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span>burnin),])</span>
-<span id="cb319-24"><a href="sec81.html#cb319-24" tabindex="-1"></a><span class="fu">summary</span>(dV); <span class="fu">summary</span>(dW)</span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="sec81.html#cb16-1" tabindex="-1"></a><span class="co"># Recursive OLS</span></span>
+<span id="cb16-2"><a href="sec81.html#cb16-2" tabindex="-1"></a>Bp <span class="ot">&lt;-</span> <span class="fu">matrix</span>(RegLS<span class="sc">$</span>coefficients, T, K, <span class="at">byrow =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb16-3"><a href="sec81.html#cb16-3" tabindex="-1"></a>S <span class="ot">&lt;-</span> <span class="dv">20</span></span>
+<span id="cb16-4"><a href="sec81.html#cb16-4" tabindex="-1"></a><span class="cf">for</span>(t <span class="cf">in</span> S<span class="sc">:</span>T){</span>
+<span id="cb16-5"><a href="sec81.html#cb16-5" tabindex="-1"></a>    RegLSt <span class="ot">&lt;-</span> <span class="fu">lm</span>(yt[<span class="dv">1</span><span class="sc">:</span>t] <span class="sc">~</span> Xt[<span class="dv">1</span><span class="sc">:</span>t,])</span>
+<span id="cb16-6"><a href="sec81.html#cb16-6" tabindex="-1"></a>    Bp[t,] <span class="ot">&lt;-</span> RegLSt<span class="sc">$</span>coefficients </span>
+<span id="cb16-7"><a href="sec81.html#cb16-7" tabindex="-1"></a>}</span>
+<span id="cb16-8"><a href="sec81.html#cb16-8" tabindex="-1"></a>VarBp <span class="ot">&lt;-</span> <span class="fu">var</span>(Bp)</span>
+<span id="cb16-9"><a href="sec81.html#cb16-9" tabindex="-1"></a><span class="co"># State space model</span></span>
+<span id="cb16-10"><a href="sec81.html#cb16-10" tabindex="-1"></a>ModelReg <span class="ot">&lt;-</span> <span class="cf">function</span>(par){</span>
+<span id="cb16-11"><a href="sec81.html#cb16-11" tabindex="-1"></a>    Mod <span class="ot">&lt;-</span> dlm<span class="sc">::</span><span class="fu">dlmModReg</span>(Xt, <span class="at">dV =</span> <span class="fu">exp</span>(par[<span class="dv">1</span>]), <span class="at">dW =</span> <span class="fu">exp</span>(par[<span class="dv">2</span><span class="sc">:</span>(K<span class="sc">+</span><span class="dv">1</span>)]), <span class="at">m0 =</span> RegLS<span class="sc">$</span>coefficients,</span>
+<span id="cb16-12"><a href="sec81.html#cb16-12" tabindex="-1"></a>    <span class="at">C0 =</span> <span class="fu">diag</span>(VarBp))</span>
+<span id="cb16-13"><a href="sec81.html#cb16-13" tabindex="-1"></a>    <span class="fu">return</span>(Mod)</span>
+<span id="cb16-14"><a href="sec81.html#cb16-14" tabindex="-1"></a>}</span>
+<span id="cb16-15"><a href="sec81.html#cb16-15" tabindex="-1"></a>MCMC <span class="ot">&lt;-</span> <span class="dv">12000</span>; burnin <span class="ot">&lt;-</span> <span class="dv">2000</span>; thin <span class="ot">&lt;-</span> <span class="dv">10</span></span>
+<span id="cb16-16"><a href="sec81.html#cb16-16" tabindex="-1"></a>a.y <span class="ot">&lt;-</span> (SumRegLS<span class="sc">$</span>sigma<span class="sc">^</span><span class="dv">2</span>)<span class="sc">^</span>(<span class="sc">-</span><span class="dv">1</span>); b.y <span class="ot">&lt;-</span> <span class="dv">10</span><span class="sc">*</span>a.y; a.theta <span class="ot">&lt;-</span> (<span class="fu">max</span>(<span class="fu">diag</span>(VarBp)))<span class="sc">^</span>(<span class="sc">-</span><span class="dv">1</span>); b.theta <span class="ot">&lt;-</span> <span class="dv">10</span><span class="sc">*</span>a.theta </span>
+<span id="cb16-17"><a href="sec81.html#cb16-17" tabindex="-1"></a>gibbsOut <span class="ot">&lt;-</span> dlm<span class="sc">::</span><span class="fu">dlmGibbsDIG</span>(yt, <span class="at">mod =</span> dlm<span class="sc">::</span><span class="fu">dlmModReg</span>(Xt), <span class="at">a.y =</span> a.y, <span class="at">b.y =</span> b.y, <span class="at">a.theta =</span> a.theta, <span class="at">b.theta =</span> b.theta, <span class="at">n.sample =</span> MCMC, <span class="at">thin =</span> <span class="dv">5</span>, <span class="at">save.states =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb16-18"><a href="sec81.html#cb16-18" tabindex="-1"></a>B2t <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span>, MCMC <span class="sc">-</span> burnin, T <span class="sc">+</span> <span class="dv">1</span>)</span>
+<span id="cb16-19"><a href="sec81.html#cb16-19" tabindex="-1"></a><span class="cf">for</span>(t <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>(T<span class="sc">+</span><span class="dv">1</span>)){</span>
+<span id="cb16-20"><a href="sec81.html#cb16-20" tabindex="-1"></a>    B2t[,t] <span class="ot">&lt;-</span> gibbsOut[[<span class="st">&quot;theta&quot;</span>]][t,<span class="dv">2</span>,<span class="sc">-</span><span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span>burnin)] </span>
+<span id="cb16-21"><a href="sec81.html#cb16-21" tabindex="-1"></a>}</span>
+<span id="cb16-22"><a href="sec81.html#cb16-22" tabindex="-1"></a>dV <span class="ot">&lt;-</span> coda<span class="sc">::</span><span class="fu">mcmc</span>(gibbsOut[[<span class="st">&quot;dV&quot;</span>]][<span class="sc">-</span><span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span>burnin)])</span>
+<span id="cb16-23"><a href="sec81.html#cb16-23" tabindex="-1"></a>dW <span class="ot">&lt;-</span> coda<span class="sc">::</span><span class="fu">mcmc</span>(gibbsOut[[<span class="st">&quot;dW&quot;</span>]][<span class="sc">-</span><span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span>burnin),])</span>
+<span id="cb16-24"><a href="sec81.html#cb16-24" tabindex="-1"></a><span class="fu">summary</span>(dV); <span class="fu">summary</span>(dW)</span></code></pre></div>
 <pre><code>## 
 ## Iterations = 1:10000
 ## Thinning interval = 1 
@@ -717,12 +718,12 @@ where <span class="math inline">\(\Delta z_t = z_t - z_{t-1}\)</span> is the dif
 ##    plus standard error of the mean:
 ## 
 ##           Mean             SD       Naive SE Time-series SE 
-##        2.19167        0.53702        0.00537        0.00537 
+##       2.191613       0.535473       0.005355       0.005355 
 ## 
 ## 2. Quantiles for each variable:
 ## 
 ##  2.5%   25%   50%   75% 97.5% 
-## 1.401 1.814 2.104 2.476 3.517</code></pre>
+## 1.408 1.817 2.104 2.473 3.520</code></pre>
 <pre><code>## 
 ## Iterations = 1:10000
 ## Thinning interval = 1 
@@ -733,25 +734,24 @@ where <span class="math inline">\(\Delta z_t = z_t - z_{t-1}\)</span> is the dif
 ##    plus standard error of the mean:
 ## 
 ##         Mean       SD  Naive SE Time-series SE
-## W.1 0.005957 0.001504 1.504e-05      1.544e-05
-## W.2 0.005899 0.001411 1.411e-05      1.480e-05
-## W.3 0.006022 0.001518 1.518e-05      1.515e-05
+## W.1 0.005955 0.001499 1.499e-05      1.532e-05
+## W.2 0.005897 0.001411 1.411e-05      1.478e-05
+## W.3 0.006024 0.001515 1.515e-05      1.582e-05
 ## 
 ## 2. Quantiles for each variable:
 ## 
 ##         2.5%      25%      50%      75%    97.5%
-## W.1 0.003733 0.004895 0.005739 0.006776 0.009440
-## W.2 0.003710 0.004898 0.005714 0.006686 0.009139
-## W.3 0.003761 0.004953 0.005788 0.006830 0.009646</code></pre>
-<div class="sourceCode" id="cb322"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb322-1"><a href="sec81.html#cb322-1" tabindex="-1"></a><span class="fu">plot</span>(dV); <span class="fu">plot</span>(dW)</span></code></pre></div>
-<p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-40-1.svg" width="672" /><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-40-2.svg" width="672" /></p>
-<div class="sourceCode" id="cb323"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb323-1"><a href="sec81.html#cb323-1" tabindex="-1"></a><span class="fu">library</span>(fanplot); <span class="fu">library</span>(latex2exp)</span></code></pre></div>
-<pre><code>## Warning: package &#39;fanplot&#39; was built under R version 4.3.3</code></pre>
-<div class="sourceCode" id="cb325"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb325-1"><a href="sec81.html#cb325-1" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(B2t)</span>
-<span id="cb325-2"><a href="sec81.html#cb325-2" tabindex="-1"></a><span class="fu">plot</span>(<span class="cn">NULL</span>, <span class="at">main=</span><span class="st">&quot;Percentiles&quot;</span>, <span class="at">xlim =</span> <span class="fu">c</span>(<span class="dv">1</span>, T<span class="sc">+</span><span class="dv">1</span>), <span class="at">ylim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="dv">2</span>), <span class="at">xlab =</span> <span class="st">&quot;Time&quot;</span>, <span class="at">ylab =</span> <span class="fu">TeX</span>(<span class="st">&quot;$</span><span class="sc">\\</span><span class="st">beta_{t1}$&quot;</span>))</span>
-<span id="cb325-3"><a href="sec81.html#cb325-3" tabindex="-1"></a><span class="fu">fan</span>(<span class="at">data =</span> df); <span class="fu">lines</span>(<span class="fu">colMeans</span>(B2t), <span class="at">col =</span> <span class="st">&quot;black&quot;</span>, <span class="at">lw =</span> <span class="dv">2</span>)</span>
-<span id="cb325-4"><a href="sec81.html#cb325-4" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">h=</span><span class="dv">0</span>, <span class="at">col =</span> <span class="st">&quot;blue&quot;</span>)</span></code></pre></div>
-<p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-40-3.svg" width="672" /></p>
+## W.1 0.003729 0.004894 0.005739 0.006773 0.009444
+## W.2 0.003716 0.004901 0.005709 0.006678 0.009159
+## W.3 0.003745 0.004967 0.005784 0.006849 0.009585</code></pre>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="sec81.html#cb19-1" tabindex="-1"></a><span class="fu">plot</span>(dV); <span class="fu">plot</span>(dW)</span></code></pre></div>
+<p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-2-1.svg" width="672" /><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-2-2.svg" width="672" /></p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="sec81.html#cb20-1" tabindex="-1"></a><span class="fu">library</span>(fanplot); <span class="fu">library</span>(latex2exp)</span>
+<span id="cb20-2"><a href="sec81.html#cb20-2" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(B2t)</span>
+<span id="cb20-3"><a href="sec81.html#cb20-3" tabindex="-1"></a><span class="fu">plot</span>(<span class="cn">NULL</span>, <span class="at">main=</span><span class="st">&quot;Percentiles&quot;</span>, <span class="at">xlim =</span> <span class="fu">c</span>(<span class="dv">1</span>, T<span class="sc">+</span><span class="dv">1</span>), <span class="at">ylim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">1</span>, <span class="dv">2</span>), <span class="at">xlab =</span> <span class="st">&quot;Time&quot;</span>, <span class="at">ylab =</span> <span class="fu">TeX</span>(<span class="st">&quot;$</span><span class="sc">\\</span><span class="st">beta_{t1}$&quot;</span>))</span>
+<span id="cb20-4"><a href="sec81.html#cb20-4" tabindex="-1"></a><span class="fu">fan</span>(<span class="at">data =</span> df); <span class="fu">lines</span>(<span class="fu">colMeans</span>(B2t), <span class="at">col =</span> <span class="st">&quot;black&quot;</span>, <span class="at">lw =</span> <span class="dv">2</span>)</span>
+<span id="cb20-5"><a href="sec81.html#cb20-5" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">h=</span><span class="dv">0</span>, <span class="at">col =</span> <span class="st">&quot;blue&quot;</span>)</span></code></pre></div>
+<p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-2-3.svg" width="672" /></p>
 <p>We can extend the <em>dynamic linear model</em> with <em>random walk states</em> to take into account time-invariant location parameters. In particular, we follow <span class="citation">De Jong and Shephard (<a href="#ref-de1995simulation">1995</a>)</span>, who propose the <em>simulation smoother</em>. This algorithm overcomes some shortcomings of the FFBS algorithm, such as slow convergence and computational overhead. We focus on the case <span class="math inline">\(M = 1\)</span>,</p>
 <p><span class="math display" id="eq:DeJongSt" id="eq:DeJongObs">\[\begin{align}
 y_t &amp;= \boldsymbol{z}_t^{\top} \boldsymbol{\alpha} + \boldsymbol{x}_t^{\top} \boldsymbol{\beta}_t + \boldsymbol{h}_t^{\top} \boldsymbol{\epsilon}_t, &amp; t = 1, 2, \dots, T. &amp; \text{   (Observation equation)} \tag{8.3} \\
@@ -762,12 +762,13 @@ y_t &amp;= \boldsymbol{z}_t^{\top} \boldsymbol{\alpha} + \boldsymbol{x}_t^{\top}
 <p>The nice idea of <span class="citation">De Jong and Shephard (<a href="#ref-de1995simulation">1995</a>)</span> was to propose an efficient algorithm to get draws from <span class="math inline">\(\boldsymbol{\eta}_t = \boldsymbol{F}_t \boldsymbol{\epsilon}_t\)</span>, where the most common choice is <span class="math inline">\(\boldsymbol{F}_t = \boldsymbol{H}_t\)</span>, which means drawing samples from the perturbations of the states, and then, recovering the states from Equation <a href="sec81.html#eq:DeJongSt">(8.4)</a> with <span class="math inline">\(\boldsymbol{\beta}_0 = \boldsymbol{0}\)</span>. <span class="citation">De Jong and Shephard (<a href="#ref-de1995simulation">1995</a>)</span> present a more general version of the <em>state space model</em> than the one presented here.</p>
 <p>Using the system given by Equations <a href="sec81.html#eq:DeJongObs">(8.3)</a> and <a href="sec81.html#eq:DeJongSt">(8.4)</a>, <span class="math inline">\(\boldsymbol{F}_t=\boldsymbol{H}_t\)</span> and <span class="math inline">\(\boldsymbol{h}_t\boldsymbol{H}_t^{\top}=\boldsymbol{0}_{K}\)</span>, the <em>filtering</em> recursions are given by <span class="math inline">\(e_t=Y_t-\boldsymbol{z}_t^{\top}\boldsymbol{\alpha}-\boldsymbol{x}_t^{\top}\boldsymbol{b}_{t-1}\)</span>, <span class="math inline">\({q}_t=\boldsymbol{x}_t^{\top}\boldsymbol{B}_{t-1}\boldsymbol{x}_t+\boldsymbol{h}_t^{\top}\boldsymbol{h}_t\)</span>, <span class="math inline">\(\boldsymbol{K}_t=\boldsymbol{B}_{t-1}\boldsymbol{x}_tq_t^{-1}\)</span>, <span class="math inline">\(\boldsymbol{b}_t=\boldsymbol{b}_{t-1}+\boldsymbol{K}_t e_t\)</span>, and <span class="math inline">\(\boldsymbol{B}_t=\boldsymbol{B}_{t-1}-\boldsymbol{B}_{t-1}\boldsymbol{x}_t\boldsymbol{K}_t^{\top}+\boldsymbol{H}_t\boldsymbol{H}_t^{\top}\)</span>, where <span class="math inline">\(\boldsymbol{b}_0=\boldsymbol{0}\)</span> and <span class="math inline">\(\boldsymbol{B}_0=\boldsymbol{H}_0\boldsymbol{H}_0^{\top}\)</span>. See system 2 in <span class="citation">De Jong and Shephard (<a href="#ref-de1995simulation">1995</a>)</span> for a more general case. We should save <span class="math inline">\(e_t\)</span> (innovation vector), <span class="math inline">\(q_t\)</span> (scale innovation variance) and <span class="math inline">\(\boldsymbol{K}_t\)</span> (<em>Kalman gain</em>) from this recursion.</p>
 <p>Then, setting <span class="math inline">\(\boldsymbol{r}_T=0\)</span> and <span class="math inline">\(\boldsymbol{M}_T=\boldsymbol{0}\)</span>, we run backwards from <span class="math inline">\(t=T-1, T-2, \dots, 1\)</span>, the following recursions: <span class="math inline">\(\boldsymbol{\Lambda}_{t+1}=\boldsymbol{H}_{t+1}\boldsymbol{H}_{t+1}^{\top}\)</span>, <span class="math inline">\(\boldsymbol{C}_{t+1}=\boldsymbol{\Lambda}_{t+1}-\boldsymbol{\Lambda}_{t+1}\boldsymbol{M}_{t+1}\boldsymbol{\Lambda}_{t+1}^{\top}\)</span>, <span class="math inline">\(\boldsymbol{\xi}_{t+1}\sim N(\boldsymbol{0}_K,\sigma^2\boldsymbol{C}_{t+1})\)</span>, <span class="math inline">\(\boldsymbol{L}_{t+1}=\boldsymbol{I}_K-\boldsymbol{K}_{t+1}\boldsymbol{x}_{t+1}^{\top}\)</span>, <span class="math inline">\(\boldsymbol{V}_{t+1}=\boldsymbol{\Lambda}_{t+1}\boldsymbol{M}_{t+1}\boldsymbol{L}_{t+1}\)</span>, <span class="math inline">\(\boldsymbol{r}_{t}=\boldsymbol{x}_{t+1} e_{t+1}/q_{t+1} + \boldsymbol{L}_{t+1}^{\top}\boldsymbol{r}_{t+1}-\boldsymbol{V}_{t+1}^{\top}\boldsymbol{C}_{t+1}^{-1}\boldsymbol{\xi}_{t+1}\)</span>, <span class="math inline">\(\boldsymbol{M}_{t}=\boldsymbol{x}_{t+1}\boldsymbol{x}_{t+1}^{\top}/q_{t+1}+\boldsymbol{L}_{t+1}^{\top}\boldsymbol{M}_{t+1}\boldsymbol{L}_{t+1}+\boldsymbol{V}_{t+1}^{\top}\boldsymbol{C}_{t+1}^{-1}\boldsymbol{V}_{t+1}\)</span>, and <span class="math inline">\(\boldsymbol{\eta}_{t+1}=\boldsymbol{\Lambda}_{t+1}\boldsymbol{r}_{t+1}+\boldsymbol{\xi}_{t+1}\)</span>. <span class="citation">De Jong and Shephard (<a href="#ref-de1995simulation">1995</a>)</span> show that <span class="math inline">\(\boldsymbol{\eta}=[\boldsymbol{\eta}_1^{\top} \ \dots \ \boldsymbol{\eta}_T^{\top}]^{\top}\)</span> is drawn from <span class="math inline">\(p(\boldsymbol{H}_t\boldsymbol{\epsilon}_t\mid y_t,\boldsymbol{x}_t,\boldsymbol{z}_t,\boldsymbol{h}_t,\boldsymbol{H}_t,\boldsymbol{\alpha},\sigma^2, t=1,2,\dots,T)\)</span>. Thus, we can recover <span class="math inline">\(\boldsymbol{\beta}_t\)</span> using <a href="sec81.html#eq:DeJongSt">(8.4)</a> and <span class="math inline">\(\boldsymbol{\beta}_0=\boldsymbol{0}_K\)</span>.</p>
-<p>We assume in the model given by Equations <a href="sec81.html#eq:DeJongObs">(8.3)</a> and <a href="sec81.html#eq:DeJongSt">(8.4)</a> that <span class="math inline">\(\boldsymbol{h}_t=[1 \ 0 \ \dots \ 0]^{ \top}\)</span> and <span class="math inline">\(\boldsymbol{H}_t=[\boldsymbol{0}_K \ \text{diag}\left\{1/\tau_1\dots1/\tau_K\right\}]\)</span>, and then perform Bayesian inference assuming independent priors, that is, <span class="math inline">\(\pi(\boldsymbol{\beta}_0,\boldsymbol{\alpha},\sigma^2,\boldsymbol{\tau})=\pi(\boldsymbol{\beta}_0)\pi(\boldsymbol{\alpha})\pi(\sigma^2)\prod_{k=1}^K\pi(\tau_k^2)\)</span> where <span class="math inline">\(\sigma^2\sim IG(\alpha_0/2,\delta_0/2)\)</span>, <span class="math inline">\(\tau_k^2\sim G(v_{0}/2,v_{0}/2)\)</span>, <span class="math inline">\(k=1,\dots,K\)</span>, <span class="math inline">\(\boldsymbol{\alpha}\sim N(\boldsymbol{a}_0,\boldsymbol{A}_0)\)</span> and <span class="math inline">\(\boldsymbol{\beta}_0\sim N(\boldsymbol{b}_0,\boldsymbol{B}_0)\)</span>. The conditional posterior distributions are <span class="math inline">\(\sigma^2\mid \boldsymbol{y},\boldsymbol{X},\boldsymbol{Z},\boldsymbol{\beta}_{0:T},\boldsymbol{\alpha},\boldsymbol{\tau}\sim IG(\alpha_{n}/2,\delta_n/2)\)</span>, where <span class="math inline">\(\delta_n=\sum_{t=1}^T\left[(\boldsymbol{\beta}_t-\boldsymbol{\beta}_{t-1})^{\top}\boldsymbol{\Psi}(\boldsymbol{\beta}_t-\boldsymbol{\beta}_{t-1})+(y_t-\boldsymbol{z}_t^{\top}\boldsymbol{\alpha}-\boldsymbol{x}_t^{\top}\boldsymbol{\beta}_t)^{\top}(y_t-\boldsymbol{z}_t^{\top}\boldsymbol{\alpha}-\boldsymbol{x}_t^{\top}\boldsymbol{\beta}_t)\right]+\delta_0\)</span> and <span class="math inline">\(\alpha_{n}=T(K+1)+\alpha_0\)</span>, <span class="math inline">\(\boldsymbol{\tau}=[\tau_1 \ \dots \ \tau_K]\)</span>, <span class="math inline">\(\boldsymbol{\Psi}=\text{diag}\left\{\tau_1^2,\dots,\tau_K^2\right\}\)</span>, and <span class="math inline">\(\tau_k^2\mid \boldsymbol{y},\boldsymbol{X},\boldsymbol{Z},\boldsymbol{\beta}_{0:T},\sigma^2\sim G(v_{1n}/2,v_{2kn}/2)\)</span>, where <span class="math inline">\(v_{1n}=T+v_{0}\)</span> and <span class="math inline">\(v_{2kn}=\sigma^{-2}\sum_{t=1}^T(\boldsymbol{\beta}_{t,k}-\boldsymbol{\beta}_{t-1,k})^2+v_{0}\)</span>, and <span class="math inline">\(\boldsymbol{\alpha}\mid \boldsymbol{y},\boldsymbol{X},\boldsymbol{Z},\sigma^2,\boldsymbol{\beta}_{1:T},\boldsymbol{\tau}\sim N(\boldsymbol{a}_n,\boldsymbol{A}_n)\)</span>, where <span class="math inline">\(\boldsymbol{A}_n=(\boldsymbol{A}_0^{-1}+\sigma^{-2}\sum_{t=1}^T\boldsymbol{z}_t\boldsymbol{z}_t^{\top})^{-1}\)</span> and <span class="math inline">\(\boldsymbol{a}_n=\boldsymbol{A}_n(\boldsymbol{A}_0^{-1}\boldsymbol{a}_0+\sigma^{-2}\sum_{t=1}^T\boldsymbol{z}_t(y_t-\boldsymbol{x}_t^{\top}\boldsymbol{\beta}_t))\)</span>. The vector of the dependent variable is <span class="math inline">\(\boldsymbol{y}\)</span>, and all regressors are in <span class="math inline">\(\boldsymbol{X}\)</span> and <span class="math inline">\(\boldsymbol{Z}\)</span>.</p>
+<p>We assume in the model given by Equations <a href="sec81.html#eq:DeJongObs">(8.3)</a> and <a href="sec81.html#eq:DeJongSt">(8.4)</a> that <span class="math inline">\(\boldsymbol{h}_t=[1 \ 0 \ \dots \ 0]^{
+\top}\)</span> and <span class="math inline">\(\boldsymbol{H}_t=[\boldsymbol{0}_K \ \text{diag}\left\{1/\tau_1\dots1/\tau_K\right\}]\)</span>, and then perform Bayesian inference assuming independent priors, that is, <span class="math inline">\(\pi(\boldsymbol{\beta}_0,\boldsymbol{\alpha},\sigma^2,\boldsymbol{\tau})=\pi(\boldsymbol{\beta}_0)\pi(\boldsymbol{\alpha})\pi(\sigma^2)\prod_{k=1}^K\pi(\tau_k^2)\)</span> where <span class="math inline">\(\sigma^2\sim IG(\alpha_0/2,\delta_0/2)\)</span>, <span class="math inline">\(\tau_k^2\sim G(v_{0}/2,v_{0}/2)\)</span>, <span class="math inline">\(k=1,\dots,K\)</span>, <span class="math inline">\(\boldsymbol{\alpha}\sim N(\boldsymbol{a}_0,\boldsymbol{A}_0)\)</span> and <span class="math inline">\(\boldsymbol{\beta}_0\sim N(\boldsymbol{b}_0,\boldsymbol{B}_0)\)</span>. The conditional posterior distributions are <span class="math inline">\(\sigma^2\mid \boldsymbol{y},\boldsymbol{X},\boldsymbol{Z},\boldsymbol{\beta}_{0:T},\boldsymbol{\alpha},\boldsymbol{\tau}\sim IG(\alpha_{n}/2,\delta_n/2)\)</span>, where <span class="math inline">\(\delta_n=\sum_{t=1}^T\left[(\boldsymbol{\beta}_t-\boldsymbol{\beta}_{t-1})^{\top}\boldsymbol{\Psi}(\boldsymbol{\beta}_t-\boldsymbol{\beta}_{t-1})+(y_t-\boldsymbol{z}_t^{\top}\boldsymbol{\alpha}-\boldsymbol{x}_t^{\top}\boldsymbol{\beta}_t)^{\top}(y_t-\boldsymbol{z}_t^{\top}\boldsymbol{\alpha}-\boldsymbol{x}_t^{\top}\boldsymbol{\beta}_t)\right]+\delta_0\)</span> and <span class="math inline">\(\alpha_{n}=T(K+1)+\alpha_0\)</span>, <span class="math inline">\(\boldsymbol{\tau}=[\tau_1 \ \dots \ \tau_K]\)</span>, <span class="math inline">\(\boldsymbol{\Psi}=\text{diag}\left\{\tau_1^2,\dots,\tau_K^2\right\}\)</span>, and <span class="math inline">\(\tau_k^2\mid \boldsymbol{y},\boldsymbol{X},\boldsymbol{Z},\boldsymbol{\beta}_{0:T},\sigma^2\sim G(v_{1n}/2,v_{2kn}/2)\)</span>, where <span class="math inline">\(v_{1n}=T+v_{0}\)</span> and <span class="math inline">\(v_{2kn}=\sigma^{-2}\sum_{t=1}^T(\boldsymbol{\beta}_{t,k}-\boldsymbol{\beta}_{t-1,k})^2+v_{0}\)</span>, and <span class="math inline">\(\boldsymbol{\alpha}\mid \boldsymbol{y},\boldsymbol{X},\boldsymbol{Z},\sigma^2,\boldsymbol{\beta}_{1:T},\boldsymbol{\tau}\sim N(\boldsymbol{a}_n,\boldsymbol{A}_n)\)</span>, where <span class="math inline">\(\boldsymbol{A}_n=(\boldsymbol{A}_0^{-1}+\sigma^{-2}\sum_{t=1}^T\boldsymbol{z}_t\boldsymbol{z}_t^{\top})^{-1}\)</span> and <span class="math inline">\(\boldsymbol{a}_n=\boldsymbol{A}_n(\boldsymbol{A}_0^{-1}\boldsymbol{a}_0+\sigma^{-2}\sum_{t=1}^T\boldsymbol{z}_t(y_t-\boldsymbol{x}_t^{\top}\boldsymbol{\beta}_t))\)</span>. The vector of the dependent variable is <span class="math inline">\(\boldsymbol{y}\)</span>, and all regressors are in <span class="math inline">\(\boldsymbol{X}\)</span> and <span class="math inline">\(\boldsymbol{Z}\)</span>.</p>
 <p>We can see that all the previous posterior distributions are conditional on the state vector <span class="math inline">\(\boldsymbol{\beta}_{0:T}\)</span>, which can be sampled using the <em>simulation smoother</em> algorithm, conditional on draws of the time-invariant parameters. Thus, the <em>state space model</em> provides an excellent illustration of the modular nature of the Bayesian framework, where performing inference on more complex models often simply involves adding new blocks to an MCMC algorithm. This means we can break down a complex inferential problem into smaller, more manageable parts, which is a “divide and conquer” approach. This is possible due to the structure of the conditional posterior distributions. Exercise 3 asks you to perform a simulation of the model given by Equations <a href="sec81.html#eq:DeJongObs">(8.3)</a> and <a href="sec81.html#eq:DeJongSt">(8.4)</a>, and to program the MCMC algorithm, including the <em>simulation smoother</em>.</p>
 </div>
 </div>
 <h3>References<a href="references.html#references" class="anchor-section" aria-label="Anchor link to header"></a></h3>
-<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="refs" class="references csl-bib-body hanging-indent" entry-spacing="0">
 <div id="ref-carter1994gibbs" class="csl-entry">
 Carter, Chris K, and Robert Kohn. 1994. <span>“On Gibbs Sampling for State Space Models.”</span> <em>Biometrika</em> 81 (3): 541–53.
 </div>
@@ -790,7 +791,7 @@ Shephard, Neil. 1994. <span>“Partial Non-Gaussian State Space.”</span> <em>B
 Shumway, Robert H., and David S. Stoffer. 2017. <em>Time Series Analysis and Its Applications: With r Examples</em>. 4th ed. Cham, Switzerland: Springer. <a href="https://doi.org/10.1007/978-3-319-52452-8">https://doi.org/10.1007/978-3-319-52452-8</a>.
 </div>
 <div id="ref-wooldridge2016introductory" class="csl-entry">
-———. 2016. <em>Introductory Econometrics: A Modern Approach</em>. 6th ed. Boston, MA: Cengage Learning.
+Wooldridge, Jeffrey M. 2016. <em>Introductory Econometrics: A Modern Approach</em>. 6th ed. Boston, MA: Cengage Learning.
 </div>
 </div>
             </section>
@@ -813,42 +814,42 @@ Shumway, Robert H., and David S. Stoffer. 2017. <em>Time Series Analysis and Its
 <script>
 gitbook.require(["gitbook"], function(gitbook) {
 gitbook.start({
-"sharing": {
-"github": true,
-"facebook": true,
-"twitter": true,
-"linkedin": false,
-"weibo": false,
-"instapaper": false,
-"vk": false,
-"whatsapp": false,
-"all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
-},
-"fontsettings": {
-"theme": "white",
-"family": "sans",
-"size": 2
-},
-"edit": {
-"link": "https://github.com/aramir21/IntroductionBayesianEconometricsBook/08-Timeseries.Rmd",
-"text": "Edit"
-},
-"history": {
-"link": null,
-"text": null
-},
-"view": {
-"link": null,
-"text": null
-},
-"download": null,
-"search": {
-"engine": "fuse",
-"options": null
-},
-"toc": {
-"collapse": "subsection"
-}
+  "sharing": {
+    "github": true,
+    "facebook": true,
+    "twitter": true,
+    "linkedin": false,
+    "weibo": false,
+    "instapaper": false,
+    "vk": false,
+    "whatsapp": false,
+    "all": ["facebook", "twitter", "linkedin", "weibo", "instapaper"]
+  },
+  "fontsettings": {
+    "theme": "white",
+    "family": "sans",
+    "size": 2
+  },
+  "edit": {
+    "link": "https://github.com/aramir21/IntroductionBayesianEconometricsBook/08-Timeseries.Rmd",
+    "text": "Edit"
+  },
+  "history": {
+    "link": null,
+    "text": null
+  },
+  "view": {
+    "link": null,
+    "text": null
+  },
+  "download": null,
+  "search": {
+    "engine": "fuse",
+    "options": null
+  },
+  "toc": {
+    "collapse": "subsection"
+  }
 });
 });
 </script>

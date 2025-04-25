@@ -319,6 +319,75 @@ combinePlotsBSL(gkResultsNew, which = 2, thetaTrue = parpop,
                 legend.text = ggplot2::element_text(size = 12)))
 # All 95% credible intervals encompass the population parameters.
 
+########################## INLA: Multinomial model ################################
+rm(list = ls()); set.seed(010101)
+library(INLA)
+beta1 <- -0.3
+beta2 <- 1.2
+gamma <- c(0.3, 0, 0.5)
+param <- c(beta1, beta2, gamma)
+n <- 1000
+# alternative specific with generic coefficient beta
+x11 <- rnorm(n); x12 <- rnorm(n); x13 <- rnorm(n)
+x21 <- rnorm(n); x22 <- rnorm(n); x23 <- rnorm(n)
+# individual specific with alternative specific coefficient gamma
+Z <- rnorm(n)
+Multinom.sample = function(N){
+  Y <- matrix(NA, ncol = 3, nrow = n)
+  for(i in 1:n){
+    V1 <- beta1*x11[i] + beta2*x21[i] + gamma[1]*Z[i]
+    V2<- beta1*x12[i] + beta2*x22[i] + gamma[2]*Z[i]
+    V3 <- beta1*x13[i] + beta2*x23[i] + gamma[3]*Z[i]
+    probs <- c(V1, V2, V3)
+    probs <- exp(probs)/sum(exp(probs))
+    samp <- rmultinom(1, N, prob = probs)
+    Y[i,] = as.vector(samp)
+  }
+  colnames(Y ) = c("Y1", "Y2", "Y3")
+  return(Y)
+}
+head(Multinom.sample(1), 5)
+Y <- Multinom.sample(1)
+df <- data.frame(cbind(Y, x11, x12, x13, x21, x22, x23, Z))
+Data.structure = function(df){
+  Data = matrix(NA, ncol = 6, nrow = n*3)
+  for(i in 1:n){
+    # simulated variable
+    Data[((i-1)*3+1):(i*3), 1] = c(df$Y1[i], df$Y2[i], df$Y3[i])
+    # alternative specific with generic coeff
+    Data[((i-1)*3+1):(i*3), 2] = c(df$x11[i], df$x12[i], df$x13[i])
+    # alternative specific with generic coeff
+    Data[((i-1)*3+1):(i*3), 3] = c(df$x21[i], df$x22[i], df$x23[i])
+    # individual specific with alternative coeff
+    Data[((i-1)*3+1):(i*3), 4] = rep(df$Z[i],3)
+    # choice situation index
+    Data[((i-1)*3+1):(i*3), 5] = rep(i,3)
+    # choice alternative index
+    Data[((i-1)*3+1):(i*3), 6] = c(1, 2, 3)
+  }
+  Data = data.frame(Data)
+  names(Data) = c('Y', "X1", "X2", "Z",'phi','alt.idx')
+  return(Data)
+}
+round(head(Data.structure(df)),3)
+formula = Y ~ -1 + X1 + X2 +
+  f(phi, initial = -10, fixed = T) +
+  f(alt.idx, Z, fixed = T, constr = T)
+Data = Data.structure(df)
+model = inla(formula, data = Data, family = 'Poisson')
+
+result = rbind(model$summary.fixed[1:5], model$summary.random$alt.idx[2:6])
+result = cbind(result, true = param)
+row.names(result) = c("beta1", "beta2", "gamma.A","gamma.B","gamma.C" )
+round(result,3)
+diff.result =
+  cbind("0.025quant"= diff(model$summary.random$alt.idx$`0.025quant`),
+        "0.5quant" = diff(model$summary.random$alt.idx$`0.5quant`),
+        "0.975quant" = diff(model$summary.random$alt.idx$`0.975quant`),
+        "true" = diff(gamma))
+row.names(diff.result) = c("gamma.B - gamma.A", "gamma.C - gamma.B")
+round(diff.result,3)
+
 ########################## Simulation exercise: Linear regression SVI using Stan ########################
 library(rstan)
 # --- Simulated data ---
