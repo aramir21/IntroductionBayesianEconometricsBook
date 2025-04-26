@@ -582,7 +582,61 @@ inla.qmarginal(c(0.025, 0.5, 0.975), marg.var.sla) # 95% credible interval
 
 \textbf{Example: Spatial econometrics model}
 
+The starting point of spatial econometrics is the \textit{contiguity} or \textit{adjacency} matrix \( W \), which defines which spatial polygons (regions) are considered neighbors. This is an \( N \times N \) matrix, where each row and column corresponds to a spatial polygon, and a non-zero element indicates that two polygons are neighbors. By construction, the main diagonal is equal to zero, meaning that no polygon is a neighbor to itself. Given its structure, the contiguity matrix is sparse.
 
+There are various ways to define contiguity between spatial units, with two of the most commonly used criteria being the \textit{queen} and \textit{rook} criteria, inspired by chess. In the queen criterion, two spatial units are considered neighbors if they share any part of a boundary or a point. In contrast, under the rook criterion, two units are considered neighbors only if they share a common boundary edge; they must touch along at least one side, and corner contact is not sufficient to establish a neighbor relationship.
+
+However, users may apply any contiguity criteria they deem appropriate, depending on the context. For example, contiguity can be defined based on factors like the travel time by car between centroids or the proximity of main towns between municipalities. Typically, the contiguity matrix \( W \) is binary, with a value of 1 indicating that two regions are neighbors and 0 otherwise. Additionally, contiguity matrices are often row-standardized to facilitate the analysis of spatial stationarity.
+
+\cite{lesage2009introduction,bivand2015spatial} present the most commonly used specifications in spatial econometrics, namely the spatial error model (SEM), the spatial autoregressive model (SAR), and the spatial Durbin model (SDM), which can, in turn, be combined to form the general nesting spatial (GNS) model \cite{elhorst2014spatial,Ramirez2017}. In particular, the SEM sets
+\begin{align*}
+	\boldsymbol{y} &= \boldsymbol{X\beta} + \boldsymbol{\mu}\\
+	\boldsymbol{\mu} &= \lambda\boldsymbol{W\mu} + \boldsymbol{\epsilon},
+\end{align*}
+where $\boldsymbol{\epsilon}\sim N(\boldsymbol{0}_N,\sigma^2\boldsymbol{I}_N)$. Then, $\boldsymbol{\mu}=(\boldsymbol{I}_N-\rho\boldsymbol{W})^{-1}\boldsymbol{\epsilon}$, which implies that 
+\begin{align*}
+	\boldsymbol{y} &= \boldsymbol{X\beta} + \boldsymbol{e},
+\end{align*}
+where $\boldsymbol{e}\sim N(\boldsymbol{0},\sigma^2(\boldsymbol{I}_N-\rho\boldsymbol{W})^{-1}(\boldsymbol{I}_N-\rho\boldsymbol{W}^{\top})^{-1})$. In this model $\lambda$ controls the degree of spatial dependence. 
+
+The SAR sets
+\begin{align*}
+	\boldsymbol{y} &= \rho\boldsymbol{Wy} + \boldsymbol{X\beta} + \boldsymbol{\mu}\\
+	 &= (\boldsymbol{I}_N-\rho\boldsymbol{W})^{-1}\boldsymbol{X\beta} + \boldsymbol{\epsilon},
+\end{align*}
+where $\boldsymbol{\epsilon}=(\boldsymbol{I}_N-\rho\boldsymbol{W})^{-1}\boldsymbol{\mu}$.
+
+The SDM sets
+\begin{align*}
+	\boldsymbol{y} &= \rho\boldsymbol{Wy} + \boldsymbol{X\beta} +  \boldsymbol{WX\delta} + \boldsymbol{\mu}\\
+	&= (\boldsymbol{I}_N-\rho\boldsymbol{W})^{-1}(\boldsymbol{X\beta} +  \boldsymbol{WX\delta}) + \boldsymbol{\epsilon},
+\end{align*}
+where $\boldsymbol{\epsilon}=(\boldsymbol{I}_N-\rho\boldsymbol{W})^{-1}\boldsymbol{\mu}$.
+
+The degree of spatial dependence in the SAR and SDM models is determined by the parameter \( \rho \). Note that the SDM model is similar to the SAR model, except that it also includes spatial lags of the regressors as additional covariates.
+
+\cite{ord75} and \cite{anselin82} show that a necessary condition for weak stationarity in spatial autoregressive processes with a row-standardized contiguity matrix is that the spatial autocorrelation coefficient must lie between \( 1/\omega_{\min} \) and 1, where \( \omega_{\min} \) is the smallest (most negative) eigenvalue of the contiguity matrix.\footnote{This is a necessary condition to ensure weak stationarity but is not sufficient due to edge and corner effects \cite[]{haining90}.}
+
+Note that these three models conditional on the spatial parameter as standard linear regressions, which can be easily estimated using INLA. \cite{bivand2015spatial} uses the \textit{INLABMA} package to estimate these models conditional on different values of the spatial parameters, and then perform BMA using the different estimates. In particular, it is required to define a grid for the spatial parameters, then perform Bayesian inference using INLA, and then aggregate the posterior results using BMA.
+
+Let's perform Bayesian inference of a spatial econometric model using the \textit{INLA} and \textit{INLABMA} packages using the data set provided by \cite{ramirez2019welfare} who performed a Bayesian analysis the demenad of electricity in the department of Antioquia (Colombia) taking into account spatial dependence between municipalities in this region using a conditional autoregressive spatial model (CAR). In particular, we perform inference using the following specification:
+\begin{align*}
+	\log(\text{Elecitricity}_i)&=\beta_1+\beta_2\log(\text{Elect. price}_i)+\beta_3\log(\text{Income}_i)\\
+	&+\beta_4\log(\text{Subs. price}_i)+\mu_i,
+\end{align*} 
+where $\mu=\lambda\boldsymbol{W}\mu+\epsilon$.  
+
+\begin{figure}[!h]
+	\centering
+	\includegraphics[width=340pt]{Chapters/chapter15/figures/AntMap.png}
+	\caption[List of figure caption goes here]{Per capita annual average electricity consumption: Stratum 1, Antioquia (Colombia).}
+	\label{FigINLAmap1}
+\end{figure}
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt]{Chapters/chapter15/figures/AntMapCont.png}
+	\caption[List of figure caption goes here]{Contiguity map: Queen criterion, municipalities (Antioquia, Colombia).}\label{FigINLAmap2}
+\end{figure} 
 
 
 \subsection{Variational Bayes}\label{sec15_22}
