@@ -325,37 +325,20 @@ inla.qmarginal(c(0.025, 0.5, 0.975), marg.var.sla) # 95% credible interval
 
 #################### INLA: Spatial econometrics #####################
 rm(list = ls()); set.seed(010101)
-# setwd('C:/Users/aramir21/Desktop/BookBayesianInference/IntroductionBayesianEconometricsBook/BookBayesianEconometrics/Rcodes/DataApplications/Antioquia')
-library(sf)
-library(tmap)
-library(classInt)
-library(RColorBrewer)
-library(spdep)
-library(parallel)
-library(INLABMA)
-library(sf)
+library(sf); library(tmap); library(classInt); library(RColorBrewer)
+library(spdep); library(parallel); library(INLABMA); library(sf); library(INLA)
 zip_url <- "https://github.com/BEsmarter-consultancy/BSTApp/archive/refs/heads/master.zip"
 temp_zip <- tempfile(fileext = ".zip")
 download.file(zip_url, temp_zip, mode = "wb")
-# Extract to a temp folder
 temp_dir <- tempdir()
 unzip(temp_zip, exdir = temp_dir)
-# Path to the folder
 antioquia_path <- file.path(temp_dir, "BSTApp-master", "DataApp", "Antioquia")
-list.files(antioquia_path)  # Check contents
-# Print the full path to the "Antioquia" folder
+list.files(antioquia_path)
 antioquia_path <- file.path(temp_dir, "BSTApp-master", "DataApp", "Antioquia")
-print(antioquia_path)
-# Path to the shapefile
 shp_file <- file.path(antioquia_path, "Antioquia.shp")
-# Read the shapefile
 antioquia <- st_read(shp_file)
-# Check the structure of the shapefile
 print(antioquia)
-# View the result
 plot(st_geometry(antioquia), main = "Map of Antioquia")
-# Replace with your actual shapefile name
-antioquia <- st_read("antioquia.shp")
 # Create class intervals and factor
 interval <- classIntervals(antioquia$CONS_OLD, 5, style = "quantile")
 antioquia$cons_class <- cut(
@@ -376,14 +359,12 @@ tm_shape(antioquia) +
     fill.legend = tm_legend(title = "Electricity consumption")
   ) +
   tm_borders(col = "grey90") +
+  tm_compass(type = "8star", position = c("right", "top")) +
   tm_layout(legend.outside = TRUE)
-
 # Create neighbors list using queen contiguity (default)
 nb_object <- poly2nb(antioquia, queen = TRUE)
-# Get centroids as coordinates matrix
 centroids <- st_centroid(st_geometry(antioquia))
 coords <- st_coordinates(centroids)
-# Plot the map and neighbor links
 # windows(width = 10, height = 8)  # size in inches
 plot(st_geometry(antioquia), border = "grey")
 plot(nb_object, coords, add = TRUE, col = "red")
@@ -398,12 +379,12 @@ moran_mc<- moran.mc(res, listw = NBList, 10000)
 moran_mc
 LM<-localmoran(as.vector(res), NBList)
 sum(LM[,5]<0.05)
-
+# Bayesian estimation
 zero.variance <- list(prec = list(initial = 25, fixed = TRUE))
 ant.mat <- nb2mat(nb_object)
 bmsp <- as(ant.mat, "CsparseMatrix")
 antioquia$idx <- 1:nrow(antioquia)
-rrho1 <- seq(0.5, 0.95, len = 25)
+rrho1 <- seq(0.5, 0.95, len = 10)
 semmodels <- mclapply(rrho1, function(rho) {
   sem.inla(fform, d = as.data.frame(antioquia), W = bmsp, rho = rho,
              family = "gaussian", impacts = FALSE,
@@ -415,8 +396,8 @@ semmodels <- mclapply(rrho1, function(rho) {
 bmasem <- INLABMA(semmodels, rrho1, 0, impacts = FALSE)
 #Display results
 plot(bmasem$rho$marginal, type="l", col = "blue", lwd = 2,
-     xlab = expression(beta[x]), ylab = "Density",
-     main = "Spatial error model: Posterior price elasticity")
+     xlab = expression(lambda), ylab = "Density",
+     main = "Spatial error model: Posterior spatial coefficient")
 
 bmasem[["rho"]][["quantiles"]]
 

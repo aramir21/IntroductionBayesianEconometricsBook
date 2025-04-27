@@ -617,14 +617,97 @@ The degree of spatial dependence in the SAR and SDM models is determined by the 
 
 \cite{ord75} and \cite{anselin82} show that a necessary condition for weak stationarity in spatial autoregressive processes with a row-standardized contiguity matrix is that the spatial autocorrelation coefficient must lie between \( 1/\omega_{\min} \) and 1, where \( \omega_{\min} \) is the smallest (most negative) eigenvalue of the contiguity matrix.\footnote{This is a necessary condition to ensure weak stationarity but is not sufficient due to edge and corner effects \cite[]{haining90}.}
 
-Note that these three models conditional on the spatial parameter as standard linear regressions, which can be easily estimated using INLA. \cite{bivand2015spatial} uses the \textit{INLABMA} package to estimate these models conditional on different values of the spatial parameters, and then perform BMA using the different estimates. In particular, it is required to define a grid for the spatial parameters, then perform Bayesian inference using INLA, and then aggregate the posterior results using BMA.
+Note that these three models, conditional on the spatial parameter, are standard linear regressions, which can be easily estimated using \textit{INLA}. \cite{bivand2015spatial} use the \textit{INLABMA} package to estimate these models conditional on different values of the spatial parameters, and then perform Bayesian Model Averaging (BMA) using the resulting estimates. In particular, it is necessary to define a grid over the spatial parameters, perform Bayesian inference using INLA for each value in the grid, and then aggregate the posterior results using BMA.
 
-Let's perform Bayesian inference of a spatial econometric model using the \textit{INLA} and \textit{INLABMA} packages using the data set provided by \cite{ramirez2019welfare} who performed a Bayesian analysis the demenad of electricity in the department of Antioquia (Colombia) taking into account spatial dependence between municipalities in this region using a conditional autoregressive spatial model (CAR). In particular, we perform inference using the following specification:
+We now perform Bayesian inference on a spatial econometric model using the \textit{INLA} and \textit{INLABMA} packages, based on the dataset provided by \cite{ramirez2019welfare}, who conducted a Bayesian analysis of electricity demand in the department of Antioquia (Colombia), accounting for spatial dependence between municipalities in the region using a Conditional Autoregressive (CAR) spatial model. In particular, we conduct inference using the following specification:
 \begin{align*}
-	\log(\text{Elecitricity}_i)&=\beta_1+\beta_2\log(\text{Elect. price}_i)+\beta_3\log(\text{Income}_i)\\
+	\log(\text{Electricity}_i)&=\beta_1+\beta_2\log(\text{Elect. price}_i)+\beta_3\log(\text{Income}_i)\\
 	&+\beta_4\log(\text{Subs. price}_i)+\mu_i,
 \end{align*} 
-where $\mu=\lambda\boldsymbol{W}\mu+\epsilon$.  
+where \( \boldsymbol{\mu} = \lambda \boldsymbol{W} \boldsymbol{\mu} + \epsilon \); \textit{Electricity} is the average per capita annual consumption of electricity by individuals living in households of stratum one in each municipality of the department of Antioquia; \textit{Elect. price} is the average price of electricity (per kWh); \textit{Income} is the average per capita annual income; and \textit{Subs. price} is the average price of an electricity substitute (see \cite{ramirez2019welfare} for details).
+
+The following code illustrates how to carry out a spatial econometric analysis. First, we download the files needed to plot the maps and construct the contiguity matrix. These files are available in the folder \textit{DataApp/Antioquia} of our GitHub repository: \textbf{https://github.com/besmarter/BSTApp}. The initial part of the code demonstrates how to download the \textit{GitHub} repository and extract the necessary files for mapping.
+
+Figure~\ref{FigINLAmap1} displays the average electricity consumption per municipality. We observe the presence of spatial clusters, particularly in the northwestern region, which corresponds to a low-altitude area along the Caribbean coast.
+
+The second part of the code constructs the contiguity matrix using the queen criterion. Figure~\ref{FigINLAmap2} illustrates the spatial links between municipalities. Following this, we estimate a standard Ordinary Least Squares (OLS) regression and conduct spatial autocorrelation tests on the residuals. The null hypothesis of both the global and local Moran's I tests is the absence of spatial autocorrelation in the OLS residuals.
+
+Finally, we perform Bayesian inference over a predefined grid of values for the spatial coefficient and apply Bayesian Model Averaging (BMA) using the \textit{INLABMA} package. Figure~\ref{FigINLArho} shows the BMA posterior distribution of the spatial coefficient in the SEM, which indicates the presence of spatial dependence. Figure~\ref{FigINLApriceelast} displays the posterior density of the own-price elasticity of electricity demand.
+   
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Spatial econometric analysis: Spatial error model using INLA}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(010101)
+library(sf); library(tmap); library(classInt)
+library(RColorBrewer); library(spdep); library(parallel)
+library(INLABMA); library(sf); library(INLA)
+zip_url <- "https://github.com/BEsmarter-consultancy/BSTApp/archive/refs/heads/master.zip"
+temp_zip <- tempfile(fileext = ".zip")
+download.file(zip_url, temp_zip, mode = "wb")
+temp_dir <- tempdir()
+unzip(temp_zip, exdir = temp_dir)
+antioquia_path <- file.path(temp_dir, "BSTApp-master", "DataApp", "Antioquia")
+list.files(antioquia_path)
+antioquia_path <- file.path(temp_dir, "BSTApp-master", "DataApp", "Antioquia")
+shp_file <- file.path(antioquia_path, "Antioquia.shp")
+antioquia <- st_read(shp_file)
+print(antioquia)
+plot(st_geometry(antioquia), main = "Map of Antioquia")
+interval <- classIntervals(antioquia$CONS_OLD, 5, style = "quantile")
+antioquia$cons_class <- cut(antioquia$CONS_OLD,breaks = interval$brks,include.lowest = TRUE)
+plotcolors <- brewer.pal(5, "Reds")
+tmap_mode("plot")
+tm_shape(antioquia) +
+tm_fill(fill = "cons_class", fill.scale = tm_scale(values = plotcolors), fill.legend = tm_legend(title = "Electricity consumption")) + tm_borders(col = "grey90") + tm_compass(type = "8star", position = c("right", "top")) + tm_layout(legend.outside = TRUE)
+nb_object <- poly2nb(antioquia, queen = TRUE)
+centroids <- st_centroid(st_geometry(antioquia))
+coords <- st_coordinates(centroids)
+plot(st_geometry(antioquia), border = "grey")
+plot(nb_object, coords, add = TRUE, col = "red")
+attach(antioquia)
+fform <- L_CONS_OLD ~ L_P_OLD + L_ING_US + L_P_SUST 
+RegOLS <- lm(fform)
+summary(RegOLS)
+res <- RegOLS$residuals
+NBList <- nb2listw(nb_object, style = "B")
+moran_mc<- moran.mc(res, listw = NBList, 10000)
+LM<-localmoran(as.vector(res), NBList)
+sum(LM[,5]<0.05)
+# Bayesian estimation
+zero.variance <- list(prec = list(initial = 25, fixed = TRUE))
+ant.mat <- nb2mat(nb_object)
+bmsp <- as(ant.mat, "CsparseMatrix")
+antioquia$idx <- 1:nrow(antioquia)
+rrho1 <- seq(0.5, 0.95, len = 10)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Spatial econometric analysis: Spatial error model using INLA}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+semmodels <- mclapply(rrho1, function(rho) {
+	sem.inla(fform, d = as.data.frame(antioquia), W = bmsp, rho = rho,
+	family = "gaussian", impacts = FALSE,
+	control.family = list(hyper = zero.variance),
+	control.predictor = list(compute = TRUE),
+	control.compute = list(dic = TRUE, cpo = TRUE),
+	control.inla = list(print.joint.hyper = TRUE))
+})
+bmasem <- INLABMA(semmodels, rrho1, 0, impacts = FALSE)
+#Display results
+plot(bmasem$rho$marginal, type="l", col = "blue", lwd = 2, xlab = expression(lambda), ylab = "Density", main = "Spatial error model: Posterior spatial coefficient")
+bmasem[["rho"]][["quantiles"]]
+marg_sla <- bmasem[["marginals.fixed"]][["L_P_OLD"]]
+plot(marg_sla, type = "l", col = "blue", lwd = 2, xlab = expression(beta[x]), ylab = "Density", main = "Spatial error model: Posterior price elasticity")
+bmasem[["summary.fixed"]]
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
 
 \begin{figure}[!h]
 	\centering
@@ -636,6 +719,16 @@ where $\mu=\lambda\boldsymbol{W}\mu+\epsilon$.
 \begin{figure}[!h]
 	\includegraphics[width=340pt]{Chapters/chapter15/figures/AntMapCont.png}
 	\caption[List of figure caption goes here]{Contiguity map: Queen criterion, municipalities (Antioquia, Colombia).}\label{FigINLAmap2}
+\end{figure} 
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt]{Chapters/chapter15/figures/SpaCoeff.png}
+	\caption[List of figure caption goes here]{BMA posterior density: Spatial error coefficient.}\label{FigINLArho}
+\end{figure} 
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt]{Chapters/chapter15/figures/PriceElast.png}
+	\caption[List of figure caption goes here]{BMA posterior density: Own-price elasticity of electricity.}\label{FigINLApriceelast}
 \end{figure} 
 
 
@@ -976,9 +1069,9 @@ summary(coda::mcmc(sig2VBscratch)); summary(coda::mcmc(BetasVBscratch))
 \end{tcolorbox}
 
 \section{Summary}\label{sec15_3}
-We present in this chapter approximate methods.
+In this chapter, we present approximate methods designed for situations where the likelihood function does not have a closed-form expression (e.g., ABC and BSL), or where the sample size and parameter space are large (e.g., INLA and VI), making traditional MCMC and importance sampling (IS) methods ineffective. We provide the theoretical foundations and include applications to illustrate the potential of these methods.
 
-\textit{Simulation-based algorithms} suffer from the \textit{curse of dimensionality} in parameter space, whereas \textit{Optimization approaches} require evaluation of the likelihood functions. Thus, recent approaches mix these two approaches to overcome situations where both phenomena are present.
+\textit{Simulation-based algorithms} are affected by the \textit{curse of dimensionality} in the parameter space, while \textit{optimization-based approaches} typically require the evaluation of likelihood functions. As a result, recent developments, known as \textit{hybrid methods}, combine these two strategies to address scenarios where both challenges arise simultaneously. See \cite{martin2024approximating} for further references on this topic.
 
 \section{Exercises}\label{sec15_4}
 
