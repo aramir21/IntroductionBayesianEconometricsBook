@@ -13,7 +13,7 @@ Taking into account the fundamental equation for performing parameter inference 
 \end{align*}  
 we see in Section \ref{sec51} that MCMC algorithms, such as the Gibbs sampler (Section \ref{sec511}) and Metropolis-Hastings (Section \ref{sec512}), require evaluation of the likelihood function \( p(\boldsymbol{y} \mid \boldsymbol{\theta}) \) in the posterior conditional distribution or the acceptance probability, respectively. This is also the case for importance sampling when calculating the importance weights (Section \ref{sec52}).  
 
-Thus, what happens when the likelihood function does not have an analytical expression? This situation arises in many models involving unobserved heterogeneity (i.e., unobserved taste preferences), models defined by quantile functions (e.g., the g-and-k distribution), or dynamic equilibrium model (e.g., repeated game models).
+Thus, what happens when the likelihood function does not have an analytical expression? This situation arises in many models involving unobserved heterogeneity (i.e., unobserved taste preferences), models defined by quantile functions (e.g., the g-and-k distribution), or dynamic equilibrium models (e.g., repeated game models).
 
 \textit{Simulation-based algorithms} provide a Bayesian solution when we face this situation, namely, when the likelihood function lacks an analytical expression or is highly complex. The only requirement is that we must be able to simulate synthetic data from the model conditional on the parameters. Therefore, these algorithms obtain an approximation to the posterior draws by simulating from the prior distribution $\pi(\boldsymbol{\theta})$ and then using these draws to simulate from the likelihood $p(\mathbf{y} \mid \boldsymbol{\theta})$.
 
@@ -43,7 +43,7 @@ The simplest algorithm is the accept/reject approximate Bayesian computation (AB
 
 Note that the posterior distribution is conditional on the summary statistics \( \boldsymbol{\eta}(\boldsymbol{y}) \) and the tolerance parameter \( \epsilon \). This implies that we obtain an approximation to the target distribution \( \pi(\boldsymbol{\theta} \mid \boldsymbol{y}) \), that is \( \pi(\boldsymbol{\theta} \mid \boldsymbol{\eta}(\boldsymbol{y})) \), because \( \boldsymbol{\eta}(\boldsymbol{y}) \) is not a sufficient statistic in most cases, and \( \epsilon > 0 \), these conditions introduce bias \cite{blum2010approximate}. However, ABC performs well compared to full-likelihood approaches in low-dimensional parameter spaces \cite{beaumont2002approximate}.
 
-Furthermore, \cite{frazier2018asymptotic} show in Theorems 1 and 2 that Bayesian consistency and asymptotic normality hold, provided that \( \epsilon \to 0 \) fast enough as \( n \to +\infty \). In particular, the requirement is that the proportion of accepted draws converges to 0 at a rate faster than \( n^{-K / 2} \). Additionally, Theorem 2 in \cite{frazier2018asymptotic} shows that \( 100(1 -\alpha)\% \) Bayesian credible regions using ABC have frequentist coverage of \( 100(1 -\alpha)\% \). 
+Furthermore, \cite{frazier2018asymptotic} show in Theorems 1 and 2 that Bayesian consistency and asymptotic normality hold, provided that \( \epsilon \to 0 \) fast enough as \( N \to +\infty \). In particular, the requirement is that the proportion of accepted draws converges to 0 at a rate faster than \( N^{-K / 2} \). Additionally, Theorem 2 in \cite{frazier2018asymptotic} shows that \( 100(1 -\alpha)\% \) Bayesian credible regions using ABC have frequentist coverage of \( 100(1 -\alpha)\% \). 
 
 We should note from these asymptotic results that ABC suffers from the \textit{curse of dimensionality}. Specifically, given a sample size of 1,000 and two parameters, the proportion of accepted draws should be 0.1\%, meaning we would require one million prior draws to obtain 1,000 posterior draws. On the other hand, if the number of parameters is three, we would require 31.62 million prior draws. This limitation of ABC has attracted attention; see Chapter 8 of \cite{sisson2018handbook} for some potential solutions.
 
@@ -163,7 +163,28 @@ summary(PostABCSMC)
 tock <- Sys.time()
 tock - tick
 PostABCSMC <- coda::mcmc(ABC_SMC[["param"]])
-		\end{lstlisting}
+# Figures 
+library(ggplot2); library(latex2exp)
+Sp <- 1000
+
+df1 <- data.frame(Value = c(PostABCAR[1:Sp,1], PostABCMCMC[1:Sp,1], PostABCSMC[1:Sp,1]),
+Distribution = factor(c(rep("AR", Sp), rep("MCMC", Sp), rep("SMC", Sp))))
+dentheta <- ggplot(df1, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) + labs(title = TeX("Posterior density plot: $theta$"), x = TeX("$theta$"), y = "Posterior density") + scale_color_manual(values = c("blue", "red", "green")) +  theme_minimal() + theme(legend.title = element_blank())
+
+df2 <- data.frame(Value = c(PostABCAR[1:Sp,4], PostABCMCMC[1:Sp,4], PostABCSMC[1:Sp,4]),
+Distribution = factor(c(rep("AR", Sp), rep("MCMC", Sp), rep("SMC", Sp))))
+deng <- ggplot(df2, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) + labs(title = "Posterior density plot: g", x = "g", y = "Posterior density") +
+scale_color_manual(values = c("blue", "red", "green")) +  theme_minimal() + theme(legend.title = element_blank())
+
+df3 <- data.frame(Value = c(PostABCAR[1:Sp,5], PostABCMCMC[1:Sp,5], PostABCSMC[1:Sp,5]),
+Distribution = factor(c(rep("AR", Sp), rep("MCMC", Sp), rep("SMC", Sp))))
+denk <- ggplot(df3, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) + labs(title = "Posterior density plot: k", x = "k", y = "Posterior density") +
+scale_color_manual(values = c("blue", "red", "green")) +  theme_minimal() + theme(legend.title = element_blank())
+
+library(ggpubr)
+ggarrange(dentheta, deng, denk, labels = c("A", "B", "C"), ncol = 3, nrow = 1,
+legend = "bottom", common.legend = TRUE)
+\end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
 
@@ -502,7 +523,7 @@ The point of departure for INLA is the class of latent Gaussian models (LGMs); c
 
 Implementing INLA from scratch is a complex task \cite{martino2019integrated}; thus, applications are generally limited to the models implemented in the \texttt{INLA} package in \textbf{R}.\footnote{Visit https://www.r-inla.org/ for documentation.} However, there are new packages that implement specialized models, as well as recent developments that combine INLA with MCMC algorithms (see Table 2 in \cite{martino2019integrated} for details). 
 
-In particular, \cite{bivand2015spatial} developed the \textit{INLABMA} package to perform Bayesian model averaging (BMA) in spatial econometric models and MCMC-INLA. See also \cite{gomez2021estimating} for an application of INLA to spatial econometric models.\\
+%In particular, \cite{bivand2015spatial} developed the \textit{INLABMA} package to perform Bayesian model averaging (BMA) in spatial econometric models and MCMC-INLA. See also \cite{gomez2021estimating} for an application of INLA to spatial econometric models.\\
 
 \textbf{Example: Poisson model with unobserved heterogeneity}
 
@@ -630,7 +651,7 @@ The following code illustrates how to carry out a spatial econometric analysis. 
 
 Figure~\ref{FigINLAmap1} displays the average electricity consumption per municipality. We observe the presence of spatial clusters, particularly in the northwestern region, which corresponds to a low-altitude area along the Caribbean coast.
 
-The second part of the code constructs the contiguity matrix using the queen criterion. Figure~\ref{FigINLAmap2} illustrates the spatial links between municipalities. Following this, we estimate a standard Ordinary Least Squares (OLS) regression and conduct spatial autocorrelation tests on the residuals. The null hypothesis of both the global and local Moran's I tests is the absence of spatial autocorrelation in the OLS residuals.
+The second part of the code constructs the contiguity matrix using the queen criterion. Figure~\ref{FigINLAmap2} illustrates the spatial links between municipalities. Following this, we estimate a standard Ordinary Least Squares (OLS) regression and conduct spatial autocorrelation tests on the residuals. The null hypothesis of both the global and local Moran's I tests is the absence of spatial autocorrelation in the OLS residuals. We reject the null hypothesis.
 
 Finally, we perform Bayesian inference over a predefined grid of values for the spatial coefficient and apply Bayesian Model Averaging (BMA) using the \textit{INLABMA} package. Figure~\ref{FigINLArho} shows the BMA posterior distribution of the spatial coefficient in the SEM, which indicates the presence of spatial dependence. Figure~\ref{FigINLApriceelast} displays the posterior density of the own-price elasticity of electricity demand.
    
@@ -943,7 +964,7 @@ Then, \begin{align*}
 \end{align*}
 where the last equality follows from $tr\left\{Var(\boldsymbol{\beta})\boldsymbol{B}_n^{-1}\right\}=\delta_n/\alpha_n tr\left\{\boldsymbol{I}_K\right\}$.
  
-In addition (Exercise 3),
+In addition (Exercise 4),
 \begin{align*}
 	\text{ELBO}(q(\boldsymbol{\beta},\sigma^2))&=\mathbb{E}_{\boldsymbol{\beta},\sigma^2}[\log p(\boldsymbol{y},\boldsymbol{\beta},\sigma^2\mid\boldsymbol{X})]-\mathbb{E}_{\boldsymbol{\beta},\sigma^2}[\log q(\boldsymbol{\beta},\sigma^2)]\\
 	&=-\frac{N}{2}\log(2\pi)+\frac{\alpha_0}{2}\log(\delta_0/2)-\frac{\alpha_n}{2}\log(\delta_n/2)-0.5\log|\boldsymbol{B}_0|\\
