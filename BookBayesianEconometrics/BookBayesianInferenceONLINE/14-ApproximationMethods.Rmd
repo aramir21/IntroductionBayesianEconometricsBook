@@ -123,7 +123,7 @@ In **Exercise 1**, we ask to program the ABC accept/reject algorithm from scratc
 
 The following code presents the results, and the figure compares the posterior distributions of \( \theta_1 \), \( g \), and \( k \) using the three methods. In this figure, we observe that ABC-MCMC (red) and ABC-SMC (green) exhibit similar performance, and both approaches provide more information than ABC-AR (blue). There is marginal positive evidence that the moving average coefficient is positive, and the three algorithms yield similar means, although ABC-AR exhibits lower precision. Since the posterior distribution of \( g \) is centered around zero, the distribution appears to be symmetric around its median. Meanwhile, a positive \( k \) indicates that the distribution has heavier tails than a normal distribution, implying a higher likelihood of extreme values (outliers) in the exchange rate USD/EURO.
 
-```{r, eval = FALSE}
+```{r}
 ######### ABC Exchange rate og returns: USD/EURO
 rm(list = ls()); set.seed(010101)
 library(EasyABC)
@@ -343,37 +343,37 @@ The following code demonstrates this procedure. The summary statistics appear to
 
 Both ABC and BSL produce posterior distributions centered at the true parameter values, although the posterior distribution of $\theta_1$ deviates from this pattern.
 
-```{r, eval = FALSE}
+```{r}
 ######## BSL: g-and-k simulation ############
 rm(list = ls()); set.seed(010101); library(BSL)
 # Simulate g-and-k data
 RGKnew <- function(par) {
-	z <- NULL
-	theta <- par[1]; a <- par[2]; b <- par[3]; g <- par[4]; k <- par[5]
-	e <- rnorm(n + 1)
-	for(t in 2:(n + 1)){
-		zt <- e[t] + theta * e[t-1]
-		z <- c(z, zt)
-	}
-	zs <- z / (1 + theta^2)^0.5
-	x <- a + b * (1 + 0.8 * (1 - exp(-g * zs)) / (1 + exp(-g * zs))) * (1 + zs^2)^k * zs
-	return(x)
+  z <- NULL
+  theta <- par[1]; a <- par[2]; b <- par[3]; g <- par[4]; k <- par[5]
+  e <- rnorm(n + 1)
+  for(t in 2:(n + 1)){
+    zt <- e[t] + theta * e[t-1]
+    z <- c(z, zt)
+  }
+  zs <- z / (1 + theta^2)^0.5
+  x <- a + b * (1 + 0.8 * (1 - exp(-g * zs)) / (1 + exp(-g * zs))) * (1 + zs^2)^k * zs
+  return(x)
 }
 # Summary statistics
 SumSt <- function(y) {
-	Oct <- quantile(y, c(0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875))
-	eta1 <- Oct[6] - Oct[2]
-	eta2 <- (Oct[6] + Oct[2] - 2 * Oct[4]) / eta1
-	eta3 <- (Oct[7] - Oct[5] + Oct[3] - Oct[1]) / eta1
-	autocor <- acf(y, lag = 2, plot = FALSE)
-	autocor[["acf"]][2:3]
-	Etay <- c(Oct, eta1, eta2, eta3, autocor[["acf"]][2:3])
-	return(Etay)
+  Oct <- quantile(y, c(0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875))
+  eta1 <- Oct[6] - Oct[2]
+  eta2 <- (Oct[6] + Oct[2] - 2 * Oct[4]) / eta1
+  eta3 <- (Oct[7] - Oct[5] + Oct[3] - Oct[1]) / eta1
+  autocor <- acf(y, lag = 2, plot = FALSE)
+  autocor[["acf"]][2:3]
+  Etay <- c(Oct, eta1, eta2, eta3, autocor[["acf"]][2:3])
+  return(Etay)
 }
 # Prior function
 LogPrior <- function(par){
-	LogPi <- log(par[1] > -1 & par[1] < 1 & par[2] > 0 & par[2] < 5 & par[3] > 0 & par[3] < 5 & par[4] > -5 & par[4] < 5 & par[5] > -0.5 & par[5] < 5)
-	return(LogPi)
+  LogPi <- log(par[1] > -1 & par[1] < 1 & par[2] > 0 & par[2] < 5 & par[3] > 0 & par[3] < 5 & par[4] > -5 & par[4] < 5 & par[5] > -0.5 & par[5] < 5)
+  return(LogPi)
 }
 # Population parameters
 theta1 <- 0.8; a <- 1; b <- 0.5; g <- -1; k <- 1
@@ -394,10 +394,10 @@ validObject(Modelgk)
 simgk <- simulation(Modelgk, n = M, theta = par0, seed = 10)
 par(mfrow = c(4, 3))
 for (i in 1:12){
-	eval <- seq(min(simgk$ssx[, i]), max(simgk$ssx[, i]), 0.001)
-	densnorm <- dnorm(eval, mean = mean(simgk$ssx[, i]), sd(simgk$ssx[, i])) 
-	plot(density(simgk$ssx[, i]), main = "", xlab = "")
-	lines(eval, densnorm, col = "red")
+  eval <- seq(min(simgk$ssx[, i]), max(simgk$ssx[, i]), 0.001)
+  densnorm <- dnorm(eval, mean = mean(simgk$ssx[, i]), sd(simgk$ssx[, i])) 
+  plot(density(simgk$ssx[, i]), main = "", xlab = "")
+  lines(eval, densnorm, col = "red")
 }
 ##### Program from scratch #######
 Lims <- matrix(c(-1, 0, 0, -5, -0.5, 1, rep(5, 4)), 5, 2)
@@ -410,37 +410,37 @@ tune <- 0.005; CoVarRW <- tune*diag(K)
 accept <- rep(0, S); tick1 <- Sys.time()
 pb <- winProgressBar(title = "progress bar", min = 0, max = S, width = 300)
 for (s in 2:S){
-	parc <- MASS::mvrnorm(1, mu = parPost[s-1,], Sigma = CoVarRW)
-	RestCheck <- NULL
-	for(j in 1:K){
-		if(parc[j] < Lims[j,1] | parc[j] > Lims[j,2]){
-			Rej <- 1
-		}else{Rej <- 0}
-		RestCheck <- c(RestCheck, Rej)
-	}
-	if(sum(RestCheck) != 0){
-		parPost[s,] <- parPost[s-1,]; accept[s] <- 0
-	}else{
-		Z <- replicate(M, RGKnew(par = parc))
-		EtasZ <- t(apply(Z, 2, SumSt))
-		Um <- colMeans(EtasZ); SIGMAm <- var(EtasZ)
-		dnormc <- mvtnorm::dmvnorm(EtaY, Um, SIGMAm, log = TRUE)
-		if(s > round(0.1*S, 0) & s < round(0.2*S, 0)){
-			CoVarRW <- var(parPost, na.rm = TRUE)
-		}
-		if(dnormc == -Inf){
-			parPost[s,] <- parPost[s-1,]; accept[s] <- 0
-		}else{
-			alpha <- min(1, exp(dnormc - dnormsl)); U <- runif(1)
-			if(U <= alpha){
-				parPost[s,] <- parc; Usl <- Um; SIGMAsl <- SIGMAm
-				dnormsl <- dnormc; accept[s] <- 1
-			}else{
-				parPost[s,] <- parPost[s-1,]; accept[s] <- 0
-			}
-		}
-	}
-	setWinProgressBar(pb, s, title=paste( round(s/S*100, 0),"% done"))
+  parc <- MASS::mvrnorm(1, mu = parPost[s-1,], Sigma = CoVarRW)
+  RestCheck <- NULL
+  for(j in 1:K){
+    if(parc[j] < Lims[j,1] | parc[j] > Lims[j,2]){
+      Rej <- 1
+    }else{Rej <- 0}
+    RestCheck <- c(RestCheck, Rej)
+  }
+  if(sum(RestCheck) != 0){
+    parPost[s,] <- parPost[s-1,]; accept[s] <- 0
+  }else{
+    Z <- replicate(M, RGKnew(par = parc))
+    EtasZ <- t(apply(Z, 2, SumSt))
+    Um <- colMeans(EtasZ); SIGMAm <- var(EtasZ)
+    dnormc <- mvtnorm::dmvnorm(EtaY, Um, SIGMAm, log = TRUE)
+    if(s > round(0.1*S, 0) & s < round(0.2*S, 0)){
+      CoVarRW <- var(parPost, na.rm = TRUE)
+    }
+    if(dnormc == -Inf){
+      parPost[s,] <- parPost[s-1,]; accept[s] <- 0
+    }else{
+      alpha <- min(1, exp(dnormc - dnormsl)); U <- runif(1)
+      if(U <= alpha){
+        parPost[s,] <- parc; Usl <- Um; SIGMAsl <- SIGMAm
+        dnormsl <- dnormc; accept[s] <- 1
+      }else{
+        parPost[s,] <- parPost[s-1,]; accept[s] <- 0
+      }
+    }
+  }
+  setWinProgressBar(pb, s, title=paste( round(s/S*100, 0),"% done"))
 }
 close(pb); tock1 <- Sys.time(); tock1 - tick1
 mean(accept)
@@ -449,7 +449,7 @@ summary(PostChainOwn)
 #### BSL package
 tick <- Sys.time()
 Resultsgk <- bsl(y = y, n = M, M = S, model = Modelgk, covRandWalk = CoVarRW,
-method = "BSL", thetaNames = expression(theta, a, b, g, k), plotOnTheFly = TRUE)
+                 method = "BSL", thetaNames = expression(theta, a, b, g, k), plotOnTheFly = TRUE)
 tock <- Sys.time(); tock - tick
 PostChain <- coda::mcmc(Resultsgk@theta[keep,])
 summary(PostChain)
@@ -461,16 +461,16 @@ library(ggplot2); library(latex2exp)
 Sp <- length(keep)
 df1 <- data.frame(Value = c(PostChain[,1], PostChainOwn[,1]), Distribution = factor(c(rep("BSL", Sp), rep("BSLscratch", Sp))))
 dentheta <- ggplot(df1, aes(x = Value, color = Distribution)) + geom_density(linewidth = 1) + labs(title = TeX("Posterior density plot: $theta$"), x = TeX("$theta$"), y = "Posterior density") + geom_vline(xintercept = theta1, linetype = "dashed", color = "red", linewidth = 1) + scale_color_manual(values = c("blue", "red")) +  theme_minimal() +
-theme(legend.title = element_blank())
+  theme(legend.title = element_blank())
 df2 <- data.frame(Value = c(PostChain[,4], PostChainOwn[,4]), Distribution = factor(c(rep("BSL", Sp), rep("BSLscratch", Sp))))
 deng <- ggplot(df2, aes(x = Value, color = Distribution)) + geom_density(linewidth = 1) + labs(title = "Posterior density plot: g", x = "g", y = "Posterior density") +
-geom_vline(xintercept = g, linetype = "dashed", color = "red", linewidth = 1) +
-scale_color_manual(values = c("blue", "red")) + theme_minimal() + theme(legend.title = element_blank())
+  geom_vline(xintercept = g, linetype = "dashed", color = "red", linewidth = 1) +
+  scale_color_manual(values = c("blue", "red")) + theme_minimal() + theme(legend.title = element_blank())
 df3 <- data.frame(Value = c(PostChain[,5], PostChainOwn[,5]), Distribution = factor(c(rep("BSL", Sp), rep("BSLscratch", Sp))))
 denk <- ggplot(df3, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) + labs(title = "Posterior density plot: k", x = "k", y = "Posterior density") + geom_vline(xintercept = k, linetype = "dashed", color = "red", linewidth = 1) + scale_color_manual(values = c("blue", "red")) +  theme_minimal() + theme(legend.title = element_blank())
 library(ggpubr)
 ggarrange(dentheta, deng, denk, labels = c("A", "B", "C"), ncol = 3, nrow = 1,
-legend = "bottom", common.legend = TRUE)
+          legend = "bottom", common.legend = TRUE)
 ```
 ## Optimization approaches {#sec14_2}
 
@@ -599,7 +599,7 @@ We present results using the three available approximation strategies in INLA: S
 In this example, the results are practically identical across methods (see the Figures), and all 95% credible intervals contain the true population parameters.  
 Despite the large sample size, INLA performs inference in a matter of seconds.
 
-```{r, eval = FALSE}
+```{r}
 # Install Rtools according to your R version
 # Check Rtolls is properly installed
 # Install INLA
@@ -721,7 +721,7 @@ The second part of the code constructs the contiguity matrix using the queen cri
 
 Finally, we perform Bayesian inference over a predefined grid of values for the spatial coefficient and apply Bayesian Model Averaging (BMA) using the *INLABMA* package. The third Figure shows the BMA posterior distribution of the spatial coefficient in the SEM, which indicates the presence of spatial dependence. The fourth Figure displays the posterior density of the own-price elasticity of electricity demand.
 
-```{r, eval = FALSE}
+```{r}
 rm(list = ls()); set.seed(010101)
 library(sf); library(tmap); library(classInt)
 library(RColorBrewer); library(spdep); library(parallel)
@@ -736,8 +736,6 @@ list.files(antioquia_path)
 antioquia_path <- file.path(temp_dir, "BSTApp-master", "DataApp", "Antioquia")
 shp_file <- file.path(antioquia_path, "Antioquia.shp")
 antioquia <- st_read(shp_file)
-print(antioquia)
-plot(st_geometry(antioquia), main = "Map of Antioquia")
 interval <- classIntervals(antioquia$CONS_OLD, 5, style = "quantile")
 antioquia$cons_class <- cut(antioquia$CONS_OLD,breaks = interval$brks,include.lowest = TRUE)
 plotcolors <- brewer.pal(5, "Reds")
@@ -956,7 +954,7 @@ Let's perform variational Bayes inference in the linear regression model with co
 \[
 \boldsymbol{y} = \boldsymbol{X} \boldsymbol{\beta} + \boldsymbol{\mu},
 \]  
-where \( \boldsymbol{\mu} \sim N(\boldsymbol{0}, \sigma^2 \boldsymbol{I}) \). This implies that  
+where $\boldsymbol{\mu} \sim N(\boldsymbol{0}, \sigma^2 \boldsymbol{I})$. This implies that  
 \[
 \boldsymbol{y} \sim N(\boldsymbol{X} \boldsymbol{\beta}, \sigma^2 \boldsymbol{I}).
 \]
@@ -972,12 +970,7 @@ Then, the posterior distributions are
 \boldsymbol{\beta} \mid \sigma^2, \boldsymbol{y}, \boldsymbol{X} \sim N(\boldsymbol{\beta}_n, \sigma^2 \boldsymbol{B}_n), \quad 
 \sigma^2 \mid \boldsymbol{y}, \boldsymbol{X} \sim IG(\alpha_n/2, \delta_n/2),
 \]  
-where  
-- \( \boldsymbol{B}_n = (\boldsymbol{B}_0^{-1} + \boldsymbol{X}^{\top} \boldsymbol{X})^{-1} \)  
-- \( \boldsymbol{\beta}_n = \boldsymbol{B}_n(\boldsymbol{B}_0^{-1} \boldsymbol{\beta}_0 + \boldsymbol{X}^{\top} \boldsymbol{X} \hat{\boldsymbol{\beta}}) \),  
-- \( \hat{\boldsymbol{\beta}} \) is the MLE,  
-- \( \alpha_n = \alpha_0 + N \),  
-- \( \delta_n = \delta_0 + \boldsymbol{y}^{\top} \boldsymbol{y} + \boldsymbol{\beta}_0^{\top} \boldsymbol{B}_0^{-1} \boldsymbol{\beta}_0 - \boldsymbol{\beta}_n^{\top} \boldsymbol{B}_n^{-1} \boldsymbol{\beta}_n \) (see Section \@ref(sec43)).
+where $\boldsymbol{B}_n = (\boldsymbol{B}_0^{-1} + \boldsymbol{X}^{\top} \boldsymbol{X})^{-1}$, $\boldsymbol{\beta}_n = \boldsymbol{B}_n(\boldsymbol{B}_0^{-1} \boldsymbol{\beta}_0 + \boldsymbol{X}^{\top} \boldsymbol{X} \hat{\boldsymbol{\beta}})$, $\hat{\boldsymbol{\beta}}$ is the MLE, $\alpha_n = \alpha_0 + N$,  $\delta_n = \delta_0 + \boldsymbol{y}^{\top} \boldsymbol{y} + \boldsymbol{\beta}_0^{\top} \boldsymbol{B}_0^{-1} \boldsymbol{\beta}_0 - \boldsymbol{\beta}_n^{\top} \boldsymbol{B}_n^{-1} \boldsymbol{\beta}_n$ (see Section \@ref(sec43)).
 
 Let's use the mean-field variational family $q(\boldsymbol{\beta},\sigma^2)=q(\boldsymbol{\beta})q(\sigma^2)\approx \pi(\boldsymbol{\beta},\sigma^2\mid\boldsymbol{y},\boldsymbol{X})$.\footnote{We can also use the variational family $q(\boldsymbol{\beta},\sigma^2)=q(\boldsymbol{\beta}\mid\sigma^2)q(\sigma^2)$, which may be more straightforward to manipulate.} Then,
 \begin{align*}
@@ -1034,7 +1027,7 @@ First, we perform VB inference using the *LaplacesDemon* package, and then imple
 
 In general, all calculations seem to perform well: the 95% credible intervals contain the population parameters, and the posterior means are very close to them.
 
-```{r, eval = FALSE}
+```{r}
 set.seed(010101)
 library(LaplacesDemon)
 N <- 500; K <- 2
@@ -1082,7 +1075,7 @@ PosteriorChecks(Fit)
 caterpillar.plot(Fit, Parms="beta")
 plot(Fit, MyData, PDF=FALSE)
 Pred <- predict(Fit, Model, MyData, CPUs=1)
-summary(Pred, Discrep="Chi-Square")
+# summary(Pred, Discrep="Chi-Square")
 ####### MCMC #######
 # Posterior parameters
 b0 <- rep(b0, K+1); B0 <- B0*diag(K+1)
