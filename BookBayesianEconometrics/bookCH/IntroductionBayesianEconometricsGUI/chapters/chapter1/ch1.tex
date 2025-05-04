@@ -19,7 +19,7 @@ In the Bayesian framework, \( B \) represents sample information that updates a 
 
 Let's consider a simple example, \textit{the base rate fallacy}:
 
-Assume that the sample information comes from a positive result from a test whose true positive rate (sensitivity) is 98\%, i.e., \( P(+ \mid \text{disease}) = 0.98 \). On the other hand, the prior information regarding being infected with this disease comes from a base incidence rate of 0.002, i.e., \( P(\text{disease}) = 0.002 \). The question is: \textit{What is the probability of actually being infected, given a positive test result?}
+Assume that the sample information comes from a positive result from a test whose true positive rate (sensitivity) is 98\%, i.e., \( P(+ \mid \text{disease}) = 0.98 \). In addition, the false positive rate is 2\%, i.e., \( P(+ \mid \lnot\text{disease}) = 0.02 \). On the other hand, the prior probability of being infected with the disease is given by the base incidence rate, \( P(\text{disease}) = 0.002 \). The question is: \textit{What is the probability of actually being infected, given a positive test result?}
 
 This is an example of \textit{the base rate fallacy}, where a positive test result for a disease with a very low base incidence rate still gives a low probability of actually having the disease.
 
@@ -27,11 +27,11 @@ The key to answering this question lies in understanding the difference between 
 
 \begin{align*}
 	P(\text{disease}\mid +) & = \frac{P(+\mid \text{disease})\times P(\text{disease})}{P(+)}\\
-	& = \frac{0.98 \times 0.002}{0.98 \times 0.002 + (1-0.98) \times (1-0.002)}\\
+	& = \frac{0.98 \times 0.002}{0.98 \times 0.002 + 0.02 \times (1-0.002)}\\
 	& =0.09, 
 \end{align*}
 
-where $P(+)=P(+\mid \text{disease})\times P(\text{disease})+P(+\mid \lnot\text{disease})\times P( \lnot\text{disease})$.\footnote{$\lnot$ is the negation symbol. In addition, we have that $P(B\mid A)=1-P(B\mid A^c)$ in this example, where $A^c$ is the complement of $A$. However, it is not always the case that $P(B\mid A)\neq 1-P(B\mid A^c)$.}
+where $P(+)=P(+\mid \text{disease})\times P(\text{disease})+P(+\mid \lnot\text{disease})\times P( \lnot\text{disease})$.\footnote{$\lnot$ is the negation symbol.}
 
 The following code shows how to perform this exercise in \textbf{R}.
 
@@ -42,7 +42,8 @@ The following code shows how to perform this exercise in \textbf{R}.
 \begin{lstlisting}[ language=R]
 PD <- 0.002 # Probability of disease
 PPD <- 0.98 # True positive (Sensitivity)
-PDP <- PD * PPD / (PD * PPD + (1 - PD)*(1 - PPD))
+PPF <- 0.02 # False positive
+PDP <- PD * PPD / (PD * PPD + (1 - PD) * PPF)
 paste("Probability of disease given a positive test is", sep = " ", round(PDP, 2))
 "Probability of disease given a positive test is 0.09"
 \end{lstlisting}
@@ -51,22 +52,40 @@ paste("Probability of disease given a positive test is", sep = " ", round(PDP, 2
 
 We observe that despite having a positive result, the probability of actually having the disease remains low. This is due to the base rate being so small.
 
-Another interesting example, which lies at the heart of the origin of Bayes' theorem \cite{bayes1763lii}, is related to the existence of God \cite{stigler2018richard}. In Section X of David Hume's ``An Inquiry concerning Human Understanding" (1748), titled \textit{Of Miracles}, Hume argues that when someone claims to have seen a miracle, this provides poor evidence that the event actually occurred, as it contradicts our everyday observations. In response, Richard Price, who finished and published ``An Essay Towards Solving a Problem in the Doctrine of Chances" in 1763 (after Bayes' death in 1761), argues against Hume by highlighting the difference between \textit{impossibility} in casual conversation and \textit{physical impossibility}. Price used an example of a die with a million sides, where \textit{impossibility} refers to rolling a specific side, and \textit{physical impossibility} refers to rolling a side that does not exist. In millions of throws, the latter would never happen, while the former would eventually occur.
+Another interesting example—one that lies at the heart of the origin of Bayes' theorem \cite{bayes1763lii}—concerns the existence of God \cite{stigler2018richard}. In Section X of David Hume’s \emph{An Inquiry concerning Human Understanding} (1748), titled \emph{Of Miracles}, Hume argues that when someone claims to have witnessed a miracle, the claim provides weak evidence that the event actually occurred, since it contradicts our everyday experience. In response, Richard Price, who edited and published \emph{An Essay Towards Solving a Problem in the Doctrine of Chances} in 1763 (following Bayes’ death in 1761), criticizes Hume’s argument by distinguishing between \emph{logical} and \emph{physical} impossibility. He illustrates this with the example of a die with a million sides: while rolling a specific number might seem impossible, it is merely \emph{improbable}, whereas rolling a number not present on the die is \emph{physically impossible}. The former may occur with enough trials; the latter never will.
 
-Now, let's consider a scenario involving two cases of resurrection (Res): Jesus Christ and Elvis. The total number of people who have ever lived is approximately 108.5 billion,\footnote{\textbf{https://www.wolframalpha.com/input/?i=number+of+people+who+have+ever+lived+on+Earth}} so the prior base rate is given by \( \frac{2}{108.5 \times 10^9} \). On the other hand, suppose the sample information comes from a highly reliable witness with a true positive rate of 0.9999999. The question then is: \textit{What is the probability of this miracle occurring?}.\footnote{\textbf{https://www.r-bloggers.com/2019/04/base-rate-fallacy-or-why-no-one-is-justified-to-believe-that-jesus-rose/}}
+\noindent\textit{Note on the following example:} \\
+\textit{The next example is adapted from a modern blog post that illustrates the base rate fallacy using a resurrection scenario. While it is not taken from the original writings of Hume or Price, it reflects themes central to their philosophical debate on probability and miracles. It is included here to demonstrate how Bayes’ rule behaves in cases involving extremely low prior probabilities. References to figures such as Jesus and Elvis are used purely for illustrative and pedagogical purposes. The goal is to explore the statistical reasoning, not to make any theological claims. Readers are encouraged to focus on the mathematical and conceptual content of the example.}
 
-Using the Bayes' rule:
-{\small{
+To illustrate the statistical implications of this discussion, let us consider the following scenario.\footnote{\textbf{https://blog.ephorie.de/base-rate-fallacy-or-why-no-one-is-justified-to-believe-that-jesus-rose}}
+
+The scenario involves two reported cases of resurrection: Jesus Christ and Elvis Presley. The base rate is therefore two out of the total number of people who have ever lived, estimated at approximately 117 billion.\footnote{\textbf{https://www.prb.org/articles/how-many-people-have-ever-lived-on-earth/?utm\_source=chatgpt.com}} That is,
+\[
+P(\text{Res}) = \frac{2}{117 \times 10^9}.
+\]
+
+Suppose now that the sample information comes from a highly reliable witness, with a true positive rate of 0.9999999. Unlike the original blog post, we assume a more conservative false positive rate of 50\%.
+
+We ask: \emph{What is the probability that a resurrection actually occurred, given that a witness claims it did?}
+
+Using Bayes' rule, and letting \emph{Res} denote the event of resurrection, and \emph{Witness} the event of a witness declaring a resurrection:
+
 \begin{align*}
-	P(\text{Res}\mid \text{Witness}) & =  \frac{P(\text{Witness}\mid \text{Res})\times P(\text{Res})}{P(\text{Witness})}\\
-	& =\frac{2/(108.5 * 10^9) \times 0.9999999}{2/(108.5 * 10^9) \times 0.9999999 + (1-2/(108.5 * 10^9)) \times (1-0.9999999)}\\
-	& = 0.000184297806959661
+	P(\text{Res} \mid \text{Witness}) &= \frac{P(\text{Witness} \mid \text{Res}) \times P(\text{Res})}{P(\text{Witness})} \\
+	&= \frac{0.9999999 \times \frac{2}{117 \times 10^9}}{0.9999999 \times \frac{2}{117 \times 10^9} + 0.5 \times \left(1 - \frac{2}{117 \times 10^9} \right)} \\
+	&\approx 3.42 \times 10^{-11}
 \end{align*}
-}}
 
-where $P(\text{Witness})=P(\text{Witness}\mid \text{Res})\times P(\text{Res})+(1-P(\text{Witness}\mid \text{Res}))\times (1-P(\text{Res}))$.
+Here, the denominator is the marginal probability of a witness reporting a resurrection:
+\[
+P(\text{Witness}) = P(\text{Witness} \mid \text{Res}) \times P(\text{Res}) + P(\text{Witness} \mid \lnot\text{Res}) \times (1 - P(\text{Res}))
+\]
 
-Thus, the probability of a resurrection, given a very reliable witness, is approximately \( 1.843 \times 10^{-4} \).
+Thus, the probability that a resurrection actually occurred, even when reported by an extremely reliable witness, is approximately 
+\[
+3.42 \times 10^{-11}.
+\]
+This value is exceedingly small, but importantly, it is not zero. A value of zero would imply \emph{impossibility}, whereas this result reflects \emph{extremely low probability}.
 
 The following code shows how to perform this exercise in \textbf{R}.
 
@@ -75,12 +94,12 @@ The following code shows how to perform this exercise in \textbf{R}.
 \textit{R code. Of Miracles}
 \begin{VF}
 \begin{lstlisting}[ language=R]
-# Probability of resurrection
-PR <- 2/(108.5 * 10^9) 
+PR <- 2/(117 * 10^9) # Probability of resurrection
 PWR <- 0.9999999 # True positive rate
-PRW <- PR * PWR / (PR * PWR + (1 - PR)*(1 - PWR)) 
+PWNR <- 0.5 # False positive
+PRW <- PR * PWR / (PR * PWR + (1 - PR) * PWNR) # Probability of resurrection given witness
 paste("Probability of resurrection given witness is", sep = " ", PRW)
-"Probability of resurrection given witness is 0.000184297806959661"
+"Probability of resurrection given witness is 3.41880307686464e-11"
 \end{lstlisting}
 \end{VF}
 \end{tcolorbox}
@@ -360,7 +379,7 @@ where $\left.\frac{dl(\mathbf{y}\mid \theta)}{d\theta}\right\vert_{\hat{\theta}}
 Observe that the posterior density is proportional to the kernel of a normal density with mean $\hat{\theta}$ and variance $\sigma^2 / N$, as long as $\pi(\hat{\theta}) \neq 0$. This kernel dominates as the sample size increases due to the $N$ in the exponential term. It is also important to note that the prior should not exclude values of $\theta$ that are logically possible, such as $\hat{\theta}$.
 
 \subsection{Example: Health insurance}\label{sec121}
-Suppose that you are analyzing whether to buy health insurance next year. To make a better decision, you want to know \textit{what the probability is that you will visit your doctor at least once next year?} To answer this question, you have records of the number of times you have visited your doctor over the last 5 years, \( \mathbf{y} = \{0, 3, 2, 1, 0\} \). How should you proceed?
+Suppose that you are analyzing whether to buy health insurance next year. To make a better decision, you want to know \textit{what is the probability that you will visit your doctor at least once next year?} To answer this question, you have records of the number of times you have visited your doctor over the last 5 years, \( \mathbf{y} = \{0, 3, 2, 1, 0\} \). How should you proceed?
 
 Assuming that this is a random sample\footnote{Independent and identically distributed draws.} from a data-generating process (statistical model) that is Poisson, i.e., \( Y_i \sim P(\lambda) \), and your probabilistic prior beliefs about \( \lambda \) are well described by a Gamma distribution with shape and scale parameters \( \alpha_0 \) and \( \beta_0 \), i.e., \( \lambda \sim G(\alpha_0, \beta_0) \), then you are interested in calculating the probability \( P(Y_0 > 0 \mid \mathbf{y}) \). To answer this, you need to calculate the posterior predictive density \( \pi(y_0 \mid \mathbf{y}) \) in a Bayesian way.
 
@@ -915,7 +934,7 @@ Given that the posterior distribution of $\lambda$ is $G(\alpha_0 + \sum_{i=1}^N
 \end{itemize}
 These are the optimal point estimates for the quadratic, absolute, and generalized absolute loss functions, respectively.
 
-In addition, we test the null hypothesis $H_0: \lambda \in [0, 1)$ versus the alternative hypothesis $H_1: \lambda \in [1, \infty)$, setting $K_0 = K_1 = 1$. We should reject the null hypothesis since $P(\lambda \in [0, 1)) = 0.9 > \frac{K_1}{K_0 + K_1} = 0.5$.
+In addition, we test the null hypothesis $H_0: \lambda \in [0, 1)$ versus the alternative hypothesis $H_1: \lambda \in [1, \infty)$, setting $K_0 = K_1 = 1$. We should reject the null hypothesis since $P(\lambda \in [1, \infty)) = 0.9 > \frac{K_1}{K_0 + K_1} = 0.5$.
 
 The 95\% symmetric credible interval is $(0.91, 1.53)$, and the highest posterior density (HPD) interval is $(0.90, 1.51)$. Finally, the optimal point prediction under the quadratic loss function is 1.2, which is the mean value of the posterior predictive distribution. The optimal model, assuming a 0-1 loss function, is the model using the hyperparameters from the empirical Bayes procedure, since the posterior model probability of this model is approximately 1, whereas the posterior model probability of the model using vague hyperparameters is approximately 0.
 
@@ -988,7 +1007,7 @@ We introduce Bayes' rule to update probabilistic statements using humorous examp
 \begin{enumerate}
 	\item \textit{The Court Case: The Blue or Green Cab}
 	
-	A cab was involved in a hit-and-run accident at night. There are two cab companies in the town: Blue and Green. The former has 150 cabs, and the latter has 850 cabs. A witness stated that a blue cab was involved in the accident; the court tested the reliability of the witness under similar circumstances and found that 80\% of the time the witness correctly identified the color of the cab. \textit{What is the probability that the color of the cab involved in the accident was blue, given that the witness said it was blue?}
+	A cab was involved in a hit-and-run accident at night. There are two cab companies in the town: Blue and Green. The Blue company has 150 cabs, while the Green company has 850 cabs. A witness stated that a blue cab was involved in the accident. The court tested the reliability of the witness under similar circumstances and found that the witness correctly identified the color of the cab 80\% of the time, but made an incorrect identification 25\% of the time. \textit{What is the probability that the cab involved in the accident was actually blue, given that the witness said it was blue?}
 	
 	\item \textit{The Monty Hall Problem}
 	

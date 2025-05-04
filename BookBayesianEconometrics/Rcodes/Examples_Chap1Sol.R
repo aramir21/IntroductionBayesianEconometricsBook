@@ -1,5 +1,13 @@
 # Examples in chapter 1
 
+######################### Cab companies ######################################
+B <- 0.15 # Blue cabs
+G <- 0.85 # Green cabs
+TP <- 0.8 # True positive witness
+FP <- 0.25 # False positive
+BW <- TP * B / (TP * B + FP * (1 - B))
+paste("Probability of a blue cab given witness is", sep = " ", round(BW, 2))
+
 
 ##########################  The Monty Hall problem reload ########################## 
 set.seed(0101) # Set simulation seed

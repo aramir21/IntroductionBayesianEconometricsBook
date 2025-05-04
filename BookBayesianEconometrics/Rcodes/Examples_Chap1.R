@@ -2,54 +2,55 @@
 
 
 ########################## The Base rate fallacy ########################## 
-
 PD <- 0.002 # Probability of disease
 PPD <- 0.98 # True positive (Sensitivity)
-PDP <- PD * PPD / (PD * PPD + (1 - PD) * (1 - PPD)) # Probability of disease given positive
+PPF <- 0.02 # False positive
+PDP <- PD * PPD / (PD * PPD + (1 - PD) * PPF)
 paste("Probability of disease given a positive test is", sep = " ", round(PDP, 2))
+"Probability of disease given a positive test is 0.09"
 
-##########################  Jesus Crist ########################## 
+##########################  Jesus Crist ##########################
 
-PR <- 2/(108.5 * 10^9) # Probability of resurrection
-PWR <- 0.9999999 # Very reliable witness (true positive rate)
-PRW <- PR * PWR / (PR * PWR + (1 - PR) * (1 - PWR)) # Probability of resurrection given witness
+PR <- 2/(117 * 10^9) # Probability of resurrection
+PWR <- 0.9999999 # True positive rate
+PWNR <- 0.5 # False positive
+PRW <- PR * PWR / (PR * PWR + (1 - PR) * PWNR) # Probability of resurrection given witness
 paste("Probability of resurrection given witness is", sep = " ", PRW)
+"Probability of resurrection given witness is 3.41880307686464e-11"
 
 ##########################  The Monty Hall problem ########################## 
 set.seed(0101) # Set simulation seed
 S <- 100000 # Simulations
 Game <- function(switch = 0){
-  # switch = 0 is not change, and switch = 1 is to change
+  # switch = 0 is not change  
+  # switch = 1 is to change
   opts <- 1:3 
   car <- sample(opts, 1) # car location
-  guess1 <- sample(opts, 1) # Initial guess pick
+  guess1 <- sample(opts, 1) # Initial guess 
   
   if(car != guess1) {
     host <- opts[-c(car, guess1)]
   } else {
     host <- sample(opts[-c(car, guess1)], 1)
-  }
-  
-  win1 <- guess1 == car # Win given no change
-  
-  guess2 <- opts[-c(host, guess1)]
-  
-  win2 <- guess2 == car # Win given change
-  
+  }	
+  win1 <- guess1 == car # Win no change
+  guess2 <- opts[-c(host, guess1)]	
+  win2 <- guess2 == car # Win change
   if(switch == 0){
     win <- win1
   } else {
     win <- win2
   }
-  
   return(win)
 }
 
-Prob <- mean(replicate(S, Game(switch = 0))) #Win probabilities not changing
-paste("Winning probabilities no changing door is", Prob, sep = " ")
+#Win probabilities not changing
+Prob <- mean(replicate(S, Game(switch = 0))) 
+Prob
 
-Prob <- mean(replicate(S, Game(switch = 1))) #Win probabilities changing
-paste("Winning probabilities changing door is", Prob, sep = " ")
+#Win probabilities changing
+Prob <- mean(replicate(S, Game(switch = 1))) 
+Prob
 
 ##########################  Health care insurance ########################## 
 

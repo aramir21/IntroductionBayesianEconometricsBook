@@ -21,53 +21,84 @@ In the Bayesian framework, \( B \) represents sample information that updates a 
 
 Let's consider a simple example, *the base rate fallacy*:
 
-Assume that the sample information comes from a positive result from a test whose true positive rate (sensitivity) is 98%, i.e., \( P(+ \mid \text{disease}) = 0.98 \). On the other hand, the prior information regarding being infected with this disease comes from a base incidence rate of 0.002, i.e., \( P(\text{disease}) = 0.002 \). The question is: *What is the probability of actually being infected, given a positive test result?*
+Assume that the sample information comes from a positive result from a test whose true positive rate (sensitivity) is 98\%, i.e., \( P(+ \mid \text{disease}) = 0.98 \). In addition, the false positive rate is 2\%, i.e., \( P(+ \mid \lnot\text{disease}) = 0.02 \). On the other hand, the prior probability of being infected with the disease is given by the base incidence rate, \( P(\text{disease}) = 0.002 \). The question is: *What is the probability of actually being infected, given a positive test result?*
 
 This is an example of *the base rate fallacy*, where a positive test result for a disease with a very low base incidence rate still gives a low probability of actually having the disease.
 
 The key to answering this question lies in understanding the difference between the probability of having the disease given a positive test result, \( P(\text{disease} \mid +) \), and the probability of a positive result given the disease, \( P(+ \mid \text{disease}) \). The former is the crucial result, and Bayes' rule helps us to compute it. Using Bayes' rule (equation \@ref(eq:111)):
 
 \[
-P(\text{disease} \mid +) = \frac{P(+ \mid \text{disease}) \times P(\text{disease})}{P(+)} = \frac{0.98 \times 0.002}{0.98 \times 0.002 + (1-0.98) \times (1-0.002)} = 0.09
+P(\text{disease} \mid +) = \frac{P(+ \mid \text{disease}) \times P(\text{disease})}{P(+)} = \frac{0.98 \times 0.002}{0.98 \times 0.002 + 0.02 \times (1-0.002)} = 0.09
 \]
 
-where \( P(+) = P(+ \mid \text{disease}) \times P(\text{disease}) + P(+ \mid \lnot \text{disease}) \times P(\lnot \text{disease}) \).^[\( \lnot \) is the negation symbol. In addition, we have that \( P(B \mid A) = 1 - P(B \mid A^c) \) in this example, where \( A^c \) is the complement of \( A \). However, it is not always the case that \( P(B \mid A) \neq 1 - P(B \mid A^c) \).]
+where \( P(+) = P(+ \mid \text{disease}) \times P(\text{disease}) + P(+ \mid \lnot \text{disease}) \times P(\lnot \text{disease}) \).^[\( \lnot \) is the negation symbol.]
 
 The following code shows how to perform this exercise in **R**.
 
 ```{r}
-PD <- 0.002 # Probability of disease
-PPD <- 0.98 # True positive (Sensitivity)
-PDP <- PD * PPD / (PD * PPD + (1 - PD)*(1 - PPD))
-paste("Probability of disease given a positive test is", sep = " ", round(PDP, 2))
+# Define known probabilities
+prob_disease <- 0.002        # P(Disease)
+sensitivity <- 0.98          # P(Positive test | Disease) - True Positive Rate
+false_positive_rate <- 0.02  # P(Positive test | No disease) - False Positive Rate
+
+# Compute posterior using Bayes' theorem
+posterior_prob <- (prob_disease * sensitivity) /
+  (prob_disease * sensitivity + (1 - prob_disease) * false_positive_rate)
+
+# Print the result
+message(sprintf("Probability of disease given a positive test is %.2f", posterior_prob))
 ```
 
 We observe that despite having a positive result, the probability of actually having the disease remains low. This is due to the base rate being so small.
 
-Another interesting example, which lies at the heart of the origin of Bayes' theorem [@bayes1763lii], is related to the existence of God [@stigler2018richard]. In Section X of David Hume's *"An Inquiry concerning Human Understanding"* (1748), titled *Of Miracles*, Hume argues that when someone claims to have seen a miracle, this provides poor evidence that the event actually occurred, as it contradicts our everyday observations. In response, Richard Price, who finished and published *"An Essay Towards Solving a Problem in the Doctrine of Chances"* in 1763 (after Bayes' death in 1761), argues against Hume by highlighting the difference between *impossibility* in casual conversation and *physical impossibility*. Price used an example of a die with a million sides, where *impossibility* refers to rolling a specific side, and *physical impossibility* refers to rolling a side that does not exist. In millions of throws, the latter would never happen, while the former would eventually occur.
+Another interesting example—one that lies at the heart of the origin of Bayes' theorem [@bayes1763lii]—concerns the existence of God [@stigler2018richard]. In Section X of David Hume’s *An Inquiry concerning Human Understanding* (1748), titled *Of Miracles*, Hume argues that when someone claims to have witnessed a miracle, the claim provides weak evidence that the event actually occurred, since it contradicts our everyday experience. In response, Richard Price—who edited and published *An Essay Towards Solving a Problem in the Doctrine of Chances* in 1763 (following Bayes’ death in 1761)—criticizes Hume’s argument by distinguishing between *logical* and *physical* impossibility. He illustrates this with the example of a die with a million sides: while rolling a specific number might seem impossible, it is merely *improbable*, whereas rolling a number not present on the die is *physically impossible*. The former may occur with enough trials; the latter never will.
 
-Now, let's consider a scenario involving two cases of resurrection (Res): Jesus Christ and Elvis. The total number of people who have ever lived is approximately 108.5 billion,^[[ Source](https://www.wolframalpha.com/input/?i=number+of+people+who+have+ever+lived+on+Earth).] so the prior base rate is given by \( \frac{2}{108.5 \times 10^9} \). On the other hand, suppose the sample information comes from a highly reliable witness with a true positive rate of 0.9999999. The question then is: *What is the probability of this miracle occurring?*^[[Source](https://www.r-bloggers.com/2019/04/base-rate-fallacy-or-why-no-one-is-justified-to-believe-that-jesus-rose/).]
+> **Note on the following example**:  
+> The next example is adapted from a modern blog post that illustrates the base rate fallacy using a resurrection scenario. While it is not taken from the original writings of Hume or Price, it reflects themes central to their philosophical debate on probability and miracles. It is included here to demonstrate how Bayes’ rule behaves in cases involving extremely low prior probabilities. References to figures such as Jesus and Elvis are used purely for illustrative and pedagogical purposes. The goal is to explore the statistical reasoning—not to make any theological claims. Readers are encouraged to focus on the mathematical and conceptual content of the example.
 
-Using Bayes' rule:
+To illustrate the statistical implications of this discussion, let us consider the following scenario.^[[Source](https://blog.ephorie.de/base-rate-fallacy-or-why-no-one-is-justified-to-believe-that-jesus-rose)]
+
+The scenario involves two reported cases of resurrection: Jesus Christ and Elvis Presley. The base rate is therefore two out of the total number of people who have ever lived—estimated at approximately 117 billion,^[[Source](https://www.prb.org/articles/how-many-people-have-ever-lived-on-earth/?utm_source=chatgpt.com)]—that is,  
+\( P(\text{Res}) = \frac{2}{117 \times 10^9} \).
+
+Suppose now that the sample information comes from a highly reliable witness, with a true positive rate of 0.9999999. Unlike the original blog post, we assume a more conservative false positive rate of 50%.
+
+We ask: *What is the probability that a resurrection actually occurred, given that a witness claims it did?*
+
+Using Bayes' rule, and letting *Res* denote the event of resurrection, and *Witness* the event of a witness declaring a resurrection:
 
 \begin{align*}
-	P(\text{Res}\mid \text{Witness}) & =  \frac{P(\text{Witness}\mid \text{Res})\times P(\text{Res})}{P(\text{Witness})}\\
-	& =\frac{2/(108.5 * 10^9) \times 0.9999999}{2/(108.5 * 10^9) \times 0.9999999 + (1-2/(108.5 * 10^9)) \times (1-0.9999999)}\\
-	& = 0.000184297806959661
+	P(\text{Res} \mid \text{Witness}) &= \frac{P(\text{Witness} \mid \text{Res}) \times P(\text{Res})}{P(\text{Witness})} \\
+	&= \frac{0.9999999 \times \frac{2}{117 \times 10^9}}{0.9999999 \times \frac{2}{117 \times 10^9} + 0.5 \times \left(1 - \frac{2}{117 \times 10^9} \right)} \\
+	&\approx 3.42 \times 10^{-11}
 \end{align*}
 
-where \( P(\text{Witness}) = P(\text{Witness} \mid \text{Res}) \times P(\text{Res}) + (1 - P(\text{Witness} \mid \text{Res})) \times (1 - P(\text{Res})) \).
+Here, the denominator is the marginal probability of a witness reporting a resurrection:
 
-Thus, the probability of a resurrection, given a very reliable witness, is approximately \( 1.843 \times 10^{-4} \).
+\[
+P(\text{Witness}) = P(\text{Witness} \mid \text{Res}) \times P(\text{Res}) + P(\text{Witness} \mid \lnot\text{Res}) \times (1 - P(\text{Res}))
+\]
+
+Thus, the probability that a resurrection actually occurred—even when reported by an extremely reliable witness—is approximately  $3.42 \times 10^{-11}$. This value is exceedingly small, but importantly, it is not zero. A value of zero would imply *impossibility*, whereas this result reflects *extremely low probability*.
+
 
 The following code shows how to perform this exercise in **R**.
 
 ```{r}
-# Probability of resurrection
-PR <- 2/(108.5 * 10^9) 
-PWR <- 0.9999999 # True positive rate
-PRW <- PR * PWR / (PR * PWR + (1 - PR)*(1 - PWR)) 
-paste("Probability of resurrection given witness is", sep = " ", PRW)
+# Define known probabilities
+prior_resurrection <- 2 / (117 * 1e9)  # P(Resurrection)
+true_positive_rate <- 0.9999999         # P(Witness | Resurrection)
+
+# Assume a 50% false positive rate as implied in earlier context
+false_positive_rate <- 0.5              # P(Witness | No Resurrection)
+
+# Compute posterior probability using Bayes' rule
+posterior_resurrection <- (prior_resurrection * true_positive_rate) /
+  (prior_resurrection * true_positive_rate +
+   (1 - prior_resurrection) * false_positive_rate)
+
+# Print result
+message(sprintf("Probability of resurrection given a witness is %.2e", posterior_resurrection))
 ```
 
 Observe that we can condition on multiple events in Bayes' rule. Let's consider two conditioning events, \( B \) and \( C \). Then, equation \@ref(eq:111) becomes
@@ -117,38 +148,45 @@ Therefore, changing the initial decision increases the probability of getting th
 Let's see a simulation exercise in **R** to check this answer:
 
 ```{r}
-set.seed(0101) # Set simulation seed
-S <- 100000 # Simulations
-Game <- function(switch = 0){
-	# switch = 0 is not change  
-	# switch = 1 is to change
-	opts <- 1:3 
-	car <- sample(opts, 1) # car location
-	guess1 <- sample(opts, 1) # Initial guess 
-	
-	if(car != guess1) {
-	 host <- opts[-c(car, guess1)]
-	} else {
-	 host <- sample(opts[-c(car, guess1)], 1)
-	}	
-	win1 <- guess1 == car # Win no change
-	guess2 <- opts[-c(host, guess1)]	
-	win2 <- guess2 == car # Win change
-	if(switch == 0){
-		win <- win1
-	} else {
-		win <- win2
-	}
-	return(win)
+# Set simulation seed for reproducibility
+set.seed(010101)
+
+# Number of simulations
+num_simulations <- 100000
+
+# Monty Hall game function
+simulate_game <- function(switch_door = FALSE) {
+  doors <- 1:3
+  car_location <- sample(doors, 1)
+  first_guess <- sample(doors, 1)
+
+  # Host reveals a goat
+  if (car_location != first_guess) {
+    host_opens <- doors[!doors %in% c(car_location, first_guess)]
+  } else {
+    host_opens <- sample(doors[doors != first_guess], 1)
+  }
+
+  # Determine second guess if player switches
+  second_guess <- doors[!doors %in% c(first_guess, host_opens)]
+
+  win_if_no_switch <- (first_guess == car_location)
+  win_if_switch <- (second_guess == car_location)
+
+  if (switch_door) {
+    return(win_if_switch)
+  } else {
+    return(win_if_no_switch)
+  }
 }
 
-#Win probabilities not changing
-Prob <- mean(replicate(S, Game(switch = 0))) 
-paste("Winning probabilities no changing door is", Prob, sep = " ")
+# Simulate without switching
+prob_no_switch <- mean(replicate(num_simulations, simulate_game(switch_door = FALSE)))
+message(sprintf("Winning probability without switching: %.3f", prob_no_switch))
 
-#Win probabilities changing
-Prob <- mean(replicate(S, Game(switch = 1))) 
-paste("Winning probabilities changing door is", Prob, sep = " ")
+# Simulate with switching
+prob_with_switch <- mean(replicate(num_simulations, simulate_game(switch_door = TRUE)))
+message(sprintf("Winning probability with switching: %.3f", prob_with_switch))
 ```
 
 ## Bayesian framework: A brief summary of theory {#sec12}
@@ -177,7 +215,7 @@ For instance, set \( \pi(\boldsymbol{\theta}) = c \), where \( c \) is a constan
 \]
 where \( c \) cancels out. 
 
-\(\pi(\boldsymbol{\theta} \mid \mathbf{y})\) is a sample updated ``probabilistic belief" version of \(\pi(\boldsymbol{\theta})\), where \(\pi(\boldsymbol{\theta})\) is a prior probabilistic belief which can be constructed from previous empirical work, theoretical foundations, expert knowledge, and/or mathematical convenience. This prior usually depends on parameters, which are named \textit{hyperparameters}. In addition, the Bayesian approach implies using a probabilistic model about \(\mathbf{Y}\) given \(\boldsymbol{\theta}\), that is, \(p(\mathbf{y} \mid \boldsymbol{\theta})\), where its integral over \(\mathbf{\Theta}\), \(p(\mathbf{y})\), is named \textit{the model evidence} due to being a measure of model fit to the data.
+\(\pi(\boldsymbol{\theta} \mid \mathbf{y})\) is a sample updated "probabilistic belief" version of \(\pi(\boldsymbol{\theta})\), where \(\pi(\boldsymbol{\theta})\) is a prior probabilistic belief which can be constructed from previous empirical work, theoretical foundations, expert knowledge, and/or mathematical convenience. This prior usually depends on parameters, which are named *hyperparameters*. In addition, the Bayesian approach implies using a probabilistic model about \(\mathbf{Y}\) given \(\boldsymbol{\theta}\), that is, \(p(\mathbf{y} \mid \boldsymbol{\theta})\), where its integral over \(\mathbf{\Theta}\), \(p(\mathbf{y})\), is named *the model evidence* due to being a measure of model fit to the data.
 
 Observe that the Bayesian inferential approach is conditional, that is, what can we learn about an unknown object \(\boldsymbol{\theta}\) given that we already observed \(\mathbf{ Y} =\mathbf{y}\)? The answer is also conditional on the probabilistic model, that is, \(p(\mathbf{y} \mid \boldsymbol{\theta})\). So, what if we want to compare different models, say \(\mathcal{M}_m\), \(m = \{1,2,\dots,M\}\)? Then, we should make explicit this in the Bayes' rule formulation:
 \begin{align}
@@ -261,7 +299,7 @@ The Bayesian approach is also suitable to get probabilistic predictions, that is
 	(\#eq:126)
 \end{align}
 
-Observe that equation \@ref(eq:126) is again an expectation \( \mathbb{E}[\pi(\mathbf{y}_0 \mid \boldsymbol{\theta}, \mathbf{y}, \mathcal{M}_m)] \), this time using the posterior distribution.^[Computing expectations is a fundamental aspect of Bayesian inference. See [@martin2024computing] for a comprehensive review of the evolution of computational methods for this task.] Therefore, the Bayesian approach takes estimation error into account when performing prediction.
+Observe that equation \@ref(eq:126) is again an expectation \( \mathbb{E}[\pi(\mathbf{y}_0 \mid \boldsymbol{\theta}, \mathbf{y}, \mathcal{M}_m)] \), this time using the posterior distribution.^[Computing expectations is a fundamental aspect of Bayesian inference. See @martin2024computing for a comprehensive review of the evolution of computational methods for this task.] Therefore, the Bayesian approach takes estimation error into account when performing prediction.
 
 As we have shown many times, expectation (integration) is a common feature in Bayesian inference. That is why the remarkable relevance of computation based on *Monte Carlo integration* in the Bayesian framework.
 
@@ -288,7 +326,7 @@ $\hat{\boldsymbol{\theta}}_m$ is the posterior mean and $\widehat{Var}({\theta}_
 
 Observe how the variance in equation \@ref(eq:128) captures the extra variability due to potential differences between the mean posterior estimates associated with each model, and the posterior mean that incorporates model uncertainty in equation \@ref(eq:127).
 
-A significant advantage of the Bayesian approach, which is particularly useful in \textit{state space representations} (see Chapter \@ref(Chap8)), is the way the posterior distribution updates with new sample information. Given $\mathbf{y} = \mathbf{y}_{1:t+1}$ as a sequence of observations from 1 to $t+1$, then
+A significant advantage of the Bayesian approach, which is particularly useful in *state space representations* (see Chapter \@ref(Chap8)), is the way the posterior distribution updates with new sample information. Given $\mathbf{y} = \mathbf{y}_{1:t+1}$ as a sequence of observations from 1 to $t+1$, then
 \begin{align}
 	\pi(\boldsymbol{\theta}\mid \mathbf{y}_{1:t+1})&\propto p(\mathbf{y}_{1:t+1}\mid \boldsymbol{\theta})\times \pi(\boldsymbol{\theta})\nonumber\\
 	&= p(y_{t+1}\mid \mathbf{y}_{1:t},\boldsymbol{\theta})\times p(\mathbf{y}_{1:t}\mid \boldsymbol{\theta})\times \pi(\boldsymbol{\theta})\nonumber\\
@@ -330,7 +368,7 @@ Observe that the posterior density is proportional to the kernel of a normal den
 
 **Example: Health insurance**
 
-Suppose that you are analyzing whether to buy health insurance next year. To make a better decision, you want to know *what the probability is that you will visit your doctor at least once next year?* To answer this question, you have records of the number of times you have visited your doctor over the last 5 years, \( \mathbf{y} = \{0, 3, 2, 1, 0\} \). How should you proceed?
+Suppose that you are analyzing whether to buy health insurance next year. To make a better decision, you want to know *what is the probability that you will visit your doctor at least once next year?* To answer this question, you have records of the number of times you have visited your doctor over the last 5 years, \( \mathbf{y} = \{0, 3, 2, 1, 0\} \). How should you proceed?
 
 Assuming that this is a random sample^[Independent and identically distributed draws.] from a data-generating process (statistical model) that is Poisson, i.e., \( Y_i \sim P(\lambda) \), and your probabilistic prior beliefs about \( \lambda \) are well described by a Gamma distribution with shape and scale parameters \( \alpha_0 \) and \( \beta_0 \), i.e., \( \lambda \sim G(\alpha_0, \beta_0) \), then you are interested in calculating the probability \( P(Y_0 > 0 \mid \mathbf{y}) \). To answer this, you need to calculate the posterior predictive density \( \pi(y_0 \mid \mathbf{y}) \) in a Bayesian way.
 
@@ -423,111 +461,136 @@ The following code shows how to perform this exercise in **R**.
 
 
 ```{r}
-set.seed(010101)
-y <- c(0, 3, 2, 1, 0) # Data
-N <- length(y)
-ProbBo <- function(y, a0, b0){
-	N <- length(y)
-	#sample size
-	an <- a0 + sum(y) 
-	# Posterior shape parameter
-	bn <- b0 / ((b0 * N) + 1) 
-	# Posterior scale parameter
-	p <- bn / (bn + 1) 
-	# Probability negative binomial density
-	Pr <- 1 - pnbinom(0, size=an,prob=(1 - p)) 
-	# Probability of visiting the Doctor at least once next year
-	# Observe that in R there is a slightly different parametrization.
-	return(Pr)
-} 
-# Using a vague prior:
-a0 <- 0.001 # Prior shape parameter
-b0 <- 1 / 0.001 # Prior scale parameter
-PriMeanV <- a0 * b0 # Prior mean
-PriVarV <- a0 * b0^2 # Prior variance
-Pp <- ProbBo(y, a0 = 0.001, b0 = 1 / 0.001) 
-# This setting is vague prior information.
-Pp
-# Using Empirical Bayes
-LogMgLik <- function(theta, y){
- N <- length(y) 
- #sample size
- a0 <- theta[1] 
- # prior shape hyperparameter
- b0 <- theta[2] 
- # prior scale hyperparameter
- an <- sum(y) + a0 
- # posterior shape parameter
- if(a0 <= 0 || b0 <= 0){ 
-  #Avoiding negative values
-  lnp <- -Inf
-  }else{
-  lnp <- lgamma(an) + sum(y)*log(b0/(N*b0+1)) - a0*log(N*b0+1) - lgamma(a0)
- } 
- # log marginal likelihood
- return(-lnp)
-}			
-theta0 <- c(0.01, 1/0.1) 
-# Initial values
-control <- list(maxit = 1000) 
-# Number of iterations in optimization
-EmpBay <- optim(theta0, LogMgLik, method = "BFGS", control = control, hessian = TRUE, y = y) 
-# Optimization
-EmpBay$convergence
-a0EB <- EmpBay$par[1] 
-# Prior shape using empirical Bayes
-a0EB
-b0EB <- EmpBay$par[2] 
-# Prior scale using empirical Bayes
-b0EB
-PriMeanEB <- a0EB * b0EB 
-# Prior mean
-PriVarEB <- a0EB * b0EB^2 
-# Prior variance
-PpEB <- ProbBo(y, a0 = a0EB, b0 = b0EB) 
-# This setting is using emprical Bayes.
-PpEB
-# Density figures: 
-# This code helps plotting densities
-lambda <- seq(0.01, 10, 0.01) 
-# Values of lambda
-VaguePrior <- dgamma(lambda,shape=a0,scale = b0)
-EBPrior <- dgamma(lambda,shape=a0EB,scale = b0EB)
-PosteriorV <- dgamma(lambda, shape = a0 + sum(y), scale = b0 / ((b0 * N) + 1)) 
-PosteriorEB <- dgamma(lambda, shape = a0EB+sum(y), scale = b0EB / ((b0EB * N) + 1))			
-# Likelihood function
-Likelihood <- function(theta, y){
- LogL <- dpois(y, theta, log = TRUE)
- Lik <- prod(exp(LogL))
- return(Lik)
-}
-Liks <- sapply(lambda, function(par) {Likelihood(par, y = y)})
-Sc <- max(PosteriorEB)/max(Liks) 
-#Scale for displaying in figure
-LiksScale <- Liks * Sc
-data <- data.frame(cbind(lambda, VaguePrior, EBPrior, PosteriorV, PosteriorEB, LiksScale)) #Data frame
-require(ggplot2) # Cool figures
-require(latex2exp) # LaTeX equations in figures
-require(ggpubr) # Multiple figures in one page
-fig1 <- ggplot(data = data, aes(lambda, VaguePrior)) + geom_line() + 	xlab(TeX("$\\lambda$")) + ylab("Density") +	ggtitle("Prior: Vague Gamma") 
-fig2 <- ggplot(data = data, aes(lambda, EBPrior)) + geom_line() + xlab(TeX("$\\lambda$")) + ylab("Density") + ggtitle("Prior: Empirical Bayes Gamma")
-fig3 <- ggplot(data = data, aes(lambda, PosteriorV)) + geom_line() + xlab(TeX("$\\lambda$")) + ylab("Density") + ggtitle("Posterior: Vague Gamma")
-fig4 <- ggplot(data = data, aes(lambda, PosteriorEB)) + geom_line() + xlab(TeX("$\\lambda$")) + ylab("Density") + ggtitle("Posterior: Empirical Bayes Gamma")
-FIGcap1 <- ggarrange(fig1, fig2, fig3, fig4, ncol = 2, nrow = 2)
-annotate_figure(FIGcap1, top = text_grob("Vague versus Empirical Bayes: Poisson-Gamma model", color = "black", face = "bold", size = 14))
-dataNew <- data.frame(cbind(rep(lambda, 3), c(EBPrior, PosteriorEB, LiksScale), rep(1:3, each = 1000))) #Data frame
-colnames(dataNew) <- c("Lambda", "Density", "Factor")
-dataNew$Factor <- factor(dataNew$Factor, levels=c("1", "3", "2"), 
-labels=c("Prior", "Likelihood", "Posterior"))
-# ggplot(data = dataNew, aes_string(x = "Lambda", y = "Density", group = "Factor")) + geom_line(aes(color = Factor)) + xlab(TeX("$\\lambda$")) + ylab("Density") + ggtitle("Prior, likelihood and posterior: Empirical Bayes Poisson-Gamma model") + guides(color=guide_legend(title="Information")) + scale_color_manual(values = c("red", "yellow", "blue"))
+# Poisson-Gamma Bayesian Inference with Vague and Empirical Bayes Priors
 
-p1 <- ggplot(data = dataNew, aes(x = Lambda, y = Density, group = Factor, color = Factor)) + geom_line() +
-  xlab(TeX("$\\lambda$")) +
+# Load required packages
+library(ggplot2)
+library(ggpubr)
+library(latex2exp)
+
+# Set seed and data
+y <- c(0, 3, 2, 1, 0)
+n_obs <- length(y)
+set.seed(010101)
+
+# Summary statistics
+message(sprintf("Sample mean: %.2f", mean(y)))
+message(sprintf("Sample variance: %.2f", var(y)))
+
+# Predictive probability function
+predictive_prob <- function(y, a0, b0) {
+  n <- length(y)
+  an <- a0 + sum(y)
+  bn <- b0 / (b0 * n + 1)
+  p <- bn / (bn + 1)
+  prob <- 1 - pnbinom(0, size = an, prob = 1 - p)
+  return(prob)
+}
+
+# Vague prior parameters
+a0_vague <- 0.001
+b0_vague <- 1 / a0_vague
+
+prior_mean_vague <- a0_vague * b0_vague
+prior_var_vague  <- a0_vague * b0_vague^2
+
+message(sprintf("Vague prior mean: %.2f, variance: %.2f", prior_mean_vague, prior_var_vague))
+
+# Predictive under vague prior
+predictive_vague <- predictive_prob(y, a0 = a0_vague, b0 = b0_vague)
+message(sprintf("P(y > 0) under vague prior: %.2f", predictive_vague))
+
+# Empirical Bayes: log marginal likelihood
+log_marginal_likelihood <- function(theta, y) {
+  a0 <- theta[1]
+  b0 <- theta[2]
+  n <- length(y)
+  if (a0 <= 0 || b0 <= 0) return(Inf)
+  an <- a0 + sum(y)
+  loglik <- lgamma(an) + sum(y) * log(b0 / (n * b0 + 1)) - a0 * log(n * b0 + 1) - lgamma(a0)
+  return(-loglik)
+}
+
+# Optimize
+theta_start <- c(0.01, 1 / 0.1)
+opt_result <- optim(
+  par = theta_start,
+  fn = log_marginal_likelihood,
+  method = "BFGS",
+  control = list(maxit = 1000),
+  hessian = TRUE,
+  y = y
+)
+
+# Extract parameters
+a0_eb <- opt_result$par[1]
+b0_eb <- opt_result$par[2]
+
+prior_mean_eb <- a0_eb * b0_eb
+prior_var_eb  <- a0_eb * b0_eb^2
+
+message(sprintf("Empirical Bayes prior: shape = %.4f, scale = %.4f", a0_eb, b0_eb))
+message(sprintf("Empirical Bayes mean: %.4f, variance: %.4f", prior_mean_eb, prior_var_eb))
+
+# Predictive under EB prior
+predictive_eb <- predictive_prob(y, a0 = a0_eb, b0 = b0_eb)
+message(sprintf("P(y > 0) under EB prior: %.4f", predictive_eb))
+
+# Plot densities
+lambda_vals <- seq(0.01, 10, 0.01)
+
+prior_vague <- dgamma(lambda_vals, shape = a0_vague, scale = b0_vague)
+prior_eb <- dgamma(lambda_vals, shape = a0_eb, scale = b0_eb)
+posterior_vague <- dgamma(lambda_vals, shape = a0_vague + sum(y), scale = b0_vague / (b0_vague * n_obs + 1))
+posterior_eb <- dgamma(lambda_vals, shape = a0_eb + sum(y), scale = b0_eb / (b0_eb * n_obs + 1))
+
+# Likelihood function
+likelihood_vals <- sapply(lambda_vals, function(lam) prod(dpois(y, lam)))
+likelihood_scaled <- likelihood_vals * max(posterior_eb) / max(likelihood_vals)
+
+# Prepare data
+densities_df <- data.frame(
+  lambda = lambda_vals,
+  VaguePrior = prior_vague,
+  EBPrior = prior_eb,
+  PosteriorV = posterior_vague,
+  PosteriorEB = posterior_eb,
+  Likelihood = likelihood_scaled
+)
+
+# Plots
+plot_density <- function(data, yval, title) {
+  ggplot(data, aes(x = lambda, y = !!as.name(yval))) +
+    geom_line() +
+    xlab(TeX("$lambda$")) +
+    ylab("Density") +
+    ggtitle(title)
+}
+
+figs <- list(
+  plot_density(densities_df, "VaguePrior", "Prior: Vague Gamma"),
+  plot_density(densities_df, "EBPrior", "Prior: Empirical Bayes Gamma"),
+  plot_density(densities_df, "PosteriorV", "Posterior: Vague Gamma"),
+  plot_density(densities_df, "PosteriorEB", "Posterior: Empirical Bayes Gamma")
+)
+
+combined_plot <- ggarrange(plotlist = figs, ncol = 2, nrow = 2)
+annotate_figure(combined_plot, top = text_grob("Vague vs Empirical Bayes: Poisson-Gamma", face = "bold", size = 14))
+
+# Prior, Likelihood, and Posterior comparison (Empirical Bayes)
+dataNew <- data.frame(cbind(rep(lambda_vals, 3), c(prior_eb, posterior_eb, likelihood_scaled),
+                            rep(1:3, each = length(lambda_vals))))
+colnames(dataNew) <- c("Lambda", "Density", "Factor")
+dataNew$Factor <- factor(dataNew$Factor, levels = c("1", "3", "2"),
+                         labels = c("Prior", "Likelihood", "Posterior"))
+
+ggplot(data = dataNew, aes(x = Lambda, y = Density, group = Factor, color = Factor)) +
+  geom_line() +
+  xlab(TeX("$lambda$")) +
   ylab("Density") +
-  ggtitle("Prior, likelihood and posterior: Empirical Bayes Poisson-Gamma model") +
+  ggtitle("Prior, Likelihood, and Posterior: Empirical Bayes Poisson-Gamma Model") +
   guides(color = guide_legend(title = "Information")) +
   scale_color_manual(values = c("red", "yellow", "blue"))
-p1
 ```
 
 The first figure displays the prior and posterior densities based on vague and Empirical Bayes hyperparameters. We observe that the prior and posterior densities using the latter are more informative, as expected.
@@ -535,65 +598,100 @@ The first figure displays the prior and posterior densities based on vague and E
 The second figure shows the prior, scaled likelihood, and posterior densities of $\lambda$ based on the hyperparameters from the Empirical Bayes approach. The posterior density is a compromise between prior and sample information.
 
 ```{r}
-# Predictive distributions
-PredDen <- function(y, y0, a0, b0){
-	N <- length(y)
-	#sample size
-	an <- a0 + sum(y) 
-	# Posterior shape parameter
-	bn <- b0 / ((b0 * N) + 1) 
-	# Posterior scale parameter
-	p <- bn / (bn + 1) 
-	# Probability negative binomial density
-	Pr <- dnbinom(y0, size=an, prob=(1 - p))
-	# Predictive density
-	# Observe that in R there is a slightly different parametrization.
-	return(Pr)
+# Predictive densities
+predictive_density <- function(y, y0, a0, b0) {
+  n <- length(y)
+  an <- a0 + sum(y)
+  bn <- b0 / (b0 * n + 1)
+  p <- bn / (bn + 1)
+  dnbinom(y0, size = an, prob = 1 - p)
 }
-y0 <- 0:10
-PredVague <- PredDen(y=y, y0=y0, a0=a0, b0=b0)
-PredEB <- PredDen(y=y, y0=y0, a0=a0EB, b0=b0EB)
-dataPred <- as.data.frame(cbind(y0, PredVague, PredEB))
-colnames(dataPred) <- c("y0", "PredictiveVague", "PredictiveEB")
-FIGchappred <- ggplot(data = dataPred) + geom_point(aes(y0, PredictiveVague, color = "red")) + 
-xlab(TeX("$y_0$")) + ylab("Density") + ggtitle("Predictive density: Vague and Empirical Bayes priors") + geom_point(aes(y0, PredictiveEB, color = "yellow")) +
-guides(color = guide_legend(title="Prior")) + scale_color_manual(labels = c("Vague", "Empirical Bayes"), values = c("red", "yellow")) + scale_x_continuous(breaks=seq(0,10,by=1))
-FIGchappred
+
+y0_vals <- 0:10
+pred_vague <- predictive_density(y, y0_vals, a0_vague, b0_vague)
+pred_eb <- predictive_density(y, y0_vals, a0_eb, b0_eb)
+
+pred_df <- data.frame(y0 = y0_vals, Vague = pred_vague, EmpBayes = pred_eb)
+
+ggplot(pred_df) +
+  geom_point(aes(x = y0, y = Vague, color = "Vague")) +
+  geom_point(aes(x = y0, y = EmpBayes, color = "Empirical Bayes")) +
+  xlab(TeX("$y_0$")) +
+  ylab("Density") +
+  ggtitle("Predictive Densities: Vague vs Empirical Bayes Priors") +
+  scale_color_manual(name = "Prior", values = c("Vague" = "red", "Empirical Bayes" = "blue")) +
+  theme_minimal()
 ```
 
 This figure displays the predictive probability mass of not having any visits to a physician next year, as well as having one, two, and so on, using Empirical Bayes and vague hyperparameters. The predictive probabilities of not having any visits are approximately 30\% and 33\% based on the Empirical Bayes and vague hyperparameters, respectively.
 
 ```{r}
-# Posterior odds: Vague vs Empirical Bayes
-PO12 <- exp(-LogMgLik(c(a0EB, b0EB), y = y))/exp(-LogMgLik(c(a0, b0), y = y))
-PO12
-PostProMEM <- PO12/(1 + PO12) 
-PostProMEM
-# Posterior model probability Empirical Bayes
-PostProbMV <- 1 - PostProMEM 
-PostProbMV
-# Posterior model probability vague prior
-# Bayesian model average (BMA)
-PostMeanEB <- (a0EB + sum(y)) * (b0EB / (b0EB * N + 1)) 
-# Posterior mean Empirical Bayes 
-PostMeanV <- (a0 + sum(y)) * (b0 / (b0 * N + 1)) 
-# Posterior mean vague priors
-BMAmean <- PostProMEM * PostMeanEB + PostProbMV * PostMeanV  
-BMAmean
-# BMA posterior mean
-PostVarEB <- (a0EB + sum(y)) * (b0EB/(b0EB * N + 1))^2 
-# Posterior variance Empirical Bayes
-PostVarV <- (a0 + sum(y)) * (b0 / (b0 * N + 1))^2 
-# Posterior variance vague prior 
-BMAVar <- PostProMEM * PostVarEB + PostProbMV*PostVarV + PostProMEM * (PostMeanEB - BMAmean)^2 + PostProbMV * (PostMeanV - BMAmean)^2
-# BMA posterior variance   
-BMAVar
-# BMA: Predictive
-BMAPred <- PostProMEM * PredEB+PostProbMV * PredVague
-dataPredBMA <- as.data.frame(cbind(y0, BMAPred))
-colnames(dataPredBMA) <- c("y0", "PredictiveBMA")
-FIGchappred1 <- ggplot(data = dataPredBMA) + geom_point(aes(y0, PredictiveBMA, color = "red")) +  xlab(TeX("$y_0$")) + ylab("Density") + ggtitle("Predictive density: BMA") + guides(color = guide_legend(title="BMA")) + scale_color_manual(labels = c("Probability"), values = c("red")) + scale_x_continuous(breaks=seq(0,10,by=1))
-FIGchappred1
+# Posterior odds and model probabilities
+log_mg_vague <- -log_marginal_likelihood(c(a0_vague, b0_vague), y)
+log_mg_eb <- -log_marginal_likelihood(c(a0_eb, b0_eb), y)
+
+odds_eb_vs_vague <- exp(log_mg_eb - log_mg_vague)
+prob_eb <- odds_eb_vs_vague / (1 + odds_eb_vs_vague)
+prob_vague <- 1 - prob_eb
+
+message(sprintf("Posterior model probabilities - Empirical Bayes: %.4f, Vague: %.4f", prob_eb, prob_vague))
+
+# BMA: mean and variance
+post_mean_eb <- (a0_eb + sum(y)) * (b0_eb / (b0_eb * n_obs + 1))
+post_var_eb <- (a0_eb + sum(y)) * (b0_eb / (b0_eb * n_obs + 1))^2
+post_mean_vague <- (a0_vague + sum(y)) * (b0_vague / (b0_vague * n_obs + 1))
+post_var_vague <- (a0_vague + sum(y)) * (b0_vague / (b0_vague * n_obs + 1))^2
+
+bma_mean <- prob_eb * post_mean_eb + prob_vague * post_mean_vague
+bma_var <- prob_eb * post_var_eb + prob_vague * post_var_vague +
+  prob_eb * (post_mean_eb - bma_mean)^2 + prob_vague * (post_mean_vague - bma_mean)^2
+
+message(sprintf("BMA posterior mean: %.4f, variance: %.4f", bma_mean, bma_var))
+
+# BMA Predictive
+pred_bma <- prob_eb * pred_eb + prob_vague * pred_vague
+pred_df_bma <- data.frame(y0 = y0_vals, BMAPredictive = pred_bma)
+
+ggplot(data = pred_df_bma) + 
+  geom_point(aes(y0, BMAPredictive, color = "red")) +  
+  xlab(TeX("$y_0$")) + 
+  ylab("Density") + 
+  ggtitle("Predictive density: BMA") + 
+  guides(color = guide_legend(title = "BMA")) + 
+  scale_color_manual(labels = c("Probability"), values = c("red")) + 
+  scale_x_continuous(breaks = seq(0, 10, by = 1))
+
+# Sequential Bayesian updating
+sequential_update <- function(y, lambda, a0, b0) {
+  n <- length(y)
+  results <- matrix(NA, nrow = length(lambda), ncol = n)
+  a_new <- a0
+  b_new <- b0
+  
+  for (i in 1:n) {
+    a_new <- a_new + y[i]
+    b_new <- b_new / (b_new * 1 + 1)
+    results[, i] <- dgamma(lambda, shape = a_new, scale = b_new)
+  }
+  return(results)
+}
+
+lambda_grid <- lambda_vals
+updates <- sequential_update(y, lambda_grid, a0_vague, b0_vague)
+
+updates_df <- data.frame(
+  lambda = rep(lambda_grid, times = n_obs),
+  density = as.vector(updates),
+  iteration = factor(rep(1:n_obs, each = length(lambda_grid)))
+)
+
+ggplot(updates_df, aes(x = lambda, y = density, color = iteration)) +
+  geom_line() +
+  xlab(TeX("$lambda$")) +
+  ylab("Density") +
+  ggtitle("Sequential Bayesian Updating: Vague Prior") +
+  theme_minimal() +
+  guides(color = guide_legend(title = "Update step"))
 ```
 
 The first figure displays the predictive density using Bayesian model averaging based on the vague and Empirical Bayes hyperparameters. This figure closely resembles the predictive probability mass function based on the Empirical Bayes framework, as the posterior model probability for that setting is nearly one.
@@ -797,7 +895,7 @@ Although Bayesian Model Averaging (BMA) allows for incorporating model uncertain
 
 We show some optimal rules in the health insurance example, specifically the best point estimates of $\lambda$ under the quadratic, absolute, and generalized absolute loss functions. For the generalized absolute loss function, we assume that underestimating $\lambda$ is twice as costly as overestimating it, i.e., $K_0 = 2$ and $K_1 = 1$.
 
-Given that the posterior distribution of $\lambda$ is $G(\alpha_0 + \sum_{i=1}^N y_i, \frac{\beta_0}{\beta_0 N + 1})$, and using the hyperparameters from empirical Bayes, we obtain the following optimal point estimates:
+Given that the posterior distribution of $\lambda$ is $G\left(\alpha_0 + \sum_{i=1}^N y_i, \frac{\beta_0}{\beta_0 N + 1}\right)$, and using the hyperparameters from empirical Bayes, we obtain the following optimal point estimates:
 
 - The posterior mean: $\mathbb{E}[\lambda \mid \mathbf{y}] = \alpha_n \beta_n = 1.2$,
 - The posterior median: 1.19,
@@ -805,50 +903,62 @@ Given that the posterior distribution of $\lambda$ is $G(\alpha_0 + \sum_{i=1}^N
 
 These are the optimal point estimates for the quadratic, absolute, and generalized absolute loss functions, respectively.
 
-In addition, we test the null hypothesis $H_0: \lambda \in [0, 1)$ versus the alternative hypothesis $H_1: \lambda \in [1, \infty)$, setting $K_0 = K_1 = 1$. We should reject the null hypothesis since $P(\lambda \in [0, 1)) = 0.9 > \frac{K_1}{K_0 + K_1} = 0.5$.
+In addition, we test the null hypothesis $H_0: \lambda \in [0, 1)$ versus the alternative hypothesis $H_1: \lambda \in [1, \infty)$, setting $K_0 = K_1 = 1$. We should reject the null hypothesis since $P(\lambda \in [1, \infty)) = 0.9 > \frac{K_1}{K_0 + K_1} = 0.5$.
 
 The 95% symmetric credible interval is $(0.91, 1.53)$, and the highest posterior density (HPD) interval is $(0.90, 1.51)$. Finally, the optimal point prediction under the quadratic loss function is 1.2, which is the mean value of the posterior predictive distribution. The optimal model, assuming a 0-1 loss function, is the model using the hyperparameters from the empirical Bayes procedure, since the posterior model probability of this model is approximately 1, whereas the posterior model probability of the model using vague hyperparameters is approximately 0.
 
 ```{r}
-an <- sum(y) + a0EB 
-# Posterior shape parameter
-bn <- b0EB / (N*b0EB + 1) 
-# Posterior scale parameter
-S <- 1000000 
-# Number of posterior draws
-Draws <- rgamma(1000000, shape = an, scale = bn) 
+########################## Decision theory ########################## 
+
+# Load required package
+library(HDInterval)
+
+# Posterior parameters
+posterior_shape <- sum(y) + a0_eb
+posterior_scale <- b0_eb / (n_obs * b0_eb + 1)
+
 # Posterior draws
-###### Point estimation ########
-OptQua <- an*bn 
-# Mean: Optimal choice quadratic loss function
-OptQua
-OptAbs <- qgamma(0.5, shape = an, scale = bn) 
-# Median: Optimal choice absolute loss function
-OptAbs
-# Setting K0 = 2 and K1 = 1, that is, to underestimate lambda is twice as costly as to overestimate it.
-K0 <- 2; K1 <- 1
-OptGenAbs <- quantile(Draws, K0/(K0 + K1)) 
-# Median: Optimal choice generalized absolute loss function
-OptGenAbs
-###### Hypothesis test ########
-# H0: lambda in [0,1) vs H1: lambda in [1, Inf]
-K0 <- 1; K1 <- 1
-ProbH0 <- pgamma(1, shape = an, scale = bn) 
-ProbH0 # Posterior  probability H0
-ProbH1 <- 1 -ProbH0
-ProbH1 # Posterior  probability H1
-# We should reject H0 given ProbH1 > K1 / (K0 + K1) 
-###### Credible intervals ########
-LimInf <- qgamma(0.025, shape = an, scale = bn) # Lower bound
-LimInf
-LimSup <- qgamma(0.975, shape = an, scale = bn) # Upper bound
-LimSup
-HDI <- HDInterval::hdi(Draws, credMass = 0.95) # Highest posterior density credible interval
-HDI
-###### Predictive optimal choices ########
-p <- bn / (bn + 1) # Probability negative binomial density
-OptPred <- p/(1-p)*an # Optimal point prediction given a quadratic loss function in prediction
-OptPred
+n_draws <- 1e6
+posterior_draws <- rgamma(n_draws, shape = posterior_shape, scale = posterior_scale)
+
+# Optimal point estimates
+mean_quad_loss <- posterior_shape * posterior_scale
+median_abs_loss <- qgamma(0.5, shape = posterior_shape, scale = posterior_scale)
+
+# Generalized absolute loss with asymmetric costs
+k0 <- 2
+k1 <- 1
+quantile_weight <- k0 / (k0 + k1)
+generalized_abs_loss <- quantile(posterior_draws, probs = quantile_weight)
+
+# Display point estimates
+message(sprintf("Quadratic loss (mean): %.4f", mean_quad_loss))
+message(sprintf("Absolute loss (median): %.4f", median_abs_loss))
+message(sprintf("Generalized absolute loss (quantile %.2f): %.4f", quantile_weight, generalized_abs_loss))
+
+# Hypothesis test: H0: λ ∈ [0, 1), H1: λ ≥ 1
+k0 <- 1
+k1 <- 1
+prob_h0 <- pgamma(1, shape = posterior_shape, scale = posterior_scale)
+prob_h1 <- 1 - prob_h0
+decision_threshold <- k1 / (k0 + k1)
+
+message(sprintf("P(H0: λ < 1): %.4f", prob_h0))
+message(sprintf("P(H1: λ ≥ 1): %.4f", prob_h1))
+message(sprintf("Reject H0? %s", ifelse(prob_h1 > decision_threshold, "Yes", "No")))
+
+# Credible intervals
+ci_lower <- qgamma(0.025, shape = posterior_shape, scale = posterior_scale)
+ci_upper <- qgamma(0.975, shape = posterior_shape, scale = posterior_scale)
+hdi_interval <- HDInterval::hdi(posterior_draws, credMass = 0.95)
+
+message(sprintf("95%% Credible Interval (Quantiles): [%.4f, %.4f]", ci_lower, ci_upper))
+message(sprintf("95%% HDI: [%.4f, %.4f]", hdi_interval[1], hdi_interval[2]))
+
+# Optimal prediction under quadratic loss
+nbinom_p <- posterior_scale / (posterior_scale + 1)
+opt_predictive <- (nbinom_p / (1 - nbinom_p)) * posterior_shape
+message(sprintf("Optimal predictive (quadratic loss): %.4f", opt_predictive))
 ```
 
 ## Summary
@@ -859,7 +969,7 @@ We introduce Bayes' rule to update probabilistic statements using humorous examp
 
 1. **The Court Case: The Blue or Green Cab**
 
-   A cab was involved in a hit-and-run accident at night. There are two cab companies in the town: Blue and Green. The former has 150 cabs, and the latter has 850 cabs. A witness stated that a blue cab was involved in the accident; the court tested the reliability of the witness under similar circumstances and found that 80% of the time the witness correctly identified the color of the cab. **What is the probability that the color of the cab involved in the accident was blue, given that the witness said it was blue?**
+   A cab was involved in a hit-and-run accident at night. There are two cab companies in the town: Blue and Green. The Blue company has 150 cabs, while the Green company has 850 cabs. A witness stated that a blue cab was involved in the accident. The court tested the reliability of the witness under similar circumstances and found that the witness correctly identified the color of the cab 80% of the time, but made an incorrect identification 25% of the time. *What is the probability that the cab involved in the accident was actually blue, given that the witness said it was blue?*
 
 2. **The Monty Hall Problem**
 
