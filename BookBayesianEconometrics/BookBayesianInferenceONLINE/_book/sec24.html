@@ -23,7 +23,7 @@
 <meta name="author" content="Andrés Ramírez-Hassan" />
 
 
-<meta name="date" content="2025-05-04" />
+<meta name="date" content="2025-05-05" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -384,24 +384,39 @@ p_2(y|\theta) = \binom{y + r - 1}{r - 1} (1 - (1 - \theta)^y)(1 - \theta)^r = 55
 \alpha_1=P_{1/2}(Y\geq
 9)=p_1(9|1/2)+p_1(10|1/2)+p_1(11|1/2)+p_1(12|1/2)=0.073.
 \]</span></p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="sec24.html#cb1-1" tabindex="-1"></a>success <span class="ot">&lt;-</span> <span class="dv">9</span> </span>
-<span id="cb1-2"><a href="sec24.html#cb1-2" tabindex="-1"></a><span class="co"># Number of observed success in n trials</span></span>
-<span id="cb1-3"><a href="sec24.html#cb1-3" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">12</span> </span>
-<span id="cb1-4"><a href="sec24.html#cb1-4" tabindex="-1"></a><span class="co"># Number of trials</span></span>
-<span id="cb1-5"><a href="sec24.html#cb1-5" tabindex="-1"></a>siglevel <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="fu">sapply</span>(<span class="dv">9</span><span class="sc">:</span>n,<span class="cf">function</span>(y)<span class="fu">dbinom</span>(y,n,<span class="fl">0.5</span>)))</span>
-<span id="cb1-6"><a href="sec24.html#cb1-6" tabindex="-1"></a>siglevel</span></code></pre></div>
-<pre><code>## [1] 0.07299805</code></pre>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="sec24.html#cb1-1" tabindex="-1"></a><span class="co"># Binomial test: one-sided significance level for observing 9 or more successes in 12 trials</span></span>
+<span id="cb1-2"><a href="sec24.html#cb1-2" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="sec24.html#cb1-3" tabindex="-1"></a><span class="co"># Parameters</span></span>
+<span id="cb1-4"><a href="sec24.html#cb1-4" tabindex="-1"></a>successes <span class="ot">&lt;-</span> <span class="dv">9</span>         <span class="co"># Number of observed successes</span></span>
+<span id="cb1-5"><a href="sec24.html#cb1-5" tabindex="-1"></a>n_trials <span class="ot">&lt;-</span> <span class="dv">12</span>         <span class="co"># Total number of trials</span></span>
+<span id="cb1-6"><a href="sec24.html#cb1-6" tabindex="-1"></a>p_null <span class="ot">&lt;-</span> <span class="fl">0.5</span>          <span class="co"># Null hypothesis success probability</span></span>
+<span id="cb1-7"><a href="sec24.html#cb1-7" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="sec24.html#cb1-8" tabindex="-1"></a><span class="co"># Calculate one-sided significance level</span></span>
+<span id="cb1-9"><a href="sec24.html#cb1-9" tabindex="-1"></a>significance_level <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="fu">dbinom</span>(successes<span class="sc">:</span>n_trials, <span class="at">size =</span> n_trials, <span class="at">prob =</span> p_null))</span>
+<span id="cb1-10"><a href="sec24.html#cb1-10" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="sec24.html#cb1-11" tabindex="-1"></a><span class="co"># Output result with context</span></span>
+<span id="cb1-12"><a href="sec24.html#cb1-12" tabindex="-1"></a><span class="fu">message</span>(<span class="fu">sprintf</span>(<span class="st">&quot;One-sided significance level (P(X ≥ %d | H0: p = %.1f)): %.4f&quot;</span>,                 successes, p_null, significance_level))</span></code></pre></div>
+<pre><code>## One-sided significance level (P(X ≥ 9 | H0: p = 0.5)): 0.0730</code></pre>
 <p>For the Negative Binomial model, the significance level would be:</p>
 <p><span class="math display">\[
     \alpha_2=P_{1/2}(Y\geq 9)=p_2(9|1/2)+p_2(10|1/2)+\ldots=0.0327.
 \]</span></p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="sec24.html#cb3-1" tabindex="-1"></a>success <span class="ot">&lt;-</span> <span class="dv">3</span> </span>
-<span id="cb3-2"><a href="sec24.html#cb3-2" tabindex="-1"></a><span class="co"># Number of target success (tails)</span></span>
-<span id="cb3-3"><a href="sec24.html#cb3-3" tabindex="-1"></a>failures <span class="ot">&lt;-</span> <span class="dv">9</span> </span>
-<span id="cb3-4"><a href="sec24.html#cb3-4" tabindex="-1"></a><span class="co"># Number of failures</span></span>
-<span id="cb3-5"><a href="sec24.html#cb3-5" tabindex="-1"></a>siglevel <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">-</span> <span class="fu">pnbinom</span>((failures <span class="sc">-</span> <span class="dv">1</span>),success,<span class="fl">0.5</span>)</span>
-<span id="cb3-6"><a href="sec24.html#cb3-6" tabindex="-1"></a>siglevel</span></code></pre></div>
-<pre><code>## [1] 0.03271484</code></pre>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="sec24.html#cb3-1" tabindex="-1"></a><span class="co"># Negative binomial test: Probability of observing at least 3 tails before 9 heads (failures)</span></span>
+<span id="cb3-2"><a href="sec24.html#cb3-2" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="sec24.html#cb3-3" tabindex="-1"></a><span class="co"># Parameters</span></span>
+<span id="cb3-4"><a href="sec24.html#cb3-4" tabindex="-1"></a>target_successes <span class="ot">&lt;-</span> <span class="dv">3</span>      <span class="co"># Number of target successes (e.g., tails)</span></span>
+<span id="cb3-5"><a href="sec24.html#cb3-5" tabindex="-1"></a>num_failures <span class="ot">&lt;-</span> <span class="dv">9</span>          <span class="co"># Number of failures (e.g., heads)</span></span>
+<span id="cb3-6"><a href="sec24.html#cb3-6" tabindex="-1"></a>p_success <span class="ot">&lt;-</span> <span class="fl">0.5</span>           <span class="co"># Probability of success (e.g., tails)</span></span>
+<span id="cb3-7"><a href="sec24.html#cb3-7" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="sec24.html#cb3-8" tabindex="-1"></a><span class="co"># Compute the one-sided significance level: P(X ≥ 3 successes before 9 failures)</span></span>
+<span id="cb3-9"><a href="sec24.html#cb3-9" tabindex="-1"></a>significance_level <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">-</span> <span class="fu">pnbinom</span>(<span class="at">q =</span> num_failures <span class="sc">-</span> <span class="dv">1</span>,</span>
+<span id="cb3-10"><a href="sec24.html#cb3-10" tabindex="-1"></a>                                  <span class="at">size =</span> target_successes,</span>
+<span id="cb3-11"><a href="sec24.html#cb3-11" tabindex="-1"></a>                                  <span class="at">prob =</span> p_success)</span>
+<span id="cb3-12"><a href="sec24.html#cb3-12" tabindex="-1"></a></span>
+<span id="cb3-13"><a href="sec24.html#cb3-13" tabindex="-1"></a><span class="co"># Print result</span></span>
+<span id="cb3-14"><a href="sec24.html#cb3-14" tabindex="-1"></a><span class="fu">message</span>(<span class="fu">sprintf</span>(<span class="st">&quot;P(at least %d tails before %d heads): %.4f&quot;</span>,</span>
+<span id="cb3-15"><a href="sec24.html#cb3-15" tabindex="-1"></a>                target_successes, num_failures, significance_level))</span></code></pre></div>
+<pre><code>## P(at least 3 tails before 9 heads): 0.0327</code></pre>
 <p>We arrive at different conclusions using a significance level of 5%, whereas we obtain the same outcomes using a Bayesian approach because the kernels of both distributions are identical (<span class="math inline">\(\theta^9 \times (1 - \theta)^3\)</span>).</p>
 </div>
 <h3>References<a href="references.html#references" class="anchor-section" aria-label="Anchor link to header"></a></h3>
