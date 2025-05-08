@@ -1,63 +1,107 @@
+########### Chapter 4 ###############
+
+########### Dirichlet-Multinomial model: Liverpool vs Manchester City ##############
+# Clear workspace
 rm(list = ls())
-set.seed(010101)
-########################## Multinomial-Dirichlet example: Liverpool vs Manchester city ##########################
-Data <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/DataOddsLIVvsMAN.csv", sep = ",", header = TRUE, quote = "")
-# https://www.oddsportal.com/soccer/england/premier-league/liverpool-manchester-city-WrqgEz5S/
-# Betting odds at 6-10-2022 19:00 hours (Colombia time)
-# Liverpool vs Manchester city at 16-10-2022
-attach(Data)
+set.seed(10101)  # Use unquoted integer (010101 is octal in R)
+
+# Load required libraries
 library(dplyr)
-Probs <- Data %>%
-  mutate(pns1 = 1/home, pns2 = 1/draw, pns3 = 1/away) %>%
-  mutate(SumInvOdds = pns1 + pns2 + pns3) %>% 
-  mutate(p1 = pns1/SumInvOdds, p2 = pns2/SumInvOdds, p3 = pns3/SumInvOdds) %>% 
-  select(p1, p2, p3)
+library(sirt)
+library(MCMCpack)
+library(Compositional)
 
-DirMLE <- sirt::dirichlet.mle(Probs)
-alpha0odds <- DirMLE$alpha
-alpha0odds
-y <- c(2, 2, 1) 
-# Liverpool win, draw, Manchester city win
-# https://www.11v11.com/teams/manchester-city/tab/opposingTeams/opposition/Liverpool/
-# Last 5 matches in Premier League Liverpool local: 14/01/2018-10/04/2022
+# Load match data and betting odds
+data <- read.csv(
+  "https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/DataOddsLIVvsMAN.csv",
+  sep = ",", header = TRUE, quote = ""
+)
 
-# Marginal likelihood
-MarLik <- function(a0){
+# Match details:
+# - Betting odds collected on 2022-10-06 at 19:00 (Colombia time)
+# - Match played on 2022-10-16: Liverpool vs Manchester City
+# - Source: https://www.oddsportal.com/soccer/england/premier-league/liverpool-manchester-city-WrqgEz5S/
+
+# Compute normalized probabilities from odds
+probs <- data %>%
+  mutate(
+    inv_home = 1 / home,
+    inv_draw = 1 / draw,
+    inv_away = 1 / away,
+    sum_inv = inv_home + inv_draw + inv_away,
+    p1 = inv_home / sum_inv,
+    p2 = inv_draw / sum_inv,
+    p3 = inv_away / sum_inv
+  ) %>%
+  dplyr::select(p1, p2, p3)
+
+# Estimate Dirichlet parameters (prior) from odds
+dir_mle <- dirichlet.mle(probs)
+alpha0_odds <- dir_mle$alpha
+print(alpha0_odds)
+
+# Historical match outcomes (Premier League, Liverpool at home vs Manchester City)
+# From 14/01/2018 to 10/04/2022: 2 wins for Liverpool, 2 draws, 1 win for Man City
+# Source: https://www.11v11.com/teams/manchester-city/tab/opposingTeams/opposition/Liverpool/
+y <- c(2, 2, 1)
+
+# Define (negative) marginal log-likelihood
+marginal_likelihood <- function(alpha) {
   n <- sum(y)
-  Res1 <- sum(sapply(1:length(y), function(l){lgamma(a0[l] + y[l]) - lgamma(a0[l])}))
-  Res <- lgamma(sum(a0)) - lgamma(sum(a0)+n) + Res1
-  return(-Res)
+  term <- sum(sapply(1:length(y), function(l) {
+    lgamma(alpha[l] + y[l]) - lgamma(alpha[l])
+  }))
+  result <- lgamma(sum(alpha)) - lgamma(sum(alpha) + n) + term
+  return(-result)
 }
 
-EmpBay <- optim(alpha0odds, MarLik, method = "BFGS", control = list(maxit = 10000))
-alpha0EB <- EmpBay$par
-alpha0EB
-alpha0odds
+# Estimate empirical Bayes prior (MLE of marginal likelihood)
+emp_bayes <- optim(alpha0_odds, marginal_likelihood, method = "BFGS", control = list(maxit = 10000))
+alpha0_eb <- emp_bayes$par
+print(alpha0_eb)
 
-BF <- exp(-MarLik(alpha0EB))/exp(-MarLik(alpha0odds))
-BF
+# Compare priors: empirical Bayes vs odds-based
+print(alpha0_odds)
 
-set.seed(010101)
-alphan <- alpha0odds + y 
-S <- 100000 
-# Sample draws
-thetas <- MCMCpack::rdirichlet(S, alphan)
+# Bayes Factor: empirical Bayes vs odds-based prior
+bf <- exp(-marginal_likelihood(alpha0_eb)) / exp(-marginal_likelihood(alpha0_odds))
+print(bf)
+
+# Posterior Dirichlet parameters
+alpha_n <- alpha0_odds + y
+
+# Draw from posterior (predictive distribution)
+set.seed(10101)
+S <- 100000
+thetas <- rdirichlet(S, alpha_n)
 colnames(thetas) <- c("Liverpool", "Draw", "Manchester")
 head(thetas)
-Compositional::bivt.contour(thetas, cont.line = FALSE, appear = FALSE)
 
-# Predictive
+# Visualize posterior with compositional bivariate contour plot
+bivt.contour(thetas, cont.line = FALSE, appear = FALSE)
+
+# Predictive outcome: Liverpool 2 wins, Man City 3 wins in next 5 matches
 y0 <- c(2, 0, 3)
-Pred <- apply(thetas, 1, function(p) {rmultinom(1, size = sum(y0), prob = p)})
-ProbY0 <- sum(sapply(1:S, function(s) {sum(Pred[,s] == y0) == 3}))/S
-ProbY0
-PredY0 <- function(y0){
+
+# Simulated predictive probability of y0
+pred_draws <- apply(thetas, 1, function(p) {
+  rmultinom(1, size = sum(y0), prob = p)
+})
+
+prob_y0_sim <- mean(apply(pred_draws, 2, function(draw) all(draw == y0)))
+print(prob_y0_sim)
+
+# Analytical predictive probability of y0
+predictive_prob_y0 <- function(y0) {
   n <- sum(y0)
-  Res1 <- sum(sapply(1:length(y), function(l){lgamma(alphan[l] + y0[l]) - lgamma(alphan[l]) - lfactorial(y0[l])}))
-  Res <- lfactorial(n) + lgamma(sum(alphan)) - lgamma(sum(alphan)+n) + Res1
-  return(exp(Res))
+  term <- sum(sapply(1:length(y), function(l) {
+    lgamma(alpha_n[l] + y0[l]) - lgamma(alpha_n[l]) - lfactorial(y0[l])
+  }))
+  result <- lfactorial(n) + lgamma(sum(alpha_n)) - lgamma(sum(alpha_n) + n) + term
+  return(exp(result))
 }
-PredY0(y0) 
+
+predictive_prob_y0(y0)
 
 ########################## The multivariate normal-normal/inverse-Wishart model example ########################## 
 # Tangency portfolio
