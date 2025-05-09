@@ -103,3 +103,90 @@ predictive_prob_y0 <- function(y0) {
 }
 
 predictive_prob_y0(y0)
+
+########################## The multivariate normal-normal/inverse-Wishart model example ########################## 
+# Tangent portfolio
+
+# Load required libraries
+library(quantmod)
+library(xts)
+library(ggplot2)
+library(gridExtra)
+library(purrr)
+library(dplyr)
+
+# Define date range
+start_date <- as.Date("2021-01-01")
+end_date <- as.Date("2022-09-30")
+dates <- seq(start_date, end_date, by = "day")
+
+# Tickers of interest
+tickers <- c("AAPL", "NFLX", "AMZN", "GOOG", "INTC", "META", "MSFT", "TSLA", "NVDA", "PYPL")
+p <- length(tickers)
+
+# Download adjusted closing prices
+getSymbols(tickers, from = start_date, to = end_date, auto.assign = TRUE)
+
+prices <- map(tickers, ~ Ad(get(.x))) %>%
+  reduce(merge) %>%
+  `colnames<-`(tickers) %>%
+  as.data.frame()
+
+# Calculate daily log returns
+returns <- apply(prices, 2, function(x) diff(log(x))) %>%
+  as.data.frame()
+
+# Download 10-year Treasury yield from FRED
+t10yr <- getSymbols("DGS10", src = "FRED", from = start_date, to = end_date, auto.assign = FALSE)
+t10yr_daily <- ((1 + t10yr / 100)^(1 / 365)) - 1
+t10yr_daily <- t10yr_daily[rownames(returns), ]
+
+# Compute excess returns
+excess_returns <- as.matrix(returns) - kronecker(t(rep(1, p)), as.matrix(t10yr_daily))
+
+# Convert to data frame with dates
+df <- as.data.frame(excess_returns)
+df$Date <- as.Date(rownames(df))
+df$Month <- months(df$Date)
+df$Year <- format(df$Date, "%y")
+
+# Aggregate monthly means
+monthly_means <- map(1:p, function(i) {
+  aggregate(df[[i]] ~ Month + Year, data = df, FUN = mean)
+})
+
+# Extract values into matrix
+data_excess <- matrix(0, nrow = nrow(monthly_means[[1]]), ncol = p)
+for (i in 1:p) {
+  data_excess[, i] <- as.numeric(monthly_means[[i]][, 3])
+}
+colnames(data_excess) <- tickers
+
+# Hyperparameters
+N <- nrow(data_excess)
+mu_0 <- rep(0, p)
+beta_0 <- 1
+psi_0 <- 100 * diag(p)
+alpha_0 <- p + 2
+
+# Posterior parameters
+alpha_n <- N + alpha_0
+v_n <- alpha_n + 1 - p
+mu_hat <- colMeans(data_excess)
+mu_n <- (N / (N + beta_0)) * mu_hat + (beta_0 / (N + beta_0)) * mu_0
+S <- t(data_excess - matrix(mu_hat, N, p, byrow = TRUE)) %*% 
+  (data_excess - matrix(mu_hat, N, p, byrow = TRUE))
+psi_n <- psi_0 + S + (N * beta_0 / (N + beta_0)) * 
+  tcrossprod(mu_hat - mu_0)
+
+beta_n <- N + beta_0
+sigma_n <- psi_n / ((alpha_n + 1 - p) * beta_n)
+cov_n <- (sigma_n * (1 + beta_n)) * v_n / (v_n - 2)
+cov_inv <- solve(cov_n)
+
+# Optimal portfolio weights (Bayesian mean-variance)
+opt_weights <- t(cov_inv %*% mu_n / as.numeric(t(rep(1, p)) %*% cov_inv %*% mu_n))
+colnames(opt_weights) <- tickers
+
+# Result
+opt_weights
