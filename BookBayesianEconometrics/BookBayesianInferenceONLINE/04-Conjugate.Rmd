@@ -978,7 +978,7 @@ We study in this example the determinants of the monthly demand for electricity 
 	& + \beta_8\log(\text{Income}_i) + \beta_9 + \mu_i.
 \end{align*}
 
-We use a non-informative vague prior setting such that $\alpha_0=\delta_0=0.001$, $\boldsymbol{\beta}_0=\boldsymbol{0}$ and $\boldsymbol{B}_0=c_0\boldsymbol{I}_k$, where $c_0=1000$ and $k$ is the number of regressors. 
+We use a non-informative vague prior setting such that $\alpha_0=\delta_0=0.001$, $\boldsymbol{\beta}_0=\boldsymbol{0}$ and $\boldsymbol{B}_0=c_0\boldsymbol{I}_K$, where $c_0=1000$ and $K$ is the number of regressors. 
 
 The results from the **R** code (see below) indicate that the posterior mean of the own-price elasticity of electricity demand is -1.09, and the 95\% symmetric credible interval is (-1.47, -0.71). Households in neighborhoods with low socioeconomic conditions and those located in municipalities situated more than 1000 meters above sea level consume less electricity, with reductions of 32.7\% and 19.7\% on average, respectively. An additional room leads to an 8.7\% increase in electricity consumption, and each additional household member increases consumption by 5.9\% on average. The mean estimate for income elasticity is 0.074, meaning that a 10\% increase in income results in a 0.74\% increase in electricity demand.
 
@@ -986,7 +986,7 @@ We want to check the results of the Bayes factor comparing the previous specific
 \begin{align*}
 	\log(\text{Electricity}_i) & = \beta_1\text{IndSocio1}_i + \beta_2\text{IndSocio2}_i + \beta_3\text{Altitude}_i + \beta_4\text{Nrooms}_i\\
 	& + \beta_5\text{HouseholdMem}_i + \beta_6\text{Children}_i + \beta_7\log(\text{Income}_i)\\
-	& + \beta_8 + \mu.
+	& + \beta_8 + \mu_i
 \end{align*}
 
 In particular, we examine what happens as $c_0$ increases from $10^{0}$ to $10^{20}$. We observe that when $c_0 = 1$, $BF_{12} = 8.68 \times 10^{+16}$, which indicates very strong evidence in favor of the model including the price of electricity. However, as $c_0$ increases, the Bayes factor decreases, which suggests evidence supporting model 2. For instance, when $c_0 = 10^{20}$, $BF_{12} = 3.11 \times 10^{-4}$. This is an example of the issue with using non-informative priors to calculate the Bayes factor: there is very strong evidence supporting the parsimonious model as $c_0 \rightarrow \infty$.
@@ -995,87 +995,118 @@ We can obtain the posterior predictive distribution of the monthly electricity d
 
 
 ```{r}
-rm(list = ls())
-set.seed(010101)
-# Electricity demand
-DataUt <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/Utilities.csv", sep = ",", header = TRUE, quote = "")
+# Load required libraries
 library(dplyr)
-DataUtEst <- DataUt %>% 
-	filter(Electricity != 0)
-attach(DataUtEst)
-# Dependent variable: Monthly consumption (kWh) in log
-Y <- log(Electricity) 
-# Regressors quantity including intercept
-X <- cbind(LnPriceElect, IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem, Children, Lnincome, 1)
-# LnPriceElect: Price per kWh (USD) in log
-# IndSocio1, IndSocio2, IndSocio3: Indicators socio-economic condition (1) is the lowest and (3) the highest
-# Altitude: Indicator of household location (1 is more than 1000 meters above sea level)
-# Nrooms: Number of rooms in house
-# HouseholdMem: Number of household members
-# Children: Indicator por presence of children in household (1)
-# Lnincome: Monthly income (USD) in log
-k <- dim(X)[2]
-N <- dim(X)[1]
+library(Matrix)
+library(MCMCpack)
+library(LaplacesDemon)
+library(coda)
+library(HDInterval)
+
+# Load electricity demand data
+data_util <- read.csv(
+  "https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/Utilities.csv",
+  sep = ",", header = TRUE, quote = ""
+)
+
+# Filter out households with zero electricity consumption
+data_est <- data_util %>%
+  filter(Electricity != 0)
+
+# Define dependent variable: log of monthly electricity consumption
+y <- log(data_est$Electricity)
+
+# Define regressors including intercept
+X <- with(data_est, cbind(
+  LnPriceElect, IndSocio1, IndSocio2, Altitude, Nrooms,
+  HouseholdMem, Children, Lnincome, 1
+))
+
+# Dimensions
+k <- ncol(X)
+n <- nrow(X)
+
 # Hyperparameters
-d0 <- 0.001
-a0 <- 0.001
-b0 <- rep(0, k)
-B0 <- 1000*diag(k)
+d_0 <- 0.001
+a_0 <- 0.001
+b_0 <- rep(0, k)
+B_0 <- 1000 * diag(k)
+
 # Posterior parameters
-bhat <- solve(t(X)%*%X)%*%t(X)%*%Y
-Bn <- as.matrix(Matrix::forceSymmetric(solve(solve(B0) + t(X)%*%X))) # Force this matrix to be symmetric
-bn <- Bn%*%(solve(B0)%*%b0 + t(X)%*%X%*%bhat)
-dn <- as.numeric(d0 + t(Y)%*%Y+t(b0)%*%solve(B0)%*%b0-t(bn)%*%solve(Bn)%*%bn)
-an <- a0 + N
-Hn <- Bn*dn/an
+b_hat <- solve(t(X) %*% X) %*% t(X) %*% y
+B_n <- as.matrix(forceSymmetric(solve(solve(B_0) + t(X) %*% X)))
+b_n <- B_n %*% (solve(B_0) %*% b_0 + t(X) %*% X %*% b_hat)
+d_n <- as.numeric(d_0 + t(y) %*% y + t(b_0) %*% solve(B_0) %*% b_0 - t(b_n) %*% solve(B_n) %*% b_n)
+a_n <- a_0 + n
+H_n <- B_n * d_n / a_n
+
 # Posterior draws
-S <- 10000 # Number of draws from posterior distributions
-sig2 <- MCMCpack::rinvgamma(S,an/2,dn/2)
-summary(coda::mcmc(sig2))
-Betas <- LaplacesDemon::rmvt(S, bn, Hn, an)
-summary(coda::mcmc(Betas))
-# Log marginal function (multiply by -1 due to minimization)
-LogMarLikLM <- function(X, c0){
-	k <- dim(X)[2]
-	N <- dim(X)[1]	
-	# Hyperparameters
-	B0 <- c0*diag(k)
-	b0 <- rep(0, k)
-	# Posterior parameters
-	bhat <- solve(t(X)%*%X)%*%t(X)%*%Y
-	# Force this matrix to be symmetric
-	Bn <- as.matrix(Matrix::forceSymmetric(solve(solve(B0) + t(X)%*%X))) 
-	bn <- Bn%*%(solve(B0)%*%b0 + t(X)%*%X%*%bhat)
-	dn <- as.numeric(d0 + t(Y)%*%Y+t(b0)%*%solve(B0)%*%b0-t(bn)%*%solve(Bn)%*%bn)
-	an <- a0 + N
-	# Log marginal likelihood
-	logpy <- (N/2)*log(1/pi)+(a0/2)*log(d0)-(an/2)*log(dn) + 0.5*log(det(Bn)/det(B0)) + lgamma(an/2)-lgamma(a0/2)
-	return(-logpy)
+S <- 10000
+sigma2_samples <- rinvgamma(S, shape = a_n / 2, scale = d_n / 2)
+summary(mcmc(sigma2_samples))
+
+beta_samples <- rmvt(S, b_n, H_n, df = a_n)
+summary(mcmc(beta_samples))
+
+# Function to compute log marginal likelihood (negative for optimization)
+log_marginal_likelihood <- function(X, c_0) {
+  k <- ncol(X)
+  n <- nrow(X)
+  B_0 <- c_0 * diag(k)
+  b_0 <- rep(0, k)
+  
+  b_hat <- solve(t(X) %*% X) %*% t(X) %*% y
+  B_n <- as.matrix(forceSymmetric(solve(solve(B_0) + t(X) %*% X)))
+  b_n <- B_n %*% (solve(B_0) %*% b_0 + t(X) %*% X %*% b_hat)
+  d_n <- as.numeric(d_0 + t(y) %*% y + t(b_0) %*% solve(B_0) %*% b_0 - t(b_n) %*% solve(B_n) %*% b_n)
+  a_n <- a_0 + n
+  
+  log_py <- (n / 2) * log(1 / pi) +
+    (a_0 / 2) * log(d_0) -
+    (a_n / 2) * log(d_n) +
+    0.5 * log(det(B_n) / det(B_0)) +
+    lgamma(a_n / 2) - lgamma(a_0 / 2)
+  
+  return(-log_py)
 }
-cs <- c(10^0, 10^3, 10^6, 10^10, 10^12, 10^15, 10^20)
-# Observe -1 to recover the right sign
-LogML <- sapply(cs, function(c) {-LogMarLikLM(c0=c, X = X)}) 
-# Regressor without price
-Xnew <- cbind(IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem, Children, Lnincome, 1)
-# Observe -1 to recover the right sign
-LogMLnew <- sapply(cs, function(c) {-LogMarLikLM(c0=c,X = Xnew)})
-# Bayes factor
-BF <- exp(LogML - LogMLnew)
-BF
+
+# Prior variances
+c_values <- c(1, 1e3, 1e6, 1e10, 1e12, 1e15, 1e20)
+
+# Compute log marginal likelihoods
+log_ml <- sapply(c_values, function(c) -log_marginal_likelihood(X = X, c_0 = c))
+
+# Regressors without price
+X_new <- with(data_est, cbind(
+  IndSocio1, IndSocio2, Altitude, Nrooms,
+  HouseholdMem, Children, Lnincome, 1
+))
+
+log_ml_new <- sapply(c_values, function(c) -log_marginal_likelihood(X = X_new, c_0 = c))
+
+# Bayes Factor
+bf <- exp(log_ml - log_ml_new)
+bf
+
 # Predictive distribution
-Xpred <- c(log(0.15), 1, 0, 0, 2, 3, 1, log(500), 1)
-Mean <- Xpred%*%bn
-Hn <- dn*(1+t(Xpred)%*%Bn%*%Xpred)/an
-ExpKwH <- exp(LaplacesDemon::rmvt(S, Mean, Hn, an))
-summary(ExpKwH)
-HDI <- HDInterval::hdi(ExpKwH, credMass = 0.95) # Highest posterior density credible interval
-HDI
-hist(ExpKwH, main = "Histogram: Monthly demand of electricity", xlab = "Monthly kWh", col = "blue", breaks = 50)
+x_pred <- c(log(0.15), 1, 0, 0, 2, 3, 1, log(500), 1)
+mean_pred <- x_pred %*% b_n
+H_pred <- d_n * (1 + t(x_pred) %*% B_n %*% x_pred) / a_n
+expected_kwh <- exp(rmvt(S, mean_pred, H_pred, df = a_n))
+
+summary(expected_kwh)
+hdi_interval <- hdi(expected_kwh, credMass = 0.95)
+hdi_interval
+
+hist(expected_kwh,
+     main = "Histogram: Monthly demand of electricity",
+     xlab = "Monthly kWh",
+     col = "blue", breaks = 50)
 ```
 
 ## Multivariate linear regression: The conjugate normal-normal/inverse Wishart model {#sec44}
 
-Let's study the multivariate regression setting where there are $N$-dimensional vectors ${\boldsymbol{y}}_m$, for $m = 1, 2, \dots, M$, such that ${\boldsymbol{y}}_m = {\boldsymbol{X}} \boldsymbol{\beta}_m + \mu_m$. Here, ${\boldsymbol{X}}$ represents the set of common regressors, and $\mu_m$ is the $N$-dimensional vector of stochastic errors for each equation. We assume that ${\boldsymbol{U}} = [\mu_1 \ \mu_2 \ \dots \ \mu_M] \sim MN_{N,M}({\boldsymbol{0}}, {\boldsymbol{I}}_N, {\boldsymbol{\Sigma}})$, which is a matrix variate normal distribution where $\boldsymbol{\Sigma}$ is the covariance matrix of each $i$-th row of ${\boldsymbol{U}}$, for $i = 1, 2, \dots, N$, and we assume independence between the rows. Consequently, we have that $vec({\boldsymbol{U}}) \sim N_{N \times M}({\boldsymbol{0}}, \boldsymbol{\Sigma} \otimes {\boldsymbol{I}}_N)$.^[$vec$ denotes the vectorization operation, and $\otimes$ denotes the Kronecker product.]
+Let's study the multivariate regression setting where there are $N$-dimensional vectors ${\boldsymbol{y}}_m$, for $m = 1, 2, \dots, M$, such that ${\boldsymbol{y}}_m = {\boldsymbol{X}} \boldsymbol{\beta}_m + \boldsymbol{\mu}_m$. Here, ${\boldsymbol{X}}$ represents the set of common regressors, and $\boldsymbol{\mu}_m$ is the $N$-dimensional vector of stochastic errors for each equation. We assume that ${\boldsymbol{U}} = [\boldsymbol{\mu}_1 \ \boldsymbol{\mu}_2 \ \dots \ \boldsymbol{\mu}_M] \sim MN_{N,M}({\boldsymbol{0}}, {\boldsymbol{I}}_N, {\boldsymbol{\Sigma}})$, which is a matrix variate normal distribution where $\boldsymbol{\Sigma}$ is the covariance matrix of each $i$-th row of ${\boldsymbol{U}}$, for $i = 1, 2, \dots, N$, and we assume independence between the rows. Consequently, we have that $vec({\boldsymbol{U}}) \sim N_{N \times M}({\boldsymbol{0}}, \boldsymbol{\Sigma} \otimes {\boldsymbol{I}}_N)$.^[$vec$ denotes the vectorization operation, and $\otimes$ denotes the Kronecker product.]
 
 This framework can be written in matrix form
 \begin{align*}
@@ -1109,8 +1140,8 @@ This framework can be written in matrix form
 	\end{bmatrix}}_{\boldsymbol{U}}.
 \end{align*}
 
-Therefore, ${\boldsymbol{Y}}\sim N_{N\times M}({\boldsymbol{X}}{\boldsymbol{B}},\boldsymbol{\Sigma}\otimes {\boldsymbol{I}}_N)$,\footnote{We can write down the former expression in a more familiar way using vectorization properties,
-$\underbrace{vec(Y)}_{\boldsymbol{y}}=\underbrace{({\boldsymbol{I}}_M\otimes {\boldsymbol{X}})}_{{\boldsymbol{Z}}}\underbrace{vec({\boldsymbol{B}})}_{\boldsymbol{\beta}}+\underbrace{vec({\boldsymbol{U}})}_{\mu}$, where ${\boldsymbol{y}}\sim N_{N\times M}({\boldsymbol{Z}}\boldsymbol{\beta},\boldsymbol{\Sigma}\otimes {\boldsymbol{I}}_N)$.}
+Therefore, ${\boldsymbol{Y}}\sim N_{N\times M}({\boldsymbol{X}}{\boldsymbol{B}},\boldsymbol{\Sigma}\otimes {\boldsymbol{I}}_N)$,^[We can write down the former expression in a more familiar way using vectorization properties,
+$\underbrace{vec(Y)}_{\boldsymbol{y}}=\underbrace{({\boldsymbol{I}}_M\otimes {\boldsymbol{X}})}_{{\boldsymbol{Z}}}\underbrace{vec({\boldsymbol{B}})}_{\boldsymbol{\beta}}+\underbrace{vec({\boldsymbol{U}})}_{\mu}$, where ${\boldsymbol{y}}\sim N_{N\times M}({\boldsymbol{Z}}\boldsymbol{\beta},\boldsymbol{\Sigma}\otimes {\boldsymbol{I}}_N)$.]
 \begin{align*}
 	p({\boldsymbol{Y}}\mid  {\boldsymbol{B}},{\boldsymbol{\Sigma}}, {\boldsymbol{X}})&\propto |{{\boldsymbol \Sigma}}|^{-N/2}\exp\left\lbrace -\frac{1}{2}tr\left[({\boldsymbol{Y}}-{\boldsymbol{X}}{\boldsymbol{B}})^{\top}({\boldsymbol{Y}}-{\boldsymbol{X}}{\boldsymbol{B}}){{\boldsymbol \Sigma}}^{-1}\right]\right\rbrace
 	\\

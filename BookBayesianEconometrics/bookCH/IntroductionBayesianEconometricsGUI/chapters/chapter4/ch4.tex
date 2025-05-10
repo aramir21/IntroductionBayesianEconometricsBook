@@ -941,7 +941,7 @@ We study in this example the determinants of the monthly demand for electricity 
 	& + \beta_8\log(\text{Income}_i) + \beta_9 + \mu_i.
 \end{align*}
 
-We use a non-informative vague prior setting such that $\alpha_0=\delta_0=0.001$, $\bm{\beta}_0=\bm{0}$ and $\bm{B}_0=c_0\bm{I}_k$, where $c_0=1000$ and $k$ is the number of regressors. 
+We use a non-informative vague prior setting such that $\alpha_0=\delta_0=0.001$, $\bm{\beta}_0=\bm{0}$ and $\bm{B}_0=c_0\bm{I}_K$, where $c_0=1000$ and $K$ is the number of regressors. 
 
 The results from the \textbf{R} code (see below) indicate that the posterior mean of the own-price elasticity of electricity demand is -1.09, and the 95\% symmetric credible interval is (-1.47, -0.71). Households in neighborhoods with low socioeconomic conditions and those located in municipalities situated more than 1000 meters above sea level consume less electricity, with reductions of 32.7\% and 19.7\% on average, respectively. An additional room leads to an 8.7\% increase in electricity consumption, and each additional household member increases consumption by 5.9\% on average. The mean estimate for income elasticity is 0.074, meaning that a 10\% increase in income results in a 0.74\% increase in electricity demand.
 
@@ -949,7 +949,7 @@ We want to check the results of the Bayes factor comparing the previous specific
 \begin{align*}
 	\log(\text{Electricity}_i) & = \beta_1\text{IndSocio1}_i + \beta_2\text{IndSocio2}_i + \beta_3\text{Altitude}_i + \beta_4\text{Nrooms}_i\\
 	& + \beta_5\text{HouseholdMem}_i + \beta_6\text{Children}_i + \beta_7\log(\text{Income}_i)\\
-	& + \beta_8 + \mu.
+	& + \beta_8 + \mu_i.
 \end{align*}
 
 In particular, we examine what happens as $c_0$ increases from $10^{0}$ to $10^{20}$. We observe that when $c_0 = 1$, $BF_{12} = 8.68 \times 10^{+16}$, which indicates very strong evidence in favor of the model including the price of electricity. However, as $c_0$ increases, the Bayes factor decreases, which suggests evidence supporting model 2. For instance, when $c_0 = 10^{20}$, $BF_{12} = 3.11 \times 10^{-4}$. This is an example of the issue with using non-informative priors to calculate the Bayes factor: there is very strong evidence supporting the parsimonious model as $c_0 \rightarrow \infty$.
@@ -1124,7 +1124,7 @@ hist(ExpKwH, main = "Histogram: Monthly demand of electricity", xlab = "Monthly 
  
 \section{Multivariate linear regression: The conjugate normal-normal/inverse Wishart model}\label{sec44}
 
-Let's study the multivariate regression setting where there are $N$-dimensional vectors ${\bm{y}}_m$, for $m = 1, 2, \dots, M$, such that ${\bm{y}}_m = {\bm{X}} \bm{\beta}_m + \mu_m$. Here, ${\bm{X}}$ represents the set of common regressors, and $\mu_m$ is the $N$-dimensional vector of stochastic errors for each equation. We assume that ${\bm{U}} = [\mu_1 \ \mu_2 \ \dots \ \mu_M] \sim MN_{N,M}({\bm{0}}, {\bm{I}}_N, {\bm{\Sigma}})$, which is a matrix variate normal distribution where $\bm{\Sigma}$ is the covariance matrix of each $i$-th row of ${\bm{U}}$, for $i = 1, 2, \dots, N$, and we assume independence between the rows. Consequently, we have that $vec({\bm{U}}) \sim N_{N \times M}({\bm{0}}, \bm{\Sigma} \otimes {\bm{I}}_N)$.\footnote{$vec$ denotes the vectorization operation, and $\otimes$ denotes the Kronecker product.}
+Let's study the multivariate regression setting where there are $N$-dimensional vectors ${\bm{y}}_m$, for $m = 1, 2, \dots, M$, such that ${\bm{y}}_m = {\bm{X}} \bm{\beta}_m + \bm{\mu}_m$. Here, ${\bm{X}}$ represents the set of common regressors, and $\bm{\mu}_m$ is the $N$-dimensional vector of stochastic errors for each equation. We assume that ${\bm{U}} = [\bm{\mu}_1 \ \bm{\mu}_2 \ \dots \ \bm{\mu}_M] \sim MN_{N,M}({\bm{0}}, {\bm{I}}_N, {\bm{\Sigma}})$, which is a matrix variate normal distribution where $\bm{\Sigma}$ is the covariance matrix of each $i$-th row of ${\bm{U}}$, for $i = 1, 2, \dots, N$, and we assume independence between the rows. Consequently, we have that $vec({\bm{U}}) \sim N_{N \times M}({\bm{0}}, \bm{\Sigma} \otimes {\bm{I}}_N)$.\footnote{$vec$ denotes the vectorization operation, and $\otimes$ denotes the Kronecker product.}
 
 This framework can be written in matrix form
 \begin{align*}
@@ -1168,7 +1168,7 @@ $\underbrace{vec(Y)}_{\bm{y}}=\underbrace{({\bm{I}}_M\otimes {\bm{X}})}_{{\bm{Z}
 
 where ${\bm{S}}= ({\bm{Y}}-{\bm{X}}\widehat{\bm{B}})^{\top}({\bm{Y}}-{\bm{X}}\widehat{\bm{B}})$, $\widehat{\bm{B}}= ({\bm{X}}^{\top}{\bm{X}})^{-1}{\bm{X}}^{\top}{\bm{Y}}$ (see Exercise 9).
 
-The conjugate prior for this models is $\pi({\bm{B}},{\bm{\Sigma}})=\pi({\bm{B}}\mid {\bm{\Sigma}})\pi({\bm{\Sigma}})$ where ${\bm{B}}\mid {\bm \Sigma}\sim N_{K\times M}({\bm{B}}_{0},{\bm{V}}_{0},{\bm{\Sigma}})$ and ${\bm{\Sigma}}\sim IW({\bm{\Psi}}_{0},\alpha_{0})$, that is,
+The conjugate prior for this model is $\pi({\bm{B}},{\bm{\Sigma}})=\pi({\bm{B}}\mid {\bm{\Sigma}})\pi({\bm{\Sigma}})$ where ${\bm{B}}\mid {\bm \Sigma}\sim N_{K\times M}({\bm{B}}_{0},{\bm{V}}_{0},{\bm{\Sigma}})$ and ${\bm{\Sigma}}\sim IW({\bm{\Psi}}_{0},\alpha_{0})$, that is,
 \begin{align*}
 	\pi ({\bm{B}},{\bm{\Sigma}})\propto &\left|{\bm{\Sigma}} \right|^{-K/2}\exp\left\lbrace -\frac{1}{2}tr\left[({\bm{B}}-{\bm{B}}_{0})^{\top}{\bm{V}}_{0}^{-1}({\bm{B}}-{\bm{B}}_{0}){\bm \Sigma}^{-1}\right]\right\rbrace \\
 	& \times \left|{\bm \Sigma} \right|^{-(\alpha_{0}+M+1)/2}\exp\left\lbrace -\frac{1}{2}tr \left[ {\bm{\Psi}}_{0} {\bm \Sigma}^{-1}\right] \right\rbrace.

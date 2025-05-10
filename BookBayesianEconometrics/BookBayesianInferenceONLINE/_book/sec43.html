@@ -591,55 +591,78 @@ Thus,</p>
 <span class="math display">\[\begin{align*}
     \log(\text{Electricity}_i) &amp; = \beta_1\log(\text{price}_i) + \beta_2\text{IndSocio1}_i + \beta_3\text{IndSocio2}_i + \beta_4\text{Altitude}_i \\
     &amp; + \beta_5\text{Nrooms}_i + \beta_6\text{HouseholdMem}_i + \beta_7\text{Children}_i\\
-    &amp; + \beta_8\log(\text{Income}_i) + \beta_9 + \mu.
+    &amp; + \beta_8\log(\text{Income}_i) + \beta_9 + \mu_i.
 \end{align*}\]</span></p>
-<p>We use a non-informative vague prior setting such that <span class="math inline">\(\alpha_0=\delta_0=0.001\)</span>, <span class="math inline">\(\boldsymbol{\beta}_0=\boldsymbol{0}\)</span> and <span class="math inline">\(\boldsymbol{B}_0=c_0\boldsymbol{I}_k\)</span>, where <span class="math inline">\(c_0=1000\)</span> and <span class="math inline">\(k\)</span> is the number of regressors.</p>
+<p>We use a non-informative vague prior setting such that <span class="math inline">\(\alpha_0=\delta_0=0.001\)</span>, <span class="math inline">\(\boldsymbol{\beta}_0=\boldsymbol{0}\)</span> and <span class="math inline">\(\boldsymbol{B}_0=c_0\boldsymbol{I}_K\)</span>, where <span class="math inline">\(c_0=1000\)</span> and <span class="math inline">\(K\)</span> is the number of regressors.</p>
 <p>The results from the <strong>R</strong> code (see below) indicate that the posterior mean of the own-price elasticity of electricity demand is -1.09, and the 95% symmetric credible interval is (-1.47, -0.71). Households in neighborhoods with low socioeconomic conditions and those located in municipalities situated more than 1000 meters above sea level consume less electricity, with reductions of 32.7% and 19.7% on average, respectively. An additional room leads to an 8.7% increase in electricity consumption, and each additional household member increases consumption by 5.9% on average. The mean estimate for income elasticity is 0.074, meaning that a 10% increase in income results in a 0.74% increase in electricity demand.</p>
 <p>We want to check the results of the Bayes factor comparing the previous specification (model 1) with other specification without considering the price of electricity (model 2), that is,
 <span class="math display">\[\begin{align*}
     \log(\text{Electricity}_i) &amp; = \beta_1\text{IndSocio1}_i + \beta_2\text{IndSocio2}_i + \beta_3\text{Altitude}_i + \beta_4\text{Nrooms}_i\\
     &amp; + \beta_5\text{HouseholdMem}_i + \beta_6\text{Children}_i + \beta_7\log(\text{Income}_i)\\
-    &amp; + \beta_8 + \mu.
+    &amp; + \beta_8 + \mu_i
 \end{align*}\]</span></p>
 <p>In particular, we examine what happens as <span class="math inline">\(c_0\)</span> increases from <span class="math inline">\(10^{0}\)</span> to <span class="math inline">\(10^{20}\)</span>. We observe that when <span class="math inline">\(c_0 = 1\)</span>, <span class="math inline">\(BF_{12} = 8.68 \times 10^{+16}\)</span>, which indicates very strong evidence in favor of the model including the price of electricity. However, as <span class="math inline">\(c_0\)</span> increases, the Bayes factor decreases, which suggests evidence supporting model 2. For instance, when <span class="math inline">\(c_0 = 10^{20}\)</span>, <span class="math inline">\(BF_{12} = 3.11 \times 10^{-4}\)</span>. This is an example of the issue with using non-informative priors to calculate the Bayes factor: there is very strong evidence supporting the parsimonious model as <span class="math inline">\(c_0 \rightarrow \infty\)</span>.</p>
 <p>We can obtain the posterior predictive distribution of the monthly electricity demand for a household located in the lowest socioeconomic condition in a municipality situated below 1000 meters above sea level, with 2 rooms, 3 members (with children), a monthly income of USD 500, and an electricity price of USD 0.15/kWh. The next Figure shows the histogram of the predictive posterior distribution. The highest posterior density credible interval at 95% is between 44.4 kWh and 373.9 kWh, and the posterior mean is 169.4 kWh.</p>
-<div class="sourceCode" id="cb53"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb53-1"><a href="sec43.html#cb53-1" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>())</span>
-<span id="cb53-2"><a href="sec43.html#cb53-2" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">010101</span>)</span>
-<span id="cb53-3"><a href="sec43.html#cb53-3" tabindex="-1"></a><span class="co"># Electricity demand</span></span>
-<span id="cb53-4"><a href="sec43.html#cb53-4" tabindex="-1"></a>DataUt <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/Utilities.csv&quot;</span>, <span class="at">sep =</span> <span class="st">&quot;,&quot;</span>, <span class="at">header =</span> <span class="cn">TRUE</span>, <span class="at">quote =</span> <span class="st">&quot;&quot;</span>)</span>
-<span id="cb53-5"><a href="sec43.html#cb53-5" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
-<span id="cb53-6"><a href="sec43.html#cb53-6" tabindex="-1"></a>DataUtEst <span class="ot">&lt;-</span> DataUt <span class="sc">%&gt;%</span> </span>
-<span id="cb53-7"><a href="sec43.html#cb53-7" tabindex="-1"></a>    <span class="fu">filter</span>(Electricity <span class="sc">!=</span> <span class="dv">0</span>)</span>
-<span id="cb53-8"><a href="sec43.html#cb53-8" tabindex="-1"></a><span class="fu">attach</span>(DataUtEst)</span>
-<span id="cb53-9"><a href="sec43.html#cb53-9" tabindex="-1"></a><span class="co"># Dependent variable: Monthly consumption (kWh) in log</span></span>
-<span id="cb53-10"><a href="sec43.html#cb53-10" tabindex="-1"></a>Y <span class="ot">&lt;-</span> <span class="fu">log</span>(Electricity) </span>
-<span id="cb53-11"><a href="sec43.html#cb53-11" tabindex="-1"></a><span class="co"># Regressors quantity including intercept</span></span>
-<span id="cb53-12"><a href="sec43.html#cb53-12" tabindex="-1"></a>X <span class="ot">&lt;-</span> <span class="fu">cbind</span>(LnPriceElect, IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem, Children, Lnincome, <span class="dv">1</span>)</span>
-<span id="cb53-13"><a href="sec43.html#cb53-13" tabindex="-1"></a><span class="co"># LnPriceElect: Price per kWh (USD) in log</span></span>
-<span id="cb53-14"><a href="sec43.html#cb53-14" tabindex="-1"></a><span class="co"># IndSocio1, IndSocio2, IndSocio3: Indicators socio-economic condition (1) is the lowest and (3) the highest</span></span>
-<span id="cb53-15"><a href="sec43.html#cb53-15" tabindex="-1"></a><span class="co"># Altitude: Indicator of household location (1 is more than 1000 meters above sea level)</span></span>
-<span id="cb53-16"><a href="sec43.html#cb53-16" tabindex="-1"></a><span class="co"># Nrooms: Number of rooms in house</span></span>
-<span id="cb53-17"><a href="sec43.html#cb53-17" tabindex="-1"></a><span class="co"># HouseholdMem: Number of household members</span></span>
-<span id="cb53-18"><a href="sec43.html#cb53-18" tabindex="-1"></a><span class="co"># Children: Indicator por presence of children in household (1)</span></span>
-<span id="cb53-19"><a href="sec43.html#cb53-19" tabindex="-1"></a><span class="co"># Lnincome: Monthly income (USD) in log</span></span>
-<span id="cb53-20"><a href="sec43.html#cb53-20" tabindex="-1"></a>k <span class="ot">&lt;-</span> <span class="fu">dim</span>(X)[<span class="dv">2</span>]</span>
-<span id="cb53-21"><a href="sec43.html#cb53-21" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="fu">dim</span>(X)[<span class="dv">1</span>]</span>
-<span id="cb53-22"><a href="sec43.html#cb53-22" tabindex="-1"></a><span class="co"># Hyperparameters</span></span>
-<span id="cb53-23"><a href="sec43.html#cb53-23" tabindex="-1"></a>d0 <span class="ot">&lt;-</span> <span class="fl">0.001</span></span>
-<span id="cb53-24"><a href="sec43.html#cb53-24" tabindex="-1"></a>a0 <span class="ot">&lt;-</span> <span class="fl">0.001</span></span>
-<span id="cb53-25"><a href="sec43.html#cb53-25" tabindex="-1"></a>b0 <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">0</span>, k)</span>
-<span id="cb53-26"><a href="sec43.html#cb53-26" tabindex="-1"></a>B0 <span class="ot">&lt;-</span> <span class="dv">1000</span><span class="sc">*</span><span class="fu">diag</span>(k)</span>
-<span id="cb53-27"><a href="sec43.html#cb53-27" tabindex="-1"></a><span class="co"># Posterior parameters</span></span>
-<span id="cb53-28"><a href="sec43.html#cb53-28" tabindex="-1"></a>bhat <span class="ot">&lt;-</span> <span class="fu">solve</span>(<span class="fu">t</span>(X)<span class="sc">%*%</span>X)<span class="sc">%*%</span><span class="fu">t</span>(X)<span class="sc">%*%</span>Y</span>
-<span id="cb53-29"><a href="sec43.html#cb53-29" tabindex="-1"></a>Bn <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(Matrix<span class="sc">::</span><span class="fu">forceSymmetric</span>(<span class="fu">solve</span>(<span class="fu">solve</span>(B0) <span class="sc">+</span> <span class="fu">t</span>(X)<span class="sc">%*%</span>X))) <span class="co"># Force this matrix to be symmetric</span></span>
-<span id="cb53-30"><a href="sec43.html#cb53-30" tabindex="-1"></a>bn <span class="ot">&lt;-</span> Bn<span class="sc">%*%</span>(<span class="fu">solve</span>(B0)<span class="sc">%*%</span>b0 <span class="sc">+</span> <span class="fu">t</span>(X)<span class="sc">%*%</span>X<span class="sc">%*%</span>bhat)</span>
-<span id="cb53-31"><a href="sec43.html#cb53-31" tabindex="-1"></a>dn <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(d0 <span class="sc">+</span> <span class="fu">t</span>(Y)<span class="sc">%*%</span>Y<span class="sc">+</span><span class="fu">t</span>(b0)<span class="sc">%*%</span><span class="fu">solve</span>(B0)<span class="sc">%*%</span>b0<span class="sc">-</span><span class="fu">t</span>(bn)<span class="sc">%*%</span><span class="fu">solve</span>(Bn)<span class="sc">%*%</span>bn)</span>
-<span id="cb53-32"><a href="sec43.html#cb53-32" tabindex="-1"></a>an <span class="ot">&lt;-</span> a0 <span class="sc">+</span> N</span>
-<span id="cb53-33"><a href="sec43.html#cb53-33" tabindex="-1"></a>Hn <span class="ot">&lt;-</span> Bn<span class="sc">*</span>dn<span class="sc">/</span>an</span>
-<span id="cb53-34"><a href="sec43.html#cb53-34" tabindex="-1"></a><span class="co"># Posterior draws</span></span>
-<span id="cb53-35"><a href="sec43.html#cb53-35" tabindex="-1"></a>S <span class="ot">&lt;-</span> <span class="dv">10000</span> <span class="co"># Number of draws from posterior distributions</span></span>
-<span id="cb53-36"><a href="sec43.html#cb53-36" tabindex="-1"></a>sig2 <span class="ot">&lt;-</span> MCMCpack<span class="sc">::</span><span class="fu">rinvgamma</span>(S,an<span class="sc">/</span><span class="dv">2</span>,dn<span class="sc">/</span><span class="dv">2</span>)</span>
-<span id="cb53-37"><a href="sec43.html#cb53-37" tabindex="-1"></a><span class="fu">summary</span>(coda<span class="sc">::</span><span class="fu">mcmc</span>(sig2))</span></code></pre></div>
+<div class="sourceCode" id="cb53"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb53-1"><a href="sec43.html#cb53-1" tabindex="-1"></a><span class="co"># Load required libraries</span></span>
+<span id="cb53-2"><a href="sec43.html#cb53-2" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb53-3"><a href="sec43.html#cb53-3" tabindex="-1"></a><span class="fu">library</span>(Matrix)</span>
+<span id="cb53-4"><a href="sec43.html#cb53-4" tabindex="-1"></a><span class="fu">library</span>(MCMCpack)</span>
+<span id="cb53-5"><a href="sec43.html#cb53-5" tabindex="-1"></a><span class="fu">library</span>(LaplacesDemon)</span></code></pre></div>
+<pre><code>## 
+## Attaching package: &#39;LaplacesDemon&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:purrr&#39;:
+## 
+##     partial</code></pre>
+<pre><code>## The following objects are masked from &#39;package:MCMCpack&#39;:
+## 
+##     BayesFactor, ddirichlet, dinvgamma, rdirichlet, rinvgamma</code></pre>
+<pre><code>## The following object is masked from &#39;package:sirt&#39;:
+## 
+##     rmvn</code></pre>
+<div class="sourceCode" id="cb58"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb58-1"><a href="sec43.html#cb58-1" tabindex="-1"></a><span class="fu">library</span>(coda)</span>
+<span id="cb58-2"><a href="sec43.html#cb58-2" tabindex="-1"></a><span class="fu">library</span>(HDInterval)</span>
+<span id="cb58-3"><a href="sec43.html#cb58-3" tabindex="-1"></a></span>
+<span id="cb58-4"><a href="sec43.html#cb58-4" tabindex="-1"></a><span class="co"># Load electricity demand data</span></span>
+<span id="cb58-5"><a href="sec43.html#cb58-5" tabindex="-1"></a>data_util <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(</span>
+<span id="cb58-6"><a href="sec43.html#cb58-6" tabindex="-1"></a>  <span class="st">&quot;https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/Utilities.csv&quot;</span>,</span>
+<span id="cb58-7"><a href="sec43.html#cb58-7" tabindex="-1"></a>  <span class="at">sep =</span> <span class="st">&quot;,&quot;</span>, <span class="at">header =</span> <span class="cn">TRUE</span>, <span class="at">quote =</span> <span class="st">&quot;&quot;</span></span>
+<span id="cb58-8"><a href="sec43.html#cb58-8" tabindex="-1"></a>)</span>
+<span id="cb58-9"><a href="sec43.html#cb58-9" tabindex="-1"></a></span>
+<span id="cb58-10"><a href="sec43.html#cb58-10" tabindex="-1"></a><span class="co"># Filter out households with zero electricity consumption</span></span>
+<span id="cb58-11"><a href="sec43.html#cb58-11" tabindex="-1"></a>data_est <span class="ot">&lt;-</span> data_util <span class="sc">%&gt;%</span></span>
+<span id="cb58-12"><a href="sec43.html#cb58-12" tabindex="-1"></a>  <span class="fu">filter</span>(Electricity <span class="sc">!=</span> <span class="dv">0</span>)</span>
+<span id="cb58-13"><a href="sec43.html#cb58-13" tabindex="-1"></a></span>
+<span id="cb58-14"><a href="sec43.html#cb58-14" tabindex="-1"></a><span class="co"># Define dependent variable: log of monthly electricity consumption</span></span>
+<span id="cb58-15"><a href="sec43.html#cb58-15" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="fu">log</span>(data_est<span class="sc">$</span>Electricity)</span>
+<span id="cb58-16"><a href="sec43.html#cb58-16" tabindex="-1"></a></span>
+<span id="cb58-17"><a href="sec43.html#cb58-17" tabindex="-1"></a><span class="co"># Define regressors including intercept</span></span>
+<span id="cb58-18"><a href="sec43.html#cb58-18" tabindex="-1"></a>X <span class="ot">&lt;-</span> <span class="fu">with</span>(data_est, <span class="fu">cbind</span>(</span>
+<span id="cb58-19"><a href="sec43.html#cb58-19" tabindex="-1"></a>  LnPriceElect, IndSocio1, IndSocio2, Altitude, Nrooms,</span>
+<span id="cb58-20"><a href="sec43.html#cb58-20" tabindex="-1"></a>  HouseholdMem, Children, Lnincome, <span class="dv">1</span></span>
+<span id="cb58-21"><a href="sec43.html#cb58-21" tabindex="-1"></a>))</span>
+<span id="cb58-22"><a href="sec43.html#cb58-22" tabindex="-1"></a></span>
+<span id="cb58-23"><a href="sec43.html#cb58-23" tabindex="-1"></a><span class="co"># Dimensions</span></span>
+<span id="cb58-24"><a href="sec43.html#cb58-24" tabindex="-1"></a>k <span class="ot">&lt;-</span> <span class="fu">ncol</span>(X)</span>
+<span id="cb58-25"><a href="sec43.html#cb58-25" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(X)</span>
+<span id="cb58-26"><a href="sec43.html#cb58-26" tabindex="-1"></a></span>
+<span id="cb58-27"><a href="sec43.html#cb58-27" tabindex="-1"></a><span class="co"># Hyperparameters</span></span>
+<span id="cb58-28"><a href="sec43.html#cb58-28" tabindex="-1"></a>d_0 <span class="ot">&lt;-</span> <span class="fl">0.001</span></span>
+<span id="cb58-29"><a href="sec43.html#cb58-29" tabindex="-1"></a>a_0 <span class="ot">&lt;-</span> <span class="fl">0.001</span></span>
+<span id="cb58-30"><a href="sec43.html#cb58-30" tabindex="-1"></a>b_0 <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">0</span>, k)</span>
+<span id="cb58-31"><a href="sec43.html#cb58-31" tabindex="-1"></a>B_0 <span class="ot">&lt;-</span> <span class="dv">1000</span> <span class="sc">*</span> <span class="fu">diag</span>(k)</span>
+<span id="cb58-32"><a href="sec43.html#cb58-32" tabindex="-1"></a></span>
+<span id="cb58-33"><a href="sec43.html#cb58-33" tabindex="-1"></a><span class="co"># Posterior parameters</span></span>
+<span id="cb58-34"><a href="sec43.html#cb58-34" tabindex="-1"></a>b_hat <span class="ot">&lt;-</span> <span class="fu">solve</span>(<span class="fu">t</span>(X) <span class="sc">%*%</span> X) <span class="sc">%*%</span> <span class="fu">t</span>(X) <span class="sc">%*%</span> y</span>
+<span id="cb58-35"><a href="sec43.html#cb58-35" tabindex="-1"></a>B_n <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(<span class="fu">forceSymmetric</span>(<span class="fu">solve</span>(<span class="fu">solve</span>(B_0) <span class="sc">+</span> <span class="fu">t</span>(X) <span class="sc">%*%</span> X)))</span>
+<span id="cb58-36"><a href="sec43.html#cb58-36" tabindex="-1"></a>b_n <span class="ot">&lt;-</span> B_n <span class="sc">%*%</span> (<span class="fu">solve</span>(B_0) <span class="sc">%*%</span> b_0 <span class="sc">+</span> <span class="fu">t</span>(X) <span class="sc">%*%</span> X <span class="sc">%*%</span> b_hat)</span>
+<span id="cb58-37"><a href="sec43.html#cb58-37" tabindex="-1"></a>d_n <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(d_0 <span class="sc">+</span> <span class="fu">t</span>(y) <span class="sc">%*%</span> y <span class="sc">+</span> <span class="fu">t</span>(b_0) <span class="sc">%*%</span> <span class="fu">solve</span>(B_0) <span class="sc">%*%</span> b_0 <span class="sc">-</span> <span class="fu">t</span>(b_n) <span class="sc">%*%</span> <span class="fu">solve</span>(B_n) <span class="sc">%*%</span> b_n)</span>
+<span id="cb58-38"><a href="sec43.html#cb58-38" tabindex="-1"></a>a_n <span class="ot">&lt;-</span> a_0 <span class="sc">+</span> n</span>
+<span id="cb58-39"><a href="sec43.html#cb58-39" tabindex="-1"></a>H_n <span class="ot">&lt;-</span> B_n <span class="sc">*</span> d_n <span class="sc">/</span> a_n</span>
+<span id="cb58-40"><a href="sec43.html#cb58-40" tabindex="-1"></a></span>
+<span id="cb58-41"><a href="sec43.html#cb58-41" tabindex="-1"></a><span class="co"># Posterior draws</span></span>
+<span id="cb58-42"><a href="sec43.html#cb58-42" tabindex="-1"></a>S <span class="ot">&lt;-</span> <span class="dv">10000</span></span>
+<span id="cb58-43"><a href="sec43.html#cb58-43" tabindex="-1"></a>sigma2_samples <span class="ot">&lt;-</span> <span class="fu">rinvgamma</span>(S, <span class="at">shape =</span> a_n <span class="sc">/</span> <span class="dv">2</span>, <span class="at">scale =</span> d_n <span class="sc">/</span> <span class="dv">2</span>)</span>
+<span id="cb58-44"><a href="sec43.html#cb58-44" tabindex="-1"></a><span class="fu">summary</span>(<span class="fu">mcmc</span>(sigma2_samples))</span></code></pre></div>
 <pre><code>## 
 ## Iterations = 1:10000
 ## Thinning interval = 1 
@@ -650,14 +673,14 @@ Thus,</p>
 ##    plus standard error of the mean:
 ## 
 ##           Mean             SD       Naive SE Time-series SE 
-##      2.361e-01      7.617e-03      7.617e-05      7.617e-05 
+##      2.361e-01      7.524e-03      7.524e-05      7.524e-05 
 ## 
 ## 2. Quantiles for each variable:
 ## 
 ##   2.5%    25%    50%    75%  97.5% 
-## 0.2217 0.2309 0.2360 0.2412 0.2513</code></pre>
-<div class="sourceCode" id="cb55"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb55-1"><a href="sec43.html#cb55-1" tabindex="-1"></a>Betas <span class="ot">&lt;-</span> LaplacesDemon<span class="sc">::</span><span class="fu">rmvt</span>(S, bn, Hn, an)</span>
-<span id="cb55-2"><a href="sec43.html#cb55-2" tabindex="-1"></a><span class="fu">summary</span>(coda<span class="sc">::</span><span class="fu">mcmc</span>(Betas))</span></code></pre></div>
+## 0.2219 0.2309 0.2359 0.2411 0.2513</code></pre>
+<div class="sourceCode" id="cb60"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb60-1"><a href="sec43.html#cb60-1" tabindex="-1"></a>beta_samples <span class="ot">&lt;-</span> <span class="fu">rmvt</span>(S, b_n, H_n, <span class="at">df =</span> a_n)</span>
+<span id="cb60-2"><a href="sec43.html#cb60-2" tabindex="-1"></a><span class="fu">summary</span>(<span class="fu">mcmc</span>(beta_samples))</span></code></pre></div>
 <pre><code>## 
 ## Iterations = 1:10000
 ## Thinning interval = 1 
@@ -668,79 +691,94 @@ Thus,</p>
 ##    plus standard error of the mean:
 ## 
 ##                  Mean      SD  Naive SE Time-series SE
-## LnPriceElect -1.09043 0.19459 0.0019459      0.0019459
-## IndSocio1    -0.32783 0.05294 0.0005294      0.0005294
-## IndSocio2    -0.05737 0.04557 0.0004557      0.0004557
-## Altitude     -0.19780 0.02386 0.0002386      0.0002429
-## Nrooms        0.08731 0.01094 0.0001094      0.0001119
-## HouseholdMem  0.05987 0.01334 0.0001334      0.0001334
-## Children      0.05696 0.03043 0.0003043      0.0003043
-## Lnincome      0.07447 0.01223 0.0001223      0.0001223
-##               2.52296 0.35077 0.0035077      0.0035077
+## LnPriceElect -1.09036 0.19366 0.0019366      0.0019366
+## IndSocio1    -0.32714 0.05233 0.0005233      0.0005233
+## IndSocio2    -0.05622 0.04621 0.0004621      0.0004621
+## Altitude     -0.19758 0.02406 0.0002406      0.0002327
+## Nrooms        0.08740 0.01092 0.0001092      0.0001092
+## HouseholdMem  0.06007 0.01343 0.0001343      0.0001378
+## Children      0.05679 0.03069 0.0003069      0.0003069
+## Lnincome      0.07442 0.01209 0.0001209      0.0001209
+##               2.52160 0.34868 0.0034868      0.0034868
 ## 
 ## 2. Quantiles for each variable:
 ## 
 ##                   2.5%      25%      50%      75%    97.5%
-## LnPriceElect -1.472069 -1.22432 -1.08961 -0.95703 -0.71429
-## IndSocio1    -0.435957 -0.36228 -0.32731 -0.29133 -0.22588
-## IndSocio2    -0.147252 -0.08744 -0.05757 -0.02650  0.03254
-## Altitude     -0.244759 -0.21372 -0.19783 -0.18164 -0.15094
-## Nrooms        0.066432  0.07985  0.08709  0.09480  0.10864
-## HouseholdMem  0.033623  0.05089  0.05975  0.06889  0.08596
-## Children     -0.002259  0.03637  0.05698  0.07736  0.11681
-## Lnincome      0.050536  0.06614  0.07449  0.08283  0.09852
-##               1.835506  2.28703  2.52165  2.76364  3.21199</code></pre>
-<div class="sourceCode" id="cb57"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb57-1"><a href="sec43.html#cb57-1" tabindex="-1"></a><span class="co"># Log marginal function (multiply by -1 due to minimization)</span></span>
-<span id="cb57-2"><a href="sec43.html#cb57-2" tabindex="-1"></a>LogMarLikLM <span class="ot">&lt;-</span> <span class="cf">function</span>(X, c0){</span>
-<span id="cb57-3"><a href="sec43.html#cb57-3" tabindex="-1"></a>    k <span class="ot">&lt;-</span> <span class="fu">dim</span>(X)[<span class="dv">2</span>]</span>
-<span id="cb57-4"><a href="sec43.html#cb57-4" tabindex="-1"></a>    N <span class="ot">&lt;-</span> <span class="fu">dim</span>(X)[<span class="dv">1</span>]  </span>
-<span id="cb57-5"><a href="sec43.html#cb57-5" tabindex="-1"></a>    <span class="co"># Hyperparameters</span></span>
-<span id="cb57-6"><a href="sec43.html#cb57-6" tabindex="-1"></a>    B0 <span class="ot">&lt;-</span> c0<span class="sc">*</span><span class="fu">diag</span>(k)</span>
-<span id="cb57-7"><a href="sec43.html#cb57-7" tabindex="-1"></a>    b0 <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">0</span>, k)</span>
-<span id="cb57-8"><a href="sec43.html#cb57-8" tabindex="-1"></a>    <span class="co"># Posterior parameters</span></span>
-<span id="cb57-9"><a href="sec43.html#cb57-9" tabindex="-1"></a>    bhat <span class="ot">&lt;-</span> <span class="fu">solve</span>(<span class="fu">t</span>(X)<span class="sc">%*%</span>X)<span class="sc">%*%</span><span class="fu">t</span>(X)<span class="sc">%*%</span>Y</span>
-<span id="cb57-10"><a href="sec43.html#cb57-10" tabindex="-1"></a>    <span class="co"># Force this matrix to be symmetric</span></span>
-<span id="cb57-11"><a href="sec43.html#cb57-11" tabindex="-1"></a>    Bn <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(Matrix<span class="sc">::</span><span class="fu">forceSymmetric</span>(<span class="fu">solve</span>(<span class="fu">solve</span>(B0) <span class="sc">+</span> <span class="fu">t</span>(X)<span class="sc">%*%</span>X))) </span>
-<span id="cb57-12"><a href="sec43.html#cb57-12" tabindex="-1"></a>    bn <span class="ot">&lt;-</span> Bn<span class="sc">%*%</span>(<span class="fu">solve</span>(B0)<span class="sc">%*%</span>b0 <span class="sc">+</span> <span class="fu">t</span>(X)<span class="sc">%*%</span>X<span class="sc">%*%</span>bhat)</span>
-<span id="cb57-13"><a href="sec43.html#cb57-13" tabindex="-1"></a>    dn <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(d0 <span class="sc">+</span> <span class="fu">t</span>(Y)<span class="sc">%*%</span>Y<span class="sc">+</span><span class="fu">t</span>(b0)<span class="sc">%*%</span><span class="fu">solve</span>(B0)<span class="sc">%*%</span>b0<span class="sc">-</span><span class="fu">t</span>(bn)<span class="sc">%*%</span><span class="fu">solve</span>(Bn)<span class="sc">%*%</span>bn)</span>
-<span id="cb57-14"><a href="sec43.html#cb57-14" tabindex="-1"></a>    an <span class="ot">&lt;-</span> a0 <span class="sc">+</span> N</span>
-<span id="cb57-15"><a href="sec43.html#cb57-15" tabindex="-1"></a>    <span class="co"># Log marginal likelihood</span></span>
-<span id="cb57-16"><a href="sec43.html#cb57-16" tabindex="-1"></a>    logpy <span class="ot">&lt;-</span> (N<span class="sc">/</span><span class="dv">2</span>)<span class="sc">*</span><span class="fu">log</span>(<span class="dv">1</span><span class="sc">/</span>pi)<span class="sc">+</span>(a0<span class="sc">/</span><span class="dv">2</span>)<span class="sc">*</span><span class="fu">log</span>(d0)<span class="sc">-</span>(an<span class="sc">/</span><span class="dv">2</span>)<span class="sc">*</span><span class="fu">log</span>(dn) <span class="sc">+</span> <span class="fl">0.5</span><span class="sc">*</span><span class="fu">log</span>(<span class="fu">det</span>(Bn)<span class="sc">/</span><span class="fu">det</span>(B0)) <span class="sc">+</span> <span class="fu">lgamma</span>(an<span class="sc">/</span><span class="dv">2</span>)<span class="sc">-</span><span class="fu">lgamma</span>(a0<span class="sc">/</span><span class="dv">2</span>)</span>
-<span id="cb57-17"><a href="sec43.html#cb57-17" tabindex="-1"></a>    <span class="fu">return</span>(<span class="sc">-</span>logpy)</span>
-<span id="cb57-18"><a href="sec43.html#cb57-18" tabindex="-1"></a>}</span>
-<span id="cb57-19"><a href="sec43.html#cb57-19" tabindex="-1"></a>cs <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">10</span><span class="sc">^</span><span class="dv">0</span>, <span class="dv">10</span><span class="sc">^</span><span class="dv">3</span>, <span class="dv">10</span><span class="sc">^</span><span class="dv">6</span>, <span class="dv">10</span><span class="sc">^</span><span class="dv">10</span>, <span class="dv">10</span><span class="sc">^</span><span class="dv">12</span>, <span class="dv">10</span><span class="sc">^</span><span class="dv">15</span>, <span class="dv">10</span><span class="sc">^</span><span class="dv">20</span>)</span>
-<span id="cb57-20"><a href="sec43.html#cb57-20" tabindex="-1"></a><span class="co"># Observe -1 to recover the right sign</span></span>
-<span id="cb57-21"><a href="sec43.html#cb57-21" tabindex="-1"></a>LogML <span class="ot">&lt;-</span> <span class="fu">sapply</span>(cs, <span class="cf">function</span>(c) {<span class="sc">-</span><span class="fu">LogMarLikLM</span>(<span class="at">c0=</span>c, <span class="at">X =</span> X)}) </span>
-<span id="cb57-22"><a href="sec43.html#cb57-22" tabindex="-1"></a><span class="co"># Regressor without price</span></span>
-<span id="cb57-23"><a href="sec43.html#cb57-23" tabindex="-1"></a>Xnew <span class="ot">&lt;-</span> <span class="fu">cbind</span>(IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem, Children, Lnincome, <span class="dv">1</span>)</span>
-<span id="cb57-24"><a href="sec43.html#cb57-24" tabindex="-1"></a><span class="co"># Observe -1 to recover the right sign</span></span>
-<span id="cb57-25"><a href="sec43.html#cb57-25" tabindex="-1"></a>LogMLnew <span class="ot">&lt;-</span> <span class="fu">sapply</span>(cs, <span class="cf">function</span>(c) {<span class="sc">-</span><span class="fu">LogMarLikLM</span>(<span class="at">c0=</span>c,<span class="at">X =</span> Xnew)})</span>
-<span id="cb57-26"><a href="sec43.html#cb57-26" tabindex="-1"></a><span class="co"># Bayes factor</span></span>
-<span id="cb57-27"><a href="sec43.html#cb57-27" tabindex="-1"></a>BF <span class="ot">&lt;-</span> <span class="fu">exp</span>(LogML <span class="sc">-</span> LogMLnew)</span>
-<span id="cb57-28"><a href="sec43.html#cb57-28" tabindex="-1"></a>BF</span></code></pre></div>
+## LnPriceElect -1.470327 -1.22358 -1.08954 -0.95828 -0.71714
+## IndSocio1    -0.430053 -0.36227 -0.32732 -0.29170 -0.22531
+## IndSocio2    -0.148235 -0.08713 -0.05633 -0.02490  0.03381
+## Altitude     -0.244686 -0.21361 -0.19747 -0.18142 -0.15081
+## Nrooms        0.066066  0.08018  0.08755  0.09482  0.10841
+## HouseholdMem  0.033540  0.05117  0.06004  0.06910  0.08621
+## Children     -0.002609  0.03629  0.05694  0.07770  0.11685
+## Lnincome      0.050594  0.06634  0.07445  0.08266  0.09794
+##               1.835193  2.28510  2.51997  2.76009  3.20715</code></pre>
+<div class="sourceCode" id="cb62"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb62-1"><a href="sec43.html#cb62-1" tabindex="-1"></a><span class="co"># Function to compute log marginal likelihood (negative for optimization)</span></span>
+<span id="cb62-2"><a href="sec43.html#cb62-2" tabindex="-1"></a>log_marginal_likelihood <span class="ot">&lt;-</span> <span class="cf">function</span>(X, c_0) {</span>
+<span id="cb62-3"><a href="sec43.html#cb62-3" tabindex="-1"></a>  k <span class="ot">&lt;-</span> <span class="fu">ncol</span>(X)</span>
+<span id="cb62-4"><a href="sec43.html#cb62-4" tabindex="-1"></a>  n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(X)</span>
+<span id="cb62-5"><a href="sec43.html#cb62-5" tabindex="-1"></a>  B_0 <span class="ot">&lt;-</span> c_0 <span class="sc">*</span> <span class="fu">diag</span>(k)</span>
+<span id="cb62-6"><a href="sec43.html#cb62-6" tabindex="-1"></a>  b_0 <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">0</span>, k)</span>
+<span id="cb62-7"><a href="sec43.html#cb62-7" tabindex="-1"></a>  </span>
+<span id="cb62-8"><a href="sec43.html#cb62-8" tabindex="-1"></a>  b_hat <span class="ot">&lt;-</span> <span class="fu">solve</span>(<span class="fu">t</span>(X) <span class="sc">%*%</span> X) <span class="sc">%*%</span> <span class="fu">t</span>(X) <span class="sc">%*%</span> y</span>
+<span id="cb62-9"><a href="sec43.html#cb62-9" tabindex="-1"></a>  B_n <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(<span class="fu">forceSymmetric</span>(<span class="fu">solve</span>(<span class="fu">solve</span>(B_0) <span class="sc">+</span> <span class="fu">t</span>(X) <span class="sc">%*%</span> X)))</span>
+<span id="cb62-10"><a href="sec43.html#cb62-10" tabindex="-1"></a>  b_n <span class="ot">&lt;-</span> B_n <span class="sc">%*%</span> (<span class="fu">solve</span>(B_0) <span class="sc">%*%</span> b_0 <span class="sc">+</span> <span class="fu">t</span>(X) <span class="sc">%*%</span> X <span class="sc">%*%</span> b_hat)</span>
+<span id="cb62-11"><a href="sec43.html#cb62-11" tabindex="-1"></a>  d_n <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(d_0 <span class="sc">+</span> <span class="fu">t</span>(y) <span class="sc">%*%</span> y <span class="sc">+</span> <span class="fu">t</span>(b_0) <span class="sc">%*%</span> <span class="fu">solve</span>(B_0) <span class="sc">%*%</span> b_0 <span class="sc">-</span> <span class="fu">t</span>(b_n) <span class="sc">%*%</span> <span class="fu">solve</span>(B_n) <span class="sc">%*%</span> b_n)</span>
+<span id="cb62-12"><a href="sec43.html#cb62-12" tabindex="-1"></a>  a_n <span class="ot">&lt;-</span> a_0 <span class="sc">+</span> n</span>
+<span id="cb62-13"><a href="sec43.html#cb62-13" tabindex="-1"></a>  </span>
+<span id="cb62-14"><a href="sec43.html#cb62-14" tabindex="-1"></a>  log_py <span class="ot">&lt;-</span> (n <span class="sc">/</span> <span class="dv">2</span>) <span class="sc">*</span> <span class="fu">log</span>(<span class="dv">1</span> <span class="sc">/</span> pi) <span class="sc">+</span></span>
+<span id="cb62-15"><a href="sec43.html#cb62-15" tabindex="-1"></a>    (a_0 <span class="sc">/</span> <span class="dv">2</span>) <span class="sc">*</span> <span class="fu">log</span>(d_0) <span class="sc">-</span></span>
+<span id="cb62-16"><a href="sec43.html#cb62-16" tabindex="-1"></a>    (a_n <span class="sc">/</span> <span class="dv">2</span>) <span class="sc">*</span> <span class="fu">log</span>(d_n) <span class="sc">+</span></span>
+<span id="cb62-17"><a href="sec43.html#cb62-17" tabindex="-1"></a>    <span class="fl">0.5</span> <span class="sc">*</span> <span class="fu">log</span>(<span class="fu">det</span>(B_n) <span class="sc">/</span> <span class="fu">det</span>(B_0)) <span class="sc">+</span></span>
+<span id="cb62-18"><a href="sec43.html#cb62-18" tabindex="-1"></a>    <span class="fu">lgamma</span>(a_n <span class="sc">/</span> <span class="dv">2</span>) <span class="sc">-</span> <span class="fu">lgamma</span>(a_0 <span class="sc">/</span> <span class="dv">2</span>)</span>
+<span id="cb62-19"><a href="sec43.html#cb62-19" tabindex="-1"></a>  </span>
+<span id="cb62-20"><a href="sec43.html#cb62-20" tabindex="-1"></a>  <span class="fu">return</span>(<span class="sc">-</span>log_py)</span>
+<span id="cb62-21"><a href="sec43.html#cb62-21" tabindex="-1"></a>}</span>
+<span id="cb62-22"><a href="sec43.html#cb62-22" tabindex="-1"></a></span>
+<span id="cb62-23"><a href="sec43.html#cb62-23" tabindex="-1"></a><span class="co"># Prior variances</span></span>
+<span id="cb62-24"><a href="sec43.html#cb62-24" tabindex="-1"></a>c_values <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="fl">1e3</span>, <span class="fl">1e6</span>, <span class="fl">1e10</span>, <span class="fl">1e12</span>, <span class="fl">1e15</span>, <span class="fl">1e20</span>)</span>
+<span id="cb62-25"><a href="sec43.html#cb62-25" tabindex="-1"></a></span>
+<span id="cb62-26"><a href="sec43.html#cb62-26" tabindex="-1"></a><span class="co"># Compute log marginal likelihoods</span></span>
+<span id="cb62-27"><a href="sec43.html#cb62-27" tabindex="-1"></a>log_ml <span class="ot">&lt;-</span> <span class="fu">sapply</span>(c_values, <span class="cf">function</span>(c) <span class="sc">-</span><span class="fu">log_marginal_likelihood</span>(<span class="at">X =</span> X, <span class="at">c_0 =</span> c))</span>
+<span id="cb62-28"><a href="sec43.html#cb62-28" tabindex="-1"></a></span>
+<span id="cb62-29"><a href="sec43.html#cb62-29" tabindex="-1"></a><span class="co"># Regressors without price</span></span>
+<span id="cb62-30"><a href="sec43.html#cb62-30" tabindex="-1"></a>X_new <span class="ot">&lt;-</span> <span class="fu">with</span>(data_est, <span class="fu">cbind</span>(</span>
+<span id="cb62-31"><a href="sec43.html#cb62-31" tabindex="-1"></a>  IndSocio1, IndSocio2, Altitude, Nrooms,</span>
+<span id="cb62-32"><a href="sec43.html#cb62-32" tabindex="-1"></a>  HouseholdMem, Children, Lnincome, <span class="dv">1</span></span>
+<span id="cb62-33"><a href="sec43.html#cb62-33" tabindex="-1"></a>))</span>
+<span id="cb62-34"><a href="sec43.html#cb62-34" tabindex="-1"></a></span>
+<span id="cb62-35"><a href="sec43.html#cb62-35" tabindex="-1"></a>log_ml_new <span class="ot">&lt;-</span> <span class="fu">sapply</span>(c_values, <span class="cf">function</span>(c) <span class="sc">-</span><span class="fu">log_marginal_likelihood</span>(<span class="at">X =</span> X_new, <span class="at">c_0 =</span> c))</span>
+<span id="cb62-36"><a href="sec43.html#cb62-36" tabindex="-1"></a></span>
+<span id="cb62-37"><a href="sec43.html#cb62-37" tabindex="-1"></a><span class="co"># Bayes Factor</span></span>
+<span id="cb62-38"><a href="sec43.html#cb62-38" tabindex="-1"></a>bf <span class="ot">&lt;-</span> <span class="fu">exp</span>(log_ml <span class="sc">-</span> log_ml_new)</span>
+<span id="cb62-39"><a href="sec43.html#cb62-39" tabindex="-1"></a>bf</span></code></pre></div>
 <pre><code>## [1] 8.687289e+16 1.006665e+05 3.108374e+03 3.108299e+01 3.108303e+00
 ## [6] 9.829315e-02 3.108302e-04</code></pre>
-<div class="sourceCode" id="cb59"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb59-1"><a href="sec43.html#cb59-1" tabindex="-1"></a><span class="co"># Predictive distribution</span></span>
-<span id="cb59-2"><a href="sec43.html#cb59-2" tabindex="-1"></a>Xpred <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fu">log</span>(<span class="fl">0.15</span>), <span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">1</span>, <span class="fu">log</span>(<span class="dv">500</span>), <span class="dv">1</span>)</span>
-<span id="cb59-3"><a href="sec43.html#cb59-3" tabindex="-1"></a>Mean <span class="ot">&lt;-</span> Xpred<span class="sc">%*%</span>bn</span>
-<span id="cb59-4"><a href="sec43.html#cb59-4" tabindex="-1"></a>Hn <span class="ot">&lt;-</span> dn<span class="sc">*</span>(<span class="dv">1</span><span class="sc">+</span><span class="fu">t</span>(Xpred)<span class="sc">%*%</span>Bn<span class="sc">%*%</span>Xpred)<span class="sc">/</span>an</span>
-<span id="cb59-5"><a href="sec43.html#cb59-5" tabindex="-1"></a>ExpKwH <span class="ot">&lt;-</span> <span class="fu">exp</span>(LaplacesDemon<span class="sc">::</span><span class="fu">rmvt</span>(S, Mean, Hn, an))</span>
-<span id="cb59-6"><a href="sec43.html#cb59-6" tabindex="-1"></a><span class="fu">summary</span>(ExpKwH)</span></code></pre></div>
+<div class="sourceCode" id="cb64"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb64-1"><a href="sec43.html#cb64-1" tabindex="-1"></a><span class="co"># Predictive distribution</span></span>
+<span id="cb64-2"><a href="sec43.html#cb64-2" tabindex="-1"></a>x_pred <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fu">log</span>(<span class="fl">0.15</span>), <span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">1</span>, <span class="fu">log</span>(<span class="dv">500</span>), <span class="dv">1</span>)</span>
+<span id="cb64-3"><a href="sec43.html#cb64-3" tabindex="-1"></a>mean_pred <span class="ot">&lt;-</span> x_pred <span class="sc">%*%</span> b_n</span>
+<span id="cb64-4"><a href="sec43.html#cb64-4" tabindex="-1"></a>H_pred <span class="ot">&lt;-</span> d_n <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">+</span> <span class="fu">t</span>(x_pred) <span class="sc">%*%</span> B_n <span class="sc">%*%</span> x_pred) <span class="sc">/</span> a_n</span>
+<span id="cb64-5"><a href="sec43.html#cb64-5" tabindex="-1"></a>expected_kwh <span class="ot">&lt;-</span> <span class="fu">exp</span>(<span class="fu">rmvt</span>(S, mean_pred, H_pred, <span class="at">df =</span> a_n))</span>
+<span id="cb64-6"><a href="sec43.html#cb64-6" tabindex="-1"></a></span>
+<span id="cb64-7"><a href="sec43.html#cb64-7" tabindex="-1"></a><span class="fu">summary</span>(expected_kwh)</span></code></pre></div>
 <pre><code>##        V1         
-##  Min.   :  27.32  
-##  1st Qu.: 119.94  
-##  Median : 168.74  
-##  Mean   : 190.18  
-##  3rd Qu.: 236.20  
-##  Max.   :1032.62</code></pre>
-<div class="sourceCode" id="cb61"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb61-1"><a href="sec43.html#cb61-1" tabindex="-1"></a>HDI <span class="ot">&lt;-</span> HDInterval<span class="sc">::</span><span class="fu">hdi</span>(ExpKwH, <span class="at">credMass =</span> <span class="fl">0.95</span>) <span class="co"># Highest posterior density credible interval</span></span>
-<span id="cb61-2"><a href="sec43.html#cb61-2" tabindex="-1"></a>HDI</span></code></pre></div>
+##  Min.   :  21.63  
+##  1st Qu.: 123.23  
+##  Median : 170.92  
+##  Mean   : 193.31  
+##  3rd Qu.: 238.12  
+##  Max.   :1124.50</code></pre>
+<div class="sourceCode" id="cb66"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb66-1"><a href="sec43.html#cb66-1" tabindex="-1"></a>hdi_interval <span class="ot">&lt;-</span> <span class="fu">hdi</span>(expected_kwh, <span class="at">credMass =</span> <span class="fl">0.95</span>)</span>
+<span id="cb66-2"><a href="sec43.html#cb66-2" tabindex="-1"></a>hdi_interval</span></code></pre></div>
 <pre><code>##            [,1]
-## lower  47.94745
-## upper 387.64843
+## lower  48.78708
+## upper 396.47748
 ## attr(,&quot;credMass&quot;)
 ## [1] 0.95</code></pre>
-<div class="sourceCode" id="cb63"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb63-1"><a href="sec43.html#cb63-1" tabindex="-1"></a><span class="fu">hist</span>(ExpKwH, <span class="at">main =</span> <span class="st">&quot;Histogram: Monthly demand of electricity&quot;</span>, <span class="at">xlab =</span> <span class="st">&quot;Monthly kWh&quot;</span>, <span class="at">col =</span> <span class="st">&quot;blue&quot;</span>, <span class="at">breaks =</span> <span class="dv">50</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb68"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb68-1"><a href="sec43.html#cb68-1" tabindex="-1"></a><span class="fu">hist</span>(expected_kwh,</span>
+<span id="cb68-2"><a href="sec43.html#cb68-2" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">&quot;Histogram: Monthly demand of electricity&quot;</span>,</span>
+<span id="cb68-3"><a href="sec43.html#cb68-3" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">&quot;Monthly kWh&quot;</span>,</span>
+<span id="cb68-4"><a href="sec43.html#cb68-4" tabindex="-1"></a>     <span class="at">col =</span> <span class="st">&quot;blue&quot;</span>, <span class="at">breaks =</span> <span class="dv">50</span>)</span></code></pre></div>
 <p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-3-1.svg" width="672" /></p>
 </div>
 <h3>References<a href="references.html#references" class="anchor-section" aria-label="Anchor link to header"></a></h3>
