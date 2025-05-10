@@ -760,9 +760,9 @@ Another way to see this model is by considering that both \( \bm{y} \) and \( \b
 where we use that $Cov[\bm{\beta},\bm{y}]=\mathbb{E}[\bm{\beta}\bm{y}^{\top}]-\mathbb{E}[\bm{\beta}]\mathbb{E}[\bm{y}^{\top}]=\mathbb{E}[\bm{\beta}(\bm{X}\bm{\beta}+\bm{\mu})^{\top}]-\mathbb{E}[\bm{\beta}]\mathbb{E}[\bm{y}^{\top}]=[Var[\bm{\beta}]+\mathbb{E}[\bm{\beta}]\mathbb{E}[\bm{\beta}^{\top}]]\bm{X}^{\top}-\mathbb{E}[\bm{\beta}]\mathbb{E}[\bm{y}^{\top}]=\sigma^2\bm{B}_0\bm{X}^{\top}+\bm{\beta}_0\bm{\beta}_0^{\top}\bm{X}^{\top}-\bm{\beta}_0\bm{\beta}_0^{\top}\bm{X}^{\top}=\sigma^2\bm{B}_0\bm{X}^{\top}$.
 
 Then, we can obtain the conditional distribution of \( \bm{\beta} \mid \bm{y} \) using the properties of the multivariate normal distribution. This distribution is normal with mean equal to
-\[
+\begin{align}\label{eq:415}
 \bm{\beta}_{0} + \bm{B}_{0} \bm{X}^{\top} \left( \bm{X} \bm{B}_{0} \bm{X}^{\top} + \bm{I}_N \right)^{-1} (\bm{y} - \bm{X} \bm{\beta}_{0}),
-\]
+\end{align}
 
 and covariance matrix
 \[
@@ -773,7 +773,7 @@ Observe that in this representation, the posterior mean is equal to the prior me
 
 This form of expressing the posterior distribution is relevant for gaining some intuition on Bayesian inference in time series models within the \textit{Gaussian linear state-space representation} in Chapter \ref{chap8}, also known as the Kalman filter in time series literature.
 
-We can show that both conditional posterior distributions are the same. In particular, the posterior mean in this representation is $[\bm{I}_K-\bm{B}_{0}\bm{X}^{\top}(\bm{X}\bm{B}_{0}\bm{X}^{\top}+ \bm{I}_N)^{-1}\bm{X}]\bm{\beta}_{0}+\bm{B}_{0}\bm{X}^{\top}(\bm{X}\bm{B}_{0}\bm{X}^{\top}+ \bm{I}_N)^{-1}\bm{y}$, where 
+We can show that both conditional posterior distributions are the same. In particular, the posterior mean in Equation \ref{eq:415} is $[\bm{I}_K-\bm{B}_{0}\bm{X}^{\top}(\bm{X}\bm{B}_{0}\bm{X}^{\top}+ \bm{I}_N)^{-1}\bm{X}]\bm{\beta}_{0}+\bm{B}_{0}\bm{X}^{\top}(\bm{X}\bm{B}_{0}\bm{X}^{\top}+ \bm{I}_N)^{-1}\bm{y}$, where 
 \begin{align*}
 		\bm{B}_{0}\bm{X}^{\top}(\bm{X}\bm{B}_{0}\bm{X}^{\top}+ \bm{I}_N)^{-1}
 		&=\bm{B}_{0}\bm{X}^{\top}[\bm{I}_N-\bm{I}_N\bm{X}(\bm{B}_0^{-1}+\bm{X}^{\top}\bm{I}_N\bm{X})^{-1}\bm{X}^{\top}\bm{I}_N]\\
@@ -818,7 +818,7 @@ The right term is the integral of the probability density function of an inverse
 	& = \left[1 + \frac{(\bm{\beta} - \bm{\beta}_n)^{\top}\left(\frac{\delta_n}{\alpha_n}{{\bm{B}}}_n\right)^{-1}(\bm{\beta} - \bm{\beta}_n)}{\alpha_n}\right]^{-(\alpha_n+K)/2}(\delta_n)^{-(\alpha_N+K)/2} \\
 	& \propto \left[1 + \frac{(\bm{\beta} - \bm{\beta}_n)^{\top}{\bm{H}}_n^{-1}(\bm{\beta} - \bm{\beta}_n)}{\alpha_n}\right]^{-(\alpha_n+K)/2},
 \end{align*}
-where ${\bm{H}}_n = \frac{\delta_n}{\alpha_n}{\bm{B}}_n$. This last expression is a multivariate t distribution for $\bm{\beta}$, $\bm{\beta}\mid {\bm{y}},{\bm{X}} \sim t_K(\alpha_n, \bm{\beta}_n, {\bm{H}}_n)$.
+where ${\bm{H}}_n = \frac{\delta_n}{\alpha_n}{\bm{B}}_n$. This last expression is a multivariate t distribution, that is, $\bm{\beta}\mid {\bm{y}},{\bm{X}} \sim t_K(\alpha_n, \bm{\beta}_n, {\bm{H}}_n)$.
 
 Observe that as we have incorporated the uncertainty of the variance, the posterior for $\bm{\beta}$ changes from a normal to a t distribution, which has heavier tails, indicating more uncertainty. 
 
@@ -858,12 +858,11 @@ if \( \frac{K_2}{K_1} > 1 \) and \( c \to \infty \) (the latter implying a non-i
 
 Comparing models having the same number of regressors (\( K_1 = K_2 \)) is not a safe ground, as \( | \bm{B}_0 | \) depends on the measurement units of the regressors. Conclusions regarding model selection depend on this, which is not a nice property. This prevents using non-informative priors when performing model selection in the Bayesian framework. However, this is not the case when \( \alpha_0 \to 0 \) and \( \delta_0 \to 0 \), which implies a non-informative prior for the variance parameter.\footnote{See \cite{gelman2006prior} for advice against this common practice.}
 
-We observe that \( \Gamma(\alpha_{j0}) \) cancels out, \( \alpha_{jn} \to N \), and 
+We observe that \( \Gamma(\alpha_{j0}) \) cancels out, as \( \alpha_0 \to 0 \) implies \( \alpha_{jn} \to N \), and 
 \[
 \delta_{jn} \to ({\bm{y}} - {\bm{X}}_j \hat{\bm{\beta}}_j)^{\top} ({\bm{y}} - {\bm{X}}_j \hat{\bm{\beta}}_j) + (\hat{\bm{\beta}}_j - \bm{\beta}_{j0})^{\top} \left( ({\bm{X}}_j^{\top} {\bm{X}}_j)^{-1} + \bm{B}_{j0} \right)^{-1} (\hat{\bm{\beta}}_j - \bm{\beta}_{j0}),
 \]
-
-therefore, there is no effect. This is due to \( \sigma^2 \) being a common parameter in both models.
+when $\delta_0 \to 0$, therefore, there is no effect. This is due to \( \sigma^2 \) being a common parameter in both models.
 
 In general, we can use non-informative priors for common parameters across all models, but we cannot use non-informative priors for non-common parameters when performing model selection using the Bayes factor. This issue raises the question of how to set informative priors. On one hand, we have those who advocate for \textit{subjective} priors \cite{Ramsey1926, deFinetti1937, savage1954, Lindley2000}; on the other hand, those who prefer \textit{objective} priors \cite{Bayes1763, Laplace1812, Jeffreys1961, Berger2006}. 
 
@@ -931,7 +930,7 @@ Then,
 	&\propto\left[\frac{({\bm{y}}_0-{\bm{X}}_0\bm{\beta}_n)^{\top}\left(\frac{{\bm{C}}\alpha_n}{\delta_n}\right)({\bm{y}}_0-{\bm{X}}_0\bm{\beta}_n)}{\alpha_n}+1\right]^{-\frac{\alpha_n+N_0}{2}}.
 \end{align*}
 
-The posterior predictive is a multivariate t distribution, ${\bm{y}}_0\mid {\bm{y}}\sim t\left({\bm{X}}_0\bm{\beta}_n,\frac{\delta_n({\bm{I}}_{N_0}+{\bm{X}}_0{\bm{B}}_n{\bm{X}}_0^{\top})}{\alpha_n},\alpha_n\right)$ centered at ${\bm{X}}_0\bm{\beta}_n$.\\
+The posterior predictive is a multivariate t distribution, ${\bm{y}}_0\mid {\bm{y}}\sim t\left({\bm{X}}_0\bm{\beta}_n,\frac{\delta_n({\bm{I}}_{N_0}+{\bm{X}}_0{\bm{B}}_n{\bm{X}}_0^{\top})}{\alpha_n},\alpha_n\right)$.\\
 
 \textbf{Example: Demand of electricity}
 
@@ -939,7 +938,7 @@ We study in this example the determinants of the monthly demand for electricity 
 \begin{align*}
 	\log(\text{Electricity}_i) & = \beta_1\log(\text{price}_i) + \beta_2\text{IndSocio1}_i + \beta_3\text{IndSocio2}_i + \beta_4\text{Altitude}_i \\
 	& + \beta_5\text{Nrooms}_i + \beta_6\text{HouseholdMem}_i + \beta_7\text{Children}_i\\
-	& + \beta_8\log(\text{Income}_i) + \beta_9 + \mu.
+	& + \beta_8\log(\text{Income}_i) + \beta_9 + \mu_i.
 \end{align*}
 
 We use a non-informative vague prior setting such that $\alpha_0=\delta_0=0.001$, $\bm{\beta}_0=\bm{0}$ and $\bm{B}_0=c_0\bm{I}_k$, where $c_0=1000$ and $k$ is the number of regressors. 
