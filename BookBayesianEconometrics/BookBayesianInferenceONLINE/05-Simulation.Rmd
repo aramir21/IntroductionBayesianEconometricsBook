@@ -30,6 +30,7 @@ q(\boldsymbol{\theta}_1^{(s)},\boldsymbol{\theta}_2^{(s)}\mid \boldsymbol{\theta
 $$  
 
 Thus,  
+<div style="font-size: 85%;">
 
 \[
 \begin{aligned}
@@ -42,6 +43,7 @@ Thus,
     &=\pi(\boldsymbol{\theta}_1^{(s)},\boldsymbol{\theta}_2^{(s)}\mid \boldsymbol{y}).
 \end{aligned}
 \]  
+</div>
 
 Then, $\pi(\boldsymbol{\theta}\mid \boldsymbol{y})$ is the stationary distribution for the Gibbs transition kernel.  
 
@@ -120,7 +122,7 @@ The conditional posterior distribution of the change point is
 ```{=latex}
 \begin{align*}
 \pi(H\mid \lambda_1,\lambda_2,y)&\propto\exp(-H\lambda_1)\lambda_1^{\sum_{t=1}^H y_t}\exp(-(T-H)\lambda_2)\lambda_2^{\sum_{t=H+1}^T y_t}\\
-&\propto \exp(-H(\lambda_1-\lambda_2))\lambda_1^{\sum_{t=1}^H y_t}\lambda_2^{\sum_{t=H+1}^T y_t} \exp(-T\lambda_2) \frac{\lambda_2^{\sum_{t=1}^H}}{\lambda_2^{\sum_{t=1}^H} y_t}\\
+&\propto \exp(-H(\lambda_1-\lambda_2))\lambda_1^{\sum_{t=1}^H y_t}\lambda_2^{\sum_{t=H+1}^T y_t} \exp(-T\lambda_2) \frac{\lambda_2^{\sum_{t=1}^H y_t}}{\lambda_2^{\sum_{t=1}^H y_t}}\\
 &\propto \exp(-H(\lambda_1-\lambda_2))\left(\frac{\lambda_1}{\lambda_2}\right)^{\sum_{t=1}^H y_t}.
 \end{align*}
 ```
@@ -136,33 +138,71 @@ Thus, the conditional posterior distribution of $H$ is
 The following code shows how to do a Gibbs sampling algorithm to perform inference of this model using the hyperparameters suggested by @greenberg2012introduction, $\alpha_{l0}=0.5$ and $\beta_{l0}=1$, $l=1,2$.
 
 ```{r}
-rm(list = ls()); set.seed(010101)
-dataset<-read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/MiningDataCarlin.csv",header=T)
-attach(dataset); str(dataset)
-a10<-0.5; a20<-0.5
-b10<-1; b20<-1
-y<-Count
-sumy<-sum(Count); N<-length(Count)
-theta1<-NULL; theta2<-NULL
-kk<-NULL; k<-60; S<-10000
-for(i in 1:S){
-	a1<-a10+sum(y[1:k]); b1<-b10+k
-	theta11<-rgamma(1,a1,b1)
-	theta1<-c(theta1,theta11)
-	a2<-a20+sum(y[(1+k):N]); b2<-b20+N-k
-	theta22<-rgamma(1,a2,b2)
-	theta2<-c(theta2,theta22)
-	pp<-NULL
-	for(l in 1:N){
-		p<-exp(l*(theta22-theta11))*(theta11/theta22)^(sum(y[1:l]))
-		pp<-c(pp,p)
-	}
-	prob<-pp/sum(pp); k<-sample(1:N,1,prob=prob)
-	kk<-c(kk,k)
+# Clean workspace and set seed
+rm(list = ls())
+set.seed(10101)  # Avoid leading 0 (R interprets as octal)
+
+# Load data
+dataset <- read.csv(
+  "https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/MiningDataCarlin.csv",
+  header = TRUE
+)
+
+str(dataset)
+
+# Hyperparameters
+a10 <- 0.5; b10 <- 1
+a20 <- 0.5; b20 <- 1
+
+# Extract data
+y <- dataset$Count
+sum_y <- sum(y)
+N <- length(y)
+
+# Storage for posterior samples
+S <- 10000
+theta1 <- numeric(S)
+theta2 <- numeric(S)
+kk <- numeric(S)
+
+# Initial value of change point
+k <- 60
+
+# Gibbs sampler
+for (i in 1:S) {
+  a1 <- a10 + sum(y[1:k])
+  b1 <- b10 + k
+  theta1[i] <- rgamma(1, shape = a1, rate = b1)
+  
+  a2 <- a20 + sum(y[(k + 1):N])
+  b2 <- b20 + (N - k)
+  theta2[i] <- rgamma(1, shape = a2, rate = b2)
+  
+  pp <- numeric(N)
+  for (l in 1:N) {
+    pp[l] <- exp(l * (theta2[i] - theta1[i])) *
+      (theta1[i] / theta2[i])^sum(y[1:l])
+  }
+  
+  prob <- pp / sum(pp)
+  k <- sample(1:N, 1, prob = prob)
+  kk[i] <- k
 }
-library(coda); summary(mcmc(theta1)); summary(mcmc(theta2))
+
+# Summaries
+library(coda)
+summary(mcmc(theta1))
+summary(mcmc(theta2))
 summary(mcmc(kk))
-hist(kk, main = "Histogram: Posterior mean change point", xlab = "Posterior mean", col = "blue", breaks = 25)
+
+# Plot histogram
+hist(
+  kk,
+  main = "Histogram: Posterior mean change point",
+  xlab = "Posterior mean",
+  col = "blue",
+  breaks = 25
+)
 ```
 
 The posterior results indicate that the rate of disasters decrease from 3.1 to 0.92 per year in 1890. 
@@ -246,7 +286,7 @@ In the Ph.D. students sleeping hours exercise of Chapter \@ref(Chap3) we get a p
 
 The following code shows how to do a M-H algorithm to sample from the beta distribution using the uniform distribution.
 
-```{r}
+```{r, eval=FALSE}
 rm(list = ls()); set.seed(010101)
 an <- 16.55; bn <- 39.57
 S <- 100000; p <- runif(S); accept <- rep(0, S)
@@ -342,7 +382,7 @@ then $\frac{d \log(\pi(\boldsymbol{\theta} \mid \boldsymbol{y}))}{d \boldsymbol{
 The following code shows how to implement the Gibbs sampler, the random walk M-H algorithm, and the HMC in this example such that the effective number of posterior draws is 400.
 
 
-```{r}
+```{r, eval=FALSE}
 rm(list = ls()); set.seed(010101)
 # Gibbs sampler
 Gibbs <- function(theta, rho){
@@ -561,7 +601,7 @@ This is the Gelfand-Dey method to calculate the marginal likelihood [@gelfand199
 
 Let's assume that the posterior distribution is Cauchy with parameters 0 and 1. We perform an importance sampling algorithm using as proposals a standard normal distribution and a Student's t distribution with 3 degrees of freedom. The following code shows how to do this.
 
-```{r}
+```{r, eval=FALSE}
 rm(list = ls()); set.seed(010101)
 S <- 20000 # Size proposal
 # Importance sampling from standard normal proposal 
@@ -718,7 +758,7 @@ $$
 
 The following code demonstrates the implementation of this algorithm, setting $\sigma_w^2 = \sigma_{\mu}^2 = 1$ and $\phi = 0.5$. First, we simulate the process, and then we implement the SIS algorithm.
 
-```{r}
+```{r, eval=FALSE}
 rm(list = ls()); set.seed(010101)
 S <- 50000 # Number of particles
 sigma_w <- 1  # State noise
@@ -801,7 +841,7 @@ If we apply the SIS algorithm to the dynamic linear model with a sample size of 
 
 Let's perform particle filtering in this example. The following code illustrate the procedure. The figure shows the performance of particle filtering in this example. There is the true state vector (black line), the means based on $\left\{\boldsymbol{\theta}_{1:t}^{(s)},w_t^{*(s)}\right\}$ (blue line) and  $\left\{\boldsymbol{\theta}_{1:t}^{r(s)},1/S\right\}$ (purple line), and the area defined by $\pm2\hat{\sigma}_{\theta}$ based on the former (light blue shaded area). Note that the particle filtering algorithm has better performance than the SIS algorithm.
 
-```{r}
+```{r, eval=FALSE}
 rm(list = ls()); set.seed(010101)
 S <- 50000 # Number of particles
 sigma_w <- 1; sigma_mu <- 1  #  # State and observation noises
@@ -1014,7 +1054,7 @@ The second part of the code implements the proposal by @geweke2004getting to ass
 
 To evaluate the effectiveness of the test, we run the *marginal-conditional simulator* with prior parameters $\alpha_{l0} = 0.5$ and $\beta_{l0} = 1$, $l = 1, 2$. In contrast, for the *successive-conditional simulator*, we use prior parameters $\alpha_{l0} = 1$ and $\beta_{l0} = 0.5$, $l = 1, 2$. In this case, we reject the null hypothesis in two out of three test functions, suggesting that the test performs well in this example.
 
-```{r}
+```{r, eval=FALSE}
 rm(list = ls())
 set.seed(010101)
 dataset<-read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/MiningDataCarlin.csv",header=T)

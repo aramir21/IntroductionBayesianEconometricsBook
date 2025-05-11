@@ -190,3 +190,113 @@ colnames(opt_weights) <- tickers
 
 # Result
 opt_weights
+
+########################## Linear regression example ##########################
+
+# Load required libraries
+library(dplyr)
+library(Matrix)
+library(MCMCpack)
+library(LaplacesDemon)
+library(coda)
+library(HDInterval)
+
+# Load electricity demand data
+data_util <- read.csv(
+  "https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/Utilities.csv",
+  sep = ",", header = TRUE, quote = ""
+)
+
+# Filter out households with zero electricity consumption
+data_est <- data_util %>%
+  filter(Electricity != 0)
+
+# Define dependent variable: log of monthly electricity consumption
+y <- log(data_est$Electricity)
+
+# Define regressors including intercept
+X <- with(data_est, cbind(
+  LnPriceElect, IndSocio1, IndSocio2, Altitude, Nrooms,
+  HouseholdMem, Children, Lnincome, 1
+))
+
+# Dimensions
+k <- ncol(X)
+n <- nrow(X)
+
+# Hyperparameters
+d_0 <- 0.001
+a_0 <- 0.001
+b_0 <- rep(0, k)
+B_0 <- 1000 * diag(k)
+
+# Posterior parameters
+b_hat <- solve(t(X) %*% X) %*% t(X) %*% y
+B_n <- as.matrix(forceSymmetric(solve(solve(B_0) + t(X) %*% X)))
+b_n <- B_n %*% (solve(B_0) %*% b_0 + t(X) %*% X %*% b_hat)
+d_n <- as.numeric(d_0 + t(y) %*% y + t(b_0) %*% solve(B_0) %*% b_0 - t(b_n) %*% solve(B_n) %*% b_n)
+a_n <- a_0 + n
+H_n <- B_n * d_n / a_n
+
+# Posterior draws
+S <- 10000
+sigma2_samples <- rinvgamma(S, shape = a_n / 2, scale = d_n / 2)
+summary(mcmc(sigma2_samples))
+
+beta_samples <- rmvt(S, b_n, H_n, df = a_n)
+summary(mcmc(beta_samples))
+
+# Function to compute log marginal likelihood (negative for optimization)
+log_marginal_likelihood <- function(X, c_0) {
+  k <- ncol(X)
+  n <- nrow(X)
+  B_0 <- c_0 * diag(k)
+  b_0 <- rep(0, k)
+  
+  b_hat <- solve(t(X) %*% X) %*% t(X) %*% y
+  B_n <- as.matrix(forceSymmetric(solve(solve(B_0) + t(X) %*% X)))
+  b_n <- B_n %*% (solve(B_0) %*% b_0 + t(X) %*% X %*% b_hat)
+  d_n <- as.numeric(d_0 + t(y) %*% y + t(b_0) %*% solve(B_0) %*% b_0 - t(b_n) %*% solve(B_n) %*% b_n)
+  a_n <- a_0 + n
+  
+  log_py <- (n / 2) * log(1 / pi) +
+    (a_0 / 2) * log(d_0) -
+    (a_n / 2) * log(d_n) +
+    0.5 * log(det(B_n) / det(B_0)) +
+    lgamma(a_n / 2) - lgamma(a_0 / 2)
+  
+  return(-log_py)
+}
+
+# Prior variances
+c_values <- c(1, 1e3, 1e6, 1e10, 1e12, 1e15, 1e20)
+
+# Compute log marginal likelihoods
+log_ml <- sapply(c_values, function(c) -log_marginal_likelihood(X = X, c_0 = c))
+
+# Regressors without price
+X_new <- with(data_est, cbind(
+  IndSocio1, IndSocio2, Altitude, Nrooms,
+  HouseholdMem, Children, Lnincome, 1
+))
+
+log_ml_new <- sapply(c_values, function(c) -log_marginal_likelihood(X = X_new, c_0 = c))
+
+# Bayes Factor
+bf <- exp(log_ml - log_ml_new)
+bf
+
+# Predictive distribution
+x_pred <- c(log(0.15), 1, 0, 0, 2, 3, 1, log(500), 1)
+mean_pred <- x_pred %*% b_n
+H_pred <- d_n * (1 + t(x_pred) %*% B_n %*% x_pred) / a_n
+expected_kwh <- exp(rmvt(S, mean_pred, H_pred, df = a_n))
+
+summary(expected_kwh)
+hdi_interval <- hdi(expected_kwh, credMass = 0.95)
+hdi_interval
+
+hist(expected_kwh,
+     main = "Histogram: Monthly demand of electricity",
+     xlab = "Monthly kWh",
+     col = "blue", breaks = 50)
