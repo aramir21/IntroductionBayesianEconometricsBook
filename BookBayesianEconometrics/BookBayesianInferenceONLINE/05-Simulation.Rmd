@@ -140,7 +140,7 @@ The following code shows how to do a Gibbs sampling algorithm to perform inferen
 ```{r}
 # Clean workspace and set seed
 rm(list = ls())
-set.seed(10101)  # Avoid leading 0 (R interprets as octal)
+set.seed(10101)
 
 # Load data
 dataset <- read.csv(
@@ -252,9 +252,9 @@ End for
 </figure>
 ```
 
-Some remarks: First, we do not need to know the marginal likelihood to implement the M-H algorithm, as it cancels out when calculating the acceptance probability. Specifically, given that $\pi(\boldsymbol{\theta} \mid \boldsymbol{y}) \propto \pi(\boldsymbol{\theta}) \times p(\boldsymbol{y} \mid \boldsymbol{\theta})$, we can use the right-hand side expression to compute the acceptance probability. Second, the Gibbs sampling algorithm is a particular case of the M-H algorithm where the acceptance probability is equal to 1 (@Gelman1992 and @robert2011monte, see Exercise 2). Third, we can combine the M-H and Gibbs sampling algorithms when dealing with relatively complex posterior distributions. Specifically, the Gibbs sampling algorithm can be used for blocks with conditional posterior distributions in standard closed forms, while the M-H algorithm is applied to sample from conditional posterior distributions that do not have standard forms. This approach is known as the M-H within Gibbs sampling algorithm. Fourth, we can note that the transition kernel in the M-H algorithm is a mixture of a continuous density ($q(\boldsymbol{\theta}^c \mid  \boldsymbol{\theta}^{(s-1)})$) and a probability mass function ($\alpha(\boldsymbol{\theta}^{(s-1)}, \boldsymbol{\theta}^c)$) @chib1995understanding.
+Some remarks: First, we do not need to know the marginal likelihood to implement the M-H algorithm, as it cancels out when calculating the acceptance probability. Specifically, given that $\pi(\boldsymbol{\theta} \mid \boldsymbol{y}) \propto \pi(\boldsymbol{\theta}) \times p(\boldsymbol{y} \mid \boldsymbol{\theta})$, we can use the right-hand side expression to compute the acceptance probability. Second, the Gibbs sampling algorithm is a particular case of the M-H algorithm where the acceptance probability is equal to 1 (@Gelman1992 and @robert2011monte, see Exercise 2). Third, we can combine the M-H and Gibbs sampling algorithms when dealing with relatively complex posterior distributions. Specifically, the Gibbs sampling algorithm can be used for blocks with conditional posterior distributions in standard closed forms, while the M-H algorithm is applied to sample from conditional posterior distributions that do not have standard forms. This approach is known as the M-H within Gibbs sampling algorithm. Fourth, we can note that the transition kernel in the M-H algorithm is a mixture of a continuous density ($q(\boldsymbol{\theta}^c \mid  \boldsymbol{\theta}^{(s-1)})$) and a probability mass function ($\alpha(\boldsymbol{\theta}^{(s-1)}, \boldsymbol{\theta}^c)$) [@chib1995understanding].
 
-Fifth, a crucial point associated with the proposal densities is the acceptance probability. Low or high acceptance probabilities are not ideal. A low rate implies poor mixing, meaning the chain does not move effectively through the support of the posterior distribution. Conversely, a high acceptance rate implies that the chain will converge too slowly. A sensible value depends on the dimension of the parameter space. A rule of thumb is that if the dimension is less than or equal to 2, the acceptance rate should be around 0.50. If the dimension is greater than 2, the acceptance rate should be approximately 0.25 @Roberts1997. For technical details of the Metropolis-Hastings algorithm, see @robert2011monte, Chap. 7.
+Fifth, a crucial point associated with the proposal densities is the acceptance probability. Low or high acceptance probabilities are not ideal. A low rate implies poor mixing, meaning the chain does not move effectively through the support of the posterior distribution. Conversely, a high acceptance rate implies that the chain will converge too slowly. A sensible value depends on the dimension of the parameter space. A rule of thumb is that if the dimension is less than or equal to 2, the acceptance rate should be around 0.50. If the dimension is greater than 2, the acceptance rate should be approximately 0.25 [@Roberts1997]. For technical details of the Metropolis-Hastings algorithm, see @robert2011monte, Chap. 7.
 
 Regarding the proposal density, it must be positive everywhere the posterior distribution is positive. This ensures that the Markov chain can explore the entire support of the posterior distribution. Additionally, the proposal density must allow the Markov chain to reach any region of the posterior distribution's support. There are three standard approaches for choosing the proposal density: the independent proposal, the random walk proposal, and the tailored proposal.
 
@@ -267,7 +267,7 @@ $$
 
 In this case, a move from $\boldsymbol{\theta}^{(s-1)}$ to $\boldsymbol{\theta}^c$ is always accepted if $q(\boldsymbol{\theta}^{(s-1)}) \pi(\boldsymbol{\theta}^c \mid \boldsymbol{y}) \geq q(\boldsymbol{\theta}^c) \pi(\boldsymbol{\theta}^{(s-1)} \mid \boldsymbol{y})$.
 
-In the random walk proposal, $\boldsymbol{\theta}^c = \boldsymbol{\theta}^{(s-1)} + \boldsymbol{\epsilon}$, where $\boldsymbol{\epsilon}$ is a random perturbation. If $p(\boldsymbol{\epsilon}) = p(-\boldsymbol{\epsilon})$, meaning the distribution $p(\boldsymbol{\epsilon})$ is symmetric around zero, then $q(\boldsymbol{\theta}^c \mid \boldsymbol{\theta}^{(s-1)}) = q(\boldsymbol{\theta}^{(s-1)} \mid \boldsymbol{\theta}^c)$. This was the original Metropolis algorithm @metropolis53. Thus, the acceptance rate is 
+In the random walk proposal, $\boldsymbol{\theta}^c = \boldsymbol{\theta}^{(s-1)} + \boldsymbol{\epsilon}$, where $\boldsymbol{\epsilon}$ is a random perturbation. If $p(\boldsymbol{\epsilon}) = p(-\boldsymbol{\epsilon})$, meaning the distribution $p(\boldsymbol{\epsilon})$ is symmetric around zero, then $q(\boldsymbol{\theta}^c \mid \boldsymbol{\theta}^{(s-1)}) = q(\boldsymbol{\theta}^{(s-1)} \mid \boldsymbol{\theta}^c)$. This was the original Metropolis algorithm [@metropolis53]. Thus, the acceptance rate is 
 
 $$
 \alpha(\boldsymbol{\theta}^{(s-1)}, \boldsymbol{\theta}^c) = 
@@ -278,7 +278,7 @@ In this case, a move from $\boldsymbol{\theta}^{(s-1)}$ to $\boldsymbol{\theta}^
 
 In the tailored proposal, the density is designed to have fat tails, is centered at the mode of the posterior distribution, and its scale matrix is given by the negative inverse Hessian matrix evaluated at the mode. Specifically, for two blocks, the log posterior distribution is maximized with respect to $\boldsymbol{\theta}_1$ given $\boldsymbol{\theta}_2$. This process is repeated at each iteration of the algorithm because $\boldsymbol{\theta}_2$ changes at different stages. As a result, the algorithm can be slow since the optimization process is computationally demanding (see @greenberg2012introduction, Chaps. 7 and 9 for examples).
 
-A sensible recommendation when performing the M-H algorithm is to use a random walk proposal such that $\boldsymbol{\epsilon} \sim N(\boldsymbol{0}, c^2 \boldsymbol{\Sigma})$, where $\boldsymbol{\Sigma}$ is the negative inverse Hessian matrix evaluated at the mode, that is, maximize with respect to all parameters, and set $c \approx 2.4 / \sqrt{\text{dim}(\boldsymbol{\theta})}$, which is the most efficient scale compared to independent sampling @gelman2021bayesian, Chap. 12. After some iterations of the algorithm, adjust the scale matrix $\boldsymbol{\Sigma}$ as before, and increase or decrease $c$ if the acceptance rate of the simulations is too high or low, respectively. The objective is to bring the acceptance rate to the stated rule of thumb: if the dimension is less than or equal to 2, the acceptance rate should be around 0.50, and if the dimension is greater than 2, the acceptance rate should be around 0.25. Once this is achieved, we should run the algorithm without modifications and use this part of the algorithm to perform inference.
+A sensible recommendation when performing the M-H algorithm is to use a random walk proposal such that $\boldsymbol{\epsilon} \sim N(\boldsymbol{0}, c^2 \boldsymbol{\Sigma})$, where $\boldsymbol{\Sigma}$ is the negative inverse Hessian matrix evaluated at the mode, that is, maximize with respect to all parameters, and set $c \approx 2.4 / \sqrt{\text{dim}(\boldsymbol{\theta})}$, which is the most efficient scale compared to independent sampling [@gelman2021bayesian]. After some iterations of the algorithm, adjust the scale matrix $\boldsymbol{\Sigma}$ as before, and increase or decrease $c$ if the acceptance rate of the simulations is too high or low, respectively. The objective is to bring the acceptance rate to the stated rule of thumb: if the dimension is less than or equal to 2, the acceptance rate should be around 0.50, and if the dimension is greater than 2, the acceptance rate should be around 0.25. Once this is achieved, we should run the algorithm without modifications and use this part of the algorithm to perform inference.
 
 **Example: Ph.D. students sleeping hours continues**
 
@@ -286,29 +286,69 @@ In the Ph.D. students sleeping hours exercise of Chapter \@ref(Chap3) we get a p
 
 The following code shows how to do a M-H algorithm to sample from the beta distribution using the uniform distribution.
 
-```{r, eval=FALSE}
-rm(list = ls()); set.seed(010101)
-an <- 16.55; bn <- 39.57
-S <- 100000; p <- runif(S); accept <- rep(0, S)
-for (s in 2:S){
-	pc <- runif(1) # Candidate
-	a <- dbeta(pc, an, bn)/dbeta(p[s-1], an, bn) # Acceptance rate
-	U <- runif(1)
-	if(U <= a){
-		p[s] <- pc
-		accept[s] <- 1
-	}else{
-		p[s] <- p[s-1]
-		accept[s] <- 0
-	}
+```{r}
+# Clear workspace and set seed for reproducibility
+rm(list = ls())
+set.seed(10101)
+
+# Beta distribution parameters
+a_n <- 16.55
+b_n <- 39.57
+
+# Number of samples
+S <- 100000
+
+# Initialize vectors
+samples <- numeric(S)
+accept_flags <- logical(S)
+
+# Initial value
+samples[1] <- runif(1)
+
+# Metropolis-Hastings sampling
+for (s in 2:S) {
+  candidate <- runif(1)
+  
+  alpha <- dbeta(candidate, a_n, b_n) / dbeta(samples[s - 1], a_n, b_n)
+  u <- runif(1)
+  
+  if (u <= alpha) {
+    samples[s] <- candidate
+    accept_flags[s] <- TRUE
+  } else {
+    samples[s] <- samples[s - 1]
+    accept_flags[s] <- FALSE
+  }
 }
-mean(accept); mean(p); sd(p)
-an/(an + bn); (an*bn/((an+bn)^2*(an+bn+1)))^0.5 # Population values
-h <- hist(p, breaks=50, col="blue", xlab="Proportion Ph.D. students sleeping at least 6 hours", main="Beta draws from a Metropolis-Hastings algorithm")
-pfit <- seq(min(p),max(p),length=50)
-yfit<-dbeta(pfit, an, bn)
-yfit <- yfit*diff(h$mids[1:2])*length(p)
-lines(pfit, yfit, col="red", lwd=2)
+
+# Posterior summaries
+mean_accept <- mean(accept_flags)
+mean_sample <- mean(samples)
+sd_sample <- sd(samples)
+
+# True mean and standard deviation of Beta(a_n, b_n)
+true_mean <- a_n / (a_n + b_n)
+true_sd <- sqrt((a_n * b_n) / ((a_n + b_n)^2 * (a_n + b_n + 1)))
+
+# Print summaries
+cat("Acceptance rate:", mean_accept, "\n")
+cat("Sample mean:", mean_sample, " | True mean:", true_mean, "\n")
+cat("Sample SD:  ", sd_sample, " | True SD:  ", true_sd, "\n")
+
+# Histogram and overlaid density
+hist_info <- hist(
+  samples,
+  breaks = 50,
+  col = "blue",
+  xlab = "Proportion of Ph.D. students sleeping ≥ 6 hours",
+  main = "Beta draws from a Metropolis-Hastings algorithm"
+)
+
+x_vals <- seq(min(samples), max(samples), length.out = 50)
+y_vals <- dbeta(x_vals, a_n, b_n)
+y_vals <- y_vals * diff(hist_info$mids[1:2]) * length(samples)
+
+lines(x_vals, y_vals, col = "red", lwd = 2)
 ```
 
 The results indicate that the mean and standard deviation obtained from the posterior draws are similar to the population values. Furthermore, this figure presents the histogram of the posterior draws alongside the density of the beta distribution, demonstrating a good match between them.
@@ -382,105 +422,178 @@ then $\frac{d \log(\pi(\boldsymbol{\theta} \mid \boldsymbol{y}))}{d \boldsymbol{
 The following code shows how to implement the Gibbs sampler, the random walk M-H algorithm, and the HMC in this example such that the effective number of posterior draws is 400.
 
 
-```{r, eval=FALSE}
-rm(list = ls()); set.seed(010101)
+```{r}
+# Load packages
+library(MASS)
+library(mvtnorm)
+library(coda)
+library(ggplot2)
+library(ggpubr)
+library(latex2exp)
+
+set.seed(10101)
+
+###----------------------------------------------
+### Functions
+###----------------------------------------------
+
 # Gibbs sampler
-Gibbs <- function(theta, rho){
-	thetal <- rnorm(1, mean = rho*theta, sd = (1- rho^2)^0.5)
-	return(thetal)
+gibbs_sampler <- function(theta, rho) {
+  rnorm(1, mean = rho * theta, sd = sqrt(1 - rho^2))
 }
-# Metropolis-Hastings
-MH <- function(theta, rho, sig2){
-	SIGMA <- matrix(c(1, rho, rho, 1), 2, 2)
-	SIGMAc <- matrix(c(1, sig2, sig2, 1), 2, 2)
-	thetac <- MASS::mvrnorm(1, mu = theta, Sigma = SIGMAc)
-	a <- mvtnorm::dmvnorm(thetac, c(0, 0), SIGMA)/mvtnorm::dmvnorm(theta, c(0, 0), SIGMA)
-	U <- runif(1)
-	if(U <= a){
-		theta <- thetac
-		accept <- 1
-	}else{
-		theta <- theta
-		accept <- 0
-	}
-	return(list(theta = theta, accept = accept))
+
+# Metropolis-Hastings sampler
+mh_sampler <- function(theta, rho, sig2) {
+  sigma_target <- matrix(c(1, rho, rho, 1), 2, 2)
+  sigma_proposal <- matrix(c(1, sig2, sig2, 1), 2, 2)
+  
+  theta_candidate <- mvrnorm(1, mu = theta, Sigma = sigma_proposal)
+  
+  a <- dmvnorm(theta_candidate, mean = c(0, 0), sigma = sigma_target) /
+    dmvnorm(theta, mean = c(0, 0), sigma = sigma_target)
+  
+  if (runif(1) <= a) {
+    list(theta = theta_candidate, accept = 1)
+  } else {
+    list(theta = theta, accept = 0)
+  }
 }
+
 # Hamiltonian Monte Carlo
-HMC <- function(theta, rho, epsilon, M){
-	SIGMA <- matrix(c(1, rho, rho, 1), 2, 2) 
-	L <- ceiling(1/epsilon)
-	Minv <- solve(M); thetat <- theta
-	K <- length(thetat)
-	mom <- t(mvtnorm::rmvnorm(1, rep(0, K), M))
-	logPost_Mom_t <- mvtnorm::dmvnorm(t(theta), rep(0, K), SIGMA, log = TRUE) +  mvtnorm::dmvnorm(t(mom), rep(0, K), M, log = TRUE)  
-	for(l in 1:L){
-		if(l == 1 | l == L){
-			mom <- mom + 0.5*epsilon*(-solve(SIGMA)%*%theta)
-			theta <- theta + epsilon*Minv%*%mom
-		}else{
-			mom <- mom + epsilon*(-solve(SIGMA)%*%theta)
-			theta <- theta + epsilon*Minv%*%mom
-		}
-	}
-	logPost_Mom_star <- mvtnorm::dmvnorm(t(theta), rep(0, K), SIGMA, log = TRUE) +  mvtnorm::dmvnorm(t(mom), rep(0, K), M, log = TRUE)  
-	alpha <- min(1, exp(logPost_Mom_star-logPost_Mom_t))
-	u <- runif(1)
-	if(u <= alpha){
-		thetaNew <- c(theta)
-	}else{
-		thetaNew <- thetat
-	}
-	rest <- list(theta = thetaNew, Prob = alpha)
-	return(rest)
+hmc_sampler <- function(theta, rho, epsilon, M) {
+  sigma_target <- matrix(c(1, rho, rho, 1), 2, 2)
+  L <- ceiling(1 / epsilon)
+  M_inv <- solve(M)
+  K <- length(theta)
+  
+  # Initial momentum
+  momentum <- t(rmvnorm(1, mean = rep(0, K), sigma = M))
+  theta_old <- theta
+  
+  # Initial log posterior + kinetic energy
+  log_start <- dmvnorm(theta_old, mean = rep(0, K), sigma = sigma_target, log = TRUE) +
+    dmvnorm(as.vector(momentum), mean = rep(0, K), sigma = M, log = TRUE)
+  
+  # Leapfrog steps
+  for (l in 1:L) {
+    grad <- -solve(sigma_target) %*% theta
+    if (l == 1 || l == L) {
+      momentum <- momentum + 0.5 * epsilon * grad
+    } else {
+      momentum <- momentum + epsilon * grad
+    }
+    theta <- theta + epsilon * M_inv %*% momentum
+  }
+  
+  # Final log posterior + kinetic energy
+  log_end <- dmvnorm(as.vector(theta), mean = rep(0, K), sigma = sigma_target, log = TRUE) +
+    dmvnorm(as.vector(momentum), mean = rep(0, K), sigma = M, log = TRUE)
+  
+  alpha <- min(1, exp(log_end - log_start))
+  
+  if (runif(1) <= alpha) {
+    theta_new <- as.vector(theta)
+  } else {
+    theta_new <- theta_old
+  }
+  
+  list(theta = theta_new, prob = alpha)
 }
-# Hyperparameters
-rho <- 0.98; sig2 <- 0.18^2
-# Posterior draws Gibbs and M-H
-S <- 8000; thin <- 20; K <- 2
-thetaPostGibbs <- matrix(NA, S, K)
-thetaPostMH <- matrix(NA, S, K)
-AcceptMH <- rep(NA, S)
-thetaGibbs <- c(-2, 3); thetaMH <- c(-2, 3)
-for(s in 1:S){
-	theta1 <- Gibbs(thetaGibbs[2], rho)
-	theta2 <- Gibbs(theta1, rho)
-	thetaGibbs <- c(theta1, theta2)
-	ResMH <- MH(thetaMH, rho, sig2)
-	thetaMH <- ResMH$theta
-	thetaPostGibbs[s,] <- thetaGibbs
-	thetaPostMH[s,] <- thetaMH
-	AcceptMH[s] <- ResMH$accept
+
+###----------------------------------------------
+### Parameters and storage
+###----------------------------------------------
+
+rho <- 0.98
+sig2 <- 0.18^2
+S_gibbs <- 8000
+thin <- 20
+K <- 2
+keep <- seq(0, S_gibbs, by = thin)[-1]
+
+theta_post_gibbs <- matrix(NA, S_gibbs, K)
+theta_post_mh <- matrix(NA, S_gibbs, K)
+accept_mh <- logical(S_gibbs)
+
+theta_gibbs <- c(-2, 3)
+theta_mh <- c(-2, 3)
+
+###----------------------------------------------
+### Gibbs and Metropolis-Hastings
+###----------------------------------------------
+
+for (s in 1:S_gibbs) {
+  theta1 <- gibbs_sampler(theta_gibbs[2], rho)
+  theta2 <- gibbs_sampler(theta1, rho)
+  theta_gibbs <- c(theta1, theta2)
+  
+  res_mh <- mh_sampler(theta_mh, rho, sig2)
+  theta_mh <- res_mh$theta
+  
+  theta_post_gibbs[s, ] <- theta_gibbs
+  theta_post_mh[s, ] <- theta_mh
+  accept_mh[s] <- res_mh$accept
 }
-keep <- seq(0, S, thin)
-mean(AcceptMH[keep[-1]])
-thetaPostGibbsMCMC <- coda::mcmc(thetaPostGibbs[keep[-1],])
-summary(thetaPostGibbsMCMC)
-coda::autocorr.plot(thetaPostGibbsMCMC)
-thetaPostMHMCMC <- coda::mcmc(thetaPostMH[keep[-1],])
-plot(thetaPostMHMCMC)
-coda::autocorr.plot(thetaPostMHMCMC)
-# Posterior draws HMC
-S <- 400;epsilon <- 0.05;  L <- ceiling(1/epsilon); M <- diag(2)
-thetaPostHMC <- matrix(NA, S, K)
-ProbAcceptHMC  <- rep(NA, S)
-thetaHMC <- c(-2, 3)
-for(s in 1:S){
-	ResHMC <- HMC(theta = thetaHMC, rho, epsilon, M)
-	thetaHMC <- ResHMC$theta
-	thetaPostHMC[s,] <- thetaHMC
-	ProbAcceptHMC[s] <- ResHMC$Prob
+
+cat("MH acceptance rate:", mean(accept_mh[keep]), "\n")
+
+mcmc_gibbs <- mcmc(theta_post_gibbs[keep, ])
+mcmc_mh <- mcmc(theta_post_mh[keep, ])
+
+summary(mcmc_gibbs)
+autocorr.plot(mcmc_gibbs)
+plot(mcmc_mh)
+autocorr.plot(mcmc_mh)
+
+###----------------------------------------------
+### Hamiltonian Monte Carlo
+###----------------------------------------------
+
+S_hmc <- 400
+epsilon <- 0.05
+M <- diag(2)
+
+theta_post_hmc <- matrix(NA, S_hmc, K)
+accept_prob_hmc <- numeric(S_hmc)
+theta_hmc <- c(-2, 3)
+
+for (s in 1:S_hmc) {
+  res_hmc <- hmc_sampler(theta_hmc, rho, epsilon, M)
+  theta_hmc <- res_hmc$theta
+  theta_post_hmc[s, ] <- theta_hmc
+  accept_prob_hmc[s] <- res_hmc$prob
 }
-thetaPostHMCMCMC <- coda::mcmc(thetaPostHMC)
-plot(thetaPostHMCMCMC); coda::autocorr.plot(thetaPostHMCMCMC)
-summary(ProbAcceptHMC)
-#Figure
-df <- as.data.frame(cbind(1:S, thetaPostHMC[,1], thetaPostMH[keep[-1],1], thetaPostGibbs[keep[-1],1]))
-colnames(df) <- c("Iter", "HMC", "MH", "Gibbs")
-library(latex2exp); library(ggpubr)
-g1 <- ggplot(df, aes(x= Iter)) + geom_point(aes(y=HMC), colour="black") + labs(x = "Iteration", y = TeX("$\\theta_{1}$"), title = "HMC algorithm")
-g2 <- ggplot(df, aes(x= Iter)) + geom_point(aes(y=MH), colour="black") + labs(x = "Iteration", y = TeX("$\\theta_{1}$"), title = "M-H algorithm")
-g3 <- ggplot(df, aes(x= Iter)) + geom_point(aes(y=Gibbs), colour="black") + labs(x = "Iteration", y = TeX("$\\theta_{1}$"), title = "Gibbs sampling")
-ggarrange(g3, g2, g1, labels = c("A", "B", "C"), ncol = 3, nrow = 1)
+
+mcmc_hmc <- mcmc(theta_post_hmc)
+summary(mcmc_hmc)
+summary(accept_prob_hmc)
+plot(mcmc_hmc)
+autocorr.plot(mcmc_hmc)
+
+###----------------------------------------------
+### Comparison Plot
+###----------------------------------------------
+
+df_plot <- data.frame(
+  Iter = 1:S_hmc,
+  HMC = theta_post_hmc[, 1],
+  MH = theta_post_mh[keep, 1],
+  Gibbs = theta_post_gibbs[keep, 1]
+)
+
+g1 <- ggplot(df_plot, aes(x = Iter)) +
+  geom_point(aes(y = HMC), color = "black") +
+  labs(x = "Iteration", y = TeX("$\\theta_{1}$"), title = "HMC algorithm")
+
+g2 <- ggplot(df_plot, aes(x = Iter)) +
+  geom_point(aes(y = MH), color = "black") +
+  labs(x = "Iteration", y = TeX("$\\theta_{1}$"), title = "M-H algorithm")
+
+g3 <- ggplot(df_plot, aes(x = Iter)) +
+  geom_point(aes(y = Gibbs), color = "black") +
+  labs(x = "Iteration", y = TeX("$\\theta_{1}$"), title = "Gibbs sampling")
+
+ggarrange(g3, g2, g1, labels = c("A", "B", "C"), ncol = 3)
 ```
 
 The figure shows the posterior draws of $\theta_1$ using the Gibbs sampler (Panel A, left), the Metropolis-Hastings algorithm (Panel B, middle), and the Hamiltonian Monte Carlo (Panel C, right). The convergence diagnostic plots (no shown) suggests that the three algorithms perform a good job. Although, the acceptance rate in HMC is higher than the M-H due to the HMC producing larger changes in $\boldsymbol{\theta}$ than a corresponding number of random-walk M-H iterations [@neal2011mcmc].
@@ -601,34 +714,78 @@ This is the Gelfand-Dey method to calculate the marginal likelihood [@gelfand199
 
 Let's assume that the posterior distribution is Cauchy with parameters 0 and 1. We perform an importance sampling algorithm using as proposals a standard normal distribution and a Student's t distribution with 3 degrees of freedom. The following code shows how to do this.
 
-```{r, eval=FALSE}
-rm(list = ls()); set.seed(010101)
-S <- 20000 # Size proposal
-# Importance sampling from standard normal proposal 
-thetaNs <- rnorm(S)
-wNs <- dcauchy(thetaNs)/dnorm(thetaNs)
-wNstars <- wNs/sum(wNs)
-L <- 10000 # Size posterior
-thetaCauchyN <- sample(thetaNs, L, replace = TRUE, prob = wNstars)
-h <- hist(thetaCauchyN, breaks=50, col="blue", xlab="x", main="Cauchy draws from importance sampling: Normal standard proposal")
-pfit <- seq(min(thetaCauchyN),max(thetaCauchyN),length=50)
-yfit<-dcauchy(pfit)
-yfit <- yfit*diff(h$mids[1:2])*length(thetaCauchyN)
-lines(pfit, yfit, col="red", lwd=2)
-# Importance sampling from Student's t proposal 
-df <- 3
-thetaTs <- rt(S, df = df)
-wTs <- dcauchy(thetaTs)/dt(thetaTs, df = df)
-wTstars <- wTs/sum(wTs)
-thetaCauchyT <- sample(thetaTs, L, replace = TRUE, prob = wTstars)
-h <- hist(thetaCauchyT, breaks=50, col="blue", xlab="x", main="Cauchy draws from importance sampling: Student's t proposal")
-pfit <- seq(min(thetaCauchyT),max(thetaCauchyT),length=50)
-yfit<-dcauchy(pfit)
-yfit <- yfit*diff(h$mids[1:2])*length(thetaCauchyT)
-lines(pfit, yfit, col="red", lwd=2)
-plot(wNstars, main = "Importance sampling: Cauchy distribution", ylab = "Weights", xlab = "Iterations")
-points(wTstars, col = "blue")
-legend("topright", legend = c("Normal", "Student's t"), col = c("black", "blue"), pch = c(1, 1))
+```{r}
+# Load required libraries
+library(ggplot2)
+library(ggpubr)
+library(dplyr)
+
+set.seed(10101)
+
+# Parameters
+S <- 20000  # Proposal sample size
+L <- 10000  # Posterior sample size
+
+###----------------------------------
+### Importance Sampling: Normal proposal
+###----------------------------------
+theta_norm <- rnorm(S)
+weights_norm <- dcauchy(theta_norm) / dnorm(theta_norm)
+weights_norm <- weights_norm / sum(weights_norm)
+
+theta_cauchy_norm <- sample(theta_norm, size = L, replace = TRUE, prob = weights_norm)
+df_norm <- data.frame(x = theta_cauchy_norm)
+
+g1 <- ggplot(df_norm, aes(x = x)) +
+  geom_histogram(aes(y = after_stat(density)), bins = 50,
+                 fill = "skyblue", color = "black") +
+  stat_function(fun = dcauchy, color = "red", linewidth = 1.2) +
+  labs(title = "Cauchy draws via Importance Sampling",
+       subtitle = "Normal(0,1) proposal",
+       x = "x", y = "Density") +
+  theme_minimal()
+
+###----------------------------------
+### Importance Sampling: Student's t proposal
+###----------------------------------
+df_t <- 3
+theta_t <- rt(S, df = df_t)
+weights_t <- dcauchy(theta_t) / dt(theta_t, df = df_t)
+weights_t <- weights_t / sum(weights_t)
+
+theta_cauchy_t <- sample(theta_t, size = L, replace = TRUE, prob = weights_t)
+df_tpost <- data.frame(x = theta_cauchy_t)
+
+g2 <- ggplot(df_tpost, aes(x = x)) +
+  geom_histogram(aes(y = after_stat(density)), bins = 50,
+                 fill = "lightgreen", color = "black") +
+  stat_function(fun = dcauchy, color = "red", linewidth = 1.2) +
+  labs(title = "Cauchy draws via Importance Sampling",
+       subtitle = "Student's t (df = 3) proposal",
+       x = "x", y = "Density") +
+  theme_minimal()
+
+###----------------------------------
+### Plot Importance Weights
+###----------------------------------
+df_weights <- data.frame(
+  index = 1:S,
+  Normal = weights_norm,
+  Student_t = weights_t
+)
+
+g3 <- ggplot(df_weights) +
+  geom_point(aes(x = index, y = Normal), color = "black", alpha = 0.6, size = 0.7) +
+  geom_point(aes(x = index, y = Student_t), color = "blue", alpha = 0.6, size = 0.7) +
+  labs(title = "Importance Sampling Weights",
+       x = "Index", y = "Weight") +
+  scale_y_continuous(trans = "log1p") +
+  theme_minimal()
+
+###----------------------------------
+### Arrange and display plots
+###----------------------------------
+ggarrange(g1, g2, g3, ncol = 1, labels = c("A", "B", "C"))
 ```
 
 The first and second figures show the histograms of the posterior draws using the normal and Student's t-distributions, respectively, along with the density of the Cauchy distribution. The spike in the posterior draws from the standard normal proposal arises due to the lighter tails of the standard normal compared to the Cauchy distribution, consequently assigning too much weight to a specific draw from the normal distribution.
@@ -670,7 +827,7 @@ where \(\boldsymbol{w}_t\) and \(\mu_t\) are stochastic errors such that their p
 
 We present *particle filtering*, a specific case of *sequential Monte Carlo* (SMC), which is one of the most commonly used algorithms for scenarios requiring sequential updates of the posterior distribution as described by the *state-space* model.
 
-The starting point is *sequential importance sampling* (SIS), originally proposed by @handschin1969monte, which is a modification of IS to compute an estimate of \(\pi(\boldsymbol{\theta}_{0:t}\mid \boldsymbol{y}_{0:t})\) without altering the past trajectories \(\left\{\boldsymbol{\theta}^{(s)}_{1:t-1}, s=1,2,\dots,S\right\}\). The key idea is to use a proposal density that takes the form
+The starting point is *sequential importance sampling* (SIS), originally proposed by @handschin1969monte, which is a modification of IS to compute an estimate \(\pi(\boldsymbol{\theta}_{0:t}\mid \boldsymbol{y}_{0:t})\) without altering the past trajectories \(\left\{\boldsymbol{\theta}^{(s)}_{1:t-1}, s=1,2,\dots,S\right\}\). The key idea is to use a proposal density that takes the form
 
 \[
 \begin{aligned}
@@ -758,48 +915,83 @@ $$
 
 The following code demonstrates the implementation of this algorithm, setting $\sigma_w^2 = \sigma_{\mu}^2 = 1$ and $\phi = 0.5$. First, we simulate the process, and then we implement the SIS algorithm.
 
-```{r, eval=FALSE}
-rm(list = ls()); set.seed(010101)
-S <- 50000 # Number of particles
-sigma_w <- 1  # State noise
-sigma_mu <- 1  # Observation noise
-phi <- 0.5 # Coefficient in observation equation
-T <- 50 # Sample size
-# Simulate true states and observations
-theta_true <- numeric(T); y_obs <- numeric(T)
-theta_true[1] <- rnorm(1, mean = 0, sd = sigma_w)  # Initial state
+```{r}
+# Load packages
+library(dplyr)
+library(ggplot2)
+library(latex2exp)
+
+set.seed(10101)
+
+# Parameters
+n_particles <- 50000
+sigma_w <- 1       # State noise
+sigma_mu <- 1      # Observation noise
+phi <- 0.5         # Observation coefficient
+T <- 50            # Time points
+
+###-------------------------------------
+### Simulate true states and observations
+###-------------------------------------
+theta_true <- numeric(T)
+theta_true[1] <- rnorm(1, mean = 0, sd = sigma_w)
 for (t in 2:T) {
-	theta_true[t] <- rnorm(1, mean = theta_true[t-1], sd = sigma_w)
+  theta_true[t] <- rnorm(1, mean = theta_true[t - 1], sd = sigma_w)
 }
-y_obs <- rnorm(T, mean = phi*theta_true, sd = sigma_mu)
-# Sequential Importance Sampling (SIS)
-particles <- matrix(0, nrow = S, ncol = T) 
-weights <- matrix(0, nrow = S, ncol = T) 
-weightsSt <- matrix(0, nrow = S, ncol = T) 
+y_obs <- rnorm(T, mean = phi * theta_true, sd = sigma_mu)
+
+###-------------------------------------
+### Sequential Importance Sampling (SIS)
+###-------------------------------------
+particles <- matrix(0, nrow = n_particles, ncol = T)
+weights <- matrix(0, nrow = n_particles, ncol = T)
+weights_normalized <- matrix(0, nrow = n_particles, ncol = T)
+
 # Initialization
-particles[, 1] <- rnorm(S, mean = 0, sd = sigma_w)  # Sample initial particles
-weights[, 1] <- dnorm(y_obs[1], mean = phi*particles[, 1], sd = sigma_mu)  # Importance weights
-weightsSt[, 1] <- weights[, 1] / sum(weights[, 1])  # Standardized weights
-# Sequential updating
+particles[, 1] <- rnorm(n_particles, mean = 0, sd = sigma_w)
+weights[, 1] <- dnorm(y_obs[1], mean = phi * particles[, 1], sd = sigma_mu)
+weights_normalized[, 1] <- weights[, 1] / sum(weights[, 1])
+
+# Recursive updates
 for (t in 2:T) {
-	# Propagate particles
-	particles[, t] <- rnorm(S, mean = particles[, t-1], sd = sigma_w)
-	# Compute weights
-	weights[, t] <- weightsSt[, t-1] * dnorm(y_obs[t], mean = phi*particles[, t], sd = sigma_mu) # Recursive weight update
-	weightsSt[, t] <- weights[, t] / sum(weights[, t])  # Normalize weights
+  particles[, t] <- rnorm(n_particles, mean = particles[, t - 1], sd = sigma_w)
+  weights[, t] <- weights_normalized[, t - 1] * dnorm(y_obs[t], mean = phi * particles[, t], sd = sigma_mu)
+  weights_normalized[, t] <- weights[, t] / sum(weights[, t])
 }
-# Estimate the states (weighted mean)
-FilterDist <- colSums(particles * weightsSt)
-SDFilterDist <- (colSums(particles^2 * weightsSt) - FilterDist^2)^0.5
-library(dplyr); library(ggplot2); library(latex2exp)
-ggplot2::theme_set(theme_bw())
-df <- tibble(t = 1:T, mean = FilterDist, lower = FilterDist - 2*SDFilterDist, upper = FilterDist + 2*SDFilterDist, theta_true = theta_true)
-# Function to plot
+
+###-------------------------------------
+### Posterior filtering mean and std dev
+###-------------------------------------
+posterior_mean <- colSums(particles * weights_normalized)
+posterior_sd <- sqrt(colSums((particles^2) * weights_normalized) - posterior_mean^2)
+
+###-------------------------------------
+### Plot filtering estimates
+###-------------------------------------
+df_sis <- tibble(
+  t = 1:T,
+  estimate = posterior_mean,
+  lower = posterior_mean - 2 * posterior_sd,
+  upper = posterior_mean + 2 * posterior_sd,
+  theta_true = theta_true
+)
+
 plot_filtering_estimates <- function(df) {
-	p <- ggplot(data = df, aes(x = t)) + geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1, fill = "lightblue") + geom_line(aes(y = theta_true), colour = "black", alpha = 1, linewidth = 0.5) + geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) + ylab(TeX("$\\theta_{t}$")) + xlab("Time")
-	print(p)
+  ggplot(df, aes(x = t)) +
+    geom_ribbon(aes(ymin = lower, ymax = upper, fill = "95% Credible Interval"), alpha = 0.5) +
+    geom_line(aes(y = theta_true, color = "True State"), linewidth = 0.5) +
+    geom_line(aes(y = estimate, color = "Posterior Mean"), linewidth = 0.5) +
+    scale_color_manual(values = c("True State" = "black", "Posterior Mean" = "blue")) +
+    scale_fill_manual(values = c("95% Credible Interval" = "lightblue")) +
+    ylab(TeX("$\\theta_t$")) +
+    xlab("Time") +
+    labs(color = "Line", fill = "Interval") +
+    theme_bw() +
+    theme(legend.position = "bottom")
 }
-plot_filtering_estimates(df)
+
+# Display plot
+plot_filtering_estimates(df_sis)
 ```
 
 The figure shows the trajectory of the true state vector (black line), the posterior mean (blue line), and the area defined by $\pm2\hat{\sigma}_{\theta}$ (light blue shaded area).
@@ -842,7 +1034,7 @@ If we apply the SIS algorithm to the dynamic linear model with a sample size of 
 Let's perform particle filtering in this example. The following code illustrate the procedure. The figure shows the performance of particle filtering in this example. There is the true state vector (black line), the means based on $\left\{\boldsymbol{\theta}_{1:t}^{(s)},w_t^{*(s)}\right\}$ (blue line) and  $\left\{\boldsymbol{\theta}_{1:t}^{r(s)},1/S\right\}$ (purple line), and the area defined by $\pm2\hat{\sigma}_{\theta}$ based on the former (light blue shaded area). Note that the particle filtering algorithm has better performance than the SIS algorithm.
 
 ```{r, eval=FALSE}
-rm(list = ls()); set.seed(010101)
+rm(list = ls()); set.seed(10101)
 S <- 50000 # Number of particles
 sigma_w <- 1; sigma_mu <- 1  #  # State and observation noises
 phi <- 0.5 # Coefficient in observation equation
@@ -1056,7 +1248,7 @@ To evaluate the effectiveness of the test, we run the *marginal-conditional simu
 
 ```{r, eval=FALSE}
 rm(list = ls())
-set.seed(010101)
+set.seed(10101)
 dataset<-read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/MiningDataCarlin.csv",header=T)
 attach(dataset)
 str(dataset)

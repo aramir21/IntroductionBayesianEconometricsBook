@@ -23,7 +23,7 @@
 <meta name="author" content="Andrés Ramírez-Hassan" />
 
 
-<meta name="date" content="2025-05-11" />
+<meta name="date" content="2025-05-12" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -440,33 +440,88 @@ p(\boldsymbol{y})^{-1}=\frac{\pi(\boldsymbol{\theta}\mid \boldsymbol{y})}{p(\bol
 <p>This is the Gelfand-Dey method to calculate the marginal likelihood <span class="citation">(<a href="#ref-gelfand1994bayesian">Alan E. Gelfand and Dey 1994</a>)</span>.</p>
 <p><strong>Example: Cauchy distribution</strong></p>
 <p>Let’s assume that the posterior distribution is Cauchy with parameters 0 and 1. We perform an importance sampling algorithm using as proposals a standard normal distribution and a Student’s t distribution with 3 degrees of freedom. The following code shows how to do this.</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="sec52.html#cb12-1" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">010101</span>)</span>
-<span id="cb12-2"><a href="sec52.html#cb12-2" tabindex="-1"></a>S <span class="ot">&lt;-</span> <span class="dv">20000</span> <span class="co"># Size proposal</span></span>
-<span id="cb12-3"><a href="sec52.html#cb12-3" tabindex="-1"></a><span class="co"># Importance sampling from standard normal proposal </span></span>
-<span id="cb12-4"><a href="sec52.html#cb12-4" tabindex="-1"></a>thetaNs <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(S)</span>
-<span id="cb12-5"><a href="sec52.html#cb12-5" tabindex="-1"></a>wNs <span class="ot">&lt;-</span> <span class="fu">dcauchy</span>(thetaNs)<span class="sc">/</span><span class="fu">dnorm</span>(thetaNs)</span>
-<span id="cb12-6"><a href="sec52.html#cb12-6" tabindex="-1"></a>wNstars <span class="ot">&lt;-</span> wNs<span class="sc">/</span><span class="fu">sum</span>(wNs)</span>
-<span id="cb12-7"><a href="sec52.html#cb12-7" tabindex="-1"></a>L <span class="ot">&lt;-</span> <span class="dv">10000</span> <span class="co"># Size posterior</span></span>
-<span id="cb12-8"><a href="sec52.html#cb12-8" tabindex="-1"></a>thetaCauchyN <span class="ot">&lt;-</span> <span class="fu">sample</span>(thetaNs, L, <span class="at">replace =</span> <span class="cn">TRUE</span>, <span class="at">prob =</span> wNstars)</span>
-<span id="cb12-9"><a href="sec52.html#cb12-9" tabindex="-1"></a>h <span class="ot">&lt;-</span> <span class="fu">hist</span>(thetaCauchyN, <span class="at">breaks=</span><span class="dv">50</span>, <span class="at">col=</span><span class="st">&quot;blue&quot;</span>, <span class="at">xlab=</span><span class="st">&quot;x&quot;</span>, <span class="at">main=</span><span class="st">&quot;Cauchy draws from importance sampling: Normal standard proposal&quot;</span>)</span>
-<span id="cb12-10"><a href="sec52.html#cb12-10" tabindex="-1"></a>pfit <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="fu">min</span>(thetaCauchyN),<span class="fu">max</span>(thetaCauchyN),<span class="at">length=</span><span class="dv">50</span>)</span>
-<span id="cb12-11"><a href="sec52.html#cb12-11" tabindex="-1"></a>yfit<span class="ot">&lt;-</span><span class="fu">dcauchy</span>(pfit)</span>
-<span id="cb12-12"><a href="sec52.html#cb12-12" tabindex="-1"></a>yfit <span class="ot">&lt;-</span> yfit<span class="sc">*</span><span class="fu">diff</span>(h<span class="sc">$</span>mids[<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>])<span class="sc">*</span><span class="fu">length</span>(thetaCauchyN)</span>
-<span id="cb12-13"><a href="sec52.html#cb12-13" tabindex="-1"></a><span class="fu">lines</span>(pfit, yfit, <span class="at">col=</span><span class="st">&quot;red&quot;</span>, <span class="at">lwd=</span><span class="dv">2</span>)</span>
-<span id="cb12-14"><a href="sec52.html#cb12-14" tabindex="-1"></a><span class="co"># Importance sampling from Student&#39;s t proposal </span></span>
-<span id="cb12-15"><a href="sec52.html#cb12-15" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="dv">3</span></span>
-<span id="cb12-16"><a href="sec52.html#cb12-16" tabindex="-1"></a>thetaTs <span class="ot">&lt;-</span> <span class="fu">rt</span>(S, <span class="at">df =</span> df)</span>
-<span id="cb12-17"><a href="sec52.html#cb12-17" tabindex="-1"></a>wTs <span class="ot">&lt;-</span> <span class="fu">dcauchy</span>(thetaTs)<span class="sc">/</span><span class="fu">dt</span>(thetaTs, <span class="at">df =</span> df)</span>
-<span id="cb12-18"><a href="sec52.html#cb12-18" tabindex="-1"></a>wTstars <span class="ot">&lt;-</span> wTs<span class="sc">/</span><span class="fu">sum</span>(wTs)</span>
-<span id="cb12-19"><a href="sec52.html#cb12-19" tabindex="-1"></a>thetaCauchyT <span class="ot">&lt;-</span> <span class="fu">sample</span>(thetaTs, L, <span class="at">replace =</span> <span class="cn">TRUE</span>, <span class="at">prob =</span> wTstars)</span>
-<span id="cb12-20"><a href="sec52.html#cb12-20" tabindex="-1"></a>h <span class="ot">&lt;-</span> <span class="fu">hist</span>(thetaCauchyT, <span class="at">breaks=</span><span class="dv">50</span>, <span class="at">col=</span><span class="st">&quot;blue&quot;</span>, <span class="at">xlab=</span><span class="st">&quot;x&quot;</span>, <span class="at">main=</span><span class="st">&quot;Cauchy draws from importance sampling: Student&#39;s t proposal&quot;</span>)</span>
-<span id="cb12-21"><a href="sec52.html#cb12-21" tabindex="-1"></a>pfit <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="fu">min</span>(thetaCauchyT),<span class="fu">max</span>(thetaCauchyT),<span class="at">length=</span><span class="dv">50</span>)</span>
-<span id="cb12-22"><a href="sec52.html#cb12-22" tabindex="-1"></a>yfit<span class="ot">&lt;-</span><span class="fu">dcauchy</span>(pfit)</span>
-<span id="cb12-23"><a href="sec52.html#cb12-23" tabindex="-1"></a>yfit <span class="ot">&lt;-</span> yfit<span class="sc">*</span><span class="fu">diff</span>(h<span class="sc">$</span>mids[<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>])<span class="sc">*</span><span class="fu">length</span>(thetaCauchyT)</span>
-<span id="cb12-24"><a href="sec52.html#cb12-24" tabindex="-1"></a><span class="fu">lines</span>(pfit, yfit, <span class="at">col=</span><span class="st">&quot;red&quot;</span>, <span class="at">lwd=</span><span class="dv">2</span>)</span>
-<span id="cb12-25"><a href="sec52.html#cb12-25" tabindex="-1"></a><span class="fu">plot</span>(wNstars, <span class="at">main =</span> <span class="st">&quot;Importance sampling: Cauchy distribution&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;Weights&quot;</span>, <span class="at">xlab =</span> <span class="st">&quot;Iterations&quot;</span>)</span>
-<span id="cb12-26"><a href="sec52.html#cb12-26" tabindex="-1"></a><span class="fu">points</span>(wTstars, <span class="at">col =</span> <span class="st">&quot;blue&quot;</span>)</span>
-<span id="cb12-27"><a href="sec52.html#cb12-27" tabindex="-1"></a><span class="fu">legend</span>(<span class="st">&quot;topright&quot;</span>, <span class="at">legend =</span> <span class="fu">c</span>(<span class="st">&quot;Normal&quot;</span>, <span class="st">&quot;Student&#39;s t&quot;</span>), <span class="at">col =</span> <span class="fu">c</span>(<span class="st">&quot;black&quot;</span>, <span class="st">&quot;blue&quot;</span>), <span class="at">pch =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">1</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb31-1"><a href="sec52.html#cb31-1" tabindex="-1"></a><span class="co"># Load required libraries</span></span>
+<span id="cb31-2"><a href="sec52.html#cb31-2" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb31-3"><a href="sec52.html#cb31-3" tabindex="-1"></a><span class="fu">library</span>(ggpubr)</span>
+<span id="cb31-4"><a href="sec52.html#cb31-4" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span></code></pre></div>
+<pre><code>## 
+## Attaching package: &#39;dplyr&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:MASS&#39;:
+## 
+##     select</code></pre>
+<pre><code>## The following objects are masked from &#39;package:stats&#39;:
+## 
+##     filter, lag</code></pre>
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
+## 
+##     intersect, setdiff, setequal, union</code></pre>
+<div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb36-1"><a href="sec52.html#cb36-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">10101</span>)</span>
+<span id="cb36-2"><a href="sec52.html#cb36-2" tabindex="-1"></a></span>
+<span id="cb36-3"><a href="sec52.html#cb36-3" tabindex="-1"></a><span class="co"># Parameters</span></span>
+<span id="cb36-4"><a href="sec52.html#cb36-4" tabindex="-1"></a>S <span class="ot">&lt;-</span> <span class="dv">20000</span>  <span class="co"># Proposal sample size</span></span>
+<span id="cb36-5"><a href="sec52.html#cb36-5" tabindex="-1"></a>L <span class="ot">&lt;-</span> <span class="dv">10000</span>  <span class="co"># Posterior sample size</span></span>
+<span id="cb36-6"><a href="sec52.html#cb36-6" tabindex="-1"></a></span>
+<span id="cb36-7"><a href="sec52.html#cb36-7" tabindex="-1"></a><span class="do">###----------------------------------</span></span>
+<span id="cb36-8"><a href="sec52.html#cb36-8" tabindex="-1"></a><span class="do">### Importance Sampling: Normal proposal</span></span>
+<span id="cb36-9"><a href="sec52.html#cb36-9" tabindex="-1"></a><span class="do">###----------------------------------</span></span>
+<span id="cb36-10"><a href="sec52.html#cb36-10" tabindex="-1"></a>theta_norm <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(S)</span>
+<span id="cb36-11"><a href="sec52.html#cb36-11" tabindex="-1"></a>weights_norm <span class="ot">&lt;-</span> <span class="fu">dcauchy</span>(theta_norm) <span class="sc">/</span> <span class="fu">dnorm</span>(theta_norm)</span>
+<span id="cb36-12"><a href="sec52.html#cb36-12" tabindex="-1"></a>weights_norm <span class="ot">&lt;-</span> weights_norm <span class="sc">/</span> <span class="fu">sum</span>(weights_norm)</span>
+<span id="cb36-13"><a href="sec52.html#cb36-13" tabindex="-1"></a></span>
+<span id="cb36-14"><a href="sec52.html#cb36-14" tabindex="-1"></a>theta_cauchy_norm <span class="ot">&lt;-</span> <span class="fu">sample</span>(theta_norm, <span class="at">size =</span> L, <span class="at">replace =</span> <span class="cn">TRUE</span>, <span class="at">prob =</span> weights_norm)</span>
+<span id="cb36-15"><a href="sec52.html#cb36-15" tabindex="-1"></a>df_norm <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> theta_cauchy_norm)</span>
+<span id="cb36-16"><a href="sec52.html#cb36-16" tabindex="-1"></a></span>
+<span id="cb36-17"><a href="sec52.html#cb36-17" tabindex="-1"></a>g1 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(df_norm, <span class="fu">aes</span>(<span class="at">x =</span> x)) <span class="sc">+</span></span>
+<span id="cb36-18"><a href="sec52.html#cb36-18" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="fu">aes</span>(<span class="at">y =</span> <span class="fu">after_stat</span>(density)), <span class="at">bins =</span> <span class="dv">50</span>,</span>
+<span id="cb36-19"><a href="sec52.html#cb36-19" tabindex="-1"></a>                 <span class="at">fill =</span> <span class="st">&quot;skyblue&quot;</span>, <span class="at">color =</span> <span class="st">&quot;black&quot;</span>) <span class="sc">+</span></span>
+<span id="cb36-20"><a href="sec52.html#cb36-20" tabindex="-1"></a>  <span class="fu">stat_function</span>(<span class="at">fun =</span> dcauchy, <span class="at">color =</span> <span class="st">&quot;red&quot;</span>, <span class="at">linewidth =</span> <span class="fl">1.2</span>) <span class="sc">+</span></span>
+<span id="cb36-21"><a href="sec52.html#cb36-21" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">&quot;Cauchy draws via Importance Sampling&quot;</span>,</span>
+<span id="cb36-22"><a href="sec52.html#cb36-22" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">&quot;Normal(0,1) proposal&quot;</span>,</span>
+<span id="cb36-23"><a href="sec52.html#cb36-23" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">&quot;x&quot;</span>, <span class="at">y =</span> <span class="st">&quot;Density&quot;</span>) <span class="sc">+</span></span>
+<span id="cb36-24"><a href="sec52.html#cb36-24" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span>
+<span id="cb36-25"><a href="sec52.html#cb36-25" tabindex="-1"></a></span>
+<span id="cb36-26"><a href="sec52.html#cb36-26" tabindex="-1"></a><span class="do">###----------------------------------</span></span>
+<span id="cb36-27"><a href="sec52.html#cb36-27" tabindex="-1"></a><span class="do">### Importance Sampling: Student&#39;s t proposal</span></span>
+<span id="cb36-28"><a href="sec52.html#cb36-28" tabindex="-1"></a><span class="do">###----------------------------------</span></span>
+<span id="cb36-29"><a href="sec52.html#cb36-29" tabindex="-1"></a>df_t <span class="ot">&lt;-</span> <span class="dv">3</span></span>
+<span id="cb36-30"><a href="sec52.html#cb36-30" tabindex="-1"></a>theta_t <span class="ot">&lt;-</span> <span class="fu">rt</span>(S, <span class="at">df =</span> df_t)</span>
+<span id="cb36-31"><a href="sec52.html#cb36-31" tabindex="-1"></a>weights_t <span class="ot">&lt;-</span> <span class="fu">dcauchy</span>(theta_t) <span class="sc">/</span> <span class="fu">dt</span>(theta_t, <span class="at">df =</span> df_t)</span>
+<span id="cb36-32"><a href="sec52.html#cb36-32" tabindex="-1"></a>weights_t <span class="ot">&lt;-</span> weights_t <span class="sc">/</span> <span class="fu">sum</span>(weights_t)</span>
+<span id="cb36-33"><a href="sec52.html#cb36-33" tabindex="-1"></a></span>
+<span id="cb36-34"><a href="sec52.html#cb36-34" tabindex="-1"></a>theta_cauchy_t <span class="ot">&lt;-</span> <span class="fu">sample</span>(theta_t, <span class="at">size =</span> L, <span class="at">replace =</span> <span class="cn">TRUE</span>, <span class="at">prob =</span> weights_t)</span>
+<span id="cb36-35"><a href="sec52.html#cb36-35" tabindex="-1"></a>df_tpost <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> theta_cauchy_t)</span>
+<span id="cb36-36"><a href="sec52.html#cb36-36" tabindex="-1"></a></span>
+<span id="cb36-37"><a href="sec52.html#cb36-37" tabindex="-1"></a>g2 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(df_tpost, <span class="fu">aes</span>(<span class="at">x =</span> x)) <span class="sc">+</span></span>
+<span id="cb36-38"><a href="sec52.html#cb36-38" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="fu">aes</span>(<span class="at">y =</span> <span class="fu">after_stat</span>(density)), <span class="at">bins =</span> <span class="dv">50</span>,</span>
+<span id="cb36-39"><a href="sec52.html#cb36-39" tabindex="-1"></a>                 <span class="at">fill =</span> <span class="st">&quot;lightgreen&quot;</span>, <span class="at">color =</span> <span class="st">&quot;black&quot;</span>) <span class="sc">+</span></span>
+<span id="cb36-40"><a href="sec52.html#cb36-40" tabindex="-1"></a>  <span class="fu">stat_function</span>(<span class="at">fun =</span> dcauchy, <span class="at">color =</span> <span class="st">&quot;red&quot;</span>, <span class="at">linewidth =</span> <span class="fl">1.2</span>) <span class="sc">+</span></span>
+<span id="cb36-41"><a href="sec52.html#cb36-41" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">&quot;Cauchy draws via Importance Sampling&quot;</span>,</span>
+<span id="cb36-42"><a href="sec52.html#cb36-42" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">&quot;Student&#39;s t (df = 3) proposal&quot;</span>,</span>
+<span id="cb36-43"><a href="sec52.html#cb36-43" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">&quot;x&quot;</span>, <span class="at">y =</span> <span class="st">&quot;Density&quot;</span>) <span class="sc">+</span></span>
+<span id="cb36-44"><a href="sec52.html#cb36-44" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span>
+<span id="cb36-45"><a href="sec52.html#cb36-45" tabindex="-1"></a></span>
+<span id="cb36-46"><a href="sec52.html#cb36-46" tabindex="-1"></a><span class="do">###----------------------------------</span></span>
+<span id="cb36-47"><a href="sec52.html#cb36-47" tabindex="-1"></a><span class="do">### Plot Importance Weights</span></span>
+<span id="cb36-48"><a href="sec52.html#cb36-48" tabindex="-1"></a><span class="do">###----------------------------------</span></span>
+<span id="cb36-49"><a href="sec52.html#cb36-49" tabindex="-1"></a>df_weights <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb36-50"><a href="sec52.html#cb36-50" tabindex="-1"></a>  <span class="at">index =</span> <span class="dv">1</span><span class="sc">:</span>S,</span>
+<span id="cb36-51"><a href="sec52.html#cb36-51" tabindex="-1"></a>  <span class="at">Normal =</span> weights_norm,</span>
+<span id="cb36-52"><a href="sec52.html#cb36-52" tabindex="-1"></a>  <span class="at">Student_t =</span> weights_t</span>
+<span id="cb36-53"><a href="sec52.html#cb36-53" tabindex="-1"></a>)</span>
+<span id="cb36-54"><a href="sec52.html#cb36-54" tabindex="-1"></a></span>
+<span id="cb36-55"><a href="sec52.html#cb36-55" tabindex="-1"></a>g3 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(df_weights) <span class="sc">+</span></span>
+<span id="cb36-56"><a href="sec52.html#cb36-56" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">x =</span> index, <span class="at">y =</span> Normal), <span class="at">color =</span> <span class="st">&quot;black&quot;</span>, <span class="at">alpha =</span> <span class="fl">0.6</span>, <span class="at">size =</span> <span class="fl">0.7</span>) <span class="sc">+</span></span>
+<span id="cb36-57"><a href="sec52.html#cb36-57" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">x =</span> index, <span class="at">y =</span> Student_t), <span class="at">color =</span> <span class="st">&quot;blue&quot;</span>, <span class="at">alpha =</span> <span class="fl">0.6</span>, <span class="at">size =</span> <span class="fl">0.7</span>) <span class="sc">+</span></span>
+<span id="cb36-58"><a href="sec52.html#cb36-58" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">&quot;Importance Sampling Weights&quot;</span>,</span>
+<span id="cb36-59"><a href="sec52.html#cb36-59" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">&quot;Index&quot;</span>, <span class="at">y =</span> <span class="st">&quot;Weight&quot;</span>) <span class="sc">+</span></span>
+<span id="cb36-60"><a href="sec52.html#cb36-60" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">trans =</span> <span class="st">&quot;log1p&quot;</span>) <span class="sc">+</span></span>
+<span id="cb36-61"><a href="sec52.html#cb36-61" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span>
+<span id="cb36-62"><a href="sec52.html#cb36-62" tabindex="-1"></a></span>
+<span id="cb36-63"><a href="sec52.html#cb36-63" tabindex="-1"></a><span class="do">###----------------------------------</span></span>
+<span id="cb36-64"><a href="sec52.html#cb36-64" tabindex="-1"></a><span class="do">### Arrange and display plots</span></span>
+<span id="cb36-65"><a href="sec52.html#cb36-65" tabindex="-1"></a><span class="do">###----------------------------------</span></span>
+<span id="cb36-66"><a href="sec52.html#cb36-66" tabindex="-1"></a><span class="fu">ggarrange</span>(g1, g2, g3, <span class="at">ncol =</span> <span class="dv">1</span>, <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">&quot;A&quot;</span>, <span class="st">&quot;B&quot;</span>, <span class="st">&quot;C&quot;</span>))</span></code></pre></div>
+<p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-4-1.svg" width="672" /></p>
 <p>The first and second figures show the histograms of the posterior draws using the normal and Student’s t-distributions, respectively, along with the density of the Cauchy distribution. The spike in the posterior draws from the standard normal proposal arises due to the lighter tails of the standard normal compared to the Cauchy distribution, consequently assigning too much weight to a specific draw from the normal distribution.</p>
 <p>The third figure shows the weights using the standard normal distribution (black dots) and the Student’s t-distribution with 3 degrees of freedom (blue dots) as proposals. We observe that a few draws carry too much weight when using the normal proposal; this occurs because the normal distribution has much lighter tails compared to the Cauchy distribution. In contrast, using the Student’s t-distribution with 3 degrees of freedom improves this situation.</p>
 </div>
