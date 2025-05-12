@@ -1033,68 +1033,125 @@ If we apply the SIS algorithm to the dynamic linear model with a sample size of 
 
 Let's perform particle filtering in this example. The following code illustrate the procedure. The figure shows the performance of particle filtering in this example. There is the true state vector (black line), the means based on $\left\{\boldsymbol{\theta}_{1:t}^{(s)},w_t^{*(s)}\right\}$ (blue line) and  $\left\{\boldsymbol{\theta}_{1:t}^{r(s)},1/S\right\}$ (purple line), and the area defined by $\pm2\hat{\sigma}_{\theta}$ based on the former (light blue shaded area). Note that the particle filtering algorithm has better performance than the SIS algorithm.
 
-```{r, eval=FALSE}
-rm(list = ls()); set.seed(10101)
-S <- 50000 # Number of particles
-sigma_w <- 1; sigma_mu <- 1  #  # State and observation noises
-phi <- 0.5 # Coefficient in observation equation
-T <- 200 # Sample size
-# Simulate true states and observations
-theta_true <- numeric(T); y_obs <- numeric(T)
-theta_true[1] <- rnorm(1, mean = 0, sd = sigma_w) 
-for (t in 2:T) {
-	theta_true[t] <- rnorm(1, mean = theta_true[t-1], sd = sigma_w)
-}
-y_obs <- rnorm(T, mean = phi*theta_true, sd = sigma_mu)
-# Particle filtering
-particles <- matrix(0, nrow = S, ncol = T)  # Store particles
-particlesT <- matrix(0, nrow = S, ncol = T)  # Store resampling particles
-weights <- matrix(0, nrow = S, ncol = T)   # Store weights
-weightsSt <- matrix(0, nrow = S, ncol = T)   # Store standardized weights
-weightsSTT <- matrix(1/S, nrow = S, ncol = T)   # Store standardized weights
-logalphas <- matrix(0, nrow = S, ncol = T)   # Store log incremental weights
-particles[, 1] <- rnorm(S, mean = 0, sd = sigma_w) 
-weights[, 1] <- dnorm(y_obs[1], mean = phi*particles[, 1], sd = sigma_mu)  # Importance weights
-weightsSt[, 1] <- weights[, 1] / sum(weights[, 1])  # Normalize weights
-ind <- sample(1:S, size = S, replace = TRUE, prob = weightsSt[, 1]) # Resample 
-particles[, 1] <- particles[ind, 1] # Resampled particles
-particlesT[, 1] <- particles[, 1] # Resampled particles
-# Sequential updating
-pb <- winProgressBar(title = "progress bar", min = 0, max = T, width = 300)
-for (t in 2:T) {
-	particles[, t] <- rnorm(S, mean = particles[, t-1], sd = sigma_w)
-	logalphas[, t] <- dnorm(y_obs[t], mean = phi*particles[, t], sd = sigma_mu, log = TRUE) 
-	weights[, t] <- exp(logalphas[, t])
-	weightsSt[, t] <- weights[, t] / sum(weights[, t])
-	if(t < T){
-		ind <- sample(1:S, size = S, replace = TRUE, prob = weightsSt[, t])
-		particles[, 1:t] <- particles[ind, 1:t]
-	}else{
-		ind <- sample(1:S, size = S, replace = TRUE, prob = weightsSt[, t])
-		particlesT[, 1:t] <- particles[ind, 1:t]
-	}
-	setWinProgressBar(pb, t, title=paste( round(t/T*100, 0), "% done"))
-}
-close(pb)
-FilterDist <- colSums(particles * weightsSt)
-SDFilterDist <- (colSums(particles^2 * weightsSt) - FilterDist^2)^0.5
-FilterDistT <- colSums(particlesT * weightsSTT)
-SDFilterDistT <- (colSums(particlesT^2 * weightsSTT) - FilterDistT^2)^0.5
-MargLik <- colMeans(weights)
-plot(MargLik, type = "l")
+```{r}
+# Load required packages
 library(dplyr)
 library(ggplot2)
-require(latex2exp)
-ggplot2::theme_set(theme_bw())
-df <- tibble(t = 1:T, mean = FilterDist, lower = FilterDist - 2*SDFilterDist, upper = FilterDist+ 2*SDFilterDist, meanT = FilterDistT, lowerT = FilterDistT - 2*SDFilterDistT,
-upperT = FilterDistT + 2*SDFilterDistT, x_true = theta_true)
-plot_filtering_estimates <- function(df) {
-	p <- ggplot(data = df, aes(x = t)) + geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1, fill = "lightblue") + geom_line(aes(y = x_true), colour = "black", alpha = 1, linewidth = 0.5) + geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) +
-	geom_line(aes(y = meanT), colour = "purple", linewidth = 0.5) + 	ylab(TeX("$\\theta_{t}$")) + xlab("Time")
-	print(p)
-}
-plot_filtering_estimates(df)
+library(latex2exp)
 
+set.seed(10101)
+
+# Parameters
+n_particles <- 50000
+sigma_w <- 1
+sigma_mu <- 1
+phi <- 0.5
+T <- 200
+
+###-----------------------------------
+### Simulate true states and observations
+###-----------------------------------
+theta_true <- numeric(T)
+y_obs <- numeric(T)
+
+theta_true[1] <- rnorm(1, 0, sigma_w)
+for (t in 2:T) {
+  theta_true[t] <- rnorm(1, mean = theta_true[t - 1], sd = sigma_w)
+}
+y_obs <- rnorm(T, mean = phi * theta_true, sd = sigma_mu)
+
+###-----------------------------------
+### Initialize matrices for filtering
+###-----------------------------------
+particles <- matrix(0, n_particles, T)
+particles_resampled <- matrix(0, n_particles, T)
+
+weights <- matrix(0, n_particles, T)
+weights_norm <- matrix(0, n_particles, T)
+weights_fixed <- matrix(1 / n_particles, n_particles, T)
+
+log_weights <- matrix(0, n_particles, T)
+
+# Initialize t = 1
+particles[, 1] <- rnorm(n_particles, 0, sigma_w)
+weights[, 1] <- dnorm(y_obs[1], mean = phi * particles[, 1], sd = sigma_mu)
+weights_norm[, 1] <- weights[, 1] / sum(weights[, 1])
+
+# Resampling
+resample_index <- sample(1:n_particles, size = n_particles, replace = TRUE, prob = weights_norm[, 1])
+particles[, 1] <- particles[resample_index, 1]
+particles_resampled[, 1] <- particles[, 1]
+
+###-----------------------------------
+### Particle filtering loop
+###-----------------------------------
+pb <- txtProgressBar(min = 1, max = T, style = 3)
+
+for (t in 2:T) {
+  # Propagate particles
+  particles[, t] <- rnorm(n_particles, mean = particles[, t - 1], sd = sigma_w)
+  
+  # Log-weight and normalization
+  log_weights[, t] <- dnorm(y_obs[t], mean = phi * particles[, t], sd = sigma_mu, log = TRUE)
+  weights[, t] <- exp(log_weights[, t])
+  weights_norm[, t] <- weights[, t] / sum(weights[, t])
+  
+  # Resampling
+  resample_index <- sample(1:n_particles, size = n_particles, replace = TRUE, prob = weights_norm[, t])
+  
+  if (t < T) {
+    particles[, 1:t] <- particles[resample_index, 1:t]
+  } else {
+    particles_resampled[, 1:t] <- particles[resample_index, 1:t]
+  }
+  
+  setTxtProgressBar(pb, t)
+}
+close(pb)
+
+###-----------------------------------
+### Posterior summaries
+###-----------------------------------
+posterior_mean <- colSums(particles * weights_norm)
+posterior_sd <- sqrt(colSums((particles^2) * weights_norm) - posterior_mean^2)
+
+posterior_mean_resampled <- colSums(particles_resampled * weights_fixed)
+posterior_sd_resampled <- sqrt(colSums((particles_resampled^2) * weights_fixed) - posterior_mean_resampled^2)
+
+marginal_likelihood <- colMeans(weights)
+plot(marginal_likelihood, type = "l", main = "Marginal Likelihood", xlab = "Time", ylab = "Likelihood")
+
+###-----------------------------------
+### Plot filtering results
+###-----------------------------------
+df_filter <- tibble(
+  t = 1:T,
+  mean = posterior_mean,
+  lower = posterior_mean - 2 * posterior_sd,
+  upper = posterior_mean + 2 * posterior_sd,
+  mean_resampled = posterior_mean_resampled,
+  lower_resampled = posterior_mean_resampled - 2 * posterior_sd_resampled,
+  upper_resampled = posterior_mean_resampled + 2 * posterior_sd_resampled,
+  theta_true = theta_true
+)
+
+plot_filtering_estimates <- function(df) {
+  ggplot(df, aes(x = t)) +
+    geom_ribbon(aes(ymin = lower, ymax = upper, fill = "SIS 95% CI"), alpha = 0.3) +
+    geom_line(aes(y = mean, color = "SIS Mean"), linewidth = 0.5) +
+    geom_line(aes(y = mean_resampled, color = "Resampled Mean"), linewidth = 0.5) +
+    geom_line(aes(y = theta_true, color = "True State"), linewidth = 0.5) +
+    scale_color_manual(values = c("SIS Mean" = "blue", "Resampled Mean" = "purple", "True State" = "black")) +
+    scale_fill_manual(values = c("SIS 95% CI" = "lightblue")) +
+    labs(
+      y = TeX("$\\theta_t$"), x = "Time",
+      color = "Line", fill = "Band"
+    ) +
+    theme_bw() +
+    theme(legend.position = "bottom")
+}
+
+plot_filtering_estimates(df_filter)
 ```
 
 Algorithm <a href="#algPF">5</a> performs resampling at every time step. However, it is common to perform resampling only when the effective sample size of the particles ($ESS = (\sum_{s=1}^S (w_t^{*(s)})^{2})^{-1}$) falls below a specific threshold, such as 50% of the initial number of particles. Note that when $w_t^{*(s)} = 1/S$, the effective sample size is $S$, the total number of particles. Additionally, we should use $\left\{\boldsymbol{\theta}_{1:t}^{(s)}, w_t^{*(s)}\right\}$ to estimate the posterior distribution, as it results in lower Monte Carlo error compared to calculations based on $\left\{\boldsymbol{\theta}_{1:t}^{r(s)}, 1/S\right\}$ [@cappe2007overview]. Finally, an estimate of the marginal likelihood can be obtained using  

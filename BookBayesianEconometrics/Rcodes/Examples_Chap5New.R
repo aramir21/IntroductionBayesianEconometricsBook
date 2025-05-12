@@ -455,3 +455,122 @@ plot_filtering_estimates <- function(df) {
 # Display plot
 plot_filtering_estimates(df_sis)
 
+########################## Particle filter: Dynamic linear model ########################## 
+# Load required packages
+library(dplyr)
+library(ggplot2)
+library(latex2exp)
+
+set.seed(10101)
+
+# Parameters
+n_particles <- 50000
+sigma_w <- 1
+sigma_mu <- 1
+phi <- 0.5
+T <- 200
+
+###-----------------------------------
+### Simulate true states and observations
+###-----------------------------------
+theta_true <- numeric(T)
+y_obs <- numeric(T)
+
+theta_true[1] <- rnorm(1, 0, sigma_w)
+for (t in 2:T) {
+  theta_true[t] <- rnorm(1, mean = theta_true[t - 1], sd = sigma_w)
+}
+y_obs <- rnorm(T, mean = phi * theta_true, sd = sigma_mu)
+
+###-----------------------------------
+### Initialize matrices for filtering
+###-----------------------------------
+particles <- matrix(0, n_particles, T)
+particles_resampled <- matrix(0, n_particles, T)
+
+weights <- matrix(0, n_particles, T)
+weights_norm <- matrix(0, n_particles, T)
+weights_fixed <- matrix(1 / n_particles, n_particles, T)
+
+log_weights <- matrix(0, n_particles, T)
+
+# Initialize t = 1
+particles[, 1] <- rnorm(n_particles, 0, sigma_w)
+weights[, 1] <- dnorm(y_obs[1], mean = phi * particles[, 1], sd = sigma_mu)
+weights_norm[, 1] <- weights[, 1] / sum(weights[, 1])
+
+# Resampling
+resample_index <- sample(1:n_particles, size = n_particles, replace = TRUE, prob = weights_norm[, 1])
+particles[, 1] <- particles[resample_index, 1]
+particles_resampled[, 1] <- particles[, 1]
+
+###-----------------------------------
+### Particle filtering loop
+###-----------------------------------
+pb <- txtProgressBar(min = 1, max = T, style = 3)
+
+for (t in 2:T) {
+  # Propagate particles
+  particles[, t] <- rnorm(n_particles, mean = particles[, t - 1], sd = sigma_w)
+  
+  # Log-weight and normalization
+  log_weights[, t] <- dnorm(y_obs[t], mean = phi * particles[, t], sd = sigma_mu, log = TRUE)
+  weights[, t] <- exp(log_weights[, t])
+  weights_norm[, t] <- weights[, t] / sum(weights[, t])
+  
+  # Resampling
+  resample_index <- sample(1:n_particles, size = n_particles, replace = TRUE, prob = weights_norm[, t])
+  
+  if (t < T) {
+    particles[, 1:t] <- particles[resample_index, 1:t]
+  } else {
+    particles_resampled[, 1:t] <- particles[resample_index, 1:t]
+  }
+  
+  setTxtProgressBar(pb, t)
+}
+close(pb)
+
+###-----------------------------------
+### Posterior summaries
+###-----------------------------------
+posterior_mean <- colSums(particles * weights_norm)
+posterior_sd <- sqrt(colSums((particles^2) * weights_norm) - posterior_mean^2)
+
+posterior_mean_resampled <- colSums(particles_resampled * weights_fixed)
+posterior_sd_resampled <- sqrt(colSums((particles_resampled^2) * weights_fixed) - posterior_mean_resampled^2)
+
+marginal_likelihood <- colMeans(weights)
+plot(marginal_likelihood, type = "l", main = "Marginal Likelihood", xlab = "Time", ylab = "Likelihood")
+
+###-----------------------------------
+### Plot filtering results
+###-----------------------------------
+df_filter <- tibble(
+  t = 1:T,
+  mean = posterior_mean,
+  lower = posterior_mean - 2 * posterior_sd,
+  upper = posterior_mean + 2 * posterior_sd,
+  mean_resampled = posterior_mean_resampled,
+  lower_resampled = posterior_mean_resampled - 2 * posterior_sd_resampled,
+  upper_resampled = posterior_mean_resampled + 2 * posterior_sd_resampled,
+  theta_true = theta_true
+)
+
+plot_filtering_estimates <- function(df) {
+  ggplot(df, aes(x = t)) +
+    geom_ribbon(aes(ymin = lower, ymax = upper, fill = "SIS 95% CI"), alpha = 0.3) +
+    geom_line(aes(y = mean, color = "SIS Mean"), linewidth = 0.5) +
+    geom_line(aes(y = mean_resampled, color = "Resampled Mean"), linewidth = 0.5) +
+    geom_line(aes(y = theta_true, color = "True State"), linewidth = 0.5) +
+    scale_color_manual(values = c("SIS Mean" = "blue", "Resampled Mean" = "purple", "True State" = "black")) +
+    scale_fill_manual(values = c("SIS 95% CI" = "lightblue")) +
+    labs(
+      y = TeX("$\\theta_t$"), x = "Time",
+      color = "Line", fill = "Band"
+    ) +
+    theme_bw() +
+    theme(legend.position = "bottom")
+}
+
+plot_filtering_estimates(df_filter)
