@@ -119,7 +119,7 @@ PpEB <- ProbBo(y, a0 = a0EB, b0 = b0EB)
 PpEB
 
 ##########################  Car claim ##########################
-set.seed(010101)
+set.seed(10101)
 y <- c(0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0) 
 # Data
 N <- length(y)
@@ -151,7 +151,7 @@ Pp <- ProbBo(y, a0 = 1, b0 = 1)
 # This setting is defining vague prior information.
 # The probability of a claim 
 Pp
-# Using Emprirical Bayes
+# Using Empirical Bayes
 LogMgLik <- function(theta, y){
   N <- length(y) 
   #sample size

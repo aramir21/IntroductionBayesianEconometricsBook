@@ -574,3 +574,171 @@ plot_filtering_estimates <- function(df) {
 }
 
 plot_filtering_estimates(df_filter)
+
+########################## Mining change point ########################## 
+
+# Load libraries
+library(coda)
+library(latex2exp)
+
+set.seed(10101)
+
+# Load and inspect data
+dataset <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/MiningDataCarlin.csv")
+y <- dataset$Count
+T_len <- length(y)
+
+# Prior parameters
+a10 <- 0.5; b10 <- 1
+a20 <- 0.5; b20 <- 1
+
+# MCMC settings
+H <- 60
+MCMC <- 20000
+burnin <- 1000
+S <- MCMC + burnin
+keep <- (burnin + 1):S
+
+# Preallocate
+theta1 <- numeric(S)
+theta2 <- numeric(S)
+kk <- numeric(S)
+
+pb <- txtProgressBar(min = 1, max = S, style = 3)
+
+for (s in 1:S) {
+  a1 <- a10 + sum(y[1:H])
+  b1 <- b10 + H
+  theta1[s] <- rgamma(1, a1, b1)
+  
+  a2 <- a20 + sum(y[(H + 1):T_len])
+  b2 <- b20 + T_len - H
+  theta2[s] <- rgamma(1, a2, b2)
+  
+  log_p <- numeric(T_len)
+  for (l in 1:T_len) {
+    log_p[l] <- l * (theta2[s] - theta1[s]) + sum(y[1:l]) * log(theta1[s] / theta2[s])
+  }
+  p <- exp(log_p - max(log_p))  # Stabilize numerics
+  prob <- p / sum(p)
+  H <- sample(1:T_len, 1, prob = prob)
+  kk[s] <- H
+  
+  setTxtProgressBar(pb, s)
+}
+close(pb)
+
+# Post-burnin chains
+theta1_post <- mcmc(theta1[keep])
+theta2_post <- mcmc(theta2[keep])
+H_post <- mcmc(kk[keep])
+
+# Diagnostics
+summary(theta2_post)
+plot(theta2_post, density = FALSE, main = "Trace plot", ylab = TeX("$\\theta_{2}$"))
+autocorr.plot(theta2_post)
+raftery.diag(theta2_post)
+geweke.diag(theta2_post)
+heidel.diag(theta2_post)
+effectiveSize(theta2_post)
+
+# -------------------------------
+# Marginal-conditional simulator
+# -------------------------------
+theta1_prior <- rgamma(MCMC, a10, b10)
+theta2_prior <- rgamma(MCMC, a20, b20)
+k_prior <- sample(1:T_len, MCMC, replace = TRUE)
+
+simulate_y <- function(par) {
+  y1 <- rpois(par[3], par[1])
+  y2 <- if (par[3] < T_len) rpois(T_len - par[3], par[2]) else numeric(0)
+  c(y1, y2)
+}
+
+pars_mc <- cbind(theta1_prior, theta2_prior, k_prior)
+Yt <- apply(pars_mc, 1, simulate_y)
+mcmc_mc <- mcmc(pars_mc)
+summary_mc <- summary(mcmc_mc)
+
+# -------------------------------
+# Successive-conditional simulator
+# -------------------------------
+simulate_succ <- function(a10, b10, a20, b20, par) {
+  y <- simulate_y(par)
+  H <- par[3]
+  
+  a1 <- a10 + sum(y[1:H])
+  b1 <- b10 + H
+  theta1_new <- rgamma(1, a1, b1)
+  
+  if (H == T_len) {
+    a2 <- a20
+  } else {
+    a2 <- a20 + sum(y[(H + 1):T_len])
+  }
+  b2 <- b20 + T_len - H
+  theta2_new <- rgamma(1, a2, b2)
+  
+  log_p <- sapply(1:T_len, function(l) {
+    l * (theta2_new - theta1_new) + sum(y[1:l]) * log(theta1_new / theta2_new)
+  })
+  p <- exp(log_p - max(log_p))
+  prob <- p / sum(p)
+  H_new <- sample(1:T_len, 1, prob = prob)
+  
+  list(y = y, pars = c(theta1_new, theta2_new, H_new))
+}
+
+# Run simulation
+a10 <- 0.5; b10 <- 1
+a20 <- 0.5; b20 <- 1
+pars_sc <- matrix(NA, nrow = MCMC, ncol = 3)
+pars_sc[1, ] <- c(rgamma(1, a10, b10), rgamma(1, a20, b20), sample(1:T_len, 1))
+
+for (s in 2:MCMC) {
+  res <- simulate_succ(a10, b10, a20, b20, pars_sc[s - 1, ])
+  pars_sc[s, ] <- res$pars
+}
+
+mcmc_sc <- mcmc(pars_sc)
+summary_sc <- summary(mcmc_sc)
+
+# -------------------------------
+# Geweke test
+# -------------------------------
+geweke_test <- function(j) {
+  num <- summary_mc$statistics[j, 1] - summary_sc$statistics[j, 1]
+  denom <- sqrt(summary_mc$statistics[j, 4]^2 + summary_sc$statistics[j, 4]^2)
+  z <- num / denom
+  reject <- abs(z) > qnorm(0.975)
+  list(Test = z, Reject = reject)
+}
+
+geweke_test(1); geweke_test(2); geweke_test(3)
+
+# -------------------------------
+# Repeat with wrong prior to test sensitivity
+# -------------------------------
+a10 <- 1; b10 <- 0.5
+a20 <- 1; b20 <- 0.5
+pars_sc2 <- matrix(NA, nrow = MCMC, ncol = 3)
+pars_sc2[1, ] <- c(rgamma(1, a10, b10), rgamma(1, a20, b20), sample(1:T_len, 1))
+
+for (s in 2:MCMC) {
+  res <- simulate_succ(a10, b10, a20, b20, pars_sc2[s - 1, ])
+  pars_sc2[s, ] <- res$pars
+}
+
+mcmc_sc2 <- mcmc(pars_sc2)
+summary_sc2 <- summary(mcmc_sc2)
+
+geweke_test <- function(j) {
+  num <- summary_mc$statistics[j, 1] - summary_sc2$statistics[j, 1]
+  denom <- sqrt(summary_mc$statistics[j, 4]^2 + summary_sc2$statistics[j, 4]^2)
+  z <- num / denom
+  reject <- abs(z) > qnorm(0.975)
+  list(Test = z, Reject = reject)
+}
+
+geweke_test(1); geweke_test(2); geweke_test(3)
+
