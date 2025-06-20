@@ -3,23 +3,22 @@
 Machine learning (ML) approaches are often characterized by high-dimensional parameter spaces, which are implicit in non-parametric inference. It is important to note that non-parametric inference refers to models with potentially infinite parameters, not the absence of parameters. This is known as the wide problem, where the number of features, and consequently parameters, can exceed the sample size. Another common challenge in ML is the tall problem, which arises when the sample size is extremely large. In such cases, scalable algorithms are required.
 
 \section{Cross validation and Bayes factors}\label{sec13_1}
-Prediction is central in machine learning, particularly in supervised learning. Therefore, the starting point is a set of ``raw'' regressors \( \mathbf{x} \), which are used to construct a set of features \( \mathbf{w} = T(\mathbf{x}) \), where \( T(\cdot) \) denotes a \textit{dictionary of transformations} such as polynomials, interactions between variables, application of functions like exponentials, and so on. These features are then used to predict $Y$ through a model $f(\mathbf{w})$,
+Prediction is central in machine learning, particularly in supervised learning. Therefore, the starting point is a set of ``raw'' regressors \( \mathbf{W} \), which are used to construct a set of features \( \mathbf{w} = T(\mathbf{W}) \), where \( T(\cdot) \) denotes a \textit{dictionary of transformations} such as polynomials, interactions between variables, application of functions like exponentials, and so on. These features are then used to predict $y$ through a model $f(\mathbf{w})$,
 \begin{align*}
-	Y_i &= f(\mathbf{w}_i) + \mu_i,
+	y_i &= f(\mathbf{w}_i) + \mu_i,
 \end{align*}
 where $\mu_i \stackrel{\text{i.i.d.}}{\sim} (0, \sigma^2)$.
 
-We predict $Y$ using $\hat{f}(\mathbf{w})$, a model trained from the data. Thus, the expected squared error (ESE) at a fixed set of features is given by
+We predict \( y \) using \( \hat{f}(\mathbf{w}) \), a model trained on the data. Thus, the expected squared error (ESE) at a fixed set of features, taking into account that \( \mathbb{E}_{\mathcal{D},\boldsymbol{\mu}} \left[\mu_i(f(\mathbf{w}_i) - \hat{f}(\mathbf{w}))\right] = 0 \) by independence, and defining \( \bar{f}(\mathbf{w}_i) = \mathbb{E}_{\mathcal{D}}[\hat{f}(\mathbf{w}_i)] \), is given by:
+
 \begin{align*}
-	\text{ESE} &= \mathbb{E}_{\mathcal{D},Y} \left[ (Y - \hat{f}(\mathbf{w}))^2 \right] \\
+	\text{ESE} &= \mathbb{E}_{\mathcal{D},y} \left[ (y - \hat{f}(\mathbf{w}))^2 \right] \\
 	&= \mathbb{E}_{\mathcal{D},\boldsymbol{\mu}} \left[ \left(f(\mathbf{w}_i) + \mu_i - \hat{f}(\mathbf{w})\right)^2 \right] \\
 	&= \mathbb{E}_{\mathcal{D},\boldsymbol{\mu}} \left[ (f(\mathbf{w}_i) - \hat{f}(\mathbf{w}))^2 + 2\mu_i(f(\mathbf{w}_i) - \hat{f}(\mathbf{w})) + \mu_i^2 \right] \\
 	&= \mathbb{E}_{\mathcal{D}} \left[ (f(\mathbf{w}_i) - \hat{f}(\mathbf{w}))^2 \right] + \mathbb{E}_{\boldsymbol{\mu}} \left[ \mu_i^2 \right] \\
 	&= \mathbb{E}_{\mathcal{D}} \left[ \left((f(\mathbf{w}_i) - \bar{f}(\mathbf{w}_i)) - (\hat{f}(\mathbf{w}) - \bar{f}(\mathbf{w}_i)) \right)^2 \right] + \sigma^2 \\
-	&= \underbrace{\mathbb{E}_{\mathcal{D}} \left[ (f(\mathbf{w}_i) - \bar{f}(\mathbf{w}_i))^2 \right]}_{\text{Bias}^2} + \underbrace{\mathbb{E}_{\mathcal{D}} \left[ (\hat{f}(\mathbf{w}) - \bar{f}(\mathbf{w}_i))^2 \right]}_{\text{Variance}} + \underbrace{\sigma^2}_{\text{Irreducible Error}},
+	&= \underbrace{\mathbb{E}_{\mathcal{D}} \left[ (f(\mathbf{w}_i) - \bar{f}(\mathbf{w}_i))^2 \right]}_{\text{Bias}^2} + \underbrace{\mathbb{E}_{\mathcal{D}} \left[ (\hat{f}(\mathbf{w}) - \bar{f}(\mathbf{w}_i))^2 \right]}_{\text{Variance}} + \underbrace{\sigma^2}_{\text{Irreducible Error}}.
 \end{align*}
-where $\mathbb{E}_{\mathcal{D},\boldsymbol{\mu}} \left[\mu_i(f(\mathbf{w}_i) - \hat{f}(\mathbf{w}))\right] = 0$ by independence, and $\bar{f}(\mathbf{w}_i) = \mathbb{E}_{\mathcal{D}}[\hat{f}(\mathbf{w}_i)]$.
-
 Thus, the ESE is composed of the squared bias, the variance of the prediction (which is a random variable due to data variation $\mathcal{D}$), and the irreducible error. The key insight is that increasing model complexity, such as by including more features, typically reduces bias but increases variance. This trade-off can lead to overfitting, where models perform well on the training data but poorly on new, unseen data. There is, therefore, an optimal point at which the predictive error is minimized (see Figure~\ref{fig:bias_var}).\footnote{However, recent developments show that powerful modern machine learning methods, such as deep neural networks, often overfit and yet generalize remarkably well on unseen data. This phenomenon is known as \textit{double descent} or \textit{benign overfitting} \cite{belkin2019reconciling, bartlett2020benign, hastie2022surprises}.}
 
 \begin{figure}[h!]
@@ -62,7 +61,7 @@ There is a compelling justification for cross-validation within Bayesian inferen
 
 Given the expected loss conditional on model \( j \) for a predictive problem, where the action \( a \) is chosen to minimize the posterior expected loss:
 \begin{align*}
-	\mathbb{E}_{Y_0}[L(Y_0,a) \mid M_j, \mathbf{y}] &= \int_{\mathcal{Y}_0} L(y_0, a \mid M_j, \mathbf{y}) \, \pi(y_0 \mid \mathbf{y}) \, dy_0,
+	\mathbb{E}_{y_0}[L(Y_0,a) \mid M_j, \mathbf{y}] &= \int_{\mathcal{Y}_0} L(y_0, a \mid M_j, \mathbf{y}) \, \pi(y_0 \mid \mathbf{y}) \, dy_0,
 \end{align*}
 we note that there are \( N \) possible partitions of the dataset \( \mathbf{y} = \{y_1, y_2, \dots, y_N\} \) following a leave-one-out strategy, i.e., \( \mathbf{y} = \{\mathbf{y}_{-k}, y_k\} \), for \( k = 1, \dots, N \), where \( \mathbf{y}_{-k} \) denotes the dataset excluding observation \( y_k \). Assuming that \( \mathbf{y} \) is exchangeable, meaning its joint distribution is invariant to reordering, and that \( N \) is large, then \( \mathbf{y}_{-k} \) and \( y_k \) are good proxies for \( \mathbf{y} \) and \( y_0 \), respectively. Consequently,
 \begin{align*}
@@ -125,9 +124,88 @@ This distinction is important because the Bayesian framework naturally incorpora
 Furthermore, empirical Bayes methods can be employed to estimate the scale parameter of the prior covariance matrix for the regression coefficients, which in turn determines the regularization strength in ridge regression.
 
 \subsection{Bayesian LASSO}\label{sec13_21}
-Given the popularity of the LASSO as a variable selection technique, we present its Bayesian formulation in this subsection \cite{Park2008}.
+Given the popularity of the LASSO as a variable selection technique, we present its Bayesian formulation in this subsection \cite{Park2008}. The Gibbs sampler for the Bayesian LASSO exploits the representation of the Laplace distribution as a scale mixture of normals. This leads to the following hierarchical representation of the model:
+\begin{align*}
+	\mathbf{y} \mid \beta_0, \boldsymbol{\beta}, \sigma^2, \mathbf{W} &\sim {N}(\beta_0 \mathbf{1} + \mathbf{W} \boldsymbol{\beta}, \sigma^2 \mathbf{I}_N), \\
+	\boldsymbol{\beta} \mid \sigma^2, \tau_1^2, \dots, \tau_K^2 &\sim {N}(\mathbf{0}_K, \sigma^2 \mathbf{D}_{\tau}), \\
+	\tau_1^2, \dots, \tau_K^2 &\sim \prod_{k=1}^K \frac{\lambda^2}{2} \exp\left\{ -\frac{\lambda^2}{2} \tau_k^2 \right\}, \\
+	\sigma^2 &\sim \frac{1}{\sigma^2},
+\end{align*}
+where $	\mathbf{D}_{\tau} = \operatorname{diag}(\tau_1^2, \dots, \tau_K^2)$. 
 
+After integrating out \( \tau_1^2, \dots, \tau_K^2 \), the conditional prior of \( \boldsymbol{\beta} \mid \sigma^2 \) is:
+\begin{align*}
+	\pi(\boldsymbol{\beta} \mid \sigma^2) &= \prod_{k=1}^K \frac{\lambda}{2 \sqrt{\sigma^2}} \exp\left\{ -\frac{\lambda}{\sqrt{\sigma^2}} |\beta_k| \right\},
+\end{align*}
+which implies that the log-prior is proportional to \( \lambda \sum_{k=1}^K |\beta_k| \), matching the penalty term in the LASSO optimization problem.
 
+We assume that \( \beta_0 \) has a flat prior distribution. Since it is not of primary interest, and given that all regressors are standardized, \( \beta_0 \) corresponds to the overall mean of \( \mathbf{y} \) and can be integrated out.
+
+The conditional posterior distributions for the Gibbs sampler are \cite{Park2008}:
+\begin{align*}
+	\boldsymbol{\beta} \mid \sigma^2, \tau_1^2, \dots, \tau_K^2, \mathbf{W}, \tilde{\mathbf{y}} &\sim {N}(\boldsymbol{\beta}_n, \sigma^2 \mathbf{B}_n), \\
+	\sigma^2 \mid \boldsymbol{\beta}, \tau_1^2, \dots, \tau_K^2, \mathbf{W}, \tilde{\mathbf{y}} &\sim \text{Inverse-Gamma}(\alpha_n/2, \delta_n/2), \\
+	\tau_k \mid \boldsymbol{\beta}, \sigma^2, \mathbf{W}, \tilde{\mathbf{y}} &\sim \text{Inverse-Gaussian}(\mu_{kn}, \lambda_n),
+\end{align*}
+where:
+\begin{align*}
+	\boldsymbol{\beta}_n &= \mathbf{B}_n \mathbf{W}^{\top} \tilde{\mathbf{y}}, \\
+	\mathbf{B}_n &= \left( \mathbf{W}^{\top} \mathbf{W} + \mathbf{D}_{\tau}^{-1} \right)^{-1}, \\
+	\alpha_n &= (N - 1) + K, \\
+	\delta_n &= (\tilde{\mathbf{y}} - \mathbf{W} \boldsymbol{\beta})^{\top} (\tilde{\mathbf{y}} - \mathbf{W} \boldsymbol{\beta}) + \boldsymbol{\beta}^{\top} \mathbf{D}_{\tau}^{-1} \boldsymbol{\beta}, \\
+	\mu_{kn} &= \sqrt{ \frac{ \lambda^2 \sigma^2 }{ \beta_k^2 } }, \\
+	\lambda_n &= \lambda^2,
+\end{align*}
+and $\tilde{\mathbf{y}}$ is the centered response vector.
+
+In this formulation, we can interpret \( \tau_k \) as local shrinkage parameters, while \( \lambda \) serves as a global shrinkage parameter. Higher values of \( \lambda \) imply stronger shrinkage toward zero. \cite{Park2008} propose two methods for specifying the value of the global shrinkage parameter: empirical Bayes estimation or a fully Bayesian hierarchical approach, in which \( \lambda^2 \) is assigned a Gamma prior.
+
+We should acknowledge that the Bayesian LASSO is more computationally expensive than the Frequentist LASSO. However, it provides credible intervals for the parameters automatically. In contrast, obtaining standard errors in the Frequentist LASSO is more challenging, particularly for parameters estimated to be exactly zero \cite{kyung2010penalized}.\\
+
+\textbf{Example: Simulation exercise of the Bayesian LASSO}
+
+We simulate the process \( y_i = \beta_0 + \sum_{k=1}^{10} w_{ik} \beta_k + \mu_i \), where \( \beta_k \sim \mathcal{U}(-3, 3) \), \( \mu_i \sim \mathcal{N}(0, 1) \), and \( w_{ik} \sim \mathcal{N}(0, 1) \), $i=1,2,\dots,500$. Additionally, we generate 90 extra potential features from a standard normal distribution, which are included in the model specification. Our goal is to assess whether the Bayesian LASSO can successfully identify the truly relevant features.
+
+We use the \textit{bayesreg} package in \textbf{R} to perform the Bayesian LASSO, using 5,000 MCMC draws and 1,000 burn-in iterations. The following code illustrates the simulation exercise and compares the posterior means with the true population values.
+
+The summary of the fit and the plot comparing the population parameters with the posterior means show that the Bayesian LASSO is able to identify the variables that are relevant in the data generating process. In Exercise 1, we propose programming the Gibbs sampler from scratch, assuming a hierarchical structure for the global shrinkage parameter, and comparing the results with those obtained using the \textit{monomvn} package.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. The Bayesian LASSO}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(10101)
+library(bayesreg)
+# Parameters
+n <- 500  # sample size
+p <- 100  # number of predictors
+s <- 10   # number of non-zero coefficients
+# Generate design matrix
+X <- matrix(rnorm(n * p), nrow = n, ncol = p)
+# True beta: first s coefficients are non-zero, rest are zero
+beta_true <- c(runif(s, -3, 3), rep(0, p - s))
+# Generate response with some noise
+sigma <- 1
+y <- X %*% beta_true + rnorm(n, sd = sigma)
+df <- data.frame(X,y)
+### Using bayesreg ###
+# Fit the model
+fit <- bayesreg::bayesreg(y ~ X, data = df, model = "gaussian", prior = "lasso", 
+n.samples = 5000, burnin = 1000)
+# Check summary
+summary(fit)
+# Extract posterior means of beta
+beta_post_mean <- rowMeans(fit$beta)
+# Compare true vs estimated
+plot(beta_true, beta_post_mean, pch = 19, col = "steelblue",
+xlab = "True beta", ylab = "Posterior mean of beta",
+main = "Bayesian LASSO Shrinkage")
+abline(0, 1, col = "red", lty = 2)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+  
 \subsection{Stochastic search variable selection}\label{sec13_22}
 
 \subsection{Non-local priors}\label{sec13_23}
@@ -207,3 +285,11 @@ col = c("blue", "red"), lty = c(1, 2))
 Variational Bayes, a method rooted in machine learning \cite{wainwright2008graphical}, is introduced in Chapter \ref{chap15}. When implemented in its stochastic form, it can effectively address the tall problem.
 
 \section{Exercises}\label{13_7}
+
+\begin{enumerate}
+	\item \textbf{Simulation exercise: the Bayesian LASSO continues}
+	
+	Program the Gibbs sampler for the Bayesian LASSO from scratch, assuming a hierarchical structure for the global shrinkage parameter. Perform inference using this sampler in the Bayesian LASSO simulation exercise. Compare the results with those obtained using the \textit{monomvn} package.
+
+\end{enumerate}
+
