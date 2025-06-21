@@ -1,4 +1,4 @@
-######### Bayesian LASSO with hierarchical lambda
+######### Bayesian LASSO with hierarchical lambda #########
 rm(list = ls()); set.seed(10101)
 library(monomvn)
 
@@ -139,3 +139,105 @@ points(beta_true, beta_post_meanNew, pch = 17, col = "darkorange")
 legend("topleft", legend = c("blasso", "Our Gibbs"), 
        col = c("steelblue", "darkorange"), 
        pch = c(19, 17), bty = "n")
+
+
+######### Application SSVS: Conflict #########
+rm(list = ls())
+set.seed(010101)
+Data <- read.csv("https://raw.githubusercontent.com/BEsmarter-consultancy/BSTApp/refs/heads/master/DataApp/Conflict.csv", sep = ",", header = TRUE, quote = "")
+
+# Scale regressors
+W <- as.matrix(scale(Data[, -c(1, 2)]))
+niter <- 15000
+y <- unlist(Data[, 2])
+
+# Linear model
+SSBoomLinear <- lm.spike(y ~ W, niter = niter)
+Models <- SSBoomLinear$beta != 0
+PIP <- colMeans(SSBoomLinear$beta != 0)
+# Convert the logical matrix to a data frame and then to a tibble
+df <- as.data.frame(Models); df_tbl <- as_tibble(df)
+# Count identical rows
+row_counts <- df_tbl %>% count(across(everything()), name = "frequency") %>% arrange(desc(frequency))
+colnames(W)
+# Get indices of best model
+for(l in 1:5) {
+  print(which(row_counts[l,] == 1))
+  print(row_counts[l, dim(row_counts)[2]]/niter)
+  }
+# Coefficients
+SummarySS <- summary(coda::mcmc(SSBoomLinear$beta))
+SummarySS
+
+# Logit model
+SSBoomLogit <- logit.spike(y ~ W, niter = niter)
+ModelsLogit <- SSBoomLogit$beta != 0
+PIPLogit <- colMeans(SSBoomLogit$beta != 0)
+# Convert the logical matrix to a data frame and then to a tibble
+df <- as.data.frame(ModelsLogit); df_tbl <- as_tibble(df)
+# Count identical rows
+row_counts <- df_tbl %>% count(across(everything()), name = "frequency") %>% arrange(desc(frequency))
+colnames(W)
+# Get indices of best model
+for(l in 1:5) {
+  print(which(row_counts[l,] == 1))
+  print(row_counts[l, dim(row_counts)[2]]/niter)
+}
+# Coefficients
+SummarySSlogit <- summary(coda::mcmc(SSBoomLogit$beta))
+SummarySSlogit
+
+######### BLASSO and SSVS: K > N #########
+rm(list = ls()); set.seed(10101)
+library(BoomSpikeSlab)
+library(dplyr)
+library(tibble)
+# Parameters
+n <- 500  # sample size
+k <- 600  # number of predictors
+s <- 10   # number of non-zero coefficients
+# Generate design matrix
+X <- matrix(rnorm(n * k), nrow = n, ncol = k)
+# True beta: first s coefficients are non-zero, rest are zero
+beta_true <- c(runif(s, -3, 3), rep(0, k - s))
+# Generate response with some noise
+sigma <- 1
+y <- X %*% beta_true + rnorm(n, sd = sigma)
+df <- data.frame(X,y)
+### Using BoomSpikeSlab ###
+#Scale regressors
+W <- scale(X); yh <- y - mean(y)
+niter <- 5000
+######Estimate model########
+# Least squared
+Reg <- lm(y ~ X)
+summary(Reg)
+## BLASSO ##
+# Fit the model
+fit <- bayesreg::bayesreg(y ~ X, data = df, model = "gaussian", prior = "lasso", 
+                          n.samples = niter, burnin = 1000)
+# Check summary
+summary(fit)
+# Extract posterior means of beta
+beta_post_meanLASSO <- rowMeans(fit$beta)
+
+## SSVS ##
+SSBoomNew <- lm.spike(yh ~ W - 1, niter = niter)
+# Coefficients
+SummarySS <- summary(coda::mcmc(SSBoomNew$beta))
+# Extract posterior means of beta
+beta_post_meanSSVS <- SummarySS$statistics[, 1]
+
+# Compare true vs estimated
+plot(beta_true, beta_post_meanLASSO, pch = 19, col = "steelblue",
+     xlab = "True beta", ylab = "Posterior mean of beta",
+     main = "Bayesian LASSO and SSVS: K > N")
+abline(0, 1, col = "red", lty = 2)
+# Add another set of posterior means
+points(beta_true, beta_post_meanSSVS, pch = 17, col = "darkorange")
+# Add legend
+legend("topleft", legend = c("BLASSO", "SSVS"), 
+       col = c("steelblue", "darkorange"), 
+       pch = c(19, 17), bty = "n")
+
+cbind(beta_true, beta_post_meanLASSO, beta_post_meanSSVS)
