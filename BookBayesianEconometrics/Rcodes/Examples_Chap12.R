@@ -4,14 +4,14 @@ library(bayesreg)
 
 # Parameters
 n <- 500  # sample size
-p <- 100  # number of predictors
+k <- 100  # number of predictors
 s <- 10   # number of non-zero coefficients
 
 # Generate design matrix
-X <- matrix(rnorm(n * p), nrow = n, ncol = p)
+X <- matrix(rnorm(n * k), nrow = n, ncol = k)
 
 # True beta: first s coefficients are non-zero, rest are zero
-beta_true <- c(runif(s, -3, 3), rep(0, p - s))
+beta_true <- c(runif(s, -3, 3), rep(0, k - s))
 
 # Generate response with some noise
 sigma <- 1

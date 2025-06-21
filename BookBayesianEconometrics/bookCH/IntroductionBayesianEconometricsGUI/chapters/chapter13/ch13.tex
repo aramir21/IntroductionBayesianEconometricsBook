@@ -99,15 +99,19 @@ Thus, under the log-score function, cross-validation reduces to the geometric av
 
 In this century, the amount of available data continues to grow. This means we have access to more covariates for prediction, and we can also generate additional features to enhance the predictive power of our models. As a result, we often encounter \textit{wide} datasets, where the number of features may exceed the number of observations. Even in modest settings, we might have hundreds of features, and we can use them to identify which ones contribute to accurate predictions. However, we generally avoid using all features at once due to the risk of overfitting. Thus, we require a class of feature selection or \textit{regularization}.
 
-In the Frequentist inferential framework, there has been extensive development of techniques aimed at regularization. These include methods such as Ridge regression \cite{hoerl1970ridge}, discrete subset selection techniques like best subset selection \cite{furnival1974regressions}, and forward and backward stepwise selection \cite{hastie2009elements}, as well as continuous subset selection methods such as the LASSO \cite{tibshirani1996regression}, the elastic net \cite{zou2005regularization}, and OSCAR \cite{bondell2008simultaneous}. 
+In the standard linear regression setting,
+\begin{align*}
+	\mathbf{y} &= \beta_0\mathbf{1} + \mathbf{W}\boldsymbol{\beta} + \boldsymbol{\mu},
+\end{align*}
+where \(\mathbf{1}\) is an \(N\)-dimensional vector of ones, \(\mathbf{W}\) is the \(N \times K\) design matrix of features, and \(\boldsymbol{\mu} \sim \mathcal{N}(\mathbf{0}, \sigma^2 \mathbf{I}_N)\), there has been extensive development of techniques aimed at regularization within the Frequentist inferential framework. These include methods such as Ridge regression \cite{hoerl1970ridge}; discrete subset selection techniques like best subset selection \cite{furnival1974regressions}, forward selection, and backward stepwise selection \cite{hastie2009elements}; as well as continuous subset selection approaches such as the LASSO \cite{tibshirani1996regression}, the elastic net \cite{zou2005regularization}, and OSCAR \cite{bondell2008simultaneous}.
 
 It is important to note, however, that Ridge regression does not perform variable selection; rather, it shrinks coefficient estimates toward zero without setting them exactly to zero.
 
 Ridge regression and the LASSO can be viewed as special cases of a more general class of estimators known as \textit{Bridge regression} \cite{fu1998penalized}, which also admits a Bayesian interpretation. Consider the following penalized least squares criterion in the linear regression setting:
 \begin{align*}
-	\hat{\boldsymbol{\beta}}^{\text{Bridge}} = \arg\min_{\boldsymbol{\beta}} \left\{ \sum_{i=1}^N \left( y_i - \beta_0 - \sum_{k=1}^K w_{ik} \beta_k \right)^2 + \lambda \sum_{k=1}^K |\beta_k|^q \right\}, \quad q \geq 0.
+	\hat{\boldsymbol{\beta}}^{\text{Bridge}} = \arg\min_{\boldsymbol{\beta}} \left\{ \sum_{i=1}^N \left( y_i - \beta_0 - \sum_{k=1}^K \tilde{w}_{ik} \beta_k \right)^2 + \lambda \sum_{k=1}^K |\beta_k|^q \right\}, \quad q \geq 0,
 \end{align*}
-Note that in variable selection problems, it is important to standardize the features to avoid issues caused by differences in scale, otherwise, variables with larger magnitudes will be penalized less and dominate the regularization path.
+where \(\tilde{w}_{ik}\) denotes the standardized features. Standardizing features is important in variable selection problems to avoid issues caused by differences in scale; otherwise, variables with larger magnitudes will be penalized less and disproportionately influence the regularization path.
 
 Interpreting \( |\beta_k|^q \) as proportional to the negative log-prior density of \( \beta_k \), the penalty shapes the contours of the prior distribution on the parameters. Specifically:
 \begin{itemize}
@@ -129,9 +133,10 @@ Given the popularity of the LASSO as a variable selection technique, we present 
 	\mathbf{y} \mid \beta_0, \boldsymbol{\beta}, \sigma^2, \mathbf{W} &\sim {N}(\beta_0 \mathbf{1} + \mathbf{W} \boldsymbol{\beta}, \sigma^2 \mathbf{I}_N), \\
 	\boldsymbol{\beta} \mid \sigma^2, \tau_1^2, \dots, \tau_K^2 &\sim {N}(\mathbf{0}_K, \sigma^2 \mathbf{D}_{\tau}), \\
 	\tau_1^2, \dots, \tau_K^2 &\sim \prod_{k=1}^K \frac{\lambda^2}{2} \exp\left\{ -\frac{\lambda^2}{2} \tau_k^2 \right\}, \\
-	\sigma^2 &\sim \frac{1}{\sigma^2},
+	\sigma^2 &\sim \frac{1}{\sigma^2},\\
+	\beta_0&\sim c,
 \end{align*}
-where $	\mathbf{D}_{\tau} = \operatorname{diag}(\tau_1^2, \dots, \tau_K^2)$. 
+where $\mathbf{D}_{\tau} = \operatorname{diag}(\tau_1^2, \dots, \tau_K^2)$ and $c$ is a constant. 
 
 After integrating out \( \tau_1^2, \dots, \tau_K^2 \), the conditional prior of \( \boldsymbol{\beta} \mid \sigma^2 \) is:
 \begin{align*}
@@ -139,30 +144,29 @@ After integrating out \( \tau_1^2, \dots, \tau_K^2 \), the conditional prior of 
 \end{align*}
 which implies that the log-prior is proportional to \( \lambda \sum_{k=1}^K |\beta_k| \), matching the penalty term in the LASSO optimization problem.
 
-We assume that \( \beta_0 \) has a flat prior distribution. Since it is not of primary interest, and given that all regressors are standardized, \( \beta_0 \) corresponds to the overall mean of \( \mathbf{y} \) and can be integrated out.
-
 The conditional posterior distributions for the Gibbs sampler are \cite{Park2008}:
 \begin{align*}
-	\boldsymbol{\beta} \mid \sigma^2, \tau_1^2, \dots, \tau_K^2, \mathbf{W}, \tilde{\mathbf{y}} &\sim {N}(\boldsymbol{\beta}_n, \sigma^2 \mathbf{B}_n), \\
-	\sigma^2 \mid \boldsymbol{\beta}, \tau_1^2, \dots, \tau_K^2, \mathbf{W}, \tilde{\mathbf{y}} &\sim \text{Inverse-Gamma}(\alpha_n/2, \delta_n/2), \\
-	\tau_k \mid \boldsymbol{\beta}, \sigma^2, \mathbf{W}, \tilde{\mathbf{y}} &\sim \text{Inverse-Gaussian}(\mu_{kn}, \lambda_n),
+	\boldsymbol{\beta} \mid \sigma^2, \tau_1^2, \dots, \tau_K^2, \tilde{\mathbf{W}}, \tilde{\mathbf{y}} &\sim {N}(\boldsymbol{\beta}_n, \sigma^2 \mathbf{B}_n), \\
+	\sigma^2 \mid \boldsymbol{\beta}, \tau_1^2, \dots, \tau_K^2, \tilde{\mathbf{W}}, \tilde{\mathbf{y}} &\sim \text{Inverse-Gamma}(\alpha_n/2, \delta_n/2), \\
+	1/\tau_k^2 \mid \boldsymbol{\beta}, \sigma^2 &\sim \text{Inverse-Gaussian}(\mu_{kn}, \lambda_n),\\
+	\beta_0\mid \sigma^2, \tilde{\mathbf{W}}, \tilde{\mathbf{y}} &\sim N(\bar{y},\sigma^2/N) 
 \end{align*}
 where:
 \begin{align*}
-	\boldsymbol{\beta}_n &= \mathbf{B}_n \mathbf{W}^{\top} \tilde{\mathbf{y}}, \\
-	\mathbf{B}_n &= \left( \mathbf{W}^{\top} \mathbf{W} + \mathbf{D}_{\tau}^{-1} \right)^{-1}, \\
+	\boldsymbol{\beta}_n &= \mathbf{B}_n \tilde{\mathbf{W}}^{\top} \tilde{\mathbf{y}}, \\
+	\mathbf{B}_n &= \left( \tilde{\mathbf{W}}^{\top} \tilde{\mathbf{W}} + \mathbf{D}_{\tau}^{-1} \right)^{-1}, \\
 	\alpha_n &= (N - 1) + K, \\
-	\delta_n &= (\tilde{\mathbf{y}} - \mathbf{W} \boldsymbol{\beta})^{\top} (\tilde{\mathbf{y}} - \mathbf{W} \boldsymbol{\beta}) + \boldsymbol{\beta}^{\top} \mathbf{D}_{\tau}^{-1} \boldsymbol{\beta}, \\
+	\delta_n &= (\tilde{\mathbf{y}} - \tilde{\mathbf{W}} \boldsymbol{\beta})^{\top} (\tilde{\mathbf{y}} - \tilde{\mathbf{W}} \boldsymbol{\beta}) + \boldsymbol{\beta}^{\top} \mathbf{D}_{\tau}^{-1} \boldsymbol{\beta}, \\
 	\mu_{kn} &= \sqrt{ \frac{ \lambda^2 \sigma^2 }{ \beta_k^2 } }, \\
 	\lambda_n &= \lambda^2,
 \end{align*}
-and $\tilde{\mathbf{y}}$ is the centered response vector.
+where $\tilde{\mathbf{W}}$ is the matrix of standardized features and $\tilde{\mathbf{y}}$ is the centered response vector.
 
-In this formulation, we can interpret \( \tau_k \) as local shrinkage parameters, while \( \lambda \) serves as a global shrinkage parameter. Higher values of \( \lambda \) imply stronger shrinkage toward zero. \cite{Park2008} propose two methods for specifying the value of the global shrinkage parameter: empirical Bayes estimation or a fully Bayesian hierarchical approach, in which \( \lambda^2 \) is assigned a Gamma prior.
+In this formulation, we can interpret \( \tau_k \) as local shrinkage parameters, while \( \lambda \) serves as a global shrinkage parameter. Higher values of \( \tau_k \) and \( \lambda \) imply stronger shrinkage toward zero. \cite{Park2008} propose two methods for specifying the value of the global shrinkage parameter: empirical Bayes estimation or a fully Bayesian hierarchical approach, in which \( \lambda^2 \) is assigned a Gamma prior.
 
 We should acknowledge that the Bayesian LASSO is more computationally expensive than the Frequentist LASSO. However, it provides credible intervals for the parameters automatically. In contrast, obtaining standard errors in the Frequentist LASSO is more challenging, particularly for parameters estimated to be exactly zero \cite{kyung2010penalized}.\\
 
-\textbf{Example: Simulation exercise of the Bayesian LASSO}
+\textbf{Example: Simulation exercise to study the Bayesian LASSO performance}
 
 We simulate the process \( y_i = \beta_0 + \sum_{k=1}^{10} w_{ik} \beta_k + \mu_i \), where \( \beta_k \sim \mathcal{U}(-3, 3) \), \( \mu_i \sim \mathcal{N}(0, 1) \), and \( w_{ik} \sim \mathcal{N}(0, 1) \), $i=1,2,\dots,500$. Additionally, we generate 90 extra potential features from a standard normal distribution, which are included in the model specification. Our goal is to assess whether the Bayesian LASSO can successfully identify the truly relevant features.
 
@@ -207,6 +211,52 @@ abline(0, 1, col = "red", lty = 2)
 \end{tcolorbox}
   
 \subsection{Stochastic search variable selection}\label{sec13_22}
+Another well-known Bayesian strategy for variable selection in the presence of a large set of regressors (features) is \textit{stochastic search variable selection} (SSVS) \cite{george1993variable,George1997}. SSVS is a particular case of the broader class of \textit{spike-and-slab} priors, in which the prior distribution for the location parameters is specified as a hierarchical mixture that captures the uncertainty inherent in variable selection problems \cite{Ishwaran2005}. The hierarchical structure of the model is given by
+\begin{align*}
+	\mathbf{y} \mid \beta_0, \boldsymbol{\beta}, \sigma^2, \mathbf{W} &\sim {N}(\beta_0 \mathbf{1} + \mathbf{W} \boldsymbol{\beta}, \sigma^2 \mathbf{I}_N), \\
+	\boldsymbol{\beta} \mid \sigma^2, \boldsymbol{\gamma} &\sim {N}(\mathbf{0}_K, \sigma^2 \mathbf{D}_{\gamma} \mathbf{R} \mathbf{D}_{\gamma}), \\
+	\sigma^2 &\sim \text{Inverse-Gamma}\left(\frac{v}{2}, \frac{v\lambda_{\gamma}}{2}\right), \\
+	\gamma_k &\sim \text{Bernoulli}(p_k),
+\end{align*}
+where \(p_k\) is the prior inclusion probability of regressor \(w_k\), that is, \(P(\gamma_k = 1) = 1 - P(\gamma_k = 0) = p_k\), \(\mathbf{R}\) is a correlation matrix, and \(\mathbf{D}_{\gamma}\) is a diagonal matrix whose \(kk\)-th element is defined as
+\begin{align*}
+	(\mathbf{D}_{\gamma})_{kk} &= 
+	\begin{cases}
+		v_{0k}, & \text{if } \gamma_k = 0, \\
+		v_{1k}, & \text{if } \gamma_k = 1.
+	\end{cases}
+\end{align*}
+
+This formulation implies that \(\beta_k \sim (1 - \gamma_k) {N}(0, v_{0k}) + \gamma_k {N}(0, v_{1k})\), where \(v_{0k}\) and \(v_{1k}\) are chosen such that \(v_{0k}\) is small and \(v_{1k}\) is large. Therefore, when the data favors \(\gamma_k = 0\) over \(\gamma_k = 1\), the corresponding \(\beta_k\) is shrunk toward zero, effectively excluding feature \(k\) from the model. In this sense, \({N}(0, v_{0k})\) is a spike prior concentrated at zero, while \({N}(0, v_{1k})\) is a diffuse slab prior. A critical aspect of SSVS is the choice of the hyperparameters \(v_{0k}\) and \(v_{1k}\), as they determine the amount of shrinkage applied to the regression coefficients (see \cite{george1993variable,George1997} for details).
+
+The assumption \(\gamma_k \sim \text{Bernoulli}(p_k)\) implies that the prior on the inclusion indicators is given by \(\pi(\boldsymbol{\gamma}) = \prod_{k=1}^K p_k^{\gamma_k} (1 - p_k)^{1 - \gamma_k}\). This means that the inclusion of feature \(k\) is independent of the inclusion of any other feature \(j \neq k\). A common choice is the uniform prior \(\pi(\boldsymbol{\gamma}) = 2^{-K}\), which corresponds to setting \(p_k = 1/2\), giving each regressor an equal chance of being included \cite{Ishwaran2005}.
+
+A practical choice for the correlation matrix is to set \(\mathbf{R} \propto (\tilde{\mathbf{W}}^{\top} \tilde{\mathbf{W}})^{-1}\) \cite{george1993variable}. Regarding the hyperparameters \(v\) and \(\lambda_{\gamma}\), it is helpful to interpret \(\lambda_{\gamma}\) as a prior estimate of \(\sigma^2\), and \(v\) as the prior sample size associated with this estimate. In the absence of prior information, \cite{george1997approaches} recommend setting \(\lambda_{\gamma}\) equal to the least squares estimate of the variance from the \textit{saturated model}, that is, the model including all regressors, and \(v\) a small number, for instance, 0.01.
+
+The conditional posterior distributions for the Gibbs sampler are \cite{george1993variable}:
+\begin{align*}
+	\boldsymbol{\beta} \mid \sigma^2, \gamma_1, \dots, \gamma_K, \tilde{\mathbf{W}}, \tilde{\mathbf{y}} &\sim {N}(\boldsymbol{\beta}_n, \mathbf{B}_n), \\
+	\sigma^2 \mid \boldsymbol{\beta}, \gamma_1, \dots, \gamma_K, \tilde{\mathbf{W}}, \tilde{\mathbf{y}} &\sim \text{Inverse-Gamma}(\alpha_n/2, \delta_n/2), \\
+	\gamma_k \mid \boldsymbol{\beta}, \sigma^2 &\sim \text{Bernoulli}(p_{kn}),\\
+\end{align*}
+where:
+\begin{align*}
+	\boldsymbol{\beta}_n &= \sigma^{-2} \mathbf{B}_n \tilde{\mathbf{W}}^{\top} \tilde{\mathbf{y}}, \\
+	\mathbf{B}_n &= \left(\sigma^{-2} \tilde{\mathbf{W}}^{\top} \tilde{\mathbf{W}} + \mathbf{D}_{\gamma}^{-1}\mathbf{R}^{-1}\mathbf{D}_{\gamma}^{-1} \right)^{-1}, \\
+	\alpha_n &= N + v, \\
+	\delta_n &= (\tilde{\mathbf{y}} - \tilde{\mathbf{W}} \boldsymbol{\beta})^{\top} (\tilde{\mathbf{y}} - \tilde{\mathbf{W}} \boldsymbol{\beta}) + v\lambda_{\gamma}, \\
+	p_{kn} &= \frac{\pi(\boldsymbol{\beta}\mid \boldsymbol{\gamma}_{-k},\gamma_k=1)\times p_k}{\pi(\boldsymbol{\beta}\mid \boldsymbol{\gamma}_{-k},\gamma_k=1)\times p_k+\pi(\boldsymbol{\beta}\mid \boldsymbol{\gamma}_{-k},\gamma_k=0)\times (1-p_k)},
+\end{align*}
+where \(\tilde{\mathbf{W}}\) is the matrix of standardized features, \(\tilde{\mathbf{y}}\) is the centered response vector, and \(\boldsymbol{\gamma}_{-k}\) denotes the vector composed of \(\gamma_1, \gamma_2, \dots, \gamma_K\), excluding \(\gamma_k\).
+
+In general, it is wise to consider the inclusion of regressors jointly due to potential correlations among them; that is, the marginal frequency of \(\gamma_k = 1\) should be interpreted with caution. SSVS is more effective at identifying a good set of potential models rather than selecting a single best model.\\
+
+\textbf{Example: Simulation exercise to study SSVS performance}
+Let's use the simulation setting from the previous example to evaluate the performance of SSVS in uncovering the data-generating process. In particular, we use the \textit{BoomSpikeSlab} package to implement this example.
+
+
+
+Take into account that in this package setting $\alpha=0$, we obtain Zellner's $g$ prior, which is commonly used in model selection such that prior information agrees with sample information. If the full rank condition of the covariance matrix is not fulfilled, $\alpha=0.5$, implying equal weight. The prior information weight regarding the location parameter ($\boldsymbol{\beta}_{\boldsymbol{\gamma}}$) is $\kappa$, which is set equal to 0.1 to be non-informative. We elect to use a noninformative prior so that we remain as agnostic as possible regarding the magnitude of any coefficient that is in the model. Alternatively, we take the position that no coefficient a priori is large. Then, if we find that a coefficient has an estimated large magnitude, we can be more confident that this large effect is due to the fact that in truth the effect is large rather than fictitiously having started in this manner. $\mathbf{P}_{\boldsymbol{\gamma}}$ is a diagonal matrix with all elements equal to $p_{k,\boldsymbol{\gamma}}(1-p_{k,\boldsymbol{\gamma}})$ in the case of the logit model. In addition, the inverse of the variance (precision) has a gamma distribution, $\sigma^{-2}\sim G(df/2,v\times df/2)$ where $df$ captures the prior degrees of freedom (prior hypothetical sample size) for estimating the residual variance. Again, to remain agnostic we use a non-informative prior for $\sigma^{-2}$ and set $df=0.01$ to be non informative. Finally, $v=(1-ER^2)\hat{\sigma}_y^2$, $ER^2$ is the expected prior coefficient of determination in the regression ($ER^2=0.5$), and $\hat{\sigma}_y^2$ is the standard deviation of the dependent variable. Thus, $v$ may be thought of as a prior estimate of $\sigma^2$. In general, we set the prior information trying to be non-informative, i.e., the posterior inference is based on sample information.
 
 \subsection{Non-local priors}\label{sec13_23}
 
@@ -289,7 +339,13 @@ Variational Bayes, a method rooted in machine learning \cite{wainwright2008graph
 \begin{enumerate}
 	\item \textbf{Simulation exercise: the Bayesian LASSO continues}
 	
-	Program the Gibbs sampler for the Bayesian LASSO from scratch, assuming a hierarchical structure for the global shrinkage parameter. Perform inference using this sampler in the Bayesian LASSO simulation exercise. Compare the results with those obtained using the \textit{monomvn} package.
+	Program the Gibbs sampler for the Bayesian LASSO from scratch, assuming a hierarchical structure for the global shrinkage parameter, where both the shape and rate parameters are set to 1. Perform inference using this sampler in the Bayesian LASSO simulation exercise and compare the results with those obtained using the \textit{monomvn} package.
+	
+	\item \cite{jetter2022postcold} employ SSVS to identify the main drivers of civil conflict in the post-Cold War era, considering a set of 34 potential determinants across 175 countries worldwide. We use a subset of their dataset provided in \textit{Conflict.xlsx}, where the dependent variable is \textit{conflictcw}, a binary indicator of civil conflict. Perform SSVS using the \textit{BoomSpikeSlab} package, specifically the \textit{lm.spike} function, to identify the best subset of models.
+	
+	\item \cite{tuchler2008bayesian} proposes an SSVS approach for binary response models. Use the dataset \textit{Conflict.xlsx}, where the dependent variable is \textit{conflictcw}, to perform SSVS using the \textit{BoomSpikeSlab} package, specifically the \texttt{logit.spike} function, in order to identify the best subset of models. Compare the results with those obtained in Exercise 2.
+	
+	
 
 \end{enumerate}
 
