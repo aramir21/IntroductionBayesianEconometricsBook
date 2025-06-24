@@ -125,7 +125,9 @@ In this light, best subset selection, the LASSO, and ridge regression can be vie
 
 This distinction is important because the Bayesian framework naturally incorporates regularization through the use of proper priors, which helps mitigate overfitting. Specifically, when proper shrinkage priors are used, the posterior balances data likelihood and prior information, thus controlling model complexity.
 
-Furthermore, empirical Bayes methods can be employed to estimate the scale parameter of the prior covariance matrix for the regression coefficients, which in turn determines the regularization strength in ridge regression.
+Furthermore, empirical Bayes methods, where the marginal likelihood is optimized, or cross-validation can be used to estimate the scale parameter of the prior covariance matrix for the regression coefficients. This scale parameter, in turn, determines the strength of regularization in ridge regression.
+
+Note that regularization introduces bias into the parameter estimates because it constrains the model, shrinking the location parameters toward zero. However, it substantially reduces variance, as the estimates are prevented from varying excessively across samples. As a result, the mean squared error (MSE) of the estimates, which equals the sum of the squared bias and the variance, is often lower for regularization methods compared to ordinary least squares (OLS), which remains unbiased under the classical assumptions. This trade-off is particularly important when the goal is to identify causal effects, where unbiasedness may be preferred over predictive accuracy (see Chapter \ref{chap12}).
 
 \subsection{Bayesian LASSO}\label{sec13_21}
 Given the popularity of the LASSO as a variable selection technique, we present its Bayesian formulation in this subsection \cite{Park2008}. The Gibbs sampler for the Bayesian LASSO exploits the representation of the Laplace distribution as a scale mixture of normals. This leads to the following hierarchical representation of the model:
@@ -317,7 +319,7 @@ abline(0, 1, col = "red", lty = 2)
 	\end{VF}
 \end{tcolorbox}
 
-The examples and exercises presented thus far have considered scenarios where the number of features is smaller than the number of observations ($K < N$). In Exercise 4, we challenge the Bayesian LASSO and SSVS in a setting where the number of features exceeds the sample size ($K > N$). As you will observe in that experiment, both the Bayesian LASSO and SSVS perform well. However, the Bayesian LASSO requires more time to produce results compared to SSVS.
+The examples and exercises presented thus far have considered scenarios in which the number of features is smaller than the number of observations ($K < N$). In Exercise 4, we challenge the Bayesian LASSO and SSVS in a setting where the number of features exceeds the sample size ($K > N$). As you will observe in that experiment, both the Bayesian LASSO and SSVS perform well. However, the Bayesian LASSO requires more time to produce results compared to SSVS in this exercise. \cite{rockova2018spike} propose a connection between the LASSO and spike-and-slab priors for variable selection in linear models, offering oracle properties and optimal posterior concentration even in high-dimensional settings where $K > N$.
 
 In addition, there are other Bayesian methods for regularization, such as the spike-and-slab approach proposed by \cite{Ishwaran2005} and non-local priors introduced by \cite{johnson2012bayesian}, which can be implemented using the \textbf{R} packages \textit{spikeslab} and \textit{mombf}, respectively.
 
@@ -326,6 +328,81 @@ In addition, there are other Bayesian methods for regularization, such as the sp
 %\cite{johnson2012bayesian}: R package mombf link: https://cran.r-project.org/web/packages/mombf/index.html
 
 \section{Bayesian additive regression trees}\label{sec13_3}
+
+A Classification and Regression Tree (CART) is a method used to predict outcomes based on input features. It is referred to as a classification tree when the outcome variable is qualitative, and as a regression tree when the outcome variable is quantitative. The method works by recursively partitioning the dataset into smaller, more homogeneous subsets using decision rules based on the input variables. For regression tasks, CART selects splits that minimize prediction error, typically measured by the sum of squared residuals. For classification problems, it aims to create the purest possible groups, using criteria such as Gini impurity or entropy. The result is a tree-like structure in which each internal node represents a decision based on one variable, and each leaf node corresponds to a prediction. CART was popularized in the statistical community by \cite{breiman1984classification}.
+
+Figure \ref{fig:tree} displays a regression tree with two variables: one continuous ($x_1$) and one categorical ($x_2 \in {A, B, C}$). The tree has seven nodes in total, four of which are terminal nodes ($B = 4$), dividing the feature space $\mathbf{x} = (x_1, x_2)$ into four non-overlapping regions. Each internal node indicates the splitting variable and rule, while each terminal node shows the value $\theta_b$, representing the conditional mean of $y$ given $\mathbf{x}$.
+
+The first split is based on the rule $x_1 \leq 5$ (left) versus $x_1 > 5$ (right). The leftmost terminal node corresponds to $x_2 \in {A}$ with $\theta_1 = 5$. The second terminal node, with $\theta_2 = 3$, is defined by $x_1 \leq 3$ and $x_2 \in {B, C}$. The third node assigns $\theta_3 = 5$ for $3 < x_1 \leq 5$ and $x_2 \in {B, C}$. Finally, the rightmost terminal node assigns $\theta_4 = 8$ for all observations with $x_1 > 5$.
+
+\begin{figure}[h!]
+	\centering
+\begin{tikzpicture}[
+	level distance=2.5cm,
+	sibling distance=4cm,
+	every node/.style={font=\small},
+	ellipseNode/.style={draw, ellipse, minimum width=1.2cm, minimum height=0.7cm},
+	rectNode/.style={draw, rectangle, minimum width=1.8cm, minimum height=0.9cm},
+	edge from parent/.style={draw, -{Latex[length=2mm]}, line width=0.6pt},
+	level 2/.style={sibling distance=3.2cm},
+	level 3/.style={sibling distance=2.4cm}
+	]
+	
+	% Root node
+	\node[ellipseNode] (root) {}
+	child { % Left subtree
+		node[ellipseNode] (a1) {}
+		child {
+			node[rectNode] {$\theta_1 = 2$}
+			edge from parent node[left] {$x_2 \in \{A\}$}
+		}
+		child {
+			node[ellipseNode] (a2) {}
+			child {
+				node[rectNode] {$\theta_2 = 3$}
+				edge from parent node[left] {$x_1 \leq 3$}
+			}
+			child {
+				node[rectNode] {$\theta_3 = 5$}
+				edge from parent node[right] {$x_1 > 3$}
+			}
+			edge from parent node[right] {$x_2 \in \{B,C\}$}
+		}
+		edge from parent node[left] {$x_1 \leq 5$}
+	}
+	child { % Right subtree
+		node[rectNode] {$\theta_4 = 8$}
+		edge from parent node[right] {$x_1 > 5$}
+	};
+	
+\end{tikzpicture}
+\begin{tablenotes}
+	\item \small{\textbf{Notes:} Decision tree with one continuous variable ($x_1$) and one categorical variable ($x_2 \in \{A, B, C\}$). The tree has four terminal nodes, each associated with a value denoted by $\boldsymbol{\theta}_b$.}
+\end{tablenotes}
+\caption{\textit{Decision tree}.}
+\label{fig:tree}
+\end{figure}	
+
+We can view a CART model as specifying the conditional distribution of \( y \) given the input vector \( \mathbf{x} = [x_1, x_2, \dots, x_K]^{\top} \). There are two main components: the tree structure \( T \), which consists of \( B \) terminal nodes that define a non-overlapping and exhaustive partition of the input space, and the parameter vector \( \boldsymbol{\theta} = [\boldsymbol{\theta}_1, \boldsymbol{\theta}_2, \dots, \boldsymbol{\theta}_B]^{\top} \), where each \( \boldsymbol{\theta}_b \) corresponds to a parameter associated with terminal node \( b \). Consequently, the response \( y \mid \mathbf{x} \sim f(y \mid \boldsymbol{\theta}_b) \) if \( \mathbf{x} \) belongs to the region associated with terminal node \( b \), where \( f \) denotes a parametric family indexed by \( \theta_b \).
+
+Assuming that \( y_{bi} \) is independently and identically distributed within each terminal node and independently across nodes, for \( b = 1, 2, \dots, B \) and \( i = 1, 2, \dots, n_b \), we have:
+\begin{align*}
+	p(\mathbf{y} \mid \mathbf{x}, T, \boldsymbol{\theta}) &= \prod_{b=1}^B f(\mathbf{y}_b \mid \boldsymbol{\theta}_b) \\
+	&= \prod_{b=1}^B \prod_{i=1}^{n_b} f(y_{bi} \mid \boldsymbol{\theta}_b).
+\end{align*}
+
+\cite{chipman1998bayesian} introduced a Bayesian formulation of CART models, in which inference is carried out through a combination of prior specification on the tree structure \( T \) and the parameters \( \boldsymbol{\theta} \mid T \), along with a stochastic search strategy based on a Metropolis-Hastings algorithm. The transition kernels used in the algorithm include operations such as growing, pruning, changing, and swapping tree branches, and candidate trees are evaluated based on their marginal likelihood. This approach enables exploration of a richer set of potential tree models and offers a more flexible and effective alternative to the greedy algorithms commonly used in classical CART. 
+
+While CART is a simple yet powerful tool, it is prone to overfitting. To mitigate this, pruning techniques or ensemble methods, such as random forests, are often used. A random forest constructs multiple decision trees by training each tree on a bootstrap sample of the data and selecting the best split at each node from a random subset of the predictors \cite{breiman2001random}. This added randomness ensures that individual trees are diverse. Although a single tree might overfit and generalize poorly, aggregating many randomized trees typically yields more accurate and stable predictions.
+
+\cite{chipman2010bart} introduced Bayesian additive regression trees ...
+
+Bayesian Backfitting \cite{hastie2000bayesian}
+
+\cite{linero2018bayesian} extended BART models to high-dimensional settings for prediction and variable selection, while \cite{hill2011bayesian, hahn2020bayesian} applied them to causal inference. The asymptotic properties of BART models have been studied by \cite{rockova2019on, rockova2020posterior, rockova2020semiparametric}.
+
+
+
 
 \section{Gaussian processes}\label{13_4}
 
