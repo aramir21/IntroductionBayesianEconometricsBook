@@ -318,5 +318,76 @@ pch = c(19, 17), bty = "n")
 	\caption[List of figure caption goes here]{Performance of the Bayesian LASSO and SSVS: $K > N$.}\label{figKlargerN}
 \end{figure}
 
+\item \textbf{Simulation exercise: the BART model continues} 
+
+Compute Friedman’s partial dependence functions \cite{friedman2001greedy} for all variables in the BART model simulation example, and plot the posterior mean along with the 95\% credible intervals.
+
+\textbf{Answer}
+
+The following code illustrates how to compute the posterior distribution of Friedman’s partial dependence functions. Figures \ref{figPartial1} and \ref{figPartial10} display the results for variables 1 and 10. From the simulation setup, we know that variable 1 is relevant, whereas variable 10 is irrelevant. This is reflected in the partial dependence functions: the function for variable 10 is flat, indicating no effect, while the function for variable 1 shows a positive relationship with the outcome variable.
+
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation: Partial dependence functions from BART models}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(10101)
+library(BART); library(ggplot2); library(dplyr); library(tidyr)
+N <- 500; K <- 10
+# Simulate the dataset
+MeanFunct <- function(x){
+	f <- 10*sin(pi*x[,1]*x[,2]) + 20*(x[,3]-.5)^2+10*x[,4]+5*x[,5]
+	return(f)
+}
+sig2 <- 1
+e <- rnorm(N, 0, sig2^0.5)
+X <- matrix(runif(N*K),N,K)
+y <- MeanFunct(X[,1:5]) + e
+# Hyperparameters
+alpha <- 0.95; beta <- 2; k <- 2
+v <- 3; q <- 0.9; J <- 200
+# MCMC parameters
+MCMCiter <- 1000; burnin <- 100; thinning <- 1
+# Partial dependence function
+BARTfit <- wbart(x.train = X, y.train = y, base = alpha,
+power = beta, k = k, sigdf = v, sigquant = q, ntree = J,
+ndpost = MCMCiter, nskip = burnin, keepevery = thinning)
+k <- 1; L <- 20
+x <- seq(min(X[, k]), max(X[, k]), length.out = L)
+X.test <- X
+X.test[,k] <- x[1]
+for(j in 2:L){
+	X.k <- X
+	X.k[,k] <- x[j]
+	X.test <- rbind(X.test, X.k)
+} 
+pred <- predict(BARTfit, X.test)
+partial <- matrix(nrow = MCMCiter, ncol = L)
+for(j in 1:L) {
+	h <- (j - 1) * N + 1:N
+	partial[, j] <- apply(pred[, h], 1, mean)
+}
+partial_df <- as.data.frame(partial)
+partial_df$draw <- 1:nrow(partial_df)
+long_df <- pivot_longer(partial_df, cols = -draw, names_to = "x", values_to = "value")
+long_df$x <- as.numeric(gsub("V", "", long_df$x))
+summary_df <- long_df %>% group_by(x) %>%
+summarise(mean = mean(value), lower = quantile(value, 0.025), upper = quantile(value, 0.975)
+)
+ggplot(summary_df, aes(x = x, y = mean)) + geom_line(color = "blue") + geom_ribbon(aes(ymin = lower, ymax = upper), fill = "lightblue", alpha = 0.4) + labs(x = "Grid point", y = "Partial effect", title = "Partial Dependence Function with 95% Intervals") + theme_minimal()
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter13/figures/Partial1.png}
+	\caption[List of figure caption goes here]{Partial dependence function: Variable 1.}\label{figPartial1}
+\end{figure}
+
+\begin{figure}[!h]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter13/figures/Partial10.png}
+	\caption[List of figure caption goes here]{Partial dependence function: Variable 10.}\label{figPartial10}
+\end{figure}
 
 \end{enumerate}

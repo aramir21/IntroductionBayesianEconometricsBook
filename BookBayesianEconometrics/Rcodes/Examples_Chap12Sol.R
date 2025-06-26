@@ -241,3 +241,71 @@ legend("topleft", legend = c("BLASSO", "SSVS"),
        pch = c(19, 17), bty = "n")
 
 cbind(beta_true, beta_post_meanLASSO, beta_post_meanSSVS)
+
+####### BART #########
+rm(list = ls()); set.seed(10101)
+library(BART); library(ggplot2); library(dplyr); library(tidyr)
+N <- 500; K <- 10
+# Simulate the dataset
+MeanFunct <- function(x){
+  f <- 10*sin(pi*x[,1]*x[,2]) + 20*(x[,3]-.5)^2+10*x[,4]+5*x[,5]
+  return(f)
+}
+sig2 <- 1
+e <- rnorm(N, 0, sig2^0.5)
+X <- matrix(runif(N*K),N,K)
+y <- MeanFunct(X[,1:5]) + e
+
+# Hyperparameters
+alpha <- 0.95; beta <- 2; k <- 2
+v <- 3; q <- 0.9; J <- 200
+# MCMC parameters
+MCMCiter <- 1000; burnin <- 100; thinning <- 1
+
+
+# Partial dependence function
+BARTfit <- wbart(x.train = X, y.train = y, base = alpha,
+                 power = beta, k = k, sigdf = v, sigquant = q, ntree = J,
+                 ndpost = MCMCiter, nskip = burnin, keepevery = thinning)
+
+k <- 10
+L <- 20
+x <- seq(min(X[, k]), max(X[, k]), length.out = L)
+X.test <- X
+X.test[,k] <- x[1]
+for(j in 2:L){
+  X.k <- X
+  X.k[,k] <- x[j]
+  X.test <- rbind(X.test, X.k)
+} 
+pred <- predict(BARTfit, X.test)
+partial <- matrix(nrow = MCMCiter, ncol = L)
+for(j in 1:L) {
+  h <- (j - 1) * N + 1:N
+  partial[, j] <- apply(pred[, h], 1, mean)
+}
+# Assume: partial is a 1000 x 20 matrix (1000 posterior draws, 20 grid points)
+partial_df <- as.data.frame(partial)
+
+# Add draw index for clarity
+partial_df$draw <- 1:nrow(partial_df)
+
+# Pivot to long format
+long_df <- pivot_longer(partial_df, cols = -draw, names_to = "x", values_to = "value")
+
+# Convert x to numeric (column names are likely "V1", "V2", ..., or "1", "2", ...)
+long_df$x <- as.numeric(gsub("V", "", long_df$x))
+
+summary_df <- long_df %>%
+  group_by(x) %>%
+  summarise(
+    mean = mean(value),
+    lower = quantile(value, 0.025),
+    upper = quantile(value, 0.975)
+  )
+
+ggplot(summary_df, aes(x = x, y = mean)) +
+  geom_line(color = "blue") +
+  geom_ribbon(aes(ymin = lower, ymax = upper), fill = "lightblue", alpha = 0.4) +
+  labs(x = "Grid point", y = "Partial effect", title = "Partial Dependence Function with 95% Intervals") +
+  theme_minimal()

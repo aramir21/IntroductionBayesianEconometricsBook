@@ -90,3 +90,117 @@ plot(beta_true, beta_post_mean, pch = 19, col = "steelblue",
      main = "SSVS Shrinkage")
 abline(0, 1, col = "red", lty = 2)
 
+####### BART #########
+rm(list = ls()); set.seed(10101)
+library(BART)
+N <- 500; K <- 10
+# Simulate the dataset
+MeanFunct <- function(x){
+  f <- 10*sin(pi*x[,1]*x[,2]) + 20*(x[,3]-.5)^2+10*x[,4]+5*x[,5]
+  return(f)
+}
+sig2 <- 1
+e <- rnorm(N, 0, sig2^0.5)
+X <- matrix(runif(N*K),N,K)
+y <- MeanFunct(X[,1:5]) + e
+# Train and test
+c <- 0.8
+Ntrain <- floor(c * N)
+Ntest <- N - Ntrain
+X.train <- X[1:Ntrain, ]
+y.train <- y[1:Ntrain]
+X.test <- X[(Ntrain+1):N, ]
+y.test <- y[(Ntrain+1):N]
+# Hyperparameters
+alpha <- 0.95; beta <- 2; k <- 2
+v <- 3; q <- 0.9; J <- 200
+# MCMC parameters
+MCMCiter <- 1000; burnin <- 100; thinning <- 1
+# Estimate BART
+BARTfit <- wbart(x.train = X.train, y.train = y.train, x.test = X.test, base = alpha,
+                 power = beta, k = k, sigdf = v, sigquant = q, ntree = J,
+                 ndpost = MCMCiter, nskip = burnin, keepevery = thinning)
+
+# Trace plot sigma
+library(ggplot2)
+keep <- seq(burnin + 1, MCMCiter + burnin, thinning)
+df_sigma <- data.frame(iteration = 1:length(keep), sigma = BARTfit$sigma[keep])
+ggplot(df_sigma, aes(x = iteration, y = sigma)) +
+  geom_line(color = "steelblue") +
+  labs(title = "Trace Plot of Sigma", x = "Iteration", y = expression(sigma)) +
+  theme_minimal()
+
+# Prediction plot training
+library(dplyr)
+train_preds <- data.frame(
+  y_true = y.train,
+  mean = apply(BARTfit$yhat.train, 2, mean),
+  lower = apply(BARTfit$yhat.train, 2, quantile, 0.025),
+  upper = apply(BARTfit$yhat.train, 2, quantile, 0.975)
+) %>% arrange(y_true) %>% mutate(index = row_number())
+ggplot(train_preds, aes(x = index)) +
+  geom_ribbon(aes(ymin = lower, ymax = upper, fill = "95% Interval"), alpha = 0.4, show.legend = TRUE) +
+  geom_line(aes(y = mean, color = "Predicted Mean")) +
+  geom_line(aes(y = y_true, color = "True y")) +
+  scale_color_manual(name = "Line", values = c("Predicted Mean" = "blue", "True y" = "black")) +
+  scale_fill_manual(name = "Interval", values = c("95% Interval" = "lightblue")) +
+  labs(title = "Training Data: Ordered Predictions with 95% Intervals",
+       x = "Ordered Index", y = "y") +
+  theme_minimal()
+
+# Prediction plot test
+test_preds <- data.frame(
+  y_true = y.test,
+  mean = apply(BARTfit$yhat.test, 2, mean),
+  lower = apply(BARTfit$yhat.test, 2, quantile, 0.025),
+  upper = apply(BARTfit$yhat.test, 2, quantile, 0.975)
+) %>% arrange(y_true) %>% mutate(index = row_number())
+
+ggplot(test_preds, aes(x = index)) +
+  geom_ribbon(aes(ymin = lower, ymax = upper, fill = "95% Interval"), alpha = 0.4, show.legend = TRUE) +
+  geom_line(aes(y = mean, color = "Predicted Mean")) +
+  geom_line(aes(y = y_true, color = "True y")) +
+  scale_color_manual(name = "Line", values = c("Predicted Mean" = "blue", "True y" = "black")) +
+  scale_fill_manual(name = "Interval", values = c("95% Interval" = "lightblue")) +
+  labs(title = "Test Data: Ordered Predictions with 95% Intervals",
+       x = "Ordered Index", y = "y") +
+  theme_minimal()
+
+# Relevant regressors
+Js <- c(10, 20, 50, 100, 200)
+VarImportance <- matrix(0, length(Js), K)
+l <- 1
+for (j in Js){
+  BARTfit <- wbart(x.train = X.train, y.train = y.train, x.test = X.test, base = alpha,
+                   power = beta, k = k, sigdf = v, sigquant = q, ntree = j,
+                   ndpost = MCMCiter, nskip = burnin, keepevery = thinning)
+  VarImportance[l, ] <- BARTfit[["varcount.mean"]]/j
+  l <- l + 1
+}
+
+library(tidyr)
+# Assign row and column names for clarity
+rownames(VarImportance) <- c("10", "20", "50", "100", "200")
+colnames(VarImportance) <- as.character(1:10)
+
+# Convert to long format for ggplot2
+importance_df <- as.data.frame(VarImportance) %>%
+  mutate(trees = rownames(.)) %>%
+  pivot_longer(
+    cols = -trees,
+    names_to = "variable",
+    values_to = "percent_used"
+  )
+
+# Make variable numeric for plotting
+importance_df$variable <- as.numeric(importance_df$variable)
+
+importance_df$trees <- factor(importance_df$trees, levels = c("10", "20", "50", "100", "200"))
+
+ggplot(importance_df, aes(x = variable, y = percent_used, color = trees, linetype = trees)) +
+  geom_line() +
+  geom_point() +
+  scale_color_manual(values = c("10" = "red", "20" = "green", "50" = "blue", "100" = "cyan", "200" = "magenta")) +
+  scale_x_continuous(breaks = 1:10) +
+  labs(x = "variable", y = "percent used", color = "#trees", linetype = "#trees") +
+  theme_minimal()
