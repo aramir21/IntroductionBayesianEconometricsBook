@@ -204,3 +204,168 @@ ggplot(importance_df, aes(x = variable, y = percent_used, color = trees, linetyp
   scale_x_continuous(breaks = 1:10) +
   labs(x = "variable", y = "percent used", color = "#trees", linetype = "#trees") +
   theme_minimal()
+
+####### Simulation: Gaussian process ########
+rm(list = ls())
+set.seed(10101)
+
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(MASS)
+
+# Simulation setup
+n <- 100
+x <- seq(0, 1, length.out = n)
+sigma_f <- 1
+l <- 0.2
+sigma_n <- 1e-8
+
+# Squared Exponential Kernel function
+SE_kernel <- function(x1, x2, sigma_f, l) {
+  outer(x1, x2, function(a, b) sigma_f^2 * exp(-0.5 * (a - b)^2 / l^2))
+}
+
+K <- SE_kernel(x, x, sigma_f, l) + diag(sigma_n, n)
+samples <- mvrnorm(n = 5, mu = rep(0, n), Sigma = K)
+
+# Transpose and rename columns to f1, f2, ..., f5
+samples_t <- t(samples)
+colnames(samples_t) <- paste0("f", 1:5)
+
+# Convert to tidy data frame
+df <- data.frame(x = x, samples_t) |>
+  pivot_longer(cols = -x, names_to = "draw", values_to = "value")
+
+# Plot
+ggplot(df, aes(x = x, y = value, color = draw)) +
+  geom_line(linewidth = 1) +
+  labs(
+    title = "Simulated Gaussian Process Draws",
+    x = "x", y = "f(x)", color = "Function"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "top")
+
+####### Given 4 observations, and one realization of a GP ###### 
+rm(list = ls())
+set.seed(10101)
+library(ggplot2)
+library(MASS)
+
+# Define the squared exponential kernel
+SE_kernel <- function(x1, x2, sigma_f, l) {
+  outer(x1, x2, function(a, b) sigma_f^2 * exp(-0.5 * (a - b)^2 / l^2))
+}
+
+# Define the input space and observed points
+x_star <- seq(0, 1, length.out = 200)
+x0 <- c(0.1, 0.2, 0.5, 0.9)
+y0 <- sin(2 * pi * x0)
+
+# Hyperparameters
+sigma_f <- 1
+l <- 0.2
+sigma_n <- 1e-8  # Jitter term for stability
+
+# Compute covariance matrices
+K_x0x0 <- SE_kernel(x0, x0, sigma_f, l) + diag(sigma_n, length(x0))
+K_xstarx0 <- SE_kernel(x_star, x0, sigma_f, l)
+K_xstarxstar <- SE_kernel(x_star, x_star, sigma_f, l) + diag(sigma_n, length(x_star))
+
+# Compute posterior mean and covariance
+K_inv <- solve(K_x0x0)
+posterior_mean <- K_xstarx0 %*% K_inv %*% y0
+posterior_cov <- K_xstarxstar - K_xstarx0 %*% K_inv %*% t(K_xstarx0)
+
+# Sample from the posterior
+sample_draw <- sin(2 * pi * x_star) 
+# Compute 95% intervals
+posterior_sd <- sqrt(diag(posterior_cov))
+lower <- posterior_mean - 1.96 * posterior_sd
+upper <- posterior_mean + 1.96 * posterior_sd
+
+# Data frame for plotting
+df <- data.frame(
+  x = x_star,
+  mean = posterior_mean,
+  lower = lower,
+  upper = upper,
+  sample = sample_draw
+)
+
+obs <- data.frame(x = x0, y = y0)
+
+# Plot
+ggplot(df, aes(x = x)) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), fill = "lightblue", alpha = 0.4) +
+  geom_line(aes(y = mean), color = "blue", linewidth = 1.2) +
+  geom_line(aes(y = sample), color = "darkgreen", linewidth = 1, linetype = "dashed") +
+  geom_point(data = obs, aes(x = x, y = y), color = "red", size = 3) +
+  labs(
+    title = "Gaussian Process with Conditioning Points",
+    x = "x", y = "f(x)",
+    caption = "Blue: Posterior mean | Light blue: 95% interval | Dashed green: Population | Red: Observed points"
+  ) +
+  theme_minimal(base_size = 14)
+
+####### Gaussian Process #########
+library(DiceKriging)
+library(ggplot2)
+# Simulated data
+set.seed(123)
+n <- 20
+x <- matrix(runif(n), ncol = 1)
+y <- sin(2 * pi * x) + rnorm(n, sd = 0.1)
+
+# Fixed values
+fixed_theta <- 0.2     # length-scale
+fixed_sigma2 <- 1      # process variance
+fixed_nugget <- 0.01   # noise variance
+
+# Fit model with fixed hyperparameters
+fit_km <- km(
+  design = data.frame(x = x),
+  response = y,
+  covtype = "gauss",
+  nugget = fixed_nugget,
+  nugget.estim = FALSE,
+  coef.trend = 0,               # intercept (optional)
+  coef.cov = fixed_theta,       # fixed length-scale
+  coef.var = fixed_sigma2,      # fixed process variance
+  estim.method = "none"         # disables hyperparameter estimation
+)
+
+# Check that parameters were fixed
+fit_km@covariance@range.val  # Should return 0.2
+fit_km@covariance@sd2        # Should return 1
+fit_km@noise.var             # noise variance (nugget)
+
+
+# Prediction grid
+x_grid <- seq(0, 1, length.out = 200)
+X_grid <- data.frame(x = x_grid)
+
+# Predict mean and standard error
+pred <- predict(fit_km, newdata = X_grid, type = "UK", se.compute = TRUE)
+
+# Construct data frame for plotting
+pred_df <- data.frame(
+  x = x_grid,
+  mean = pred$mean,
+  lower = pred$mean - 1.96 * pred$sd,
+  upper = pred$mean + 1.96 * pred$sd
+)
+
+# Plot
+ggplot() +
+  geom_ribbon(data = pred_df, aes(x = x, ymin = lower, ymax = upper), fill = "lightblue", alpha = 0.5) +
+  geom_line(data = pred_df, aes(x = x, y = mean), color = "blue") +
+  geom_point(data = data.frame(x = x, y = y), aes(x = x, y = y), color = "black", size = 1) +
+  labs(title = "Gaussian Process Regression with DiceKriging", x = "x", y = "y") +
+  theme_minimal()
+
+fit_km@covariance@range.val  # lengthscale (ℓ)
+fit_km@covariance@sd2        # process variance (σ²_f)
+fit_km@noise.var             # noise variance (σ²)
+
