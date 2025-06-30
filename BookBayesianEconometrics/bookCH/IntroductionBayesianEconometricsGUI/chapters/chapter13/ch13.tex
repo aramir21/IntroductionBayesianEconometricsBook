@@ -589,7 +589,7 @@ Figure~\ref{figRelvVar} shows the relative frequency with which each variable is
 	\label{figRelvVar}
 \end{figure}
 
-\section{Gaussian processes}\label{13_4}
+\section{Gaussian process}\label{13_4}
 A Gaussian Process (GP) is an infinite collection of random variables, any finite subset of which follows a joint Gaussian distribution. A GP is fully specified by its mean function and covariance function, that is,
 \begin{align*}
 	f(\mathbf{x}) &\sim GP(m(\mathbf{x}), k(\mathbf{x}, \mathbf{x}')),
@@ -605,7 +605,7 @@ where \( \sigma^2_f \) is the signal variance, which controls the vertical varia
 
 The squared exponential kernel implies that the function is infinitely differentiable, leading to very smooth function draws. While this smoothness may be desirable in some applications, it can be too restrictive in others. Alternative kernels like the Matérn class allow for more flexibility by controlling the degree of differentiability \cite{rasmussen2006gaussian}.
 
-A Gaussian Process (GP) can be interpreted as a prior distribution over a space of functions. The starting point in working with GPs is the specification of this prior before any data are observed. The following code illustrates five sample paths drawn from a GP with a squared exponential kernel, assuming a signal variance \( \sigma_f^2 = 1 \) and a length-scale \( l = 0.2 \), evaluated over a grid of input values \( x \in [0,1] \). A small \textit{jitter term} is added to the covariance matrix to ensure numerical stability during simulation. Figure \ref{figGPsim} displays the five realizations drawn from the Gaussian Process.
+A GP can be interpreted as a prior distribution over a space of functions. The starting point in working with GPs is the specification of this prior before any data are observed. The following code illustrates five sample paths drawn from a GP with a squared exponential kernel, assuming a signal variance \( \sigma_f^2 = 1 \) and a length-scale \( l = 0.2 \), evaluated over a grid of input values \( x \in [0,1] \). A small \textit{jitter term} is added to the covariance matrix to ensure numerical stability during simulation. Figure \ref{figGPsim} displays the five realizations drawn from the Gaussian Process.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -670,7 +670,7 @@ where the \( (i,j) \)-th entry of the covariance matrix \( \mathbf{K}(\mathbf{X}
 
 If we are interested in the properties of a function evaluated at a finite set of input points \( \{(f_i, x_i)\}_{i=1}^N\), inference can be performed using only those points, effectively disregarding the uncountably infinite values the function may take elsewhere.
 
-The following code illustrates how to perform inference for a Gaussian Process (GP) given four observed points \( \{(f_i, x_i)\}_{i=1}^4 \), assuming that the true underlying process is
+The following code illustrates how to perform inference for a GP given four observed points \( \{(f_i, x_i)\}_{i=1}^4 \), assuming that the true underlying process is
 \[
 f_i = \sin(2\pi x_i).
 \]
@@ -777,7 +777,74 @@ where
 	\operatorname{cov}(\mathbf{f}_*) &= \mathbf{K}(\mathbf{X}_*, \mathbf{X}_*) - \mathbf{K}(\mathbf{X}_*, \mathbf{X}) [\mathbf{K}(\mathbf{X}, \mathbf{X}) + \sigma^2 \mathbf{I}_N]^{-1} \mathbf{K}(\mathbf{X}, \mathbf{X}_*).
 \end{align*}
 
-Therefore, Gaussian Process (GP) regression provides a flexible and efficient nonparametric framework for predicting unobserved outputs, with increasing accuracy as more data become available. GPs are also widely used to estimate unknown functions in Bayesian inference settings, owing to their favorable computational properties and posterior consistency under mild conditions \cite{choi2007posterior, stuart2018posterior}. Moreover, predictive accuracy can be enhanced by incorporating derivative information, since the derivative of a Gaussian process is itself a Gaussian process \cite{solak2003derivative}.
+Therefore, GP regression provides a flexible and efficient nonparametric framework for predicting unobserved outputs, with increasing accuracy as more data become available. GPs are also widely used to estimate unknown functions in Bayesian inference settings, owing to their favorable computational properties and posterior consistency under mild conditions \cite{choi2007posterior, stuart2018posterior}. Moreover, predictive accuracy can be enhanced by incorporating derivative information, since the derivative of a GP is itself a GP \cite{solak2003derivative}.\\
+
+\textbf{Example: Simulation exercise to study GP performance}
+
+We simulate the process
+\begin{align*}
+	f_i & = \sin(2\pi x_{i1}) + \cos(2\pi x_{i2}) + \sin(x_{i1} x_{i2}),
+\end{align*}
+where $x_{i1}$ and $x_{i2}$ are independently drawn from a uniform distribution on the interval $[0, 1]$, for $i = 1, 2, \dots, 100$.
+
+We use the \textit{DiceKriging} package in \textbf{R} to estimate and make predictions using a GP. This package applies maximum likelihood estimation to infer the length-scale parameters ($l_k$) and the signal variance ($\sigma_f^2$). Note that there are two separate length-scale parameters, one for each input variable. The following code illustrates how to carry out this example, and Figure~\ref{GPsim3D} displays a 3D plot with the observed points and the posterior mean surface. The package also provides pointwise credible intervals for the predictions.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation: $f_i=\sin(2\pi x_{i1}) + \cos(2\pi x_{i2}) + \sin(x_{i1} x_{i2})$ and Gaussian process}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+# Load required packages
+library(DiceKriging)
+library(rgl)
+
+# Simulate training data
+set.seed(10101)
+n_train <- 100
+x1 <- runif(n_train)
+x2 <- runif(n_train)
+X_train <- data.frame(x1 = x1, x2 = x2)
+
+# True function without noise
+f_train <- sin(2 * pi * X_train$x1) + cos(2 * pi * X_train$x2) + sin(X_train$x1 * X_train$x2)
+
+# Fit Gaussian Process
+fit_km <- km(design = X_train, response = f_train, covtype = "gauss", nugget = 1e-10)
+
+# Prediction grid
+grid_points <- 30
+x1_seq <- seq(0, 1, length.out = grid_points)
+x2_seq <- seq(0, 1, length.out = grid_points)
+grid <- expand.grid(x1 = x1_seq, x2 = x2_seq)
+
+# Predict GP surface
+pred <- predict(fit_km, newdata = grid, type = "UK")
+z_pred <- matrix(pred$mean, nrow = grid_points, ncol = grid_points)
+
+# Plot
+persp3d(x = x1_seq, y = x2_seq, z = z_pred,
+col = "lightblue", alpha = 0.7,
+xlab = "x1", ylab = "x2", zlab = "GP Mean")
+points3d(x = X_train$x1, y = X_train$x2, z = f_train, col = "red", size = 8)
+
+fit_km@covariance@range.val # length-scale
+fit_km@covariance@sd2 # Signal variance
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{figure}[!h]
+	\centering
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter13/figures/GPsim3D.png}
+	\caption{Simulation: $f_i=\sin(2\pi x_{i1}) + \cos(2\pi x_{i2}) + \sin(x_{i1} x_{i2})$ and Gaussian process}
+	\label{GPsim3D}
+\end{figure} 
+
+A limitation of the \textit{DiceKriging} package is that it is designed for deterministic simulations and, consequently, does not estimate the noise variance. Therefore, in Exercise 6, we ask to simulate the process
+\[
+f_i = \sin(2\pi x_{i1}) + \cos(2\pi x_{i2}) + \sin(x_{i1} x_{i2}) + \mu_i,
+\]
+where \( \mu_i \overset{\text{i.i.d.}}{\sim} \mathcal{N}(0, 0.1^2) \), and to use an empirical Bayes approach to estimate the hyperparameters. These estimated hyperparameters should then be used to perform GP prediction.
 
 Remember the relevance of GP in Bayesian optimization, and consequently, in pseudo-marginal MCMC, which is a case where the likelihood function cannot be evaluated exactly but can be estimated unbiasedly. This method is particularly useful in scenarios where latent variables or complex models make direct likelihood computations intractable.
 
@@ -865,6 +932,22 @@ Variational Bayes, a method rooted in machine learning \cite{wainwright2008graph
 	\item \textbf{Simulation exercise: the BART model continues} 
 	
 	Compute Friedman’s partial dependence functions \cite{friedman2001greedy} for all variables in the BART model simulation example, and plot the posterior mean along with the 95\% credible intervals.
+	
+	\item \textbf{Simulation exercise: The Gaussian Process simulation continues}
+	
+	Simulate the process
+	\[
+	f_i = \sin(2\pi x_{i1}) + \cos(2\pi x_{i2}) + \sin(x_{i1} x_{i2}) + \mu_i,
+	\]
+	where \( \mu_i \overset{\text{i.i.d.}}{\sim} {N}(0, 0.1^2) \), \( x_{ik} \sim {U}(0,1) \) for \( k = 1, 2 \), and the sample size is 500. 
+	
+	Define a grid of 20 evenly spaced values between 0 and 1 for each covariate \( x_{ik} \), and use this grid to perform prediction.
+	
+	Estimate the hyperparameters of the Gaussian Process by maximizing the log marginal likelihood. Then, use the \textit{km} function from the \textit{DiceKriging} package to fit the Gaussian Process, fixing the noise variance at the value that maximizes the log marginal likelihood.
+	
+	Finally, use the fitted model to predict the outputs on the grid points, and produce a 3D plot showing the predicted surface along with the training data points.
+	
+	
 	
 	  
 \end{enumerate}

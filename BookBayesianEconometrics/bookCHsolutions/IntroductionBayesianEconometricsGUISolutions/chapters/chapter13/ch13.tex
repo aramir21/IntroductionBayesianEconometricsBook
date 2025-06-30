@@ -390,4 +390,129 @@ ggplot(summary_df, aes(x = x, y = mean)) + geom_line(color = "blue") + geom_ribb
 	\caption[List of figure caption goes here]{Partial dependence function: Variable 10.}\label{figPartial10}
 \end{figure}
 
+\item \textbf{Simulation exercise: The Gaussian Process simulation continues}
+
+	Simulate the process
+\[
+f_i = \sin(2\pi x_{i1}) + \cos(2\pi x_{i2}) + \sin(x_{i1} x_{i2}) + \mu_i,
+\]
+where \( \mu_i \overset{\text{i.i.d.}}{\sim} {N}(0, 0.1^2) \), \( x_{ik} \sim {U}(0,1) \) for \( k = 1, 2 \), and the sample size is 500. 
+
+Define a grid of 20 evenly spaced values between 0 and 1 for each covariate \( x_{ik} \), and use this grid to perform prediction.
+
+Estimate the hyperparameters of the Gaussian Process by maximizing the log marginal likelihood. Then, use the \textit{km} function from the \textit{DiceKriging} package to fit the Gaussian Process, fixing the noise variance at the value that maximizes the log marginal likelihood.
+
+Finally, use the fitted model to predict the outputs on the grid points, and produce a 3D plot showing the predicted surface along with the training data points.
+
+\textbf{Answer} 
+
+We use the Cholesky decomposition to optimize time calculating the inverse of the covariance matrix. In particular, let \( \mathbf{K} \in \mathbb{R}^{N \times N} \) be a symmetric positive definite matrix. Then, it admits a Cholesky decomposition:
+	
+	\[
+	\mathbf{K} = \mathbf{L} \mathbf{L}^\top,
+	\]
+	
+	where \( \mathbf{L} \) is a lower triangular matrix with positive diagonal entries.
+	
+	The determinant of \( \mathbf{K} \) can be computed using the Cholesky factor:
+	
+	\[
+	\det(\mathbf{K}) = \det(\mathbf{L} \mathbf{L}^\top) = \det(\mathbf{L})^2.
+	\]
+	
+	Since \( \mathbf{L} \) is lower triangular, its determinant is the product of its diagonal elements:
+	
+	\[
+	\det(\mathbf{K}) = \left( \prod_{i=1}^N L_{ii} \right)^2.
+	\]
+	
+	Equivalently, the log-determinant is:
+	
+	\[
+	\log |\mathbf{K}| = 2 \sum_{i=1}^N \log L_{ii}.
+	\]
+	
+	The inverse of \( \mathbf{K} \) can also be computed using the Cholesky factor:
+	
+	\[
+	\mathbf{K}^{-1} = (\mathbf{L} \mathbf{L}^\top)^{-1} = (\mathbf{L}^\top)^{-1} \mathbf{L}^{-1}.
+	\]
+	
+	This is useful computationally because triangular systems can be solved efficiently via forward and backward substitution:
+	
+	\begin{enumerate}
+		\item Solve \( \mathbf{L} \mathbf{z} = \mathbf{b} \) for \( \mathbf{z} \) (forward solve),
+		\item Solve \( \mathbf{L}^\top \mathbf{x} = \mathbf{z} \) for \( \mathbf{x} \) (backward solve),
+	\end{enumerate}
+	
+	then,  \( \mathbf{x} = (\mathbf{L}^\top)^{-1} \mathbf{z} = (\mathbf{L}^\top)^{-1} \mathbf{L}^{-1}  \mathbf{b} = (\mathbf{L}\mathbf{L}^\top)^{-1} \mathbf{b} = \mathbf{K}^{-1}  \mathbf{b} \).
+	Thus, we avoid computing the matrix inverse, which requires \( O(N^3) \) operations. Instead, it is more efficient and numerically stable to solve triangular systems of equations, which arise naturally from the Cholesky decomposition.
+	
+	The following code shows how to perform this exercise, and Figure \ref{GPsim3D} displays the 3D plot.
+	
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation: $f_i=\sin(2\pi x_{i1}) + \cos(2\pi x_{i2}) + \sin(x_{i1} x_{i2}) + \mu_i$ and Gaussian process}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(10101)
+library(fields); library(DiceKriging); library(ggplot2)
+# Simulate training data
+n_train <- 500
+x1 <- runif(n_train); x2 <- runif(n_train)
+X_train <- data.frame(x1 = x1, x2 = x2)
+sig <- 0.1; u <- rnorm(n_train, mean = 0, sd = sig)
+# True function without noise
+f_train <- sin(2 * pi * X_train$x1) + cos(2 * pi * X_train$x2) + sin(X_train$x1 * X_train$x2)
+y_train <- scale(f_train + u)
+# Empirical Bayes: Optimize the log marginal likelihood
+log_marginal_likelihood <- function(par, X, y) {
+	sigma2_f <- par[1]; l2 <- par[2]; sigma2_n <- par[3]; n <- nrow(X)
+	# Ensure parameters are positive
+	if (sigma2_f <= 0 | l2 <= 0 | sigma2_n <= 0) return(Inf)
+	# Squared exponential kernel
+	dists <- rdist(X)
+	K <- sigma2_f * exp(-0.5 * (dists^2) / l2)
+	# Add noise variance + jitter for numerical stability
+	K <- K + (sigma2_n + 1e-8) * diag(n)
+	# Cholesky decomposition
+	L <- tryCatch(chol(K), error = function(e) return(NULL))
+	if (is.null(L)) return(Inf)
+	alpha <- backsolve(t(L), forwardsolve(L, y)) #--> K^{-1}y
+	log_det_K <- 2 * sum(log(diag(L)))
+	lml <- -0.5 * t(y) %*% alpha - 0.5 * log_det_K - 0.5 * n * log(2 * pi)
+	return(-as.numeric(lml))  # Negative log-marginal likelihood
+}
+par0 <- rep(1, 3)
+ResOpt <- optim(par = par0, fn = log_marginal_likelihood, method = "L-BFGS-B", lower = c(1e-5, 1e-5), X = X_train, y = y_train)
+theta_hat <- ResOpt$par
+sigma2_f_hat <- theta_hat[1]; l2_hat <- theta_hat[2]; sigma2_n_hat <- theta_hat[3]
+# Grid for prediction 
+grid_points <- 20
+x1_seq <- seq(0, 1, length.out = grid_points)
+x2_seq <- seq(0, 1, length.out = grid_points)
+X_new <- expand.grid(x1 = x1_seq, x2 = x2_seq)
+# Fit Gaussian Process
+fit_km <- km(design = X_train, response = y_train, covtype = "gauss", noise.var = rep(sigma2_n_hat, n_train))
+# Predict GP surface
+pred <- predict(fit_km, newdata = X_new, type = "UK")
+z_pred <- matrix(pred$mean, nrow = grid_points, ncol = grid_points)
+# Plot
+persp3d(x = x1_seq, y = x2_seq, z = z_pred, col = "lightblue", alpha = 0.7, xlab = "x1", ylab = "x2", zlab = "GP Mean")
+points3d(x = X_train$x1, y = X_train$x2, z = y_train, col = "red", size = 8)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{figure}[!h]
+	\centering
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter13/figures/GPsim3D.png}
+	\caption{Simulation: $f_i=\sin(2\pi x_{i1}) + \cos(2\pi x_{i2}) + \sin(x_{i1} x_{i2}) + \mu_i$ and Gaussian process}
+	\label{GPsim3D}
+\end{figure} 
+
+	
+	
+	
+
 \end{enumerate}

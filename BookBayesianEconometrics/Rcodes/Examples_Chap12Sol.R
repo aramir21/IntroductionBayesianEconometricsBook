@@ -309,3 +309,107 @@ ggplot(summary_df, aes(x = x, y = mean)) +
   geom_ribbon(aes(ymin = lower, ymax = upper), fill = "lightblue", alpha = 0.4) +
   labs(x = "Grid point", y = "Partial effect", title = "Partial Dependence Function with 95% Intervals") +
   theme_minimal()
+
+######## Gaussian Process #########
+rm(list = ls()); set.seed(10101)
+library(fields); library(DiceKriging); library(ggplot2)
+# Simulate training data
+n_train <- 500
+x1 <- runif(n_train)
+x2 <- runif(n_train)
+X_train <- data.frame(x1 = x1, x2 = x2)
+sig <- 0.1
+u <- rnorm(n_train, mean = 0, sd = sig)
+# True function without noise
+f_train <- sin(2 * pi * X_train$x1) + cos(2 * pi * X_train$x2) + sin(X_train$x1 * X_train$x2)
+y_train <- scale(f_train + u)
+
+# Empirical Bayes: Optimize the log marginal likelihood
+log_marginal_likelihood <- function(par, X, y) {
+  sigma2_f <- par[1]
+  l2 <- par[2]
+  sigma2_n <- par[3]
+  n <- nrow(X)
+  
+  # Ensure parameters are positive
+  if (sigma2_f <= 0 | l2 <= 0 | sigma2_n <= 0) return(Inf)
+  
+  # Squared exponential kernel
+  dists <- rdist(X)
+  K <- sigma2_f * exp(-0.5 * (dists^2) / l2)
+  
+  # Add noise variance + jitter for numerical stability
+  K <- K + (sigma2_n + 1e-8) * diag(n)
+  
+  # Cholesky decomposition
+  L <- tryCatch(chol(K), error = function(e) return(NULL))
+  if (is.null(L)) return(Inf)
+  
+  alpha <- backsolve(t(L), forwardsolve(L, y)) #--> K^{-1}y
+  log_det_K <- 2 * sum(log(diag(L)))
+  lml <- -0.5 * t(y) %*% alpha - 0.5 * log_det_K - 0.5 * n * log(2 * pi)
+  
+  return(-as.numeric(lml))  # Return negative log-marginal likelihood
+}
+par0 <- rep(1, 3)
+# log_marginal_likelihood(par = par0, X = X_train, y = y_train)
+# log_marginal_likelihood(par = c(11.6, 0.52^2, 0.1^2), X = X_train, y = y_train)
+ResOpt <- optim(par = par0, fn = log_marginal_likelihood, method = "L-BFGS-B",
+                lower = c(1e-5, 1e-5), X = X_train, y = y_train)
+# ResOpt$par
+# ResOpt$value
+theta_hat <- ResOpt$par
+sigma2_f_hat <- theta_hat[1]
+l2_hat <- theta_hat[2]
+sigma2_n_hat <- theta_hat[3]
+
+# Grid for prediction 
+grid_points <- 20
+x1_seq <- seq(0, 1, length.out = grid_points)
+x2_seq <- seq(0, 1, length.out = grid_points)
+X_new <- expand.grid(x1 = x1_seq, x2 = x2_seq)
+
+# Fit Gaussian Process
+fit_km <- km(design = X_train, response = y_train, covtype = "gauss",
+             noise.var = rep(sigma2_n_hat, n_train))
+
+# Predict GP surface
+pred <- predict(fit_km, newdata = X_new, type = "UK")
+z_pred <- matrix(pred$mean, nrow = grid_points, ncol = grid_points)
+# Plot
+persp3d(x = x1_seq, y = x2_seq, z = z_pred,
+        col = "lightblue", alpha = 0.7,
+        xlab = "x1", ylab = "x2", zlab = "GP Mean")
+points3d(x = X_train$x1, y = X_train$x2, z = y_train, col = "red", size = 8)
+
+# fit_km@covariance@range.val # length-scale
+# fit_km@covariance@sd2 # Signal variance
+# log_marginal_likelihood(par = c(fit_km@covariance@sd2, fit_km@covariance@range.val^2, sigma2_n_hat), X = X_train, y = y_train)
+
+
+# # Covariance matrices
+# K <- sigma2_f_hat * exp(-0.5 * rdist(X_train)^2 / l2_hat) +
+#   (sigma2_n_hat + 1e-4) * diag(n_train)
+# 
+# K_s <- sigma2_f_hat * exp(-0.5 * rdist(X_new, X_train)^2 / l2_hat)
+# K_ss <- sigma2_f_hat * exp(-0.5 * rdist(X_new)^2 / l2_hat)
+# 
+# # Prediction new points
+# L <- chol(K)
+# alpha <- backsolve(t(L), forwardsolve(L, y_train)) # --> K^{-1}y
+# 
+# # Posterior mean
+# mu_post <- K_s %*% alpha
+# z_pred <- matrix(mu_post, nrow = grid_points, ncol = grid_points)
+# 
+# # Posterior covariance
+# v <- forwardsolve(L, t(K_s)) # --> L^{-1}K_s'
+# cov_post <- K_ss - t(v) %*% v
+# sd_post <- sqrt(pmax(diag(cov_post), 0))  # ensure no negative values
+# 
+# # Plot
+# persp3d(x = x1_seq, y = x2_seq, z = z_pred,
+#         col = "lightblue", alpha = 0.7,
+#         xlab = "x1", ylab = "x2", zlab = "GP Mean")
+# points3d(x = X_train$x1, y = X_train$x2, z = y_train, col = "red", size = 8)
+

@@ -309,11 +309,46 @@ ggplot(df, aes(x = x)) +
   ) +
   theme_minimal(base_size = 14)
 
+####### GP with two regressors ###### 
+rm(list = ls()); set.seed(10101)
+# Load required packages
+library(DiceKriging); library(rgl)
+
+# Simulate training data
+n_train <- 100
+x1 <- runif(n_train)
+x2 <- runif(n_train)
+X_train <- data.frame(x1 = x1, x2 = x2)
+
+# True function without noise
+f_train <- sin(2 * pi * X_train$x1) + cos(2 * pi * X_train$x2) + sin(X_train$x1 * X_train$x2)
+
+# Fit Gaussian Process
+fit_km <- km(design = X_train, response = f_train, covtype = "gauss", nugget = 1e-10)
+
+# Prediction grid
+grid_points <- 30
+x1_seq <- seq(0, 1, length.out = grid_points)
+x2_seq <- seq(0, 1, length.out = grid_points)
+grid <- expand.grid(x1 = x1_seq, x2 = x2_seq)
+
+# Predict GP surface
+pred <- predict(fit_km, newdata = grid, type = "UK")
+z_pred <- matrix(pred$mean, nrow = grid_points, ncol = grid_points)
+
+# Plot
+persp3d(x = x1_seq, y = x2_seq, z = z_pred,
+        col = "lightblue", alpha = 0.7,
+        xlab = "x1", ylab = "x2", zlab = "GP Mean")
+points3d(x = X_train$x1, y = X_train$x2, z = f_train, col = "red", size = 8)
+
+fit_km@covariance@range.val # length-scale
+fit_km@covariance@sd2 # Signal variance
+
 ####### Gaussian Process #########
-library(DiceKriging)
-library(ggplot2)
+rm(list = ls()); set.seed(10101)
+library(DiceKriging); library(ggplot2)
 # Simulated data
-set.seed(123)
 n <- 20
 x <- matrix(runif(n), ncol = 1)
 y <- sin(2 * pi * x) + rnorm(n, sd = 0.1)
@@ -365,7 +400,7 @@ ggplot() +
   labs(title = "Gaussian Process Regression with DiceKriging", x = "x", y = "y") +
   theme_minimal()
 
-fit_km@covariance@range.val  # lengthscale (ℓ)
-fit_km@covariance@sd2        # process variance (σ²_f)
-fit_km@noise.var             # noise variance (σ²)
+fit_km@covariance@range.val  # lengthscale 
+fit_km@covariance@sd2        # process variance
+fit_km@noise.var             # noise variance
 
