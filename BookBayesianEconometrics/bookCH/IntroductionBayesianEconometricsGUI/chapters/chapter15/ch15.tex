@@ -1092,7 +1092,15 @@ summary(coda::mcmc(sig2VBscratch)); summary(coda::mcmc(BetasVBscratch))
 \section{Summary}\label{sec15_3}
 In this chapter, we present approximate methods designed for situations where the likelihood function does not have a closed-form expression (e.g., ABC and BSL), or where the sample size and parameter space are large (e.g., INLA and VI), making traditional MCMC and importance sampling (IS) methods ineffective. We provide the theoretical foundations and include applications to illustrate the potential of these methods.
 
-\textit{Simulation-based algorithms} are affected by the \textit{curse of dimensionality} in the parameter space, while \textit{optimization-based approaches} typically require the evaluation of likelihood functions. As a result, recent developments, known as \textit{hybrid methods}, combine these two strategies to address scenarios where both challenges arise simultaneously. See \cite{martin2024approximating} for further references on this topic.
+\textit{Simulation-based algorithms} suffer from the \textit{curse of dimensionality} in the parameter space, while \textit{optimization-based approaches} typically require explicit evaluation of likelihood functions. To address cases where both challenges arise simultaneously, recent developments, referred to as \textit{hybrid methods}, combine these strategies with the \textit{pseudo-marginal} approach \cite{andrieu2009pseudoefficient, martin2024approximating}. 
+
+The intuition behind the \textit{pseudo-marginal} method is straightforward: introduce a set of auxiliary random variables \( \mathbf{z} \) with density \( p(\mathbf{z}) \), such that an unbiased estimator of the marginal likelihood is obtained even when a closed-form expression is unavailable. Specifically, if \(\mathbb{E}_{\mathbf{z}}[p(\mathbf{y} \mid \boldsymbol{\theta}, \mathbf{z})] = \int_{\mathcal{Z}} p(\mathbf{y} \mid \boldsymbol{\theta}, \mathbf{z}) \, p(\mathbf{z}) \, d\mathbf{z} = p(\mathbf{y} \mid \boldsymbol{\theta}),
+\)
+then
+\(
+\hat{p}(\mathbf{y} \mid \boldsymbol{\theta}) = \frac{1}{S} \sum_{s=1}^S p(\mathbf{y} \mid \boldsymbol{\theta}, \mathbf{z}^{(s)}),
+\)
+where \( \mathbf{z}^{(s)} \sim p(\mathbf{z}) \), is a valid unbiased estimator of the marginal likelihood. As a result, the \textit{pseudo-marginal} method enables exact simulation-based inference for \( p(\mathbf{y} \mid \boldsymbol{\theta}) \) in situations where the likelihood cannot be evaluated analytically \cite{andrieu2009pseudoefficient}. When combined with variational Bayes, this approach facilitates inference in high-dimensional spaces even when the likelihood function is intractable \cite{tran2017variational}.
 
 \section{Exercises}\label{sec15_4}
 

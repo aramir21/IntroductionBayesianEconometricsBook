@@ -262,7 +262,6 @@ v <- 3; q <- 0.9; J <- 200
 # MCMC parameters
 MCMCiter <- 1000; burnin <- 100; thinning <- 1
 
-
 # Partial dependence function
 BARTfit <- wbart(x.train = X, y.train = y, base = alpha,
                  power = beta, k = k, sigdf = v, sigquant = q, ntree = J,
@@ -309,6 +308,110 @@ ggplot(summary_df, aes(x = x, y = mean)) +
   geom_ribbon(aes(ymin = lower, ymax = upper), fill = "lightblue", alpha = 0.4) +
   labs(x = "Grid point", y = "Partial effect", title = "Partial Dependence Function with 95% Intervals") +
   theme_minimal()
+
+######### Application BART: Conflict #########
+rm(list = ls())
+set.seed(10101)
+library(BART); library(tidyr)
+library(pROC); library(caret)
+
+# Load and prepare data
+Data <- read.csv("https://raw.githubusercontent.com/BEsmarter-consultancy/BSTApp/refs/heads/master/DataApp/Conflict.csv", sep = ",", header = TRUE, quote = "")
+X <- as.matrix(Data[, -c(1, 2)])
+y <- unlist(Data[, 2])
+
+niter <- 1000; burnin <- 200; J <- 200
+
+# Create 5-fold cross-validation indices
+folds <- createFolds(y, k = 5, list = TRUE, returnTrain = FALSE)
+
+thresholds <- seq(0.01, 0.99, by = 0.01)
+scores <- matrix(0, nrow = 5, ncol = length(thresholds))
+
+for (i in 1:5) {
+  test_idx <- folds[[i]]
+  train_idx <- setdiff(1:length(y), test_idx)
+  
+  X.train <- X[train_idx, ]
+  y.train <- y[train_idx]
+  X.test <- X[test_idx, ]
+  y.test <- y[test_idx]
+  
+  pf <- pbart(x.train = X.train, y = y.train, x.test = X.train, ntree = J, ndpost = niter, nskip = burnin)
+  prob_train <- pf$prob.test.mean
+  
+  for (j in 1:length(thresholds)) {
+    thresh <- thresholds[j]
+    preds <- ifelse(prob_train > thresh, 1, 0)
+    TP <- sum(preds == 1 & y.train == 1)
+    TN <- sum(preds == 0 & y.train == 0)
+    FP <- sum(preds == 1 & y.train == 0)
+    FN <- sum(preds == 0 & y.train == 1)
+    TPR <- TP / (TP + FN + 1e-8)
+    TNR <- TN / (TN + FP + 1e-8)
+    scores[i, j] <- TPR + TNR
+  }
+}
+
+mean_scores <- colMeans(scores)
+best_thresh <- thresholds[which.max(mean_scores)]
+cat("Optimal threshold by CV:", best_thresh, "\n")
+
+# Train/test split to evaluate final performance
+N <- nrow(X); K <- ncol(X)
+N.train <- floor(0.8 * N)
+X.train <- X[1:N.train, ]
+y.train <- y[1:N.train]
+X.test <- X[(N.train + 1):N, ]
+y.test <- y[(N.train + 1):N]
+
+pf_final <- pbart(x.train = X.train, y = y.train, x.test = X.test, ntree = 200, ndpost = 1000, nskip = 200)
+prob_test <- pf_final$prob.test.mean
+y_pred_test <- ifelse(prob_test > best_thresh, 1, 0)
+
+conf_mat <- table(Predicted = y_pred_test, Actual = y.test)
+accuracy <- mean(y_pred_test == y.test)
+
+print(conf_mat)
+cat("Test set accuracy:", round(accuracy, 3), "\n")
+
+# Relevant regressors
+Js <- c(10, 20, 50, 100, 200)
+VarImportance <- matrix(0, length(Js), K)
+l <- 1
+for (j in Js){
+  BARTfit <- BART::pbart(x.train = X.train, y = y.train, x.test = X.test, ntree = j, ndpost = niter, nskip = burnin)
+  VarImportance[l, ] <- BARTfit[["varcount.mean"]]/j
+  l <- l + 1
+}
+
+# Assign row and column names for clarity
+rownames(VarImportance) <- as.character(Js)
+colnames(VarImportance) <- as.character(1:K)
+
+# Convert to long format
+importance_df <- as.data.frame(VarImportance) %>%
+  mutate(trees = rownames(.)) %>%
+  pivot_longer(
+    cols = -trees,
+    names_to = "variable",
+    values_to = "percent_used"
+  )
+
+# Make variable numeric for plotting
+importance_df$variable <- as.numeric(importance_df$variable)
+
+importance_df$trees <- factor(importance_df$trees, levels = c("10", "20", "50", "100", "200"))
+
+ggplot(importance_df, aes(x = variable, y = percent_used, color = trees, linetype = trees)) +
+  geom_line() +
+  geom_point() +
+  scale_color_manual(values = c("10" = "red", "20" = "green", "50" = "blue", "100" = "cyan", "200" = "magenta")) +
+  scale_x_continuous(breaks = 1:K) +
+  labs(x = "variable", y = "percent used", color = "#trees", linetype = "#trees") +
+  theme_minimal()
+
+data.frame(Nanes = colnames(X), Frequency = VarImportance[1,])
 
 ######## Gaussian Process #########
 rm(list = ls()); set.seed(10101)
