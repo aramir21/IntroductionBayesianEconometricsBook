@@ -310,8 +310,7 @@ ggplot(summary_df, aes(x = x, y = mean)) +
   theme_minimal()
 
 ######### Application BART: Conflict #########
-rm(list = ls())
-set.seed(10101)
+rm(list = ls()); set.seed(10101)
 library(BART); library(tidyr)
 library(pROC); library(caret)
 

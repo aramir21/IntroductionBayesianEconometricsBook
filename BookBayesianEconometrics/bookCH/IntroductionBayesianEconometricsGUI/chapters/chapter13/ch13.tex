@@ -597,7 +597,7 @@ A Gaussian Process (GP) is an infinite collection of random variables, any finit
 where \( m(\mathbf{x}) = \mathbb{E}[f(\mathbf{x})] \) and \( k(\mathbf{x}, \mathbf{x}') = \mathbb{E}[(f(\mathbf{x}) - m(\mathbf{x}))(f(\mathbf{x}') - m(\mathbf{x}'))] \).  
 It is common to assume \( m(\mathbf{x}) = 0 \) to simplify calculations, although this is not required.
 
-Perhaps the most commonly used covariance function in Gaussian Processes (GPs) is the \textit{squared exponential} kernel \cite{jacobi2024posterior}, defined as
+Perhaps the most commonly used covariance function in Gaussian Processes (GPs) is the \textit{squared exponential} kernel (or \textit{radial basis function}) \cite{jacobi2024posterior}, defined as
 \begin{align*}
 	k(\mathbf{x}, \mathbf{x}') & = \sigma^2_f \exp\left(-\frac{1}{2l^2} \|\mathbf{x} - \mathbf{x}'\|^2\right),
 \end{align*}
@@ -779,7 +779,9 @@ where
 	\operatorname{cov}(\mathbf{f}_*) &= \mathbf{K}(\mathbf{X}_*, \mathbf{X}_*) - \mathbf{K}(\mathbf{X}_*, \mathbf{X}) [\mathbf{K}(\mathbf{X}, \mathbf{X}) + \sigma^2 \mathbf{I}_N]^{-1} \mathbf{K}(\mathbf{X}, \mathbf{X}_*).
 \end{align*}
 
-Therefore, GP regression provides a flexible and efficient nonparametric framework for predicting unobserved responses, with increasing accuracy as more data become available. GPs are widely used due to their favorable computational properties and posterior consistency under mild conditions \cite{choi2007posterior, stuart2018posterior}. Moreover, predictive accuracy can be enhanced by incorporating derivative information, since the derivative of a GP is itself a GP \cite{solak2003derivative}.\\
+Therefore, Gaussian Process (GP) regression provides a flexible and efficient nonparametric framework for predicting unobserved responses, with accuracy that improves as more data become available. GPs are widely used due to their favorable computational properties, including the availability of closed-form expressions, and posterior consistency under mild conditions \cite{choi2007posterior, stuart2018posterior}. Moreover, predictive performance can be further enhanced by incorporating derivative information, as the derivative of a GP is itself a GP \cite{solak2003derivative,jacobi2024posterior}. 
+
+However, a major limitation of GPs is the need to invert an \( N \times N \) covariance matrix, which requires \( O(N^3) \) computational operations, making them computationally expensive for large datasets. To address this, several scalable methods have been proposed that reduce the computational burden. For instance, \cite{wilson2015kernel,gardner2018product, pleiss2018constant} develop algorithms that reduce complexity to \( O(N) \).
 
 \textbf{Example: Simulation exercise to study GP performance}
 
@@ -848,12 +850,15 @@ f_i = \sin(2\pi x_{i1}) + \cos(2\pi x_{i2}) + \sin(x_{i1} x_{i2}) + \mu_i,
 \]
 where \( \mu_i \overset{\text{i.i.d.}}{\sim} \mathcal{N}(0, 0.1^2) \), and to use an empirical Bayes approach to estimate the hyperparameters. These estimated hyperparameters should then be used to perform GP prediction.
 
-Remember the relevance of GP in Bayesian optimization, and consequently, in pseudo-marginal MCMC, which is a case where the likelihood function cannot be evaluated exactly but can be estimated unbiasedly. This method is particularly useful in scenarios where latent variables or complex models make direct likelihood computations intractable.
-
-The kernel trick allows you to model nonlinear relationships using linear algorithms by working implicitly in a high-dimensional space.
-
 \section{Large data problems}\label{13_5}
-Review \cite{bardenet2017markov}
+In this section, we explore several methods developed to perform Bayesian inference when the sample size is large—specifically, when there is a large number of units, commonly referred to as \textit{tall datasets}.
+
+Performing Bayesian inference in such settings is particularly challenging because each iteration of an MCMC algorithm requires computations over all \( N \) observations when evaluating the likelihood function. One alternative is to use \textit{Variational Bayes} (see Chapter~\ref{chap15}); however, this approach can sometimes be difficult to implement or may have limitations in terms of uncertainty quantification.
+
+In scenarios where the observations are assumed to be independent, two major frameworks have been proposed to scale MCMC algorithms: \textit{divide-and-conquer approaches} and \textit{subsampling-based algorithms}. Divide-and-conquer methods partition the dataset into batches, perform MCMC separately on each subset, and then integrate the results to approximate the full posterior. In contrast, subsampling-based algorithms aim to reduce the number of data points used to evaluate the likelihood function at each MCMC iteration. For an excellent review of these frameworks, see \cite{bardenet2017markov}.
+
+
+
 \begin{itemize}
 	\item Subsampling MCMC: Firefly Monte Carlo \cite{Maclaurin2015}
 	\item Stochastic Gradient MCMC (SG-MCMC): Stochastic Gradient Langevin Dynamics (SGLD) and Stochastic Gradient Hamiltonian Monte Carlo (SGHMC). See \cite{nemeth2021stochastic,song2020extended,baker2019sgmcmc,chen2014stochastic,welling2011bayesian}
