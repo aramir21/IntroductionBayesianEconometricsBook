@@ -851,19 +851,94 @@ f_i = \sin(2\pi x_{i1}) + \cos(2\pi x_{i2}) + \sin(x_{i1} x_{i2}) + \mu_i,
 where \( \mu_i \overset{\text{i.i.d.}}{\sim} \mathcal{N}(0, 0.1^2) \), and to use an empirical Bayes approach to estimate the hyperparameters. These estimated hyperparameters should then be used to perform GP prediction.
 
 \section{Large data problems}\label{13_5}
-In this section, we explore several methods developed to perform Bayesian inference when the sample size is large—specifically, when there is a large number of units, commonly referred to as \textit{tall datasets}.
+In this section, we explore several methods developed to perform Bayesian inference when the sample size is large, particularly when there is a large number of observational units, commonly referred to as \textit{tall datasets}.
 
-Performing Bayesian inference in such settings is particularly challenging because each iteration of an MCMC algorithm requires computations over all \( N \) observations when evaluating the likelihood function. One alternative is to use \textit{Variational Bayes} (see Chapter~\ref{chap15}); however, this approach can sometimes be difficult to implement or may have limitations in terms of uncertainty quantification.
+Bayesian inference in such settings is computationally demanding because each iteration of an MCMC algorithm requires evaluating the likelihood function over all \( N \) observations. For large \( N \), this renders standard MCMC methods prohibitively expensive. Recent efforts have focused on developing scalable Monte Carlo algorithms that significantly reduce the computational cost compared to standard approaches. One alternative is to use \textit{Variational Bayes} (see Chapter~\ref{chap15}); however, it can be difficult to implement and may exhibit limitations in uncertainty quantification.
 
-In scenarios where the observations are assumed to be independent, two major frameworks have been proposed to scale MCMC algorithms: \textit{divide-and-conquer approaches} and \textit{subsampling-based algorithms}. Divide-and-conquer methods partition the dataset into batches, perform MCMC separately on each subset, and then integrate the results to approximate the full posterior. In contrast, subsampling-based algorithms aim to reduce the number of data points used to evaluate the likelihood function at each MCMC iteration. For an excellent review of these frameworks, see \cite{bardenet2017markov}.
+In scenarios where observations are assumed to be independent, two main frameworks have been proposed to scale MCMC algorithms: \textit{divide-and-conquer approaches} and \textit{subsampling-based algorithms}. Divide-and-conquer methods partition the dataset into disjoint subsets, run MCMC independently on each batch to obtain subposteriors, and then combine them to approximate the full posterior distribution. Subsampling-based algorithms, on the other hand, aim to reduce the number of data points used to evaluate the likelihood at each iteration, often relying on \textit{pseudo-marginal} MCMC methods \cite{andrieu2009pseudoefficient}. The key idea of pseudo-marginal MCMC is to augment the model with latent variables such that the sample average of the likelihood, computed over draws from these latent variables, provides an unbiased estimator of the marginal likelihood. This approach is particularly valuable when the marginal likelihood is not available in closed form. Moreover, the same principles can be adapted to reduce the computational burden of evaluating the log-likelihood. For an excellent review of divide-and-conquer and subsampling-based approaches, see \cite{bardenet2017markov}.
+
+\subsection{Divide-and-conquer methods}
+In \textit{divide-and-conquer} methods, the main idea is to partition the dataset and distribute the subsets across multiple computing cores. An independent MCMC algorithm is then executed on each subset to obtain a corresponding \textit{subposterior} distribution. The central challenge lies in accurately and efficiently combining these subposteriors into a single approximation of the full posterior distribution. Several approaches have been proposed to address this issue. For instance, \cite{wang2013parallelizing} develop a method based on the \textit{Weierstrass sampler} for parallelizing MCMC; \cite{minsker2015scalable} propose using the \textit{geometric median of posterior distributions}; \cite{scott2016bayes, rendell2020global, scott2022bayes} introduce the \textit{Consensus Monte Carlo} algorithm; and \cite{wu2017average} suggest combining \textit{rescaled subposteriors}.
+
+In divide-and-conquer methods, the dataset is divided into \( B \) disjoint batches $\mathbf{y}_1, \mathbf{y}_2, \dots, \mathbf{y}_B$, and the posterior is rewritten using the identity:
+\begin{align*}
+	\pi(\boldsymbol{\theta} \mid \mathbf{y}) &\propto \prod_{b=1}^B \pi(\boldsymbol{\theta})^{1/B} p(\mathbf{y}_b \mid \boldsymbol{\theta}),
+\end{align*}
+which implies that the full posterior is proportional to the product of appropriately rescaled subposteriors.
+
+It is possible to recover the exact posterior distribution merging subposteriors if these are Gaussian, where the update rules just depend on the mean and variance for each subposterior \cite{scott2016bayes,scott2022bayes}. Alternative merging procedures, that are more robust to non-Gaussianity, have also been proposed \cite{neiswanger2013asymptotically,minsker2017robust}; however, it is also difficult to quantify the approximation error of these methods. 
+
+The main difficulty is how to effectively merge the subposterior distributions, especially when their supports are not well-aligned. This misalignment can lead to poor scalability with an increasing number of batches. Moreover, most theoretical guarantees for these methods are asymptotic in the size of each batch, which may limit their performance in practice.
 
 
+\subsection{Subsampling-based algorithms}
 
-\begin{itemize}
-	\item Subsampling MCMC: Firefly Monte Carlo \cite{Maclaurin2015}
-	\item Stochastic Gradient MCMC (SG-MCMC): Stochastic Gradient Langevin Dynamics (SGLD) and Stochastic Gradient Hamiltonian Monte Carlo (SGHMC). See \cite{nemeth2021stochastic,song2020extended,baker2019sgmcmc,chen2014stochastic,welling2011bayesian}
-	\item Divide-and-Conquer MCMC \cite{quiroz2018subsampling,quiroz2019speeding}: Consensus Monte Carlo \cite{rendell2020global,scott2022bayes} and Weierstrass Sampler \cite{wu2017average}
-\end{itemize}
+An alternative to the divide-and-conquer methods is not to evaluate the likelihood in all observations, which means $O(N)$ operations, by the contrary to evaluate the likelihood in $M<N$ observations to reduce the computational burden of the algorithm. The point of departure is the log-likelihood function given $N$ independent observations,
+\begin{align*}
+	\log p(\mathbf{y}\mid \boldsymbol{\theta})&=\sum_{i=1}^N \log p(y_i\mid \boldsymbol{\theta}).
+\end{align*} 
+The literature has focused on the log-likelihood as this is usually a sum, which is equivalent to estimating a population total. 
+
+The intuition behind the \textit{pseudo-marginal} method is straightforward: introduce a set of auxiliary random variables \( \mathbf{z} \) with density \( p(\mathbf{z}) \), such that an unbiased estimator of the marginal likelihood is obtained even when a closed-form expression is unavailable. Specifically, if \(\mathbb{E}_{\mathbf{z}}[p(\mathbf{y} \mid \boldsymbol{\theta}, \mathbf{z})] = \int_{\mathcal{Z}} p(\mathbf{y} \mid \boldsymbol{\theta}, \mathbf{z}) \, p(\mathbf{z}) \, d\mathbf{z} = p(\mathbf{y} \mid \boldsymbol{\theta}),
+\)
+then
+\(
+\hat{p}(\mathbf{y} \mid \boldsymbol{\theta}) = \frac{1}{S} \sum_{s=1}^S p(\mathbf{y} \mid \boldsymbol{\theta}, \mathbf{z}^{(s)}),
+\)
+where \( \mathbf{z}^{(s)} \sim p(\mathbf{z}) \), is a valid unbiased estimator of the marginal likelihood. As a result, the \textit{pseudo-marginal} method enables exact simulation-based inference for \( p(\mathbf{y} \mid \boldsymbol{\theta}) \) in situations where the likelihood cannot be evaluated analytically \cite{andrieu2009pseudoefficient}, for instance, in non-linear random effects models.
+
+\cite{quiroz2018subsampling,quiroz2019speeding} \cite{bardenet2017markov} show the relationship between the firefly Monte Carlo algorithm \cite{Maclaurin2015} and subsampling MCMC.
+
+Another class of subsampling methods, which does not rely on the pseudo-marginal likelihood, consists of stochastic gradient MCMC algorithms. \cite{welling2011bayesian} introduced the \textit{Stochastic Gradient Langevin Dynamics} (SGLD), which builds on ideas from stochastic gradient descent \cite{robbins1951stochastic} and the Langevin diffusion-based stochastic differential equations.
+
+We begin with the product of the prior and the likelihood function, which is proportional to the posterior distribution:
+\begin{align*}
+	\pi(\boldsymbol{\theta} \mid \mathbf{y}) &\propto \pi(\boldsymbol{\theta}) \prod_{i=1}^{N} p(y_i \mid \boldsymbol{\theta}) \\
+	&= \exp\left\{ \sum_{i=1}^N \left[ \frac{1}{N} \log \pi(\boldsymbol{\theta}) + \log p(y_i \mid \boldsymbol{\theta}) \right] \right\} \\
+	&= \exp\left\{ -\sum_{i=1}^N U_i(\boldsymbol{\theta}) \right\} \\
+	&= \exp\left\{ -U(\boldsymbol{\theta}) \right\},
+\end{align*}
+where \( \boldsymbol{\theta} \in \mathbb{R}^K \), \( U_i(\boldsymbol{\theta}) = -\frac{1}{N} \log \pi(\boldsymbol{\theta}) - \log p(y_i \mid \boldsymbol{\theta}) \), and \( U(\boldsymbol{\theta}) = \sum_{i=1}^N U_i(\boldsymbol{\theta}) \) is assumed to be continuous and differentiable almost everywhere.
+
+The advantage of this formulation is that, under mild regularity conditions \cite{roberts1996exponential}, the Langevin diffusion process
+\begin{align*}
+	d\boldsymbol{\theta}(s) = -\frac{1}{2} \nabla U(\boldsymbol{\theta}(s))\,ds + d\mathbf{B}_s,
+\end{align*}
+has \( \pi(\boldsymbol{\theta} \mid \mathbf{y}) \) as its stationary distribution. Here, \( \mathbf{B}_s \) is a \( K \)-dimensional Brownian motion,\footnote{A Brownian motion is a continuous-time stochastic process that starts at zero, has independent increments with \( B(s) - B(t) \sim \mathcal{N}(0, s - t) \), and is continuous almost surely but nowhere differentiable.} and \( \nabla U(\boldsymbol{\theta}(s)) \) is the drift term.
+
+Using an Euler discretization of the Langevin diffusion gives a proposal for the posterior:
+\begin{align*}
+	\boldsymbol{\theta}^{(c)} = \boldsymbol{\theta}^{(s)} - \frac{\epsilon}{2} \nabla U(\boldsymbol{\theta}^{(s)}) + \boldsymbol{\psi},
+\end{align*}
+where \( \boldsymbol{\psi} \sim \mathcal{N}(\mathbf{0}, \epsilon \mathbf{I}_K) \) and \( \epsilon > 0 \) is a suitably chosen stepsize. This proposal is used in a Metropolis–Hastings algorithm (see Section~\ref{sec512}) and is known as the \textit{Metropolis-adjusted Langevin algorithm} (MALA) \cite{roberts1996exponential}. However, a major computational bottleneck in MALA is the need to evaluate the full gradient \( \nabla U(\boldsymbol{\theta}) = \sum_{i=1}^N \nabla U_i(\boldsymbol{\theta}) \) at every iteration, which becomes prohibitive for large \( N \).
+
+To overcome this limitation, \cite{welling2011bayesian} proposed the \textit{Stochastic Gradient Langevin Dynamics} (SGLD), which replaces the full gradient with an unbiased estimate computed using a mini-batch of data. Given a random sample of size \( n \ll N \), the stochastic gradient estimate at iteration \( s \) is:
+\begin{align} \label{eq:grad}
+	\hat{\nabla} U(\boldsymbol{\theta})^{(n)} = \frac{N}{n} \sum_{i \in \mathcal{S}_n} \nabla U_i(\boldsymbol{\theta}),
+\end{align}
+where \( \mathcal{S}_n \subset \{1, 2, \dots, N\} \) is a randomly selected subset without replacement.
+
+Algorithm~\ref{Alg:SGLD} summarizes the SGLD procedure \cite{nemeth2021stochastic}. Empirical evidence suggests that SGLD often outperforms the Metropolis–Hastings algorithm when dealing with large datasets under a fixed computational budget.
+
+\begin{algorithm}[h!]
+	\caption{Stochastic gradient Langevin dynamic algorithm}\label{Alg:SGLD}
+	\begin{algorithmic}[1]
+		\State Set $\bm{\theta}^{(0)}$ and the step size schedule $\epsilon_s=s^{-1/3}$  		 			
+		\For{\texttt{$s=1,\dots,S$}}
+		\State Draw $\mathcal{S}_n$ from $i=\left\{1,2,\dots,N\right\}$ without replacement
+		\State Calculate $\hat{\nabla} U(\boldsymbol{\theta})^{(n)}$ using \ref{eq:grad}  
+		\State Draw $\boldsymbol{\psi}_s\sim N(\mathbf{0},\epsilon_s\mathbf{I}_K)$
+		\State Update $\boldsymbol{\theta}^{(s+1)}\leftarrow \boldsymbol{\theta}^{(s)} -\frac{\epsilon_s}{2}\hat{\nabla} U(\boldsymbol{\theta}^{(s)})^{(n)}+\boldsymbol{\psi}_s$
+		\EndFor 
+	\end{algorithmic} 
+\end{algorithm}
+ 
+
+
+(SG-MCMC): Stochastic Gradient Langevin Dynamics (SGLD)  and Stochastic Gradient Hamiltonian Monte Carlo (SGHMC) \cite{chen2014stochastic}. The R package for these methods \textit{sgmcmc} by \cite{baker2019sgmcmc}, a JASA paper for review of stochastic gradient MCMC methods \cite{nemeth2021stochastic}. 
+
+However, SG methods are only applicable to a small class of problems for which the parameter space has a fixed dimension and the log-posterior density is differentiable with respect to the parameters. \cite{song2020extended} propose an extended stochastic gradient MCMC method that is useful to more general large-scale Bayesian computing problems, such as those involving dimension jumping and missing data. 
+
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -919,7 +994,8 @@ col = c("blue", "red"), lty = c(1, 2))
 \end{tcolorbox}
 
 \section{Summary}\label{13_6}
-Variational Bayes, a method rooted in machine learning \cite{wainwright2008graphical}, is introduced in Chapter \ref{chap15}. When implemented in its stochastic form, it can effectively address the tall problem.
+
+In this chapter, we introduced several Bayesian machine learning methods designed to address the challenges posed by \textit{wide} and \textit{tall} data. However, the field of Bayesian machine learning is rapidly evolving, and the material presented here should be viewed as an introductory overview. Many important topics were not covered but are highly relevant, such as Bayesian neural networks \cite{neal2012bayesian} and neural posterior estimation \cite{papamakarios2016fast,lueckmann2017flexible,greenberg2019automatic}. Other key approaches, such as Variational Bayes, particularly in its stochastic implementations, which are rooted in machine learning and offer scalable solutions for tall data, are introduced in Chapter~\ref{chap15} \cite{wainwright2008graphical}.
 
 \section{Exercises}\label{13_7}
 
