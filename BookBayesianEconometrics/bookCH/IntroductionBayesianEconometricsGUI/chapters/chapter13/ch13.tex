@@ -781,7 +781,7 @@ where
 
 Therefore, Gaussian Process (GP) regression provides a flexible and efficient nonparametric framework for predicting unobserved responses, with accuracy that improves as more data become available. GPs are widely used due to their favorable computational properties, including the availability of closed-form expressions, and posterior consistency under mild conditions \cite{choi2007posterior, stuart2018posterior}. Moreover, predictive performance can be further enhanced by incorporating derivative information, as the derivative of a GP is itself a GP \cite{solak2003derivative,jacobi2024posterior}. 
 
-However, a major limitation of GPs is the need to invert an \( N \times N \) covariance matrix, which requires \( O(N^3) \) computational operations, making them computationally expensive for large datasets. To address this, several scalable methods have been proposed that reduce the computational burden. For instance, \cite{wilson2015kernel,gardner2018product, pleiss2018constant} develop algorithms that reduce complexity to \( O(N) \).
+However, a major limitation of GPs is the need to invert an \( N \times N \) covariance matrix, which requires \( O(N^3) \) computational operations, making them computationally expensive for large datasets. To address this, several scalable methods have been proposed that reduce the computational burden. For instance, \cite{wilson2015kernel,gardner2018product, pleiss2018constant} develop algorithms that reduce complexity to \( O(N) \).\\
 
 \textbf{Example: Simulation exercise to study GP performance}
 
@@ -889,41 +889,57 @@ where \( \mathbf{z}^{(s)} \sim p(\mathbf{z}) \), is a valid unbiased estimator o
 
 \cite{quiroz2018subsampling,quiroz2019speeding} \cite{bardenet2017markov} show the relationship between the firefly Monte Carlo algorithm \cite{Maclaurin2015} and subsampling MCMC.
 
-Another class of subsampling methods, which does not rely on the pseudo-marginal likelihood, consists of stochastic gradient MCMC algorithms. \cite{welling2011bayesian} introduced the \textit{Stochastic Gradient Langevin Dynamics} (SGLD), which builds on ideas from stochastic gradient descent \cite{robbins1951stochastic} and the Langevin diffusion-based stochastic differential equations.
+Another class of subsampling methods, which does not rely on the pseudo-marginal likelihood, consists of stochastic gradient MCMC algorithms. These methods begin based on ideas from stochastic gradient descent \cite{robbins1951stochastic} and the Langevin diffusion-based stochastic differential equations.
 
-We begin with the product of the prior and the likelihood function, which is proportional to the posterior distribution:
+The point of departure is the unnormalized posterior distribution:
 \begin{align*}
 	\pi(\boldsymbol{\theta} \mid \mathbf{y}) &\propto \pi(\boldsymbol{\theta}) \prod_{i=1}^{N} p(y_i \mid \boldsymbol{\theta}) \\
 	&= \exp\left\{ \sum_{i=1}^N \left[ \frac{1}{N} \log \pi(\boldsymbol{\theta}) + \log p(y_i \mid \boldsymbol{\theta}) \right] \right\} \\
 	&= \exp\left\{ -\sum_{i=1}^N U_i(\boldsymbol{\theta}) \right\} \\
 	&= \exp\left\{ -U(\boldsymbol{\theta}) \right\},
 \end{align*}
-where \( \boldsymbol{\theta} \in \mathbb{R}^K \), \( U_i(\boldsymbol{\theta}) = -\frac{1}{N} \log \pi(\boldsymbol{\theta}) - \log p(y_i \mid \boldsymbol{\theta}) \), and \( U(\boldsymbol{\theta}) = \sum_{i=1}^N U_i(\boldsymbol{\theta}) \) is assumed to be continuous and differentiable almost everywhere.
+where \( \boldsymbol{\theta} \in \mathbb{R}^K \), \( U_i(\boldsymbol{\theta}) = -\frac{1}{N} \log \pi(\boldsymbol{\theta}) - \log p(y_i \mid \boldsymbol{\theta}) \), and \( U(\boldsymbol{\theta}) = \sum_{i=1}^N U_i(\boldsymbol{\theta}) \) is assumed to be continuous and differentiable almost everywhere.  
 
 The advantage of this formulation is that, under mild regularity conditions \cite{roberts1996exponential}, the Langevin diffusion process
 \begin{align*}
 	d\boldsymbol{\theta}(s) = -\frac{1}{2} \nabla U(\boldsymbol{\theta}(s))\,ds + d\mathbf{B}_s,
 \end{align*}
-has \( \pi(\boldsymbol{\theta} \mid \mathbf{y}) \) as its stationary distribution. Here, \( \mathbf{B}_s \) is a \( K \)-dimensional Brownian motion,\footnote{A Brownian motion is a continuous-time stochastic process that starts at zero, has independent increments with \( B(s) - B(t) \sim \mathcal{N}(0, s - t) \), and is continuous almost surely but nowhere differentiable.} and \( \nabla U(\boldsymbol{\theta}(s)) \) is the drift term.
+has \( \pi(\boldsymbol{\theta} \mid \mathbf{y}) \) as its stationary distribution. Here, \( \nabla U(\boldsymbol{\theta}(s)) \) is the drift term, and \( \mathbf{B}_s \) is a \( K \)-dimensional Brownian motion.\footnote{A Brownian motion is a continuous-time stochastic process that starts at zero, has independent increments with \( B(s) - B(t) \sim \mathcal{N}(0, s - t) \), and is continuous almost surely but nowhere differentiable.}
 
-Using an Euler discretization of the Langevin diffusion gives a proposal for the posterior:
+Using an Euler-Maruyama discretization of the Langevin diffusion gives a proposal draw from the posterior:
 \begin{align*}
 	\boldsymbol{\theta}^{(c)} = \boldsymbol{\theta}^{(s)} - \frac{\epsilon}{2} \nabla U(\boldsymbol{\theta}^{(s)}) + \boldsymbol{\psi},
 \end{align*}
-where \( \boldsymbol{\psi} \sim \mathcal{N}(\mathbf{0}, \epsilon \mathbf{I}_K) \) and \( \epsilon > 0 \) is a suitably chosen stepsize. This proposal is used in a Metropolis–Hastings algorithm (see Section~\ref{sec512}) and is known as the \textit{Metropolis-adjusted Langevin algorithm} (MALA) \cite{roberts1996exponential}. However, a major computational bottleneck in MALA is the need to evaluate the full gradient \( \nabla U(\boldsymbol{\theta}) = \sum_{i=1}^N \nabla U_i(\boldsymbol{\theta}) \) at every iteration, which becomes prohibitive for large \( N \).
+where \( \boldsymbol{\psi} \sim \mathcal{N}(\mathbf{0}, \epsilon \mathbf{I}_K) \) and \( \epsilon > 0 \) is a suitably chosen step size. This proposal is used within a Metropolis–Hastings algorithm (see Section~\ref{sec512}) to correct for the discretization error introduced by the Euler approximation. This method is known as the \textit{Metropolis-adjusted Langevin algorithm} (MALA) \cite{roberts1996exponential}. 
+
+A simpler variant, known as the \textit{unadjusted Langevin algorithm} (ULA), omits the acceptance step. As a result, ULA produces a biased approximation of the posterior distribution. However, a major computational bottleneck in both MALA and ULA is the requirement to evaluate the full gradient \( \nabla U(\boldsymbol{\theta}) = \sum_{i=1}^N \nabla U_i(\boldsymbol{\theta}) \) at every iteration, which becomes computationally prohibitive when \( N \) is large.
 
 To overcome this limitation, \cite{welling2011bayesian} proposed the \textit{Stochastic Gradient Langevin Dynamics} (SGLD), which replaces the full gradient with an unbiased estimate computed using a mini-batch of data. Given a random sample of size \( n \ll N \), the stochastic gradient estimate at iteration \( s \) is:
 \begin{align} \label{eq:grad}
 	\hat{\nabla} U(\boldsymbol{\theta})^{(n)} = \frac{N}{n} \sum_{i \in \mathcal{S}_n} \nabla U_i(\boldsymbol{\theta}),
 \end{align}
-where \( \mathcal{S}_n \subset \{1, 2, \dots, N\} \) is a randomly selected subset without replacement.
+where \( \mathcal{S}_n \subset \{1, 2, \dots, N\} \) is a randomly selected subset of dimension $n$ without replacement.
 
-Algorithm~\ref{Alg:SGLD} summarizes the SGLD procedure \cite{nemeth2021stochastic}. Empirical evidence suggests that SGLD often outperforms the Metropolis–Hastings algorithm when dealing with large datasets under a fixed computational budget.
+Therefore, 
+\begin{align*}
+	\boldsymbol{\theta}^{(s+1)}&= \boldsymbol{\theta}^{(s)} -\frac{\epsilon_s}{2}\hat{\nabla} U(\boldsymbol{\theta}^{(s)})^{(n)}+\boldsymbol{\psi}_s,
+\end{align*}
+such that $\sum_{s=1}^{\infty}\epsilon_s=\infty$ and $\sum_{s=1}^{\infty}\epsilon_s^2<\infty$.
+
+\cite{teh2016consistency} formally show that, under verifiable assumptions, the SGLD algorithm is consistent. That is, given a test function $\phi(\boldsymbol{\theta}): \mathbb{R}^K \rightarrow \mathbb{R}$,
+\begin{align*}
+	\lim_{S \rightarrow \infty} \frac{\epsilon_1 \phi(\boldsymbol{\theta}_1) + \epsilon_2 \phi(\boldsymbol{\theta}_2) + \dots + \epsilon_S \phi(\boldsymbol{\theta}_S)}{\sum_{s=1}^S \epsilon_s} = \int_{\mathbb{R}^K} \phi(\boldsymbol{\theta}) \pi(\boldsymbol{\theta}) \, d\boldsymbol{\theta}.
+\end{align*}
+Moreover, the algorithm satisfies a central limit theorem: $\lim_{S \rightarrow \infty} \pi_S(\phi(\boldsymbol{\theta})) = \pi(\phi(\boldsymbol{\theta}))$, and its asymptotic bias-variance decomposition is characterized by a functional of $\epsilon_s$, such that the optimal step size that minimizes the asymptotic mean squared error is proportional to $s^{-1/3}$. In the common practice of using a constant stepsize, it has been shown that the optimal choice to minimize the asymptotic mean squared error is of order \( S^{-1/3} \) \cite{vollmer2016exploration}. 
+
+Importantly, this iterative process does not require the computation of acceptance probabilities, which significantly reduces the computational burden. Empirical evidence suggests that SGLD often outperforms the Metropolis–Hastings algorithm when applied to large datasets under a fixed computational budget \cite{li2016scalable}.
+
+Algorithm~\ref{Alg:SGLD} summarizes the SGLD procedure \cite{nemeth2021stochastic}. 
 
 \begin{algorithm}[h!]
 	\caption{Stochastic gradient Langevin dynamic algorithm}\label{Alg:SGLD}
 	\begin{algorithmic}[1]
-		\State Set $\bm{\theta}^{(0)}$ and the step size schedule $\epsilon_s=s^{-1/3}$  		 			
+		\State Set $\bm{\theta}^{(0)}$ and the step size schedule $\epsilon_s=S^{-1/3}$  		 			
 		\For{\texttt{$s=1,\dots,S$}}
 		\State Draw $\mathcal{S}_n$ from $i=\left\{1,2,\dots,N\right\}$ without replacement
 		\State Calculate $\hat{\nabla} U(\boldsymbol{\theta})^{(n)}$ using \ref{eq:grad}  
@@ -933,11 +949,30 @@ Algorithm~\ref{Alg:SGLD} summarizes the SGLD procedure \cite{nemeth2021stochasti
 	\end{algorithmic} 
 \end{algorithm}
  
+A critical point in the SGLD is the estimation of the stochastic gradient (Equation \ref{eq:grad}), particularly because high variability of this estimator generates instability of the algorithm. Therefore, the literature has used control variates to reduce the variability of the estimator. The intuition is to use a simple function $u_i(\boldsymbol{\theta})$ that is highly correlated to $\nabla U_i(\boldsymbol{\theta})$, and whose expected value is known, such that the fluctuations in $u_i(\boldsymbol{\theta})$ can be used to ``cancel out" some of the noise in $\nabla U_i(\boldsymbol{\theta})$. In particular, 
+\begin{align*}
+	\sum_{i=1}^N \nabla U_i(\boldsymbol{\theta})&=\sum_{i=1}^N u_i(\boldsymbol{\theta}) + \sum_{i=1}^N (\nabla U_i(\boldsymbol{\theta})-u_i(\boldsymbol{\theta})),
+\end{align*} 
+then it can be obtained an unbiased estimator
+\begin{align*}
+	\sum_{i=1}^N u_i(\boldsymbol{\theta}) + \frac{N}{n}\sum_{i\in\mathcal{S}_n} (\nabla U_i(\boldsymbol{\theta})-u_i(\boldsymbol{\theta})).
+\end{align*} 
+Thus, the idea is to use stochastic gradient descent to find the posterior mode \( \hat{\boldsymbol{\theta}} \), which can then serve as the initial point in Algorithm~\ref{Alg:SGLD}. At this mode, we set \( u_i(\hat{\boldsymbol{\theta}}) = \nabla U_i(\hat{\boldsymbol{\theta}}) \). The control variate estimator is given by
+\begin{align*}
+	\hat{\nabla}_{cv}U(\boldsymbol{\theta}^{(n)}) &= \sum_{i=1}^N \nabla U_i(\hat{\boldsymbol{\theta}}) + \frac{N}{n} \sum_{i \in \mathcal{S}_n} \left( \nabla U_i(\boldsymbol{\theta}) - \nabla U_i(\hat{\boldsymbol{\theta}}) \right).
+\end{align*}
+It has been shown that the computational cost per effective sample size of SGLD with control variates is \( O(1) \), rather than \( O(N) \) \cite{nemeth2021stochastic}. However, it is also known that the approximate posterior distribution produced by SGLD, despite capturing the correct mode, tends to exhibit higher variance compared to the true target posterior.
 
+\cite{chen2014stochastic} propose the stochastic gradient Hamiltonian Monte Carlo (SGHMC), which performs better asymptotically than SGLD in terms of the Wasserstein distance to the target distribution, especially in high-dimensional settings (with large \( K \)). Similarly, \cite{ma2015complete} propose an alternative diffusion process whose stationary distribution is the desired posterior. See Table 1 in \cite{nemeth2021stochastic} for a comprehensive list of stochastic gradient MCMC methods that fit in the general diffusion process proposed by \cite{ma2015complete}.
 
-(SG-MCMC): Stochastic Gradient Langevin Dynamics (SGLD)  and Stochastic Gradient Hamiltonian Monte Carlo (SGHMC) \cite{chen2014stochastic}. The R package for these methods \textit{sgmcmc} by \cite{baker2019sgmcmc}, a JASA paper for review of stochastic gradient MCMC methods \cite{nemeth2021stochastic}. 
+\cite{nemeth2021stochastic} also discuss convergence diagnostics for stochastic gradient MCMC (SGMCMC) methods. They argue that standard diagnostics, such as those discussed in Section~\ref{sec54}, are inadequate for assessing SGMCMC behavior, as these methods target asymptotically biased approximations of the posterior. Consequently, a growing body of research focuses on designing suitable diagnostics for SGMCMC, with approaches based on Stein's discrepancy being among the most prominent (see \cite{nemeth2021stochastic} for details).
 
-However, SG methods are only applicable to a small class of problems for which the parameter space has a fixed dimension and the log-posterior density is differentiable with respect to the parameters. \cite{song2020extended} propose an extended stochastic gradient MCMC method that is useful to more general large-scale Bayesian computing problems, such as those involving dimension jumping and missing data. 
+Nonetheless, stochastic gradient methods are applicable only to a restricted class of models, specifically, those with fixed-dimensional parameter spaces and differentiable log-posterior densities. To extend applicability, \cite{song2020extended} propose an extended stochastic gradient MCMC framework capable of handling more general large-scale Bayesian inference problems, including those involving dimension-jumping and missing data.\\
+
+\textbf{Example: Simulation exercise to study SGMCMC performance}
+
+In this example, we use the \texttt{sgmcmc} package \cite{baker2019sgmcmc} to evaluate the performance of stochastic gradient MCMC methods. In particular, we follow the logistic regression simulation setup introduced by \cite{nemeth2021stochastic}.
+ 
 
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
