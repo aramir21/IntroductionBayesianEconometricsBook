@@ -404,3 +404,110 @@ fit_km@covariance@range.val  # lengthscale
 fit_km@covariance@sd2        # process variance
 fit_km@noise.var             # noise variance
 
+####### Stochastic Gradient Langevin Dynamic #########
+rm(list = ls()); set.seed(10101)
+library(mvtnorm)
+library(MCMCpack)
+library(ggplot2)
+library(dplyr)
+
+#--- Generate correlated covariates
+genCovMat <- function(K, rho = 0.4) {
+  Sigma0 <- matrix(1, K, K)
+  for (i in 2:K) {
+    for (j in 1:(i - 1)) {
+      Sigma0[i, j] <- runif(1, -rho, rho)^(i - j)
+    }
+  }
+  Sigma0 <- Sigma0 * t(Sigma0)
+  diag(Sigma0) <- 1
+  return(Sigma0)
+}
+
+#--- Simulate logistic regression data
+simulate_logit_data <- function(K, N, beta_true) {
+  Sigma0 <- genCovMat(K)
+  X <- rmvnorm(N, mean = rep(0, K), sigma = Sigma0)
+  linpred <- X %*% beta_true
+  p <- 1 / (1 + exp(-linpred))
+  y <- rbinom(N, 1, p)
+  list(y = y, X = X)
+}
+
+#--- One SGLD step
+SGLD_step <- function(beta, y, X, stepsize, batch_size, prior_var = 10) {
+  N <- nrow(X)
+  K <- length(beta)
+  ids <- sample(1:N, size = batch_size, replace = FALSE)
+  
+  grad <- rep(0, K)
+  for (i in ids) {
+    xi <- X[i, ]
+    eta <- sum(xi * beta)
+    pi <- 1 / (1 + exp(-eta))
+    grad_i <- -(y[i] - pi) * xi
+    grad <- grad + grad_i
+  }
+  
+  grad <- grad / batch_size * N
+  grad <- grad + beta / prior_var  # gradient of log-prior
+  
+  noise <- rnorm(K, 0, sqrt(stepsize))
+  beta_new <- beta - 0.5 * stepsize * grad + noise
+  return(beta_new)
+}
+
+#--- SGLD algorithm
+run_SGLD <- function(y, X, stepsize, batch_prop, n_iter, burnin, beta_init = NULL) {
+  N <- nrow(X)
+  K <- ncol(X)
+  batch_size <- round(batch_prop * N)
+  
+  beta_mat <- matrix(0, n_iter + burnin, K)
+  beta_mat[1, ] <- if (is.null(beta_init)) rep(0, K) else beta_init
+  
+  for (s in 2:(n_iter + burnin)) {
+    beta_mat[s, ] <- SGLD_step(beta_mat[s - 1, ], y, X, stepsize, batch_size)
+  }
+  beta_mat[(burnin + 1):(n_iter + burnin), ]
+}
+
+#--- Parameters
+K <- 10
+N <- 100000
+beta_true <- rep(0.5, K)
+batch_prop <- 0.01
+n_iter <- 2000
+burnin <- 500
+stepsize <- 1e-4
+k_target <- 5  # beta5
+
+#--- Simulate data
+sim_data <- simulate_logit_data(K, N, beta_true)
+y <- sim_data$y
+X <- sim_data$X
+
+#--- Run SGLD
+posterior_sgld <- run_SGLD(y, X, stepsize, batch_prop, n_iter, burnin)
+
+#--- Run MCMCpack logit
+df <- as.data.frame(X)
+colnames(df) <- paste0("X", 1:K)
+df$y <- y
+formula <- as.formula(paste("y ~", paste(colnames(df)[1:K], collapse = " + "), "-1"))
+posterior_mh <- MCMClogit(formula, data = df, b0 = 0, B0 = 0.1,
+                          burnin = burnin, mcmc = n_iter)
+
+#--- Compare densities for beta5
+df_plot <- data.frame(
+  value = c(posterior_sgld[, k_target], posterior_mh[, k_target]),
+  method = rep(c("SGLD", "MCMC"), each = n_iter)
+)
+
+ggplot(df_plot, aes(x = value, fill = method, color = method)) +
+  geom_density(alpha = 0.4) +
+  geom_vline(xintercept = beta_true[k_target], linetype = "dashed", color = "black") +
+  labs(title = expression(paste("Posterior density of ", beta[5])),
+       x = expression(beta[5]),
+       y = "Density") +
+  theme_minimal()

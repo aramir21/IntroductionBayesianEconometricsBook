@@ -904,7 +904,7 @@ The advantage of this formulation is that, under mild regularity conditions \cit
 \begin{align*}
 	d\boldsymbol{\theta}(s) = -\frac{1}{2} \nabla U(\boldsymbol{\theta}(s))\,ds + d\mathbf{B}_s,
 \end{align*}
-has \( \pi(\boldsymbol{\theta} \mid \mathbf{y}) \) as its stationary distribution. Here, \( \nabla U(\boldsymbol{\theta}(s)) \) is the drift term, and \( \mathbf{B}_s \) is a \( K \)-dimensional Brownian motion.\footnote{A Brownian motion is a continuous-time stochastic process that starts at zero, has independent increments with \( B(s) - B(t) \sim \mathcal{N}(0, s - t) \), and is continuous almost surely but nowhere differentiable.}
+has \( \pi(\boldsymbol{\theta} \mid \mathbf{y}) \) as its stationary distribution. Here, \( \nabla U(\boldsymbol{\theta}(s)) \) is the drift term, and \( \mathbf{B}_s \) is a \( K \)-dimensional Brownian motion.\footnote{A Brownian motion is a continuous-time stochastic process that starts at zero, has independent increments with \( B(s) - B(t) \sim {N}(0, s - t) \), and is continuous almost surely but nowhere differentiable.}
 
 Using an Euler-Maruyama discretization of the Langevin diffusion gives a proposal draw from the posterior:
 \begin{align*}
@@ -930,7 +930,7 @@ such that $\sum_{s=1}^{\infty}\epsilon_s=\infty$ and $\sum_{s=1}^{\infty}\epsilo
 \begin{align*}
 	\lim_{S \rightarrow \infty} \frac{\epsilon_1 \phi(\boldsymbol{\theta}_1) + \epsilon_2 \phi(\boldsymbol{\theta}_2) + \dots + \epsilon_S \phi(\boldsymbol{\theta}_S)}{\sum_{s=1}^S \epsilon_s} = \int_{\mathbb{R}^K} \phi(\boldsymbol{\theta}) \pi(\boldsymbol{\theta}) \, d\boldsymbol{\theta}.
 \end{align*}
-Moreover, the algorithm satisfies a central limit theorem: $\lim_{S \rightarrow \infty} \pi_S(\phi(\boldsymbol{\theta})) = \pi(\phi(\boldsymbol{\theta}))$, and its asymptotic bias-variance decomposition is characterized by a functional of $\epsilon_s$, such that the optimal step size that minimizes the asymptotic mean squared error is proportional to $s^{-1/3}$. In the common practice of using a constant stepsize, it has been shown that the optimal choice to minimize the asymptotic mean squared error is of order \( S^{-1/3} \) \cite{vollmer2016exploration}. 
+Moreover, the algorithm satisfies a central limit theorem: $\lim_{S \rightarrow \infty} \pi_S(\phi(\boldsymbol{\theta})) = \pi(\phi(\boldsymbol{\theta}))$, and its asymptotic bias-variance decomposition is characterized by a functional of $\epsilon_s$, such that the optimal step size that minimizes the asymptotic mean squared error is proportional to $s^{-1/3}$. In the common practice of using a constant step size, it has been shown that the optimal choice to minimize the asymptotic mean squared error is of order \( S^{-1/3} \) \cite{vollmer2016exploration}. 
 
 Importantly, this iterative process does not require the computation of acceptance probabilities, which significantly reduces the computational burden. Empirical evidence suggests that SGLD often outperforms the Metropolis–Hastings algorithm when applied to large datasets under a fixed computational budget \cite{li2016scalable}.
 
@@ -939,9 +939,9 @@ Algorithm~\ref{Alg:SGLD} summarizes the SGLD procedure \cite{nemeth2021stochasti
 \begin{algorithm}[h!]
 	\caption{Stochastic gradient Langevin dynamic algorithm}\label{Alg:SGLD}
 	\begin{algorithmic}[1]
-		\State Set $\bm{\theta}^{(0)}$ and the step size schedule $\epsilon_s=S^{-1/3}$  		 			
+		\State Set $\bm{\theta}^{(0)}$ and the step size schedule $\epsilon_s=s^{-1/3}$ (dynamic) or $\epsilon_s=S^{-1/3}$ (static)  		 			
 		\For{\texttt{$s=1,\dots,S$}}
-		\State Draw $\mathcal{S}_n$ from $i=\left\{1,2,\dots,N\right\}$ without replacement
+		\State Draw $\mathcal{S}_n$ of size $n$ from $i=\left\{1,2,\dots,N\right\}$ without replacement
 		\State Calculate $\hat{\nabla} U(\boldsymbol{\theta})^{(n)}$ using \ref{eq:grad}  
 		\State Draw $\boldsymbol{\psi}_s\sim N(\mathbf{0},\epsilon_s\mathbf{I}_K)$
 		\State Update $\boldsymbol{\theta}^{(s+1)}\leftarrow \boldsymbol{\theta}^{(s)} -\frac{\epsilon_s}{2}\hat{\nabla} U(\boldsymbol{\theta}^{(s)})^{(n)}+\boldsymbol{\psi}_s$
@@ -949,7 +949,7 @@ Algorithm~\ref{Alg:SGLD} summarizes the SGLD procedure \cite{nemeth2021stochasti
 	\end{algorithmic} 
 \end{algorithm}
  
-A critical point in the SGLD is the estimation of the stochastic gradient (Equation \ref{eq:grad}), particularly because high variability of this estimator generates instability of the algorithm. Therefore, the literature has used control variates to reduce the variability of the estimator. The intuition is to use a simple function $u_i(\boldsymbol{\theta})$ that is highly correlated to $\nabla U_i(\boldsymbol{\theta})$, and whose expected value is known, such that the fluctuations in $u_i(\boldsymbol{\theta})$ can be used to ``cancel out" some of the noise in $\nabla U_i(\boldsymbol{\theta})$. In particular, 
+A critical point in the SGLD algorithm is the estimation of the stochastic gradient (Equation \ref{eq:grad}), particularly because high variability of this estimator generates instability of the algorithm. Therefore, the literature has used control variates to reduce the variability of the estimator. The intuition is to use a simple function $u_i(\boldsymbol{\theta})$ that is highly correlated to $\nabla U_i(\boldsymbol{\theta})$, and whose expected value is known, such that the fluctuations in $u_i(\boldsymbol{\theta})$ can be used to ``cancel out" some of the noise in $\nabla U_i(\boldsymbol{\theta})$. In particular, 
 \begin{align*}
 	\sum_{i=1}^N \nabla U_i(\boldsymbol{\theta})&=\sum_{i=1}^N u_i(\boldsymbol{\theta}) + \sum_{i=1}^N (\nabla U_i(\boldsymbol{\theta})-u_i(\boldsymbol{\theta})),
 \end{align*} 
@@ -961,19 +961,166 @@ Thus, the idea is to use stochastic gradient descent to find the posterior mode 
 \begin{align*}
 	\hat{\nabla}_{cv}U(\boldsymbol{\theta}^{(n)}) &= \sum_{i=1}^N \nabla U_i(\hat{\boldsymbol{\theta}}) + \frac{N}{n} \sum_{i \in \mathcal{S}_n} \left( \nabla U_i(\boldsymbol{\theta}) - \nabla U_i(\hat{\boldsymbol{\theta}}) \right).
 \end{align*}
-It has been shown that the computational cost per effective sample size of SGLD with control variates is \( O(1) \), rather than \( O(N) \) \cite{nemeth2021stochastic}. However, it is also known that the approximate posterior distribution produced by SGLD, despite capturing the correct mode, tends to exhibit higher variance compared to the true target posterior.
+It has been shown that the computational cost per effective sample size of SGLD algorithm with control variates is \( O(1) \), rather than \( O(N) \) \cite{nemeth2021stochastic}. However, it is also known that the approximate posterior distribution produced by SGLD, despite capturing the correct mode, tends to exhibit higher variance compared to the true target posterior.
 
-\cite{chen2014stochastic} propose the stochastic gradient Hamiltonian Monte Carlo (SGHMC), which performs better asymptotically than SGLD in terms of the Wasserstein distance to the target distribution, especially in high-dimensional settings (with large \( K \)). Similarly, \cite{ma2015complete} propose an alternative diffusion process whose stationary distribution is the desired posterior. See Table 1 in \cite{nemeth2021stochastic} for a comprehensive list of stochastic gradient MCMC methods that fit in the general diffusion process proposed by \cite{ma2015complete}.
+\cite{chen2014stochastic} propose the stochastic gradient Hamiltonian Monte Carlo (SGHMC) algorithm, which performs better asymptotically than SGLD in terms of the Wasserstein distance to the target distribution, especially in high-dimensional settings (with large \( K \)). Similarly, \cite{ma2015complete} propose an alternative diffusion process whose stationary distribution is the desired posterior. See Table 1 in \cite{nemeth2021stochastic} for a comprehensive list of stochastic gradient MCMC methods that fit in the general diffusion process proposed by \cite{ma2015complete}.
 
 \cite{nemeth2021stochastic} also discuss convergence diagnostics for stochastic gradient MCMC (SGMCMC) methods. They argue that standard diagnostics, such as those discussed in Section~\ref{sec54}, are inadequate for assessing SGMCMC behavior, as these methods target asymptotically biased approximations of the posterior. Consequently, a growing body of research focuses on designing suitable diagnostics for SGMCMC, with approaches based on Stein's discrepancy being among the most prominent (see \cite{nemeth2021stochastic} for details).
 
-Nonetheless, stochastic gradient methods are applicable only to a restricted class of models, specifically, those with fixed-dimensional parameter spaces and differentiable log-posterior densities. To extend applicability, \cite{song2020extended} propose an extended stochastic gradient MCMC framework capable of handling more general large-scale Bayesian inference problems, including those involving dimension-jumping and missing data.\\
+A limitation of SGMCMC algorithms is that they are applicable only to a restricted class of models, specifically, those with fixed-dimensional parameter spaces in \( \mathcal{R}^K \) and differentiable log-posterior densities. To broaden their applicability, \cite{song2020extended} propose an extended stochastic gradient MCMC framework capable of addressing more general large-scale Bayesian inference problems, including those involving dimension-jumping and missing data.\\
 
 \textbf{Example: Simulation exercise to study SGMCMC performance}
 
-In this example, we use the \texttt{sgmcmc} package \cite{baker2019sgmcmc} to evaluate the performance of stochastic gradient MCMC methods. In particular, we follow the logistic regression simulation setup introduced by \cite{nemeth2021stochastic}.
- 
+In this example, we follow the logistic regression simulation setup introduced by \cite{nemeth2021stochastic}:
+\begin{align*}
+	P(y_i = 1 \mid \boldsymbol{\beta}, \mathbf{x}_i) &= \frac{\exp\left\{\mathbf{x}_i^{\top} \boldsymbol{\beta}\right\}}{1 + \exp\left\{\mathbf{x}_i^{\top} \boldsymbol{\beta}\right\}},
+\end{align*}
+with log-likelihood function given by:
+\begin{align*}
+	\log p(\mathbf{y} \mid \boldsymbol{\beta}, \mathbf{x}) 
+	&= \sum_{i=1}^N y_i \left( \mathbf{x}_i^{\top} \boldsymbol{\beta} - \log \left(1 + \exp\left\{\mathbf{x}_i^{\top} \boldsymbol{\beta}\right\} \right) \right) 
+	+ (1 - y_i) \left( - \log \left(1 + \exp\left\{\mathbf{x}_i^{\top} \boldsymbol{\beta}\right\} \right) \right) \\
+	&= \sum_{i=1}^N y_i \mathbf{x}_i^{\top} \boldsymbol{\beta} - \log \left(1 + \exp\left\{\mathbf{x}_i^{\top} \boldsymbol{\beta}\right\} \right).
+\end{align*}
 
+Note that this implies that the gradient vector is
+\begin{align*}
+	\nabla \log p(\mathbf{y} \mid \boldsymbol{\beta}, \mathbf{x}) = \sum_{i=1}^N \left(y_i - \frac{\exp\left\{\mathbf{x}_i^{\top} \boldsymbol{\beta}\right\}}{1+\exp\left\{\mathbf{x}_i^{\top} \boldsymbol{\beta}\right\}}\right)\mathbf{x}_i. 
+\end{align*}
+
+We assume a prior distribution for \( \boldsymbol{\beta} \sim \mathcal{N}(\mathbf{0}, 10 \mathbf{I}_K) \), leading to the log-prior:
+\begin{align*}
+	\log \pi(\boldsymbol{\beta}) = -\frac{K}{2} \log(2\pi) - \frac{1}{2} \log\left( \lvert 10 \mathbf{I}_K \rvert \right) - \frac{1}{2} \boldsymbol{\beta}^{\top} (10^{-1} \mathbf{I}_K) \boldsymbol{\beta}.
+\end{align*}
+This means that the gradient vector of the log-prior is
+\begin{align*}
+	\nabla \log \pi(\boldsymbol{\beta}) = -\frac{1}{10}\boldsymbol{\beta}. 
+\end{align*}
+
+We set \( K = 10 \), \( \boldsymbol{\beta} = 0.5 \cdot \mathbf{1}_K \), \( N = 10^5 \), and \( n = 0.01 \cdot N \). The covariates \( \mathbf{x}_i \sim {N}(\mathbf{0}, \boldsymbol{\Sigma}) \), where the covariance matrix \( \boldsymbol{\Sigma}^{(i,j)} = U[-\rho, \rho]^{|i-j|} \) with \( \rho = 0.4 \), and \( \mathbf{1}_K \) denotes a \( K \)-dimensional vector of ones.
+
+We run 2{,}000 MCMC iterations initialized at zero, 500 as burn-in, and the step size set to \(1 \times 10^{-4}\). The following code implements Algorithm~\ref{Alg:SGLD}. In Exercise~8, we ask you to implement the control variate version by first performing 1{,}000 stochastic gradient descent iterations to locate the posterior mode. This mode should then be used as the initial value for 1{,}000 subsequent MCMC iterations.
+
+By running the code, you can verify that the computational time of the SGLD algorithm is lower than that of the Metropolis–Hastings algorithm. Figure~\ref{SGLDlogit} shows the posterior distributions of the fifth location parameter obtained from SGLD and Metropolis–Hastings. We observe that both modes are centered around the true population value; however, the SGLD distribution exhibits greater dispersion compared to the Metropolis–Hastings distribution.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Stochastic Gradient Langevin Dynamic (SGLD): Logit regression}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(10101)
+library(mvtnorm)
+library(MCMCpack)
+library(ggplot2)
+library(dplyr)
+
+#--- Generate correlated covariates
+genCovMat <- function(K, rho = 0.4) {
+	Sigma0 <- matrix(1, K, K)
+	for (i in 2:K) {
+		for (j in 1:(i - 1)) {
+			Sigma0[i, j] <- runif(1, -rho, rho)^(i - j)
+		}
+	}
+	Sigma0 <- Sigma0 * t(Sigma0)
+	diag(Sigma0) <- 1
+	return(Sigma0)
+}
+
+#--- Simulate logistic regression data
+simulate_logit_data <- function(K, N, beta_true) {
+	Sigma0 <- genCovMat(K)
+	X <- rmvnorm(N, mean = rep(0, K), sigma = Sigma0)
+	linpred <- X %*% beta_true
+	p <- 1 / (1 + exp(-linpred))
+	y <- rbinom(N, 1, p)
+	list(y = y, X = X)
+}
+
+#--- One SGLD step
+SGLD_step <- function(beta, y, X, stepsize, batch_size, prior_var = 10) {
+	N <- nrow(X)
+	K <- length(beta)
+	ids <- sample(1:N, size = batch_size, replace = FALSE)
+	
+	grad <- rep(0, K)
+	for (i in ids) {
+		xi <- X[i, ]
+		eta <- sum(xi * beta)
+		pi <- 1 / (1 + exp(-eta))
+		grad_i <- -(y[i] - pi) * xi
+		grad <- grad + grad_i
+	}
+	
+	grad <- grad / batch_size * N
+	grad <- grad + beta / prior_var  # gradient of log-prior
+	
+	noise <- rnorm(K, 0, sqrt(stepsize))
+	beta_new <- beta - 0.5 * stepsize * grad + noise
+	return(beta_new)
+}
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Stochastic Gradient Langevin Dynamic (SGLD): Logit regression}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+#--- SGLD algorithm
+run_SGLD <- function(y, X, stepsize, batch_prop, n_iter, burnin, beta_init = NULL){
+	N <- nrow(X)
+	K <- ncol(X)
+	batch_size <- round(batch_prop * N)
+	
+	beta_mat <- matrix(0, n_iter + burnin, K)
+	beta_mat[1, ] <- if (is.null(beta_init)) rep(0, K) else beta_init
+	
+	for (s in 2:(n_iter + burnin)) {
+		beta_mat[s, ] <- SGLD_step(beta_mat[s - 1, ], y, X, stepsize, batch_size)
+	}
+	beta_mat[(burnin + 1):(n_iter + burnin), ]
+}
+
+#--- Parameters
+K <- 10; N <- 100000
+beta_true <- rep(0.5, K); batch_prop <- 0.01
+n_iter <- 2000; burnin <- 500
+stepsize <- 1e-4; k_target <- 5  # beta5
+
+#--- Simulate data
+sim_data <- simulate_logit_data(K, N, beta_true)
+y <- sim_data$y; X <- sim_data$X
+
+#--- Run SGLD
+posterior_sgld <- run_SGLD(y, X, stepsize, batch_prop, n_iter, burnin)
+
+#--- Run MCMCpack logit
+df <- as.data.frame(X)
+colnames(df) <- paste0("X", 1:K)
+df$y <- y
+formula <- as.formula(paste("y ~", paste(colnames(df)[1:K], collapse = " + "), "-1"))
+posterior_mh <- MCMClogit(formula, data = df, b0 = 0, B0 = 0.1,
+burnin = burnin, mcmc = n_iter)
+
+#--- Compare densities for beta5
+df_plot <- data.frame(
+value = c(posterior_sgld[, k_target], posterior_mh[, k_target]),
+method = rep(c("SGLD", "MCMC"), each = n_iter)
+)
+
+ggplot(df_plot, aes(x = value, fill = method, color = method)) + geom_density(alpha = 0.4) + geom_vline(xintercept = beta_true[k_target], linetype = "dashed", color = "black") + labs(title = expression(paste("Posterior density of ", beta[5])), x = expression(beta[5]), y = "Density") + theme_minimal()
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{figure}[!h]
+	\centering
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter13/figures/SGLDlogit.png}
+	\caption{Simulation: Posterior distributions from logit simulation exercise}
+	\label{SGLDlogit}
+\end{figure}  
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -1068,6 +1215,11 @@ In this chapter, we introduced several Bayesian machine learning methods designe
 	
 	Finally, use the fitted model to predict the outputs on the grid points, and produce a 3D plot showing the predicted surface along with the training data points.
 	
+	\item \textbf{Simulation exercise: Stochastic gradient MCMC continues} 
+	
+	Program from scratch the stochastic gradient Langevin dynamic algorithm for the logit simulation exercise implementing the control variate version performing 1{,}500 stochastic gradient descent iterations to locate the posterior mode, which should be then used as the initial value for 1{,}000 subsequent MCMC iterations using a step size set to \(1 \times 10^{-4}\).
+	
+	\item Perform the simulation according to the model \( y_i = 1 - 2 x_{i1} + 0.5 x_{i2} + \mu_i \), where \( \mu_i \sim {N}(0,1) \), the sample size is 100,000, and the covariates \( \mathbf{x}_i \sim {N}(\mathbf{0}, \mathbf{I}_2) \). Use 2,000 MCMC iterations, a batch size of 1000, and a step size of \( 10^{-4} \) to implement the SGLD algorithm.
 	
 	
 	  

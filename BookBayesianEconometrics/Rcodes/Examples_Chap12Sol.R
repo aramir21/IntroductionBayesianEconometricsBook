@@ -515,3 +515,5 @@ points3d(x = X_train$x1, y = X_train$x2, z = y_train, col = "red", size = 8)
 #         xlab = "x1", ylab = "x2", zlab = "GP Mean")
 # points3d(x = X_train$x1, y = X_train$x2, z = y_train, col = "red", size = 8)
 
+####### Stochastic Gradient Langevin Dynamic #########
+rm(list = ls()); set.seed(10101)
