@@ -515,5 +515,227 @@ points3d(x = X_train$x1, y = X_train$x2, z = y_train, col = "red", size = 8)
 #         xlab = "x1", ylab = "x2", zlab = "GP Mean")
 # points3d(x = X_train$x1, y = X_train$x2, z = y_train, col = "red", size = 8)
 
-####### Stochastic Gradient Langevin Dynamic #########
+####### Stochastic Gradient Langevin Dynamic with control variate: Logit #########
 rm(list = ls()); set.seed(10101)
+library(mvtnorm)
+library(MCMCpack)
+library(ggplot2)
+library(dplyr)
+
+#--- Generate correlated covariates
+genCovMat <- function(K, rho = 0.4) {
+  Sigma0 <- matrix(1, K, K)
+  for (i in 2:K) {
+    for (j in 1:(i - 1)) {
+      Sigma0[i, j] <- runif(1, -rho, rho)^(i - j)
+    }
+  }
+  Sigma0 <- Sigma0 * t(Sigma0)
+  diag(Sigma0) <- 1
+  return(Sigma0)
+}
+
+#--- Simulate logistic regression data
+simulate_logit_data <- function(K, N, beta_true) {
+  Sigma0 <- genCovMat(K)
+  X <- rmvnorm(N, mean = rep(0, K), sigma = Sigma0)
+  linpred <- X %*% beta_true
+  p <- 1 / (1 + exp(-linpred))
+  y <- rbinom(N, 1, p)
+  list(y = y, X = X)
+}
+
+#--- One SGD step
+SGD_step <- function(beta, y, X, lr, batch_size, prior_var = 10) {
+  N <- nrow(X)
+  K <- length(beta)
+  ids <- sample(1:N, size = batch_size, replace = FALSE)
+  
+  grad <- rep(0, K)
+  for (i in ids) {
+    xi <- X[i, ]
+    eta <- sum(xi * beta)
+    pi <- 1 / (1 + exp(-eta))
+    grad_i <- -(y[i] - pi) * xi
+    grad <- grad + grad_i
+  }
+  
+  grad <- grad / batch_size + beta / prior_var * 1 / N 
+  
+  beta_new <- beta - lr * grad
+  return(beta_new)
+}
+
+#--- Parameters
+K <- 10
+N <- 100000
+beta_true <- rep(0.5, K)
+batch_prop <- 0.01
+batch_size <- round(N*batch_prop)
+n_iter <- 1000
+n_iterSGD <- 1500
+kappa <- 0.5
+stepsize <- 1e-4
+prior_var <- 10
+k_target <- 5  # beta5
+
+sim_data <- simulate_logit_data(K, N, beta_true)
+y <- sim_data$y
+X <- sim_data$X
+
+beta_mat <- matrix(0, n_iterSGD, K)
+beta_mat[1, ] <- rep(0, K)
+for (s in 2:n_iterSGD) {
+  beta_mat[s, ] <- SGD_step(beta_mat[s - 1, ], y = y, X = X, lr = s^(-kappa), batch_size = batch_size, prior_var = prior_var)
+}
+matplot(beta_mat, type = "l")
+betahat <- beta_mat[s, ]
+
+gradhat <- rep(0, K)
+for (i in 1:N) {
+  xi <- X[i, ]
+  etahat <- sum(xi * betahat)
+  pihat <- 1 / (1 + exp(-etahat))
+  grad_ihat <- -(y[i] - pihat) * xi
+  gradhat <- gradhat + grad_ihat
+}
+
+#--- One SGLD control variate step
+SGLDcv_step <- function(beta, betahat, gradhat, y, X, stepsize, batch_size, prior_var = 10) {
+  N <- nrow(X)
+  K <- length(beta)
+  ids <- sample(1:N, size = batch_size, replace = FALSE)
+  
+  grad_dif <- rep(0, K)
+  for (i in ids) {
+    xi <- X[i, ]
+    eta <- sum(xi * beta)
+    pi <- 1 / (1 + exp(-eta))
+    etahat <- sum(xi * betahat)
+    pihat <- 1 / (1 + exp(-etahat))
+    grad_dif_i <- (pi - pihat) * xi
+    grad_dif <- grad_dif + grad_dif_i
+  }
+  
+  grad <- gradhat + grad_dif / batch_size * N
+  grad <- grad + beta / prior_var  # gradient of log-prior
+  
+  noise <- rnorm(K, 0, sqrt(stepsize))
+  beta_new <- beta - 0.5 * stepsize * grad + noise
+  return(beta_new)
+}
+
+#--- SGLD algorithm
+run_SGLDcv <- function(y, X, stepsize, batch_prop, n_iter, beta_init = NULL, prior_var = prior_var) {
+  N <- nrow(X)
+  K <- ncol(X)
+  batch_size <- round(batch_prop * N)
+  
+  beta_mat <- matrix(0, n_iter, K)
+  beta_mat[1, ] <- if (is.null(beta_init)) rep(0, K) else beta_init
+  
+  for (s in 2:n_iter) {
+    beta_mat[s, ] <- SGLDcv_step(beta_mat[s - 1, ], betahat = betahat, gradhat = gradhat, y, X, stepsize, batch_size)
+  }
+  return(beta_mat)
+}
+
+#--- Run SGLD cv
+posterior_sgldcv <- run_SGLDcv(y, X, stepsize, batch_prop, n_iter)
+
+#--- Run MCMCpack logit
+df <- as.data.frame(X)
+colnames(df) <- paste0("X", 1:K)
+df$y <- y
+formula <- as.formula(paste("y ~", paste(colnames(df)[1:K], collapse = " + "), "-1"))
+posterior_mh <- MCMClogit(formula, data = df, b0 = 0, B0 = 0.1,
+                          burnin = n_iterSGD, mcmc = n_iter)
+
+#--- Compare densities for beta5
+df_plot <- data.frame(
+    value = c(posterior_sgldcv[, k_target], posterior_mh[, k_target]),
+  method = rep(c("SGLDcv", "MCMC"), each = n_iter)
+)
+
+ggplot(df_plot, aes(x = value, fill = method, color = method)) +
+  geom_density(alpha = 0.4) +
+  geom_vline(xintercept = beta_true[k_target], linetype = "dashed", color = "black") +
+  labs(title = expression(paste("Posterior density of ", beta[k_target])),
+       x = expression(beta[k_target]),
+       y = "Density") +
+  theme_minimal() +
+  xlim(0.45, 0.55)
+
+rm(list = ls()); set.seed(10101)
+
+# Simulated data
+N <- 100000
+K <- 3
+X <- cbind(1, matrix(rnorm(N * (K - 1)), N, K - 1))  # design matrix
+beta_true <- c(1, -2, 0.5)
+sigma2_true <- 1
+y <- X %*% beta_true + rnorm(N, 0, sqrt(sigma2_true))
+
+# SGLD settings
+iterations <- 5000
+batch_size <- 1000
+initial_stepsize <- 1e-4
+decay_rate <- 0.55
+schedule <- 1000
+
+# Priors
+a0 <- 2
+b0 <- 2
+
+# Storage
+trace_beta <- matrix(NA, nrow = iterations, ncol = K)
+trace_sigma2 <- rep(NA, iterations)
+
+# Initialization
+beta <- rep(0, K)
+sigma2 <- 1
+
+# Gradient of log-posterior w.r.t. beta (scaled)
+grad_log_post <- function(beta, X_batch, y_batch, N, sigma2) {
+  grad_loglik <- t(X_batch) %*% (y_batch - X_batch %*% beta) / sigma2
+  grad_logprior <- -beta  # derivative of log N(0, I)
+  return((N / nrow(X_batch)) * grad_loglik + grad_logprior)
+}
+
+# SGLD algorithm
+for (t in 1:iterations) {
+  # Step size
+  stepsize_t <- initial_stepsize / (1 + t / schedule)^decay_rate
+  
+  # Sample mini-batch
+  idx <- sample(1:N, batch_size)
+  X_batch <- X[idx, ]
+  y_batch <- y[idx]
+  
+  # Beta update via SGLD
+  grad <- grad_log_post(beta, X_batch, y_batch, N, sigma2)
+  noise <- rnorm(K, 0, sqrt(stepsize_t))
+  beta <- beta + 0.5 * stepsize_t * grad + noise
+  
+  # Sigma2 update via inverse-gamma (full conditional)
+  resid <- y - X %*% beta
+  shape <- a0 + N / 2
+  rate <- b0 + sum(resid^2) / 2
+  sigma2 <- 1 / rgamma(1, shape = shape, rate = rate)
+  
+  # Store draws
+  trace_beta[t, ] <- beta
+  trace_sigma2[t] <- sigma2
+}
+
+# Plot trace of beta[2]
+plot(trace_beta[4001:5000, 2], type = "l", col = "blue", lwd = 2,
+     main = expression("SGLD: Evolution of " * beta[2]),
+     xlab = "Iteration", ylab = expression(beta[2]))
+abline(h = beta_true[2], col = "red", lty = 2)
+
+# Plot trace of sigma2
+plot(trace_sigma2[4001:5000], type = "l", col = "darkgreen", lwd = 2,
+     main = expression("Trace plot of " * sigma^2),
+     xlab = "Iteration", ylab = expression(sigma^2))
+abline(h = sigma2_true, col = "red", lty = 2)
