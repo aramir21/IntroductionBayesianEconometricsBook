@@ -574,14 +574,14 @@ batch_prop <- 0.01
 batch_size <- round(N*batch_prop)
 n_iter <- 1000
 n_iterSGD <- 1500
-kappa <- 0.5
+kappa <- 0.55
 stepsize <- 1e-4
 prior_var <- 10
 k_target <- 5  # beta5
 
 sim_data <- simulate_logit_data(K, N, beta_true)
 y <- sim_data$y
-X <- sim_data$X
+X <- scale(sim_data$X)
 
 beta_mat <- matrix(0, n_iterSGD, K)
 beta_mat[1, ] <- rep(0, K)
@@ -666,6 +666,7 @@ ggplot(df_plot, aes(x = value, fill = method, color = method)) +
   theme_minimal() +
   xlim(0.45, 0.55)
 
+####### Stochastic Gradient Langevin Dynamic with control variate: Linear #########
 rm(list = ls()); set.seed(10101)
 
 # Simulated data
@@ -675,6 +676,7 @@ X <- cbind(1, matrix(rnorm(N * (K - 1)), N, K - 1))  # design matrix
 beta_true <- c(1, -2, 0.5)
 sigma2_true <- 1
 y <- X %*% beta_true + rnorm(N, 0, sqrt(sigma2_true))
+X[, 2:3] <- scale(X[, 2:3])
 
 # SGLD settings
 iterations <- 5000
@@ -684,8 +686,8 @@ decay_rate <- 0.55
 schedule <- 1000
 
 # Priors
-a0 <- 2
-b0 <- 2
+a0 <- 0.01
+b0 <- 0.01
 
 # Storage
 trace_beta <- matrix(NA, nrow = iterations, ncol = K)
@@ -693,7 +695,7 @@ trace_sigma2 <- rep(NA, iterations)
 
 # Initialization
 beta <- rep(0, K)
-sigma2 <- 1
+sigma2 <- 0.5
 
 # Gradient of log-posterior w.r.t. beta (scaled)
 grad_log_post <- function(beta, X_batch, y_batch, N, sigma2) {
@@ -719,8 +721,8 @@ for (t in 1:iterations) {
   
   # Sigma2 update via inverse-gamma (full conditional)
   resid <- y - X %*% beta
-  shape <- a0 + N / 2
-  rate <- b0 + sum(resid^2) / 2
+  shape <- (a0 + N) / 2
+  rate <- (b0 + sum(resid^2)) / 2
   sigma2 <- 1 / rgamma(1, shape = shape, rate = rate)
   
   # Store draws

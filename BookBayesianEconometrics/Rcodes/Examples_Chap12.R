@@ -485,10 +485,10 @@ k_target <- 5  # beta5
 #--- Simulate data
 sim_data <- simulate_logit_data(K, N, beta_true)
 y <- sim_data$y
-X <- sim_data$X
+X <- scale(sim_data$X)
 
 #--- Run SGLD
-posterior_sgld <- run_SGLD(y, X, stepsize, batch_prop, n_iter, burnin)
+posterior_sgld <- run_SGLD(y = y, X = X, stepsize, batch_prop, n_iter, burnin)
 
 #--- Run MCMCpack logit
 df <- as.data.frame(X)

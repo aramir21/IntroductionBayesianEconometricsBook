@@ -924,13 +924,13 @@ Therefore,
 \begin{align*}
 	\boldsymbol{\theta}^{(s+1)}&= \boldsymbol{\theta}^{(s)} -\frac{\epsilon_s}{2}\hat{\nabla} U(\boldsymbol{\theta}^{(s)})^{(n)}+\boldsymbol{\psi}_s,
 \end{align*}
-such that $\sum_{s=1}^{\infty}\epsilon_s=\infty$ and $\sum_{s=1}^{\infty}\epsilon_s^2<\infty$.
+such that $\sum_{s=1}^{\infty}\epsilon_s=\infty$ and $\sum_{s=1}^{\infty}\epsilon_s^2<\infty$. These conditions guarantee almost sure convergence: the former condition allows the algorithm to continue exploring the parameter space (no premature convergence), and the latter ensures that the cumulative noise does not explode.
 
 \cite{teh2016consistency} formally show that, under verifiable assumptions, the SGLD algorithm is consistent. That is, given a test function $\phi(\boldsymbol{\theta}): \mathbb{R}^K \rightarrow \mathbb{R}$,
 \begin{align*}
 	\lim_{S \rightarrow \infty} \frac{\epsilon_1 \phi(\boldsymbol{\theta}_1) + \epsilon_2 \phi(\boldsymbol{\theta}_2) + \dots + \epsilon_S \phi(\boldsymbol{\theta}_S)}{\sum_{s=1}^S \epsilon_s} = \int_{\mathbb{R}^K} \phi(\boldsymbol{\theta}) \pi(\boldsymbol{\theta}) \, d\boldsymbol{\theta}.
 \end{align*}
-Moreover, the algorithm satisfies a central limit theorem: $\lim_{S \rightarrow \infty} \pi_S(\phi(\boldsymbol{\theta})) = \pi(\phi(\boldsymbol{\theta}))$, and its asymptotic bias-variance decomposition is characterized by a functional of $\epsilon_s$, such that the optimal step size that minimizes the asymptotic mean squared error is proportional to $s^{-1/3}$. In the common practice of using a constant step size, it has been shown that the optimal choice to minimize the asymptotic mean squared error is of order \( S^{-1/3} \) \cite{vollmer2016exploration}. 
+Moreover, the algorithm satisfies a central limit theorem: $\lim_{S \rightarrow \infty} \pi_S(\phi(\boldsymbol{\theta})) = \pi(\phi(\boldsymbol{\theta}))$, and its asymptotic bias-variance decomposition is characterized by a functional of $\epsilon_s$, such that the optimal step size that minimizes the asymptotic mean squared error is proportional to $s^{-1/3}$. In the common practice of using a constant step size, it has been shown that the optimal choice to minimize the asymptotic mean squared error is of order \( S^{-1/3} \) \cite{vollmer2016exploration}. However, we recommend tuning this parameter based on the specific application, guided by the theoretical results presented here. 
 
 Importantly, this iterative process does not require the computation of acceptance probabilities, which significantly reduces the computational burden. Empirical evidence suggests that SGLD often outperforms the Metropolis–Hastings algorithm when applied to large datasets under a fixed computational budget \cite{li2016scalable}.
 
@@ -939,7 +939,7 @@ Algorithm~\ref{Alg:SGLD} summarizes the SGLD procedure \cite{nemeth2021stochasti
 \begin{algorithm}[h!]
 	\caption{Stochastic gradient Langevin dynamic algorithm}\label{Alg:SGLD}
 	\begin{algorithmic}[1]
-		\State Set $\bm{\theta}^{(0)}$ and the step size schedule $\epsilon_s=s^{-1/3}$ (dynamic) or $\epsilon_s=S^{-1/3}$ (static)  		 			
+		\State Set $\bm{\theta}^{(0)}$ and the step size schedule $\epsilon_s$  		 			
 		\For{\texttt{$s=1,\dots,S$}}
 		\State Draw $\mathcal{S}_n$ of size $n$ from $i=\left\{1,2,\dots,N\right\}$ without replacement
 		\State Calculate $\hat{\nabla} U(\boldsymbol{\theta})^{(n)}$ using Equation \ref{eq:grad}  
@@ -964,7 +964,9 @@ To construct effective control variates, one common strategy is to first approxi
 \]
 This approximation introduces stochasticity into the updates but significantly reduces computational cost.
 
-A commonly used learning rate (or step size) schedule is \( \epsilon_s = s^{-\kappa} \), where \( \kappa \in (0.5, 1] \). If \( \kappa \) is too large, the learning rate decays too quickly and the algorithm may stagnate. If it is too small, the algorithm may remain unstable or fail to converge. An important distinction to note is that SGLD operates with sums, while SGD typically works with averages.
+Two commonly used learning rate (or step size) schedules are \( \epsilon_s = s^{-\kappa} \) and \( \epsilon_s = \epsilon_0 / (1 + s / \tau)^{\kappa} \), where \( \epsilon_0 \) is the initial learning rate, \( \tau \) is a stability constant that slows down early decay (larger values lead to more stable early behavior), and \( \kappa \in (0.5, 1] \) controls the long-run decay rate. If \( \kappa \) is too large, the learning rate decays too quickly and the algorithm may stagnate. Conversely, if \( \kappa \) is too small, the algorithm may remain unstable or fail to converge. 
+
+An important distinction to note is that SGLD operates with gradient \emph{sums}, while SGD typically uses \emph{averages}. This distinction affects how step sizes and noise scaling should be interpreted in practice.
 
 After convergence, we obtain a reliable estimate of the posterior mode \( \hat{\boldsymbol{\theta}} \). Based on this, we define the control variate as \( u_i(\boldsymbol{\theta}) = \nabla U_i(\hat{\boldsymbol{\theta}}) \). The resulting control variate estimator of the gradient is:
 \[
@@ -975,9 +977,9 @@ This expression is used in place of \( \hat{\nabla} U(\boldsymbol{\theta})^{(n)}
 
 It has been shown that the computational cost per effective sample size of SGLD algorithm with control variates is \( O(1) \), rather than \( O(N) \) \cite{nemeth2021stochastic}. However, it is also known that the approximate posterior distribution produced by SGLD, despite capturing the correct mode, tends to exhibit higher variance compared to the true target posterior.
 
-\cite{chen2014stochastic} propose the stochastic gradient Hamiltonian Monte Carlo (SGHMC) algorithm, which performs better asymptotically than SGLD in terms of the Wasserstein distance to the target distribution, especially in high-dimensional settings (with large \( K \)). Similarly, \cite{ma2015complete} propose an alternative diffusion process whose stationary distribution is the desired posterior. See Table 1 in \cite{nemeth2021stochastic} for a comprehensive list of stochastic gradient MCMC methods that fit in the general diffusion process proposed by \cite{ma2015complete}.
+\cite{chen2014stochastic} propose the stochastic gradient Hamiltonian Monte Carlo (SGHMC) algorithm, which performs better asymptotically than SGLD in terms of the Wasserstein distance to the target distribution, especially in high-dimensional settings (with large \( K \)). Similarly, \cite{ma2015complete} propose an alternative diffusion process whose stationary distribution is the desired posterior. See Table 1 in \cite{nemeth2021stochastic} for a comprehensive list of stochastic gradient MCMC (SGMCMC) methods that fit in the general diffusion process proposed by \cite{ma2015complete}.
 
-\cite{nemeth2021stochastic} also discuss convergence diagnostics for stochastic gradient MCMC (SGMCMC) methods. They argue that standard diagnostics, such as those discussed in Section~\ref{sec54}, are inadequate for assessing SGMCMC behavior, as these methods target asymptotically biased approximations of the posterior. Consequently, a growing body of research focuses on designing suitable diagnostics for SGMCMC, with approaches based on Stein's discrepancy being among the most prominent (see \cite{nemeth2021stochastic} for details).
+\cite{nemeth2021stochastic} also discuss convergence diagnostics for SGMCMC methods. They argue that standard diagnostics, such as those discussed in Section~\ref{sec54}, are inadequate for assessing SGMCMC behavior, as these methods target asymptotically biased approximations of the posterior. Consequently, a growing body of research focuses on designing suitable diagnostics for SGMCMC, with approaches based on Stein's discrepancy being among the most prominent (see \cite{nemeth2021stochastic} for details).
 
 A limitation of SGMCMC algorithms is that they are applicable only to a restricted class of models, specifically, those with fixed-dimensional parameter spaces in \( \mathcal{R}^K \) and differentiable log-posterior densities. To broaden their applicability, \cite{song2020extended} propose an extended stochastic gradient MCMC framework capable of addressing more general large-scale Bayesian inference problems, including those involving dimension-jumping and missing data.\\
 
@@ -1011,7 +1013,7 @@ This means that the gradient vector of the log-prior is
 
 We set \( K = 10 \), \( \boldsymbol{\beta} = 0.5 \cdot \mathbf{1}_K \), \( N = 10^5 \), and \( n = 0.01 \cdot N \). The covariates \( \mathbf{x}_i \sim {N}(\mathbf{0}, \boldsymbol{\Sigma}) \), where the covariance matrix \( \boldsymbol{\Sigma}^{(i,j)} = U[-\rho, \rho]^{|i-j|} \) with \( \rho = 0.4 \), and \( \mathbf{1}_K \) denotes a \( K \)-dimensional vector of ones.
 
-We run 2{,}000 MCMC iterations initialized at zero, 500 as burn-in, and the step size set to \(1 \times 10^{-4}\). The following code implements Algorithm~\ref{Alg:SGLD}.\footnote{There is an \textbf{R} package called \textit{sgmcmc} developed by \cite{baker2019sgmcmc}, which implements various stochastic gradient MCMC methods, including SGLD and SGHMC. However, this package relies on version~1 of the \textit{tensorflow} package, whereas the current version is 2, and \textit{sgmcmc} has not been updated on the CRAN repository. We attempted to install the package from its GitHub repository using the \textit{devtools} package via \texttt{devtools::install\_github("STOR-i/sgmcmc")}, but encountered compatibility issues due to conflicting TensorFlow versions.} In Exercise~8, we ask you to implement the control variate version by first performing 1{,}500 SGD iterations to locate the posterior mode. This mode should then be used as the initial value for 1{,}000 subsequent MCMC iterations.
+We run 2{,}000 MCMC iterations initialized at zero, 500 as burn-in, and the step size set to \(1 \times 10^{-4}\). The following code implements Algorithm~\ref{Alg:SGLD}. We scale the regressors beforehand, as this is generally recommended to improve numerical stability and convergence.\footnote{There is an \textbf{R} package called \textit{sgmcmc} developed by \cite{baker2019sgmcmc}, which implements various stochastic gradient MCMC methods, including SGLD and SGHMC. However, this package relies on version~1 of the \textit{tensorflow} package, whereas the current version is 2, and \textit{sgmcmc} has not been updated on the CRAN repository. We attempted to install the package from its GitHub repository using the \textit{devtools} package via \texttt{devtools::install\_github("STOR-i/sgmcmc")}, but encountered compatibility issues due to conflicting TensorFlow versions.} In Exercise~8, we ask you to implement the control variate version by first performing 1{,}500 SGD iterations to locate the posterior mode. This mode should then be used as the initial value for 1{,}000 subsequent MCMC iterations.
 
 By running the code, you can verify that the computational time of the SGLD algorithm is lower than that of the Metropolis–Hastings algorithm. Figure~\ref{SGLDlogit} shows the posterior distributions of the fifth location parameter obtained from SGLD and Metropolis–Hastings. We observe that both modes are centered around the true population value; however, the SGLD distribution exhibits greater dispersion compared to the Metropolis–Hastings distribution.
 
@@ -1103,7 +1105,7 @@ stepsize <- 1e-4; k_target <- 5  # beta5
 
 #--- Simulate data
 sim_data <- simulate_logit_data(K, N, beta_true)
-y <- sim_data$y; X <- sim_data$X
+y <- sim_data$y; X <- scale(sim_data$X)
 
 #--- Run SGLD
 posterior_sgld <- run_SGLD(y, X, stepsize, batch_prop, n_iter, burnin)
@@ -1178,7 +1180,9 @@ In this chapter, we introduced several Bayesian machine learning methods designe
 	
 	Program from scratch the stochastic gradient Langevin dynamic algorithm for the logit simulation exercise implementing the control variate version performing 1{,}500 stochastic gradient descent iterations to locate the posterior mode, which should be then used as the initial value for 1{,}000 subsequent MCMC iterations using a step size set to \(1 \times 10^{-4}\).
 	
-	\item Perform the simulation according to the model \( y_i = 1 - 2 x_{i1} + 0.5 x_{i2} + \mu_i \), where \( \mu_i \sim {N}(0,1) \), the sample size is 100,000, and the covariates \( \mathbf{x}_i \sim {N}(\mathbf{0}, \mathbf{I}_2) \). Use 2,000 MCMC iterations, a batch size of 1000, and a step size of \( 10^{-4} \) to implement the SGLD algorithm.
+	\item Perform the simulation according to the model \( y_i = 1 - 2 x_{i1} + 0.5 x_{i2} + \mu_i \), where \( \mu_i \sim {N}(0,1) \), the sample size is 100{,}000, and the covariates \( \mathbf{x}_i \sim {N}(\mathbf{0}, \mathbf{I}_2) \). Use 5{,}000 MCMC iterations and a batch size of 1{,}000 to implement the SGLD algorithm. Set a learning rate schedule that yields sensible results.
+	
+	Assume independent priors \( \pi(\boldsymbol{\beta}, \sigma^2) = \pi(\boldsymbol{\beta}) \times \pi(\sigma^2) \), with \( \boldsymbol{\beta} \sim {N}(\mathbf{0}, \mathbf{I}_3) \) and \( \sigma^2 \sim {IG}(\alpha_0/2, \delta_0/2) \), where \( \alpha_0 = \delta_0 = 0.01 \).
 	
 	
 	  

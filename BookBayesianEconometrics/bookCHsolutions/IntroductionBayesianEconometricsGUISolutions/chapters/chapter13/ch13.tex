@@ -669,13 +669,13 @@ SGD_step <- function(beta, y, X, lr, batch_size, prior_var = 10) {
 K <- 10; N <- 100000
 beta_true <- rep(0.5, K); batch_prop <- 0.01
 batch_size <- round(N*batch_prop); n_iter <- 1000
-n_iterSGD <- 1500; kappa <- 0.5
+n_iterSGD <- 1500; kappa <- 0.55
 stepsize <- 1e-4; prior_var <- 10
 k_target <- 5  # beta5
 
 sim_data <- simulate_logit_data(K, N, beta_true)
 y <- sim_data$y
-X <- sim_data$X
+X <- scale(sim_data$X)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
@@ -769,10 +769,98 @@ ggplot(df_plot, aes(x = value, fill = method, color = method)) + geom_density(al
 	\label{SGLDlogit}
 \end{figure} 
 
+\item Perform the simulation according to the model \( y_i = 1 - 2 x_{i1} + 0.5 x_{i2} + \mu_i \), where \( \mu_i \sim {N}(0,1) \), the sample size is 100{,}000, and the covariates \( \mathbf{x}_i \sim {N}(\mathbf{0}, \mathbf{I}_2) \). Use 5{,}000 MCMC iterations and a batch size of 1{,}000 to implement the SGLD algorithm. Set a learning rate schedule that yields sensible results.
 
+Assume independent priors \( \pi(\boldsymbol{\beta}, \sigma^2) = \pi(\boldsymbol{\beta}) \times \pi(\sigma^2) \), with \( \boldsymbol{\beta} \sim {N}(\mathbf{0}, \mathbf{I}_3) \) and \( \sigma^2 \sim {IG}(\alpha_0/2, \delta_0/2) \), where \( \alpha_0 = \delta_0 = 0.01 \).
 
-\item Perform the simulation according to the model \( y_i = 1 - 2 x_{i1} + 0.5 x_{i2} + \mu_i \), where \( \mu_i \sim {N}(0,1) \), the sample size is 100,000, and the covariates \( \mathbf{x}_i \sim {N}(\mathbf{0}, \mathbf{I}_2) \). Use 2,000 MCMC iterations, a batch size of 1000, and a step size of \( 10^{-4} \) to implement the SGLD algorithm.
-	
+\textbf{Answer}
+
+Take into account that SGLD was originally developed for parameter spaces in \( \mathbb{R}^K \). In this exercise, we use SGLD to perform inference on \( \boldsymbol{\beta} \), while obtaining draws from the conditional posterior distribution of \( \sigma^2 \sim {IG}(\alpha_n/2, \delta_n/2) \), where \( \alpha_n = N + \alpha_0 \) and \( \delta_n = (\mathbf{y} - \mathbf{X}\boldsymbol{\beta})^{\top}(\mathbf{y} - \mathbf{X}\boldsymbol{\beta}) + \delta_0 \).
+
+Additionally, recall the gradients involved in the SGLD updates:
+\begin{align*}
+	\nabla_{\boldsymbol{\beta}} \log p(\mathbf{y} \mid \boldsymbol{\beta}, \sigma^2) &= \frac{1}{\sigma^2} \mathbf{X}^{\top}(\mathbf{y} - \mathbf{X}\boldsymbol{\beta}), \\
+	\nabla_{\boldsymbol{\beta}} \log \pi(\boldsymbol{\beta}) &= -\boldsymbol{\beta}.
+\end{align*}
+
+The following code illustrates how to implement this procedure. We note that the results for the location parameters \( \boldsymbol{\beta} \) are satisfactory; however, the algorithm appears to exhibit a positive bias in the estimation of \( \sigma^2 \).
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Stochastic Gradient MCMC (SG-MCMC): Linear regression}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(10101)
+# Simulated data
+N <- 100000; K <- 3
+X <- cbind(1, matrix(rnorm(N * (K - 1)), N, K - 1))  # design matrix
+beta_true <- c(1, -2, 0.5); sigma2_true <- 1
+y <- X %*% beta_true + rnorm(N, 0, sqrt(sigma2_true))
+X[, 2:3] <- scale(X[, 2:3])
+# SGLD settings
+iterations <- 5000
+batch_size <- 1000
+initial_stepsize <- 1e-4
+decay_rate <- 0.55
+schedule <- 1000
+# Priors
+a0 <- 0.01; b0 <- 0.01
+# Storage
+trace_beta <- matrix(NA, nrow = iterations, ncol = K)
+trace_sigma2 <- rep(NA, iterations)
+# Initialization
+beta <- rep(0, K)
+sigma2 <- 0.5
+# Gradient of log-posterior w.r.t. beta (scaled)
+grad_log_post <- function(beta, X_batch, y_batch, N, sigma2) {
+	grad_loglik <- t(X_batch) %*% (y_batch - X_batch %*% beta) / sigma2
+	grad_logprior <- -beta  # derivative of log N(0, I)
+	return((N / nrow(X_batch)) * grad_loglik + grad_logprior)
+}
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Stochastic Gradient MCMC (SG-MCMC): Linear regression}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+# SGLD algorithm
+for (t in 1:iterations) {
+	# Step size
+	stepsize_t <- initial_stepsize / (1 + t / schedule)^decay_rate
+	# Sample mini-batch
+	idx <- sample(1:N, batch_size)
+	X_batch <- X[idx, ]
+	y_batch <- y[idx]
+	# Beta update via SGLD
+	grad <- grad_log_post(beta, X_batch, y_batch, N, sigma2)
+	noise <- rnorm(K, 0, sqrt(stepsize_t))
+	beta <- beta + 0.5 * stepsize_t * grad + noise
+	# Sigma2 update via inverse-gamma (full conditional)
+	resid <- y - X %*% beta
+	shape <- (a0 + N) / 2
+	rate <- (b0 + sum(resid^2)) / 2
+	sigma2 <- 1 / rgamma(1, shape = shape, rate = rate)
+	# Store draws
+	trace_beta[t, ] <- beta
+	trace_sigma2[t] <- sigma2
+}
+# Plot trace of beta[2]
+plot(trace_beta[4001:5000, 2], type = "l", col = "blue", lwd = 2,
+main = expression("SGLD: Evolution of " * beta[2]),
+xlab = "Iteration", ylab = expression(beta[2]))
+abline(h = beta_true[2], col = "red", lty = 2)
+# Plot trace of sigma2
+plot(trace_sigma2[4001:5000], type = "l", col = "darkgreen", lwd = 2,
+main = expression("Trace plot of " * sigma^2),
+xlab = "Iteration", ylab = expression(sigma^2))
+abline(h = sigma2_true, col = "red", lty = 2)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
 	
 
 \end{enumerate}
