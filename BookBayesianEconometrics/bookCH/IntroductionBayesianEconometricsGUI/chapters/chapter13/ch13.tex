@@ -873,21 +873,57 @@ The main difficulty is how to effectively merge the subposterior distributions, 
 
 \subsection{Subsampling-based algorithms}
 
-An alternative to the divide-and-conquer methods is not to evaluate the likelihood in all observations, which means $O(N)$ operations, by the contrary to evaluate the likelihood in $M<N$ observations to reduce the computational burden of the algorithm. The point of departure is the log-likelihood function given $N$ independent observations,
+An alternative to divide-and-conquer methods is to avoid evaluating the likelihood over all observations, which requires \( O(N) \) operations. Instead, the likelihood is approximated using a smaller subset of observations, \( n \ll N \), in order to reduce the computational burden of the algorithm. The starting point is the log-likelihood function for \( N \) independent observations:
 \begin{align*}
-	\log p(\mathbf{y}\mid \boldsymbol{\theta})&=\sum_{i=1}^N \log p(y_i\mid \boldsymbol{\theta}).
-\end{align*} 
-The literature has focused on the log-likelihood as this is usually a sum, which is equivalent to estimating a population total. 
+	\log p(\mathbf{y} \mid \boldsymbol{\theta}) &= \sum_{i=1}^N \log p(y_i \mid \boldsymbol{\theta}).
+\end{align*}
+The literature has focused on the log-likelihood because it is a sum over independent contributions, which is analogous to the problem of estimating a population total.
 
-The intuition behind the \textit{pseudo-marginal} method is straightforward: introduce a set of auxiliary random variables \( \mathbf{z} \) with density \( p(\mathbf{z}) \), such that an unbiased estimator of the marginal likelihood is obtained even when a closed-form expression is unavailable. Specifically, if \(\mathbb{E}_{\mathbf{z}}[p(\mathbf{y} \mid \boldsymbol{\theta}, \mathbf{z})] = \int_{\mathcal{Z}} p(\mathbf{y} \mid \boldsymbol{\theta}, \mathbf{z}) \, p(\mathbf{z}) \, d\mathbf{z} = p(\mathbf{y} \mid \boldsymbol{\theta}),
-\)
-then
-\(
+A class of subsampling methods relies on estimating the marginal likelihood via the \textit{pseudo-marginal} approach. Examples include the confidence sampler \cite{bardenet2014towards}, the Firefly Monte Carlo algorithm \cite{Maclaurin2015}, whose relationship to subsampling MCMC is formally established in \cite{bardenet2017markov}, and approaches using data-expanded and parameter-expanded control variates \cite{quiroz2019speeding}.
+
+The intuition behind the pseudo-marginal method is straightforward: introduce a set of auxiliary random variables \( \mathbf{z} \sim p(\mathbf{z}) \), such that the marginal likelihood can be written as an expectation with respect to \( \mathbf{z} \):
+\[
+\mathbb{E}_{\mathbf{z}}[p(\mathbf{y} \mid \boldsymbol{\theta}, \mathbf{z})] = \int_{\mathcal{Z}} p(\mathbf{y} \mid \boldsymbol{\theta}, \mathbf{z}) \, p(\mathbf{z}) \, d\mathbf{z} = p(\mathbf{y} \mid \boldsymbol{\theta}).
+\]
+This implies that
+\[
 \hat{p}(\mathbf{y} \mid \boldsymbol{\theta}) = \frac{1}{S} \sum_{s=1}^S p(\mathbf{y} \mid \boldsymbol{\theta}, \mathbf{z}^{(s)}),
-\)
-where \( \mathbf{z}^{(s)} \sim p(\mathbf{z}) \), is a valid unbiased estimator of the marginal likelihood. As a result, the \textit{pseudo-marginal} method enables exact simulation-based inference for \( p(\mathbf{y} \mid \boldsymbol{\theta}) \) in situations where the likelihood cannot be evaluated analytically \cite{andrieu2009pseudoefficient}, for instance, in non-linear random effects models.
+\]
+where \( \mathbf{z}^{(s)} \sim p(\mathbf{z}) \), is an unbiased estimator of the marginal likelihood.
 
-\cite{quiroz2018subsampling,quiroz2019speeding} \cite{bardenet2017markov} show the relationship between the firefly Monte Carlo algorithm \cite{Maclaurin2015} and subsampling MCMC.
+As a result, the pseudo-marginal method enables exact simulation-based inference for \( p(\mathbf{y} \mid \boldsymbol{\theta}) \) in settings where the likelihood cannot be evaluated analytically \cite{andrieu2009pseudoefficient}, for instance, in non-linear random effects models. \cite{andrieu2009pseudoefficient} show that replacing the likelihood with an unbiased and positive estimator within the Metropolis–Hastings (MH) algorithm yields samples from the correct posterior distribution.
+
+The pseudo-marginal likelihood approach can also be applied in settings where the sample size is so large that evaluating the full likelihood at each iteration of an MCMC algorithm becomes computationally prohibitive. In such cases, the likelihood can be approximated using a small subset of observations, \( n \ll N \). The choice of the subset size \( n \) is particularly important, as it directly affects the variance of the likelihood estimator, which in turn is critical to ensuring an efficient Metropolis–Hastings (MH) algorithm.
+
+In particular, a likelihood estimator with high variance may result in an accepted draw that overestimates the likelihood. As a consequence, subsequent proposals are unlikely to be accepted, causing the algorithm to become stuck and leading to a very low acceptance rate. Therefore, the choice of \( n \) determines the computational efficiency of the algorithm: a small \( n \) increases the estimator's variance, which reduces the acceptance rate, whereas a large \( n \) increases the number of likelihood evaluations per iteration.
+
+\cite{quiroz2018subsampling} recommend targeting a likelihood estimator variance between 1 and 3.3 to optimize computational efficiency, as supported by the findings of \cite{pitt2012some}.
+
+Let \( \ell_i(y_i \mid \boldsymbol{\theta}) = \log p(y_i \mid \boldsymbol{\theta}) \) denote the contribution of the \( i \)-th observation to the log-likelihood, and let \( z_1, \dots, z_N \) be latent binary variables such that \( z_i = 1 \) indicates that \( y_i \) is included in a subsample of size \( n \), selected without replacement. Then, an unbiased estimator of the log-likelihood is given by
+\begin{align*}
+	\hat{\ell}(\mathbf{y} \mid \boldsymbol{\theta}) & = \frac{N}{n} \sum_{i=1}^N \ell_i(y_i \mid \boldsymbol{\theta}) z_i.
+\end{align*}
+
+However, note that what we require is an unbiased estimator of the likelihood, not the log-likelihood. Consequently, a bias correction is needed:
+\begin{align*}
+	\hat{p}(\mathbf{y} \mid \boldsymbol{\theta}) & = \exp\left\{ \hat{\ell}(\mathbf{y} \mid \boldsymbol{\theta}) - \frac{1}{2} \sigma^2_{\hat{\ell}}(\boldsymbol{\theta}) \right\},
+\end{align*}
+where \( \sigma^2_{\hat{\ell}}(\boldsymbol{\theta}) \) denotes the variance of \( \hat{\ell}(\mathbf{y} \mid \boldsymbol{\theta}) \) \cite{ceperley1999penalty}. This correction is exact if \( \sigma^2_{\hat{\ell}}(\boldsymbol{\theta}) \) is known and \( \hat{\ell}(\mathbf{y} \mid \boldsymbol{\theta}) \) follows a normal distribution.
+
+Given the importance of controlling the variance of the log-likelihood estimator in subsampling methods, and the limitations of simple random sampling in achieving low variability, \cite{quiroz2019speeding} propose a highly efficient, unbiased estimator of the log-likelihood based on \textit{control variates}, specifically through data-expanded and parameter-expanded control variates. 
+The key idea is to construct a function \( q_i(\boldsymbol{\theta}) \) that is highly correlated with the log-likelihood contribution \( \ell_i(y_i \mid \boldsymbol{\theta}) \), thereby stabilizing the log-likelihood estimator. In particular, \cite{quiroz2019speeding} introduce a \textit{difference estimator} of the form:
+\begin{align*}
+	\hat{\ell}_{\mathrm{DE}}(\mathbf{y} \mid \boldsymbol{\theta}, \mathbf{z}) = \sum_{i=1}^N q_i(\boldsymbol{\theta}) + \frac{N}{n} \sum_{i: z_i = 1} \left( \ell_i(y_i \mid \boldsymbol{\theta}) - q_i(\boldsymbol{\theta}) \right).
+\end{align*}
+This estimator \( \hat{\ell}_{\mathrm{DE}}(\mathbf{y} \mid \boldsymbol{\theta}, \mathbf{z}) \) is unbiased for the full log-likelihood \( \log p(\mathbf{y} \mid \boldsymbol{\theta}) \).
+
+\cite{quiroz2019speeding} propose constructing \( q_i(\boldsymbol{\theta}) \) using a second-order Taylor expansion of the log-likelihood around a central value of \( \boldsymbol{\theta} \), such as the mode. An alternative approach is to perform a second-order Taylor expansion around the nearest centroid of each observation, where the centroids are obtained from a pre-clustering of the data.
+
+The first approach can perform poorly when the current draw \( \boldsymbol{\theta} \) is far from the central expansion point, leading to inaccurate approximations. The second approach encounters difficulties in high-dimensional settings due to the curse of dimensionality: many observations will be far from their assigned centroid. To address these issues, the authors propose an adaptive strategy—initialize the algorithm using data-expanded control variates, and switch to parameter-expanded control variates once the sampler reaches a region closer to the center of the parameter space.
+
+It is important to note that this strategy targets an approximation to the posterior distribution, due to the small bias introduced by the difference estimator. However, this bias diminishes rapidly and has a negligible impact on the quality of the posterior inference.
+
+Once a good estimator of the log-likelihood is obtained, meaning it has low variance, the likelihood can be recovered using the appropriate bias correction. This corrected likelihood estimator is then used within the acceptance probability of the Metropolis–Hastings algorithm (see Section \ref{sec512}), resulting in the so-called pseudo-marginal Metropolis–Hastings (PMMH) method. This strategy significantly reduces computational cost in tall data settings.
 
 Another class of subsampling methods, which does not rely on the pseudo-marginal likelihood, consists of stochastic gradient MCMC algorithms. These methods begin based on ideas from stochastic gradient descent \cite{robbins1951stochastic} and the Langevin diffusion-based stochastic differential equations.
 
@@ -949,7 +985,7 @@ Algorithm~\ref{Alg:SGLD} summarizes the SGLD procedure \cite{nemeth2021stochasti
 	\end{algorithmic} 
 \end{algorithm}
  
-A critical component of the SGLD algorithm is the estimation of the stochastic gradient (Equation~\ref{eq:grad}), particularly because high variability in this estimator can lead to algorithmic instability. To mitigate this, the literature often employs \emph{control variates} to reduce variance. The intuition is to construct a simple function \( u_i(\boldsymbol{\theta}) \) that is highly correlated with \( \nabla U_i(\boldsymbol{\theta}) \) and has a known expectation. This allows the fluctuations in \( u_i(\boldsymbol{\theta}) \) to help ``cancel out'' some of the noise in \( \nabla U_i(\boldsymbol{\theta}) \). Specifically,
+A critical component of the SGLD algorithm is the estimation of the stochastic gradient (Equation~\ref{eq:grad}), particularly because high variability in this estimator can lead to algorithmic instability, a challenge also encountered in pseudo-marginal methods, as described previously. To mitigate this issue, the literature also employs \textit{control variates} to reduce the variance of the estimator. The core idea is to construct a simple function \( u_i(\boldsymbol{\theta}) \) that is highly correlated with \( \nabla U_i(\boldsymbol{\theta}) \) and has a known expectation. This correlation allows the fluctuations in \( u_i(\boldsymbol{\theta}) \) to ``cancel out'' some of the noise in \( \nabla U_i(\boldsymbol{\theta}) \), thereby stabilizing the stochastic gradient estimates. Specifically,
 \begin{align*}
 	\sum_{i=1}^N \nabla U_i(\boldsymbol{\theta}) &= \sum_{i=1}^N u_i(\boldsymbol{\theta}) + \sum_{i=1}^N \left( \nabla U_i(\boldsymbol{\theta}) - u_i(\boldsymbol{\theta}) \right),
 \end{align*}
