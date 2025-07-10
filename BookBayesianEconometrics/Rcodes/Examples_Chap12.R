@@ -404,13 +404,14 @@ fit_km@covariance@range.val  # lengthscale
 fit_km@covariance@sd2        # process variance
 fit_km@noise.var             # noise variance
 
-####### Stochastic Gradient Langevin Dynamic #########
+####### Consensus Monte Carlo and Stochastic Gradient Langevin Dynamic #########
 rm(list = ls()); set.seed(10101)
 library(mvtnorm)
 library(MCMCpack)
 library(ggplot2)
 library(dplyr)
 library(parallel)
+library(GGally)
 
 #--- Generate correlated covariates
 genCovMat <- function(K, rho = 0.4) {
@@ -444,7 +445,8 @@ batch_prop <- 0.01
 n_iter <- 2000
 burnin <- 500
 stepsize <- 1e-4
-k_target1 <- 4  # beta5
+Prior_prec <- 0.1
+k_target1 <- 4  # beta4
 k_target2 <- 5  # beta5
 ks <- k_target1:k_target2
 #--- Simulate data
@@ -457,7 +459,7 @@ df <- as.data.frame(X)
 colnames(df) <- paste0("X", 1:K)
 df$y <- y
 formula <- as.formula(paste("y ~", paste(colnames(df)[1:K], collapse = " + "), "-1"))
-posterior_mh <- MCMClogit(formula, data = df, b0 = 0, B0 = 0.1,
+posterior_mh <- MCMClogit(formula, data = df, b0 = 0, B0 = Prior_prec,
                           burnin = burnin, mcmc = n_iter)
 full_posterior <- as.matrix(posterior_mh)[, 1:K]
 
@@ -470,13 +472,14 @@ mcmc_batch <- function(batch_index, X, y, n_iter, burnin) {
   ids <- batch_ids[[batch_index]]
   X_b <- X[ids, ]
   y_b <- y[ids]
-  mcmc_out <- MCMClogit(y_b ~ X_b - 1, burnin = burnin, mcmc = n_iter, verbose = 0)
+  mcmc_out <- MCMClogit(y_b ~ X_b - 1, burnin = burnin, mcmc = n_iter, verbose = 0,
+                        b0 = 0, B0 = Prior_prec * (1/B))
   return(mcmc_out)
 }
 
 #--- Run in parallel
 cl <- makeCluster(B)
-clusterExport(cl, c("X", "y", "batch_ids", "n_iter", "burnin", "mcmc_batch"))
+clusterExport(cl, c("X", "y", "batch_ids", "n_iter", "burnin", "mcmc_batch", "Prior_prec", "B"))
 clusterEvalQ(cl, library(MCMCpack))
 
 chains <- parLapply(cl, 1:B, function(b) mcmc_batch(b, X, y, n_iter, burnin))

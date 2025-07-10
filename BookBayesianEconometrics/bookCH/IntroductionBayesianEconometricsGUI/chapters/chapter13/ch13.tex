@@ -858,14 +858,13 @@ Bayesian inference in such settings is computationally demanding because each it
 In scenarios where observations are assumed to be independent, two main frameworks have been proposed to scale MCMC algorithms: \textit{divide-and-conquer approaches} and \textit{subsampling-based algorithms}. Divide-and-conquer methods partition the dataset into disjoint subsets, run MCMC independently on each batch to obtain subposteriors, and then combine them to approximate the full posterior distribution. Subsampling-based algorithms, on the other hand, aim to reduce the number of data points used to evaluate the likelihood at each iteration, often relying on \textit{pseudo-marginal} MCMC methods \cite{andrieu2009pseudoefficient}. The key idea of pseudo-marginal MCMC is to augment the model with latent variables such that the sample average of the likelihood, computed over draws from these latent variables, provides an unbiased estimator of the marginal likelihood. This approach is particularly valuable when the marginal likelihood is not available in closed form. Moreover, the same principles can be adapted to reduce the computational burden of evaluating the log-likelihood. For an excellent review of divide-and-conquer and subsampling-based approaches, see \cite{bardenet2017markov}.
 
 \subsection{Divide-and-conquer methods}
-In \textit{divide-and-conquer} methods, the main idea is to partition the dataset and distribute the subsets across multiple computing machines/cores. An independent MCMC algorithm is then executed on each subset to obtain a corresponding \textit{subposterior} distribution. The central challenge lies in accurately and efficiently combining these subposteriors into a single approximation of the full posterior distribution. Several approaches have been proposed to address this issue. For instance, \cite{wang2013parallelizing} develop a method based on the \textit{Weierstrass sampler} for parallelizing MCMC; \cite{minsker2015scalable} propose using the \textit{geometric median of posterior distributions}; \cite{huang2005sampling,scott2016bayes, rendell2020global, scott2022bayes} introduce the \textit{Consensus Monte Carlo} algorithm; and \cite{wu2017average} suggest combining \textit{rescaled subposteriors}.
+In \textit{divide-and-conquer} methods, the main idea is to partition the dataset and distribute the subsets across multiple computing machines/cores. An independent MCMC algorithm is then executed on each subset to obtain a corresponding \textit{subposterior} distribution. The central challenge lies in accurately and efficiently combining these subposteriors into a single approximation of the full posterior distribution. Several approaches have been proposed to address this issue. For instance, \cite{huang2005sampling,scott2016bayes, rendell2020global, scott2022bayes} introduce the \textit{Consensus Monte Carlo} algorithm; \cite{wang2013parallelizing} develop a method based on the \textit{Weierstrass sampler} for parallelizing MCMC; \cite{minsker2015scalable} propose using the \textit{geometric median of posterior distributions}; and \cite{wu2017average} suggest combining \textit{rescaled subposteriors}.
+
 In divide-and-conquer methods, the dataset is partitioned into \( B \) disjoint batches \( \mathbf{y}_1, \mathbf{y}_2, \dots, \mathbf{y}_B \), and the posterior is rewritten using the identity:
 \begin{align*}
 	\pi(\boldsymbol{\theta} \mid \mathbf{y}) &\propto \prod_{b=1}^B \pi(\boldsymbol{\theta})^{1/B} p(\mathbf{y}_b \mid \boldsymbol{\theta}),
 \end{align*}
 which implies that the full posterior is proportional to the product of appropriately rescaled subposteriors.
-
-It is possible to recover the exact posterior distribution by merging subposteriors if they are Gaussian, in which case the combination rules depend only on the means and covariances of each subposterior \cite{scott2016bayes, scott2022bayes}. Alternative merging procedures that are more robust to non-Gaussianity have also been proposed \cite{neiswanger2013asymptotically, minsker2017robust}; however, it remains difficult to quantify the approximation error in these approaches.
 
 \textit{Consensus Monte Carlo} (CMC) operates by running separate Monte Carlo algorithms on each subset in parallel, and then averaging the resulting posterior draws. Specifically, given samples \( \boldsymbol{\theta}_b^{(s)} \), for  \( b = 1, 2, \dots, B \) and \( s = 1, 2, \dots, S \), obtained independently from each batch \( \mathbf{y}_b \), the \( s \)-th draw from the consensus posterior is computed as:
 \begin{align*}
@@ -873,9 +872,9 @@ It is possible to recover the exact posterior distribution by merging subposteri
 \end{align*}
 where the optimal weight is the inverse covariance matrix of the subposterior, i.e., \( \mathbf{w}_b = \operatorname{Var}^{-1}(\boldsymbol{\theta} \mid \mathbf{y}_b) \). In practice, one may use the marginal variances of each parameter to simplify the computation, which can still yield good performance.
 
-When each subposterior \( \pi_b(\boldsymbol{\theta} \mid \mathbf{y}_b) \) is Gaussian, the full posterior \( \pi(\boldsymbol{\theta} \mid \mathbf{y}) \) is also Gaussian, and this strategy yields exact inference. In the non-Gaussian case, standard asymptotic results in Bayesian inference (see Chapter~\ref{chap1}) imply that the posterior distributions converge to a Gaussian distribution as the batch size increases. However, this procedure is limited to continuous parameter spaces and may exhibit small-sample bias; that is, when the dataset is divided into small batches, the subposterior distributions may be biased. In such cases, jackknife bias corrections are recommended to reduce the overall approximation error.
+When each subposterior \( \pi_b(\boldsymbol{\theta} \mid \mathbf{y}_b) \) is Gaussian, the full posterior \( \pi(\boldsymbol{\theta} \mid \mathbf{y}) \) is also Gaussian, and can be recovered exactly by combining the subposteriors using simple rules based on their means and covariances \cite{scott2016bayes, scott2022bayes}. In the non-Gaussian case, standard asymptotic results in Bayesian inference (see Chapter~\ref{chap1}) imply that the posterior distributions converge to a Gaussian distribution as the batch size increases. Alternative merging procedures that are more robust to non-Gaussianity have also been proposed \cite{neiswanger2013asymptotically, minsker2017robust}; however, it remains difficult to quantify the approximation error in these approaches. Moreover, this procedure is limited to continuous parameter spaces and may exhibit small-sample bias; that is, when the dataset is divided into small batches, the subposterior distributions may be biased. In such cases, jackknife bias corrections are recommended to reduce the overall approximation error.
 
-In particular, we perform Consensus Monte Carlo (CMC) following Algorithm~\ref{Alg:CMC} \cite{scott2016bayes}. Next, we compute the CMC posterior repeatedly, each time leaving out one of the \( B \) subsets. Let \( \pi_{-b}(\boldsymbol{\theta} \mid \mathbf{y}) \) denote the resulting posterior when subset \( b \) is excluded. The average of these leave-one-out posteriors is denoted by
+In particular, we perform CMC following Algorithm~\ref{Alg:CMC} \cite{scott2016bayes}. Next, we compute the CMC posterior repeatedly, each time leaving out one of the \( B \) subsets. Let \( \pi_{-b}(\boldsymbol{\theta} \mid \mathbf{y}) \) denote the resulting posterior when subset \( b \) is excluded. The average of these leave-one-out posteriors is denoted by
 \[
 \bar{\pi}_{-b}(\boldsymbol{\theta} \mid \mathbf{y}) = \frac{1}{B} \sum_{b=1}^B \pi_{-b}(\boldsymbol{\theta} \mid \mathbf{y}).
 \]
@@ -892,7 +891,7 @@ where \( \pi_{\text{CMC}}(\boldsymbol{\theta} \mid \mathbf{y}) \) is the origina
 	\begin{algorithmic}[1]
 		\State Divide the dataset into \( B \) disjoint batches $\mathbf{y}_1, \mathbf{y}_2, \dots, \mathbf{y}_B$
 		\State Run $B$ separate MCMC algorithms to sample $\boldsymbol{\theta}_b^{(s)}\sim \pi(\boldsymbol{\theta}\mid \mathbf{y}_b)$, $b=1,2,\dots,B$, and $s=1,2,\dots,S$ using the prior distribution $\pi(\boldsymbol{\theta})^{1/B}$
-		\State Combine the posterior draws using $\boldsymbol{\theta}^{(s)}=\left(\sum_{b=1}^B\mathbf{w}_b\right)^{-1} \sum_{b=1}^B\mathbf{w}_b \boldsymbol{\theta}^{(s)}_b$ using $\mathbf{w}_b=Var(\boldsymbol{\theta}\mid \mathbf{y}_b)$    		 			 
+		\State Combine the posterior draws using $\boldsymbol{\theta}^{(s)}=\left(\sum_{b=1}^B\mathbf{w}_b\right)^{-1} \sum_{b=1}^B\mathbf{w}_b \boldsymbol{\theta}^{(s)}_b$ using \( \mathbf{w}_b = \operatorname{Var}^{-1}(\boldsymbol{\theta} \mid \mathbf{y}_b) \)    		 			 
 	\end{algorithmic} 
 \end{algorithm}
 
@@ -918,7 +917,7 @@ This implies that
 \]
 where \( \mathbf{z}^{(s)} \sim p(\mathbf{z}) \), is an unbiased estimator of the marginal likelihood.
 
-As a result, the pseudo-marginal method enables exact simulation-based inference for \( p(\mathbf{y} \mid \boldsymbol{\theta}) \) in settings where the likelihood cannot be evaluated analytically \cite{andrieu2009pseudoefficient}, for instance, in non-linear random effects models. \cite{andrieu2009pseudoefficient} show that replacing the likelihood with an unbiased and positive estimator within the Metropolis–Hastings (MH) algorithm yields samples from the correct posterior distribution.
+As a result, the pseudo-marginal method enables exact simulation-based inference for \( p(\mathbf{y} \mid \boldsymbol{\theta}) \) in settings where the likelihood cannot be evaluated analytically \cite{andrieu2009pseudoefficient}, for instance, in non-linear random effects models (see also approximate methods such as \textit{approximate Bayesian computation} and \textit{Bayesian synthetic likelihood} in Chapter \ref{chap15}). \cite{andrieu2009pseudoefficient} show that replacing the likelihood with an unbiased and positive estimator within the Metropolis–Hastings (MH) algorithm yields samples from the correct posterior distribution.
 
 The pseudo-marginal likelihood approach can also be applied in settings where the sample size is so large that evaluating the full likelihood at each iteration of an MCMC algorithm becomes computationally prohibitive. In such cases, the likelihood can be approximated using a small subset of observations, \( n \ll N \). The choice of the subset size \( n \) is particularly important, as it directly affects the variance of the likelihood estimator, which in turn is critical to ensuring an efficient Metropolis–Hastings (MH) algorithm.
 
@@ -946,7 +945,7 @@ This estimator \( \hat{\ell}_{\mathrm{DE}}(\mathbf{y} \mid \boldsymbol{\theta}, 
 
 \cite{quiroz2019speeding} propose constructing \( q_i(\boldsymbol{\theta}) \) using a second-order Taylor expansion of the log-likelihood around a central value of \( \boldsymbol{\theta} \), such as the mode. An alternative approach is to perform a second-order Taylor expansion around the nearest centroid of each observation, where the centroids are obtained from a pre-clustering of the data.
 
-The first approach can perform poorly when the current draw \( \boldsymbol{\theta} \) is far from the central expansion point, leading to inaccurate approximations. The second approach encounters difficulties in high-dimensional settings due to the curse of dimensionality: many observations will be far from their assigned centroid. To address these issues, the authors propose an adaptive strategy—initialize the algorithm using data-expanded control variates, and switch to parameter-expanded control variates once the sampler reaches a region closer to the center of the parameter space.
+The first approach can perform poorly when the current draw \( \boldsymbol{\theta} \) is far from the central expansion point, leading to inaccurate approximations. The second approach encounters difficulties in high-dimensional settings due to the curse of dimensionality: many observations will be far from their assigned centroid. To address these issues, the authors propose an adaptive strategy: initialize the algorithm using data-expanded control variates, and switch to parameter-expanded control variates once the sampler reaches a region closer to the center of the parameter space.
 
 It is important to note that this strategy targets an approximation to the posterior distribution, due to the small bias introduced by the difference estimator. However, this bias diminishes rapidly and has a negligible impact on the quality of the posterior inference.
 
@@ -1046,7 +1045,7 @@ It has been shown that the computational cost per effective sample size of SGLD 
 
 A limitation of SGMCMC algorithms is that they are applicable only to a restricted class of models, specifically, those with fixed-dimensional parameter spaces in \( \mathcal{R}^K \) and differentiable log-posterior densities. To broaden their applicability, \cite{song2020extended} propose an extended stochastic gradient MCMC framework capable of addressing more general large-scale Bayesian inference problems, including those involving dimension-jumping and missing data.\\
 
-\textbf{Example: Simulation exercise to study SGMCMC performance}
+\textbf{Example: Simulation exercise to study the performance of CMC and SGLD}
 
 In this example, we follow the logistic regression simulation setup introduced by \cite{nemeth2021stochastic}:
 \begin{align*}
@@ -1074,7 +1073,14 @@ This means that the gradient vector of the log-prior is
 	\nabla \log \pi(\boldsymbol{\beta}) = -\frac{1}{10}\boldsymbol{\beta}. 
 \end{align*}
 
-We set \( K = 10 \), \( \boldsymbol{\beta} = 0.5 \cdot \mathbf{1}_K \), \( N = 10^5 \), and \( n = 0.01 \cdot N \). The covariates \( \mathbf{x}_i \sim {N}(\mathbf{0}, \boldsymbol{\Sigma}) \), where the covariance matrix \( \boldsymbol{\Sigma}^{(i,j)} = U[-\rho, \rho]^{|i-j|} \) with \( \rho = 0.4 \), and \( \mathbf{1}_K \) denotes a \( K \)-dimensional vector of ones.
+Also note that 
+\begin{align*}
+	\pi(\boldsymbol{\beta})^{1/B} &\propto \left\{\exp\left(-\frac{1}{2 \cdot 10} \boldsymbol{\beta}^\top \boldsymbol{\beta}\right)\right\}^{1/B} \\
+	&= \exp\left(-\frac{1}{2 \cdot 10 \cdot B} \boldsymbol{\beta}^\top \boldsymbol{\beta} \right).
+\end{align*}
+This implies that, when implementing CMC, the prior variance must be scaled by the number of batches \( B \). In other words, each subposterior should use a prior with variance \( 10 \cdot B \) in this example, so that the product of the \( B \) subposteriors reconstructs the correct full posterior.
+
+We set \( K = 10 \), \( \boldsymbol{\beta} = 0.5 \cdot \mathbf{1}_K \), and \( N = 10^5 \). The covariates \( \mathbf{x}_i \sim {N}(\mathbf{0}, \boldsymbol{\Sigma}) \), where the covariance matrix \( \boldsymbol{\Sigma}^{(i,j)} = U[-\rho, \rho]^{|i-j|} \) with \( \rho = 0.4 \), and \( \mathbf{1}_K \) denotes a \( K \)-dimensional vector of ones.
 
 We run 2{,}000 MCMC iterations initialized at zero, and 500 as burn-in. We scale the regressors beforehand, as this is generally recommended to improve numerical stability and convergence. The following code simulates the model, and sets the hyperparameters of the algorithms.
 
@@ -1085,7 +1091,8 @@ We run 2{,}000 MCMC iterations initialized at zero, and 500 as burn-in. We scale
 		\begin{lstlisting}[language=R]
 rm(list = ls()); set.seed(10101)
 library(mvtnorm); library(MCMCpack)
-library(ggplot2); library(dplyr); library(parallel)
+library(ggplot2); library(dplyr)
+library(parallel); library(GGally)
 
 #--- Generate correlated covariates
 genCovMat <- function(K, rho = 0.4) {
@@ -1116,6 +1123,7 @@ N <- 100000
 beta_true <- rep(0.5, K)
 B <- 5
 batch_prop <- 0.01
+Prior_prec <- 0.1
 n_iter <- 2000
 burnin <- 500
 stepsize <- 1e-4
@@ -1132,7 +1140,7 @@ df <- as.data.frame(X)
 colnames(df) <- paste0("X", 1:K)
 df$y <- y
 formula <- as.formula(paste("y ~", paste(colnames(df)[1:K], collapse = " + "), "-1"))
-posterior_mh <- MCMClogit(formula, data = df, b0 = 0, B0 = 0.1,
+posterior_mh <- MCMClogit(formula, data = df, b0 = 0, B0 = Prior_prec,
 burnin = burnin, mcmc = n_iter)
 full_posterior <- as.matrix(posterior_mh)[, 1:K]
 \end{lstlisting}
@@ -1153,12 +1161,12 @@ mcmc_batch <- function(batch_index, X, y, n_iter, burnin) {
 	ids <- batch_ids[[batch_index]]
 	X_b <- X[ids, ]
 	y_b <- y[ids]
-	mcmc_out <- MCMClogit(y_b ~ X_b - 1, burnin = burnin, mcmc = n_iter, verbose = 0)
+	mcmc_out <- MCMClogit(y_b ~ X_b - 1, burnin = burnin, mcmc = n_iter, verbose = 0, b0 = 0, B0 = Prior_prec * (1/B))
 	return(mcmc_out)
 }
 #--- Run in parallel
 cl <- makeCluster(B)
-clusterExport(cl, c("X", "y", "batch_ids", "n_iter", "burnin", "mcmc_batch"))
+clusterExport(cl, c("X", "y", "batch_ids", "n_iter", "burnin", "mcmc_batch", "Prior_prec", "B"))
 clusterEvalQ(cl, library(MCMCpack))
 chains <- parLapply(cl, 1:B, function(b) mcmc_batch(b, X, y, n_iter, burnin))
 stopCluster(cl)
@@ -1233,7 +1241,7 @@ By running the code, you can verify that the computational time of the CMC algor
 \end{figure} 
 
 
-To implement the SGLD algorithm (Algorithm~\ref{Alg:SGLD}), we set the step size to \( 1 \times 10^{-4} \). The following code illustrates how to implement the SGLD algorithm.\footnote{There is an \textbf{R} package called \textit{sgmcmc}, developed by \cite{baker2019sgmcmc}, which provides implementations of various stochastic gradient MCMC methods, including SGLD and SGHMC. However, this package depends on version~1 of the \textit{tensorflow} package, while the current version is 2, and \textit{sgmcmc} has not been updated on CRAN. We attempted to install the package from its GitHub repository using the \texttt{devtools::install\_github("STOR-i/sgmcmc")} command, but encountered compatibility issues due to conflicting TensorFlow versions.} 
+To implement the SGLD algorithm (Algorithm~\ref{Alg:SGLD}), we set \( n = 0.01 \cdot N \), and the step size to \( 1 \times 10^{-4} \). The following code illustrates how to implement the SGLD algorithm.\footnote{There is an \textbf{R} package called \textit{sgmcmc}, developed by \cite{baker2019sgmcmc}, which provides implementations of various stochastic gradient MCMC methods, including SGLD and SGHMC. However, this package depends on version~1 of the \textit{tensorflow} package, while the current version is 2, and \textit{sgmcmc} has not been updated on CRAN. We attempted to install the package from its GitHub repository using the \texttt{devtools::install\_github("STOR-i/sgmcmc")} command, but encountered compatibility issues due to conflicting TensorFlow versions.} 
 
 In Exercise~8, you are asked to implement the control variate version of SGLD. Begin by running 1{,}500 SGD iterations to locate the posterior mode. This mode should then be used as the initial value for a subsequent run of 1{,}000 SGLD iterations.
 
@@ -1308,7 +1316,7 @@ In this chapter, we introduced several Bayesian machine learning methods designe
 	
 	\item \cite{jetter2022postcold} employ SSVS to identify the main drivers of civil conflict in the post-Cold War era, considering a set of 35 potential determinants across 175 countries worldwide. We use a subset of their dataset provided in \textit{Conflict.csv}, where the dependent variable is \textit{conflictcw}, a binary indicator of civil conflict. Perform SSVS using the \textit{BoomSpikeSlab} package, specifically the \textit{lm.spike} function, to identify the best subset of models.
 	
-	\item \cite{tuchler2008bayesian} proposes an SSVS approach for binary response models. Use the dataset \textit{Conflict.csv}, where the dependent variable is \textit{conflictcw}, to perform SSVS using the \textit{BoomSpikeSlab} package, specifically the \texttt{logit.spike} function, in order to identify the best subset of models. Compare the results with those obtained in Exercise 2.
+	\item \cite{tuchler2008bayesian} proposes an SSVS approach for binary response models. Use the dataset \textit{Conflict.csv}, where the dependent variable is \textit{conflictcw}, to perform SSVS using the \textit{BoomSpikeSlab} package, specifically the \textit{logit.spike} function, in order to identify the best subset of models. Compare the results with those obtained in Exercise 2.
 	
 	\item \textbf{Example: Simulation exercise $K > N$}
 	
