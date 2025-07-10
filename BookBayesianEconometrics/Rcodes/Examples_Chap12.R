@@ -410,6 +410,7 @@ library(mvtnorm)
 library(MCMCpack)
 library(ggplot2)
 library(dplyr)
+library(parallel)
 
 #--- Generate correlated covariates
 genCovMat <- function(K, rho = 0.4) {
@@ -434,6 +435,107 @@ simulate_logit_data <- function(K, N, beta_true) {
   list(y = y, X = X)
 }
 
+#--- Parameters
+K <- 10
+N <- 100000
+beta_true <- rep(0.5, K)
+B <- 5
+batch_prop <- 0.01
+n_iter <- 2000
+burnin <- 500
+stepsize <- 1e-4
+k_target1 <- 4  # beta5
+k_target2 <- 5  # beta5
+ks <- k_target1:k_target2
+#--- Simulate data
+sim_data <- simulate_logit_data(K, N, beta_true)
+y <- sim_data$y
+X <- scale(sim_data$X)
+
+#--- Run MCMCpack logit
+df <- as.data.frame(X)
+colnames(df) <- paste0("X", 1:K)
+df$y <- y
+formula <- as.formula(paste("y ~", paste(colnames(df)[1:K], collapse = " + "), "-1"))
+posterior_mh <- MCMClogit(formula, data = df, b0 = 0, B0 = 0.1,
+                          burnin = burnin, mcmc = n_iter)
+full_posterior <- as.matrix(posterior_mh)[, 1:K]
+
+######### Consensus Monte Carlo #########
+#--- Split data
+batch_ids <- split(1:N, sort(rep(1:B, length.out = N)))
+
+#--- Function to run MCMC on a subset
+mcmc_batch <- function(batch_index, X, y, n_iter, burnin) {
+  ids <- batch_ids[[batch_index]]
+  X_b <- X[ids, ]
+  y_b <- y[ids]
+  mcmc_out <- MCMClogit(y_b ~ X_b - 1, burnin = burnin, mcmc = n_iter, verbose = 0)
+  return(mcmc_out)
+}
+
+#--- Run in parallel
+cl <- makeCluster(B)
+clusterExport(cl, c("X", "y", "batch_ids", "n_iter", "burnin", "mcmc_batch"))
+clusterEvalQ(cl, library(MCMCpack))
+
+chains <- parLapply(cl, 1:B, function(b) mcmc_batch(b, X, y, n_iter, burnin))
+stopCluster(cl)
+
+# Stack MCMC results
+posteriors <- lapply(chains, function(x) x[, 1:K])  # remove intercept if added
+
+# CMC posteriors
+equal_cmc <- Reduce("+", posteriors) / B
+
+invvar_cmc <- {
+  vars <- lapply(posteriors, function(x) apply(x, 2, var))
+  weights <- lapply(vars, function(v) 1 / v)
+  weights_sum <- Reduce("+", weights)
+  
+  weighted_post <- Reduce("+", Map(function(x, w) sweep(x, 2, w, "*"), posteriors, weights))
+  sweep(weighted_post, 2, weights_sum, "/")
+}
+
+invmat_cmc <- {
+  covs <- lapply(posteriors, cov)                      # Get posterior covariances
+  invs <- lapply(covs, solve)                          # Invert each covariance
+  weight_sum <- Reduce("+", invs)                      # Total weight matrix
+  
+  consensus <- matrix(NA, nrow = n_iter, ncol = K)
+  for (i in 1:n_iter) {
+    draws <- lapply(posteriors, function(p) matrix(p[i, ], ncol = 1))  # Ensure column matrix
+    weighted_sum <- Reduce("+", Map(function(w, d) w %*% d, invs, draws))  # Weighted matrix product
+    consensus[i, ] <- as.vector(solve(weight_sum, weighted_sum))  # Solve system and convert to vector
+  }
+  consensus
+}
+
+# Combine all for plotting
+build_df <- function(mat, method) {
+  df <- as.data.frame(mat)
+  colnames(df) <- paste0("x", ks)
+  df$method <- method
+  return(df)
+}
+
+df_full <- build_df(full_posterior[,ks], "overall")
+df_equal <- build_df(equal_cmc[,ks], "equal")
+df_scalar <- build_df(invvar_cmc[,ks], "scalar")
+df_matrix <- build_df(invmat_cmc[,ks], "matrix")
+
+df_plot <- rbind(df_full, df_matrix, df_scalar, df_equal)
+
+# Plot
+ggpairs(
+  df_plot,
+  aes(color = method, fill = method, alpha = 0.4),
+  upper = list(continuous = GGally::wrap("density", alpha = 0.4)),
+  lower = list(continuous = GGally::wrap("density", alpha = 0.4)),
+  diag = list(continuous = GGally::wrap("densityDiag", alpha = 0.4))
+)
+
+########## SGLD ###########
 #--- One SGLD step
 SGLD_step <- function(beta, y, X, stepsize, batch_size, prior_var = 10) {
   N <- nrow(X)
@@ -472,41 +574,18 @@ run_SGLD <- function(y, X, stepsize, batch_prop, n_iter, burnin, beta_init = NUL
   beta_mat[(burnin + 1):(n_iter + burnin), ]
 }
 
-#--- Parameters
-K <- 10
-N <- 100000
-beta_true <- rep(0.5, K)
-batch_prop <- 0.01
-n_iter <- 2000
-burnin <- 500
-stepsize <- 1e-4
-k_target <- 5  # beta5
-
-#--- Simulate data
-sim_data <- simulate_logit_data(K, N, beta_true)
-y <- sim_data$y
-X <- scale(sim_data$X)
-
 #--- Run SGLD
 posterior_sgld <- run_SGLD(y = y, X = X, stepsize, batch_prop, n_iter, burnin)
 
-#--- Run MCMCpack logit
-df <- as.data.frame(X)
-colnames(df) <- paste0("X", 1:K)
-df$y <- y
-formula <- as.formula(paste("y ~", paste(colnames(df)[1:K], collapse = " + "), "-1"))
-posterior_mh <- MCMClogit(formula, data = df, b0 = 0, B0 = 0.1,
-                          burnin = burnin, mcmc = n_iter)
-
 #--- Compare densities for beta5
 df_plot <- data.frame(
-  value = c(posterior_sgld[, k_target], posterior_mh[, k_target]),
+  value = c(posterior_sgld[, k_target2], posterior_mh[, k_target2]),
   method = rep(c("SGLD", "MCMC"), each = n_iter)
 )
 
 ggplot(df_plot, aes(x = value, fill = method, color = method)) +
   geom_density(alpha = 0.4) +
-  geom_vline(xintercept = beta_true[k_target], linetype = "dashed", color = "black") +
+  geom_vline(xintercept = beta_true[k_target2], linetype = "dashed", color = "black") +
   labs(title = expression(paste("Posterior density of ", beta[5])),
        x = expression(beta[5]),
        y = "Density") +
