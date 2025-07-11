@@ -2,9 +2,9 @@
 
 Machine learning (ML) methods are often characterized by high-dimensional parameter spaces, particularly in the context of nonparametric inference. It is important to note that nonparametric inference does not imply the absence of parameters, but rather models with potentially infinitely many parameters. This setting is often referred to as the \textit{wide} problem, where the number of input variables, and consequently parameters, can exceed the sample size. Another common challenge in ML is the \textit{tall} problem, which occurs when the sample size is extremely large, necessitating scalable algorithms.
 
-In this section, we focus on Bayesian approaches to \textit{supervised ML} problems, where the outcome variable is observed and used to guide prediction or inference. In contrast, \textit{unsupervised ML} refers to settings in which the outcome variable is not observed, such as in clustering or dimensionality reduction.
+In this chapter, we focus on Bayesian approaches to \textit{supervised ML} problems, where the outcome variable is observed and used to guide prediction or inference. In contrast, \textit{unsupervised ML} refers to settings in which the outcome variable is not observed, such as in clustering or dimensionality reduction.
 
-Specifically, we introduce Bayesian ML tools for regression, including regularization techniques, regression trees, and Gaussian processes. Extensions of these methods for classification are explored in some of the exercises. The section begins with a discussion on the relationship between cross-validation and Bayes factors, and concludes with Bayesian approaches for addressing large-scale data challenges.
+Specifically, we introduce Bayesian ML tools for regression, including regularization techniques, regression trees, and Gaussian processes. Extensions of these methods for binary classification are explored in some of the exercises. The section begins with a discussion on the relationship between cross-validation and Bayes factors, and concludes with Bayesian approaches for addressing large-scale data challenges.
 
 \section{Cross-validation and Bayes factors}\label{sec13_1}
 Prediction is central to machine learning, particularly in supervised learning. The starting point is a set of raw regressors or features, denoted by \( \mathbf{x} \), which are used to construct a set of input variables fed into the model: \( \mathbf{w} = T(\mathbf{x}) \), where \( T(\cdot) \) represents a \textit{dictionary of transformations} such as polynomials, interactions between variables, or the application of functions like exponentials, and so on. These inputs are then used to predict \( y \) through a model \( f(\mathbf{w}) \):
@@ -13,16 +13,19 @@ Prediction is central to machine learning, particularly in supervised learning. 
 \end{align*}
 where \( \mu_i \stackrel{\text{i.i.d.}}{\sim} \mathcal{N}(0, \sigma^2) \).
 
-We predict \( y \) using \( \hat{f}(\mathbf{w}) \), a model trained on the data. Thus, the expected squared error (ESE) at a fixed set of inputs, taking into account that \( \mathbb{E}_{\mathcal{D},\boldsymbol{\mu}} \left[\mu_i(f(\mathbf{w}_i) - \hat{f}(\mathbf{w}))\right] = 0 \) by independence, and defining \( \bar{f}(\mathbf{w}_i) = \mathbb{E}_{\mathcal{D}}[\hat{f}(\mathbf{w}_i)] \), is given by:
+We predict \( y \) using \( \hat{f}(\mathbf{w}) \), a model trained on the data. The expected squared error (ESE) at a fixed input \( \mathbf{w}_i \) is given by:
 
 \begin{align*}
-	\text{ESE} &= \mathbb{E}_{\mathcal{D},y} \left[ (y - \hat{f}(\mathbf{w}))^2 \right] \\
-	&= \mathbb{E}_{\mathcal{D},\boldsymbol{\mu}} \left[ \left(f(\mathbf{w}_i) + \mu_i - \hat{f}(\mathbf{w})\right)^2 \right] \\
-	&= \mathbb{E}_{\mathcal{D},\boldsymbol{\mu}} \left[ (f(\mathbf{w}_i) - \hat{f}(\mathbf{w}))^2 + 2\mu_i(f(\mathbf{w}_i) - \hat{f}(\mathbf{w})) + \mu_i^2 \right] \\
-	&= \mathbb{E}_{\mathcal{D}} \left[ (f(\mathbf{w}_i) - \hat{f}(\mathbf{w}))^2 \right] + \mathbb{E}_{\boldsymbol{\mu}} \left[ \mu_i^2 \right] \\
-	&= \mathbb{E}_{\mathcal{D}} \left[ \left((f(\mathbf{w}_i) - \bar{f}(\mathbf{w}_i)) - (\hat{f}(\mathbf{w}) - \bar{f}(\mathbf{w}_i)) \right)^2 \right] + \sigma^2 \\
-	&= \underbrace{\mathbb{E}_{\mathcal{D}} \left[ (f(\mathbf{w}_i) - \bar{f}(\mathbf{w}_i))^2 \right]}_{\text{Bias}^2} + \underbrace{\mathbb{E}_{\mathcal{D}} \left[ (\hat{f}(\mathbf{w}) - \bar{f}(\mathbf{w}_i))^2 \right]}_{\text{Variance}} + \underbrace{\sigma^2}_{\text{Irreducible Error}}.
+	\text{ESE} &= \mathbb{E}_{\mathcal{D},y} \left[ (y_i - \hat{f}(\mathbf{w}_i))^2 \right] \\
+	&= \mathbb{E}_{\mathcal{D},\boldsymbol{\mu}} \left[ \left(f(\mathbf{w}_i) + \mu_i - \hat{f}(\mathbf{w}_i)\right)^2 \right] \\
+	&= \mathbb{E}_{\mathcal{D},\boldsymbol{\mu}} \left[ (f(\mathbf{w}_i) - \hat{f}(\mathbf{w}_i))^2 + 2\mu_i(f(\mathbf{w}_i) - \hat{f}(\mathbf{w}_i)) + \mu_i^2 \right] \\
+	&= \mathbb{E}_{\mathcal{D}} \left[ (f(\mathbf{w}_i) - \hat{f}(\mathbf{w}_i))^2 \right] + \mathbb{E}_{\boldsymbol{\mu}} \left[ \mu_i^2 \right] \\
+	&= \mathbb{E}_{\mathcal{D}} \left[ \left((f(\mathbf{w}_i) - \bar{f}(\mathbf{w}_i)) - (\hat{f}(\mathbf{w}_i) - \bar{f}(\mathbf{w}_i)) \right)^2 \right] + \sigma^2 \\
+	&= \underbrace{\mathbb{E}_{\mathcal{D}} \left[ (f(\mathbf{w}_i) - \bar{f}(\mathbf{w}_i))^2 \right]}_{\text{Bias}^2} + \underbrace{\mathbb{E}_{\mathcal{D}} \left[ (\hat{f}(\mathbf{w}_i) - \bar{f}(\mathbf{w}_i))^2 \right]}_{\text{Variance}} + \underbrace{\sigma^2}_{\text{Irreducible Error}}.
 \end{align*}
+
+Here, \( \mathcal{D} \) denotes the distribution over datasets defined by the feature space. Independence between the noise \( \mu_i \sim \mathcal{N}(0, \sigma^2) \) and the estimator ensures that \( \mathbb{E}_{\mathcal{D},\boldsymbol{\mu}} \left[\mu_i(f(\mathbf{w}_i) - \hat{f}(\mathbf{w}_i))\right] = 0 \). We also define \( \bar{f}(\mathbf{w}_i) = \mathbb{E}_{\mathcal{D}}[\hat{f}(\mathbf{w}_i)] \) as the expected predictor across datasets.
+
 Thus, the ESE is composed of the squared bias, the variance of the prediction (which is a random variable due to data variation $\mathcal{D}$), and the irreducible error. The key insight is that increasing model complexity, such as by including more inputs, typically reduces bias but increases variance. This trade-off can lead to overfitting, where models perform well on the training data but poorly on new, unseen data. There is, therefore, an optimal point at which the predictive error is minimized (see Figure~\ref{fig:bias_var}).\footnote{However, recent developments show that powerful modern machine learning methods, such as deep neural networks, often overfit and yet generalize remarkably well on unseen data. This phenomenon is known as \textit{double descent} or \textit{benign overfitting} \cite{belkin2019reconciling, bartlett2020benign, hastie2022surprises}.}
 
 \begin{figure}[h!]
@@ -105,9 +108,9 @@ In this century, the amount of available data continues to grow. This means we h
 
 In the standard linear regression setting,
 \begin{align*}
-	\mathbf{y} &= \beta_0\mathbf{1} + \mathbf{W}\boldsymbol{\beta} + \boldsymbol{\mu},
+	\mathbf{y} &= \mathbf{1}_N \beta_0 + \mathbf{W}\boldsymbol{\beta} + \boldsymbol{\mu},
 \end{align*}
-where \(\mathbf{1}\) is an \(N\)-dimensional vector of ones, \(\mathbf{W}\) is the \(N \times K\) design matrix of inputs, and \(\boldsymbol{\mu} \sim \mathcal{N}(\mathbf{0}, \sigma^2 \mathbf{I}_N)\), there has been extensive development of techniques aimed at regularization within the Frequentist inferential framework. These include methods such as Ridge regression \cite{hoerl1970ridge}; discrete subset selection techniques like best subset selection \cite{furnival1974regressions}, forward selection, and backward stepwise selection \cite{hastie2009elements}; as well as continuous subset selection approaches such as the LASSO \cite{tibshirani1996regression}, the elastic net \cite{zou2005regularization}, and OSCAR \cite{bondell2008simultaneous}.
+where \(\mathbf{1}_N\) is an \(N\)-dimensional vector of ones, \(\mathbf{W}\) is the \(N \times K\) design matrix of inputs, and \(\boldsymbol{\mu} \sim \mathcal{N}(\mathbf{0}, \sigma^2 \mathbf{I}_N)\), there has been extensive development of techniques aimed at regularization within the Frequentist inferential framework. These include methods such as Ridge regression \cite{hoerl1970ridge}; discrete subset selection techniques like best subset selection \cite{furnival1974regressions}, forward selection, and backward stepwise selection \cite{hastie2009elements}; as well as continuous subset selection approaches such as the LASSO \cite{tibshirani1996regression}, the elastic net \cite{zou2005regularization}, and OSCAR \cite{bondell2008simultaneous}.
 
 It is important to note, however, that Ridge regression does not perform variable selection; rather, it shrinks coefficient estimates toward zero without setting them exactly to zero.
 
@@ -136,7 +139,7 @@ Note that regularization introduces bias into the parameter estimates because it
 \subsection{Bayesian LASSO}\label{sec13_21}
 Given the popularity of the LASSO as a variable selection technique, we present its Bayesian formulation in this subsection \cite{Park2008}. The Gibbs sampler for the Bayesian LASSO exploits the representation of the Laplace distribution as a scale mixture of normals. This leads to the following hierarchical representation of the model:
 \begin{align*}
-	\mathbf{y} \mid \beta_0, \boldsymbol{\beta}, \sigma^2, \mathbf{W} &\sim {N}(\beta_0 \mathbf{1} + \mathbf{W} \boldsymbol{\beta}, \sigma^2 \mathbf{I}_N), \\
+	\mathbf{y} \mid \beta_0, \boldsymbol{\beta}, \sigma^2, \mathbf{W} &\sim {N}(\mathbf{1}_N \beta_0 + \mathbf{W} \boldsymbol{\beta}, \sigma^2 \mathbf{I}_N), \\
 	\boldsymbol{\beta} \mid \sigma^2, \tau_1^2, \dots, \tau_K^2 &\sim {N}(\mathbf{0}_K, \sigma^2 \mathbf{D}_{\tau}), \\
 	\tau_1^2, \dots, \tau_K^2 &\sim \prod_{k=1}^K \frac{\lambda^2}{2} \exp\left\{ -\frac{\lambda^2}{2} \tau_k^2 \right\}, \\
 	\sigma^2 &\sim \frac{1}{\sigma^2},\\
@@ -219,7 +222,7 @@ abline(0, 1, col = "red", lty = 2)
 \subsection{Stochastic search variable selection}\label{sec13_22}
 Another well-known Bayesian strategy for variable selection in the presence of a large set of regressors (inputs) is \textit{stochastic search variable selection} (SSVS) \cite{george1993variable,George1997}. SSVS is a particular case of the broader class of \textit{spike-and-slab} priors, in which the prior distribution for the location parameters is specified as a hierarchical mixture that captures the uncertainty inherent in variable selection problems \cite{Ishwaran2005}. The hierarchical structure of the model is given by
 \begin{align*}
-	\mathbf{y} \mid \beta_0, \boldsymbol{\beta}, \sigma^2, \mathbf{W} &\sim {N}(\beta_0 \mathbf{1} + \mathbf{W} \boldsymbol{\beta}, \sigma^2 \mathbf{I}_N), \\
+	\mathbf{y} \mid \beta_0, \boldsymbol{\beta}, \sigma^2, \mathbf{W} &\sim {N}(\mathbf{1}_N \beta_0  + \mathbf{W} \boldsymbol{\beta}, \sigma^2 \mathbf{I}_N), \\
 	\boldsymbol{\beta} \mid \sigma^2, \boldsymbol{\gamma} &\sim {N}(\mathbf{0}_K, \sigma^2 \mathbf{D}_{\gamma} \mathbf{R} \mathbf{D}_{\gamma}), \\
 	\sigma^2 &\sim \text{Inverse-Gamma}\left(\frac{v}{2}, \frac{v\lambda_{\gamma}}{2}\right), \\
 	\gamma_k &\sim \text{Bernoulli}(p_k),
@@ -227,10 +230,10 @@ Another well-known Bayesian strategy for variable selection in the presence of a
 where \(p_k\) is the prior inclusion probability of regressor \(w_k\), that is, \(P(\gamma_k = 1) = 1 - P(\gamma_k = 0) = p_k\), \(\mathbf{R}\) is a correlation matrix, and \(\mathbf{D}_{\gamma}\) is a diagonal matrix whose \(kk\)-th element is defined as
 \begin{align*}
 	(\mathbf{D}_{\gamma})_{kk} &= 
-	\begin{cases}
+	\begin{Bmatrix}
 		v_{0k}, & \text{if } \gamma_k = 0, \\
-		v_{1k}, & \text{if } \gamma_k = 1.
-	\end{cases}
+		v_{1k}, & \text{if } \gamma_k = 1
+	\end{Bmatrix}.
 \end{align*}
 
 This formulation implies that \(\beta_k \sim (1 - \gamma_k) {N}(0, v_{0k}) + \gamma_k {N}(0, v_{1k})\), where \(v_{0k}\) and \(v_{1k}\) are chosen such that \(v_{0k}\) is small and \(v_{1k}\) is large. Therefore, when the data favors \(\gamma_k = 0\) over \(\gamma_k = 1\), the corresponding \(\beta_k\) is shrunk toward zero, effectively excluding input \(k\) from the model. In this sense, \({N}(0, v_{0k})\) is a spike prior concentrated at zero, while \({N}(0, v_{1k})\) is a diffuse slab prior. A critical aspect of SSVS is the choice of the hyperparameters \(v_{0k}\) and \(v_{1k}\), as they determine the amount of shrinkage applied to the regression coefficients (see \cite{george1993variable,George1997} for details).
@@ -333,11 +336,11 @@ In addition, there are other Bayesian methods for regularization, such as the sp
 
 \section{Bayesian additive regression trees}\label{sec13_3}
 
-A Classification and Regression Tree (CART) is a method used to predict outcomes based on input inputs. It is referred to as a classification tree when the outcome variable is qualitative, and as a regression tree when the outcome variable is quantitative. The method works by recursively partitioning the dataset into smaller, more homogeneous subsets using decision rules based on the input variables. For regression tasks, CART selects splits that minimize prediction error, typically measured by the sum of squared residuals. For classification problems, it aims to create the purest possible groups, using criteria such as Gini impurity or entropy. The result is a tree-like structure in which each internal node represents a decision based on one variable, and each leaf node corresponds to a prediction. CART was popularized in the statistical community by \cite{breiman1984classification}.
+A Classification and Regression Tree (CART) is a method used to predict outcomes based on inputs without assuming a parametric model. It is referred to as a classification tree when the outcome variable is qualitative, and as a regression tree when the outcome variable is quantitative. The method works by recursively partitioning the dataset into smaller, more homogeneous subsets using decision rules based on the input variables. For regression tasks, CART selects splits that minimize prediction error, typically measured by the sum of squared residuals. For classification problems, it aims to create the purest possible groups, using criteria such as Gini impurity or entropy. The result is a tree-like structure in which each internal node represents a decision based on one variable, and each leaf node corresponds to a prediction. CART was popularized in the statistical community by \cite{breiman1984classification}.
 
 Figure \ref{fig:tree} displays a binary regression tree with two variables: one continuous ($x_1$) and one categorical ($x_2 \in {A, B, C}$). The tree has seven nodes in total, four of which are terminal nodes ($B = 4$), dividing the input space $\mathbf{x} = (x_1, x_2)$ into four non-overlapping regions. Each internal node indicates the splitting variable and rule, while each terminal node shows the value $\theta_b$, representing the conditional mean of $y$ given $\mathbf{x}$.
 
-The first split is based on the rule $x_1 \leq 5$ (left) versus $x_1 > 5$ (right). The leftmost terminal node corresponds to $x_2 \in {A}$ with $\mu_1 = 5$. The second terminal node, with $\mu_2 = 3$, is defined by $x_1 \leq 3$ and $x_2 \in {B, C}$. The third node assigns $\mu_3 = 5$ for $3 < x_1 \leq 5$ and $x_2 \in {B, C}$. Finally, the rightmost terminal node assigns $\mu_4 = 8$ for all observations with $x_1 > 5$.
+The first split is based on the rule $x_1 \leq 5$ (left) versus $x_1 > 5$ (right). The leftmost terminal node corresponds to $x_2 \in {A}$ with $\mu_1 = 2$. The second terminal node, with $\mu_2 = 3$, is defined by $x_1 \leq 3$ and $x_2 \in {B, C}$. The third node assigns $\mu_3 = 5$ for $3 < x_1 \leq 5$ and $x_2 \in {B, C}$. Finally, the rightmost terminal node assigns $\mu_4 = 8$ for all observations with $x_1 > 5$.
 
 \begin{figure}[h!]
 	\centering
@@ -407,10 +410,10 @@ While CART is a simple yet powerful tool, it is prone to overfitting. To mitigat
 where \( \mu_i \sim N(0, \sigma^2) \).
 
 Thus, the conditional expectation \( \mathbb{E}[y_i \mid \mathbf{x}_i] = f(\mathbf{x}_i) \) is approximated as
-\begin{align}\label{eq:BART}
+\begin{align*}
 	f(\mathbf{x}_i) & \approx h(\mathbf{x}_i) \nonumber \\
 	&= \sum_{j=1}^J g_j(\mathbf{x}_i \mid T_j, \boldsymbol{\theta}_j),
-\end{align}
+\end{align*}
 that is, \( f(\mathbf{x}_i) \) is approximated by the sum of \( J \) regression trees. Each tree is defined by a structure \( T_j \) and a corresponding set of terminal node parameters \( \boldsymbol{\theta}_j \), where \( g_j(\mathbf{x}_i \mid T_j, \boldsymbol{\theta}_j) \) denotes the function that assigns the value \( \mu_{bj} \in \boldsymbol{\theta}_j \) to \( \mathbf{x}_i \) according to the partition defined by \( T_j \).
 
 The main idea is to construct this sum-of-trees model by imposing a prior that regularizes the fit, ensuring that the individual contribution of each tree remains small. Thus, each tree \( g_j \) explains a small and distinct portion of \( f \). This is achieved through Bayesian backfitting MCMC \cite{hastie2000bayesian}, where successive fits to the residuals are added. In this sense, BART can be viewed as a Bayesian version of boosting.
@@ -779,7 +782,7 @@ where
 	\operatorname{cov}(\mathbf{f}_*) &= \mathbf{K}(\mathbf{X}_*, \mathbf{X}_*) - \mathbf{K}(\mathbf{X}_*, \mathbf{X}) [\mathbf{K}(\mathbf{X}, \mathbf{X}) + \sigma^2 \mathbf{I}_N]^{-1} \mathbf{K}(\mathbf{X}, \mathbf{X}_*).
 \end{align*}
 
-Therefore, Gaussian Process (GP) regression provides a flexible and efficient nonparametric framework for predicting unobserved responses, with accuracy that improves as more data become available. GPs are widely used due to their favorable computational properties, including the availability of closed-form expressions, and posterior consistency under mild conditions \cite{choi2007posterior, stuart2018posterior}. Moreover, predictive performance can be further enhanced by incorporating derivative information, as the derivative of a GP is itself a GP \cite{solak2003derivative,jacobi2024posterior}. 
+Therefore, GP regression provides a flexible and efficient nonparametric framework for predicting unobserved responses, with accuracy that improves as more data become available. GPs are widely used due to their favorable computational properties, including the availability of closed-form expressions, and posterior consistency under mild conditions \cite{choi2007posterior, stuart2018posterior}. Moreover, predictive performance can be further enhanced by incorporating derivative information, as the derivative of a GP is itself a GP \cite{solak2003derivative,jacobi2024posterior}. 
 
 However, a major limitation of GPs is the need to invert an \( N \times N \) covariance matrix, which requires \( O(N^3) \) computational operations, making them computationally expensive for large datasets. To address this, several scalable methods have been proposed that reduce the computational burden. For instance, \cite{wilson2015kernel,gardner2018product, pleiss2018constant} develop algorithms that reduce complexity to \( O(N) \).\\
 
@@ -850,7 +853,7 @@ f_i = \sin(2\pi x_{i1}) + \cos(2\pi x_{i2}) + \sin(x_{i1} x_{i2}) + \mu_i,
 \]
 where \( \mu_i \overset{\text{i.i.d.}}{\sim} \mathcal{N}(0, 0.1^2) \), and to use an empirical Bayes approach to estimate the hyperparameters. These estimated hyperparameters should then be used to perform GP prediction.
 
-\section{Large data problems}\label{13_5}
+\section{Tall data problems}\label{13_5}
 In this section, we explore several methods developed to perform Bayesian inference when the sample size is large, particularly when there is a large number of observational units, commonly referred to as \textit{tall datasets}.
 
 Bayesian inference in such settings is computationally demanding because each iteration of an MCMC algorithm requires evaluating the likelihood function over all \( N \) observations. For large \( N \), this renders standard MCMC methods prohibitively expensive. Recent efforts have focused on developing scalable Monte Carlo algorithms that significantly reduce the computational cost compared to standard approaches. One alternative is to use \textit{Variational Bayes} (see Chapter~\ref{chap15}); however, it can be challenging to implement and may exhibit limitations in uncertainty quantification, particularly for the joint posterior distribution. Another alternative is the \textit{Integrated Nested Laplace Approximation} (INLA, see Chapter~\ref{chap15}); however, its computational cost grows exponentially with the dimension of the parameter space. 
@@ -883,8 +886,6 @@ Then, the jackknife bias-corrected posterior is given by
 \pi_{\text{jk}}(\boldsymbol{\theta} \mid \mathbf{y}) = B \cdot \pi_{\text{CMC}}(\boldsymbol{\theta} \mid \mathbf{y}) - (B - 1) \cdot \bar{\pi}_{-b}(\boldsymbol{\theta} \mid \mathbf{y}),
 \]
 where \( \pi_{\text{CMC}}(\boldsymbol{\theta} \mid \mathbf{y}) \) is the original CMC posterior based on all \( B \) subsets.
-
-  
 
 \begin{algorithm}[h!]
 	\caption{Consensus Monte Carlo algorithm}\label{Alg:CMC}
