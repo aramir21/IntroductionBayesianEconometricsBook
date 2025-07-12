@@ -208,7 +208,7 @@ The summary of the fit and the plot comparing the population parameters with the
 
 In **Exercise 1**, we propose programming the Gibbs sampler from scratch, assuming a hierarchical structure for the global shrinkage parameter, and comparing the results with those obtained using the *monomvn* package.
 
-```{r, eval = FALSE}
+```{r}
 ####### Bayesian LASSSO #######
 rm(list = ls()); set.seed(10101)
 library(bayesreg)
@@ -318,7 +318,7 @@ The analysis is performed using 5,000 posterior draws and the default prior. How
 
 The results show that the posterior inclusion probabilities for regressors 2 through 10 are 100%, and the model with the highest posterior probability (94%) includes all of these nine variables. However, the true data-generating process, which also includes regressor 1, receives a posterior model probability of 0%. This is because the population coefficient of this regressor is essentially zero. The plot comparing the posterior means with the true population parameters indicates good performance of SSVS. In general, Bayesian methods for variable selection perform well, and the choice of the most suitable method largely depends on the prior specification [@ohara2009bayesian].
 
-```{r, eval = FALSE}
+```{r}
 ####### Stochastic search variable selection #######
 rm(list = ls()); set.seed(10101)
 library(BoomSpikeSlab)
@@ -491,7 +491,7 @@ We set the hyperparameters to \( (\alpha, \beta, k, J, v, q) = (0.95, 2, 2, 200,
 
 We analyze the trace plot of the posterior draws of \( \sigma \) to assess convergence, compare the true values of \( y \) with the posterior mean and 95% predictive intervals for both the training and test sets (using 80% of the data for training and 20% for testing), and visualize the relative importance of the regressors across different values of \( J = 10, 20, 50, 100, 200 \).
 
-```{r, eval = FALSE}
+```{r}
 ####### Bayesian Additive Regression Trees #######
 rm(list = ls()); set.seed(10101)
 library(BART); library(tidyr)
@@ -591,7 +591,7 @@ The squared exponential kernel implies that the function is infinitely different
 
 A GP can be interpreted as a prior distribution over a space of functions. The starting point in working with GPs is the specification of this prior before any data are observed. The following code illustrates five sample paths drawn from a GP with a squared exponential kernel, assuming a signal variance \( \sigma_f^2 = 1 \) and a length-scale \( l = 0.2 \), evaluated over a grid of input values \( x \in [0,1] \). A small *jitter term* is added to the covariance matrix to ensure numerical stability during simulation. The following figure displays the five realizations drawn from the Gaussian Process.
 
-```{r, eval = FALSE}
+```{r}
 ####### Gaussian Process #######
 rm(list = ls())
 set.seed(10101)
@@ -656,7 +656,7 @@ In situations where the input locations can be selected, such as in experimental
 
 Consequently, GPs play a central role in *Bayesian optimization*, a stochastic method for finding the maximum of expensive or unknown objective functions. In this approach, a prior is placed over the objective function, which is then updated using observed data to form a posterior distribution over possible functions. This posterior guides the selection of new input points by balancing exploration and exploitation through the acquisition function [@brochu2010tutorial].
 
-```{r, eval = FALSE}
+```{r}
 ####### Gaussian Process #######
 rm(list = ls()); set.seed(10101)
 library(ggplot2); library(MASS)
@@ -777,7 +777,7 @@ We use the *DiceKriging* package in **R** to estimate and make predictions using
 
 The following code illustrates how to carry out this example, and the following figure displays a 3D plot with the observed points and the posterior mean surface. The package also provides pointwise credible intervals for the predictions.
 
-```{r, eval = FALSE}
+```{r}
 ####### Gaussian Process #######
 # Load required packages
 library(DiceKriging)
@@ -1091,4 +1091,233 @@ This implies that, when implementing CMC, the prior variance must be scaled by t
 We set \( K = 10 \), \( \boldsymbol{\beta} = 0.5 \cdot \mathbf{1}_K \), and \( N = 10^5 \). The covariates \( \mathbf{x}_i \sim \mathcal{N}(\mathbf{0}, \boldsymbol{\Sigma}) \), where the covariance matrix \( \boldsymbol{\Sigma}^{(i,j)} = U[-\rho, \rho]^{|i-j|} \) with \( \rho = 0.4 \), and \( \mathbf{1}_K \) denotes a \( K \)-dimensional vector of ones.
 
 We run 2,000 MCMC iterations initialized at zero, and discard the first 500 as burn-in. We scale the regressors beforehand, as this is generally recommended to improve numerical stability and convergence. The following code simulates the model and sets the hyperparameters of the algorithms.
+
+The following code implements SMC Algorithm, running five parallel MCMC chains and combining the resulting subposteriors using three different weighting schemes: equal weights, weights based on marginal variances, and weights based on the full covariance matrices.
+
+By running the code, you can verify that the computational time of the CMC algorithm is lower than that of the Metropolis–Hastings algorithm. The first figure shows the posterior distributions of \( \beta_4 \) and \( \beta_5 \). We observe that all three weighting schemes perform reasonably well, yielding posterior modes similar to those obtained from the full-data MCMC algorithm. However, the consensus Monte Carlo (CMC) methods produce more dispersed draws, particularly when using equal weights. In contrast, the weighting schemes based on marginal variances and the full covariance matrices yield comparable and more concentrated posterior distributions.
+
+To implement the SGLD algorithm, we set \( n = 0.01 \cdot N \), and the step size to \( 1 \times 10^{-4} \). The following code illustrates how to implement the SGLD algorithm.^[There is an **R** package called *sgmcmc*, developed by @baker2019sgmcmc, which provides implementations of various stochastic gradient MCMC methods, including SGLD and SGHMC. However, this package depends on version 1 of the *tensorflow* package, while the current version is 2, and *sgmcmc* has not been updated on CRAN. We attempted to install the package from its GitHub repository using the `devtools::install\_github("STOR-i/sgmcmc"` command, but encountered compatibility issues due to conflicting TensorFlow versions.]
+
+In Exercise 8, you are asked to implement the control variate version of SGLD. Begin by running 1,500 SGD iterations to locate the posterior mode. This mode should then be used as the initial value for a subsequent run of 1,000 SGLD iterations.
+
+By running the code, you can verify that the computational time of the SGLD algorithm is lower than that of the Metropolis–Hastings algorithm. The second figure shows the posterior distributions of the fifth location parameter obtained from SGLD and Metropolis–Hastings. We observe that both modes are centered around the true population value; however, the SGLD distribution exhibits greater dispersion compared to the Metropolis–Hastings distribution.
+
+```{r}
+####### CMC and SDLD #######
+#### Simulation
+rm(list = ls()); set.seed(10101)
+library(mvtnorm); library(MCMCpack)
+library(ggplot2); library(dplyr)
+library(parallel); library(GGally)
+
+#--- Generate correlated covariates
+genCovMat <- function(K, rho = 0.4) {
+	Sigma0 <- matrix(1, K, K)
+	for (i in 2:K) {
+		for (j in 1:(i - 1)) {
+			Sigma0[i, j] <- runif(1, -rho, rho)^(i - j)
+		}
+	}
+	Sigma0 <- Sigma0 * t(Sigma0)
+	diag(Sigma0) <- 1
+	return(Sigma0)
+}
+
+#--- Simulate logistic regression data
+simulate_logit_data <- function(K, N, beta_true) {
+	Sigma0 <- genCovMat(K)
+	X <- rmvnorm(N, mean = rep(0, K), sigma = Sigma0)
+	linpred <- X %*% beta_true
+	p <- 1 / (1 + exp(-linpred))
+	y <- rbinom(N, 1, p)
+	list(y = y, X = X)
+}
+
+#--- Parameters
+K <- 10
+N <- 100000
+beta_true <- rep(0.5, K)
+B <- 5
+batch_prop <- 0.01
+Prior_prec <- 0.1
+n_iter <- 2000
+burnin <- 500
+stepsize <- 1e-4
+k_target1 <- 4  # beta5
+k_target2 <- 5  # beta5
+ks <- k_target1:k_target2
+#--- Simulate data
+sim_data <- simulate_logit_data(K, N, beta_true)
+y <- sim_data$y
+X <- scale(sim_data$X)
+
+#--- Run MCMCpack logit
+df <- as.data.frame(X)
+colnames(df) <- paste0("X", 1:K)
+df$y <- y
+formula <- as.formula(paste("y ~", paste(colnames(df)[1:K], collapse = " + "), "-1"))
+posterior_mh <- MCMClogit(formula, data = df, b0 = 0, B0 = Prior_prec,
+burnin = burnin, mcmc = n_iter)
+full_posterior <- as.matrix(posterior_mh)[, 1:K]
+#### CMC
+#--- Split data
+batch_ids <- split(1:N, sort(rep(1:B, length.out = N)))
+#--- Function to run MCMC on a subset
+mcmc_batch <- function(batch_index, X, y, n_iter, burnin) {
+	ids <- batch_ids[[batch_index]]
+	X_b <- X[ids, ]
+	y_b <- y[ids]
+	mcmc_out <- MCMClogit(y_b ~ X_b - 1, burnin = burnin, mcmc = n_iter, verbose = 0, b0 = 0, B0 = Prior_prec * (1/B))
+	return(mcmc_out)
+}
+#--- Run in parallel
+cl <- makeCluster(B)
+clusterExport(cl, c("X", "y", "batch_ids", "n_iter", "burnin", "mcmc_batch", "Prior_prec", "B"))
+clusterEvalQ(cl, library(MCMCpack))
+chains <- parLapply(cl, 1:B, function(b) mcmc_batch(b, X, y, n_iter, burnin))
+stopCluster(cl)
+# Stack MCMC results
+posteriors <- lapply(chains, function(x) x[, 1:K])  # remove intercept if added
+# CMC posteriors
+equal_cmc <- Reduce("+", posteriors) / B
+invvar_cmc <- {
+	vars <- lapply(posteriors, function(x) apply(x, 2, var))
+	weights <- lapply(vars, function(v) 1 / v)
+	weights_sum <- Reduce("+", weights)
+	
+	weighted_post <- Reduce("+", Map(function(x, w) sweep(x, 2, w, "*"), posteriors, weights))
+	sweep(weighted_post, 2, weights_sum, "/")
+}
+invmat_cmc <- {
+	covs <- lapply(posteriors, cov)                      # Get posterior covariances
+	invs <- lapply(covs, solve)                          # Invert each covariance
+	weight_sum <- Reduce("+", invs)                      # Total weight matrix
+	
+	consensus <- matrix(NA, nrow = n_iter, ncol = K)
+	for (i in 1:n_iter) {
+		draws <- lapply(posteriors, function(p) matrix(p[i, ], ncol = 1))  # Ensure column matrix
+		weighted_sum <- Reduce("+", Map(function(w, d) w %*% d, invs, draws))  # Weighted matrix product
+		consensus[i, ] <- as.vector(solve(weight_sum, weighted_sum))  # Solve system and convert to vector
+	}
+	consensus
+}
+# Combine all for plotting
+build_df <- function(mat, method) {
+	df <- as.data.frame(mat)
+	colnames(df) <- paste0("x", ks)
+	df$method <- method
+	return(df)
+}
+
+df_full <- build_df(full_posterior[,ks], "overall")
+df_equal <- build_df(equal_cmc[,ks], "equal")
+df_scalar <- build_df(invvar_cmc[,ks], "scalar")
+df_matrix <- build_df(invmat_cmc[,ks], "matrix")
+
+df_plot <- rbind(df_full, df_matrix, df_scalar, df_equal)
+
+# Plot
+ggpairs(
+df_plot,
+aes(color = method, fill = method, alpha = 0.4),
+upper = list(continuous = GGally::wrap("density", alpha = 0.4)),
+lower = list(continuous = GGally::wrap("density", alpha = 0.4)),
+diag = list(continuous = GGally::wrap("densityDiag", alpha = 0.4))
+)
+
+#### SGLD
+SGLD_step <- function(beta, y, X, stepsize, batch_size, prior_var = 10) {
+	N <- nrow(X); 	K <- length(beta)
+	ids <- sample(1:N, size = batch_size, replace = FALSE)
+	grad <- rep(0, K)
+	for (i in ids) {
+		xi <- X[i, ]
+		eta <- sum(xi * beta)
+		pi <- 1 / (1 + exp(-eta))
+		grad_i <- -(y[i] - pi) * xi
+		grad <- grad + grad_i
+	}
+	grad <- grad / batch_size * N
+	grad <- grad + beta / prior_var  # gradient of log-prior
+	noise <- rnorm(K, 0, sqrt(stepsize))
+	beta_new <- beta - 0.5 * stepsize * grad + noise
+	return(beta_new)
+}
+#--- SGLD algorithm
+run_SGLD <- function(y, X, stepsize, batch_prop, n_iter, burnin, beta_init = NULL) {
+	N <- nrow(X)
+	K <- ncol(X)
+	batch_size <- round(batch_prop * N)
+	
+	beta_mat <- matrix(0, n_iter + burnin, K)
+	beta_mat[1, ] <- if (is.null(beta_init)) rep(0, K) else beta_init
+	
+	for (s in 2:(n_iter + burnin)) {
+		beta_mat[s, ] <- SGLD_step(beta_mat[s - 1, ], y, X, stepsize, batch_size)
+	}
+	beta_mat[(burnin + 1):(n_iter + burnin), ]
+}
+#--- Run SGLD
+posterior_sgld <- run_SGLD(y = y, X = X, stepsize, batch_prop, n_iter, burnin)
+#--- Compare densities for beta5
+df_plot <- data.frame(
+value = c(posterior_sgld[, k_target2], posterior_mh[, k_target2]),
+method = rep(c("SGLD", "MCMC"), each = n_iter)
+)
+ggplot(df_plot, aes(x = value, fill = method, color = method)) + geom_density(alpha = 0.4) + geom_vline(xintercept = beta_true[k_target2], linetype = "dashed", color = "black") + labs(title = expression(paste("Posterior density of ", beta[5])), x = expression(beta[5]), y = "Density") + theme_minimal()
+```
+
+## Summary {#13_6}
+
+In this chapter, we introduced several Bayesian machine learning methods designed to address the challenges posed by *wide* and *tall* data. However, the field of Bayesian machine learning is rapidly evolving, and the material presented here should be viewed as an introductory overview.
+
+Many important topics were not covered but are highly relevant, such as Bayesian neural networks [@neal2012bayesian] and neural posterior estimation [@papamakarios2016fast; @lueckmann2017flexible; @greenberg2019automatic].
+
+Other key approaches, such as Variational Bayes, particularly in its stochastic implementations, which are rooted in machine learning and offer scalable solutions for tall data — are introduced in Chapter \@ref(Chap14) [@wainwright2008graphical].
+
+## Exercises {#13_7}
+
+1. **Simulation exercise: the Bayesian LASSO continues**
+
+   Program the Gibbs sampler for the Bayesian LASSO from scratch, assuming a hierarchical structure for the global shrinkage parameter, where both the shape and rate parameters are set to 1. Perform inference using this sampler in the Bayesian LASSO simulation exercise and compare the results with those obtained using the *monomvn* package.
+
+2. @jetter2022postcold employ SSVS to identify the main drivers of civil conflict in the post-Cold War era, considering a set of 35 potential determinants across 175 countries worldwide. We use a subset of their dataset provided in *Conflict.csv*, where the dependent variable is *conflictcw*, a binary indicator of civil conflict. Perform SSVS using the *BoomSpikeSlab* package, specifically the `lm.spike` function, to identify the best subset of models.
+
+3. @tuchler2008bayesian proposes an SSVS approach for binary response models. Use the dataset *Conflict.csv*, where the dependent variable is *conflictcw*, to perform SSVS using the *BoomSpikeSlab* package, specifically the `logit.spike` function, in order to identify the best subset of models. Compare the results with those obtained in Exercise 2.
+
+4. **Example: Simulation exercise $K > N$**
+
+   Use the simulation setting from the Bayesian LASSO and SSVS examples, but now assume there are 600 inputs. This setup implies that the number of inputs exceeds the sample size. In such a scenario, there is no unique solution to the least squares estimator because the determinant of \( \mathbf{W}^{\top} \mathbf{W} \) is zero. This means the matrix is not invertible, and consequently, standard inference procedures based on the least squares estimator cannot be applied. On the other hand, Bayesian inference in this setup is well-defined because the prior helps regularize the problem, which is a key motivation for these methods.
+
+5. **Simulation exercise: the BART model continues**
+
+   Compute Friedman’s partial dependence functions [@friedman2001greedy] for all variables in the BART model simulation example, and plot the posterior mean along with the 95% credible intervals.
+
+6. @chipman2010bart presents BART probit for classification. This method can be implemented using the *BART* package through the function `pbart`. Use the file *Conflict.csv*, where the dependent variable is *conflictcw*, to perform BART probit, implementing *k-fold* cross-validation to select the threshold that maximizes the sum of the true positive and true negative rates. Additionally, identify the most important predictors by evaluating different numbers of trees.
+
+7. **Simulation exercise: The Gaussian Process simulation continues**
+
+   Simulate the process  
+   \[
+   f_i = \sin(2\pi x_{i1}) + \cos(2\pi x_{i2}) + \sin(x_{i1} x_{i2}) + \mu_i,
+   \]  
+   where \( \mu_i \overset{\text{i.i.d.}}{\sim} N(0, 0.1^2) \), \( x_{ik} \sim U(0,1) \) for \( k = 1, 2 \), and the sample size is 500.
+
+   Define a grid of 20 evenly spaced values between 0 and 1 for each covariate \( x_{ik} \), and use this grid to perform prediction.
+
+   Estimate the hyperparameters of the Gaussian Process by maximizing the log marginal likelihood. Then, use the `km` function from the *DiceKriging* package to fit the Gaussian Process, fixing the noise variance at the value that maximizes the log marginal likelihood.
+
+   Finally, use the fitted model to predict the outputs on the grid points, and produce a 3D plot showing the predicted surface along with the training data points.
+
+8. **Simulation exercise: Stochastic gradient MCMC continues**
+
+   Program from scratch the stochastic gradient Langevin dynamics algorithm for the logit simulation exercise implementing the control variate version, performing 1,500 stochastic gradient descent iterations to locate the posterior mode, which should then be used as the initial value for 1,000 subsequent MCMC iterations using a step size set to \( 1 \times 10^{-4} \).
+
+9. Perform the simulation according to the model  
+   \[
+   y_i = 1 - 2 x_{i1} + 0.5 x_{i2} + \mu_i,
+   \]  
+   where \( \mu_i \sim N(0,1) \), the sample size is 100,000, and the covariates \( \mathbf{x}_i \sim N(\mathbf{0}, \mathbf{I}_2) \). Use 5,000 MCMC iterations and a batch size of 1,000 to implement the SGLD algorithm. Set a learning rate schedule that yields sensible results.
+
+   Assume independent priors \( \pi(\boldsymbol{\beta}, \sigma^2) = \pi(\boldsymbol{\beta}) \times \pi(\sigma^2) \), with \( \boldsymbol{\beta} \sim N(\mathbf{0}, \mathbf{I}_3) \) and \( \sigma^2 \sim IG(\alpha_0/2, \delta_0/2) \), where \( \alpha_0 = \delta_0 = 0.01 \).
 
