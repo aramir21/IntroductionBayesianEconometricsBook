@@ -1,11 +1,94 @@
 \chapter{Causal inference}\label{chap12}
 
+In this chapter, we present some Bayesian methods to perform inference on \textit{causal} effects. The point of departure is the set of conditions required to identify the causal effect from observable data distributions. These identification conditions are conceptually distinct from the econometric or statistical framework used to perform inference once those conditions are satisfied. In other words, the assumptions necessary for identification do not constrain whether we apply a Frequentist or a Bayesian approach for estimation and inference.
+
+Identification addresses the question: \textit{Can the causal effect be expressed as a function of the observable data distribution under certain assumptions?} Once the causal effect is identified in terms of the observed data distribution, we can proceed with statistical inference using either Frequentist methods or Bayesian methods. These inferential frameworks differ in how they estimate and quantify uncertainty but operate on the same identified causal effect. Thus, the identification assumptions are logically prior and independent of whether we adopt a frequentist or a Bayesian inferential paradigm.
+
+The aim is to identify the \textit{causal} or \textit{treatment effect} of a particular regressor or treatment on an outcome. For example, this could involve estimating the causal effect of a labor training program on individuals’ earnings or unemployment, or the price elasticity of demand. The starting point is the \textit{potential outcomes} framework \cite{rubin1974}, which defines a \textit{counterfactual scenario} describing what would happen to the outcome variable if the treatment status or level were different (commonly referred to as the \textit{Rubin causal model}).
+
+In this context, \textit{treatment status} refers to a binary treatment case with two potential outcomes; for instance, what would my earnings be if I had participated in the training program? Conversely, \textit{treatment level} applies to cases where there is a potential outcome for each level of the treatment; for example, what would demand be if the price had increased by 10\%?
+
+Following the potential outcomes notation in the binary treatment case, let $D_i = 1$ and $D_i = 0$ indicate the treatment status, corresponding to \textit{treated} and \textit{control} units, respectively. The potential outcomes $Y_i(1)$ and $Y_i(0)$ represent the outcome for unit $i = 1, 2, \dots, N$ under treatment and control, respectively. For instance, $Y_i(1)$ denotes the employment status an individual would have if she/he would have participated in the training program, regardless of their actual participation, whereas $Y_i(0)$ denotes the employment status if the individual would not have attended the program. The individual-level treatment effect is then defined as
+\begin{align*}
+	\tau_i = Y_i(1) - Y_i(0).
+\end{align*}
+
+The potential outcomes framework can also be extended to situations where the treatment is continuous \cite{imbens2014ivperspective}. In this case, let $Y_i(x_s)$ denote the outcome for unit $i$ under the counterfactual scenario where the treatment variable $X_s$ takes the value $x_s$. The ``treatment effect'' of changing $X_s$ from $x_s$ to $x_s'$, for example, the effect of increasing the price by 10\% on demand, is given by
+\begin{align*}
+	\beta_{si} = Y_i(x_s') - Y_i(x_s).
+\end{align*}
+When the change is infinitesimal, the causal effect can be expressed as a marginal effect:
+\begin{align*}
+	\beta_{si} =\frac{\partial Y_i(x_s)}{\partial x_s}.
+\end{align*}
+This setting is more complex than the binary treatment case because there is a potential outcome for each possible value of $x_s$ \cite{gill2001causal}. Thus, we begin with the binary treatment case. However, the fundamental challenge in identifying the individual-level causal effect remains that it is impossible to observe the same unit under both \textit{treatment statuses} simultaneously \cite{angrist2009mostly}. Thus, we must learn about the causal effects by comparing the outcomes from treated and untreated units.
+
+The starting point is to express the observed outcome in terms of the potential outcomes as
+\begin{align*}
+	Y_i = [Y_i(1) - Y_i(0)] \times D_i + Y_i(0),
+\end{align*}
+which can be represented as a linear regression model \cite{angrist2009mostly}:
+\begin{align*}
+	Y_i = \underbrace{\beta_0}_{\mathbb{E}[Y_i(0)]} 
+	+ \underbrace{\tau}_{Y_i(1)-Y_i(0)} D_i 
+	+ \underbrace{\mu_i}_{Y_i(0)-\mathbb{E}[Y_i(0)]},
+\end{align*}
+where
+\[
+\mathbb{E}[Y_i \mid D_i=1] - \mathbb{E}[Y_i \mid D_i=0] 
+= \tau + \big( \mathbb{E}[Y_i(0) \mid D_i=1] - \mathbb{E}[Y_i(0) \mid D_i=0] \big),
+\]
+such that 
+\[\tau=\mathbb{E}[Y_i(1)\mid D_i=1]-\mathbb{E}[Y_i(0)\mid D_i=1]
+\] represents the \textit{treatment effect on the treated}, while
+\[
+\mathbb{E}[Y_i(0) \mid D_i=1] - \mathbb{E}[Y_i(0) \mid D_i=0]
+\]
+is the \textit{selection bias}, which captures the difference between the expected outcome of treated individuals if they would not have been treated, and the expected outcome of untreated individuals. Depending on the context, this selection bias can be zero, positive, or negative. For instance, in a \textit{randomized controlled trial (RCT)}, where treatment assignment is random and independent of potential outcomes, that is, 
+\[
+\{ Y_i(1), Y_i(0) \} \perp D_i,
+\]
+which implies that $\mathbb{E}[\mu_i\mid D_i]=0$, we have
+\[
+\mathbb{E}[Y_i(0) \mid D_i=1] - \mathbb{E}[Y_i(0) \mid D_i=0] = 0.
+\]
+Thus, an RCT is considered the gold standard for identifying causal effects because it provides the strongest basis for satisfying the key identification assumption in causal inference: independence between treatment assignment and potential outcomes. However, RCTs may face challenges such as \textit{non-compliance}, which occurs when individuals do not adhere to their assigned treatment in an experimental study. This is important because, in many real-world settings, some individuals do not take the treatment they were assigned, leading to deviations from the ideal randomized controlled trial design. In addition, sometimes an RCT cannot be implemented due to ethical, logistical or financial restrictions.
+
+Note that the simple regression framework can be extended to a multiple linear regression model by including additional regressors to improve the precision of the estimates:
+\begin{align*}
+	Y_i = \beta_0 + \tau D_i + \mathbf{X}_i^{\top}\boldsymbol{\beta} + \mu_i.
+\end{align*}
+In practice, researchers often work with \textit{observational data}, where the treatment status is not randomly assigned because units actively choose the treatment they receive. In an RCT, the assignment mechanism is determined by chance, whereas in observational studies it is driven by choice. In these situations, regression can still be used to identify the causal effect if the \textit{conditional independence assumption} (CIA) holds. This assumption states that the potential outcomes are independent of the treatment status, conditional on a set of observed covariates:
+\[
+\{ Y_i(1), Y_i(0) \} \perp D_i \mid \mathbf{X}_i.
+\]
+
+    
+
+
+
+ On the other hand,     
+
+
+ 
+We can write the observed outcome
+
+instrumental variables change the level of the treatment, without affecting the potential outcomes associated with these treatment levels \cite{imbens2014ivperspective}.
+
+ 
+ 
+The gold standard in identification of causal effects is \textit{randomized controlled trial (RCT)}, where assignment to treatment is random, independent of the outcome and other potential exogenous determinants of the outcome. However, most of the time practitioners use \textit{observational data}, where the treatment status/level is \textit{endogenous} due to units actively defining the treatment that they receive \cite{imbens2014ivperspective}. Thus the assignment mechanism in RCTs are given by chance, whereas in observational studies by choice. This makes a subtantial methodological difference such that the latter implies looking a source of \textit{exogenous variation} that influences the \textit{treatment status/level}.
+
+We are interested in the \textit{causal effect}
+
 Two critical aspects in the identification of causal effects are: (i) the presence of a strong source of \textit{exogenous variation} that influences the \textit{endogenous regressors}, which are often the primary variables of interest to researchers, as they may directly affect the outcome or response variables and can be influenced by policy decisions, for example, identifying the causal effects of social programs on income or education, or evaluating strategic interventions in industry, such as estimating the price elasticity of demand for a specific product; and (ii) the effective \textit{control of other relevant exogenous covariates}, such as pre-treatment characteristics or external factors in a demand model.
 
 In this context, the use of \textit{non-parametric models} (see Chapters~\ref{chap12} and~\ref{chap13}) is valuable due to their flexibility and weaker structural assumptions. Therefore, non-parametric and machine learning approaches serve as \textit{powerful tools} that can be combined with strong exogenous variation to robustly identify causal effects \cite{chernozhukov2018double,chernozhukov2024applied}.
 
 
 Read this reference \cite{iacovone2023bayesian} before begin working in this chapter! Also read \cite{imbens1997bayesian}.
+
+
 \section{Instrumental variables}\label{sec12_1}
 \subsection{Semi-parametric IV model}\label{sec12_11}
 Use function \textit{rivDP} from package \textit{bayesm} in \textbf{R}.
