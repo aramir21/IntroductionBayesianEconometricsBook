@@ -68,9 +68,13 @@ Finally, note that under random assignment, ATT equals the \textit{average treat
 \[\tau=\mathbb{E}[Y_i(1)\mid D_i=1]-\mathbb{E}[Y_i(0)\mid D_i=1]=\mathbb{E}[Y_i(1)-Y_i(0)].
 \]
 
+In addition to \textit{random assignment}, the identification of causal effects in RCTs relies on the assumption that every unit has a positive probability of being assigned to both treatment and control groups ($0 < P(D_i = 1) < 1$), this is called \textit{overlap}, as well as the \textit{Stable Unit Treatment Value Assumption} (SUTVA). The latter requires that one unit’s potential outcome is unaffected by another unit’s treatment (\textit{no interference}) and that the observed outcome equals the potential outcome corresponding to the received treatment (\textit{consistency}).
+
 We can have a graphical representation of the causal mechanism in an RCT using causal diagrams \cite{pearl1995causal,pearl2018book}. These provide a powerful framework for representing and analyzing the underlying structures that enable causal identification.
 
-In particular, we can depict the causal mechanism using a \textit{Directed Acyclic Graph (DAG)}, which is a graphical representation of a set of variables and their assumed causal relationships. A DAG consists of \textit{nodes}, representing variables, and \textit{directed edges (arrows)}, representing direct causal effects from one variable to another. The graph is \textit{acyclic}, meaning it contains no directed cycles: starting from any node and following the arrows, it is impossible to return to the same node. See \cite{hernan2020causal} for a nice introduction. Figure~\ref{DAG1} illustrates the causal structure underlying RCTs
+In particular, we can depict the causal mechanism using a \textit{Directed Acyclic Graph (DAG)}, which is a graphical representation of a set of variables and their assumed causal relationships. A DAG consists of \textit{nodes}, representing variables, and \textit{directed edges (arrows)}, representing direct causal effects from one variable to another. The graph is \textit{acyclic}, meaning it contains no directed cycles: starting from any node and following the arrows, it is impossible to return to the same node. A defining property of causal DAGs
+is that, conditional on its direct causes, any variable on the DAG is independent
+of any other variable for which it is not a cause (\textit{causal Markov assumption}). See \cite{hernan2020causal} for a nice introduction. Figure~\ref{DAG1} illustrates the causal structure underlying RCTs.
 
 \begin{figure}[h]
 	\centering
@@ -86,13 +90,24 @@ In particular, we can depict the causal mechanism using a \textit{Directed Acycl
 	\label{DAG1}
 \end{figure} 
 
-In addition to \textit{random assignment}, the identification of causal effects in RCTs relies on the assumption that every unit has a positive probability of being assigned to both treatment and control groups ($0 < P(D_i = 1) < 1$), this is called \textit{overlap}, as well as the \textit{Stable Unit Treatment Value Assumption} (SUTVA). The latter requires that one unit’s potential outcome is unaffected by another unit’s treatment (\textit{no interference}) and that the observed outcome equals the potential outcome corresponding to the received treatment (\textit{consistency}).
+The counterfactual representation of the DAG, known as the \textit{Single-World Intervention Graph} (SWIG), is shown in Figure~\ref{SWIG1}. In this figure, the treatment variable $D$ is split to reflect the intervention: we fix $D$ at a specific value $d$ (the intervention), and replace the outcome $Y$ with its counterfactual representation $Y(d)$, which denotes the value of $Y$ if $D$ were set to $d$. The natural value of $D$ is also shown (dashed) but becomes irrelevant for the outcome once the intervention is imposed.
 
-The simple regression framework can be extended to a multiple linear regression model by including additional \textit{pre-treatment variables} to improve the precision of the estimates:
-\begin{align*}
-	Y_i = \beta_0 + \tau D_i + \mathbf{X}_i^{\top}\boldsymbol{\beta} + \mu_i.
-\end{align*}
-Note that, by assumption in RCTs, $D_i$ and $\mathbf{X}_i$ are independent. Thus, the identification of $\tau$ is not affected; however, including $\mathbf{X}_i$ helps explain part of the variability in $Y_i$, thereby improving the precision of the estimates.
+\begin{figure}[h]
+	\centering
+	\begin{tikzpicture}[->,>=Stealth,shorten >=1pt,node distance=2.5cm,
+		thick,main node/.style={circle,draw,minimum size=7mm}]
+		% Nodes
+		\node[main node] (Dfix) {$D = d$};    % Fixed intervention
+		\node[main node] (Y) [right of=Dfix] {$Y(d)$}; % Counterfactual outcome
+		\node[main node, dashed] (Dnat) [below of=Dfix, node distance=1.5cm] {$D$}; % Natural value (now irrelevant)
+		
+		% Edges
+		\path (Dfix) edge (Y);
+	\end{tikzpicture}
+	\caption{Single-World Intervention Graph (SWIG) for intervention $do(D=d)$: $Y$ is replaced by the counterfactual $Y(d)$, and $D$ is split into the fixed value $D=d$ and its natural value $D$.}
+	\label{SWIG1}
+\end{figure}
+ 
 
 An RCT is considered the gold standard for identifying causal effects because it provides the strongest basis for satisfying the key identification assumption in causal inference: \textit{independence between treatment assignment and potential outcomes}. However, RCTs may face challenges such as \textit{non-compliance}, which occurs when individuals do not adhere to their assigned treatment in an experimental study. This is important because, in many real-world settings, some individuals do not take the treatment they were assigned, leading to deviations from the ideal randomized controlled trial design. In addition, RCTs are sometimes infeasible due to ethical, logistical, or financial constraints. Moreover, they can be too narrowly focused or too localized to provide general conclusions about what works \cite{deaton2010instruments}.
 
@@ -100,13 +115,19 @@ It is also important to note that RCTs primarily identify the mean of the treatm
 
 \section{Conditional independence assumption (CIA)}
 
+The simple regression framework can be extended to a multiple linear regression model by including additional \textit{pre-treatment variables} to improve the precision of the estimates:
+\begin{align*}
+	Y_i = \beta_0 + \tau D_i + \mathbf{X}_i^{\top}\boldsymbol{\beta} + \mu_i.
+\end{align*}
+Note that, by assumption in RCTs, $D_i$ and $\mathbf{X}_i$ are independent. Thus, the identification of $\tau$ is not affected; however, including $\mathbf{X}_i$ helps explain part of the variability in $Y_i$, thereby improving the precision of the estimates.
+
 In practice, researchers often work with \textit{observational data}, where the treatment status is not randomly assigned because units actively choose the treatment they receive. In an RCT, the assignment mechanism is determined by chance, whereas in observational studies it is driven by choice. In these situations, regression can still be used to identify the causal effect if the \textit{conditional independence assumption} (CIA) holds. This assumption states that the potential outcomes are independent of the treatment status, conditional on a set of observed  \textit{pre-treatment variables}:
 \[
 \{ Y_i(1), Y_i(0) \} \perp D_i \mid \mathbf{X}_i.
 \]
 This means that, conditional on the \textit{pre-treatment variables} $\mathbf{X}_i$, treatment assignment is as good as random. This property is known as \textit{unconfoundedness given} $\mathbf{X}_i$, or equivalently, the \textit{no unmeasured confounders} assumption. When this condition is combined with the requirement that, for all possible values of $\mathbf{X}_i$, there is a positive probability of receiving each treatment level ($0 < P(D_i = 1 \mid \mathbf{X}_i) < 1$), the joint condition is referred to as \textit{strong ignorability}. Identification of average causal effects in this setting also requires the SUTVA assumption.
 
-Figure~\ref{DAG2} illustrates the causal structure underlying the CIA. Here, $\mathbf{X}$ -a vector of pre-treatment variables or \textit{confounders}- influences both the treatment ($D$) and the outcome ($Y$). Under the CIA, we can identify the causal effect of $D$ on $Y$ by adjusting for $\mathbf{X}$ because this causal structure satisfies the \textit{back-door criterion}. This criterion states that a set of variables $\mathbf{X}$ satisfies the condition for identifying the effect of $D$ on $Y$ if no variable in $\mathbf{X}$ is a descendant of $D$ and $\mathbf{X}$ blocks every back-door path from $D$ to $Y$. A \textit{back-door path} is any path from $D$ to $Y$ that begins with an arrow pointing into $D$. 
+Figure~\ref{DAG2} illustrates the causal structure underlying the CIA. We follow the convention that time flows from left to right. Here, $\mathbf{X}$ -a vector of pre-treatment variables or \textit{confounders}- influences both the treatment ($D$) and the outcome ($Y$). Under the CIA, we can identify the causal effect of $D$ on $Y$ by adjusting for $\mathbf{X}$ because this causal structure satisfies the \textit{back-door criterion}. This criterion states that a set of variables $\mathbf{X}$ satisfies the condition for identifying the effect of $D$ on $Y$ if no variable in $\mathbf{X}$ is a descendant of $D$ and $\mathbf{X}$ blocks every back-door path from $D$ to $Y$. A \textit{back-door path} is any path from $D$ to $Y$ that begins with an arrow pointing into $D$. 
 
 \begin{figure}[h]
 	\centering
@@ -122,7 +143,29 @@ Figure~\ref{DAG2} illustrates the causal structure underlying the CIA. Here, $\m
 	\end{tikzpicture}
 	\caption{Directed Acyclic Graph (DAG) implied by the linear model $Y = \beta_0 + \tau D + \mathbf{X}^\top\boldsymbol{\beta} + \mu$ under CIA.}
 	\label{DAG2}
-\end{figure} 
+\end{figure}
+
+The SWIG of this DAG is displayed in Figure \ref{SWIG2}.  
+
+\begin{figure}[h]
+	\centering
+	\begin{tikzpicture}[->,>=Stealth,shorten >=1pt,node distance=2.5cm,
+		thick,main node/.style={circle,draw,minimum size=7mm}]
+		% Nodes
+		\node[main node] (X) {$\mathbf{X}$};
+		\node[main node] (Dfix) [right of=X] {$D = d$}; % Intervention
+		\node[main node] (Y) [right of=Dfix] {$Y(d)$};  % Counterfactual outcome
+		\node[main node, dashed] (Dnat) [below of=Dfix, node distance=1.5cm] {$D$}; % Natural value
+		
+		% Edges
+		\path (Dfix) edge (Y)
+		(X) edge[bend left=25] (Y)
+		(X) edge (Dnat);
+	\end{tikzpicture}
+	\caption{Single-World Intervention Graph (SWIG) for $do(D=d)$: The treatment $D$ is split into the fixed intervention $D=d$ and its natural value (dashed). The outcome is replaced by $Y(d)$. $\mathbf{X}$ still influences $Y(d)$, so adjustment for $\mathbf{X}$ is needed for identification.}
+	\label{SWIG2}
+\end{figure}
+ 
 
 In this setting, the error term is defined as
 \[
@@ -159,7 +202,7 @@ Figure~\ref{DAG3} illustrates this situation. Here, $C$ is a common effect of $D
 		\node[main node] (X) {$\mathbf{X}$};
 		\node[main node] (D) [right of=X] {$D$};
 		\node[main node] (Y) [right of=D] {$Y$};
-		\node[main node] (C) [below of=D, node distance=2cm] {$C$}; % Collider
+		\node[main node] (C) [below of=Y, node distance=1cm] {$C$}; % Collider
 		
 		% Edges
 		\path (X) edge (D)
@@ -173,6 +216,24 @@ Figure~\ref{DAG3} illustrates this situation. Here, $C$ is a common effect of $D
 \end{figure}
 
 Another source of bias in identification of causal effects is omission of relevant regressors.
+
+\begin{figure}[h!]
+	\centering
+	\begin{tikzpicture}[->,>=Stealth,shorten >=1pt,node distance=2.8cm,
+		thick,main node/.style={circle,draw,minimum size=8mm}]
+		% Nodes
+		\node[main node] (X) {$X$};  % Omitted confounder
+		\node[main node] (D) [right of=X] {$D$};  % Treatment
+		\node[main node] (Y) [right of=D] {$Y$};  % Outcome
+		
+		% Edges
+		\path (X) edge (D)
+		(X) edge[bend left=15] (Y)
+		(D) edge (Y);
+	\end{tikzpicture}
+	\caption{DAG illustrating omitted variable bias: $X$ affects both treatment $D$ and outcome $Y$. Omitting $X$ in regression leaves an open back-door path $D \leftarrow X \to Y$, violating the back-door criterion.}
+	\label{DAG4}
+\end{figure}
 
 Attenuation bias...  
 
