@@ -2,7 +2,11 @@
 
 In this chapter, we present some Bayesian methods to perform inference on \textit{causal} effects. The point of departure is the set of conditions required to identify the causal effect from observable data distributions. These identification conditions are conceptually distinct from the econometric or statistical framework used to perform inference once those conditions are satisfied. In other words, the assumptions necessary for identification do not constrain whether we apply a Frequentist or a Bayesian approach for estimation and inference.
 
-Identification addresses the question: \textit{Can the causal effect be expressed as a function of the observable data distribution under certain assumptions?} Once the causal effect is identified in terms of the observed data distribution, we can proceed with statistical inference using either Frequentist methods or Bayesian methods. These inferential frameworks differ in how they estimate and quantify uncertainty but operate on the same identified causal effect. Thus, the identification assumptions are logically prior and independent of whether we adopt a frequentist or a Bayesian inferential paradigm.
+Identification addresses the question: \textit{Can the causal effect be expressed as a function of the observable data distribution under certain assumptions?} Once the causal effect is identified in terms of the observed data distribution, we can proceed with statistical inference using either Frequentist methods or Bayesian methods. These inferential frameworks differ in how they estimate and quantify uncertainty but operate on the same identified causal effect. Thus, the identification assumptions are logically prior and independent of whether we adopt a Frequentist or a Bayesian inferential paradigm.
+
+Thus, we present the underlying identification assumptions employed in popular strategies such as randomized controlled trials, conditional independence, and instrumental variables, among others, as well as the Bayesian inferential framework used to estimate causal effects in these settings. 
+
+\section{General setting}
 
 The aim is to identify the \textit{causal} or \textit{treatment effect} of a particular regressor or treatment on an outcome. For example, this could involve estimating the causal effect of a labor training program on individuals’ earnings or unemployment, or the price elasticity of demand. The starting point is the \textit{potential outcomes} framework \cite{rubin1974}, which defines a \textit{counterfactual scenario} describing what would happen to the outcome variable if the treatment status or level were different (commonly referred to as the \textit{Rubin causal model}).
 
@@ -21,7 +25,9 @@ When the change is infinitesimal, the causal effect can be expressed as a margin
 \begin{align*}
 	\beta_{si} =\frac{\partial Y_i(x_s)}{\partial x_s}.
 \end{align*}
-This setting is more complex than the binary treatment case because there is a potential outcome for each possible value of $x_s$ \cite{gill2001causal}. Thus, we begin with the binary treatment case. However, the fundamental challenge in identifying the individual-level causal effect remains that it is impossible to observe the same unit under both \textit{treatment statuses} simultaneously \cite{angrist2009mostly}. Thus, we must learn about the causal effects by comparing the outcomes from treated and untreated units.
+This setting is more complex than the binary treatment case because there is a potential outcome for each possible value of $x_s$ \cite{gill2001causal}. Thus, we begin with the binary treatment case. However, the fundamental challenge in identifying the individual-level causal effect remains that it is impossible to observe the same unit under different \textit{treatment statuses} simultaneously \cite{angrist2009mostly}. Thus, we must learn about the causal effects by comparing the outcomes from treated and untreated units.
+
+\section{Randomized controlled trial (RCT)}
 
 The starting point is to express the observed outcome in terms of the potential outcomes as
 \begin{align*}
@@ -40,46 +46,143 @@ where
 \]
 such that 
 \[\tau=\mathbb{E}[Y_i(1)\mid D_i=1]-\mathbb{E}[Y_i(0)\mid D_i=1]
-\] represents the \textit{treatment effect on the treated}, while
+\] represents the \textit{treatment effect on the treated} (ATT), while
 \[
 \mathbb{E}[Y_i(0) \mid D_i=1] - \mathbb{E}[Y_i(0) \mid D_i=0]
 \]
-is the \textit{selection bias}, which captures the difference between the expected outcome of treated individuals if they would not have been treated, and the expected outcome of untreated individuals. Depending on the context, this selection bias can be zero, positive, or negative. For instance, in a \textit{randomized controlled trial (RCT)}, where treatment assignment is random and independent of potential outcomes, that is, 
+is the \textit{selection bias}, which captures the difference between the expected outcome of treated individuals if they would not have been treated, and the expected outcome of untreated individuals. Depending on the context, this selection bias can be zero, positive, or negative. For instance, in a \textit{randomized controlled trial (RCT)}, where treatment assignment is random and independent of potential outcomes, we have
 \[
 \{ Y_i(1), Y_i(0) \} \perp D_i,
 \]
-which implies that $\mathbb{E}[\mu_i\mid D_i]=0$, we have
+which implies
 \[
-\mathbb{E}[Y_i(0) \mid D_i=1] - \mathbb{E}[Y_i(0) \mid D_i=0] = 0.
+\mathbb{E}[\mu_i \mid D_i] = \mathbb{E}[Y_i(0) \mid D_i] - \mathbb{E}[Y_i(0)] = \mathbb{E}[Y_i(0)] - \mathbb{E}[Y_i(0)] = 0.
 \]
-Thus, an RCT is considered the gold standard for identifying causal effects because it provides the strongest basis for satisfying the key identification assumption in causal inference: independence between treatment assignment and potential outcomes. However, RCTs may face challenges such as \textit{non-compliance}, which occurs when individuals do not adhere to their assigned treatment in an experimental study. This is important because, in many real-world settings, some individuals do not take the treatment they were assigned, leading to deviations from the ideal randomized controlled trial design. In addition, sometimes an RCT cannot be implemented due to ethical, logistical or financial restrictions.
+Therefore, the error term is mean-independent of treatment status. Equivalently,
+\[
+\mathbb{E}[Y_i(0) \mid D_i = 1] - \mathbb{E}[Y_i(0) \mid D_i = 0] = 0,
+\]
+which implies there is no selection bias under random assignment.
 
-Note that the simple regression framework can be extended to a multiple linear regression model by including additional regressors to improve the precision of the estimates:
+Finally, note that under random assignment, ATT equals the \textit{average treatment effect (ATE)}:
+\[\tau=\mathbb{E}[Y_i(1)\mid D_i=1]-\mathbb{E}[Y_i(0)\mid D_i=1]=\mathbb{E}[Y_i(1)-Y_i(0)].
+\]
+
+We can have a graphical representation of the causal mechanism in an RCT using causal diagrams \cite{pearl1995causal,pearl2018book}. These provide a powerful framework for representing and analyzing the underlying structures that enable causal identification.
+
+In particular, we can depict the causal mechanism using a \textit{Directed Acyclic Graph (DAG)}, which is a graphical representation of a set of variables and their assumed causal relationships. A DAG consists of \textit{nodes}, representing variables, and \textit{directed edges (arrows)}, representing direct causal effects from one variable to another. The graph is \textit{acyclic}, meaning it contains no directed cycles: starting from any node and following the arrows, it is impossible to return to the same node. See \cite{hernan2020causal} for a nice introduction. Figure~\ref{DAG1} illustrates the causal structure underlying RCTs
+
+\begin{figure}[h]
+	\centering
+	\begin{tikzpicture}[->,>=Stealth,shorten >=1pt,node distance=2.5cm,
+		thick,main node/.style={circle,draw,minimum size=7mm}]
+		\node[main node] (D) {$D$};
+		\node[main node] (Y) [right of=D] {$Y$};
+		
+		\path (D) edge (Y)
+		(D) edge (Y);
+	\end{tikzpicture}
+	\caption{Directed Acyclic Graph (DAG) implied by a Randomized Controlled Trial (RCT).}
+	\label{DAG1}
+\end{figure} 
+
+In addition to \textit{random assignment}, the identification of causal effects in RCTs relies on the assumption that every unit has a positive probability of being assigned to both treatment and control groups ($0 < P(D_i = 1) < 1$), this is called \textit{overlap}, as well as the \textit{Stable Unit Treatment Value Assumption} (SUTVA). The latter requires that one unit’s potential outcome is unaffected by another unit’s treatment (\textit{no interference}) and that the observed outcome equals the potential outcome corresponding to the received treatment (\textit{consistency}).
+
+The simple regression framework can be extended to a multiple linear regression model by including additional \textit{pre-treatment variables} to improve the precision of the estimates:
 \begin{align*}
 	Y_i = \beta_0 + \tau D_i + \mathbf{X}_i^{\top}\boldsymbol{\beta} + \mu_i.
 \end{align*}
-In practice, researchers often work with \textit{observational data}, where the treatment status is not randomly assigned because units actively choose the treatment they receive. In an RCT, the assignment mechanism is determined by chance, whereas in observational studies it is driven by choice. In these situations, regression can still be used to identify the causal effect if the \textit{conditional independence assumption} (CIA) holds. This assumption states that the potential outcomes are independent of the treatment status, conditional on a set of observed covariates:
+Note that, by assumption in RCTs, $D_i$ and $\mathbf{X}_i$ are independent. Thus, the identification of $\tau$ is not affected; however, including $\mathbf{X}_i$ helps explain part of the variability in $Y_i$, thereby improving the precision of the estimates.
+
+An RCT is considered the gold standard for identifying causal effects because it provides the strongest basis for satisfying the key identification assumption in causal inference: \textit{independence between treatment assignment and potential outcomes}. However, RCTs may face challenges such as \textit{non-compliance}, which occurs when individuals do not adhere to their assigned treatment in an experimental study. This is important because, in many real-world settings, some individuals do not take the treatment they were assigned, leading to deviations from the ideal randomized controlled trial design. In addition, RCTs are sometimes infeasible due to ethical, logistical, or financial constraints. Moreover, they can be too narrowly focused or too localized to provide general conclusions about what works \cite{deaton2010instruments}.
+
+It is also important to note that RCTs primarily identify the mean of the treatment effect distribution but do not capture other features, such as the median or higher-order moments. See \cite{deaton2010instruments} for a detailed discussion of other potential shortcomings of RCTs.
+
+\section{Conditional independence assumption (CIA)}
+
+In practice, researchers often work with \textit{observational data}, where the treatment status is not randomly assigned because units actively choose the treatment they receive. In an RCT, the assignment mechanism is determined by chance, whereas in observational studies it is driven by choice. In these situations, regression can still be used to identify the causal effect if the \textit{conditional independence assumption} (CIA) holds. This assumption states that the potential outcomes are independent of the treatment status, conditional on a set of observed  \textit{pre-treatment variables}:
 \[
 \{ Y_i(1), Y_i(0) \} \perp D_i \mid \mathbf{X}_i.
 \]
+This means that, conditional on the \textit{pre-treatment variables} $\mathbf{X}_i$, treatment assignment is as good as random. This property is known as \textit{unconfoundedness given} $\mathbf{X}_i$, or equivalently, the \textit{no unmeasured confounders} assumption. When this condition is combined with the requirement that, for all possible values of $\mathbf{X}_i$, there is a positive probability of receiving each treatment level ($0 < P(D_i = 1 \mid \mathbf{X}_i) < 1$), the joint condition is referred to as \textit{strong ignorability}. Identification of average causal effects in this setting also requires the SUTVA assumption.
 
-    
+Figure~\ref{DAG2} illustrates the causal structure underlying the CIA. Here, $\mathbf{X}$ -a vector of pre-treatment variables or \textit{confounders}- influences both the treatment ($D$) and the outcome ($Y$). Under the CIA, we can identify the causal effect of $D$ on $Y$ by adjusting for $\mathbf{X}$ because this causal structure satisfies the \textit{back-door criterion}. This criterion states that a set of variables $\mathbf{X}$ satisfies the condition for identifying the effect of $D$ on $Y$ if no variable in $\mathbf{X}$ is a descendant of $D$ and $\mathbf{X}$ blocks every back-door path from $D$ to $Y$. A \textit{back-door path} is any path from $D$ to $Y$ that begins with an arrow pointing into $D$. 
 
+\begin{figure}[h]
+	\centering
+	\begin{tikzpicture}[->,>=Stealth,shorten >=1pt,node distance=2.5cm,
+		thick,main node/.style={circle,draw,minimum size=7mm}]
+		\node[main node] (X) {$\mathbf{X}$};
+		\node[main node] (D) [right of=X] {$D$};
+		\node[main node] (Y) [right of=D] {$Y$};
+		
+		\path (X) edge (D)
+		(X) edge[bend left=20] (Y)
+		(D) edge (Y);
+	\end{tikzpicture}
+	\caption{Directed Acyclic Graph (DAG) implied by the linear model $Y = \beta_0 + \tau D + \mathbf{X}^\top\boldsymbol{\beta} + \mu$ under CIA.}
+	\label{DAG2}
+\end{figure} 
 
+In this setting, the error term is defined as
+\[
+\mu_i = Y_i(0) - \mathbb{E}[Y_i(0) \mid \mathbf{X}_i].
+\]
 
- On the other hand,     
+Thus,
+\[
+\mathbb{E}[\mu_i \mid D_i, \mathbf{X}_i] = \mathbb{E}[Y_i(0) - \mathbb{E}[Y_i(0) \mid \mathbf{X}_i] \mid D_i, \mathbf{X}_i] 
+= \mathbb{E}[Y_i(0) \mid D_i, \mathbf{X}_i] - \mathbb{E}[Y_i(0) \mid \mathbf{X}_i].
+\]
 
+By the CIA, $Y_i(0) \perp D_i \mid \mathbf{X}_i$, so:
+\[
+\mathbb{E}[Y_i(0) \mid D_i, \mathbf{X}_i] = \mathbb{E}[Y_i(0) \mid \mathbf{X}_i].
+\]
 
- 
-We can write the observed outcome
+Therefore:
+\[
+\mathbb{E}[\mu_i \mid D_i, \mathbf{X}_i] = 0.
+\]
 
-instrumental variables change the level of the treatment, without affecting the potential outcomes associated with these treatment levels \cite{imbens2014ivperspective}.
+This condition is known as \textit{conditional mean independence}: after controlling for $\mathbf{X}_i$, treatment assignment is independent of unobserved determinants of the outcome. It justifies unbiased estimation of $\tau$ by regression adjustment in observational studies.
+
+Observe that the identification strategy relies on conditioning on $\mathbf{X}$. However, adding more controls is not always safe because some variables, known as \textit{bad controls}, can introduce bias if included in the adjustment set \cite{angrist2009mostly}. One important type of bad control is a \textit{collider}, a variable that is caused by (or is a common effect of) two or more other variables in a DAG. Colliders play a critical role because conditioning on them can create spurious associations between their causes, leading to what is known as \textit{collider bias} (or selection bias).
+
+Figure~\ref{DAG3} illustrates this situation. Here, $C$ is a common effect of $D$ and $\mathbf{X}$. Conditioning on $C$ opens an additional path between $D$ and $Y$, creating a spurious association that violates the \textit{back-door criterion}. 
+
+\begin{figure}[h]
+	\centering
+	\begin{tikzpicture}[->,>=Stealth,shorten >=1pt,node distance=2.5cm,
+		thick,main node/.style={circle,draw,minimum size=7mm}]
+		% Nodes
+		\node[main node] (X) {$\mathbf{X}$};
+		\node[main node] (D) [right of=X] {$D$};
+		\node[main node] (Y) [right of=D] {$Y$};
+		\node[main node] (C) [below of=D, node distance=2cm] {$C$}; % Collider
+		
+		% Edges
+		\path (X) edge (D)
+		(X) edge[bend left=20] (Y)
+		(D) edge (Y)
+		(D) edge (C)
+		(X) edge (C);
+	\end{tikzpicture}
+	\caption{Directed Acyclic Graph (DAG) implied by the linear model $Y = \beta_0 + \tau D + \gamma C + \mathbf{X}^\top\boldsymbol{\beta} + \mu$ under CIA, the additional collider $C$ caused by both $D$ and $\mathbf{X}$ would open a path between $D$ and $\mathbf{X}$, inducing bias.}
+	\label{DAG3}
+\end{figure}
+
+Another source of bias in identification of causal effects is omission of relevant regressors.
+
+Attenuation bias...  
+
+Introduce maximum entropy using identification conditions to build likelihood functions.
+
+Instrumental variables change the level of the treatment, without affecting the potential outcomes associated with these treatment levels \cite{imbens2014ivperspective}.
 
  
  
 The gold standard in identification of causal effects is \textit{randomized controlled trial (RCT)}, where assignment to treatment is random, independent of the outcome and other potential exogenous determinants of the outcome. However, most of the time practitioners use \textit{observational data}, where the treatment status/level is \textit{endogenous} due to units actively defining the treatment that they receive \cite{imbens2014ivperspective}. Thus the assignment mechanism in RCTs are given by chance, whereas in observational studies by choice. This makes a subtantial methodological difference such that the latter implies looking a source of \textit{exogenous variation} that influences the \textit{treatment status/level}.
-
-We are interested in the \textit{causal effect}
 
 Two critical aspects in the identification of causal effects are: (i) the presence of a strong source of \textit{exogenous variation} that influences the \textit{endogenous regressors}, which are often the primary variables of interest to researchers, as they may directly affect the outcome or response variables and can be influenced by policy decisions, for example, identifying the causal effects of social programs on income or education, or evaluating strategic interventions in industry, such as estimating the price elasticity of demand for a specific product; and (ii) the effective \textit{control of other relevant exogenous covariates}, such as pre-treatment characteristics or external factors in a demand model.
 
