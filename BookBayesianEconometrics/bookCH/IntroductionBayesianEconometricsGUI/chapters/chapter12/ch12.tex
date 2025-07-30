@@ -6,7 +6,7 @@ Identification addresses the question: \textit{Can the causal effect be expresse
 
 Thus, we present the underlying identification assumptions employed in popular strategies such as randomized controlled trials, conditional independence, and instrumental variables, among others, as well as the Bayesian inferential framework used to estimate causal effects in these settings. 
 
-\section{General setting}
+\section{Identification setting}
 
 The aim is to identify the \textit{causal} or \textit{treatment effect} of a particular regressor or treatment on an outcome. For example, this could involve estimating the causal effect of a labor training program on individuals’ earnings or unemployment, or the price elasticity of demand. The starting point is the \textit{potential outcomes} framework \cite{rubin1974}, which defines a \textit{counterfactual scenario} describing what would happen to the outcome variable if the treatment status or level were different (commonly referred to as the \textit{Rubin causal model}).
 
@@ -29,24 +29,33 @@ This setting is more complex than the binary treatment case because there is a p
 
 \section{Randomized controlled trial (RCT)}
 
-The starting point is to express the observed outcome in terms of the potential outcomes as
-\begin{align*}
-	Y_i = [Y_i(1) - Y_i(0)] \times D_i + Y_i(0),
-\end{align*}
-which can be represented as a linear regression model \cite{angrist2009mostly}:
-\begin{align*}
-	Y_i = \underbrace{\beta_0}_{\mathbb{E}[Y_i(0)]} 
-	+ \underbrace{\tau}_{Y_i(1)-Y_i(0)} D_i 
-	+ \underbrace{\mu_i}_{Y_i(0)-\mathbb{E}[Y_i(0)]},
-\end{align*}
-where
+The starting point is to express the observed outcome in terms of the potential outcomes as:
+\[
+Y_i = [Y_i(1) - Y_i(0)] D_i + Y_i(0),
+\]
+which shows that the observed outcome equals the control potential outcome plus the treatment effect if treated. Under the assumption of a constant treatment effect, this can be represented as a linear regression model \cite{angrist2009mostly}:
+\[
+Y_i = \underbrace{\beta_0}_{\mathbb{E}[Y_i(0)]} 
++ \underbrace{\tau}_{\text{constant treatment effect}} D_i 
++ \underbrace{\mu_i}_{Y_i(0) - \mathbb{E}[Y_i(0)]}.
+\]
+
+The observed mean difference between treated and untreated units decomposes as:
 \[
 \mathbb{E}[Y_i \mid D_i=1] - \mathbb{E}[Y_i \mid D_i=0] 
-= \tau + \big( \mathbb{E}[Y_i(0) \mid D_i=1] - \mathbb{E}[Y_i(0) \mid D_i=0] \big),
+= \tau + \Big( \mathbb{E}[Y_i(0)\mid D_i=1] - \mathbb{E}[Y_i(0)\mid D_i=0]\Big).
 \]
-such that 
-\[\tau=\mathbb{E}[Y_i(1)\mid D_i=1]-\mathbb{E}[Y_i(0)\mid D_i=1]
-\] represents the \textit{treatment effect on the treated} (ATT), while
+If $\tau$ is constant across units, then it represents both the average treatment effect (ATE),
+\[
+\text{ATE} = \mathbb{E}[Y_i(1) - Y_i(0)],
+\]
+and the treatment effect on the treated (ATT),
+\[
+\text{ATT} = \mathbb{E}[Y_i(1) - Y_i(0)\mid D_i=1].
+\]
+However, when treatment effects are heterogeneous, the ATE differs from the ATT.
+
+On the other hand, 
 \[
 \mathbb{E}[Y_i(0) \mid D_i=1] - \mathbb{E}[Y_i(0) \mid D_i=0]
 \]
@@ -55,22 +64,23 @@ is the \textit{selection bias}, which captures the difference between the expect
 \{ Y_i(1), Y_i(0) \} \perp D_i,
 \]
 which implies
-\[
-\mathbb{E}[\mu_i \mid D_i] = \mathbb{E}[Y_i(0) \mid D_i] - \mathbb{E}[Y_i(0)] = \mathbb{E}[Y_i(0)] - \mathbb{E}[Y_i(0)] = 0.
-\]
+\begin{equation}\label{eq:12_1}
+	\mathbb{E}[\mu_i \mid D_i] = \mathbb{E}[Y_i(0) \mid D_i] - \mathbb{E}[Y_i(0)] = \mathbb{E}[Y_i(0)] - \mathbb{E}[Y_i(0)] = 0.
+\end{equation}
+
 Therefore, the error term is mean-independent of treatment status. Equivalently,
 \[
 \mathbb{E}[Y_i(0) \mid D_i = 1] - \mathbb{E}[Y_i(0) \mid D_i = 0] = 0,
 \]
 which implies there is no selection bias under random assignment.
 
-Finally, note that under random assignment, ATT equals the \textit{average treatment effect (ATE)}:
+Note also that under random assignment, ATT equals ATE:
 \[\tau=\mathbb{E}[Y_i(1)\mid D_i=1]-\mathbb{E}[Y_i(0)\mid D_i=1]=\mathbb{E}[Y_i(1)-Y_i(0)].
 \]
 
 In addition to \textit{random assignment}, the identification of causal effects in RCTs relies on the assumption that every unit has a positive probability of being assigned to both treatment and control groups ($0 < P(D_i = 1) < 1$), this is called \textit{overlap}, as well as the \textit{Stable Unit Treatment Value Assumption} (SUTVA). The latter requires that one unit’s potential outcome is unaffected by another unit’s treatment (\textit{no interference}) and that the observed outcome equals the potential outcome corresponding to the received treatment (\textit{consistency}).
 
-We can have a graphical representation of the causal mechanism in an RCT using causal diagrams \cite{pearl1995causal,pearl2018book}. These provide a powerful framework for representing and analyzing the underlying structures that enable causal identification.
+We can represent the causal mechanism in an RCT using causal diagrams \cite{pearl1995causal,pearl2018book}. These diagrams provide a powerful framework for visualizing and analyzing the underlying structures that enable causal identification. It is important to note that causal diagrams do not impose specific functional forms, such as those assumed in linear regression models, and are closely linked to structural equation models (SEMs). SEMs offer another perspective on causal inference in econometrics, which is closely related to the potential outcomes approach \cite{haavelmo1943statistical,marschak1944random,imbens2014ivperspective}.
 
 In particular, we can depict the causal mechanism using a \textit{Directed Acyclic Graph (DAG)}, which is a graphical representation of a set of variables and their assumed causal relationships. A DAG consists of \textit{nodes}, representing variables, and \textit{directed edges (arrows)}, representing direct causal effects from one variable to another. The graph is \textit{acyclic}, meaning it contains no directed cycles: starting from any node and following the arrows, it is impossible to return to the same node. A defining property of causal DAGs
 is that, conditional on its direct causes, any variable on the DAG is independent
@@ -99,7 +109,7 @@ The counterfactual representation of the DAG, known as the \textit{Single-World 
 		% Nodes
 		\node[main node] (Dfix) {$D = d$};    % Fixed intervention
 		\node[main node] (Y) [right of=Dfix] {$Y(d)$}; % Counterfactual outcome
-		\node[main node, dashed] (Dnat) [below of=Dfix, node distance=1.5cm] {$D$}; % Natural value (irrelevant)
+		\node[main node] (Dnat) [below of=Dfix, node distance=1.5cm] {$D$}; % Natural value (irrelevant)
 		
 		% Edges
 		\path (Dfix) edge[dashed] (Y); % Dashed arrow
@@ -112,7 +122,8 @@ The counterfactual representation of the DAG, known as the \textit{Single-World 
 
 An RCT is considered the gold standard for identifying causal effects because it provides the strongest basis for satisfying the key identification assumption in causal inference: \textit{independence between treatment assignment and potential outcomes}. However, RCTs may face challenges such as \textit{non-compliance}, which occurs when individuals do not adhere to their assigned treatment in an experimental study. This is important because, in many real-world settings, some individuals do not take the treatment they were assigned, leading to deviations from the ideal randomized controlled trial design. In addition, RCTs are sometimes infeasible due to ethical, logistical, or financial constraints. Moreover, they can be too narrowly focused or too localized to provide general conclusions about what works \cite{deaton2010instruments}.
 
-It is also important to note that RCTs primarily identify the mean of the treatment effect distribution but do not capture other features, such as the median or higher-order moments. See \cite{deaton2010instruments} for a detailed discussion of other potential shortcomings of RCTs.
+It is also important to note that RCTs primarily identify the mean of the treatment effect distribution but do not capture other features, such as the median or higher-order moments. These additional aspects of the distribution of treatment effects can be highly relevant for policymakers and stakeholders. See \cite{deaton2010instruments} for a detailed discussion of other potential shortcomings of RCTs.
+
 
 \section{Conditional independence assumption (CIA)}
 
@@ -156,14 +167,14 @@ The SWIG of this DAG is displayed in Figure \ref{SWIG2}.
 		\node[main node] (X) {$\mathbf{X}$};
 		\node[main node] (Dfix) [right of=X] {$D = d$}; % Intervention
 		\node[main node] (Y) [right of=Dfix] {$Y(d)$};  % Counterfactual outcome
-		\node[main node, dashed] (Dnat) [below of=Dfix, node distance=1.5cm] {$D$}; % Natural value
+		\node[main node] (Dnat) [below of=Dfix, node distance=1.5cm] {$D$}; % Natural value
 		
 		% Edges
 		\path (Dfix) edge[dashed] (Y)
 		(X) edge[bend left=25] (Y)
 		(X) edge (Dnat);
 	\end{tikzpicture}
-	\caption{Single-World Intervention Graph (SWIG) for $do(D=d)$: The treatment $D$ is split into the fixed intervention $D=d$ and its natural value (dashed). The outcome is replaced by $Y(d)$. $\mathbf{X}$ still influences $Y(d)$, so adjustment for $\mathbf{X}$ is needed for identification.}
+	\caption{Single-World Intervention Graph (SWIG) for $do(D=d)$: The treatment $D$ is split into the fixed intervention $D=d$ and its natural value. The outcome is replaced by $Y(d)$. $\mathbf{X}$ still influences $Y(d)$, so adjustment for $\mathbf{X}$ is needed for identification.}
 	\label{SWIG2}
 \end{figure}
  
@@ -185,9 +196,9 @@ By the CIA, $Y_i(0) \perp D_i \mid \mathbf{X}_i$, so:
 \]
 
 Therefore:
-\[
-\mathbb{E}[\mu_i \mid D_i, \mathbf{X}_i] = 0.
-\]
+\begin{equation}\label{eq:12_2}
+	\mathbb{E}[\mu_i \mid D_i, \mathbf{X}_i] = 0.
+\end{equation}
 
 This condition is known as \textit{conditional mean independence}: after controlling for $\mathbf{X}_i$, treatment assignment is independent of unobserved determinants of the outcome. It justifies unbiased estimation of $\tau$ by regression adjustment in observational studies.
 
@@ -220,11 +231,33 @@ Collider (selection) bias is one possible source of bias in the identification o
 
 \section{Instrumental variables (IV)}
 
-In many real-world situations, we face biases such as those described in the previous paragraph, arising from measurement errors, omission of relevant variables, and similar issues. Even in these cases, it is still possible to identify the causal effect. One common strategy is to use a set of \textit{instrumental variables} ($\mathbf{Z}$) that satisfy two conditions: (i) \textit{relevance}, meaning the instruments are correlated with the treatment ($\mathbf{Z} \not\perp D$), and (ii) \textit{exclusion restrictions}, meaning the instruments affect the outcome only through the treatment ($\mathbf{Z} \perp Y \mid D$). The latter also implies that the instruments and the outcome do not share common causes. Unfortunately, only the first condition is testable, while the second is fundamentally untestable. 
+In many real-world situations, we face biases such as those described in the previous paragraph, arising from measurement errors, omission of relevant variables, and similar issues. Even in these cases, it is still possible to identify the causal effect. One common strategy is to use a set of \textit{instrumental variables} ($\mathbf{Z}$) that satisfy two key conditions:
+\begin{enumerate}
+	\item \textit{Relevance}, meaning the instruments are correlated with the treatment:
+	\[
+	\mathbf{Z}_i \not\perp D_i.
+	\]
+	\item \textit{Exogeneity}, which in the linear model requires:
+	\begin{equation}\label{eq:12_3}
+		\mathbb{E}[\mu_i \mid \mathbf{Z}_i] = 0,
+	\end{equation}
+	and, in terms of potential outcomes, entails:
+	\begin{itemize}
+		\item \textit{Exclusion restriction}: instruments affect the outcome only through the treatment:
+		\[
+		Y_i(D_i = d, \mathbf{Z}_i = \mathbf{z}) = Y_i(D_i = d, \mathbf{Z}_i = \mathbf{z}') = Y_i(D_i = d), \quad d \in \{0,1\},
+		\]
+		\item \textit{Marginal exchangeability}: instruments are independent of the potential outcomes:
+		\[
+		\mathbf{Z}_i \perp \{ Y_i(1), Y_i(0) \}.
+		\]
+	\end{itemize}
+\end{enumerate}
 
-When the number of instruments exceeds the number of endogenous variables, the Sargan test (or its robust version, the Hansen $J$-test) can be used to assess the validity of overidentifying restrictions. However, it should not be misinterpreted as a direct test of the exclusion restriction. Instead, the test evaluates whether the overidentifying restrictions implied by the IV model hold. Specifically, the null hypothesis states that all instruments are jointly uncorrelated with the structural error term, that is, $\mathbb{E}[\mathbf{Z}^{\top}\mu] = \mathbf{0}$ \cite{sargan1958econometric,hansen1982large}.
+Relevance is testable, typically by checking whether instruments significantly predict the endogenous variable \cite{staiger1997instrumental,cragg1993testing,kleibergen2006generalized,stock2005asymptotic}. However, \textit{weak instruments}, those that exhibit only a weak association with the treatment, can lead to serious consequences, including a high level of uncertainty and the potential amplification of even small biases when estimating the causal effect.
 
-If the test rejects, it indicates that at least one instrument is invalid, but it does not reveal whether the violation results from a failure of the exclusion restriction, correlation with unobserved confounders, or model misspecification. Conversely, if the test fails to reject, it suggests that the sample moment conditions do not provide evidence against instrument validity under the maintained model, but this does not prove that the exclusion restrictions hold. Therefore, while the Sargan test is informative about overall instrument validity, it is not a separate or definitive test of the exclusion restriction \cite{wooldridge2010econometric,hayashi2000econometrics}. 
+Exogeneity is fundamentally untestable. However, when the number of instruments exceeds the number of endogenous variables, the Sargan test (or its robust version, the Hansen $J$-test) can be used to assess the validity of overidentifying restrictions. However, it should not be misinterpreted as a direct test of the exclusion restriction. Instead, the test evaluates whether the overidentifying restrictions implied by the IV model hold. Specifically, the null hypothesis states that all instruments are jointly uncorrelated with the structural error term: $\mathbb{E}[\mathbf{Z}^\top \mu] = \mathbf{0}$ \cite{sargan1958econometric,hansen1982large}. If the test rejects, it indicates that at least one instrument is invalid, but it does not reveal whether the violation results from a failure of the exclusion restriction, correlation with unobserved confounders, or model misspecification. Conversely, if the test fails to reject, it suggests that the sample moment conditions do not provide evidence against instrument validity under the maintained model, but this does not prove that the exclusion restrictions hold. Therefore, while the Sargan test is informative about overall instrument validity, it is not a separate or definitive test of the exclusion restriction \cite{wooldridge2010econometric,hayashi2000econometrics}. \cite{Conley2012} present practical methods for performing inference while relaxing the exclusion
+restriction in IV settings.
 
 Figure~\ref{DAG4} illustrates a situation where pre-treatment variables that influence both the treatment and the outcome are partially observed or measured with error. In such cases, an instrument can help identify the causal effect of the treatment on the outcome.
 
@@ -236,7 +269,7 @@ Figure~\ref{DAG4} illustrates a situation where pre-treatment variables that inf
 		\node[main node, dashed] (X) {$\mathbf{X}$};
 		\node[main node] (D) [right of=X] {$D$};
 		\node[main node] (Y) [right of=D] {$Y$};
-		\node[main node] (Z) [below of=D, node distance=2cm] {$Z$}; % Collider
+		\node[main node] (Z) [below of=D, node distance=2cm] {$Z$};
 		
 		% Edges
 		\path (Z) edge (D)
@@ -244,15 +277,27 @@ Figure~\ref{DAG4} illustrates a situation where pre-treatment variables that inf
 		(D) edge (Y)
 		(X) edge (D);
 	\end{tikzpicture}
-	\caption{Directed Acyclic Graph (DAG) showing an instrumental variable $Z$ used to identify the causal effect of $D$ on $Y$ when some confounders $\mathbf{X}$ are unobserved or measured with error.}
+	\caption{Directed Acyclic Graph (DAG) showing an instrumental variable $Z$ used to identify the causal effect of $D$ on $Y$ when some confounders $\mathbf{X}$ (dashed) are unobserved or measured with error.}
 	\label{DAG4}
 \end{figure}
 
-However, the two conditions of the instruments only implies partial identification of the treatment effect \cite{manski1990nonparametric}. Thus, it is necessary to add a third condition to get point identification of a particular treatment effect using IV. This condition is \textit{monotonicity}...
+However, the two conditions of the instruments only imply partial identification of the treatment effect \cite{manski1990nonparametric}. Thus, it is necessary to add a third condition to get point identification of a particular treatment effect using IV. This condition is \textit{monotonicity} which asserts that the instrument moves all units’ treatment decisions in the same direction, that is,
+\[
+D_i(1)\geq D_i(0), i=1,2,\dots,N,
+\]
+assuming a binary instrument $Z_i=\left\{0,1\right\}$. In this setting, there are four potential groups according to a binary treatment and instrument: \textit{always takers} ($D=1\mid Z = 1$ and $D=1\mid Z = 0$), \textit{never takers} ($D=0\mid Z = 1$ and $D=0\mid Z = 0$), \textit{compliers} ($D=1\mid Z = 1$ and $D=0\mid Z = 0$) and \textit{defiers} ($D=0\mid Z = 1$ and $D=1\mid Z = 0$). Note that this groups are not identified, for instance, we do not know if given $Z_i=1$ and $D_i=1$ this individual is a complier or always taker. Monotonicity means that there are not defiers because the instrument does not change the treatment status or increases it.
 
+Adding the monotonicity assumption, IV methods allow identification of the causal effect for the subgroup of \textit{compliers}, that is, individuals who take the treatment when encouraged by the instrument and do not take it otherwise \cite{imbens1994identification,angrist1996identification}. This estimand is known as the \textit{Local Average Treatment Effect} (LATE) because it applies to a specific subpopulation rather than the entire population:
 
+\begin{align*}
+	\tau_{LATE}&=\mathbb{E}[Y_i(1)-Y_i(0)\mid D(1)=1,D(0)=0]\\
+	&=\frac{\mathbb{E}[Y_i\mid Z_i=1]-\mathbb{E}[Y_i\mid Z_i=0]}{\mathbb{E}[D_i\mid Z_i=1]-\mathbb{E}[D_i\mid Z_i=0]}.
+\end{align*}
 
-Conditioning on instruments generates the \textit{M-bias}
+Thus, the LATE is the ratio between the intention-to-treat effect on the outcome (ITT), and the effect of the instrument on the treatment. Thus, the instrument induces random variation in treatment. The numerator captures how outcomes change with the instrument, and the denominator captures how treatment changes with the instrument. Dividing isolates the causal effect for compliers.
+
+Note that the LATE is not the global average causal effect, and has been subject to several criticisms. First, the proportion of compliers in the population may be small, raising concerns about the policy relevance of this estimand. Observe that while we cannot identify all four principal strata (compliers, never-takers, always-takers, and defiers), the proportion of compliers is identifiable. Second, the monotonicity assumption is not always plausible, particularly in observational studies where instruments may induce heterogeneous behavioral responses. Third, partitioning the population into four strata can become ill-defined in settings where instruments arise from different mechanisms or individual-specific criteria \cite{deaton2010instruments,hernan2020causal}. For arguments in defense of LATE against these critiques, see \cite{angrist2010better}.
+
 
 In general, association does not imply causation, although causation does imply association. Two variables can be associated for several reasons: one may cause the other, they may share common causes, or they may share a common effect when the analysis is restricted to a specific level of that effect (or one of its descendants) \cite{hernan2020causal}. For this reason, causal graphs are valuable tools for explicitly representing the assumptions about the causal relationships under study and should be among the first steps in establishing an identification strategy.
 
