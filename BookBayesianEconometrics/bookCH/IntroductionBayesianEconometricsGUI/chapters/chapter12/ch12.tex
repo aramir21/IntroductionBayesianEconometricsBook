@@ -6,6 +6,8 @@ Identification addresses the question: \textit{Can the causal effect be expresse
 
 Thus, we present the underlying identification assumptions employed in popular strategies such as randomized controlled trials, conditional independence, and instrumental variables, among others, as well as the Bayesian inferential framework used to estimate causal effects in these settings. 
 
+We should be clear that this is only an introduction to causal inference, and we do not aim to provide an in-depth discussion. There are excellent texts on causal inference, such as \cite{angrist2009mostly,angrist2014mastering,imbens2015causal,hernan2020causal,cunningham2021causal,chernozhukov2024applied}. We recommend that readers consult these references for a deeper understanding of some of the concepts and tools introduced in this chapter.
+
 \section{Identification setting}
 
 The aim is to identify the \textit{causal} or \textit{treatment effect} of a particular regressor or treatment on an outcome. For example, this could involve estimating the causal effect of a labor training program on individuals’ earnings or unemployment, or the price elasticity of demand. The starting point is the \textit{potential outcomes} framework \cite{rubin1974}, which defines a \textit{counterfactual scenario} describing what would happen to the outcome variable if the treatment status or level were different (commonly referred to as the \textit{Rubin causal model}).
@@ -137,7 +139,7 @@ In practice, researchers often work with \textit{observational data}, where the 
 \[
 \{ Y_i(1), Y_i(0) \} \perp D_i \mid \mathbf{X}_i.
 \]
-This means that, conditional on the \textit{pre-treatment variables} $\mathbf{X}_i$, treatment assignment is as good as random. This property is known as \textit{unconfoundedness given} $\mathbf{X}_i$, or equivalently, the \textit{no unmeasured confounders} assumption. When this condition is combined with the requirement that, for all possible values of $\mathbf{X}_i$, there is a positive probability of receiving each treatment level ($0 < P(D_i = 1 \mid \mathbf{X}_i) < 1$), the joint condition is referred to as \textit{strong ignorability}. Identification of average causal effects in this setting also requires the SUTVA assumption.
+This means that, conditional on the \textit{pre-treatment variables} $\mathbf{X}_i$, treatment assignment is as good as random. This property is known as \textit{unconfoundedness given} $\mathbf{X}_i$, or equivalently, the \textit{no unmeasured confounders} assumption. When this condition is combined with the requirement that, for all possible values of $\mathbf{X}_i$, there is a positive probability of receiving each treatment level ($0 < P(D_i = 1 \mid \mathbf{X}_i) < 1$), the joint condition is referred to as \textit{strong ignorability}. Identification of average causal effects in this setting also requires the SUTVA.
 
 Figure~\ref{DAG2} illustrates the causal structure underlying the CIA. We follow the convention that time flows from left to right. Here, $\mathbf{X}$ -a vector of pre-treatment variables or \textit{confounders}- influences both the treatment ($D$) and the outcome ($Y$). Under the CIA, we can identify the causal effect of $D$ on $Y$ by adjusting for $\mathbf{X}$ because this causal structure satisfies the \textit{back-door criterion}. This criterion states that a set of variables $\mathbf{X}$ satisfies the condition for identifying the effect of $D$ on $Y$ if no variable in $\mathbf{X}$ is a descendant of $D$ and $\mathbf{X}$ blocks every back-door path from $D$ to $Y$. A \textit{back-door path} is any path from $D$ to $Y$ that begins with an arrow pointing into $D$. 
 
@@ -285,9 +287,11 @@ However, the two conditions of the instruments only imply partial identification
 \[
 D_i(1)\geq D_i(0), i=1,2,\dots,N,
 \]
-assuming a binary instrument $Z_i=\left\{0,1\right\}$. In this setting, there are four potential groups according to a binary treatment and instrument: \textit{always takers} ($D=1\mid Z = 1$ and $D=1\mid Z = 0$), \textit{never takers} ($D=0\mid Z = 1$ and $D=0\mid Z = 0$), \textit{compliers} ($D=1\mid Z = 1$ and $D=0\mid Z = 0$) and \textit{defiers} ($D=0\mid Z = 1$ and $D=1\mid Z = 0$). Note that this groups are not identified, for instance, we do not know if given $Z_i=1$ and $D_i=1$ this individual is a complier or always taker. Monotonicity means that there are not defiers because the instrument does not change the treatment status or increases it.
+with equality for at least one unit $i$, and assuming a binary instrument $Z_i=\left\{0,1\right\}$. 
 
-Adding the monotonicity assumption, IV methods allow identification of the causal effect for the subgroup of \textit{compliers}, that is, individuals who take the treatment when encouraged by the instrument and do not take it otherwise \cite{imbens1994identification,angrist1996identification}. This estimand is known as the \textit{Local Average Treatment Effect} (LATE) because it applies to a specific subpopulation rather than the entire population:
+In the case where $Z_i$ denotes the assignment to treatment and $D_i$ the actual treatment status, there are four potential groups: \textit{always takers} ($D = 1 \mid Z = 1$ and $D = 1 \mid Z = 0$), \textit{never takers} ($D = 0 \mid Z = 1$ and $D = 0 \mid Z = 0$), \textit{compliers} ($D = 1 \mid Z = 1$ and $D = 0 \mid Z = 0$), and \textit{defiers} ($D = 0 \mid Z = 1$ and $D = 1 \mid Z = 0$). Note that these groups are not identified; for instance, we do not know whether an individual with $Z_i = 1$ and $D_i = 1$ is a complier or an always taker. The monotonicity assumption rules out defiers, meaning that the instrument (assignment to treatment) either does not change treatment status or only increases it.
+
+Adding the monotonicity assumption and SUTVA, IV methods allow identification of the causal effect for the subgroup of \textit{compliers}, that is, individuals who take the treatment when encouraged by the instrument and do not take it otherwise \cite{imbens1994identification,angrist1996identification}. This estimand is known as the \textit{Local Average Treatment Effect} (LATE) because it applies to a specific subpopulation rather than the entire population:
 
 \begin{align*}
 	\tau_{LATE}&=\mathbb{E}[Y_i(1)-Y_i(0)\mid D(1)=1,D(0)=0]\\
@@ -298,6 +302,23 @@ Thus, the LATE is the ratio between the intention-to-treat effect on the outcome
 
 Note that the LATE is not the global average causal effect, and has been subject to several criticisms. First, the proportion of compliers in the population may be small, raising concerns about the policy relevance of this estimand. Observe that while we cannot identify all four principal strata (compliers, never-takers, always-takers, and defiers), the proportion of compliers is identifiable. Second, the monotonicity assumption is not always plausible, particularly in observational studies where instruments may induce heterogeneous behavioral responses. Third, partitioning the population into four strata can become ill-defined in settings where instruments arise from different mechanisms or individual-specific criteria \cite{deaton2010instruments,hernan2020causal}. For arguments in defense of LATE against these critiques, see \cite{angrist2010better}.
 
+Bayesian inference for causal effects \cite{rubin1978bayesian} is more direct than procedures based on Fisher's \textit{p}-value approach, which relies on the logic of stochastic proof by contradiction, or Neyman's randomization-based inference, which is grounded in the idea of repeated sampling and the construction of confidence intervals for treatment effects \cite{rubin2004teaching}.
+
+Bayesian inference of causal effects treats the potential outcomes as random variables, and involves the calculation of the posterior predictive distribution to evaluate treatments not received, conditionally on given responses to treatments received. This gives the posterior distribution of the causal estimands. The effect of adding or dropping identification conditions can be assessed by examinating how the posterior predictive distribution of causal estimands change \cite{imbens1997bayesian}.
+
+In this framework, there is a model for the assignment mechanism $P(D_i\mid Y_i(1), Y_i(0), \mathbf{X}_i)$, like randomization or propensity score matching \cite{rosenbaum1983central}, supplemented by a model for the data $P(Y_i(1), Y_i(0)\mid \mathbf{X}_i)$. A causal inference is delivered by conditioning in what is observed to calculate the posterior distribution of the causal estimand given also the models for the assignment mechanisms and data. Therefore, there is a model to input the potential outcome missing value that allows to get the predictive distribution, and then, the posterior predictive distribution of the treatment effect ($Y_i(1)-Y_i(0)$) is calculated. We should take into account that the parameters of the models for predicting the missing potential outcomes are generally not causal effects. Due to using models for the data based on simulation, the Bayesian approach is by far the most direct and flexible of the modes of inference for causal effects. However, it relies on assumptions on the assignment mechanism and data.
+
+Given pretreatment variables, it improves the predictive power of the potential outcome missing data
+
+Bayesian inference of causal effects in a completely randomized experiment with no covariates is then presented using a simple normal model \cite{rubin1990neyman}.
+
+Bayesian inference of causal effects in a completely randomized experiment with no compliance and no covariates is then presented in \cite{imbens1997bayesian}.
+
+Bayesian inference of causal effects in a randomized experiment with no compliance and but covariates is then presented in \cite{hirano2000assessing}.
+
+ There, no compliance is explicitly treated as missing data. A nice advantage of the Bayesian approach is to relax the exclusion restriction \cite{rubin2004teaching}.
+
+Propensity matching should be used to create ``assigned treatment" and ``assigned control" groups that are well balanced on all covariates. The covariate modeling should be applied to estimate the effects of ``received treatment" for the subgroup of true compliers \cite{rubin2004teaching}.
 
 In general, association does not imply causation, although causation does imply association. Two variables can be associated for several reasons: one may cause the other, they may share common causes, or they may share a common effect when the analysis is restricted to a specific level of that effect (or one of its descendants) \cite{hernan2020causal}. For this reason, causal graphs are valuable tools for explicitly representing the assumptions about the causal relationships under study and should be among the first steps in establishing an identification strategy.
 
