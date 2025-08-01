@@ -27,7 +27,17 @@ When the change is infinitesimal, the causal effect can be expressed as a margin
 \begin{align*}
 	\beta_{si} =\frac{\partial Y_i(x_s)}{\partial x_s}.
 \end{align*}
-This setting is more complex than the binary treatment case because there is a potential outcome for each possible value of $x_s$ \cite{gill2001causal}. Thus, we begin with the binary treatment case. However, the fundamental challenge in identifying the individual-level causal effect remains that it is impossible to observe the same unit under different \textit{treatment statuses} simultaneously \cite{angrist2009mostly}. Thus, we must learn about the causal effects by comparing the outcomes from treated and untreated units.
+This setting is more complex than the binary treatment case because there is a potential outcome for each possible value of $x_s$ \cite{gill2001causal}. Therefore, we begin by considering the binary treatment case. However, \textit{the fundamental problem of causal inference} \cite{holland1986statistics} remains: it is impossible to observe the same unit under different \textit{treatment statuses} simultaneously. Consequently, we must learn about causal effects by comparing the outcomes of treated and untreated units.
+
+Bayesian inference for causal effects \cite{rubin1978bayesian} is more direct than procedures based on Fisher's \textit{p}-value approach, which relies on the logic of stochastic proof by contradiction, or Neyman's randomization-based inference, which is grounded in the idea of repeated sampling and the construction of confidence intervals for treatment effects \cite{rubin2004teaching}.
+
+Bayesian inference for causal effects treats the potential outcomes as random variables and involves computing the posterior predictive distribution to evaluate treatments not received, conditional on the observed responses to treatments actually received. This approach yields the posterior distribution of the causal estimands as a function of both the observed outcomes and the unobserved potential outcomes, which are treated as missing data and handled through data augmentation methods \cite{Tanner1987}. 
+
+In addition, it is important to note that the likelihood function does not contain information about the correlation between the potential outcomes due to \textit{the fundamental problem of causal inference}. Consequently, most of the classical literature on treatment effects has focused on average treatment effects, since these require only the marginal distributions of the potential outcomes $Y(1)$ and $Y(0)$ \cite{heckman2014treatment}.
+
+By contrast, a Bayesian inferential approach allows us to obtain \textit{distributional treatment effects}, which describe the entire distribution of potential outcomes under treatment and control, rather than just the mean. This has particular policy relevance; for example, it enables the estimation of the proportion of the population that benefits from a social program or the probability that a treated individual experiences a positive effect \cite{Ramirez2019a}.
+
+Furthermore, under a Bayesian framework, the impact of adding or relaxing identification assumptions can be assessed by examining how the distributional treatment effects change \cite{imbens1997bayesian}.
 
 \section{Randomized controlled trial (RCT)}
 
@@ -102,7 +112,7 @@ of any other variable for which it is not a cause (\textit{causal Markov assumpt
 	\label{DAG1}
 \end{figure} 
 
-The counterfactual representation of the DAG, known as the \textit{Single-World Intervention Graph} (SWIG), is shown in Figure~\ref{SWIG1}. In this figure, the treatment variable $D$ is split to reflect the intervention: we fix $D$ at a specific value $d$ (the intervention), and replace the outcome $Y$ with its counterfactual representation $Y(d)$, which denotes the value of $Y$ if $D$ were set to $d$. The natural value of $D$ is also shown (dashed) but becomes irrelevant for the outcome once the intervention is imposed.
+The counterfactual representation of the DAG, known as the \textit{Single-World Intervention Graph} (SWIG), is shown in Figure~\ref{SWIG1}. In this figure, the treatment variable $D$ is split to reflect the intervention: we fix $D$ at a specific value $d$ (the intervention), and replace the outcome $Y$ with its counterfactual representation $Y(d)$, which denotes the value of $Y$ if $D$ were set to $d$. The natural value of $D$ is also shown but becomes irrelevant for the outcome once the intervention is imposed.
 
 \begin{figure}[h]
 	\centering
@@ -120,7 +130,13 @@ The counterfactual representation of the DAG, known as the \textit{Single-World 
 	\label{SWIG1}
 \end{figure}
 
- 
+Bayesian inference of causal effects in a completely randomized experiment with no covariates is then presented using the normal model in \cite{rubin1990neyman}. 
+
+Let's assume that $p(Y_i(1),Y_i(0)\mid \boldsymbol{\theta})$ is normal with mean $\boldsymbol{\lambda}=[\lambda_1 \ \lambda_0]^{\top}$, variances $\sigma_1^2$ and $\sigma_0^2$, and correlation $\rho$. Note that the likelihood function does not have information about the correlation between the potential outcomes,
+\[
+p(\mathbf{y}\mid \mathbf{d}; \lambda_1,\lambda_0,\sigma^2_1,\sigma^2_0)=\prod_{i:d_i=1}\phi(\lambda_1,\sigma_1^2)\prod_{i:d_i=0}\phi(\lambda_0,\sigma_0^2),
+\]
+due to the  impossibility to observe the same unit under different treatment statuses simultaneously. Thus, most of the classical literature in treatment effects focused on average treatment effects due to these only requiring the marginal distributions of $Y(1)$ and $Y(1)$ \cite{heckman2014treatment}. However, a Bayesian inferential approach allows obtaining the distributional treatment effects, whose have a particular policy relevance due to they allow going beyond mean average treatment effects, for instance, the proportion of the population that benefits from a social program or the probability of a positive effect on the treated \cite{Ramirez2019a}.
 
 An RCT is considered the gold standard for identifying causal effects because it provides the strongest basis for satisfying the key identification assumption in causal inference: \textit{independence between treatment assignment and potential outcomes}. However, RCTs may face challenges such as \textit{non-compliance}, which occurs when individuals do not adhere to their assigned treatment in an experimental study. This is important because, in many real-world settings, some individuals do not take the treatment they were assigned, leading to deviations from the ideal randomized controlled trial design. In addition, RCTs are sometimes infeasible due to ethical, logistical, or financial constraints. Moreover, they can be too narrowly focused or too localized to provide general conclusions about what works \cite{deaton2010instruments}.
 
@@ -302,15 +318,9 @@ Thus, the LATE is the ratio between the intention-to-treat effect on the outcome
 
 Note that the LATE is not the global average causal effect, and has been subject to several criticisms. First, the proportion of compliers in the population may be small, raising concerns about the policy relevance of this estimand. Observe that while we cannot identify all four principal strata (compliers, never-takers, always-takers, and defiers), the proportion of compliers is identifiable. Second, the monotonicity assumption is not always plausible, particularly in observational studies where instruments may induce heterogeneous behavioral responses. Third, partitioning the population into four strata can become ill-defined in settings where instruments arise from different mechanisms or individual-specific criteria \cite{deaton2010instruments,hernan2020causal}. For arguments in defense of LATE against these critiques, see \cite{angrist2010better}.
 
-Bayesian inference for causal effects \cite{rubin1978bayesian} is more direct than procedures based on Fisher's \textit{p}-value approach, which relies on the logic of stochastic proof by contradiction, or Neyman's randomization-based inference, which is grounded in the idea of repeated sampling and the construction of confidence intervals for treatment effects \cite{rubin2004teaching}.
-
-Bayesian inference of causal effects treats the potential outcomes as random variables, and involves the calculation of the posterior predictive distribution to evaluate treatments not received, conditionally on given responses to treatments received. This gives the posterior distribution of the causal estimands. The effect of adding or dropping identification conditions can be assessed by examinating how the posterior predictive distribution of causal estimands change \cite{imbens1997bayesian}.
-
 In this framework, there is a model for the assignment mechanism $P(D_i\mid Y_i(1), Y_i(0), \mathbf{X}_i)$, like randomization or propensity score matching \cite{rosenbaum1983central}, supplemented by a model for the data $P(Y_i(1), Y_i(0)\mid \mathbf{X}_i)$. A causal inference is delivered by conditioning in what is observed to calculate the posterior distribution of the causal estimand given also the models for the assignment mechanisms and data. Therefore, there is a model to input the potential outcome missing value that allows to get the predictive distribution, and then, the posterior predictive distribution of the treatment effect ($Y_i(1)-Y_i(0)$) is calculated. We should take into account that the parameters of the models for predicting the missing potential outcomes are generally not causal effects. Due to using models for the data based on simulation, the Bayesian approach is by far the most direct and flexible of the modes of inference for causal effects. However, it relies on assumptions on the assignment mechanism and data.
 
 Given pretreatment variables, it improves the predictive power of the potential outcome missing data
-
-Bayesian inference of causal effects in a completely randomized experiment with no covariates is then presented using a simple normal model \cite{rubin1990neyman}.
 
 Bayesian inference of causal effects in a completely randomized experiment with no compliance and no covariates is then presented in \cite{imbens1997bayesian}.
 
