@@ -1,0 +1,146 @@
+\chapter{Bayesian machine learning}\label{chap12}
+
+\section*{Solutions of Exercises}\label{sec12_1}
+\begin{enumerate}[leftmargin=*]
+\item Show that the Average Treatment Effect (ATE) in the simple linear regression framework
+\[
+Y_i = \beta_0 + \tau D_i + \mu_i,
+\]
+assuming non-informative prior distributions, so that the posterior mean of the location parameter coincides with the maximum likelihood estimator, is equal to
+\[
+\bar{y}_1 - \bar{y}_0.
+\]
+
+\textbf{Answer}
+
+Consider the simple linear regression model
+\[
+Y_i = \beta_0 + \tau D_i + \mu_i, \qquad i = 1,\dots,N,
+\]
+where $D_i \in \{0,1\}$ is a treatment indicator. In matrix notation:
+\[
+\mathbf{y} = X \boldsymbol{\beta} + \boldsymbol{\mu}, \qquad
+X = \begin{pmatrix}
+	1 & D_1 \\
+	\vdots & \vdots \\
+	1 & D_n
+\end{pmatrix}, \quad
+\boldsymbol{\beta} = \begin{pmatrix}\beta_0 \\ \tau \end{pmatrix}.
+\]
+
+Under the usual Gaussian likelihood and a non-informative prior $\pi(\boldsymbol{\beta},\sigma^2) \propto \sigma^{-2}$, the posterior mean of $\boldsymbol{\beta}$ coincides with the maximum likelihood estimator (MLE), which is the ordinary least squares (OLS) estimator:
+\[
+\widehat{\boldsymbol{\beta}} = (\mathbf{X}^\top \mathbf{X})^{-1} \mathbf{X}^\top \mathbf{y}.
+\]
+
+Compute $\mathbf{X}^\top \mathbf{X}$ and $\mathbf{X}^\top \mathbf{y}$:
+\[
+\mathbf{X}^\top \mathbf{X} =
+\begin{pmatrix}
+	N & N_1 \\
+	N_1 & N_1
+\end{pmatrix}, \qquad
+\mathbf{X}^\top \mathbf{y} =
+\begin{pmatrix}
+	\sum_{i=1}^N y_i \\
+	\sum_{i:D_i=1} y_i
+\end{pmatrix},
+\]
+where $N_1 = \sum_i D_i$ and $N_0 = N - N_1$. Let $\bar{y}_1 = \frac{1}{N_1}\sum_{i:D_i=1} y_i$ and $\bar{y}_0 = \frac{1}{N_0}\sum_{i:D_i=0} y_i$.
+
+Compute the inverse:
+\[
+(\mathbf{X}^\top \mathbf{X})^{-1} =
+\frac{1}{N_0 N_1}
+\begin{pmatrix}
+	N_1 & -N_1 \\
+	-N_1 & N
+\end{pmatrix}.
+\]
+
+Thus:
+\[
+\widehat{\boldsymbol{\beta}} =
+\frac{1}{N_0 N_1}
+\begin{pmatrix}
+	N_1 & -N_1 \\
+	-N_1 & N
+\end{pmatrix}
+\begin{pmatrix}
+	\sum_{i=1}^N y_i \\
+	\sum_{i:D_i=1} y_i
+\end{pmatrix}
+=
+\begin{pmatrix}
+	\bar{y}_0 \\
+	\bar{y}_1 - \bar{y}_0
+\end{pmatrix}.
+\]
+
+Therefore, the intercept equals the mean outcome for the control group ($\bar{y}_0$), and the slope equals the difference in means between treated and control groups:
+\[
+\widehat{\tau} = \bar{y}_1 - \bar{y}_0.
+\]
+
+Since under a non-informative prior the posterior mean equals the ML estimator, the posterior mean of $\tau$ coincides with the sample difference in means:
+\[
+\text{ATE} = \mathbb{E}[\tau \mid \mathbf{y}] = \bar{y}_1 - \bar{y}_0.
+\]
+
+\item Some readers may question the assumption that potential outcomes are normally distributed. However, it is important to note that the normal distribution is the \textit{maximum entropy} continuous distribution given a specified mean $\mu$ and finite variance $\sigma^2$. In other words, among all distributions with the same mean and variance, the normal distribution represents the one with the greatest level of uncertainty or unpredictability \cite{cover2006elements}.
+ 
+Show that the normal distribution is the \textit{maximum entropy} continuous distribution given a specified mean $\mu$ and finite variance $\sigma^2$ by considering the formal definition of entropy:
+\[
+H(f) = - \int_{-\infty}^{\infty} f(y) \log f(y) \, dy,
+\]
+where $f(y)$ is a probability density function.
+
+\textbf{Answer}
+  
+We want to maximize $H(f)$ subject to the constraints:
+\[
+\int_{-\infty}^{\infty} f(y)\, dy = 1, \qquad
+\int_{-\infty}^{\infty} y f(y)\, dy = \mu, \qquad
+\int_{-\infty}^{\infty} (y-\mu)^2 f(y)\, dy = \sigma^2.
+\]
+
+Form the Lagrangian:
+\[
+\mathcal{L}(f) = - \int f(y)\log f(y) \, dy 
++ \lambda_0 \left( \int f(y)\, dy - 1\right)
++ \lambda_1 \left( \int y f(y)\, dy - \mu \right)
++ \lambda_2 \left( \int (y-\mu)^2 f(y)\, dy - \sigma^2 \right).
+\]
+
+Taking the functional derivative with respect to $f(y)$:
+\[
+\frac{\delta \mathcal{L}}{\delta f} = -(\log f(y) + 1) + \lambda_0 + \lambda_1 y + \lambda_2 (y-\mu)^2 = 0.
+\]
+
+Thus:
+\[
+\log f(y) = \lambda_0' + \lambda_1 y + \lambda_2 (y-\mu)^2,
+\]
+where $\lambda_0'$ absorbs constants. Exponentiating:
+\[
+f(y) \propto \exp\big( \lambda_1 y + \lambda_2 (y-\mu)^2 \big).
+\]
+
+For integrability, $\lambda_2 < 0$. Completing the square:
+\[
+f(y) \propto \exp\left( -\frac{(y-\mu)^2}{2\sigma^2} \right),
+\]
+which is the kernel of a normal density. Normalizing:
+\[
+f(y) = \frac{1}{\sqrt{2\pi\sigma^2}} \exp\left( -\frac{(y-\mu)^2}{2\sigma^2} \right).
+\]
+
+Therefore, the maximum entropy distribution for a given mean $\mu$ and variance $\sigma^2$ is
+\[
+Y \sim N(\mu, \sigma^2).
+\]
+
+\item 
+
+
+\end{enumerate}

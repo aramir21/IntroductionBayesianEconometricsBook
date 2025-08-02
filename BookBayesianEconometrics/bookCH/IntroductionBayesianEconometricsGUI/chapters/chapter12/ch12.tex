@@ -35,7 +35,7 @@ Bayesian inference for causal effects treats the potential outcomes as random va
 
 In addition, it is important to note that the likelihood function does not contain information about the correlation between the potential outcomes due to \textit{the fundamental problem of causal inference}. Consequently, most of the classical literature on treatment effects has focused on average treatment effects, since these require only the marginal distributions of the potential outcomes $Y(1)$ and $Y(0)$ \cite{heckman2014treatment}.
 
-By contrast, a Bayesian inferential approach allows us to obtain \textit{distributional treatment effects}, which describe the entire distribution of potential outcomes under treatment and control, rather than just the mean. This has particular policy relevance; for example, it enables the estimation of the proportion of the population that benefits from a social program or the probability that a treated individual experiences a positive effect \cite{Ramirez2019a}.
+By contrast, a Bayesian inferential approach allows us to obtain \textit{distributional treatment effects}, as formally defined by \cite{aakvik2005estimating}. These effects describe the entire distribution of potential outcomes under treatment and control in the population, rather than just the mean. This has particular policy relevance; for example, it enables the estimation of the proportion of the population that benefits from a social program or the probability that a treated individual experiences a positive effect \cite{Ramirez2019a}.
 
 Furthermore, under a Bayesian framework, the impact of adding or relaxing identification assumptions can be assessed by examining how the distributional treatment effects change \cite{imbens1997bayesian}.
 
@@ -130,13 +130,57 @@ The counterfactual representation of the DAG, known as the \textit{Single-World 
 	\label{SWIG1}
 \end{figure}
 
-Bayesian inference of causal effects in a completely randomized experiment with no covariates is then presented using the normal model in \cite{rubin1990neyman}. 
+\textbf{Example: Simple example}
 
-Let's assume that $p(Y_i(1),Y_i(0)\mid \boldsymbol{\theta})$ is normal with mean $\boldsymbol{\lambda}=[\lambda_1 \ \lambda_0]^{\top}$, variances $\sigma_1^2$ and $\sigma_0^2$, and correlation $\rho$. Note that the likelihood function does not have information about the correlation between the potential outcomes,
+Bayesian inference for causal effects in a completely randomized experiment without covariates can be illustrated using the normal model in \cite{rubin1990neyman}. Assume that $Y_i(d) \sim N(\mu_d, \sigma_d^2)$ for $d \in \{1,0\}$. Then, the likelihood function given a random sample and independent treatment assignment is:
+\begin{align*}
+	p(\mathbf{y} \mid \mathbf{d}; \mu_1,\mu_0,\sigma^2_1,\sigma^2_0)
+	&= \prod_{i:d_i=1}\phi(y_i \mid \mu_1,\sigma_1^2) \prod_{i:d_i=0}\phi(y_i \mid \mu_0,\sigma_0^2) \\
+	&= \prod_{i}\phi(y_i \mid \mu_1,\sigma_1^2)^{d_i} \, \phi(y_i \mid \mu_0,\sigma_0^2)^{1-d_i},
+\end{align*}
+where $\mathbf{y}$ and $\mathbf{d}$ collect the observations of the outcomes and treatments, and $\phi(\cdot)$ denotes the normal density function.
+
+Assume conjugate priors: 
 \[
-p(\mathbf{y}\mid \mathbf{d}; \lambda_1,\lambda_0,\sigma^2_1,\sigma^2_0)=\prod_{i:d_i=1}\phi(\lambda_1,\sigma_1^2)\prod_{i:d_i=0}\phi(\lambda_0,\sigma_0^2),
+\mu_d \mid \sigma^2_d \sim N\left(\mu_{0d}, \frac{\sigma^2_d}{\beta_{0d}}\right), 
+\qquad 
+\sigma^2_d \sim IG\left(\frac{\alpha_{0d}}{2}, \frac{\delta_{0d}}{2}\right).
 \]
-due to the  impossibility to observe the same unit under different treatment statuses simultaneously. Thus, most of the classical literature in treatment effects focused on average treatment effects due to these only requiring the marginal distributions of $Y(1)$ and $Y(1)$ \cite{heckman2014treatment}. However, a Bayesian inferential approach allows obtaining the distributional treatment effects, whose have a particular policy relevance due to they allow going beyond mean average treatment effects, for instance, the proportion of the population that benefits from a social program or the probability of a positive effect on the treated \cite{Ramirez2019a}.
+From the normal/inverse-gamma model in Chapter~\ref{chap4}, the posterior conditional distributions are:
+\[
+\mu_d \mid \sigma^2_d, \{y_i,d_i\}_{i:d_i=d} \sim N \left(\mu_{nd}, \frac{\sigma^2_d}{\beta_{nd}}\right), 
+\]
+where
+\[
+\mu_{nd} = \frac{\beta_{0d}\mu_{0d} + N_d \bar{y}_d}{\beta_{0d} + N_d}, 
+\qquad 
+\beta_{nd} = \beta_{0d} + N_d,
+\]
+and $\bar{y}_d$, $N_d$ denote the sample mean and sample size of group $d$. For the variance:
+\[
+\sigma^2_d \mid \{y_i,d_i\}_{i:d_i=d} \sim IG\left(\frac{\alpha_{nd}}{2}, \frac{\delta_{nd}}{2}\right),
+\]
+where
+\[
+\alpha_{nd} = \alpha_{0d} + N_d,
+\qquad 
+\delta_{nd} = \sum_{i:d_i=d} (y_i-\bar{y}_d)^2 + \delta_{0d} + \frac{\beta_{0d}N_d}{\beta_{0d}+N_d}(\bar{y}_d-\mu_{0d})^2.
+\]
+
+The hyperparameter $\beta_{0d}$ represents the hypothetical prior sample size. To specify a non-informative prior, we can set $\beta_{0d}=0$, making the posterior mean equal to the sample mean $\bar{y}_d$. Additionally, setting $\alpha_{0d} = \delta_{0d} = 0.01$ yields a weakly informative prior for the variances so that the posterior variances resemble the sampling variances. This non-informative prior setting implies that the predictive distribution is 
+\[
+Y(d) \mid \mathbf{y} \sim t\!\left(\bar{y}_d,\; \frac{(N_d+1)\delta_n}{N_d\alpha_n},\; \alpha_n\right).
+\]
+Consequently, ATE is 
+\[
+\text{ATE} = \mathbb{E}[Y(1) - Y(0)] = \bar{y}_1 - \bar{y}_0.
+\]
+
+Note that this result can be obtained under the simple linear regression framework by assuming non-informative prior distributions, so that the posterior mean of the location parameter coincides with the maximum likelihood estimator (see Exercise 1).
+
+
+
+
 
 An RCT is considered the gold standard for identifying causal effects because it provides the strongest basis for satisfying the key identification assumption in causal inference: \textit{independence between treatment assignment and potential outcomes}. However, RCTs may face challenges such as \textit{non-compliance}, which occurs when individuals do not adhere to their assigned treatment in an experimental study. This is important because, in many real-world settings, some individuals do not take the treatment they were assigned, leading to deviations from the ideal randomized controlled trial design. In addition, RCTs are sometimes infeasible due to ethical, logistical, or financial constraints. Moreover, they can be too narrowly focused or too localized to provide general conclusions about what works \cite{deaton2010instruments}.
 
@@ -197,7 +241,7 @@ The SWIG of this DAG is displayed in Figure \ref{SWIG2}.
 \end{figure}
  
 
-In this setting, the error term is defined as
+In this setting, the error term in the linear regression is defined as
 \[
 \mu_i = Y_i(0) - \mathbb{E}[Y_i(0) \mid \mathbf{X}_i].
 \]
@@ -245,7 +289,11 @@ Figure~\ref{DAG3} illustrates this situation. Here, $C$ is a common effect of $D
 	\label{DAG3}
 \end{figure}
 
-Collider (selection) bias is one possible source of bias in the identification of causal effects. Heckman’s sample selection problem \cite{heckman1979sample} can be interpreted as a form of collider bias because restricting the analysis to selected observations (e.g., those with positive wages) conditions on a variable that is a common effect of observed and unobserved factors, thereby opening a non-causal path and creating bias. In other words, the sample is no longer representative of the population, which undermines the identification of the causal effect. Other sources of bias include the omission of common causes that affect both treatment and outcome, measurement error in regressors leading to \textit{attenuation bias} (where the estimated causal effect is biased toward zero), and \textit{reverse or simultaneous causality}, which often arises in systems of equations (see \cite{wooldridge2010econometric} for details). Simultaneous causality is conceptually challenging because causality is often associated with chronological order, cause preceding effect. In simultaneous systems, such as supply and demand, outcomes are jointly determined in equilibrium, so this temporal order is not explicit in the observed data. Nevertheless, the underlying structural equations still encode causal relationships, even though their effects are realized simultaneously. 
+Collider (selection) bias is one possible source of bias in the identification of causal effects. Heckman’s sample selection problem \cite{heckman1979sample} can be interpreted as a form of collider bias because restricting the analysis to selected observations (e.g., those with positive wages) conditions on a variable that is a common effect of observed and unobserved factors, thereby opening a non-causal path and creating bias. In other words, the sample is no longer representative of the population, which undermines the identification of the causal effect. Other sources of bias include the omission of common causes that affect both treatment and outcome, measurement error in regressors leading to \textit{attenuation bias} (where the estimated causal effect is biased toward zero), and \textit{reverse or simultaneous causality}, which often arises in systems of equations (see \cite{wooldridge2010econometric} for details). Simultaneous causality is conceptually challenging because causality is often associated with chronological order, cause preceding effect. In simultaneous systems, such as supply and demand, outcomes are jointly determined in equilibrium, so this temporal order is not explicit in the observed data. Nevertheless, the underlying structural equations still encode causal relationships, even though their effects are realized simultaneously.\\
+
+\textbf{Example: 401(k) eligibility on net financial assets}
+
+We study the average treatment effect of the 401(k) participation eligibility on net financial assets following \cite{chernozhukov2024applied}. The control variables are age, income, family size, years of education, a married indicator, a two-earner status indicator, a defined benefit pension status indicator, an IRA participation indicator, and a home ownership indicator. 
 
 \section{Instrumental variables (IV)}
 
@@ -381,3 +429,30 @@ Introduce \cite{bissiri2016general} as a generalization of \cite{chernozhukov200
 We can use BMA as a sensible way to perform robustness analysis regarding model specification (regressors uncertainty) in performing inference of treatment effects.
 
 %\section{Double-Debiased machine learning causal effects}\label{sec12_11a}
+
+\section{Summary}
+
+\section{Exercises}
+
+\begin{enumerate}
+	\item Show that the Average Treatment Effect (ATE) in the simple linear regression framework
+	\[
+	Y_i = \beta_0 + \tau D_i + \mu_i,
+	\]
+	assuming non-informative prior distributions, so that the posterior mean of the location parameter coincides with the maximum likelihood estimator, is equal to
+	\[
+	\bar{y}_1 - \bar{y}_0.
+	\]
+	
+	\item Some readers may question the assumption that potential outcomes are normally distributed. However, it is important to note that the normal distribution is the \textit{maximum entropy} continuous distribution given a specified mean $\mu$ and finite variance $\sigma^2$. In other words, among all distributions with the same mean and variance, the normal distribution represents the one with the greatest level of uncertainty or unpredictability \cite{cover2006elements}.
+	
+	Show that the normal distribution is the \textit{maximum entropy} continuous distribution given a specified mean $\mu$ and finite variance $\sigma^2$ by considering the formal definition of entropy:
+	\[
+	H(f) = - \int_{-\infty}^{\infty} f(y) \log f(y) \, dy,
+	\]
+	where $f(y)$ is a probability density function.
+	
+	\item 
+	
+	
+\end{enumerate}
