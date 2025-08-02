@@ -262,7 +262,66 @@ Therefore:
 	\mathbb{E}[\mu_i \mid D_i, \mathbf{X}_i] = 0.
 \end{equation}
 
-This condition is known as \textit{conditional mean independence}: after controlling for $\mathbf{X}_i$, treatment assignment is independent of unobserved determinants of the outcome. It justifies unbiased estimation of $\tau$ by regression adjustment in observational studies.
+This condition is known as \textit{conditional mean independence}: after controlling for $\mathbf{X}_i$, treatment assignment is independent of unobserved determinants of the outcome. It justifies unbiased estimation of $\tau$ by regression adjustment in observational studies.\\
+
+\textbf{Example: 401(k) eligibility on net financial assets}
+
+We study the average treatment effect of eligibility (\textit{e401}) for participation in the 401(k) retirement savings plan in the United States on net financial assets (\textit{net\_tfa}) using the dataset \textit{401k.csv}. The rationale for the exogeneity of 401(k) eligibility is that it becomes exogenous after conditioning on observable characteristics related to job choice, which may correlate with whether a firm offers this retirement plan \cite{chernozhukov2024applied}.
+
+Accordingly, we control for the following covariates: age (\textit{age}), income (\textit{inc}), family size (\textit{fsize}), years of education (\textit{educ}), a marital status indicator (\textit{marr}), a two-earner status indicator (\textit{twoearn}), a defined benefit pension status indicator (\textit{db}), an IRA participation indicator (\textit{pira}), and a home ownership indicator (\textit{hown}). Under this specification, the key assumption is that eligibility is conditionally independent of net financial assets given these covariates \cite{chernozhukov2024applied}.
+
+We can use the framework in Section \ref{sec61} to estimate the average treatment effect of 401k eligibility on net financial assets. The code \ref{code1_chap12} shows how to get the posterior distribution of this effect. Figure \ref{fig12_1} displays the posterior distribution of the treatment effect, the 95\% credible interval is (USD 3,473, USD 8,371), and the posterior mean is USD 5,903.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]\label{code1_chap12}
+	\textit{R code. Treatment effect: 401(k) eligibility on net financial assets}
+	\begin{VF}
+		\begin{lstlisting}[language=R]		
+# 401k: Treatment effects
+rm(list = ls())
+set.seed(10101)
+
+library(MCMCpack)
+library(coda)
+library(ggplot2)
+
+mydata <- read.csv("https://raw.githubusercontent.com/BEsmarter-consultancy/BSTApp/refs/heads/master/DataApp/401k.csv", sep = ",", header = TRUE, quote = "")
+attach(mydata )
+y <- net_tfa 
+# net_tfa: net financial assets
+# Regressors quantity including intercept
+X <- cbind(e401, age, inc, fsize, educ, marr, twoearn, db, pira, hown, 1)
+# e401: 401k eligibility 
+# age, income, family size, years of education, marital status indicator, two-earner status indicator, defined benefit pension status indicator, IRA participation indicator, and home ownership indicator.
+
+# Posterior distributions using packages: MCMCpack sets the model in terms of the precision matrix. We use default parameters
+posterior  <- MCMCpack::MCMCregress(y~X-1)
+summary(coda::mcmc(posterior))
+
+# Extract posterior samples for e401 (first coefficient)
+beta_e401 <- posterior[, 1]
+
+# Convert to data frame for ggplot
+df_posterior <- data.frame(beta_e401)
+
+# Plot with ggplot
+ggplot(df_posterior, aes(x = beta_e401)) +
+geom_density(fill = "steelblue", alpha = 0.6) +
+geom_vline(xintercept = mean(beta_e401), color = "red", linetype = "dashed") +
+labs(
+title = "Posterior Distribution of Treatment Effect (e401)",
+x = expression(beta[e401]),
+y = "Density"
+) +
+theme_minimal(base_size = 14)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}  
+
+\begin{figure}
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter12/figures/TE401k.png}
+	\caption[List of figure caption goes here]{Posterior distribution: Treatment effect 401k eligibility on net financial assets.}\label{fig12_1}
+\end{figure}
 
 Observe that the identification strategy relies on conditioning on $\mathbf{X}$. However, adding more controls is not always safe because some variables, known as \textit{bad controls}, can introduce bias if included in the adjustment set \cite{angrist2009mostly}. One important type of bad control is a \textit{collider}, a variable that is caused by (or is a common effect of) two or more other variables in a DAG. Colliders play a critical role because conditioning on them can create spurious associations between their causes, leading to what is known as \textit{collider bias} (or selection bias).
 
@@ -289,11 +348,7 @@ Figure~\ref{DAG3} illustrates this situation. Here, $C$ is a common effect of $D
 	\label{DAG3}
 \end{figure}
 
-Collider (selection) bias is one possible source of bias in the identification of causal effects. Heckman’s sample selection problem \cite{heckman1979sample} can be interpreted as a form of collider bias because restricting the analysis to selected observations (e.g., those with positive wages) conditions on a variable that is a common effect of observed and unobserved factors, thereby opening a non-causal path and creating bias. In other words, the sample is no longer representative of the population, which undermines the identification of the causal effect. Other sources of bias include the omission of common causes that affect both treatment and outcome, measurement error in regressors leading to \textit{attenuation bias} (where the estimated causal effect is biased toward zero), and \textit{reverse or simultaneous causality}, which often arises in systems of equations (see \cite{wooldridge2010econometric} for details). Simultaneous causality is conceptually challenging because causality is often associated with chronological order, cause preceding effect. In simultaneous systems, such as supply and demand, outcomes are jointly determined in equilibrium, so this temporal order is not explicit in the observed data. Nevertheless, the underlying structural equations still encode causal relationships, even though their effects are realized simultaneously.\\
-
-\textbf{Example: 401(k) eligibility on net financial assets}
-
-We study the average treatment effect of the 401(k) participation eligibility on net financial assets following \cite{chernozhukov2024applied}. The control variables are age, income, family size, years of education, a married indicator, a two-earner status indicator, a defined benefit pension status indicator, an IRA participation indicator, and a home ownership indicator. 
+Collider (selection) bias is one possible source of bias in the identification of causal effects. Heckman’s sample selection problem \cite{heckman1979sample} can be interpreted as a form of collider bias because restricting the analysis to selected observations (e.g., those with positive wages) conditions on a variable that is a common effect of observed and unobserved factors, thereby opening a non-causal path and creating bias. In other words, the sample is no longer representative of the population, which undermines the identification of the causal effect. Other sources of bias include the omission of common causes that affect both treatment and outcome, measurement error in regressors leading to \textit{attenuation bias} (where the estimated causal effect is biased toward zero), and \textit{reverse or simultaneous causality}, which often arises in systems of equations (see \cite{wooldridge2010econometric} for details). Simultaneous causality is conceptually challenging because causality is often associated with chronological order, cause preceding effect. In simultaneous systems, such as supply and demand, outcomes are jointly determined in equilibrium, so this temporal order is not explicit in the observed data. Nevertheless, the underlying structural equations still encode causal relationships, even though their effects are realized simultaneously.
 
 \section{Instrumental variables (IV)}
 
