@@ -264,7 +264,7 @@ Therefore:
 
 This condition is known as \textit{conditional mean independence}: after controlling for $\mathbf{X}_i$, treatment assignment is independent of unobserved determinants of the outcome. It justifies unbiased estimation of $\tau$ by regression adjustment in observational studies.\\
 
-\textbf{Example: 401(k) eligibility on net financial assets}
+\textbf{Example: Treatment effect of 401(k) eligibility on net financial assets}
 
 We study the average treatment effect of eligibility (\textit{e401}) for participation in the 401(k) retirement savings plan in the United States on net financial assets (\textit{net\_tfa}) using the dataset \textit{401k.csv}. The rationale for the exogeneity of 401(k) eligibility is that it becomes exogenous after conditioning on observable characteristics related to job choice, which may correlate with whether a firm offers this retirement plan \cite{chernozhukov2024applied}.
 
@@ -325,7 +325,7 @@ theme_minimal(base_size = 14)
 
 Observe that the identification strategy relies on conditioning on $\mathbf{X}$. However, adding more controls is not always safe because some variables, known as \textit{bad controls}, can introduce bias if included in the adjustment set \cite{angrist2009mostly}. One important type of bad control is a \textit{collider}, a variable that is caused by (or is a common effect of) two or more other variables in a DAG. Colliders play a critical role because conditioning on them can create spurious associations between their causes, leading to what is known as \textit{collider bias} (or selection bias).
 
-Figure~\ref{DAG3} illustrates this situation. Here, $C$ is a common effect of $D$ and $\mathbf{X}$. Conditioning on $C$ opens an additional path between $D$ and $Y$, creating a spurious association that violates the back-door criterion. In particular, the variable $C$ is a collider on the path $D \to C \leftarrow \mathbf{X}$. By default, a collider \textit{blocks} the flow of association along the path on which it lies, so this path is closed when $C$ is not conditioned on. However, conditioning on $C$ (or on any descendant of $C$) opens this path, creating a spurious association between $D$ and $\mathbf{X}$. Since $\mathbf{X}$ also affects $Y$, this induces bias in estimating the causal effect of $D$ on $Y$. 
+Figure~\ref{DAG3} illustrates this situation. Here, $C$ is a common effect of $D$ and $\mathbf{X}$. Conditioning on $C$ opens an additional path between $D$ and $Y$, creating a spurious association that violates the back-door criterion. In particular, the variable $C$ is a collider on the path $D \to C \leftarrow \mathbf{X}$. By default, a collider \textit{blocks} the flow of association along the path on which it lies, so this path is closed when $C$ is not conditioned on. However, conditioning on $C$ (or on any descendant of $C$) opens this path, creating a spurious association between $D$ and $\mathbf{X}$. Since $\mathbf{X}$ also affects $Y$, this induces bias in estimating the causal effect of $D$ on $Y$.\\ 
 
 \begin{figure}[h]
 	\centering
@@ -348,7 +348,96 @@ Figure~\ref{DAG3} illustrates this situation. Here, $C$ is a common effect of $D
 	\label{DAG3}
 \end{figure}
 
-Collider (selection) bias is one possible source of bias in the identification of causal effects. Heckman’s sample selection problem \cite{heckman1979sample} can be interpreted as a form of collider bias because restricting the analysis to selected observations (e.g., those with positive wages) conditions on a variable that is a common effect of observed and unobserved factors, thereby opening a non-causal path and creating bias. In other words, the sample is no longer representative of the population, which undermines the identification of the causal effect. Other sources of bias include the omission of common causes that affect both treatment and outcome, measurement error in regressors leading to \textit{attenuation bias} (where the estimated causal effect is biased toward zero), and \textit{reverse or simultaneous causality}, which often arises in systems of equations (see \cite{wooldridge2010econometric} for details). Simultaneous causality is conceptually challenging because causality is often associated with chronological order, cause preceding effect. In simultaneous systems, such as supply and demand, outcomes are jointly determined in equilibrium, so this temporal order is not explicit in the observed data. Nevertheless, the underlying structural equations still encode causal relationships, even though their effects are realized simultaneously.
+\textbf{Example: Birth-weight ``paradox", collider bias}
+
+The collider bias illustrated in DAG \ref{fig:coll}, based on \cite{chernozhukov2024applied}, reflects the well-known Birth-weight ``paradox". This phenomenon arises when conditioning on an intermediate variable (birth weight, $B$) induces a spurious association between the binary indicator of smoking ($S$) and infant mortality ($Y$). In this setting, $U$ represents unobserved factors that affect both birth weight and infant mortality. Conditioning on $B$ creates collider bias because it opens a back-door path through the unobserved factors $U$ (dashed).
+
+\begin{figure}[h!]
+	\centering
+	\begin{tikzpicture}[
+		node distance=2cm,
+		thick,
+		main/.style={circle, draw, minimum size=8mm},
+		>={Stealth}
+		]
+		
+		% Nodes
+		\node[main] (S) {$S$};
+		\node[main] (B) [below right=1.2cm and 1.8cm of S] {$B$};
+		\node[main, dashed] (U) [below left=1.2cm and 1.8cm of B] {$U$};
+		\node[main] (Y) [right=1cm of B] {$Y$};
+		
+		% Arrows
+		\draw[->] (S) -- (B);
+		\draw[->] (S) -- (Y);
+		\draw[->] (B) -- (Y);
+		\draw[->] (U) -- (B);
+		\draw[->] (U) -- (Y);
+		
+	\end{tikzpicture}
+	\caption{DAG illustrating the birth-weight paradox: $S$ (smoking), $B$ (birth weight), $Y$ (infant mortality), $U$ (other unobserved health factors).}
+	\label{fig:coll}
+\end{figure}	
+
+The code in \ref{code2_chap12} illustrates the bias by performing 100 replications, and Figure \ref{fig12_2} shows the distribution of posterior means across these replications. In this setting, the total effect of smoking on infant mortality is 2, consisting of a direct effect of 1 and an indirect effect through birth weight, also equal to 1.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]\label{code2_chap12}
+	\textit{R code. Collider bias: Birth weight ``paradox"}
+	\begin{VF}
+		\begin{lstlisting}[language=R]		
+rm(list = ls()); set.seed(10101)
+library(MCMCpack); library(dplyr); library(ggplot2)
+# Parameters
+n <- 1000; true_effect <- 2; replications <- 100
+# Store results
+results <- data.frame(rep = 1:replications, correct = numeric(replications), biased = numeric(replications))
+
+for (r in 1:replications) {
+	# Simulate data under DAG: S -> B -> Y, S -> Y, U -> B, U -> Y
+	U <- rnorm(n, 0, 1); S <- rbinom(n, prob = 0.7, size = 1)
+	B <- S + U + rnorm(n)
+	Y <- S + B + 1.5*U + rnorm(n)
+	# Correct model: does NOT condition on collider B
+	model_correct <- MCMCregress(Y ~ S, burnin = 1000, mcmc = 3000, verbose = FALSE)
+	# Biased model: conditions on collider B
+	model_biased <- MCMCregress(Y ~ S + B, burnin = 1000, mcmc = 3000, verbose = FALSE)
+	# Posterior means for S
+	results$correct[r] <- mean(as.matrix(model_correct)[, "S"])
+	results$biased[r] <- mean(as.matrix(model_biased)[, "S"])
+}
+# Compute bias
+results <- results %>% mutate(
+bias_correct = correct - true_effect,
+bias_biased = biased - true_effect
+)
+# Average bias and SD
+avg_bias <- results %>%
+summarise(
+mean_correct = mean(bias_correct),
+mean_biased = mean(bias_biased),
+sd_correct = sd(bias_correct),
+sd_biased = sd(bias_biased)
+)
+print(avg_bias)
+# Visualization: distribution of posterior means across 100 simulations
+df_long <- results %>%
+select(rep, correct, biased) %>%
+tidyr::pivot_longer(cols = c(correct, biased), names_to = "model", values_to = "estimate")
+
+ggplot(df_long, aes(x = estimate, fill = model)) + geom_density(alpha = 0.5) + geom_vline(xintercept = true_effect, color = "black", linetype = "dashed", linewidth = 1) + labs(title = "Posterior Means Across 100 Simulations", x = expression(paste("Posterior Mean of ", beta[S])), y = "Density") + theme_minimal(base_size = 14)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}  
+
+\begin{figure}[h!]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter12/figures/FigColliderBias.png}
+	\caption[List of figure caption goes here]{Posterior distribution: Posterior means of the collider bias example.}\label{fig12_2}
+\end{figure}
+
+Collider (selection) bias is one possible source of bias in the identification of causal effects. The well-known Heckman’s sample selection problem in econometrics \cite{heckman1979sample} can be interpreted as a form of collider bias because restricting the analysis to selected observations (e.g., those with positive wages) conditions on a variable that is a common effect of observed and unobserved factors, thereby opening a non-causal path and creating bias. In other words, the sample is no longer representative of the population, which undermines the identification of the causal effect. 
+
+Other well-known sources of bias in econometrics include the omission of common causes affecting both the treatment and the outcome, that is, \textit{omission of correlated relevant regressors}, measurement error in regressors leading to \textit{attenuation bias} (where the estimated causal effect is biased toward zero), and \textit{reverse or simultaneous causality}, which often arises in systems of equations (see \cite{wooldridge2010econometric} for details). We will discuss these additional sources of bias later.
 
 \section{Instrumental variables (IV)}
 
@@ -377,8 +466,7 @@ In many real-world situations, we face biases such as those described in the pre
 
 Relevance is testable, typically by checking whether instruments significantly predict the endogenous variable \cite{staiger1997instrumental,cragg1993testing,kleibergen2006generalized,stock2005asymptotic}. However, \textit{weak instruments}, those that exhibit only a weak association with the treatment, can lead to serious consequences, including a high level of uncertainty and the potential amplification of even small biases when estimating the causal effect.
 
-Exogeneity is fundamentally untestable. However, when the number of instruments exceeds the number of endogenous variables, the Sargan test (or its robust version, the Hansen $J$-test) can be used to assess the validity of overidentifying restrictions. However, it should not be misinterpreted as a direct test of the exclusion restriction. Instead, the test evaluates whether the overidentifying restrictions implied by the IV model hold. Specifically, the null hypothesis states that all instruments are jointly uncorrelated with the structural error term: $\mathbb{E}[\mathbf{Z}^\top \mu] = \mathbf{0}$ \cite{sargan1958econometric,hansen1982large}. If the test rejects, it indicates that at least one instrument is invalid, but it does not reveal whether the violation results from a failure of the exclusion restriction, correlation with unobserved confounders, or model misspecification. Conversely, if the test fails to reject, it suggests that the sample moment conditions do not provide evidence against instrument validity under the maintained model, but this does not prove that the exclusion restrictions hold. Therefore, while the Sargan test is informative about overall instrument validity, it is not a separate or definitive test of the exclusion restriction \cite{wooldridge2010econometric,hayashi2000econometrics}. \cite{Conley2012} present practical methods for performing inference while relaxing the exclusion
-restriction in IV settings.
+Exogeneity is fundamentally untestable. However, when the number of instruments exceeds the number of endogenous variables, the Sargan test (or its robust version, the Hansen $J$-test) can be used to assess the validity of overidentifying restrictions. However, it should not be misinterpreted as a direct test of the exclusion restriction. Instead, the test evaluates whether the overidentifying restrictions implied by the IV model hold. Specifically, the null hypothesis states that all instruments are jointly uncorrelated with the structural error term: $\mathbb{E}[\mathbf{Z}^\top \mu] = \mathbf{0}$ \cite{sargan1958econometric,hansen1982large}. If the test rejects, it indicates that at least one instrument is invalid, but it does not reveal whether the violation results from a failure of the exclusion restriction, correlation with unobserved confounders, or model misspecification. Conversely, if the test fails to reject, it suggests that the sample moment conditions do not provide evidence against instrument validity under the maintained model, but this does not prove that the exclusion restrictions hold. Therefore, while the Sargan test is informative about overall instrument validity, it is not a separate or definitive test of the exclusion restriction \cite{wooldridge2010econometric,hayashi2000econometrics}.
 
 Figure~\ref{DAG4} illustrates a situation where pre-treatment variables that influence both the treatment and the outcome are partially observed or measured with error. In such cases, an instrument can help identify the causal effect of the treatment on the outcome.
 
@@ -387,18 +475,18 @@ Figure~\ref{DAG4} illustrates a situation where pre-treatment variables that inf
 	\begin{tikzpicture}[->,>=Stealth,shorten >=1pt,node distance=2.5cm,
 		thick,main node/.style={circle,draw,minimum size=7mm}]
 		% Nodes
-		\node[main node, dashed] (X) {$\mathbf{X}$};
+		\node[main node, dashed] (U) {$\mathbf{U}$};
 		\node[main node] (D) [right of=X] {$D$};
 		\node[main node] (Y) [right of=D] {$Y$};
 		\node[main node] (Z) [below of=D, node distance=2cm] {$Z$};
 		
 		% Edges
 		\path (Z) edge (D)
-		(X) edge[bend left=20] (Y)
+		(U) edge[bend left=20] (Y)
 		(D) edge (Y)
-		(X) edge (D);
+		(U) edge (D);
 	\end{tikzpicture}
-	\caption{Directed Acyclic Graph (DAG) showing an instrumental variable $Z$ used to identify the causal effect of $D$ on $Y$ when some confounders $\mathbf{X}$ (dashed) are unobserved or measured with error.}
+	\caption{Directed Acyclic Graph (DAG) showing an instrumental variable $Z$ used to identify the causal effect of $D$ on $Y$ when some confounders $\mathbf{U}$ (dashed) are unobserved or measured with error.}
 	\label{DAG4}
 \end{figure}
 
@@ -410,16 +498,120 @@ with equality for at least one unit $i$, and assuming a binary instrument $Z_i=\
 
 In the case where $Z_i$ denotes the assignment to treatment and $D_i$ the actual treatment status, there are four potential groups: \textit{always takers} ($D = 1 \mid Z = 1$ and $D = 1 \mid Z = 0$), \textit{never takers} ($D = 0 \mid Z = 1$ and $D = 0 \mid Z = 0$), \textit{compliers} ($D = 1 \mid Z = 1$ and $D = 0 \mid Z = 0$), and \textit{defiers} ($D = 0 \mid Z = 1$ and $D = 1 \mid Z = 0$). Note that these groups are not identified; for instance, we do not know whether an individual with $Z_i = 1$ and $D_i = 1$ is a complier or an always taker. The monotonicity assumption rules out defiers, meaning that the instrument (assignment to treatment) either does not change treatment status or only increases it.
 
-Adding the monotonicity assumption and SUTVA, IV methods allow identification of the causal effect for the subgroup of \textit{compliers}, that is, individuals who take the treatment when encouraged by the instrument and do not take it otherwise \cite{imbens1994identification,angrist1996identification}. This estimand is known as the \textit{Local Average Treatment Effect} (LATE) because it applies to a specific subpopulation rather than the entire population:
+Then, under relevance, exogeneity, monotonicity and SUTVA, IV methods allow identification of the causal effect for the subgroup of \textit{compliers}, that is, individuals who take the treatment when encouraged by the instrument and do not take it otherwise \cite{imbens1994identification,angrist1996identification}. This estimand is known as the \textit{Local Average Treatment Effect} (LATE) because it applies to a specific subpopulation rather than the entire population:
 
 \begin{align*}
 	\tau_{LATE}&=\mathbb{E}[Y_i(1)-Y_i(0)\mid D(1)=1,D(0)=0]\\
 	&=\frac{\mathbb{E}[Y_i\mid Z_i=1]-\mathbb{E}[Y_i\mid Z_i=0]}{\mathbb{E}[D_i\mid Z_i=1]-\mathbb{E}[D_i\mid Z_i=0]}.
 \end{align*}
 
-Thus, the LATE is the ratio between the intention-to-treat effect on the outcome (ITT), and the effect of the instrument on the treatment. Thus, the instrument induces random variation in treatment. The numerator captures how outcomes change with the instrument, and the denominator captures how treatment changes with the instrument. Dividing isolates the causal effect for compliers.
+Thus, the LATE is the ratio between the intention-to-treat effect on the outcome (ITT), and the effect of the instrument on the treatment (\textit{Wald ratio}). Thus, the instrument induces random variation in treatment. The numerator captures how outcomes change with the instrument, and the denominator captures how treatment changes with the instrument. Dividing isolates the causal effect for compliers.
 
-Note that the LATE is not the global average causal effect, and has been subject to several criticisms. First, the proportion of compliers in the population may be small, raising concerns about the policy relevance of this estimand. Observe that while we cannot identify all four principal strata (compliers, never-takers, always-takers, and defiers), the proportion of compliers is identifiable. Second, the monotonicity assumption is not always plausible, particularly in observational studies where instruments may induce heterogeneous behavioral responses. Third, partitioning the population into four strata can become ill-defined in settings where instruments arise from different mechanisms or individual-specific criteria \cite{deaton2010instruments,hernan2020causal}. For arguments in defense of LATE against these critiques, see \cite{angrist2010better}.
+Note that the LATE is not the global average causal effect, and has been subject to several criticisms. First, the proportion of compliers in the population may be small, raising concerns about the policy relevance of this estimand. Observe that while we cannot identify all four principal strata (compliers, never-takers, always-takers, and defiers), the proportion of compliers is identifiable. Second, the monotonicity assumption is not always plausible, particularly in observational studies where instruments may induce heterogeneous behavioral responses. Third, partitioning the population into four strata can become ill-defined in settings where instruments arise from different mechanisms or individual-specific criteria \cite{deaton2010instruments,hernan2020causal}. For arguments in defense of LATE against these critiques, see \cite{angrist2010better}.\\
+
+\textbf{Example: Treatment effect of 401(k) participation on net financial assets}
+
+In the example of the effects of \textit{eligibility} on 401(k) net financial assets, we actually calculates the intention-to-treat (ITT) effect. However, following \cite{chernozhukov2004effects}, we use eligibility as an instrument for \textit{participation} and perform inference on the (local) average treatment effect. We adopt the framework described in Section \ref{sec73} for this example. The following code illustrates the procedure, and Figure \ref{fig12_3} displays the posterior distribution of the (local) average treatment effect of participation. The 95\% credible interval is (USD 5,102, USD 12,010), and the posterior mean is USD 8,520, which is higher than the intention-to-treat effect associated with eligibility (USD 5,903). Exercise 3 asks how to get the ITT from the LATE and the effect of eligibility on participation. 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]\label{code3_chap12}
+	\textit{R code. Treatment effect: 401(k) participation on net financial assets}
+	\begin{VF}
+		\begin{lstlisting}[language=R]		
+rm(list = ls()); set.seed(10101)
+library(coda); library(ggplot2)
+mydata <- read.csv("https://raw.githubusercontent.com/BEsmarter-consultancy/BSTApp/refs/heads/master/DataApp/401k.csv", sep = ",", header = TRUE, quote = "")
+# Attach variables
+attach(mydata)
+y <- net_tfa/1000  # Outcome: net financial assets
+x <- as.vector(p401) # Endogenous regressor: participation
+w <- as.matrix(cbind(1, age, inc, fsize, educ, marr, twoearn, db, pira, hown))  # Exogenous regressors with intercept
+z <- as.matrix(e401)  # Instrument: eligibility (NO intercept here)
+X <- cbind(x, w); Z <- cbind(z, w)
+# Dimensions
+k <- ncol(X); kz <- ncol(Z)  
+# Priors
+b0 <- rep(0, k); B0i <- diag(1e-5, k)
+g0 <- rep(0, kz); G0i <- diag(1e-5, kz)
+nu <- 3; Psi0 <- nu * 1000 * diag(2); Psi0i <- solve(Psi0)
+# MCMC parameters
+mcmc <- 5000; burnin <- 1000
+tot <- mcmc + burnin; thin <- 1
+# Auxiliary elements
+XtX <- t(X)%*%X; ZtZ <- t(Z)%*%Z; nun <- nu + length(y)
+# Gibbs sampling
+PostBeta <- function(Sigma, Gamma){
+	w1 <- Sigma[1,1] - Sigma[1,2]^2/Sigma[2,2]
+	Bn <- solve(w1^(-1)*XtX + B0i)
+	yaux <- y - (Sigma[1,2]/Sigma[2,2])*(x - Z%*%Gamma)
+	bn <- Bn%*%(B0i%*%b0 + w1^(-1)*t(X)%*%yaux)
+	Beta <- MASS::mvrnorm(1, bn, Bn)
+	return(Beta)
+}
+PostGamma <- function(Sigma, Beta){
+	w2 <- Sigma[2,2] - Sigma[1,2]^2/Sigma[1,1]
+	Gn <- solve(w2^(-1)*ZtZ + G0i)
+	xaux <- x - (Sigma[1,2]/Sigma[1,1])*(y - X%*%Beta)
+	gn <- Gn%*%(G0i%*%g0 + w2^(-1)*t(Z)%*%xaux)
+	Gamma <- MASS::mvrnorm(1, gn, Gn)
+	return(Gamma)
+}
+PostSigma <- function(Beta, Gamma){
+	Uy <- y - X%*%Beta; Ux <- x - Z%*%Gamma
+	U <- cbind(Uy, Ux)
+	Psin <- solve(Psi0i + t(U)%*%U)
+	Sigmai <- rWishart::rWishart(1, df = nun, Sigma = Psin)
+	Sigma <- solve(Sigmai[,,1]) 
+	return(Sigma)
+}
+	\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]\label{code3_chap12}
+	\textit{R code. Treatment effect: 401(k) participation on net financial assets}
+	\begin{VF}
+		\begin{lstlisting}[language=R]		
+PostBetas <- matrix(0, tot, k)
+PostGammas <- matrix(0, tot, kz)
+PostSigmas <- matrix(0, tot, 2*(2+1)/2)
+Beta <- rep(0, k); Gamma <- rep(0, kz)
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+	Sigma <- PostSigma(Beta = Beta, Gamma = Gamma)
+	Beta <- PostBeta(Sigma = Sigma, Gamma = Gamma)
+	Gamma <- PostGamma(Sigma = Sigma, Beta = Beta)
+	PostBetas[s,] <- Beta
+	PostGammas[s,] <- Gamma
+	PostSigmas[s,] <- matrixcalc::vech(Sigma)
+	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+keep <- seq((burnin+1), tot, thin)
+Bs <- PostBetas[keep,]
+Gs <- PostGammas[keep,]
+Sigmas <- PostSigmas[keep,]
+summary(coda::mcmc(Bs))
+summary(coda::mcmc(Gs))
+summary(coda::mcmc(Sigmas))
+# Extract posterior draws for the treatment effect (participation = p401)
+beta_draws <- Bs[,1]
+# Plot posterior distribution of treatment effect
+df_beta <- data.frame(effect = as.vector(beta_draws))
+ggplot(df_beta, aes(x = effect)) + geom_density(fill = "steelblue", alpha = 0.6) +
+geom_vline(xintercept = mean(beta_draws), color = "red", linetype = "dashed", linewidth = 1) + labs( title = "Posterior Distribution of 401(k) Participation Effect", x = expression(beta["p401"]), y = "Density") + theme_minimal(base_size = 14)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}  
+ 
+\begin{figure}[h!]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter12/figures/FigP401k.png}
+	\caption[List of figure caption goes here]{Posterior distribution: Local average treatment effect 401k participation on net financial assets.}\label{fig12_3}
+\end{figure}
+
+
+
 
 In this framework, there is a model for the assignment mechanism $P(D_i\mid Y_i(1), Y_i(0), \mathbf{X}_i)$, like randomization or propensity score matching \cite{rosenbaum1983central}, supplemented by a model for the data $P(Y_i(1), Y_i(0)\mid \mathbf{X}_i)$. A causal inference is delivered by conditioning in what is observed to calculate the posterior distribution of the causal estimand given also the models for the assignment mechanisms and data. Therefore, there is a model to input the potential outcome missing value that allows to get the predictive distribution, and then, the posterior predictive distribution of the treatment effect ($Y_i(1)-Y_i(0)$) is calculated. We should take into account that the parameters of the models for predicting the missing potential outcomes are generally not causal effects. Due to using models for the data based on simulation, the Bayesian approach is by far the most direct and flexible of the modes of inference for causal effects. However, it relies on assumptions on the assignment mechanism and data.
 
@@ -429,9 +621,14 @@ Bayesian inference of causal effects in a completely randomized experiment with 
 
 Bayesian inference of causal effects in a randomized experiment with no compliance and but covariates is then presented in \cite{hirano2000assessing}.
 
- There, no compliance is explicitly treated as missing data. A nice advantage of the Bayesian approach is to relax the exclusion restriction \cite{rubin2004teaching}.
+\cite{Conley2012} present practical methods for conducting sensitivity analysis of posterior results when relaxing the exclusion restriction in IV settings.
+
+
+There, no compliance is explicitly treated as missing data. A nice advantage of the Bayesian approach is to relax the exclusion restriction \cite{rubin2004teaching}.
 
 Propensity matching should be used to create ``assigned treatment" and ``assigned control" groups that are well balanced on all covariates. The covariate modeling should be applied to estimate the effects of ``received treatment" for the subgroup of true compliers \cite{rubin2004teaching}.
+
+Simultaneous causality is conceptually challenging because causality is often associated with chronological order, cause preceding effect. In simultaneous systems, such as supply and demand, outcomes are jointly determined in equilibrium, so this temporal order is not explicit in the observed data. Nevertheless, the underlying structural equations still encode causal relationships, even though their effects are realized simultaneously.
 
 In general, association does not imply causation, although causation does imply association. Two variables can be associated for several reasons: one may cause the other, they may share common causes, or they may share a common effect when the analysis is restricted to a specific level of that effect (or one of its descendants) \cite{hernan2020causal}. For this reason, causal graphs are valuable tools for explicitly representing the assumptions about the causal relationships under study and should be among the first steps in establishing an identification strategy.
 
@@ -507,7 +704,10 @@ We can use BMA as a sensible way to perform robustness analysis regarding model 
 	\]
 	where $f(y)$ is a probability density function.
 	
-	\item 
+	\item \textbf{401(k) Participation on Net Financial Assets (continued)}  
+	
+	Apply the framework from this example to compute the intention-to-treat effect, the local average treatment effect, and the effect of eligibility on participation.
+	 
 	
 	
 \end{enumerate}

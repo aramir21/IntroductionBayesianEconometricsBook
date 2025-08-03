@@ -1,4 +1,4 @@
-\chapter{Bayesian machine learning}\label{chap12}
+\chapter{Causal inference}\label{chap12}
 
 \section*{Solutions of Exercises}\label{sec12_1}
 \begin{enumerate}[leftmargin=*]
@@ -140,7 +140,96 @@ Therefore, the maximum entropy distribution for a given mean $\mu$ and variance 
 Y \sim N(\mu, \sigma^2).
 \]
 
-\item 
+\item \textbf{401(k) Participation on Net Financial Assets (continued)}  
+
+Apply the framework from this example to compute the intention-to-treat effect, the local average treatment effect, and the effect of eligibility on participation.
+
+\textbf{Answer}
+
+Taking into account that
+\begin{align*}
+	\tau_{LATE} &= \mathbb{E}[Y_i(1)-Y_i(0)\mid D(1)=1, D(0)=0] \\
+	&= \frac{\mathbb{E}[Y_i \mid Z_i=1] - \mathbb{E}[Y_i \mid Z_i=0]}{\mathbb{E}[D_i \mid Z_i=1] - \mathbb{E}[D_i \mid Z_i=0]},
+\end{align*}
+we can recover the ITT effect by multiplying the LATE by the effect of eligibility on participation. The following code illustrates this procedure and plots the ITT. The posterior distribution of the ITT is shown in Figure \ref{fig12_1}, which closely resembles the posterior distribution of the effect of eligibility reported in the main text.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]\label{code1_chap12}
+	\textit{R code. Treatment effect: 401(k) participation on net financial assets}
+	\begin{VF}
+		\begin{lstlisting}[language=R]		
+rm(list = ls()); set.seed(10101)
+library(coda); library(ggplot2)
+mydata <- read.csv("https://raw.githubusercontent.com/BEsmarter-consultancy/BSTApp/refs/heads/master/DataApp/401k.csv", sep = ",", header = TRUE, quote = "")
+# Attach variables
+attach(mydata)
+y <- net_tfa/1000  # Outcome: net financial assets
+x <- as.vector(p401) # Endogenous regressor: participation
+w <- as.matrix(cbind(1, age, inc, fsize, educ, marr, twoearn, db, pira, hown))  # Exogenous regressors with intercept
+z <- as.matrix(e401)  # Instrument: eligibility (NO intercept here)
+X <- cbind(x, w); Z <- cbind(z, w)
+# Dimensions
+k <- ncol(X); kz <- ncol(Z)  
+# Priors
+b0 <- rep(0, k); B0i <- diag(1e-5, k)
+g0 <- rep(0, kz); G0i <- diag(1e-5, kz)
+nu <- 3; Psi0 <- nu * 1000 * diag(2); Psi0i <- solve(Psi0)
+# MCMC parameters
+mcmc <- 5000; burnin <- 1000
+tot <- mcmc + burnin; thin <- 1
+# Auxiliary elements
+XtX <- t(X)%*%X; ZtZ <- t(Z)%*%Z; nun <- nu + length(y)
+# Gibbs sampling
+PostBeta <- function(Sigma, Gamma){
+	w1 <- Sigma[1,1] - Sigma[1,2]^2/Sigma[2,2]
+	Bn <- solve(w1^(-1)*XtX + B0i)
+	yaux <- y - (Sigma[1,2]/Sigma[2,2])*(x - Z%*%Gamma)
+	bn <- Bn%*%(B0i%*%b0 + w1^(-1)*t(X)%*%yaux)
+	Beta <- MASS::mvrnorm(1, bn, Bn)
+	return(Beta)
+}
+PostGamma <- function(Sigma, Beta){
+	w2 <- Sigma[2,2] - Sigma[1,2]^2/Sigma[1,1]
+	Gn <- solve(w2^(-1)*ZtZ + G0i)
+	xaux <- x - (Sigma[1,2]/Sigma[1,1])*(y - X%*%Beta)
+	gn <- Gn%*%(G0i%*%g0 + w2^(-1)*t(Z)%*%xaux)
+	Gamma <- MASS::mvrnorm(1, gn, Gn)
+	return(Gamma)
+}
+PostSigma <- function(Beta, Gamma){
+	Uy <- y - X%*%Beta; Ux <- x - Z%*%Gamma
+	U <- cbind(Uy, Ux)
+	Psin <- solve(Psi0i + t(U)%*%U)
+	Sigmai <- rWishart::rWishart(1, df = nun, Sigma = Psin)
+	Sigma <- solve(Sigmai[,,1]) 
+	return(Sigma)
+}
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]\label{code1a_chap12}
+	\textit{R code. Treatment effect: 401(k) participation on net financial assets}
+	\begin{VF}
+		\begin{lstlisting}[language=R]		
+ITT <- Bs[,1]*Gs[,1]
+summary(coda::mcmc(ITT))
+# Convert to data frame for ggplot
+df_ITT <- data.frame(ITT = as.vector(ITT))
+
+# Plot posterior distribution of treatment effect
+ggplot(df_ITT, aes(x = ITT)) + geom_density(fill = "steelblue", alpha = 0.6) +
+geom_vline(xintercept = mean(ITT), color = "red", linetype = "dashed", linewidth = 1) + labs(title = "Posterior Distribution of 401(k) ITT", x = expression(beta["ITT"]), y = "Density") + theme_minimal(base_size = 14)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{figure}[h!]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter12/figures/FigP401k.png}
+	\caption[List of figure caption goes here]{Posterior distribution: Intention-to-treat effect 401k participation on net financial assets.}\label{fig12_1}
+\end{figure}
+
 
 
 \end{enumerate}
