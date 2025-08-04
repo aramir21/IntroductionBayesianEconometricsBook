@@ -1,3 +1,104 @@
+#### Basic Example ####
+set.seed(10101)
+
+# Parameters
+mu1 <- 15; mu0 <- 10
+sigma1 <- sqrt(4); sigma0 <- sqrt(2)
+N1 <- 100; N0 <- 100
+
+# Simulate data
+y1 <- rnorm(N1, mu1, sigma1)
+y0 <- rnorm(N0, mu0, sigma0)
+
+# Prior hyperparameters
+alpha0 <- 0.01
+delta0 <- 0.01
+beta0 <- 0  # Not used now
+
+simulate_t <- function(y) {
+  N <- length(y)
+  ybar <- mean(y)
+  sse <- sum((y - ybar)^2)
+  
+  alpha_n <- alpha0 + N
+  delta_n <- sse + delta0
+  scale2 <- ((N + 1) * delta_n) / (N * alpha_n)
+  
+  df <- alpha_n
+  loc <- ybar
+  scale <- sqrt(scale2)
+  
+  rt(1, df = df) * scale + loc
+}
+
+# Posterior predictive draws
+ppd1 <- replicate(1000, simulate_t(y1))
+ppd0 <- replicate(1000, simulate_t(y0))
+
+# Summaries
+mean(ppd1); mean(ppd0)
+
+# Plot
+hist(ppd1, col = rgb(1, 0, 0, 0.4), freq = FALSE, main = "Posterior Predictive",
+     xlab = "Y", xlim = c(5, 25))
+hist(ppd0, col = rgb(0, 0, 1, 0.4), freq = FALSE, add = TRUE)
+legend("topright", legend = c("Treatment", "Control"),
+       fill = c(rgb(1, 0, 0, 0.4), rgb(0, 0, 1, 0.4)))
+
+# Posterior distribution of ATE
+posterior_mu <- function(y) {
+  N <- length(y)
+  ybar <- mean(y)
+  sse <- sum((y - ybar)^2)
+  
+  alpha_n <- alpha0 + N
+  delta_n <- sse + delta0
+  
+  # Posterior variance for mean
+  var_mu <- delta_n / (alpha_n * N)
+  df <- alpha_n
+  
+  # Draw from t for parameter μ
+  loc <- ybar
+  scale <- sqrt(var_mu)
+  rt(1, df = df) * scale + loc
+}
+
+# Posterior draws for parameters
+n_draws <- 10000
+mu1_draws <- replicate(n_draws, posterior_mu(y1))
+mu0_draws <- replicate(n_draws, posterior_mu(y0))
+
+# Parameter uncertainty: difference of means
+ate_draws <- mu1_draws - mu0_draws
+summary(coda::mcmc(ate_draws))
+# Summaries
+ate_mean <- mean(ate_draws)
+ci <- quantile(ate_draws, c(0.025, 0.975))
+
+cat("Posterior mean of ATE:", ate_mean, "\n")
+cat("95% Credible Interval:", ci, "\n")
+
+# Plot posterior distribution of ATE
+hist(ate_draws, breaks = 50, freq = FALSE,
+     main = "Posterior Distribution of ATE",
+     xlab = "ATE (Y(1) - Y(0))", col = "lightblue", border = "white")
+abline(v = ate_mean, col = "red", lwd = 2)
+abline(v = ci, col = "darkgreen", lty = 2, lwd = 2)
+
+legend("topright", legend = c("Posterior Mean", "95% Credible Interval"),
+       col = c("red", "darkgreen"), lwd = 2, lty = c(1, 2),
+       bty = "n", cex = 0.8)  # Smaller legend using cex
+
+y <- c(y0, y1)
+d <- c(rep(0, N0), rep(1, N1))
+
+data_reg <- data.frame(y = y, d = d)
+
+# OLS regression
+model <- lm(y ~ d, data = data_reg)
+summary(model)
+
 #### 401k: Treatment effects ####
 rm(list = ls())
 set.seed(10101)

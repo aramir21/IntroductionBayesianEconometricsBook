@@ -33,9 +33,9 @@ Bayesian inference for causal effects \cite{rubin1978bayesian} is more direct th
 
 Bayesian inference for causal effects treats the potential outcomes as random variables and involves computing the posterior predictive distribution to evaluate treatments not received, conditional on the observed responses to treatments actually received. This approach yields the posterior distribution of the causal estimands as a function of both the observed outcomes and the unobserved potential outcomes, which are treated as missing data and handled through data augmentation methods \cite{Tanner1987}. 
 
-In addition, it is important to note that the likelihood function does not contain information about the correlation between the potential outcomes due to \textit{the fundamental problem of causal inference}. Consequently, most of the classical literature on treatment effects has focused on average treatment effects, since these require only the marginal distributions of the potential outcomes $Y(1)$ and $Y(0)$ \cite{heckman2014treatment}.
+In addition, it is important to note that the likelihood function does not contain information about the correlation between potential outcomes due to \textit{the fundamental problem of causal inference}. Consequently, most of the classical literature on treatment effects has focused on average treatment effects, which require only the marginal distributions of the potential outcomes $Y(1)$ and $Y(0)$ \cite{heckman2014treatment}. However, it is also possible to estimate \textit{quantile treatment effects} \cite{AbadieAngristImbens2002,Chernozhukov2005}.
 
-By contrast, a Bayesian inferential approach allows us to obtain \textit{distributional treatment effects}, as formally defined by \cite{aakvik2005estimating}. These effects describe the entire distribution of potential outcomes under treatment and control in the population, rather than just the mean. This has particular policy relevance; for example, it enables the estimation of the proportion of the population that benefits from a social program or the probability that a treated individual experiences a positive effect \cite{Ramirez2019a}.
+By contrast, a Bayesian inferential approach allows us to estimate \textit{distributional treatment effects} with uncertainty quantification, as formally defined by \cite{aakvik2005estimating,heckman2014treatment}. These effects characterize the entire distribution of potential outcomes under treatment and control, rather than focusing solely on the average treatment effect, and thus capture heterogeneity. This is particularly relevant for policy, as it enables estimating the proportion of the population that benefits from a social program or the probability that a treated individual experiences a positive effect \cite{Ramirez2019a}.
 
 Furthermore, under a Bayesian framework, the impact of adding or relaxing identification assumptions can be assessed by examining how the distributional treatment effects change \cite{imbens1997bayesian}.
 
@@ -178,8 +178,97 @@ Consequently, ATE is
 
 Note that this result can be obtained under the simple linear regression framework by assuming non-informative prior distributions, so that the posterior mean of the location parameter coincides with the maximum likelihood estimator (see Exercise 1).
 
+We can use simulation to obtain the posterior distribution of the average treatment effect (ATE). For example, assume that $\mu_1 = 15$, $\mu_0 = 10$, $\sigma_1^2 = 4$, $\sigma_0^2 = 2$, and $N_1=N_0=100$, and compute the posterior distribution of the ATE. The following code illustrates this procedure, while Figures \ref{fig12_0} and \ref{fig12_0a} display the predictive densities of the potential outcomes and the posterior distribution of the ATE. The posterior mean is 4.60, and the 95\% credible interval is (4.10, 5.12).
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]\label{code0_chap12}
+	\textit{R code. Simple example: Average treatment effects}
+	\begin{VF}
+		\begin{lstlisting}[language=R]		
+set.seed(10101)
+# Parameters
+mu1 <- 15; mu0 <- 10
+sigma1 <- sqrt(4); sigma0 <- sqrt(2)
+N1 <- 100; N0 <- 100
+# Simulate data
+y1 <- rnorm(N1, mu1, sigma1); y0 <- rnorm(N0, mu0, sigma0)
+# Prior hyperparameters
+alpha0 <- 0.01; delta0 <- 0.01
+simulate_t <- function(y) {
+	N <- length(y); ybar <- mean(y)
+	sse <- sum((y - ybar)^2)
+	alpha_n <- alpha0 + N; delta_n <- sse + delta0
+	scale2 <- ((N + 1) * delta_n) / (N * alpha_n)
+	df <- alpha_n
+	loc <- ybar; scale <- sqrt(scale2)
+	rt(1, df = df) * scale + loc
+}
+# Posterior predictive draws
+ppd1 <- replicate(1000, simulate_t(y1))
+ppd0 <- replicate(1000, simulate_t(y0))
+# Plot
+hist(ppd1, col = rgb(1, 0, 0, 0.4), freq = FALSE, main = "Posterior Predictive",
+xlab = "Y", xlim = c(5, 25))
+hist(ppd0, col = rgb(0, 0, 1, 0.4), freq = FALSE, add = TRUE)
+legend("topright", legend = c("Treatment", "Control"),
+fill = c(rgb(1, 0, 0, 0.4), rgb(0, 0, 1, 0.4)))
+# Posterior distribution of ATE
+posterior_mu <- function(y) {
+	N <- length(y); ybar <- mean(y)
+	sse <- sum((y - ybar)^2)
+	alpha_n <- alpha0 + N
+	delta_n <- sse + delta0
+	# Posterior variance for mean
+	var_mu <- delta_n / (alpha_n * N)
+	df <- alpha_n
+	loc <- ybar; scale <- sqrt(var_mu)
+	rt(1, df = df) * scale + loc
+}
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]\label{code0_chap12}
+	\textit{R code. Simple example: Average treatment effects}
+	\begin{VF}
+		\begin{lstlisting}[language=R]		
+# Posterior draws for parameters
+n_draws <- 10000
+mu1_draws <- replicate(n_draws, posterior_mu(y1))
+mu0_draws <- replicate(n_draws, posterior_mu(y0))
+# Parameter uncertainty: difference of means
+ate_draws <- mu1_draws - mu0_draws
+summary(coda::mcmc(ate_draws))
+# Summaries
+ate_mean <- mean(ate_draws)
+ci <- quantile(ate_draws, c(0.025, 0.975))
+cat("Posterior mean of ATE:", ate_mean, "\n")
+cat("95% Credible Interval:", ci, "\n")
+
+# Plot posterior distribution of ATE
+hist(ate_draws, breaks = 50, freq = FALSE,
+main = "Posterior Distribution of ATE",
+xlab = "ATE (Y(1) - Y(0))", col = "lightblue", border = "white")
+abline(v = ate_mean, col = "red", lwd = 2)
+abline(v = ci, col = "darkgreen", lty = 2, lwd = 2)
+
+legend("topright", legend = c("Posterior Mean", "95% Credible Interval"), col = c("red", "darkgreen"), lwd = 2, lty = c(1, 2), bty = "n", cex = 0.8)  # Smaller legend using cex
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}  
+ 
+
+\begin{figure}
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter12/figures/BasicYd.png}
+	\caption[List of figure caption goes here]{Predictive distributions: Potential outcomes.}\label{fig12_0}
+\end{figure}
 
 
+\begin{figure}
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter12/figures/BasicATE.png}
+	\caption[List of figure caption goes here]{Posterior distribution: Average treatment effects.}\label{fig12_0a}
+\end{figure}
 
 
 An RCT is considered the gold standard for identifying causal effects because it provides the strongest basis for satisfying the key identification assumption in causal inference: \textit{independence between treatment assignment and potential outcomes}. However, RCTs may face challenges such as \textit{non-compliance}, which occurs when individuals do not adhere to their assigned treatment in an experimental study. This is important because, in many real-world settings, some individuals do not take the treatment they were assigned, leading to deviations from the ideal randomized controlled trial design. In addition, RCTs are sometimes infeasible due to ethical, logistical, or financial constraints. Moreover, they can be too narrowly focused or too localized to provide general conclusions about what works \cite{deaton2010instruments}.
