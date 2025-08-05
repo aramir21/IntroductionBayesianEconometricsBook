@@ -167,18 +167,30 @@ where
 \delta_{nd} = \sum_{i:d_i=d} (y_i-\bar{y}_d)^2 + \delta_{0d} + \frac{\beta_{0d}N_d}{\beta_{0d}+N_d}(\bar{y}_d-\mu_{0d})^2.
 \]
 
-The hyperparameter $\beta_{0d}$ represents the hypothetical prior sample size. To specify a non-informative prior, we can set $\beta_{0d}=0$, making the posterior mean equal to the sample mean $\bar{y}_d$. Additionally, setting $\alpha_{0d} = \delta_{0d} = 0.01$ yields a weakly informative prior for the variances so that the posterior variances resemble the sampling variances. This non-informative prior setting implies that the predictive distribution is 
+In addition, the predictive distribution is given by
 \[
-Y(d) \mid \mathbf{y} \sim t\!\left(\bar{y}_d,\; \frac{(N_d+1)\delta_n}{N_d\alpha_n},\; \alpha_n\right).
+Y(d)\mid \mathbf{y}\sim t\left(\mu_{nd},\frac{(\beta_{nd}+1)\delta_{nd}}{\beta_{nd}\alpha_{nd}},\alpha_{nd}\right).
 \]
-Consequently, ATE is 
+Therefore, given the definition of the average treatment effect, 
+\begin{align*}
+ \text{ATE} & = \mathbb{E}[Y(1) - Y(0)]\\
+ & = \mathbb{E}[Y(1)] - \mathbb{E}[Y(0)]\\
+ & = \int_{\mathcal{R}} y(1) f_{Y(1)}(y(1))dy(1) - \int_{\mathcal{R}} y(0) f_{Y(0)}(y(0))dy(0)\\
+ & = \mu_{1} - \mu_{0}.
+\end{align*}
+
+Note that this expectation is taken with respect to the population distribution of the potential outcomes, not with respect to the posterior distribution.\footnote{Other functions of the potential outcomes, such as $P(Y(1)\geq Y(0))$, require the joint distribution of the potential outcomes rather than just the marginal distributions, as is the case for the ATE.} Thus, the posterior distribution of the ATE is given by 
 \[
-\text{ATE} = \mathbb{E}[Y(1) - Y(0)] = \bar{y}_1 - \bar{y}_0.
+\pi(\text{ATE}\mid \mathbf{y}) = \pi(\mu_{1} - \mu_{0}\mid \mathbf{y}).
 \]
 
-Note that this result can be obtained under the simple linear regression framework by assuming non-informative prior distributions, so that the posterior mean of the location parameter coincides with the maximum likelihood estimator (see Exercise 1).
+We can obtain this posterior distribution by simulation, because the difference of two independent Student's $t$-distributed random variables does not follow a Student's $t$ distribution. However, as the degrees of freedom increase, each posterior distribution of $\mu_{d}$ converges to a normal distribution, and the difference of two normals is also normal. Consequently, an approximate point estimate of the ATE is $\mu_{n1} - \mu_{n0}$, which asymptotically equals $\bar{y}_1 - \bar{y}_0$ under relatively non-informative priors. This is the classical \textit{estimator} of the ATE.
 
-We can use simulation to obtain the posterior distribution of the average treatment effect (ATE). For example, assume that $\mu_1 = 15$, $\mu_0 = 10$, $\sigma_1^2 = 4$, $\sigma_0^2 = 2$, and $N_1=N_0=100$, and compute the posterior distribution of the ATE. The following code illustrates this procedure, while Figures \ref{fig12_0} and \ref{fig12_0a} display the predictive densities of the potential outcomes and the posterior distribution of the ATE. The posterior mean is 4.60, and the 95\% credible interval is (4.10, 5.12).
+Finally, note that we can also obtain the posterior distribution of the ATE using the simple linear regression framework by assuming relatively non-informative prior distributions, in which case the posterior mean of the slope parameter coincides with the maximum likelihood estimator (see Exercise~1).\\
+
+\textbf{Example: Posterior distribution of the average treatment effect}
+
+Let's assume that $\mu_1 = 15$, $\mu_0 = 10$, $\sigma_1^2 = 4$, $\sigma_0^2 = 2$, and $N_1=N_0=100$, and compute the posterior distribution of the ATE. The following code illustrates this procedure, while Figures \ref{fig12_0} and \ref{fig12_0a} display the predictive densities of the potential outcomes and the posterior distribution of the ATE. The posterior mean is 4.60, and the 95\% credible interval is (4.10, 5.12).
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]\label{code0_chap12}
@@ -587,7 +599,7 @@ with equality for at least one unit $i$, and assuming a binary instrument $Z_i=\
 
 In the case where $Z_i$ denotes the assignment to treatment and $D_i$ the actual treatment status, there are four potential groups: \textit{always-takers} ($D = 1 \mid Z = 1$ and $D = 1 \mid Z = 0$), \textit{never-takers} ($D = 0 \mid Z = 1$ and $D = 0 \mid Z = 0$), \textit{compliers} ($D = 1 \mid Z = 1$ and $D = 0 \mid Z = 0$), and \textit{defiers} ($D = 0 \mid Z = 1$ and $D = 1 \mid Z = 0$). Note that these groups are not identified; for instance, we do not know whether an individual with $Z_i = 1$ and $D_i = 1$ is a complier or an always taker. The monotonicity assumption rules out defiers, meaning that the instrument (assignment to treatment) either does not change treatment status or only increases it.
 
-Then, under relevance, exogeneity, monotonicity and SUTVA, IV methods allow identification of the causal effect for the subgroup of \textit{compliers}, that is, individuals who take the treatment when encouraged by the instrument and do not take it otherwise \cite{imbens1994identification,angrist1996identification}. This estimand is known as the \textit{Local Average Treatment Effect} (LATE) because it applies to a specific subpopulation rather than the entire population:
+Then, under relevance, exogeneity, monotonicity and SUTVA, IV methods allow identification of the causal effect for the subgroup of \textit{compliers}, that is, individuals who take the treatment when encouraged by the instrument and do not take it otherwise \cite{imbens1994identification,angrist1996identification}. This estimand is known as the \textit{Local Average Treatment Effect} (LATE) because it applies to a specific subpopulation rather than the entire population \cite{hernan2020causal}:
 
 \begin{align*}
 	\tau_{LATE}&=\mathbb{E}[Y_i(1)-Y_i(0)\mid D_i(1)=1,D_i(0)=0]\\
@@ -679,7 +691,8 @@ Consequently, $\eta_{c0} \in [0.992, 1]$ and $\eta_{n0} \in [0.968, 1]$.
 
 These results imply that the \textit{complier average causal effect} (CACE),
 \begin{align*}
-	\tau_{CACE} &= P[Y_i = 1 \mid C_i = c, Z_i = 1] - P[Y_i = 1 \mid C_i = c, Z_i = 0] \\
+	\tau_{CACE} &= \mathbb{E}[Y_i(1)-Y_i(0)\mid D_i(1)=1,D_i(0)=0, Z_i=1, Z_i=0]\\
+	 P[Y_i = 1 \mid C_i = c, Z_i = 1] - P[Y_i = 1 \mid C_i = c, Z_i = 0] \\
 	&= \eta_{c1} - \eta_{c0},
 \end{align*}
 is set-identified, with 
