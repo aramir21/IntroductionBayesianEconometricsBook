@@ -579,24 +579,270 @@ Figure~\ref{DAG4} illustrates a situation where pre-treatment variables that inf
 	\label{DAG4}
 \end{figure}
 
-However, the two conditions of the instruments only imply partial identification of the treatment effect \cite{manski1990nonparametric}. Thus, it is necessary to add a third condition to get point identification of a particular treatment effect using IV. This condition is \textit{monotonicity} which asserts that the instrument moves all units’ treatment decisions in the same direction, that is,
+However, the two conditions of the instruments only imply partial identification of the treatment effect \cite{manski1990nonparametric,manski1995identification,manski2003partial}. Thus, it is necessary to add a third condition to get point identification of a particular treatment effect using IV. This condition is \textit{monotonicity} which asserts that the instrument moves all units’ treatment decisions in the same direction, that is,
 \[
 D_i(1)\geq D_i(0), i=1,2,\dots,N,
 \]
 with equality for at least one unit $i$, and assuming a binary instrument $Z_i=\left\{0,1\right\}$. 
 
-In the case where $Z_i$ denotes the assignment to treatment and $D_i$ the actual treatment status, there are four potential groups: \textit{always takers} ($D = 1 \mid Z = 1$ and $D = 1 \mid Z = 0$), \textit{never takers} ($D = 0 \mid Z = 1$ and $D = 0 \mid Z = 0$), \textit{compliers} ($D = 1 \mid Z = 1$ and $D = 0 \mid Z = 0$), and \textit{defiers} ($D = 0 \mid Z = 1$ and $D = 1 \mid Z = 0$). Note that these groups are not identified; for instance, we do not know whether an individual with $Z_i = 1$ and $D_i = 1$ is a complier or an always taker. The monotonicity assumption rules out defiers, meaning that the instrument (assignment to treatment) either does not change treatment status or only increases it.
+In the case where $Z_i$ denotes the assignment to treatment and $D_i$ the actual treatment status, there are four potential groups: \textit{always-takers} ($D = 1 \mid Z = 1$ and $D = 1 \mid Z = 0$), \textit{never-takers} ($D = 0 \mid Z = 1$ and $D = 0 \mid Z = 0$), \textit{compliers} ($D = 1 \mid Z = 1$ and $D = 0 \mid Z = 0$), and \textit{defiers} ($D = 0 \mid Z = 1$ and $D = 1 \mid Z = 0$). Note that these groups are not identified; for instance, we do not know whether an individual with $Z_i = 1$ and $D_i = 1$ is a complier or an always taker. The monotonicity assumption rules out defiers, meaning that the instrument (assignment to treatment) either does not change treatment status or only increases it.
 
 Then, under relevance, exogeneity, monotonicity and SUTVA, IV methods allow identification of the causal effect for the subgroup of \textit{compliers}, that is, individuals who take the treatment when encouraged by the instrument and do not take it otherwise \cite{imbens1994identification,angrist1996identification}. This estimand is known as the \textit{Local Average Treatment Effect} (LATE) because it applies to a specific subpopulation rather than the entire population:
 
 \begin{align*}
-	\tau_{LATE}&=\mathbb{E}[Y_i(1)-Y_i(0)\mid D(1)=1,D(0)=0]\\
+	\tau_{LATE}&=\mathbb{E}[Y_i(1)-Y_i(0)\mid D_i(1)=1,D_i(0)=0]\\
 	&=\frac{\mathbb{E}[Y_i\mid Z_i=1]-\mathbb{E}[Y_i\mid Z_i=0]}{\mathbb{E}[D_i\mid Z_i=1]-\mathbb{E}[D_i\mid Z_i=0]}.
 \end{align*}
 
 Thus, the LATE is the ratio between the intention-to-treat effect on the outcome (ITT), and the effect of the instrument on the treatment, which is the proportion of compliers. This ratio is known as the \textit{Wald estimator}. Thus, the instrument induces random variation in treatment. The numerator captures how outcomes change with the instrument, and the denominator captures how treatment changes with the instrument. Dividing isolates the causal effect for compliers.
 
 Note that the LATE is not the global average causal effect, and has been subject to several criticisms. First, the proportion of compliers in the population may be small, raising concerns about the policy relevance of this estimand. Observe that while we cannot identify all four principal strata (compliers, never-takers, always-takers, and defiers), the proportion of compliers is identifiable. Second, the monotonicity assumption is not always plausible, particularly in observational studies where instruments may induce heterogeneous behavioral responses. Third, partitioning the population into four strata can become ill-defined in settings where instruments arise from different mechanisms or individual-specific criteria \cite{deaton2010instruments,hernan2020causal}. For arguments in defense of LATE against these critiques, see \cite{angrist2010better}.\\
+
+\textbf{Example: Effects of vitamin A supplements on children's survival}
+
+This example is taken from \cite{imbens1997bayesian}. The authors perform Bayesian inference for causal effects in a completely randomized experiment with no covariates and partial compliance. The experiment was conducted in Indonesia, where children were randomly assigned to receive vitamin A supplements. No individual assigned to the control group ($Z_i = 0$) actually took the vitamin, meaning that $D_i(0) = 1$ was never observed. This rules out always-takers and defiers. However, some individuals assigned to the treatment group ($Z_i = 1$) did not take the vitamin, so $D_i(1) = 0$ occurred for some units. Consequently, $D_i(1) \geq D_i(0)$ holds for all individuals (there are not defiers), satisfying the monotonicity assumption. Under this setting, the population consists only of compliers and never-takers.
+
+\begin{table}[h!]
+	%\centering % This ensures the table is centered on the page
+	\caption{Effects of vitamin A supplements on children's survival \cite{imbens1997bayesian}}
+	\label{tab:observed_data}
+	\begin{minipage}{0.5\textwidth}
+		%\centering % Centers the content inside minipage
+		\begin{tabular}{lcccr}
+			\hline
+			\multirow{2}{*}{\textbf{Type}} & \textbf{Assignment} & \textbf{Treatment} & \textbf{Survival}  & \textbf{Units} \\
+			& $Z_{\text{obs},i}$ & $D_{\text{obs},i}$ & $Y_{\text{obs},i}$ & 23,682 \\
+			\hline
+			Complier or never-taker & 0 & 0 & 0 & 74 \\
+			Complier or never-taker & 0 & 0 & 1 & 11,514 \\
+			Never-taker & 1 & 0 & 0 & 34 \\
+			Never-taker & 1 & 0 & 1 & 2,385 \\
+			Complier & 1 & 1 & 0 & 12 \\
+			Complier & 1 & 1 & 1 & 9,663 \\
+			\hline
+		\end{tabular}
+	\end{minipage}
+\end{table}
+
+Table \ref{tab:observed_data} summarizes the data. Using this table, we can illustrate key concepts in the identification of causal effects with noncompliance. Let $C_i$ denote the compliance type of individual $i$, which in this case can be either a complier ($c$) or a never-taker ($n$). The probability of being a complier, $\omega := P(C_i = c)$, is given by
+\begin{align*}
+	P(C_i = c) 
+	&= \underbrace{P(D_i = 1 \mid Z_i = 1)}_{P(\text{compliers}) + P(\text{always-takers})} 
+	- \underbrace{P(D_i = 1 \mid Z_i = 0)}_{P(\text{always-takers}) = 0} \\
+	&= \frac{P(D_i = 1, Z_i = 1)}{P(Z_i = 1)} \\
+	&= \frac{12 + 9{,}663}{12 + 9{,}663 + 34 + 2{,}385} \\
+	&= 0.8.
+\end{align*}
+This implies that $P(C_i = n) = 1 - P(C_i = c) = 0.2$.
+
+The probability of survival for compliers assigned to treatment, $\eta_{c1} := P(Y_i = 1 \mid C_i = c, Z_i = 1)$, is
+\begin{align*}
+	P(Y_i = 1 \mid C_i = c, Z_i = 1) 
+	&= \frac{P(Y_i = 1, C_i = c \mid Z_i = 1) \times P(Z_i = 1)}{P(C_i = c \mid Z_i = 1) \times P(Z_i = 1)} \\
+	&= \frac{9{,}663}{9{,}663 + 12} \\
+	&= 0.999.
+\end{align*}
+
+Similarly, the probability of survival for never-takers assigned to treatment, $\eta_{n1} := P(Y_i = 1 \mid C_i = n, Z_i = 1)$, is
+\begin{align*}
+	P(Y_i = 1 \mid C_i = n, Z_i = 1) 
+	&= \frac{P(Y_i = 1, C_i = n \mid Z_i = 1) \times P(Z_i = 1)}{P(C_i = n \mid Z_i = 1) \times P(Z_i = 1)} \\
+	&= \frac{2{,}385}{2{,}385 + 34} \\
+	&= 0.986.
+\end{align*}
+
+Note that $\eta_{c0} = P(Y_i = 1 \mid C_i = c, Z_i = 0)$ and $\eta_{n0} = P(Y_i = 1 \mid C_i = n, Z_i = 0)$ cannot be point-identified. However, we can obtain \emph{set identification} because
+\begin{align*}
+	P(Y_i = 1 \mid Z_i = 0) 
+	&= P(Y_i = 1 \mid Z_i = 0, C_i = c) \times P(C_i = c) \\
+	&\quad + P(Y_i = 1 \mid Z_i = 0, C_i = n) \times P(C_i = n) \\
+	&= \frac{P(Y_i = 1, Z_i = 0)}{P(Z_i = 0)} \\
+	&= \frac{11{,}514}{11{,}514 + 74} \\
+	&= 0.9936.
+\end{align*}
+
+The first equality holds because the probability of survival given no treatment assignment is expressed as a mixture by the law of total probability, and the second equality follows from Bayes' rule.
+
+This implies that 
+\[
+0.9936 = \omega \eta_{c0} + (1-\omega)\eta_{n0},
+\]
+which leads to 
+\[
+\eta_{n0} = 4.968 - 4\eta_{c0}.
+\]
+Given that probabilities must lie in the unit interval, i.e., $0 \leq 4.968 - 4\eta_{c0} \leq 1$, we obtain:  
+(i) $\eta_{c0} \leq 1 \leq 1.242$ (automatically satisfied), and  
+(ii) $4\eta_{c0} \geq 4.968 - 1 = 3.968$, which implies $\eta_{c0} \geq 0.992$.  
+
+Consequently, $\eta_{c0} \in [0.992, 1]$ and $\eta_{n0} \in [0.968, 1]$.
+
+These results imply that the \textit{complier average causal effect} (CACE),
+\begin{align*}
+	\tau_{CACE} &= P[Y_i = 1 \mid C_i = c, Z_i = 1] - P[Y_i = 1 \mid C_i = c, Z_i = 0] \\
+	&= \eta_{c1} - \eta_{c0},
+\end{align*}
+is set-identified, with 
+\[
+\tau_{CACE} \in [-0.001, 0.007],
+\]
+meaning that the survival rate among compliers can vary between 1 and 7 per 1,000 children due to vitamin A supplementation.
+
+Point identification can be achieved by imposing the \textit{weak exclusion restriction} \cite{imbens1997bayesian}, which states that treatment assignment is unrelated to potential outcomes for never-takers and always-takers. Under this assumption,
+\[
+P(Y_i = y \mid C_i = n, Z_i = z) = P(Y_i = y \mid C_i = n),
+\]
+so that $\eta_{n1} = \eta_{n0} = \eta_n = 0.986$. Substituting into the mixture equation yields $\eta_{c0} = 0.9955$, and consequently,
+\[
+\tau_{LATE} = 0.0035,
+\]
+indicating that survival increases by approximately 3.5 per 1,000 children due to vitamin A supplementation.\footnote{CACE and LATE refer to the same estimand, the average causal effect for compliers, under monotonicity and the exclusion restriction. If the exclusion restriction fails, they differ because LATE (as identified by IV) no longer equals the complier-specific causal effect (CACE).}
+ 
+We use conjugate families to perform Bayesian inference in this example. Specifically, we adopt the Bernoulli-Beta model (see Section \ref{sec42}) with independent non-informative Beta priors, each having parameters equal to 1. This corresponds to a uniform distribution on the interval $(0,1)$.  
+
+An advantage of the Bayesian formulation is that, after applying data augmentation with the compliance type $C_i$, all the conditional posterior distributions are Beta (See \cite{imbens1997bayesian} for details in derivations). In particular:
+\[
+\omega \mid \mathbf{C}, \mathbf{Z}_{\text{obs}}, \mathbf{D}_{\text{obs}}, \mathbf{Y}_{\text{obs}} \sim \text{Beta}(1 + N_c,\, 1 + N_n),
+\]
+where $N_c$ and $N_n$ denote the number of compliers and never-takers, respectively.
+\[
+\eta_{c1} \mid \mathbf{C}, \mathbf{Z}_{\text{obs}}, \mathbf{D}_{\text{obs}}, \mathbf{Y}_{\text{obs}} \sim \text{Beta}(1 + 9{,}663,\, 1 + 12),
+\]
+\[
+\eta_{n1} \mid \mathbf{C}, \mathbf{Z}_{\text{obs}}, \mathbf{D}_{\text{obs}}, \mathbf{Y}_{\text{obs}} \sim \text{Beta}(1 + 2{,}385,\, 1 + 34),
+\]
+\[
+\eta_{c0} \mid \mathbf{C}, \mathbf{Z}_{\text{obs}}, \mathbf{D}_{\text{obs}}, \mathbf{Y}_{\text{obs}} \sim \text{Beta}(1 + N_{c01},\, 1 + N_{c00}),
+\]
+where $N_{c01}$ and $N_{c00}$ are the numbers of compliers in the control group who survived and did not survive, respectively.
+\[
+\eta_{n0} \mid \mathbf{C}, \mathbf{Z}_{\text{obs}}, \mathbf{D}_{\text{obs}}, \mathbf{Y}_{\text{obs}} \sim \text{Beta}(1 + N_{n01},\, 1 + N_{n00}),
+\]
+where $N_{n01}$ and $N_{n00}$ are the numbers of never-takers in the control group who survived and did not survive, respectively.
+
+In addition, the conditional probability of being a complier is given by:
+\[
+P(C_i = c \mid Z_{\text{obs},i}, D_{\text{obs},i}, Y_{\text{obs},i}) =
+\begin{cases}
+	0, & i \in \{Z_i = 1, D_i = 0\},\\
+	1, & i \in \{Z_i = 1, D_i = 1\},\\
+	\dfrac{\omega g_{c0,i}}{\omega g_{c0,i} + (1-\omega) g_{n0,i}}, & i \in \{Z_i = 0\},
+\end{cases}
+\]
+where $g_{c0,i} = \eta_{c0}^{Y_{\text{obs},i}} (1 - \eta_{c0})^{1 - Y_{\text{obs},i}}$ and $g_{n0,i} = \eta_{n0}^{Y_{\text{obs},i}} (1 - \eta_{n0})^{1 - Y_{\text{obs},i}}$. Note that $Y_{\text{obs},i} = 1$ implies $g_{c0,i} = \eta_{c0}$ and $g_{n0,i} = \eta_{n0}$, while $Y_{\text{obs},i} = 0$ implies $g_{c0,i} = (1 - \eta_{c0})$ and $g_{n0,i} = (1 - \eta_{n0})$.
+
+The following code shows the implementation, and the corresponding figure displays the posterior distribution of the CACE, the mean is 0.0024, and the 95\% credible intervals is (-0.0012, 0.0071).
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]\label{codea_chap12}
+	\textit{R code. Effects of vitamin A supplements on children's survival}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(10101)
+library(dplyr)
+# Simulate data
+Nc111 <- 9663
+c111 <- cbind(rep(1, Nc111), rep(1, Nc111), rep(1, Nc111)) 
+Nc110 <- 12
+c110 <- cbind(rep(1, Nc110), rep(1, Nc110), rep(0, Nc110)) 
+Nn101 <- 2385
+n101 <- cbind(rep(1, Nn101), rep(0, Nn101), rep(1, Nn101)) 
+Nn100 <- 34
+n100 <- cbind(rep(1, Nn100), rep(0, Nn100), rep(0, Nn100)) 
+Ncn001 <- 11514
+cn001 <- cbind(rep(0, Ncn001), rep(0, Ncn001), rep(1, Ncn001)) 
+Ncn000 <- 74
+cn000 <- cbind(rep(0, Ncn000), rep(0, Ncn000), rep(0, Ncn000)) 
+
+mydata <- rbind(c111, c110, n101, n100, cn001, cn000)
+mydata <- data.frame(Z = mydata[,1], D = mydata[,2], Y = mydata[,3])
+N <- dim(mydata)[1]
+attach(mydata)
+
+# Sampling function C (type)
+SampleType <- function(z, d, y, wc, nc0, nn0){
+	if(z == 1 & d == 0){
+		pc <- 0
+	}else{
+		if(z == 1 & d == 1){
+			pc <- 1
+		}else{
+			if(y == 1){
+				pc <- (wc * nc0) / (wc * nc0 +  (1 - wc) * nn0)
+			}else{
+				pc <- (wc * (1 - nc0)) / (wc * (1 - nc0) +  (1 - wc) * (1 - nn0))
+			}
+		}
+	}
+	rbinom(1, 1, prob = pc) # 1: Complier/ 0: Never taker
+}
+z = 0; d = 0; y = 0; wc = 0.8; nc0 = 0.9; nn0 = 0.05
+SampleType(z = z, d = d, y = y, wc = wc, nc0 = nc0, nn0 = nn0)
+Clat <- sapply(1:N, function(i){SampleType(z = Z[i], d = D[i], y = Y[i], wc = wc, nc0 = nc0, nn0 = nn0)})
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Effects of vitamin A supplements on children's survival}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+# Gibbs sampler
+a0 <- 1; b0 <- 1 # Hyperparameters beta priors
+burnin <- 500; S <- 2000; tot <- S + burnin 
+PosteriorDraws <- matrix(NA, tot, 5)
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+
+for(s in 1:tot){
+	dataLat <- cbind(mydata, Clat)
+	Nc011 <- sum(dataLat$Z == 0 & dataLat$Clat == 1 & dataLat$Y == 1)
+	Nc010 <- sum(dataLat$Z == 0 & dataLat$Clat == 1 & dataLat$Y == 0)
+	Nn001 <- sum(dataLat$Z == 0 & dataLat$Clat == 0 & dataLat$Y == 1)
+	Nn000 <- sum(dataLat$Z == 0 & dataLat$Clat == 0 & dataLat$Y == 0)
+	Nc <- sum(Clat == 1)
+	Nn <- sum(Clat == 0)
+	wc <- rbeta(1, 1 + Nc, 1 + Nn)
+	nc1 <- rbeta(1, 1 + Nc111, 1 + Nc110)
+	nn1 <- rbeta(1, 1 + Nn101, 1 + Nn100)
+	nc0 <- rbeta(1, 1 + Nc011, 1 + Nc010)
+	nn0 <- rbeta(1, 1 + Nn001, 1 + Nn000)
+	Clat <- sapply(1:N, function(i){SampleType(z = Z[i], d = D[i], y = Y[i], wc = wc, nc0 = nc0, nn0 = nn0)})
+	PosteriorDraws[s, ] <- c(wc, nc1, nc0, nn1, nn0)
+	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+keep <- seq((burnin+1), tot)
+LATE <- PosteriorDraws[keep, 2] - PosteriorDraws[keep, 3]
+LATEmean <- mean(LATE)
+LATEci <- quantile(LATE, c(0.025, 0.975))
+
+# Plot posterior distribution of CATE
+hist(LATE, breaks = 40, freq = FALSE,
+main = "Posterior Distribution of CACE",
+xlab = "CACE", col = "lightblue", border = "white")
+abline(v = LATEmean, col = "red", lwd = 2)
+abline(v = LATEci, col = "darkgreen", lty = 2, lwd = 2)
+
+legend("topright", legend = c("Posterior Mean", "95% Credible Interval"),
+col = c("red", "darkgreen"), lwd = 2, lty = c(1, 2),
+bty = "n", cex = 0.8)  # Smaller legend using cex
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{figure}[h!]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter12/figures/CACE.png}
+	\caption[List of figure caption goes here]{Posterior distribution: Complier average causal effect of vitamin A supplements.}\label{fig12_CACE}
+\end{figure}
+
+We can perform inference imposing the weak exclusion restriction, which gives the local average treatment effect, the posterior mean is 0.003, and the 95\% credible interval is (0.0008,0.0054).
+\begin{figure}[h!]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter12/figures/LATE.png}
+	\caption[List of figure caption goes here]{Posterior distribution: Local average average atreatment effect vitamin A supplements.}\label{fig12_LATE}
+\end{figure}
+
 
 \textbf{Example: Treatment effect of 401(k) participation on net financial assets}
 
@@ -698,32 +944,6 @@ geom_vline(xintercept = mean(beta_draws), color = "red", linetype = "dashed", li
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter12/figures/FigP401k.png}
 	\caption[List of figure caption goes here]{Posterior distribution: Local average treatment effect 401k participation on net financial assets.}\label{fig12_3}
 \end{figure}
-
-\textbf{Example: Bayesian inference for causal effects in ramdomized experiments with noncompliance: Effects of vitamin A supplements on children's survival}
-
-This example is taken from \cite{imbens1997bayesian}. They perform Bayesian inference of causal effects in a completely randomized experiment with no compliance and no covariates.
-
-\begin{table}[ht]
-	%\centering % This ensures the table is centered on the page
-	\caption{Effects of vitamin A supplements on children's survival \cite{imbens1997bayesian}}
-	\label{tab:observed_data}
-	\begin{minipage}{0.5\textwidth}
-		%\centering % Centers the content inside minipage
-		\begin{tabular}{lcccr}
-			\hline
-			\multirow{2}{*}{\textbf{Type}} & \textbf{Assignment} & \textbf{Treatment} & \textbf{Survival}  & \textbf{Units} \\
-			 & $Z_{\text{obs},i}$ & $D_{\text{obs},i}$ & $Y_{\text{obs},i}$ & 23,682 \\
-			\hline
-			Complier or never-taker & 0 & 0 & 0 & 74 \\
-			Complier or never-taker & 0 & 0 & 1 & 11,514 \\
-			Never-taker & 1 & 0 & 0 & 34 \\
-			Never-taker & 1 & 0 & 1 & 2,385 \\
-			Complier & 1 & 1 & 0 & 12 \\
-			Complier & 1 & 1 & 1 & 9,663 \\
-			\hline
-		\end{tabular}
-	\end{minipage}
-\end{table}
 
 
 In this framework, there is a model for the assignment mechanism $P(D_i\mid Y_i(1), Y_i(0), \mathbf{X}_i)$, like randomization or propensity score matching \cite{rosenbaum1983central}, supplemented by a model for the data $P(Y_i(1), Y_i(0)\mid \mathbf{X}_i)$. A causal inference is delivered by conditioning in what is observed to calculate the posterior distribution of the causal estimand given also the models for the assignment mechanisms and data. Therefore, there is a model to input the potential outcome missing value that allows to get the predictive distribution, and then, the posterior predictive distribution of the treatment effect ($Y_i(1)-Y_i(0)$) is calculated. We should take into account that the parameters of the models for predicting the missing potential outcomes are generally not causal effects. Due to using models for the data based on simulation, the Bayesian approach is by far the most direct and flexible of the modes of inference for causal effects. However, it relies on assumptions on the assignment mechanism and data.

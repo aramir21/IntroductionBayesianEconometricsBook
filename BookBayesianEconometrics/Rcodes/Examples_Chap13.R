@@ -95,9 +95,132 @@ d <- c(rep(0, N0), rep(1, N1))
 
 data_reg <- data.frame(y = y, d = d)
 
-# OLS regression
-model <- lm(y ~ d, data = data_reg)
-summary(model)
+# # OLS regression
+# model <- lm(y ~ d, data = data_reg)
+# summary(model)
+
+#### Vitamin A supplements #####
+rm(list = ls())
+set.seed(10101)
+library(dplyr)
+# Simulate data
+Nc111 <- 9663
+c111 <- cbind(rep(1, Nc111), rep(1, Nc111), rep(1, Nc111)) 
+Nc110 <- 12
+c110 <- cbind(rep(1, Nc110), rep(1, Nc110), rep(0, Nc110)) 
+Nn101 <- 2385
+n101 <- cbind(rep(1, Nn101), rep(0, Nn101), rep(1, Nn101)) 
+Nn100 <- 34
+n100 <- cbind(rep(1, Nn100), rep(0, Nn100), rep(0, Nn100)) 
+Ncn001 <- 11514
+cn001 <- cbind(rep(0, Ncn001), rep(0, Ncn001), rep(1, Ncn001)) 
+Ncn000 <- 74
+cn000 <- cbind(rep(0, Ncn000), rep(0, Ncn000), rep(0, Ncn000)) 
+
+mydata <- rbind(c111, c110, n101, n100, cn001, cn000)
+mydata <- data.frame(Z = mydata[,1], D = mydata[,2], Y = mydata[,3])
+N <- dim(mydata)[1]
+attach(mydata)
+
+# Sampling function C (type)
+SampleType <- function(z, d, y, wc, nc0, nn0){
+  if(z == 1 & d == 0){
+    pc <- 0
+  }else{
+    if(z == 1 & d == 1){
+      pc <- 1
+    }else{
+      if(y == 1){
+        pc <- (wc * nc0) / (wc * nc0 +  (1 - wc) * nn0)
+      }else{
+        pc <- (wc * (1 - nc0)) / (wc * (1 - nc0) +  (1 - wc) * (1 - nn0))
+      }
+    }
+  }
+  rbinom(1, 1, prob = pc) # 1: Complier/ 0: Never taker
+}
+z = 0; d = 0; y = 0; wc = 0.8; nc0 = 0.9; nn0 = 0.05
+SampleType(z = z, d = d, y = y, wc = wc, nc0 = nc0, nn0 = nn0)
+Clat <- sapply(1:N, function(i){SampleType(z = Z[i], d = D[i], y = Y[i], wc = wc, nc0 = nc0, nn0 = nn0)})
+
+# Gibbs sampler
+a0 <- 1; b0 <- 1 # Hyperparameters beta priors
+burnin <- 500; S <- 2000; tot <- S + burnin 
+PosteriorDraws <- matrix(NA, tot, 5)
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+
+for(s in 1:tot){
+  dataLat <- cbind(mydata, Clat)
+  Nc011 <- sum(dataLat$Z == 0 & dataLat$Clat == 1 & dataLat$Y == 1)
+  Nc010 <- sum(dataLat$Z == 0 & dataLat$Clat == 1 & dataLat$Y == 0)
+  Nn001 <- sum(dataLat$Z == 0 & dataLat$Clat == 0 & dataLat$Y == 1)
+  Nn000 <- sum(dataLat$Z == 0 & dataLat$Clat == 0 & dataLat$Y == 0)
+  Nc <- sum(Clat == 1)
+  Nn <- sum(Clat == 0)
+  wc <- rbeta(1, 1 + Nc, 1 + Nn)
+  nc1 <- rbeta(1, 1 + Nc111, 1 + Nc110)
+  nn1 <- rbeta(1, 1 + Nn101, 1 + Nn100)
+  nc0 <- rbeta(1, 1 + Nc011, 1 + Nc010)
+  nn0 <- rbeta(1, 1 + Nn001, 1 + Nn000)
+  Clat <- sapply(1:N, function(i){SampleType(z = Z[i], d = D[i], y = Y[i], wc = wc, nc0 = nc0, nn0 = nn0)})
+  PosteriorDraws[s, ] <- c(wc, nc1, nc0, nn1, nn0)
+  setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+keep <- seq((burnin+1), tot)
+LATE <- PosteriorDraws[keep, 2] - PosteriorDraws[keep, 3]
+LATEmean <- mean(LATE)
+LATEci <- quantile(LATE, c(0.025, 0.975))
+
+# Imposing exclusion restrictions
+PosteriorDrawsER <- matrix(NA, tot, 4)
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+
+for(s in 1:tot){
+  dataLat <- cbind(mydata, Clat)
+  Nc011 <- sum(dataLat$Z == 0 & dataLat$Clat == 1 & dataLat$Y == 1)
+  Nc010 <- sum(dataLat$Z == 0 & dataLat$Clat == 1 & dataLat$Y == 0)
+  Nn01 <- sum(dataLat$Clat == 0 & dataLat$Y == 1)
+  Nn00 <- sum(dataLat$Clat == 0 & dataLat$Y == 0)
+  Nc <- sum(Clat == 1)
+  Nn <- sum(Clat == 0)
+  wc <- rbeta(1, 1 + Nc, 1 + Nn)
+  nc1 <- rbeta(1, 1 + Nc111, 1 + Nc110)
+  nn <- rbeta(1, 1 + Nn01, 1 + Nn00)
+  nc0 <- rbeta(1, 1 + Nc011, 1 + Nc010)
+  Clat <- sapply(1:N, function(i){SampleType(z = Z[i], d = D[i], y = Y[i], wc = wc, nc0 = nc0, nn0 = nn)})
+  PosteriorDrawsER[s, ] <- c(wc, nc1, nc0, nn)
+  setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+keep <- seq((burnin+1), tot)
+LATEER <- PosteriorDrawsER[keep, 2] - PosteriorDrawsER[keep, 3]
+LATEERmean <- mean(LATEER)
+LATEERci <- quantile(LATEER, c(0.025, 0.975))
+
+
+# Plot posterior distribution of ATE
+hist(LATE, breaks = 40, freq = FALSE,
+     main = "Posterior Distribution of CACE",
+     xlab = "CACE", col = "lightblue", border = "white")
+abline(v = LATEmean, col = "red", lwd = 2)
+abline(v = LATEci, col = "darkgreen", lty = 2, lwd = 2)
+
+legend("topright", legend = c("Posterior Mean", "95% Credible Interval"),
+       col = c("red", "darkgreen"), lwd = 2, lty = c(1, 2),
+       bty = "n", cex = 0.8)  # Smaller legend using cex
+
+# Plot posterior distribution of ATE
+hist(LATEER, breaks = 40, freq = FALSE,
+     main = "Posterior Distribution of LATE: Exclusion restrictions",
+     xlab = "LATE", col = "lightblue", border = "white")
+abline(v = LATEERmean, col = "red", lwd = 2)
+abline(v = LATEERci, col = "darkgreen", lty = 2, lwd = 2)
+
+legend("topright", legend = c("Posterior Mean", "95% Credible Interval"),
+       col = c("red", "darkgreen"), lwd = 2, lty = c(1, 2),
+       bty = "n", cex = 0.8)  # Smaller legend using cex
+
 
 #### 401k: Treatment effects ####
 rm(list = ls())
