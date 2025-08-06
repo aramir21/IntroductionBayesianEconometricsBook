@@ -1,6 +1,6 @@
 \chapter{Causal inference}\label{chap12}
 
-In this chapter, we present some Bayesian methods to perform inference on \textit{causal} effects. The point of departure is the set of conditions required to identify the causal effect from observable data distributions. These identification conditions are conceptually distinct from the econometric or statistical framework used to perform inference once those conditions are satisfied. In other words, the assumptions necessary for identification do not constrain whether we apply a Frequentist or a Bayesian approach for estimation and inference.
+In this chapter, we present some Bayesian methods to perform inference on \textit{causal} effects. The point of departure is \textit{identification conditions} which are the set of assumptions that allow us to express the \textit{estimand} —the causal or statistical quantity of interest— as a unique function of the observable data distribution. These identification conditions are conceptually distinct from the econometric or statistical framework used to perform inference once those conditions are satisfied. In other words, the assumptions necessary for identification do not constrain whether we apply a Frequentist or a Bayesian approach for estimation and inference.
 
 Identification addresses the question: \textit{Can the causal effect be expressed as a function of the observable data distribution under certain assumptions?} Once the causal effect is identified in terms of the observed data distribution, we can proceed with statistical inference using either Frequentist methods or Bayesian methods. These inferential frameworks differ in how they estimate and quantify uncertainty but operate on the same identified causal effect. Thus, the identification assumptions are logically prior and independent of whether we adopt a Frequentist or a Bayesian inferential paradigm.
 
@@ -10,7 +10,7 @@ We should be clear that this is only an introduction to causal inference, and we
 
 \section{Identification setting}
 
-The aim is to identify the \textit{causal} or \textit{treatment effect} of a particular regressor or treatment on an outcome. For example, this could involve estimating the causal effect of a labor training program on individuals’ earnings or unemployment, or the price elasticity of demand. The starting point is the \textit{potential outcomes} framework \cite{rubin1974}, which defines a \textit{counterfactual scenario} describing what would happen to the outcome variable if the treatment status or level were different (commonly referred to as the \textit{Rubin causal model}).
+The aim is to identify the \textit{causal} or \textit{treatment effect} of a particular regressor or treatment on an outcome. For example, this could involve estimating the causal effect of a labor training program on individuals’ earnings or unemployment, or the price elasticity of demand. The starting point is the \textit{potential outcomes} framework \cite{rubin1974}, which defines a \textit{counterfactual scenario} describing what would happen to the outcome variable if the treatment status or level were different (commonly referred to as the \textit{Rubin causal model} \cite{holland1986statistics}).
 
 In this context, \textit{treatment status} refers to a binary treatment case with two potential outcomes; for instance, what would my earnings be if I had participated in the training program? Conversely, \textit{treatment level} applies to cases where there is a potential outcome for each level of the treatment; for example, what would demand be if the price had increased by 10\%?
 
@@ -33,7 +33,7 @@ Bayesian inference for causal effects \cite{rubin1978bayesian} is more direct th
 
 Bayesian inference for causal effects treats the potential outcomes as random variables and involves computing the posterior predictive distribution to evaluate treatments not received, conditional on the observed responses to treatments actually received. This approach yields the posterior distribution of the causal estimands as a function of both the observed outcomes and the unobserved potential outcomes, which are treated as missing data and handled through data augmentation methods \cite{Tanner1987}. 
 
-In addition, it is important to note that the likelihood function does not contain information about the correlation between potential outcomes due to \textit{the fundamental problem of causal inference}. Consequently, most of the classical literature on treatment effects has focused on average treatment effects, which require only the marginal distributions of the potential outcomes $Y(1)$ and $Y(0)$ \cite{heckman2014treatment}. However, it is also possible to estimate \textit{quantile treatment effects} \cite{AbadieAngristImbens2002,Chernozhukov2005}.
+In addition, it is important to note that the likelihood function does not contain information about the correlation between potential outcomes due to \textit{the fundamental problem of causal inference}. Consequently, most of the classical literature on treatment effects has focused on average treatment effects, which require only the marginal distributions of the potential outcomes $Y(1)$ and $Y(0)$ \cite{heckman2014treatment}. Although, it is also possible to estimate \textit{quantile treatment effects} \cite{AbadieAngristImbens2002,Chernozhukov2005}.
 
 By contrast, a Bayesian inferential approach allows us to estimate \textit{distributional treatment effects} with uncertainty quantification, as formally defined by \cite{aakvik2005estimating,heckman2014treatment}. These effects characterize the entire distribution of potential outcomes under treatment and control, rather than focusing solely on the average treatment effect, and thus capture heterogeneity. This is particularly relevant for policy, as it enables estimating the proportion of the population that benefits from a social program or the probability that a treated individual experiences a positive effect \cite{Ramirez2019a}.
 
@@ -41,58 +41,70 @@ Furthermore, under a Bayesian framework, the impact of adding or relaxing identi
 
 \section{Randomized controlled trial (RCT)}
 
-The starting point is to express the observed outcome in terms of the potential outcomes as:
-\[
-Y_i = [Y_i(1) - Y_i(0)] D_i + Y_i(0),
-\]
-which shows that the observed outcome equals the control potential outcome plus the treatment effect if treated. Under the assumption of a constant treatment effect, this can be represented as a linear regression model \cite{angrist2009mostly}:
-\[
-Y_i = \underbrace{\beta_0}_{\mathbb{E}[Y_i(0)]} 
-+ \underbrace{\tau}_{\text{constant treatment effect}} D_i 
-+ \underbrace{\mu_i}_{Y_i(0) - \mathbb{E}[Y_i(0)]}.
-\]
-
-The observed mean difference between treated and untreated units decomposes as:
-\[
-\mathbb{E}[Y_i \mid D_i=1] - \mathbb{E}[Y_i \mid D_i=0] 
-= \tau + \Big( \mathbb{E}[Y_i(0)\mid D_i=1] - \mathbb{E}[Y_i(0)\mid D_i=0]\Big).
-\]
-If $\tau$ is constant across units, then it represents both the average treatment effect (ATE),
+Two of the most relevant estimands in the causal inference literature are the average treatment effect (ATE),
 \[
 \text{ATE} = \mathbb{E}[Y_i(1) - Y_i(0)],
 \]
-and the treatment effect on the treated (ATT),
+and the average treatment effect on the treated (ATT),
 \[
-\text{ATT} = \mathbb{E}[Y_i(1) - Y_i(0)\mid D_i=1].
+\text{ATT} = \mathbb{E}[Y_i(1) - Y_i(0) \mid D_i = 1].
 \]
-However, when treatment effects are heterogeneous, the ATE differs from the ATT.
 
-On the other hand, 
-\[
-\mathbb{E}[Y_i(0) \mid D_i=1] - \mathbb{E}[Y_i(0) \mid D_i=0]
-\]
-is the \textit{selection bias}, which captures the difference between the expected outcome of treated individuals if they would not have been treated, and the expected outcome of untreated individuals. Depending on the context, this selection bias can be zero, positive, or negative. For instance, in a \textit{randomized controlled trial (RCT)}, where treatment assignment is random and independent of potential outcomes, we have
+However, these estimands are not directly identifiable without additional assumptions because we never observe the same unit under both treatment states simultaneously. Therefore, identification restrictions are required to express these causal quantities in terms of the observed data.
+
+Note that the observed mean difference between treated and untreated units can be decomposed as:
+\begin{align*}
+\mathbb{E}[Y_i \mid D_i = 1] - \mathbb{E}[Y_i \mid D_i = 0] 
+& = \underbrace{\mathbb{E}[Y_i(1) - Y_i(0) \mid D_i = 1]}_{\text{ATT}}\\
+& + \underbrace{\Big( \mathbb{E}[Y_i(0) \mid D_i = 1] - \mathbb{E}[Y_i(0) \mid D_i = 0]\Big)}_{\textit{Selection Bias}},
+\end{align*}
+
+that is, the observed mean difference equals the ATT plus the \textit{selection bias}, which captures the difference between the expected potential outcome of treated individuals had they not been treated (unobserved) and the expected outcome of untreated individuals (observed). 
+
+The sign of the selection bias depends on the nature of self-selection into treatment. Two illustrative examples are:
+
+\begin{table}[H]
+	\caption{Illustrative examples of selection bias}
+	\begin{minipage}{0.5\textwidth} % Adjust width as needed
+		
+		\begin{tabular}{lccc}
+			\hline
+			\textbf{Scenario} & $\mathbb{E}[Y(0)\mid D=1]$ & $\mathbb{E}[Y(0)\mid D=0]$ & Selection Bias \\
+			\hline
+			\textit{Training Program} & 80 & 70 & $+10$ \\
+			\textit{Remedial Education} & 60 & 70 & $-10$ \\
+			\hline
+		\end{tabular}
+	\end{minipage}
+\end{table}
+
+In the first scenario, motivated individuals self-select into a training program and would have higher earnings even without participation, producing a positive selection bias and causing the observed mean difference to overestimate the ATT. In the second scenario, disadvantaged individuals are more likely to enroll in a remedial education program and would have lower outcomes without the program, resulting in a negative selection bias and causing the observed mean difference to underestimate the ATT.
+
+Note that if we assume that \textit{assignment to treatment is random},
 \[
 \{ Y_i(1), Y_i(0) \} \perp D_i,
 \]
-which implies
-\begin{equation}\label{eq:12_1}
-	\mathbb{E}[\mu_i \mid D_i] = \mathbb{E}[Y_i(0) \mid D_i] - \mathbb{E}[Y_i(0)] = \mathbb{E}[Y_i(0)] - \mathbb{E}[Y_i(0)] = 0.
-\end{equation}
-
-Therefore, the error term is mean-independent of treatment status. Equivalently,
+then the selection bias becomes zero,
 \[
 \mathbb{E}[Y_i(0) \mid D_i = 1] - \mathbb{E}[Y_i(0) \mid D_i = 0] = 0,
 \]
-which implies there is no selection bias under random assignment.
+which means there is no selection bias under random assignment.
 
-Note also that under random assignment, ATT equals ATE:
-\[\tau=\mathbb{E}[Y_i(1)\mid D_i=1]-\mathbb{E}[Y_i(0)\mid D_i=1]=\mathbb{E}[Y_i(1)-Y_i(0)].
+Moreover, under random assignment, ATT equals ATE:
+\[
+\tau = \underbrace{\mathbb{E}[Y_i(1)\mid D_i=1]-\mathbb{E}[Y_i(0)\mid D_i=1]}_{\text{ATT}} 
+= \underbrace{\mathbb{E}[Y_i(1)-Y_i(0)]}_{\text{ATE}}.
 \]
+Consequently,
+\begin{equation}
+	\tau=\mathbb{E}[Y_i \mid D_i = 1] - \mathbb{E}[Y_i \mid D_i = 0],
+\end{equation}
 
-In addition to \textit{random assignment}, the identification of causal effects in RCTs relies on the assumption that every unit has a positive probability of being assigned to both treatment and control groups ($0 < P(D_i = 1) < 1$), this is called \textit{overlap}, as well as the \textit{Stable Unit Treatment Value Assumption} (SUTVA). The latter requires that one unit’s potential outcome is unaffected by another unit’s treatment (\textit{no interference}) and that the observed outcome equals the potential outcome corresponding to the received treatment (\textit{consistency}).
+that is, the average causal effect is function of the data under random assignment to treatment.
+ 
+\textit{Randomized controlled trials} (RCTs) are characterized by \textit{random assignment to treatment}. The identification of causal effects in RCTs additionally relies on two key assumptions: \textit{overlap}, which requires that every unit has a positive probability of being assigned to both treatment and control groups ($0 < P(D_i = 1) < 1$), and the \textit{Stable Unit Treatment Value Assumption} (SUTVA). The latter consists of two components: (i) \textit{no interference}, meaning one unit’s potential outcome is unaffected by another unit’s treatment, and (ii) \textit{consistency}, meaning the observed outcome equals the potential outcome corresponding to the received treatment.
 
-We can represent the causal mechanism in an RCT using causal diagrams \cite{pearl1995causal,pearl2018book}. These diagrams provide a powerful framework for visualizing and analyzing the underlying structures that enable causal identification. It is important to note that causal diagrams do not impose specific functional forms, such as those assumed in linear regression models, and are closely linked to structural equation models (SEMs). SEMs offer another perspective on causal inference in econometrics, which is closely related to the potential outcomes approach \cite{haavelmo1943statistical,marschak1944random,imbens2014ivperspective}.
+We can represent the causal mechanism in an RCT using causal diagrams \cite{pearl1995causal,pearl2018book}. These diagrams provide a powerful framework for visualizing and analyzing the underlying structures that enable causal identification. It is important to note that causal diagrams do not impose specific functional forms, such as those assumed in linear regression models, and are closely related to structural equation models (SEMs). SEMs offer an alternative perspective on causal inference in econometrics, which is closely connected to the potential outcomes approach \cite{haavelmo1943statistical,marschak1944random,imbens2014ivperspective}. See below.
 
 In particular, we can depict the causal mechanism using a \textit{Directed Acyclic Graph (DAG)}, which is a graphical representation of a set of variables and their assumed causal relationships. A DAG consists of \textit{nodes}, representing variables, and \textit{directed edges (arrows)}, representing direct causal effects from one variable to another. The graph is \textit{acyclic}, meaning it contains no directed cycles: starting from any node and following the arrows, it is impossible to return to the same node. A defining property of causal DAGs
 is that, conditional on its direct causes, any variable on the DAG is independent
@@ -129,6 +141,26 @@ The counterfactual representation of the DAG, known as the \textit{Single-World 
 	\caption{Single-World Intervention Graph (SWIG) for intervention $do(D=d)$: $Y$ is replaced by the counterfactual $Y(d)$, and $D$ is split into the fixed value $D=d$ and its natural value $D$. The dashed arrow indicates the fixed causal assignment.}
 	\label{SWIG1}
 \end{figure}
+
+Note that we can express the observed outcome in terms of the potential outcomes as:
+\[
+Y_i = [Y_i(1) - Y_i(0)] D_i + Y_i(0),
+\]
+which shows that the observed outcome equals the control potential outcome plus the treatment effect if treated.
+
+Under the assumption of a constant treatment effect and a linear \textit{Conditional Expectation Function} (CEF) $\mathbb{E}[Y_i\mid D_i]$, this relationship can be represented as a linear regression model \cite{angrist2009mostly}:
+\[
+Y_i = \underbrace{\beta_0}_{\mathbb{E}[Y_i(0)]} 
++ \underbrace{\tau}_{\text{constant treatment effect}} D_i 
++ \underbrace{\mu_i}_{Y_i(0) - \mathbb{E}[Y_i(0)]},
+\]
+where $\tau$ represents the common treatment effect across all units.
+
+Under random assignment, we have
+\begin{equation}\label{eq:12_1}
+	\mathbb{E}[\mu_i \mid D_i] = \mathbb{E}[Y_i(0) \mid D_i] - \mathbb{E}[Y_i(0)] = \mathbb{E}[Y_i(0)] - \mathbb{E}[Y_i(0)] = 0,
+\end{equation}
+that is, the error term is \textit{mean-independent of treatment status}. This implies that a regression of $Y_i$ on $D_i$ consistently estimates the causal effect under random assignment.\\
 
 \textbf{Example: Simple example}
 
@@ -184,13 +216,11 @@ Note that this expectation is taken with respect to the population distribution 
 \pi(\text{ATE}\mid \mathbf{y}) = \pi(\mu_{1} - \mu_{0}\mid \mathbf{y}).
 \]
 
-We can obtain this posterior distribution by simulation, because the difference of two independent Student's $t$-distributed random variables does not follow a Student's $t$ distribution. However, as the degrees of freedom increase, each posterior distribution of $\mu_{d}$ converges to a normal distribution, and the difference of two normals is also normal. Consequently, an approximate point estimate of the ATE is $\mu_{n1} - \mu_{n0}$, which asymptotically equals $\bar{y}_1 - \bar{y}_0$ under relatively non-informative priors. This is the classical \textit{estimator} of the ATE.
+We can obtain this posterior distribution by simulation, because the difference of two independent Student's $t$-distributed random variables does not follow a Student's $t$ distribution. However, as the degrees of freedom increase, each posterior distribution of $\mu_{d}$ converges to a normal distribution, and the difference of two normals is also normal. Consequently, an approximate point estimate of the ATE is $\mu_{n1} - \mu_{n0}$, which asymptotically equals $\bar{y}_1 - \bar{y}_0$ under non-informative priors. This is the classical \textit{estimator} of the ATE.
 
-Finally, note that we can also obtain the posterior distribution of the ATE using the simple linear regression framework by assuming relatively non-informative prior distributions, in which case the posterior mean of the slope parameter coincides with the maximum likelihood estimator (see Exercise~1).\\
+Finally, note that we can also obtain the posterior distribution of the ATE using the simple linear regression framework by assuming non-informative prior distributions, in which case the posterior mean of the slope parameter coincides with the maximum likelihood estimator (see Exercise~1).
 
-\textbf{Example: Posterior distribution of the average treatment effect}
-
-Let's assume that $\mu_1 = 15$, $\mu_0 = 10$, $\sigma_1^2 = 4$, $\sigma_0^2 = 2$, and $N_1=N_0=100$, and compute the posterior distribution of the ATE. The following code illustrates this procedure, while Figures \ref{fig12_0} and \ref{fig12_0a} display the predictive densities of the potential outcomes and the posterior distribution of the ATE. The posterior mean is 4.60, and the 95\% credible interval is (4.10, 5.12).
+Let's assume that $\mu_1 = 15$, $\mu_0 = 10$, $\sigma_1^2 = 4$, $\sigma_0^2 = 2$, and $N_1=N_0=100$, and compute the posterior distribution of the ATE. The following code illustrates this procedure, while Figures \ref{fig12_0} and \ref{fig12_0a} display the predictive densities of the potential outcomes and the posterior distribution of the ATE. The posterior mean is 4.60, and the 95\% credible interval is (4.10, 5.12). Note that the population value is $\mu_1-\mu_0=5$.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]\label{code0_chap12}
@@ -290,21 +320,29 @@ It is also important to note that RCTs primarily identify the mean of the treatm
 
 \section{Conditional independence assumption (CIA)}
 
-The simple regression framework can be extended to a multiple linear regression model by including additional \textit{pre-treatment variables} to improve the precision of the estimates:
-\begin{align*}
-	Y_i = \beta_0 + \tau D_i + \mathbf{X}_i^{\top}\boldsymbol{\beta} + \mu_i.
-\end{align*}
-Note that, by assumption in RCTs, $D_i$ and $\mathbf{X}_i$ are independent. Thus, the identification of $\tau$ is not affected; however, including $\mathbf{X}_i$ helps explain part of the variability in $Y_i$, thereby improving the precision of the estimates.
-
-In practice, researchers often work with \textit{observational data}, where the treatment status is not randomly assigned because units actively choose the treatment they receive. In an RCT, the assignment mechanism is determined by chance, whereas in observational studies it is driven by choice. In these situations, regression can still be used to identify the causal effect if the \textit{conditional independence assumption} (CIA) holds. This assumption states that the potential outcomes are independent of the treatment status, conditional on a set of observed  \textit{pre-treatment variables}:
+In practice, researchers often work with \textit{observational data}, where the treatment status is not randomly assigned because units actively choose the treatment they receive. In an RCT, the assignment mechanism is determined by chance, whereas in observational studies it is driven by choice. In these situations, we can identify the causal effect if the \textit{conditional independence assumption} (CIA) holds. This assumption states that the potential outcomes are independent of the treatment status, conditional on a set of observed  \textit{pre-treatment variables}:
 \[
 \{ Y_i(1), Y_i(0) \} \perp D_i \mid \mathbf{X}_i.
 \]
 This means that, conditional on the \textit{pre-treatment variables} $\mathbf{X}_i$, treatment assignment is as good as random. This property is known as \textit{unconfoundedness given} $\mathbf{X}_i$, or equivalently, the \textit{no unmeasured confounders} assumption. When this condition is combined with the requirement that, for all possible values of $\mathbf{X}_i$, there is a positive probability of receiving each treatment level ($0 < P(D_i = 1 \mid \mathbf{X}_i) < 1$), the joint condition is referred to as \textit{strong ignorability}. Identification of average causal effects in this setting also requires the SUTVA.
 
-Figure~\ref{DAG2} illustrates the causal structure underlying the CIA. We follow the convention that time flows from left to right. Here, $\mathbf{X}$ -a vector of pre-treatment variables or \textit{confounders}- influences both the treatment ($D$) and the outcome ($Y$). Under the CIA, we can identify the causal effect of $D$ on $Y$ by adjusting for $\mathbf{X}$ because this causal structure satisfies the \textit{back-door criterion}. This criterion states that a set of variables $\mathbf{X}$ satisfies the condition for identifying the effect of $D$ on $Y$ if no variable in $\mathbf{X}$ is a descendant of $D$ and $\mathbf{X}$ blocks every back-door path from $D$ to $Y$. A \textit{back-door path} is any path from $D$ to $Y$ that begins with an arrow pointing into $D$. 
+Note that under the CIA,
+\begin{align*}
+	\text{ATE} &= \mathbb{E}[Y_i(1)] - \mathbb{E}[Y_i(0)] \\
+	&= \mathbb{E}_{\mathbf{X}}\left\{ \mathbb{E}[Y_i(1)\mid \mathbf{X}_i] - \mathbb{E}[Y_i(0)\mid \mathbf{X}_i] \right\} \\
+	&= \mathbb{E}_{\mathbf{X}}\left\{ \mathbb{E}[Y_i(1)\mid \mathbf{X}_i, D_i=1] - \mathbb{E}[Y_i(0)\mid \mathbf{X}_i, D_i=0] \right\} \\
+	&= \mathbb{E}_{\mathbf{X}}\left\{ \mathbb{E}[Y_i\mid \mathbf{X}_i, D_i=1] - \mathbb{E}[Y_i\mid \mathbf{X}_i, D_i=0] \right\} \\
+	&= \mathbb{E}_{\mathbf{X}}\left\{ \tau(\mathbf{X}_i) \right\},
+\end{align*}
+where the second equality follows from the law of iterated expectations, the third uses CIA, and
+\[
+\tau(\mathbf{X}_i) = \mathbb{E}[Y_i \mid \mathbf{X}_i, D_i=1] - \mathbb{E}[Y_i \mid \mathbf{X}_i, D_i=0]
+\]
+is the \textit{conditional average treatment effect} (CATE) at covariate value $\mathbf{X}_i$, which captures treatment effect heterogeneity across different values of $\mathbf{X}$. Therefore, the ATE is the expectation of the CATE over the distribution of $\mathbf{X}$.
 
-\begin{figure}[h]
+Figure~\ref{DAG2} illustrates the causal structure underlying the CIA. We follow the convention that time flows from left to right. Here, $\mathbf{X}$ -a vector of pre-treatment variables or \textit{confounders}- influences both the treatment ($D$) and the outcome ($Y$). Under the CIA, we can identify the causal effect of $D$ on $Y$ by adjusting for $\mathbf{X}$ because this causal structure satisfies the \textit{back-door criterion}. This criterion states that a set of variables $\mathbf{X}$ satisfies the condition for identifying the effect of $D$ on $Y$ if no variable in $\mathbf{X}$ is a descendant of $D$ and $\mathbf{X}$ blocks every back-door path from $D$ to $Y$. A \textit{back-door path} is any path from $D$ to $Y$ that begins with an arrow pointing into $D$. In addition, Figure \ref{SWIG2} displays the SWIG. 
+
+\begin{figure}[h!]
 	\centering
 	\begin{tikzpicture}[->,>=Stealth,shorten >=1pt,node distance=2.5cm,
 		thick,main node/.style={circle,draw,minimum size=7mm}]
@@ -316,13 +354,11 @@ Figure~\ref{DAG2} illustrates the causal structure underlying the CIA. We follow
 		(X) edge[bend left=20] (Y)
 		(D) edge (Y);
 	\end{tikzpicture}
-	\caption{Directed Acyclic Graph (DAG) implied by the linear model $Y = \beta_0 + \tau D + \mathbf{X}^\top\boldsymbol{\beta} + \mu$ under CIA.}
+	\caption{Directed Acyclic Graph (DAG) implied by the Conditional Independence Assumption (CIA).}
 	\label{DAG2}
 \end{figure}
 
-The SWIG of this DAG is displayed in Figure \ref{SWIG2}.  
-
-\begin{figure}[h]
+\begin{figure}[h!]
 	\centering
 	\begin{tikzpicture}[->,>=Stealth,shorten >=1pt,node distance=2.5cm,
 		thick,main node/.style={circle,draw,minimum size=7mm}]
@@ -341,8 +377,13 @@ The SWIG of this DAG is displayed in Figure \ref{SWIG2}.
 	\label{SWIG2}
 \end{figure}
  
+The simple regression framework of the previous section can be extended to a multiple linear regression model by including the \textit{pre-treatment variables}; therefore, the CEF is linear in the treatment and pre-treatment variables:
+\begin{align*}
+	Y_i = \beta_0 + \tau D_i + \mathbf{X}_i^{\top}\boldsymbol{\beta} + \mu_i.
+\end{align*}
+Note that, by assumption in RCTs, $D_i$ and $\mathbf{X}_i$ are independent. Thus, the identification of $\tau$ is not affected under random assignment; however, including $\mathbf{X}_i$ helps explain part of the variability in $Y_i$, thereby improving the precision of the estimates.
 
-In this setting, the error term in the linear regression is defined as
+On the other hand, if the CIA is satisfied, the error term in the linear regression is defined as
 \[
 \mu_i = Y_i(0) - \mathbb{E}[Y_i(0) \mid \mathbf{X}_i].
 \]
@@ -445,7 +486,7 @@ Figure~\ref{DAG3} illustrates this situation. Here, $C$ is a common effect of $D
 		(D) edge (C)
 		(X) edge (C);
 	\end{tikzpicture}
-	\caption{Directed Acyclic Graph (DAG) implied by the linear model $Y = \beta_0 + \tau D + \gamma C + \mathbf{X}^\top\boldsymbol{\beta} + \mu$ under CIA, the additional collider $C$ caused by both $D$ and $\mathbf{X}$ would open a path between $D$ and $\mathbf{X}$, inducing bias.}
+	\caption{Directed Acyclic Graph (DAG): The additional collider $C$ caused by both $D$ and $\mathbf{X}$ would open a path between $D$ and $\mathbf{X}$, inducing bias.}
 	\label{DAG3}
 \end{figure}
 
@@ -599,14 +640,54 @@ with equality for at least one unit $i$, and assuming a binary instrument $Z_i=\
 
 In the case where $Z_i$ denotes the assignment to treatment and $D_i$ the actual treatment status, there are four potential groups: \textit{always-takers} ($D = 1 \mid Z = 1$ and $D = 1 \mid Z = 0$), \textit{never-takers} ($D = 0 \mid Z = 1$ and $D = 0 \mid Z = 0$), \textit{compliers} ($D = 1 \mid Z = 1$ and $D = 0 \mid Z = 0$), and \textit{defiers} ($D = 0 \mid Z = 1$ and $D = 1 \mid Z = 0$). Note that these groups are not identified; for instance, we do not know whether an individual with $Z_i = 1$ and $D_i = 1$ is a complier or an always taker. The monotonicity assumption rules out defiers, meaning that the instrument (assignment to treatment) either does not change treatment status or only increases it.
 
-Then, under relevance, exogeneity, monotonicity and SUTVA, IV methods allow identification of the causal effect for the subgroup of \textit{compliers}, that is, individuals who take the treatment when encouraged by the instrument and do not take it otherwise \cite{imbens1994identification,angrist1996identification}. This estimand is known as the \textit{Local Average Treatment Effect} (LATE) because it applies to a specific subpopulation rather than the entire population \cite{hernan2020causal}:
+Therefore, under relevance, exogeneity, monotonicity, and SUTVA, IV methods allow identification of the causal effect for the subgroup of \textit{compliers}, that is, individuals who take the treatment when encouraged by the instrument and do not take it otherwise \cite{imbens1994identification,angrist1996identification}. This estimand is known as the \textit{Local Average Treatment Effect} (LATE) because it applies to a specific subpopulation rather than the entire population \cite{hernan2020causal}:
 
 \begin{align*}
-	\tau_{LATE}&=\mathbb{E}[Y_i(1)-Y_i(0)\mid D_i(1)=1,D_i(0)=0]\\
-	&=\frac{\mathbb{E}[Y_i\mid Z_i=1]-\mathbb{E}[Y_i\mid Z_i=0]}{\mathbb{E}[D_i\mid Z_i=1]-\mathbb{E}[D_i\mid Z_i=0]}.
+	\tau_{LATE} 
+	&= \mathbb{E}[Y_i(1)-Y_i(0)\mid D_i(1)=1, D_i(0)=0].
 \end{align*}
 
-Thus, the LATE is the ratio between the intention-to-treat effect on the outcome (ITT), and the effect of the instrument on the treatment, which is the proportion of compliers. This ratio is known as the \textit{Wald estimator}. Thus, the instrument induces random variation in treatment. The numerator captures how outcomes change with the instrument, and the denominator captures how treatment changes with the instrument. Dividing isolates the causal effect for compliers.
+We define $Y_i(z_i,D_i(z))$ to be the outcome for unit $i$ if exposed to treatment $D_i(z)$ after being assigned to treatment $z$. Therefore, the \textit{Intention-to-Treat} (ITT) causal effect of $Z_i$ on $Y_i$ is:
+{\scriptsize{
+\begin{align*}
+	\mathbb{E}[Y_i(1,D_i(1))-Y_i(0,D_i(0))]&=\underbrace{\mathbb{E}[Y_i(1,D_i(1))-Y_i(0,D_i(0))\mid D_i(1)=1,D_i(0)=1]\times P(D_i(1)=1,D_i(0)=1)}_{always-takers}\\
+	&+\underbrace{\mathbb{E}[Y_i(1,D_i(1))-Y_i(0,D_i(0))\mid D_i(1)=0,D_i(0)=0]\times P(D_i(1)=0,D_i(0)=0)}_{never-takers}\\
+	&+\underbrace{\mathbb{E}[Y_i(1,D_i(1))-Y_i(0,D_i(0))\mid D_i(1)=1,D_i(0)=0]\times P(D_i(1)=1,D_i(0)=0)}_{compliers}\\
+	&+\underbrace{\mathbb{E}[Y_i(1,D_i(1))-Y_i(0,D_i(0))\mid D_i(1)=0,D_i(0)=1]\times P(D_i(1)=0,D_i(0)=1)}_{defiers},\\
+\end{align*}
+}}
+that is, ITT is a mixture over the four potential groups.
+
+We know that the intention-to-treat (ITT) effect of $Z_i$ on $Y_i$ is zero for always-takers and never-takers due to the exclusion restriction, i.e., $Z_i$ affects $Y_i$ only through $D_i$, and $D_i$ does not vary with $Z_i$ for always-takers and never-takers. Moreover, the monotonicity assumption rules out the existence of defiers. Hence, only compliers contribute to the effect of $Z_i$ on $Y_i$:
+
+{\scriptsize
+	\begin{align*}
+		\mathbb{E}[Y_i(1,D_i(1)) - Y_i(0,D_i(0))] 
+		&= \mathbb{E}[Y_i(1,D_i(1)) - Y_i(0,D_i(0)) \mid D_i(1)=1, D_i(0)=0] \cdot P(D_i(1)=1, D_i(0)=0).
+	\end{align*}
+}
+
+For compliers, $D_i = Z_i$, so we can simplify $Y_i(1,D_i(1)) = Y_i(1,1) = Y_i(1)$ and $Y_i(0,D_i(0)) = Y_i(0,0) = Y_i(0)$. Thus,
+
+\begin{align*}
+	\mathbb{E}[Y_i(1) - Y_i(0)] 
+	&= \mathbb{E}[Y_i(1) - Y_i(0) \mid D_i(1) = 1, D_i(0) = 0] \cdot P(D_i(1) = 1, D_i(0) = 0),
+\end{align*}
+
+which implies that
+
+\begin{align*}
+	\tau_{LATE} = \mathbb{E}[Y_i(1) - Y_i(0) \mid D_i(1) = 1, D_i(0) = 0] 
+	&= \frac{\mathbb{E}[Y_i(1) - Y_i(0)]}{P(D_i(1) = 1, D_i(0) = 0)}.
+\end{align*}
+
+Under the assumption that the instrument $Z_i$ is independent of the potential outcomes (i.e., random assignment), and using the fact that the expectation of a binary variable equals its probability, the LATE can be expressed as:
+
+\[
+\tau_{LATE} =\frac{\mathbb{E}[Y_i \mid Z_i = 1] - \mathbb{E}[Y_i \mid Z_i = 0]}{\mathbb{E}[D_i \mid Z_i = 1] - \mathbb{E}[D_i \mid Z_i = 0]}.
+\]
+
+This is the standard instrumental variables (IV) estimand, often referred to as the \textit{Wald estimator}. It represents the ratio of the intention-to-treat effect on the outcome to the intention-to-treat effect on the treatment (i.e., the proportion of compliers). The instrument induces random variation in treatment: the numerator captures how outcomes respond to the instrument, and the denominator captures how treatment responds to the instrument. Dividing the two isolates the causal effect for compliers.
 
 Note that the LATE is not the global average causal effect, and has been subject to several criticisms. First, the proportion of compliers in the population may be small, raising concerns about the policy relevance of this estimand. Observe that while we cannot identify all four principal strata (compliers, never-takers, always-takers, and defiers), the proportion of compliers is identifiable. Second, the monotonicity assumption is not always plausible, particularly in observational studies where instruments may induce heterogeneous behavioral responses. Third, partitioning the population into four strata can become ill-defined in settings where instruments arise from different mechanisms or individual-specific criteria \cite{deaton2010instruments,hernan2020causal}. For arguments in defense of LATE against these critiques, see \cite{angrist2010better}.\\
 
@@ -641,63 +722,63 @@ Table \ref{tab:observed_data} summarizes the data. Using this table, we can illu
 	P(C_i = c) 
 	&= \underbrace{P(D_i = 1 \mid Z_i = 1)}_{P(\text{compliers}) + P(\text{always-takers})} 
 	- \underbrace{P(D_i = 1 \mid Z_i = 0)}_{P(\text{always-takers}) = 0} \\
-	&= \frac{P(D_i = 1, Z_i = 1)}{P(Z_i = 1)} \\
-	&= \frac{12 + 9{,}663}{12 + 9{,}663 + 34 + 2{,}385} \\
-	&= 0.8.
+	&= \frac{P(D_i = 1, Z_i = 1)}{P(Z_i = 1)}.
 \end{align*}
-This implies that $P(C_i = n) = 1 - P(C_i = c) = 0.2$.
+Thus, the ML estimate is
+\[
+\hat{\omega} = \frac{12 + 9{,}663}{12 + 9{,}663 + 34 + 2{,}385}= 0.8.
+\]
+Note that $P(C_i = n) = 1 - P(C_i = c)$ in this example; thus, the ML estimate is $1-\hat{\omega} = 0.2$.
 
 The probability of survival for compliers assigned to treatment, $\eta_{c1} := P(Y_i = 1 \mid C_i = c, Z_i = 1)$, is
 \begin{align*}
 	P(Y_i = 1 \mid C_i = c, Z_i = 1) 
-	&= \frac{P(Y_i = 1, C_i = c \mid Z_i = 1) \times P(Z_i = 1)}{P(C_i = c \mid Z_i = 1) \times P(Z_i = 1)} \\
-	&= \frac{9{,}663}{9{,}663 + 12} \\
-	&= 0.999.
+	&= \frac{P(Y_i = 1, C_i = c \mid Z_i = 1) \times P(Z_i = 1)}{P(C_i = c \mid Z_i = 1) \times P(Z_i = 1)}.
 \end{align*}
+Thus, the ML estimate is $\hat{\eta}_{c1}= \frac{9{,}663}{9{,}663 + 12}= 0.999.$
 
 Similarly, the probability of survival for never-takers assigned to treatment, $\eta_{n1} := P(Y_i = 1 \mid C_i = n, Z_i = 1)$, is
 \begin{align*}
 	P(Y_i = 1 \mid C_i = n, Z_i = 1) 
-	&= \frac{P(Y_i = 1, C_i = n \mid Z_i = 1) \times P(Z_i = 1)}{P(C_i = n \mid Z_i = 1) \times P(Z_i = 1)} \\
-	&= \frac{2{,}385}{2{,}385 + 34} \\
-	&= 0.986.
+	&= \frac{P(Y_i = 1, C_i = n \mid Z_i = 1) \times P(Z_i = 1)}{P(C_i = n \mid Z_i = 1) \times P(Z_i = 1)}.
 \end{align*}
+Consequently, the ML estimate is $\hat{\eta}_{n1} = \frac{2{,}385}{2{,}385 + 34} = 0.986.$
 
-Note that $\eta_{c0} = P(Y_i = 1 \mid C_i = c, Z_i = 0)$ and $\eta_{n0} = P(Y_i = 1 \mid C_i = n, Z_i = 0)$ cannot be point-identified. However, we can obtain \emph{set identification} because
+Note that $\eta_{c0} = P(Y_i = 1 \mid C_i = c, Z_i = 0)$ and $\eta_{n0} = P(Y_i = 1 \mid C_i = n, Z_i = 0)$ cannot be \textit{point-identified}. However, we can obtain \emph{set identification} because
 \begin{align*}
-	P(Y_i = 1 \mid Z_i = 0) 
+	\eta_0:=P(Y_i = 1 \mid Z_i = 0) 
 	&= P(Y_i = 1 \mid Z_i = 0, C_i = c) \times P(C_i = c) \\
 	&\quad + P(Y_i = 1 \mid Z_i = 0, C_i = n) \times P(C_i = n) \\
-	&= \frac{P(Y_i = 1, Z_i = 0)}{P(Z_i = 0)} \\
-	&= \frac{11{,}514}{11{,}514 + 74} \\
-	&= 0.9936.
-\end{align*}
+	&= \frac{P(Y_i = 1, Z_i = 0)}{P(Z_i = 0)},
+\end{align*} where the ML estimate is $\hat{\eta}_0= \frac{11{,}514}{11{,}514 + 74}= 0.9936.$
 
 The first equality holds because the probability of survival given no treatment assignment is expressed as a mixture by the law of total probability, and the second equality follows from Bayes' rule.
 
 This implies that 
 \[
-0.9936 = \omega \eta_{c0} + (1-\omega)\eta_{n0},
+0.9936 = \hat{\omega} \hat{\eta}_{c0} + (1-\hat{\omega})\hat{\eta}_{n0},
 \]
 which leads to 
 \[
-\eta_{n0} = 4.968 - 4\eta_{c0}.
+\hat{\eta}_{n0} = 4.968 - 4\hat{\eta}_{c0}.
 \]
-Given that probabilities must lie in the unit interval, i.e., $0 \leq 4.968 - 4\eta_{c0} \leq 1$, we obtain:  
-(i) $\eta_{c0} \leq 1 \leq 1.242$ (automatically satisfied), and  
-(ii) $4\eta_{c0} \geq 4.968 - 1 = 3.968$, which implies $\eta_{c0} \geq 0.992$.  
+Given that probabilities must lie in the unit interval, such that $0 \leq 4.968 - 4\hat{\eta}_{c0} \leq 1$, we obtain:  
+(i) $\hat{\eta}_{c0} \leq 1 \leq 1.242$ (automatically satisfied), and  
+(ii) $4\hat{\eta}_{c0} \geq 4.968 - 1 = 3.968$, which implies $\hat{\eta}_{c0} \geq 0.992$.  
 
-Consequently, $\eta_{c0} \in [0.992, 1]$ and $\eta_{n0} \in [0.968, 1]$.
+Consequently, the ML estimates $\hat{\eta}_{c0} \in [0.992, 1]$ and $\hat{\eta}_{n0} \in [0.968, 1]$.
 
-These results imply that the \textit{complier average causal effect} (CACE),
+These results imply that the \textit{complier average causal effect} (CACE) is
 \begin{align*}
-	\tau_{CACE} &= \mathbb{E}[Y_i(1)-Y_i(0)\mid D_i(1)=1,D_i(0)=0, Z_i=1, Z_i=0]\\
-	 P[Y_i = 1 \mid C_i = c, Z_i = 1] - P[Y_i = 1 \mid C_i = c, Z_i = 0] \\
+	\tau_{CACE} &= \mathbb{E}[Y_i(1)-Y_i(0)\mid D_i(1)=1,D_i(0)=0] \\
+	&= P[Y_i = 1 \mid C_i = c, Z_i = 1] - P[Y_i = 1 \mid C_i = c, Z_i = 0] \\
 	&= \eta_{c1} - \eta_{c0},
 \end{align*}
-is set-identified, with 
+where the first line is the formal definition, the second equality uses random assignment to express the estimand in terms of observed probabilities, and the third relies on the model parameterization.
+
+The CACE is only set-identified, yielding the interval
 \[
-\tau_{CACE} \in [-0.001, 0.007],
+\hat{\tau}_{CACE} \in [-0.001, 0.007],
 \]
 meaning that the survival rate among compliers can vary between 1 and 7 per 1,000 children due to vitamin A supplementation.
 
@@ -705,11 +786,11 @@ Point identification can be achieved by imposing the \textit{weak exclusion rest
 \[
 P(Y_i = y \mid C_i = n, Z_i = z) = P(Y_i = y \mid C_i = n),
 \]
-so that $\eta_{n1} = \eta_{n0} = \eta_n = 0.986$. Substituting into the mixture equation yields $\eta_{c0} = 0.9955$, and consequently,
+so that $\hat{\eta}_{n1} = \hat{\eta}_{n0} = \hat{\eta}_n = 0.986$. Substituting into the mixture equation yields $\hat{\eta}_{c0} = 0.9955$, and consequently,
 \[
-\tau_{LATE} = 0.0035,
+\hat{\tau}_{CACE} = 0.0035,
 \]
-indicating that survival increases by approximately 3.5 per 1,000 children due to vitamin A supplementation.\footnote{CACE and LATE refer to the same estimand, the average causal effect for compliers, under monotonicity and the exclusion restriction. If the exclusion restriction fails, they differ because LATE (as identified by IV) no longer equals the complier-specific causal effect (CACE).}
+indicating that survival increases by approximately 3.5 per 1,000 children due to vitamin A supplementation.\footnote{CACE and LATE refer to the same estimand -the average causal effect for compliers- under monotonicity and the exclusion restriction. If the exclusion restriction fails, they differ because LATE (as identified by IV) no longer equals the complier-specific causal effect (CACE).}
  
 We use conjugate families to perform Bayesian inference in this example. Specifically, we adopt the Bernoulli-Beta model (see Section \ref{sec42}) with independent non-informative Beta priors, each having parameters equal to 1. This corresponds to a uniform distribution on the interval $(0,1)$.  
 
@@ -850,7 +931,58 @@ bty = "n", cex = 0.8)  # Smaller legend using cex
 	\caption[List of figure caption goes here]{Posterior distribution: Complier average causal effect of vitamin A supplements.}\label{fig12_CACE}
 \end{figure}
 
-We can perform inference imposing the weak exclusion restriction, which gives the local average treatment effect, the posterior mean is 0.003, and the 95\% credible interval is (0.0008,0.0054).
+We can perform inference by imposing the weak exclusion restriction, setting $\eta_{n} = \eta_{n0} = \eta_{n1}$, so that the posterior distribution is
+\[
+\eta_{n} \mid \mathbf{C}, \mathbf{Z}_{\text{obs}}, \mathbf{D}_{\text{obs}}, \mathbf{Y}_{\text{obs}} \sim \text{Beta}(1 + N_{n1},\, 1 + N_{n0}),
+\]
+where $N_{n1}$ and $N_{n0}$ denote the numbers of never-takers who survived and did not survive, respectively. This is the only modification to the Gibbs sampler.  
+
+The following code shows the implementation, and Figure~\ref{fig12_LATE} displays the posterior distribution of the CACE (which equals the LATE under the exclusion restriction). The posterior mean is 0.003, and the 95\% credible interval is (0.0008, 0.0054). Therefore, imposing the exclusion restriction leaves the posterior mean approximately unchanged but increases the precision and informativeness of the posterior distribution. Without the restriction, the posterior was relatively flat within the 95\% credible interval, whereas under the exclusion restriction, the posterior distribution is approximately normal, resulting in a narrower 95\% credible interval.
+
+Thus, this example illustrates how the Bayesian framework provides a way to quantify uncertainty and conduct sensitivity analysis regarding the exclusion restriction. See \cite{hirano2000assessing} for an extension controlling for covariates.\\
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Effects of vitamin A supplements on children's survival}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+PosteriorDrawsER <- matrix(NA, tot, 4)
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+
+for(s in 1:tot){
+	dataLat <- cbind(mydata, Clat)
+	Nc011 <- sum(dataLat$Z == 0 & dataLat$Clat == 1 & dataLat$Y == 1)
+	Nc010 <- sum(dataLat$Z == 0 & dataLat$Clat == 1 & dataLat$Y == 0)
+	Nn01 <- sum(dataLat$Clat == 0 & dataLat$Y == 1)
+	Nn00 <- sum(dataLat$Clat == 0 & dataLat$Y == 0)
+	Nc <- sum(Clat == 1)
+	Nn <- sum(Clat == 0)
+	wc <- rbeta(1, 1 + Nc, 1 + Nn)
+	nc1 <- rbeta(1, 1 + Nc111, 1 + Nc110)
+	nn <- rbeta(1, 1 + Nn01, 1 + Nn00)
+	nc0 <- rbeta(1, 1 + Nc011, 1 + Nc010)
+	Clat <- sapply(1:N, function(i){SampleType(z = Z[i], d = D[i], y = Y[i], wc = wc, nc0 = nc0, nn0 = nn)})
+	PosteriorDrawsER[s, ] <- c(wc, nc1, nc0, nn)
+	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+keep <- seq((burnin+1), tot)
+LATEER <- PosteriorDrawsER[keep, 2] - PosteriorDrawsER[keep, 3]
+LATEERmean <- mean(LATEER)
+LATEERci <- quantile(LATEER, c(0.025, 0.975))
+# Plot posterior distribution of ATE
+hist(LATE, breaks = 40, freq = FALSE,
+main = "Posterior Distribution of CACE",
+xlab = "CACE", col = "lightblue", border = "white")
+abline(v = LATEmean, col = "red", lwd = 2)
+abline(v = LATEci, col = "darkgreen", lty = 2, lwd = 2)
+legend("topright", legend = c("Posterior Mean", "95% Credible Interval"),
+col = c("red", "darkgreen"), lwd = 2, lty = c(1, 2),
+bty = "n", cex = 0.8)  # Smaller legend using cex
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
 \begin{figure}[h!]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter12/figures/LATE.png}
 	\caption[List of figure caption goes here]{Posterior distribution: Local average average atreatment effect vitamin A supplements.}\label{fig12_LATE}
@@ -859,10 +991,12 @@ We can perform inference imposing the weak exclusion restriction, which gives th
 
 \textbf{Example: Treatment effect of 401(k) participation on net financial assets}
 
-In the example of the effects of \textit{eligibility} on 401(k) net financial assets, we actually calculates the intention-to-treat (ITT) effect. However, following \cite{chernozhukov2004effects}, we use eligibility as an instrument for \textit{participation} and perform inference on the (local) average treatment effect. We adopt the framework described in Section \ref{sec73} for this example. The following code illustrates the procedure, and Figure \ref{fig12_3} displays the posterior distribution of the (local) average treatment effect of participation. The 95\% credible interval is (USD 5,102, USD 12,010), and the posterior mean is USD 8,520, which is higher than the intention-to-treat effect associated with eligibility (USD 5,903). Exercise 3 asks how to get the ITT from the LATE and the effect of eligibility on participation. 
+In the example of the effect of \textit{eligibility} on 401(k) net financial assets, we calculate the intention-to-treat (ITT) effect. However, following \cite{chernozhukov2004effects}, we use eligibility as an instrument for \textit{participation} and perform inference on the (local) average treatment effect. We adopt the framework described in Section \ref{sec73} for this example. The following code illustrates the procedure, and Figure \ref{fig12_3} displays the posterior distribution of the (local) average treatment effect of participation. The 95\% credible interval is (USD 5,102, USD 12,010), and the posterior mean is USD 8,520, which is higher than the intention-to-treat effect associated with eligibility (USD 5,903). 
+
+Exercise~3 asks how to recover the ITT from the LATE and the effect of eligibility on participation. See \cite{Conley2012} for practical methods to conduct sensitivity analysis of posterior results when relaxing the exclusion restriction in IV settings. In addition, \cite{conley2008semi} present a Bayesian inferential framework using a semi-parametric approach in which stochastic errors are modeled using a Dirichlet process, and \cite{ramirez2024welfare} extend this approach to systems of equations.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
-	fontupper=\large\bfseries,drop shadow southwest,sharp corners]\label{code3_chap12}
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]\label{code3n_chap12}
 	\textit{R code. Treatment effect: 401(k) participation on net financial assets}
 	\begin{VF}
 		\begin{lstlisting}[language=R]		
@@ -958,16 +1092,44 @@ geom_vline(xintercept = mean(beta_draws), color = "red", linetype = "dashed", li
 	\caption[List of figure caption goes here]{Posterior distribution: Local average treatment effect 401k participation on net financial assets.}\label{fig12_3}
 \end{figure}
 
+\section{Difference-in-differences (DiD)}\label{sec12_5}
+
+Consider a situation with two time periods, $t = 1, 2$, and two groups: a treated group ($D_i = 1$) that receives the treatment between periods $t = 1$ and $t = 2$, and a control group that never receives the treatment ($D_i = 0$). We observe the outcomes $Y_{it}$ and treatment status $D_i$ for $i = 1, 2, \dots, N$. Assume a balanced panel data setting.
+
+Let $Y_{it}(0,1)$ denote the potential outcome for unit $i$ in period $t$ if it is not treated in the first period but treated in the second period, whereas $Y_{it}(0,0)$ denotes the potential outcome when it is never treated. Thus, the observed outcome is
+\[
+Y_{it}=Y_{it}(0,1) D_i + Y_{it}(0,0) (1-D_i).
+\]
+
+The estimand of primary interest in difference-in-differences (DiD) is the average treatment effect on the treated (ATT),
+\[
+\tau_{ATT} = \mathbb{E}[Y_{it}(0,1) - Y_{it}(0,0) \mid D_i = 1].
+\]
+
+The key identification assumption in DiD is the \textit{parallel trends} assumption,
+\[
+\mathbb{E}[Y_{i2}(0,0) - Y_{i1}(0,0) \mid D_i = 1] = \mathbb{E}[Y_{i2}(0,0) - Y_{i1}(0,0) \mid D_i = 0],
+\]
+which states that, in the absence of treatment, the average change in outcomes for the treated and control populations would have evolved in the same way.
+
+In addition, identification requires \textit{no anticipation effects},
+\[
+Y_{i1}(0,0)=Y_{i1}(0,1), \text{for all } D_i=1.
+\]
+This is, the treatment does not have causal effect prior to its implementation.
+
+
+\cite{normington2019bayesian,normington2022bayesian,breunig2024semiparametric}
+
+
+
+
+
 
 In this framework, there is a model for the assignment mechanism $P(D_i\mid Y_i(1), Y_i(0), \mathbf{X}_i)$, like randomization or propensity score matching \cite{rosenbaum1983central}, supplemented by a model for the data $P(Y_i(1), Y_i(0)\mid \mathbf{X}_i)$. A causal inference is delivered by conditioning in what is observed to calculate the posterior distribution of the causal estimand given also the models for the assignment mechanisms and data. Therefore, there is a model to input the potential outcome missing value that allows to get the predictive distribution, and then, the posterior predictive distribution of the treatment effect ($Y_i(1)-Y_i(0)$) is calculated. We should take into account that the parameters of the models for predicting the missing potential outcomes are generally not causal effects. Due to using models for the data based on simulation, the Bayesian approach is by far the most direct and flexible of the modes of inference for causal effects. However, it relies on assumptions on the assignment mechanism and data.
 
 Given pretreatment variables, it improves the predictive power of the potential outcome missing data
 
-
-
-Bayesian inference of causal effects in a randomized experiment with no compliance and but covariates is then presented in \cite{hirano2000assessing}.
-
-\cite{Conley2012} present practical methods for conducting sensitivity analysis of posterior results when relaxing the exclusion restriction in IV settings.
 
 
 There, no compliance is explicitly treated as missing data. A nice advantage of the Bayesian approach is to relax the exclusion restriction \cite{rubin2004teaching}.
@@ -994,9 +1156,6 @@ In this context, the use of \textit{non-parametric models} (see Chapters~\ref{ch
 Read this reference \cite{iacovone2023bayesian} before begin working in this chapter! Also read \cite{imbens1997bayesian}.
 
 
-\section{Instrumental variables}\label{sec12_1}
-\subsection{Semi-parametric IV model}\label{sec12_11}
-Use function \textit{rivDP} from package \textit{bayesm} in \textbf{R}.
 
 \section{Sample selection}\label{sec12_2}
 \cite{greenberg2012introduction}
@@ -1007,11 +1166,10 @@ Use function \textit{rivDP} from package \textit{bayesm} in \textbf{R}.
 \section{Regression kink design}\label{sec12_4}
 \cite{chan2025minimum}
 
-\section{Synthetic control}\label{sec12_5}
+\section{Synthetic control}\label{sec12_5a}
 \cite{amjad2018robust,kim2020bayesian}
 
-\section{Difference in difference estimation}\label{sec12_6}
-\cite{normington2019bayesian,normington2022bayesian,breunig2024semiparametric}
+
 
 \section{Event Analysis}\label{sec12_7}
 
@@ -1050,9 +1208,14 @@ We can use BMA as a sensible way to perform robustness analysis regarding model 
 	\]
 	where $f(y)$ is a probability density function.
 	
-	\item \textbf{401(k) Participation on Net Financial Assets (continued)}  
+	\item \textbf{401(k) participation on net financial assets continues I}  
 	
 	Apply the framework from this example to compute the intention-to-treat effect, the local average treatment effect, and the effect of eligibility on participation.
+	
+	\item \textbf{401(k) participation on net financial assets continues II} 
+	
+	Use the function \textit{rivDP} from the \textit{bayesm} package to perform inference on 401(k) participation and its effect on net financial assets using the same specification as in the main text, and plot the LATE.
+	  
 	 
 	
 	

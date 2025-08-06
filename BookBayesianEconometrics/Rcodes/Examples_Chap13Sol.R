@@ -125,3 +125,45 @@ ggplot(df_ITT, aes(x = ITT)) +
 # wald_partial <- cov(Y_res, Z_res) / cov(D_res, Z_res)
 # wald_partial
 
+######## Instrumental variables: 401k participation #############
+rm(list = ls()); set.seed(10101)
+library(ggplot2); library(bayesm)
+
+# Load data
+mydata <- read.csv("https://raw.githubusercontent.com/BEsmarter-consultancy/BSTApp/refs/heads/master/DataApp/401k.csv",
+                   sep = ",", header = TRUE, quote = "")
+# Attach variables
+attach(mydata)
+y <- net_tfa/1000                  # Outcome: net financial assets
+x <- as.vector(p401)          # Endogenous regressor: participation
+w <- as.matrix(cbind(age, inc, fsize, educ, marr, twoearn, db, pira, hown))  # Exogenous regressors with intercept
+z <- as.matrix(e401)          # Instrument: eligibility (NO intercept here)
+
+# specify data input and mcmc parameters
+Data = list(); 
+Data$z <- z
+Data$x <- x
+Data$y <- y
+Data$w <- w
+
+Mcmc = list()
+Mcmc$maxuniq <- 100
+Mcmc$R <- 5000
+keep <- seq((1000+1), Mcmc$R)
+
+out <- rivDP(Data=Data, Mcmc=Mcmc)
+
+# Convert to data frame for ggplot
+df_ITT <- data.frame(ITT = out[["betadraw"]][kepp])
+
+# Plot posterior distribution of treatment effect
+ggplot(df_ITT, aes(x = ITT)) +
+  geom_density(fill = "steelblue", alpha = 0.6) +
+  geom_vline(xintercept = mean(ITT), color = "red", linetype = "dashed", linewidth = 1) +
+  labs(
+    title = "Posterior Distribution of 401(k) ITT: Dirichlet process",
+    x = expression(beta["ITT"]),
+    y = "Density"
+  ) +
+  theme_minimal(base_size = 14)
+

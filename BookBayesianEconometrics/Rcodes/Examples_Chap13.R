@@ -40,7 +40,7 @@ mean(ppd1); mean(ppd0)
 
 # Plot
 hist(ppd1, col = rgb(1, 0, 0, 0.4), freq = FALSE, main = "Posterior Predictive",
-     xlab = "Y", xlim = c(5, 25))
+     xlab = "Y(d)", xlim = c(5, 25))
 hist(ppd0, col = rgb(0, 0, 1, 0.4), freq = FALSE, add = TRUE)
 legend("topright", legend = c("Treatment", "Control"),
        fill = c(rgb(1, 0, 0, 0.4), rgb(0, 0, 1, 0.4)))
@@ -82,7 +82,7 @@ cat("95% Credible Interval:", ci, "\n")
 # Plot posterior distribution of ATE
 hist(ate_draws, breaks = 50, freq = FALSE,
      main = "Posterior Distribution of ATE",
-     xlab = "ATE (Y(1) - Y(0))", col = "lightblue", border = "white")
+     xlab = "ATE", col = "lightblue", border = "white")
 abline(v = ate_mean, col = "red", lwd = 2)
 abline(v = ci, col = "darkgreen", lty = 2, lwd = 2)
 
@@ -220,7 +220,6 @@ abline(v = LATEERci, col = "darkgreen", lty = 2, lwd = 2)
 legend("topright", legend = c("Posterior Mean", "95% Credible Interval"),
        col = c("red", "darkgreen"), lwd = 2, lty = c(1, 2),
        bty = "n", cex = 0.8)  # Smaller legend using cex
-
 
 #### 401k: Treatment effects ####
 rm(list = ls())

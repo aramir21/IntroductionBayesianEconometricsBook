@@ -140,7 +140,7 @@ Therefore, the maximum entropy distribution for a given mean $\mu$ and variance 
 Y \sim N(\mu, \sigma^2).
 \]
 
-\item \textbf{401(k) Participation on Net Financial Assets (continued)}  
+\item \textbf{401(k) participation on net financial assets continues I}  
 
 Apply the framework from this example to compute the intention-to-treat effect, the local average treatment effect, and the effect of eligibility on participation.
 
@@ -230,6 +230,56 @@ geom_vline(xintercept = mean(ITT), color = "red", linetype = "dashed", linewidth
 	\caption[List of figure caption goes here]{Posterior distribution: Intention-to-treat effect 401k participation on net financial assets.}\label{fig12_1}
 \end{figure}
 
+\item \textbf{401(k) participation on net financial assets continues II} 
+
+Use the function \textit{rivDP} from the \textit{bayesm} package to perform inference on 401(k) participation and its effect on net financial assets using the same specification as in the main text, and plot the LATE.
+
+\textbf{Answer}
+
+The following code implements the exercise, and Figure \ref{fig12_2} display the posterior distribution of the LATE. The results are very similar to the ones in the main text assuming a normal distribution; however, the degree of dispersion of higher using a Dirichlet process for the stochastic errors.  
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Treatment effect: 401(k) participation on net financial assets using Dirichlet process}
+	\begin{VF}
+		\begin{lstlisting}[language=R]		
+rm(list = ls()); set.seed(10101)
+library(ggplot2); library(bayesm)
+# Load data
+mydata <- read.csv("https://raw.githubusercontent.com/BEsmarter-consultancy/BSTApp/refs/heads/master/DataApp/401k.csv",
+sep = ",", header = TRUE, quote = "")
+# Attach variables
+attach(mydata)
+y <- net_tfa/1000     # Outcome: net financial assets
+x <- as.vector(p401)  # Endogenous regressor: participation
+w <- as.matrix(cbind(age, inc, fsize, educ, marr, twoearn, db, pira, hown))  # Exogenous regressors with intercept
+z <- as.matrix(e401)  # Instrument: eligibility (NO intercept here)
+
+# specify data input and mcmc parameters
+Data = list(); 
+Data$z <- z
+Data$x <- x
+Data$y <- y
+Data$w <- w
+
+Mcmc = list()
+Mcmc$maxuniq <- 100
+Mcmc$R <- 5000
+keep <- seq((1000+1), Mcmc$R)
+
+out <- rivDP(Data=Data, Mcmc=Mcmc)
+
+# Plot posterior distribution of treatment effect
+df_ITT <- data.frame(ITT = out[["betadraw"]][kepp])
+ggplot(df_ITT, aes(x = ITT)) + geom_density(fill = "steelblue", alpha = 0.6) + geom_vline(xintercept = mean(ITT), color = "red", linetype = "dashed", linewidth = 1) + labs(title = "Posterior Distribution of 401(k) ITT: Dirichlet process", x = expression(beta["ITT"]), y = "Density") + theme_minimal(base_size = 14)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{figure}[h!]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter12/figures/FigP401k.png}
+	\caption[List of figure caption goes here]{Posterior distribution: Local average treatment effect 401k participation on net financial assets using a Dirichlet process.}\label{fig12_2}
+\end{figure}
 
 
 \end{enumerate}
