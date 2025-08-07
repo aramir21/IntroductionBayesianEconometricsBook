@@ -681,13 +681,28 @@ which implies that
 	&= \frac{\mathbb{E}[Y_i(1) - Y_i(0)]}{P(D_i(1) = 1, D_i(0) = 0)}.
 \end{align*}
 
-Under the assumption that the instrument $Z_i$ is independent of the potential outcomes (i.e., random assignment), and using the fact that the expectation of a binary variable equals its probability, the LATE can be expressed as:
-
+Under the assumption that the instrument \( Z_i \) is independent of the potential outcomes (i.e., random assignment), we have
 \[
-\tau_{LATE} =\frac{\mathbb{E}[Y_i \mid Z_i = 1] - \mathbb{E}[Y_i \mid Z_i = 0]}{\mathbb{E}[D_i \mid Z_i = 1] - \mathbb{E}[D_i \mid Z_i = 0]}.
+\tau_{LATE} = \mathbb{E}[Y_i(1) - Y_i(0) \mid D_i(1) = 1, D_i(0) = 0] 
+= \frac{\mathbb{E}[Y_i \mid Z_i = 1] - \mathbb{E}[Y_i \mid Z_i = 0]}{P(D_i(1) = 1, D_i(0) = 0)}.
 \]
 
-This is the standard instrumental variables (IV) estimand, often referred to as the \textit{Wald estimator}. It represents the ratio of the intention-to-treat effect on the outcome to the intention-to-treat effect on the treatment (i.e., the proportion of compliers). The instrument induces random variation in treatment: the numerator captures how outcomes respond to the instrument, and the denominator captures how treatment responds to the instrument. Dividing the two isolates the causal effect for compliers.
+Note that \( P(D_i = 1 \mid Z_i = 1) = P(\text{compliers}) + P(\text{always-takers}) \), because only these groups can receive treatment when \( Z_i = 1 \). Also, under monotonicity (which rules out defiers), \( P(D_i = 1 \mid Z_i = 0) = P(\text{always-takers}) \). Thus,
+\[
+P(D_i = 1 \mid Z_i = 1) - P(D_i = 1 \mid Z_i = 0) = P(\text{compliers}) = P(D_i(1) = 1, D_i(0) = 0).
+\]
+
+Finally, taking into account that \( \mathbb{E}[D_i \mid Z_i] = P(D_i = 1 \mid Z_i) \), we obtain
+\[
+\tau_{LATE} = \frac{\mathbb{E}[Y_i \mid Z_i = 1] - \mathbb{E}[Y_i \mid Z_i = 0]}{\mathbb{E}[D_i \mid Z_i = 1] - \mathbb{E}[D_i \mid Z_i = 0]}.
+\]
+
+This is the standard instrumental variables (IV) estimand, often referred to as the \textit{Wald estimator}. Note that the \textit{relevance condition} is required to ensure identification, i.e.,
+\[
+\mathbb{E}[D_i \mid Z_i = 1] - \mathbb{E}[D_i \mid Z_i = 0] \neq 0.
+\]
+
+The IV estimand represents the ratio of the intention-to-treat effect on the outcome to the intention-to-treat effect on the treatment (i.e., the proportion of compliers). The instrument induces random variation in treatment: the numerator captures how outcomes respond to the instrument, and the denominator captures how treatment responds to the instrument. Dividing the two isolates the causal effect for compliers.
 
 Note that the LATE is not the global average causal effect, and has been subject to several criticisms. First, the proportion of compliers in the population may be small, raising concerns about the policy relevance of this estimand. Observe that while we cannot identify all four principal strata (compliers, never-takers, always-takers, and defiers), the proportion of compliers is identifiable. Second, the monotonicity assumption is not always plausible, particularly in observational studies where instruments may induce heterogeneous behavioral responses. Third, partitioning the population into four strata can become ill-defined in settings where instruments arise from different mechanisms or individual-specific criteria \cite{deaton2010instruments,hernan2020causal}. For arguments in defense of LATE against these critiques, see \cite{angrist2010better}.\\
 
@@ -782,7 +797,7 @@ The CACE is only set-identified, yielding the interval
 \]
 meaning that the survival rate among compliers can vary between 1 and 7 per 1,000 children due to vitamin A supplementation.
 
-Point identification can be achieved by imposing the \textit{weak exclusion restriction} \cite{imbens1997bayesian}, which states that treatment assignment is unrelated to potential outcomes for never-takers and always-takers. Under this assumption,
+Point identification can be achieved by imposing the exclusion restriction, which states that treatment assignment is unrelated to potential outcomes for never-takers and always-takers. Under this assumption,
 \[
 P(Y_i = y \mid C_i = n, Z_i = z) = P(Y_i = y \mid C_i = n),
 \]
@@ -931,13 +946,13 @@ bty = "n", cex = 0.8)  # Smaller legend using cex
 	\caption[List of figure caption goes here]{Posterior distribution: Complier average causal effect of vitamin A supplements.}\label{fig12_CACE}
 \end{figure}
 
-We can perform inference by imposing the weak exclusion restriction, setting $\eta_{n} = \eta_{n0} = \eta_{n1}$, so that the posterior distribution is
+We can perform inference by imposing the exclusion restriction, setting $\eta_{n} = \eta_{n0} = \eta_{n1}$, so that the posterior distribution is
 \[
 \eta_{n} \mid \mathbf{C}, \mathbf{Z}_{\text{obs}}, \mathbf{D}_{\text{obs}}, \mathbf{Y}_{\text{obs}} \sim \text{Beta}(1 + N_{n1},\, 1 + N_{n0}),
 \]
 where $N_{n1}$ and $N_{n0}$ denote the numbers of never-takers who survived and did not survive, respectively. This is the only modification to the Gibbs sampler.  
 
-The following code shows the implementation, and Figure~\ref{fig12_LATE} displays the posterior distribution of the CACE (which equals the LATE under the exclusion restriction). The posterior mean is 0.003, and the 95\% credible interval is (0.0008, 0.0054). Therefore, imposing the exclusion restriction leaves the posterior mean approximately unchanged but increases the precision and informativeness of the posterior distribution. Without the restriction, the posterior was relatively flat within the 95\% credible interval, whereas under the exclusion restriction, the posterior distribution is approximately normal, resulting in a narrower 95\% credible interval.
+The following code shows the implementation, and Figure~\ref{fig12_LATE} displays the posterior distribution of the CACE (which equals the LATE under the exclusion restriction). The posterior mean is 0.0030, and the 95\% credible interval is (0.0008, 0.0054). Therefore, imposing the exclusion restriction leaves the posterior mean approximately unchanged but increases the precision and informativeness of the posterior distribution. Without the restriction, the posterior was relatively flat within the 95\% credible interval, whereas under the exclusion restriction, the posterior distribution is approximately normal, resulting in a narrower 95\% credible interval.
 
 Thus, this example illustrates how the Bayesian framework provides a way to quantify uncertainty and conduct sensitivity analysis regarding the exclusion restriction. See \cite{hirano2000assessing} for an extension controlling for covariates.\\
 
@@ -993,7 +1008,7 @@ bty = "n", cex = 0.8)  # Smaller legend using cex
 
 In the example of the effect of \textit{eligibility} on 401(k) net financial assets, we calculate the intention-to-treat (ITT) effect. However, following \cite{chernozhukov2004effects}, we use eligibility as an instrument for \textit{participation} and perform inference on the (local) average treatment effect. We adopt the framework described in Section \ref{sec73} for this example. The following code illustrates the procedure, and Figure \ref{fig12_3} displays the posterior distribution of the (local) average treatment effect of participation. The 95\% credible interval is (USD 5,102, USD 12,010), and the posterior mean is USD 8,520, which is higher than the intention-to-treat effect associated with eligibility (USD 5,903). 
 
-Exercise~3 asks how to recover the ITT from the LATE and the effect of eligibility on participation. See \cite{Conley2012} for practical methods to conduct sensitivity analysis of posterior results when relaxing the exclusion restriction in IV settings. In addition, \cite{conley2008semi} present a Bayesian inferential framework using a semi-parametric approach in which stochastic errors are modeled using a Dirichlet process, and \cite{ramirez2024welfare} extend this approach to systems of equations.
+Exercise~3 asks how to recover the ITT from the LATE and the effect of eligibility on participation. See \cite{Conley2012} for practical methods to conduct sensitivity analysis of posterior results when relaxing the exclusion restriction in IV settings. In addition, \cite{conley2008semi} present a Bayesian inferential framework using a semi-parametric approach in which stochastic errors are modeled using a Dirichlet process (see Exercise 4), and \cite{ramirez2024welfare} extend this approach to systems of equations.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]\label{code3n_chap12}
@@ -1094,29 +1109,50 @@ geom_vline(xintercept = mean(beta_draws), color = "red", linetype = "dashed", li
 
 \section{Difference-in-differences (DiD)}\label{sec12_5}
 
-Consider a situation with two time periods, $t = 1, 2$, and two groups: a treated group ($D_i = 1$) that receives the treatment between periods $t = 1$ and $t = 2$, and a control group that never receives the treatment ($D_i = 0$). We observe the outcomes $Y_{it}$ and treatment status $D_i$ for $i = 1, 2, \dots, N$. Assume a balanced panel data setting.
+Following \cite{roth2023whats}, we consider a setting with two time periods, \( t = 1, 2 \), and two groups: a treated group (\( D_i = 1 \)) that receives the treatment between periods \( t = 1 \) and \( t = 2 \), and a control group that never receives the treatment (\( D_i = 0 \)). We observe outcomes \( Y_{it} \) and treatment status \( D_i \) for units \( i = 1, 2, \dots, N \), assuming a balanced panel data structure.
 
-Let $Y_{it}(0,1)$ denote the potential outcome for unit $i$ in period $t$ if it is not treated in the first period but treated in the second period, whereas $Y_{it}(0,0)$ denotes the potential outcome when it is never treated. Thus, the observed outcome is
+Let \( Y_{it}(0,1) \) denote the potential outcome for unit \( i \) in period \( t \) if it is untreated in the first period and treated in the second, while \( Y_{it}(0,0) \) denotes the potential outcome if it is never treated. In this framework, known as \textit{difference-in-differences} (DiD), the primary estimand of interest is the average treatment effect on the treated (ATT),
 \[
-Y_{it}=Y_{it}(0,1) D_i + Y_{it}(0,0) (1-D_i).
+\tau_{2} = \mathbb{E}[Y_{i2}(0,1) - Y_{i2}(0,0) \mid D_i = 1].
 \]
 
-The estimand of primary interest in difference-in-differences (DiD) is the average treatment effect on the treated (ATT),
-\[
-\tau_{ATT} = \mathbb{E}[Y_{it}(0,1) - Y_{it}(0,0) \mid D_i = 1].
-\]
+Note that we do not observe \( Y_{i2}(0,0) \mid D_i = 1 \); that is, the outcome in the second period for treated units had they not received the treatment. Thus, the identification conditions in DiD are designed to express this counterfactual outcome as a function of the data.
 
-The key identification assumption in DiD is the \textit{parallel trends} assumption,
-\[
-\mathbb{E}[Y_{i2}(0,0) - Y_{i1}(0,0) \mid D_i = 1] = \mathbb{E}[Y_{i2}(0,0) - Y_{i1}(0,0) \mid D_i = 0],
-\]
-which states that, in the absence of treatment, the average change in outcomes for the treated and control populations would have evolved in the same way.
+There are two key identification assumptions:
 
-In addition, identification requires \textit{no anticipation effects},
+\textit{1. Parallel trends:}
+\begin{equation}
+	\mathbb{E}[Y_{i2}(0,0) - Y_{i1}(0,0) \mid D_i = 1] = \mathbb{E}[Y_{i2}(0,0) - Y_{i1}(0,0) \mid D_i = 0],
+\end{equation}
+which states that, in the absence of treatment, the average change in outcomes for the treated and control groups would have evolved similarly over time.
+
+\textit{2. No anticipation effects:}
+\begin{equation}
+	Y_{i1}(0,0) = Y_{i1}(0,1), \quad \text{for all } D_i = 1,
+\end{equation}
+meaning that the treatment has no causal effect prior to its implementation.
+
+Thus, we can use the parallel trends assumption to express \( \mathbb{E}[Y_{i2}(0,0) \mid D_i = 1] \) as
+\begin{align*}
+	\mathbb{E}[Y_{i2}(0,0)\mid D_i = 1] 
+	&= \mathbb{E}[Y_{i1}(0,0) \mid D_i = 1] + \mathbb{E}[Y_{i2}(0,0) - Y_{i1}(0,0) \mid D_i = 0] \\
+	&= \mathbb{E}[Y_{i1}(0,1) \mid D_i = 1] + \mathbb{E}[Y_{i2}(0,0) - Y_{i1}(0,0) \mid D_i = 0] \\
+	&= \mathbb{E}[Y_{i1} \mid D_i = 1] + \mathbb{E}[Y_{i2} - Y_{i1} \mid D_i = 0],
+\end{align*}
+where the second equality follows from the no anticipation effects assumption.
+
+Therefore,
 \[
-Y_{i1}(0,0)=Y_{i1}(0,1), \text{for all } D_i=1.
+\tau_2 = \mathbb{E}[Y_{i2} - Y_{i1} \mid D_i = 1] - \mathbb{E}[Y_{i2} - Y_{i1} \mid D_i = 0],
 \]
-This is, the treatment does not have causal effect prior to its implementation.
+that is, the average treatment effect on the treated (ATT) is the difference in outcome differences between treated and control units.
+
+ 
+
+
+
+
+
 
 
 \cite{normington2019bayesian,normington2022bayesian,breunig2024semiparametric}
