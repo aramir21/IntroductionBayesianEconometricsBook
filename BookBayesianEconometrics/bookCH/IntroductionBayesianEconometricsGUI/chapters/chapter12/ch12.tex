@@ -1128,7 +1128,7 @@ which states that, in the absence of treatment, the average change in outcomes f
 
 \textit{2. No anticipation effects:}
 \begin{equation}
-	Y_{i1}(0,0) = Y_{i1}(0,1), \quad \text{for all } D_i = 1,
+	\mathbb{E}[Y_{i1}(0,0)\mid D_i=1] = \mathbb{E}[Y_{i1}(0,1)\mid D_i=1],
 \end{equation}
 meaning that the treatment has no causal effect prior to its implementation.
 
@@ -1145,7 +1145,7 @@ Therefore,
 \[
 \tau_2 = \mathbb{E}[Y_{i2} - Y_{i1} \mid D_i = 1] - \mathbb{E}[Y_{i2} - Y_{i1} \mid D_i = 0],
 \]
-that is, the average treatment effect on the treated (ATT) is the difference in outcome differences between treated and control units.
+that is, the average treatment effect on the treated (ATT) is the difference in outcome differences between treated and control units. See Figure 16.2 in \cite{chernozhukov2024applied} for a nice graphical representation of the identification assumptions in DiD.
 
 Note that we can express the observed outcome in terms of potential outcomes as
 \[
@@ -1165,21 +1165,37 @@ Y_{i2} - Y_{i1} = \underbrace{Y_{i2}(0,0) - Y_{i1}(0,0)}_{\text{common trend}}
 + \underbrace{\big[(Y_{i2}(0,1) - Y_{i1}(0,1)) - (Y_{i2}(0,0) - Y_{i1}(0,0))\,\big]}_{\text{treatment effect in changes}} D_i.
 \]
 
-Under the \emph{parallel trends} assumption, the common trend is the same for treated and control units. This assumption is compatible with the linear CEF function
+Under the \emph{parallel trends} assumption, the expected value of the common trend is the same for treated and control units. This assumption is compatible with the linear CEF function
 \[
-Y_{it} = \alpha_i + \phi_t + \tau D_i + \mu_{it},
+Y_{it} = \alpha_i + \phi_t + \tau_2 D_i + \mu_{it},
 \]
 which implies
 \[
-Y_{i2} - Y_{i1} = (\phi_2 - \phi_1) + \tau D_i + (\mu_{i2} - \mu_{i1}).
+Y_{i2} - Y_{i1} = (\phi_2 - \phi_1) + \tau_2 D_i + (\mu_{i2} - \mu_{i1}).
 \]
-Comparing this expression with the one derived from the potential outcomes framework, it follows that regressing the time difference $Y_{i2} - Y_{i1}$ on a constant and the treatment indicator $D_i$ identifies $\tau$, the ATT.
+Comparing this expression with the one derived from the potential outcomes framework, it follows that regressing the time difference $Y_{i2} - Y_{i1}$ on a constant and the treatment indicator $D_i$ identifies $\tau_2$, the ATT.
 
 Another formulation in the linear regression setting that recovers the ATT is
 \[
-Y_{it} = \alpha_i + \phi_t + \tau \,\big[ D_i \cdot \mathbbm{1}(t = 2) \big] + \epsilon_{it},
+Y_{it} = \alpha + \alpha_i + \phi_t + \tau_2 \,\big[ D_i \cdot \mathbbm{1}(t = 2) \big] + \epsilon_{it},
 \]
 where $\mathbbm{1}(t = 2)$ is an indicator for the post-treatment period \cite{roth2023whats}.
+
+The DiD framework can be extended to condition on pre-treatment covariates. In this case, we assume that the underlying identification assumptions are more plausible among units that are similar in terms of observed characteristics. Thus, the identification assumptions are stated conditional on the exogenous variables. 
+The \textit{parallel trends} assumption becomes
+\begin{equation}
+	\mathbb{E}[Y_{i2}(0,0) - Y_{i1}(0,0) \mid D_i = 1, \mathbf{X}_i] 
+	= \mathbb{E}[Y_{i2}(0,0) - Y_{i1}(0,0) \mid D_i = 0, \mathbf{X}_i],
+\end{equation}
+and the \textit{no anticipation} assumption becomes
+\begin{equation}
+	\mathbb{E}[Y_{i1}(0,0) \mid D_i = 1, \mathbf{X}_i] 
+	= \mathbb{E}[Y_{i1}(0,1) \mid D_i = 1, \mathbf{X}_i].
+\end{equation} 
+In addition, the \textit{overlap} assumption is required: there exists a treatment group whose characteristics overlap with those of the control group,
+\[
+0 < P(D_i = 1 \mid \mathbf{X}_i) < 1.
+\]
 
 
  

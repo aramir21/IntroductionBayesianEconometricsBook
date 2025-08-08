@@ -479,3 +479,86 @@ ggplot(df_ITT, aes(x = ITT)) +
 # wald_partial <- cov(Y_res, Z_res) / cov(D_res, Z_res)
 # wald_partial
 
+#### Synthetic DiD data: parallel trends + no anticipation ####
+rm(list = ls()); set.seed(10101)
+library(ggplot2); library(dplyr)
+
+# Parameters
+N_per_group <- 500          # units per group
+T_periods    <- 2           # keep 2x2 for clarity
+tau_true     <- 1         # ATT
+sigma_eps    <- 0.5         # noise SD
+
+# Panel index
+id  <- rep(1:(2*N_per_group), each = T_periods)
+t   <- rep(1:T_periods, times = 2*N_per_group)
+
+# Group: treated (D=1) vs control (D=0)
+D   <- rep(c(rep(0, N_per_group), rep(1, N_per_group)), each = T_periods)
+
+# Post indicator (t=2 is post)
+post <- as.integer(t == 2)
+
+# Unit fixed effects (random heterogeneity)
+alpha_i <- rnorm(2*N_per_group, 0, 0.8)
+alpha   <- alpha_i[id]
+
+# Time effects (common shocks) – parallel trends built in here
+phi_t <- c(0, -1.8)  # common decline from t=1 to t=2
+phi   <- phi_t[t]
+
+# No anticipation: effect is zero in pre, equals tau in post *only for treated*
+treat_effect <- tau_true * (D * post)
+
+# Outcome: Y_it(0) = alpha_i + phi_t + linear trend if you want; here just FE + shock
+eps <- rnorm(length(id), 0, sigma_eps)
+Y   <- alpha + phi + treat_effect + eps
+
+did <- data.frame(id, t, D, post, Y)
+
+# --- Quick check: cell means --------------------------------------------------
+with(did, tapply(Y, list(Group = D, Time = t), mean))
+
+# --- Plot group means over time (shows parallel trends + no anticipation) ----
+
+plot_data <- did %>%
+  group_by(D, t) %>%
+  summarise(meanY = mean(Y), .groups = "drop") %>%
+  mutate(Group = ifelse(D == 1, "Treated", "Control"))
+
+ggp <- ggplot(plot_data, aes(x = t, y = meanY, group = Group, linetype = Group)) +
+  geom_line(linewidth = 1) +
+  geom_point() +
+  scale_x_continuous(breaks = c(1, 2), labels = c("t = 1 (pre)", "t = 2 (post)")) +
+  labs(x = "Time", y = "Mean outcome", title = "Synthetic DiD: Parallel Trends & No Anticipation") +
+  theme_minimal(base_size = 12)
+print(ggp)
+
+# Bayesian inference
+dY <- did$Y[did$t==2] - did$Y[did$t==1]
+D  <- did$D[did$t==1]
+post_fit <- MCMCpack::MCMCregress(dY ~ 1 + D, b0 = c(0,0), B0 = diag(2)*1e-6)
+tau_draws <- post_fit[, "D"]
+quantile(tau_draws, c(.025,.5,.975))
+
+# Frequentist
+# --- Classic 2x2 DiD regression ----------------------------------------------
+did$DID <- did$D * did$post
+m_2x2 <- lm(Y ~ D + post + DID, data = did)
+cat("\n2x2 DiD (ATE on treated) is coef on DID:\n")
+print(summary(m_2x2)$coefficients["DID", , drop = FALSE])
+
+# --- TWFE with unit and time FE + cluster-robust SEs (by unit) ---------------
+# install.packages(c("fixest","sandwich","lmtest"), dependencies = TRUE)
+library(fixest)    # fast FE estimation
+library(sandwich)  # robust vcov
+library(lmtest)    # coeftest
+
+m_twfe <- feols(Y ~ D:post | id + t, data = did)  # same as Y ~ tau*(D*post) + unit FE + time FE
+cat("\nTWFE estimate (coef on D:post):\n")
+print(coeftest(m_twfe, vcov = vcovCL, cluster = ~ id))
+cat("\nTrue ATT:", tau_true, "\n")
+
+
+
+
