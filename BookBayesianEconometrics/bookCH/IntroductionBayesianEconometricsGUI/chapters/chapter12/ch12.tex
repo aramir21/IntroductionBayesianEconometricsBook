@@ -1111,7 +1111,7 @@ geom_vline(xintercept = mean(beta_draws), color = "red", linetype = "dashed", li
 
 Following \cite{roth2023whats}, we consider a setting with two time periods, \( t = 1, 2 \), and two groups: a treated group (\( D_i = 1 \)) that receives the treatment between periods \( t = 1 \) and \( t = 2 \), and a control group that never receives the treatment (\( D_i = 0 \)). We observe outcomes \( Y_{it} \) and treatment status \( D_i \) for units \( i = 1, 2, \dots, N \), assuming a balanced panel data structure.
 
-Let \( Y_{it}(0,1) \) denote the potential outcome for unit \( i \) in period \( t \) if it is untreated in the first period and treated in the second, while \( Y_{it}(0,0) \) denotes the potential outcome if it is never treated. In this framework, known as \textit{difference-in-differences} (DiD), the primary estimand of interest is the average treatment effect on the treated (ATT),
+Let \( Y_{it}(0,1) \) denote the potential outcome for unit \( i \) in period \( t \) if it is untreated in the first period and treated in the second, while \( Y_{it}(0,0) \) denotes the potential outcome if it is never treated.\footnote{We follow the notation presented in \cite{imbens1997bayesian}, but it is common in the econometrics literature to set \( Y_{it}(0,1)=Y_{it}(1) \) and \( Y_{it}(0,0)=Y_{it}(0) \).} In this framework, known as \textit{difference-in-differences} (DiD), the primary estimand of interest is the average treatment effect on the treated (ATT),
 \[
 \tau_{2} = \mathbb{E}[Y_{i2}(0,1) - Y_{i2}(0,0) \mid D_i = 1].
 \]
@@ -1175,7 +1175,7 @@ Y_{i2} - Y_{i1} = (\phi_2 - \phi_1) + \tau_2 D_i + (\mu_{i2} - \mu_{i1}).
 \]
 Comparing this expression with the one derived from the potential outcomes framework, it follows that regressing the time difference $Y_{i2} - Y_{i1}$ on a constant and the treatment indicator $D_i$ identifies $\tau_2$, the ATT.
 
-Another formulation in the linear regression setting that recovers the ATT is
+Another common formulation in the linear regression setting that recovers the ATT is
 \[
 Y_{it} = \alpha + \alpha_i + \phi_t + \tau_2 \,\big[ D_i \cdot \mathbbm{1}(t = 2) \big] + \epsilon_{it},
 \]
@@ -1185,7 +1185,7 @@ The DiD framework can be extended to condition on pre-treatment covariates. In t
 The \textit{parallel trends} assumption becomes
 \begin{equation}
 	\mathbb{E}[Y_{i2}(0,0) - Y_{i1}(0,0) \mid D_i = 1, \mathbf{X}_i] 
-	= \mathbb{E}[Y_{i2}(0,0) - Y_{i1}(0,0) \mid D_i = 0, \mathbf{X}_i],
+	= \mathbb{E}[Y_{i2}(0,0) - Y_{i1}(0,0) \mid D_i = 0, \mathbf{X}_i], \ \text{almost surely}
 \end{equation}
 and the \textit{no anticipation} assumption becomes
 \begin{equation}
@@ -1194,14 +1194,52 @@ and the \textit{no anticipation} assumption becomes
 \end{equation} 
 In addition, the \textit{overlap} assumption is required: there exists a treatment group whose characteristics overlap with those of the control group,
 \[
-0 < P(D_i = 1 \mid \mathbf{X}_i) < 1.
+P(D_i = 1 \mid \mathbf{X}_i) < 1 - \epsilon, \ \epsilon >0, \ \text{almost surely, and,} \ P(D_i=1)>0.
 \]
 
+Following similar arguments as before, we obtain the \textit{conditional average treatment effect on the treated} (CATT):
+\[
+\tau_2(\mathbf{X}_i)= \mathbb{E}[Y_{i2} - Y_{i1} \mid D_i = 1, \mathbf{X}_i] - \mathbb{E}[Y_{i2} - Y_{i1} \mid D_i = 0, \mathbf{X}_i].
+\]
+The overall ATT can then be recovered by averaging over the distribution of $\mathbf{X}_i$ in the treated population:
+\[
+\tau_2 = \mathbb{E}_{\mathbf{X}}[\tau_2(\mathbf{X}_i) \mid D_i = 1].
+\]
 
+It is intuitive to propose the linear model:
+\[
+Y_{it} = \alpha + \alpha_i + \phi_t + \tau_2 \,\big[ D_i \cdot \mathbbm{1}(t = 2) \big] 
++ \big[ \mathbf{X}_i \cdot \mathbbm{1}(t = 2) \big]^{\top}\boldsymbol{\gamma} + \epsilon_{it}.
+\]
+However, recovering the ATT using this specification is generally not advisable, because the augmented model does not yield a consistent estimator under conditional parallel trends unless additional homogeneity assumptions are imposed \cite{abadie2005semiparametric}. For example, if the treatment effect varies with pre-treatment covariates, the ATT estimator will be inconsistent.
  
+Therefore, alternative approaches such as \textit{regression adjustment}, \textit{inverse probability weighting}, and \textit{doubly robust} estimators are preferable, as they provide consistent estimators under conditional parallel trends \cite{roth2023whats}.
+
+Another limitation of DiD is that the parallel trends assumption is generally not robust to functional form transformations of the outcome. That is, it may hold when the outcome is measured in levels, but fail when it is expressed in logarithms. This is because two groups can have the same absolute increase (parallel trends in levels) but different percentage increases (non-parallel in logs).
+
+We can check for pre-existing differences in trends (``pre-trends'') as a test of the plausibility of the parallel trends assumption. Given a time period $t = 0$, we know from the no-anticipation assumption that $\mathbb{E}[Y_{it}(0,0)] = \mathbb{E}[Y_{it}]$ for all $i$ and $t = 0,1$. Therefore, we can test whether  
+\begin{equation}
+	\mathbb{E}[Y_{i1}(0,0) - Y_{i0}(0,0) \mid D_i = 1] 
+	= \mathbb{E}[Y_{i1}(0,0) - Y_{i0}(0,0) \mid D_i = 0] = 0.
+\end{equation}
+
+However, the results of this test should be interpreted with caution. Even if pre-trends are exactly parallel, this does not guarantee that the parallel trends assumption holds in the post-treatment period. Moreover, there can be power issues: a pre-existing difference in trends may go undetected if our pre-treatment estimates are imprecise due to high variability.
+  
+Therefore, it is advisable to perform sensitivity analyses regarding the parallel trends assumption, using context-specific knowledge about plausible confounding factors.
 
 
 
+\section{Staggered settings} 
+treatment is an absorbing state
+
+not-yet-treated or never-treated units
+
+a TWFE specification may be justified for efficiency reasons if one is confident that treatment effects are homogeneous, but researchers are often unwilling to restrict treatment effect heterogeneity.
+
+Parallel trend is not robust to functional forms, except in particular cases, like random assignment.
+
+
+Remember the role of $\rho$, the correlation of the potential outcomes $Y(1)$ and $Y(0)$, where the likelihood does not have information about it!
 
 
 
