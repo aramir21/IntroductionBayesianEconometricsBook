@@ -402,5 +402,61 @@ ggplot(df_ITT, aes(x = ITT)) + geom_density(fill = "steelblue", alpha = 0.6) + g
 	\caption[List of figure caption goes here]{Posterior distribution: Local average treatment effect 401k participation on net financial assets using a Dirichlet process.}\label{fig12_2}
 \end{figure}
 
+	\item \textbf{Difference-in-Differences simulation continues}
+
+Perform the simulation of the DiD example, and perform inference using the specification:
+
+\[
+Y_{it} = \alpha + \alpha_i + \phi_t + \tau_2 \,\big[ D_i \cdot \mathbbm{1}(t = 2) \big] + \epsilon_{it}.
+\]
+
+You can check that we get same results as in example in the main book.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Difference-in-Differences: Simulation exercise}
+	\begin{VF}
+		\begin{lstlisting}[language=R]		
+rm(list = ls()); set.seed(10101)
+library(ggplot2); library(dplyr); library(fastDummies)
+# Parameters
+N_per_group <- 200          # units per group
+T_periods    <- 2           # keep 2x2 for clarity
+tau_true     <- 1         # ATT
+sigma_eps    <- 0.5         # noise SD
+# Panel index
+id  <- rep(1:(2*N_per_group), each = T_periods)
+t   <- rep(1:T_periods, times = 2*N_per_group)
+# Group: treated (D=1) vs control (D=0)
+D   <- rep(c(rep(0, N_per_group), rep(1, N_per_group)), each = T_periods)
+# Post indicator (t=2 is post)
+post <- as.integer(t == 2)
+# Unit fixed effects (random heterogeneity)
+alpha_i <- rnorm(2*N_per_group, 0, 0.8)
+alpha   <- alpha_i[id]
+# Time effects
+phi_t <- c(0, -1.8)  # common decline from t=1 to t=2
+phi   <- phi_t[t]
+treat_effect <- tau_true * (D * post)
+# Outcome
+eps <- rnorm(length(id), 0, sigma_eps)
+Y   <- alpha + phi + treat_effect + eps
+did <- data.frame(id, t, D, post, Y)
+plot_data <- did %>%
+group_by(D, t) %>%
+summarise(meanY = mean(Y), .groups = "drop") %>%
+mutate(Group = ifelse(D == 1, "Treated", "Control"))
+ggp <- ggplot(plot_data, aes(x = t, y = meanY, group = Group, linetype = Group)) +
+geom_line(linewidth = 1) + geom_point() + scale_x_continuous(breaks = c(1, 2), labels = c("t = 1 (pre)", "t = 2 (post)")) + labs(x = "Time", y = "Mean outcome", title = "Synthetic DiD: Parallel Trends & No Anticipation") + theme_minimal(base_size = 12)
+print(ggp)
+# Bayesian inference: Model with interaction treatment x post period
+post_fit1 <- MCMCpack::MCMCregress(Y ~ 1 + factor(id) + factor(t) + I(D * post), data = did, burnin = 100, mcmc = 1000)
+tau_draws1 <- post_fit1[, "I(D * post)"]
+quantile(tau_draws1, c(.025,.5,.975))
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}  
+
+
 
 \end{enumerate}

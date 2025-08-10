@@ -1175,11 +1175,65 @@ Y_{i2} - Y_{i1} = (\phi_2 - \phi_1) + \tau_2 D_i + (\mu_{i2} - \mu_{i1}).
 \]
 Comparing this expression with the one derived from the potential outcomes framework, it follows that regressing the time difference $Y_{i2} - Y_{i1}$ on a constant and the treatment indicator $D_i$ identifies $\tau_2$, the ATT.
 
-Another common formulation in the linear regression setting that recovers the ATT is
+Another common formulation in the linear regression setting that recovers the ATT is the two-way fixed effects (TWFE) model
 \[
 Y_{it} = \alpha + \alpha_i + \phi_t + \tau_2 \,\big[ D_i \cdot \mathbbm{1}(t = 2) \big] + \epsilon_{it},
 \]
-where $\mathbbm{1}(t = 2)$ is an indicator for the post-treatment period \cite{roth2023whats}. The advantage of the regression setting is that it allows for the straightforward calculation of the standard error of the ATT, enabling the construction of confidence or credible intervals under the Frequentist and Bayesian approaches, respectively.
+where $\mathbbm{1}(t = 2)$ is an indicator for the post-treatment period \cite{roth2023whats}. The advantage of the regression setting is that it allows for the straightforward calculation of the standard error of the ATT, enabling the construction of confidence or credible intervals under the Frequentist and Bayesian approaches, respectively.\\
+
+\textbf{Example: Difference-in-Differences simulation}
+
+Let's simulate a DiD setting where the treatment effect is $1$ and the common trend is $-1.8$. We assume the default priors in the \textit{MCMCpack} package. We perform inference on the ATT using
+
+\[
+Y_{i2} - Y_{i1}
+= \underbrace{\phi_2 - \phi_1}_{\text{Common change}}
++ \tau_2 D_i + \epsilon_i.
+\]
+
+From the posterior results, we can verify that the 95\% credible interval contains the true ATT. We ask in Exercise~8 to repeat exactly the same simulation, and estimate the ATT using the specification with the interaction between treatment and the post-treatment period.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Difference-in-Differences: Simulation exercise}
+	\begin{VF}
+		\begin{lstlisting}[language=R]		
+rm(list = ls()); set.seed(10101)
+library(ggplot2); library(dplyr); library(fastDummies)
+# Parameters
+N_per_group <- 200          # units per group
+T_periods    <- 2           # keep 2x2 for clarity
+tau_true     <- 1           # ATT
+sigma_eps    <- 0.5         # noise SD
+# Panel index
+id  <- rep(1:(2*N_per_group), each = T_periods)
+t   <- rep(1:T_periods, times = 2*N_per_group)
+# Group: treated (D=1) vs control (D=0)
+D   <- rep(c(rep(0, N_per_group), rep(1, N_per_group)), each = T_periods)
+# Post indicator (t=2 is post)
+post <- as.integer(t == 2)
+# Unit fixed effects (random heterogeneity)
+alpha_i <- rnorm(2*N_per_group, 0, 0.8)
+alpha   <- alpha_i[id]
+# Time effects (common shocks)
+phi_t <- c(0, -1.8)  # common decline from t=1 to t=2
+phi   <- phi_t[t]
+treat_effect <- tau_true * (D * post)
+# Outcome:
+eps <- rnorm(length(id), 0, sigma_eps)
+Y   <- alpha + phi + treat_effect + eps
+did <- data.frame(id, t, D, post, Y)
+# Bayesian inference: Model in differences
+dY <- did$Y[did$t==2] - did$Y[did$t==1]
+D  <- did$D[did$t==1]
+post_fit <- MCMCpack::MCMCregress(dY ~ 1 + D, burnin = 100, mcmc = 1000)
+tau_draws <- post_fit[, "D"]
+quantile(tau_draws, c(.025,.5,.975))
+quantile(post_fit[,1], c(.025,.5,.975))
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}  
+ 
 
 The DiD framework can be extended to condition on pre-treatment covariates. In this case, we assume that the underlying identification assumptions are more plausible among units that are similar in terms of observed characteristics. Thus, the identification assumptions are stated conditional on the exogenous variables. 
 The \textit{parallel trends} assumption becomes
@@ -1206,14 +1260,21 @@ The overall ATT can then be recovered by averaging over the distribution of $\ma
 \tau_2 = \mathbb{E}_{\mathbf{X}}[\tau_2(\mathbf{X}_i) \mid D_i = 1].
 \]
 
-It is intuitive to propose the linear model:
+Assuming a linear CEF and a homogeneous ATT, we can use either the first–difference specification
 \[
-Y_{it} = \alpha + \alpha_i + \phi_t + \tau_2 \,\big[ D_i \cdot \mathbbm{1}(t = 2) \big] 
-+ \big[ \mathbf{X}_i \cdot \mathbbm{1}(t = 2) \big]^{\top}\boldsymbol{\gamma} + \epsilon_{it}.
+\Delta Y_{i2} = \alpha + \tau_2 D_i + \sum_{k=1}^K \beta_k X_{ik} + \epsilon_i,
 \]
-However, recovering the ATT using this specification is generally not advisable, because the augmented model does not yield a consistent estimator under conditional parallel trends unless additional homogeneity assumptions are imposed \cite{abadie2005semiparametric}. For example, if the treatment effect varies with pre-treatment covariates, the ATT estimator will be inconsistent.
- 
-Therefore, alternative approaches such as \textit{regression adjustment}, \textit{inverse probability weighting}, and \textit{doubly robust} estimators are preferable, as they provide consistent estimators under conditional parallel trends and are well known in the Frequentist econometric framework \cite{roth2023whats}.\footnote{See \cite{breunig2025double} for a doubly robust Bayesian inferential framework for average treatment effects.}
+where $\Delta Y_{i2}= Y_{i2} - Y_{i1}$, or the TWFE specification
+\[
+Y_{it} = \alpha + \alpha_i + \phi_t + \tau_2 \big[D_i \cdot \mathbbm{1}(t=2)\big]
++ \sum_{k=1}^K \beta_k X_{ik} + \epsilon_{it}.
+\]
+
+Note that these are \emph{not} equivalent. The first works in first differences and conditions on (typically time-invariant) $X_{ik}$, whereas the second is in levels with unit and time effects; with $\alpha_i$, time-invariant covariates are absorbed and cannot be separately identified. They coincide only in the special two-period case with no covariates (or when $X$ enters in differences), where regressing $\Delta Y_i$ on $D_i$ yields the same estimate of $\tau_2$ as the TWFE model.
+
+For instance, \cite{normington2019bayesian,normington2022bayesian} use the first–difference specification to implement DiD in a Bayesian hierarchical framework, given the data structure they faced.
+
+However, if the treatment effect varies with pre-treatment covariates, the ATT estimator will be inconsistent \cite{abadie2005semiparametric}. Therefore, alternative \textit{semi-parametric} or \textit{non-parametric} approaches, such as \textit{inverse probability weighting} and \textit{doubly robust} estimators, are preferable, as they provide consistent estimators under conditional parallel trends \cite{roth2023whats}. For instance, \cite{breunig2025double} propose a double robust Bayesian inferential framework for average treatment effects.
 
 Another limitation of DiD is that the parallel trends assumption is generally not robust to functional form transformations of the outcome. That is, it may hold when the outcome is measured in levels, but fail when it is expressed in logarithms. This is because two groups can have the same absolute increase (parallel trends in levels) but different percentage increases (non-parallel in logs).
 
@@ -1339,6 +1400,14 @@ Introduce \cite{bissiri2016general} as a generalization of \cite{chernozhukov200
 	\item \textbf{401(k) participation on net financial assets continues II} 
 	
 	Use the function \textit{rivDP} from the \textit{bayesm} package to perform inference on 401(k) participation and its effect on net financial assets using the same specification as in the main text, and plot the LATE.
+	
+	\item \textbf{Difference-in-Differences simulation continues}
+	
+	Perform the simulation of the DiD example, and perform inference using the specification:
+	
+	\[
+	Y_{it} = \alpha + \alpha_i + \phi_t + \tau_2 \,\big[ D_i \cdot \mathbbm{1}(t = 2) \big] + \epsilon_{it},
+	\] 
 	  
 	 
 	

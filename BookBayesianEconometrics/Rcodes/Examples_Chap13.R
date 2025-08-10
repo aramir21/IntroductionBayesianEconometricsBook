@@ -540,11 +540,45 @@ D  <- did$D[did$t==1]
 post_fit <- MCMCpack::MCMCregress(dY ~ 1 + D, burnin = 100, mcmc = 1000)
 tau_draws <- post_fit[, "D"]
 quantile(tau_draws, c(.025,.5,.975))
+quantile(post_fit[,1], c(.025,.5,.975))
 
 # Bayesian inference: Model with interaction treatment x post period
-post_fit1 <- MCMCpack::MCMCregress(Y ~ 1 + factor(id) + factor(t) + I(D * post), data = did, burnin = 100, mcmc = 1000, verbose = 1)
+post_fit1 <- MCMCpack::MCMCregress(Y ~ 1 + factor(id) + factor(t) + I(D * post), data = did, burnin = 100, mcmc = 1000)
 tau_draws1 <- post_fit1[, "I(D * post)"]
 quantile(tau_draws1, c(.025,.5,.975))
+
+# Calculating the means at each level, and then ATT
+# ---- Build 2x2 cell indicators (no intercept model) ----
+did$c_pre  <- as.integer(did$D == 0 & did$t == 1)
+did$c_post <- as.integer(did$D == 0 & did$t == 2)
+did$t_pre  <- as.integer(did$D == 1 & did$t == 1)
+did$t_post <- as.integer(did$D == 1 & did$t == 2)
+
+# Sanity check: each row must belong to exactly one cell
+stopifnot(all(did$c_pre + did$c_post + did$t_pre + did$t_post == 1))
+
+# ---- Bayesian saturated cell-mean model (compatible priors) ----
+# Y_it = mu_c,pre * 1{c,pre} + mu_c,post * 1{c,post} + mu_t,pre * 1{t,pre} + mu_t,post * 1{t,post} + eps
+# No intercept: each coefficient IS a cell mean.
+fit_cells <- MCMCpack::MCMCregress(
+  Y ~ 0 + c_pre + c_post + t_pre + t_post,
+  data  = did,
+  burnin = 1000, mcmc = 10000, thin = 5
+)
+
+draws_cells <- as.matrix(fit_cells)
+colnames(draws_cells)  # should be c("c_pre","c_post","t_pre","t_post", "sigma2")
+
+# Posterior of the four cell means
+mu_c_pre_draw  <- draws_cells[, "c_pre"]
+mu_c_post_draw <- draws_cells[, "c_post"]
+mu_t_pre_draw  <- draws_cells[, "t_pre"]
+mu_t_post_draw <- draws_cells[, "t_post"]
+
+# ATT as a linear combination of cell means:
+# ATT = (mu_t,post - mu_t,pre) - (mu_c,post - mu_c,pre)
+ATT_cells_draw <- (mu_t_post_draw - mu_t_pre_draw) - (mu_c_post_draw - mu_c_pre_draw)
+quantile(ATT_cells_draw, c(.025, .5, .975))
 
 # Frequentist
 # --- Classic 2x2 DiD regression ----------------------------------------------
@@ -563,6 +597,8 @@ m_twfe <- feols(Y ~ D:post | id + t, data = did)  # same as Y ~ tau*(D*post) + u
 cat("\nTWFE estimate (coef on D:post):\n")
 print(coeftest(m_twfe, vcov = vcovCL, cluster = ~ id))
 cat("\nTrue ATT:", tau_true, "\n")
+
+
 
 #### Working example: Staggered ATT ####
 # Install packages if needed
