@@ -481,10 +481,10 @@ ggplot(df_ITT, aes(x = ITT)) +
 
 #### Synthetic DiD data: parallel trends + no anticipation ####
 rm(list = ls()); set.seed(10101)
-library(ggplot2); library(dplyr)
+library(ggplot2); library(dplyr); library(fastDummies)
 
 # Parameters
-N_per_group <- 500          # units per group
+N_per_group <- 200          # units per group
 T_periods    <- 2           # keep 2x2 for clarity
 tau_true     <- 1         # ATT
 sigma_eps    <- 0.5         # noise SD
@@ -534,12 +534,17 @@ ggp <- ggplot(plot_data, aes(x = t, y = meanY, group = Group, linetype = Group))
   theme_minimal(base_size = 12)
 print(ggp)
 
-# Bayesian inference
+# Bayesian inference: Model in differences
 dY <- did$Y[did$t==2] - did$Y[did$t==1]
 D  <- did$D[did$t==1]
-post_fit <- MCMCpack::MCMCregress(dY ~ 1 + D, b0 = c(0,0), B0 = diag(2)*1e-6)
+post_fit <- MCMCpack::MCMCregress(dY ~ 1 + D, burnin = 100, mcmc = 1000)
 tau_draws <- post_fit[, "D"]
 quantile(tau_draws, c(.025,.5,.975))
+
+# Bayesian inference: Model with interaction treatment x post period
+post_fit1 <- MCMCpack::MCMCregress(Y ~ 1 + factor(id) + factor(t) + I(D * post), data = did, burnin = 100, mcmc = 1000, verbose = 1)
+tau_draws1 <- post_fit1[, "I(D * post)"]
+quantile(tau_draws1, c(.025,.5,.975))
 
 # Frequentist
 # --- Classic 2x2 DiD regression ----------------------------------------------
@@ -559,6 +564,56 @@ cat("\nTWFE estimate (coef on D:post):\n")
 print(coeftest(m_twfe, vcov = vcovCL, cluster = ~ id))
 cat("\nTrue ATT:", tau_true, "\n")
 
+#### Working example: Staggered ATT ####
+# Install packages if needed
+library(did)
+library(ggplot2)
+
+#----------------------------
+# 1. Simulate example data
+#----------------------------
+set.seed(123)
+
+N <- 200   # number of individuals
+T <- 5     # number of periods
+
+# Balanced panel structure
+df <- expand.grid(id = 1:N, year = 2000:(2000+T-1))
+
+# Treatment adoption time (staggered: some treated earlier, some later, some never)
+adopt_year <- sample(c(2002, 2003, 2004, 9999), N, replace = TRUE, prob = c(0.25, 0.25, 0.25, 0.25))
+df$G <- adopt_year[df$id]  # group = first year treated (9999 for never treated)
+
+# Outcome: baseline + trend + treatment effect if treated after adoption
+tau <- 3
+df$Y <- 10 + 0.5*(df$year - 2000) + rnorm(nrow(df))
+df$Y <- df$Y + ifelse(df$year >= df$G & df$G != 9999, tau, 0)
+
+#----------------------------
+# 2. Estimate ATT using did
+#----------------------------
+out <- att_gt(
+  yname = "Y",           # outcome
+  tname = "year",        # time variable
+  idname = "id",         # unit identifier
+  gname = "G",           # first treatment period
+  data = df,
+  panel = TRUE,
+  est_method = "dr"      # doubly robust (default)
+)
+
+summary(out)
+
+#----------------------------
+# 3. Event-study visualization
+#----------------------------
+es <- aggte(out, type = "dynamic")
+summary(es)
+
+ggdid(es) +
+  labs(title = "Event-Study: ATT over time",
+       x = "Time relative to treatment",
+       y = "ATT")
 
 
 

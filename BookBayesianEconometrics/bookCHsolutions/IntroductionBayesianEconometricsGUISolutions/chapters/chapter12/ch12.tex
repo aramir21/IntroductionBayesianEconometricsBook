@@ -140,6 +140,127 @@ Therefore, the maximum entropy distribution for a given mean $\mu$ and variance 
 Y \sim N(\mu, \sigma^2).
 \]
 
+\item Use the package \textit{dagity} to construct the DAG in Figure~13.5, verify that it is acyclic, and check whether the causal effect of \(D\) on \(Y\) is identifiable by controlling for \(\mathbf{X}\).
+
+\textbf{Answer}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simple exercise in \textit{dagity} package: Conditional independence assumption}
+	\begin{VF}
+		\begin{lstlisting}[language=R]		
+library(dagitty)
+library(ggdag)
+
+Gd = dagitty('dag{
+	X [pos="-1,1"]
+	D [exposure, pos="0,0"]
+	Y [outcome, pos="1,1"]
+	X -> D
+	X -> Y
+	D -> Y
+}')
+
+ggdag(Gd) +  theme_dag()
+
+isAcyclic(Gd)
+
+for( n in names(Gd) ){
+	for( m in children(Gd,n) ){
+		a <- adjustmentSets(Gd, n, m, effect = c("direct"), type = c("minimal"))
+		if( length(a) > 0 ){
+			cat("The effect ",n,"->",m,
+			" is identifiable by controlling for:\n",sep="")
+			print( a, prefix=" * " )
+		}
+	}
+}
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\item Use the package \textit{dagitty} to construct the DAG in Figure~13.8, verify that it is acyclic, and check that the causal effect of \(D\) on \(Y\) is identifiable by controlling for \(\mathbf{X}\) but not for \(C\).
+
+
+\textbf{Answer}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simple exercise in \textit{dagity} package: Collider bias}
+	\begin{VF}
+		\begin{lstlisting}[language=R]		
+#### DAG: Collider bias  ####
+library(dagitty)
+library(ggdag)
+
+Gd = dagitty('dag{
+	X [pos="-1,1"]
+	D [exposure, pos="0,0"]
+	Y [outcome, pos="1,1"]
+	C [pos="0,0.5"]
+	X -> D
+	X -> Y
+	X -> C
+	D -> Y
+	D -> C
+}')
+
+ggdag(Gd) +  theme_dag()
+
+isAcyclic(Gd)
+
+adjustmentSets(Gd, exposure = "D", outcome = "Y")
+
+for( n in names(Gd) ){
+	for( m in children(Gd,n) ){
+		a <- adjustmentSets(Gd, n, m, effect = c("direct"), type = c("minimal"))
+		if( length(a) > 0 ){
+			cat("The effect ",n,"->",m,
+			" is identifiable by controlling for:\n",sep="")
+			print( a, prefix=" * " )
+		}
+	}
+}
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\item Use the package \textit{dagitty} to construct the DAG in Figure~13.11, taking into account that $\mathbf{U}$ is unobserved (latent). Verify that it is acyclic, check that $Z$ is a valid instrument, and determine whether the causal effect of \(D\) on \(Y\) is identifiable.
+
+\textbf{Answer}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simple exercise in \textit{dagity} package: Instrumental variable}
+	\begin{VF}
+		\begin{lstlisting}[language=R]		
+#### DAG: Instruments  ####
+library(dagitty)
+library(ggdag)
+
+Gd = dagitty('dag{
+	U [latent, pos="-1,1"]
+	D [exposure, pos="0,0"]
+	Y [outcome, pos="1,1"]
+	Z [pos="0,0.5"]
+	U -> D
+	U -> Y
+	D -> Y
+	Z -> D
+}')
+
+ggdag(Gd) +  theme_dag()
+
+isAcyclic(Gd)
+
+instrumentalVariables(Gd)
+
+adjustmentSets(Gd, exposure = "D", outcome = "Y")
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+
 \item \textbf{401(k) participation on net financial assets continues I}  
 
 Apply the framework from this example to compute the intention-to-treat effect, the local average treatment effect, and the effect of eligibility on participation.

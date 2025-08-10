@@ -1,3 +1,87 @@
+#### DAG: CIA  ####
+library(dagitty)
+library(ggdag)
+
+Gd = dagitty('dag{
+X [pos="-1,1"]
+D [exposure, pos="0,0"]
+Y [outcome, pos="1,1"]
+X -> D
+X -> Y
+D -> Y
+}')
+
+ggdag(Gd) +  theme_dag()
+
+isAcyclic(Gd)
+
+for( n in names(Gd) ){
+  for( m in children(Gd,n) ){
+    a <- adjustmentSets(Gd, n, m, effect = c("direct"), type = c("minimal"))
+    if( length(a) > 0 ){
+      cat("The effect ",n,"->",m,
+          " is identifiable by controlling for:\n",sep="")
+      print( a, prefix=" * " )
+    }
+  }
+}
+
+#### DAG: Collider bias  ####
+library(dagitty)
+library(ggdag)
+
+Gd = dagitty('dag{
+X [pos="-1,1"]
+D [exposure, pos="0,0"]
+Y [outcome, pos="1,1"]
+C [pos="0,0.5"]
+X -> D
+X -> Y
+X -> C
+D -> Y
+D -> C
+}')
+
+ggdag(Gd) +  theme_dag()
+
+isAcyclic(Gd)
+
+adjustmentSets(Gd, exposure = "D", outcome = "Y")
+
+for( n in names(Gd) ){
+  for( m in children(Gd,n) ){
+    a <- adjustmentSets(Gd, n, m, effect = c("direct"), type = c("minimal"))
+    if( length(a) > 0 ){
+      cat("The effect ",n,"->",m,
+          " is identifiable by controlling for:\n",sep="")
+      print( a, prefix=" * " )
+    }
+  }
+}
+
+#### DAG: Instruments  ####
+library(dagitty)
+library(ggdag)
+
+Gd = dagitty('dag{
+U [latent, pos="-1,1"]
+D [exposure, pos="0,0"]
+Y [outcome, pos="1,1"]
+Z [pos="0,0.5"]
+U -> D
+U -> Y
+D -> Y
+Z -> D
+}')
+
+ggdag(Gd) +  theme_dag()
+
+isAcyclic(Gd)
+
+instrumentalVariables(Gd)
+
+adjustmentSets(Gd, exposure = "D", outcome = "Y")
+
 ######## Instrumental variables: 401k participation #############
 
 # VERY IMPORTANT: The rivGibbs function from bayesm does not control for

@@ -104,11 +104,11 @@ that is, the average causal effect is function of the data under random assignme
  
 \textit{Randomized controlled trials} (RCTs) are characterized by \textit{random assignment to treatment}. The identification of causal effects in RCTs additionally relies on two key assumptions: \textit{overlap}, which requires that every unit has a positive probability of being assigned to both treatment and control groups ($0 < P(D_i = 1) < 1$), and the \textit{Stable Unit Treatment Value Assumption} (SUTVA). The latter consists of two components: (i) \textit{no interference}, meaning one unit’s potential outcome is unaffected by another unit’s treatment, and (ii) \textit{consistency}, meaning the observed outcome equals the potential outcome corresponding to the received treatment.
 
-We can represent the causal mechanism in an RCT using causal diagrams \cite{pearl1995causal,pearl2018book}. These diagrams provide a powerful framework for visualizing and analyzing the underlying structures that enable causal identification. It is important to note that causal diagrams do not impose specific functional forms, such as those assumed in linear regression models, and are closely related to structural equation models (SEMs). SEMs offer an alternative perspective on causal inference in econometrics, which is closely connected to the potential outcomes approach \cite{haavelmo1943statistical,marschak1944random,imbens2014ivperspective}. See below.
+We can represent the causal mechanism in an RCT using causal diagrams \cite{pearl1995causal,pearl2018book}. These diagrams provide a powerful framework for visualizing and analyzing the underlying structures that enable causal identification. It is important to note that causal diagrams do not impose specific functional forms, such as those assumed in linear regression models, and are closely related to structural equation models (SEMs). SEMs offer an alternative perspective on causal inference in econometrics, which is closely connected to the potential outcomes approach \cite{haavelmo1943statistical,marschak1944random,imbens2014ivperspective}.
 
 In particular, we can depict the causal mechanism using a \textit{Directed Acyclic Graph (DAG)}, which is a graphical representation of a set of variables and their assumed causal relationships. A DAG consists of \textit{nodes}, representing variables, and \textit{directed edges (arrows)}, representing direct causal effects from one variable to another. The graph is \textit{acyclic}, meaning it contains no directed cycles: starting from any node and following the arrows, it is impossible to return to the same node. A defining property of causal DAGs
 is that, conditional on its direct causes, any variable on the DAG is independent
-of any other variable for which it is not a cause (\textit{causal Markov assumption}). See \cite{hernan2020causal} for a nice introduction. Figure~\ref{DAG1} illustrates the causal structure underlying RCTs.
+of any other variable for which it is not a cause (\textit{causal Markov assumption}). See \cite{hernan2020causal} for a nice introduction, and the package \textit{dagity} in \textbf{R} software to perform visualization and analysis of DAGs. Figure~\ref{DAG1} illustrates the causal structure underlying RCTs.
 
 \begin{figure}[h]
 	\centering
@@ -340,7 +340,7 @@ where the second equality follows from the law of iterated expectations, the thi
 \]
 is the \textit{conditional average treatment effect} (CATE) at covariate value $\mathbf{X}_i$, which captures treatment effect heterogeneity across different values of $\mathbf{X}$. Therefore, the ATE is the expectation of the CATE over the distribution of $\mathbf{X}$.
 
-Figure~\ref{DAG2} illustrates the causal structure underlying the CIA. We follow the convention that time flows from left to right. Here, $\mathbf{X}$ -a vector of pre-treatment variables or \textit{confounders}- influences both the treatment ($D$) and the outcome ($Y$). Under the CIA, we can identify the causal effect of $D$ on $Y$ by adjusting for $\mathbf{X}$ because this causal structure satisfies the \textit{back-door criterion}. This criterion states that a set of variables $\mathbf{X}$ satisfies the condition for identifying the effect of $D$ on $Y$ if no variable in $\mathbf{X}$ is a descendant of $D$ and $\mathbf{X}$ blocks every back-door path from $D$ to $Y$. A \textit{back-door path} is any path from $D$ to $Y$ that begins with an arrow pointing into $D$. In addition, Figure \ref{SWIG2} displays the SWIG. 
+Figure~\ref{DAG2} illustrates the causal structure underlying the CIA. We follow the convention that time flows from left to right. Here, $\mathbf{X}$ -a vector of pre-treatment variables or \textit{confounders}- influences both the treatment ($D$) and the outcome ($Y$). Under the CIA, we can identify the causal effect of $D$ on $Y$ by adjusting for $\mathbf{X}$ because this causal structure satisfies the \textit{back-door criterion}. This criterion states that a set of variables $\mathbf{X}$ satisfies the condition for identifying the effect of $D$ on $Y$ if no variable in $\mathbf{X}$ is a descendant of $D$ and $\mathbf{X}$ blocks every back-door path from $D$ to $Y$. A \textit{back-door path} is any path from $D$ to $Y$ that begins with an arrow pointing into $D$. In Exercise~3, we ask you to construct the DAG in Figure~\ref{DAG2}, verify that it is acyclic, and check whether the causal effect of \(D\) on \(Y\) is identifiable by controlling for \(\mathbf{X}\). In addition, Figure \ref{SWIG2} displays the SWIG. 
 
 \begin{figure}[h!]
 	\centering
@@ -1008,7 +1008,7 @@ bty = "n", cex = 0.8)  # Smaller legend using cex
 
 In the example of the effect of \textit{eligibility} on 401(k) net financial assets, we calculate the intention-to-treat (ITT) effect. However, following \cite{chernozhukov2004effects}, we use eligibility as an instrument for \textit{participation} and perform inference on the (local) average treatment effect. We adopt the framework described in Section \ref{sec73} for this example. The following code illustrates the procedure, and Figure \ref{fig12_3} displays the posterior distribution of the (local) average treatment effect of participation. The 95\% credible interval is (USD 5,102, USD 12,010), and the posterior mean is USD 8,520, which is higher than the intention-to-treat effect associated with eligibility (USD 5,903). 
 
-Exercise~3 asks how to recover the ITT from the LATE and the effect of eligibility on participation. See \cite{Conley2012} for practical methods to conduct sensitivity analysis of posterior results when relaxing the exclusion restriction in IV settings. In addition, \cite{conley2008semi} present a Bayesian inferential framework using a semi-parametric approach in which stochastic errors are modeled using a Dirichlet process (see Exercise 4), and \cite{ramirez2024welfare} extend this approach to systems of equations.
+Exercise~6 asks how to recover the ITT from the LATE and the effect of eligibility on participation. See \cite{Conley2012} for practical methods to conduct sensitivity analysis of posterior results when relaxing the exclusion restriction in IV settings. In addition, \cite{conley2008semi} present a Bayesian inferential framework using a semi-parametric approach in which stochastic errors are modeled using a Dirichlet process (see Exercise 7), and \cite{ramirez2024welfare} extend this approach to systems of equations.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]\label{code3n_chap12}
@@ -1145,7 +1145,7 @@ Therefore,
 \[
 \tau_2 = \mathbb{E}[Y_{i2} - Y_{i1} \mid D_i = 1] - \mathbb{E}[Y_{i2} - Y_{i1} \mid D_i = 0],
 \]
-that is, the average treatment effect on the treated (ATT) is the difference in outcome differences between treated and control units. See Figure 16.2 in \cite{chernozhukov2024applied} for a nice graphical representation of the identification assumptions in DiD.
+that is, the average treatment effect on the treated (ATT) is the difference in outcome differences between treated and control units. See Figure 16.2 in \cite{chernozhukov2024applied} for a nice graphical representation of the identification assumptions in DiD, and \cite{normington2022bayesian} for a DAG representation of DiD.
 
 Note that we can express the observed outcome in terms of potential outcomes as
 \[
@@ -1179,7 +1179,7 @@ Another common formulation in the linear regression setting that recovers the AT
 \[
 Y_{it} = \alpha + \alpha_i + \phi_t + \tau_2 \,\big[ D_i \cdot \mathbbm{1}(t = 2) \big] + \epsilon_{it},
 \]
-where $\mathbbm{1}(t = 2)$ is an indicator for the post-treatment period \cite{roth2023whats}.
+where $\mathbbm{1}(t = 2)$ is an indicator for the post-treatment period \cite{roth2023whats}. The advantage of the regression setting is that it allows for the straightforward calculation of the standard error of the ATT, enabling the construction of confidence or credible intervals under the Frequentist and Bayesian approaches, respectively.
 
 The DiD framework can be extended to condition on pre-treatment covariates. In this case, we assume that the underlying identification assumptions are more plausible among units that are similar in terms of observed characteristics. Thus, the identification assumptions are stated conditional on the exogenous variables. 
 The \textit{parallel trends} assumption becomes
@@ -1213,7 +1213,7 @@ Y_{it} = \alpha + \alpha_i + \phi_t + \tau_2 \,\big[ D_i \cdot \mathbbm{1}(t = 2
 \]
 However, recovering the ATT using this specification is generally not advisable, because the augmented model does not yield a consistent estimator under conditional parallel trends unless additional homogeneity assumptions are imposed \cite{abadie2005semiparametric}. For example, if the treatment effect varies with pre-treatment covariates, the ATT estimator will be inconsistent.
  
-Therefore, alternative approaches such as \textit{regression adjustment}, \textit{inverse probability weighting}, and \textit{doubly robust} estimators are preferable, as they provide consistent estimators under conditional parallel trends \cite{roth2023whats}.
+Therefore, alternative approaches such as \textit{regression adjustment}, \textit{inverse probability weighting}, and \textit{doubly robust} estimators are preferable, as they provide consistent estimators under conditional parallel trends and are well known in the Frequentist econometric framework \cite{roth2023whats}.\footnote{See \cite{breunig2025double} for a doubly robust Bayesian inferential framework for average treatment effects.}
 
 Another limitation of DiD is that the parallel trends assumption is generally not robust to functional form transformations of the outcome. That is, it may hold when the outcome is measured in levels, but fail when it is expressed in logarithms. This is because two groups can have the same absolute increase (parallel trends in levels) but different percentage increases (non-parallel in logs).
 
@@ -1285,18 +1285,11 @@ Read this reference \cite{iacovone2023bayesian} before begin working in this cha
 \section{Sample selection}\label{sec12_2}
 \cite{greenberg2012introduction}
 
-\section{Regression discontinuity design}\label{sec12_3}
-\cite{chib2016bayesian,chib2023nonparametric,kowalska2024bayesian}
+\section{Other approaches}\label{sec12_3}
+There are other causal inference approaches that we do not cover in this chapter but are worth mentioning. In particular, the regression discontinuity design (RDD) exploits a known cutoff in a continuous running variable that deterministically assigns treatment: units above the threshold receive treatment, while those below do not. The key identification assumption is the \textit{continuity of the potential outcome functions at the cutoff}, so any observed jump in the conditional expectation of the outcome at the threshold can be attributed to the treatment effect. In a sharp RDD, treatment status changes deterministically at the cutoff, while in a fuzzy RDD the probability of treatment changes discontinuously. \cite{chib2016bayesian} propose a Bayesian inferential framework in which the type of unit (complier, always-taker, and never-taker) is explicitly modeled, allowing for the implementation of a Gibbs sampler. In addition, \cite{rischard2020bayesian} propose a Bayesian framework for performing inference nonparametrically in spatial RDD, and \cite{chib2023nonparametric} develop the theory for nonparametric sharp and fuzzy RDD using basis expansion methods.
 
-\section{Regression kink design}\label{sec12_4}
-\cite{chan2025minimum}
+Another interesting approach is the synthetic control method, which estimates a treatment effect by constructing a weighted combination of untreated units that best matches the treated unit's pre-treatment outcomes, and then comparing post-treatment differences. Identification relies on \textit{no interference between units}, \textit{parallel trends between the treated unit and its synthetic control in the absence of treatment}, and \textit{no anticipation of treatment} \cite{abadie2010synthetic}. Several proposals extend this framework to the Bayesian setting \cite{amjad2018robust,kim2020bayesian,pang2022bayesian}.
 
-\section{Synthetic control}\label{sec12_5a}
-\cite{amjad2018robust,kim2020bayesian}
-
-
-
-\section{Event Analysis}\label{sec12_7}
 
 \section{Bayesian exponential tilted empirical likelihood}\label{sec12_8}
 Bayesian parametric approaches are often criticized on the basis that they require arbitrary distribution assumptions which often are not examined. Partial information approaches are based only on certain moment assumptions without making specific distributional assumptions. However, there are no free lunch, as these methods imply efficiency losses.
@@ -1306,8 +1299,8 @@ The point of departure of Bayesian exponential tilted empirical likelihood (BETE
 \section{A general framework for updating belief distributions}\label{sec12_9}
 Introduce \cite{bissiri2016general} as a generalization of \cite{chernozhukov2003mcmc}.
 
-\section{Bayesian model averaging}\label{sec12_10}
-We can use BMA as a sensible way to perform robustness analysis regarding model specification (regressors uncertainty) in performing inference of treatment effects.
+%\section{Bayesian model averaging}\label{sec12_10}
+%We can use BMA as a sensible way to perform robustness analysis regarding model specification (regressors uncertainty) in performing inference of treatment effects.
 
 %\section{Double-Debiased machine learning causal effects}\label{sec12_11a}
 
@@ -1332,6 +1325,12 @@ We can use BMA as a sensible way to perform robustness analysis regarding model 
 	H(f) = - \int_{-\infty}^{\infty} f(y) \log f(y) \, dy,
 	\]
 	where $f(y)$ is a probability density function.
+	
+	\item Use the package \textit{dagity} to construct the DAG in Figure~\ref{DAG2}, verify that it is acyclic, and check whether the causal effect of \(D\) on \(Y\) is identifiable by controlling for \(\mathbf{X}\).
+	
+	\item Use the package \textit{dagitty} to construct the DAG in Figure~\ref{DAG3}, verify that it is acyclic, and check that the causal effect of \(D\) on \(Y\) is identifiable by controlling for \(\mathbf{X}\) but not for \(C\).
+	
+	\item Use the package \textit{dagitty} to construct the DAG in Figure~	\ref{DAG4}, taking into account that $\mathbf{U}$ is unobserved (latent). Verify that it is acyclic, check that $Z$ is a valid instrument, and determine whether the causal effect of \(D\) on \(Y\) is identifiable.
 	
 	\item \textbf{401(k) participation on net financial assets continues I}  
 	
