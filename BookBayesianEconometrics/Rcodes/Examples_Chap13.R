@@ -598,6 +598,83 @@ cat("\nTWFE estimate (coef on D:post):\n")
 print(coeftest(m_twfe, vcov = vcovCL, cluster = ~ id))
 cat("\nTrue ATT:", tau_true, "\n")
 
+#### Comparing first difference specification with TWFE specification ####
+rm(list = ls()); set.seed(10101)
+
+sim_once <- function(N = 2000,
+                     rhoX = 0.7,          # persistence of X
+                     beta = 1.0,          # effect of X on Y
+                     tau0 = 1.0,          # baseline ATT at X=0
+                     tauX = 0.8,          # heterogeneity: ATT increases with X1
+                     sel = 1.0,           # selection on X1 into treatment
+                     sd_a = 1, sd_e = 1)  # unit FE and noise SDs
+{
+  #--- panel indices (2x2 DiD)
+  id  <- 1:N
+  t   <- rep(1:2, each = N)
+  Post <- as.integer(t == 2)
+  
+  #--- pre/post covariate
+  X1_pre  <- rnorm(N)
+  X1_post <- rhoX * X1_pre + sqrt(1 - rhoX^2) * rnorm(N)
+  
+  #--- treatment depends on pre X
+  D <- as.numeric(sel * X1_pre + rnorm(N) > 0)
+  
+  #--- heterog. treatment effect: tau_i = tau0 + tauX * X1_pre
+  tau_i <- tau0 + tauX * X1_pre
+  
+  #--- unit FE and noise
+  a  <- rnorm(N, 0, sd_a)
+  e1 <- rnorm(N, 0, sd_e)
+  e2 <- rnorm(N, 0, sd_e)
+  
+  #--- outcomes
+  # levels model: Y_it(0) = a_i + phi_t + beta * X_it + eps_it
+  phi <- c(0, -1)               # common trend (parallel under X)
+  Y_pre  <- a + phi[1] + beta * X1_pre  + e1
+  Y_post <- a + phi[2] + beta * X1_post + e2 + tau_i * D
+  
+  # truths to compare
+  ATT_overall  <- mean(tau_i[D == 1])     # population ATT in this sample
+  ATT_baseline <- tau0                    # effect when X1_pre = 0
+  
+  #--- stack panel
+  Y   <- c(Y_pre, Y_post)
+  X   <- c(X1_pre, X1_post)
+  Di  <- rep(D, 2)
+  idf <- factor(rep(id, 2))
+  tt  <- factor(rep(1:2, each = N))
+  dY  <- Y_post - Y_pre
+  dX  <- X1_post - X1_pre
+  
+  #================= Estimation =================
+  
+  # (1) First-difference with ΔX: ΔY ~ D + ΔX
+  fd <- lm(dY ~ D + dX)
+  
+  # (2) TWFE with interactions to identify baseline ATT:
+  #     Y_it = α_i + φ_t + τ0*(D*Post) + γ*(Post*X1_pre) + δ*(D*Post*X1_pre) + ε_it
+  # NOTE: D main effect is collinear with α_i and drops automatically.
+  twfe <- lm(Y ~ idf + tt + I(D * (tt == 2)) +
+               I((tt == 2) * X1_pre) + I(D * (tt == 2) * X1_pre))
+  
+  c(ATT_overall  = ATT_overall,
+    ATT_baseline = ATT_baseline,
+    FD_beta_D    = coef(fd)["D"],
+    TWFE_tau0    = coef(twfe)["I(D * (tt == 2))"])
+}
+
+# Single run (illustrative)
+res1 <- sim_once()
+round(res1, 3)
+
+# Monte Carlo to stabilize comparisons
+R <- 100
+res <- replicate(R, sim_once())
+res <- t(res)
+
+apply(res, 2, function(x) c(mean = mean(x), sd = sd(x))) |> round(3)
 
 
 #### Working example: Staggered ATT ####
@@ -650,6 +727,4 @@ ggdid(es) +
   labs(title = "Event-Study: ATT over time",
        x = "Time relative to treatment",
        y = "ATT")
-
-
 

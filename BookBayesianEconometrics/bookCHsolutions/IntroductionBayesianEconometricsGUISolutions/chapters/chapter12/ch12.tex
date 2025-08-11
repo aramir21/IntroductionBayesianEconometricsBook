@@ -410,6 +410,8 @@ Perform the simulation of the DiD example, and perform inference using the speci
 Y_{it} = \alpha + \alpha_i + \phi_t + \tau_2 \,\big[ D_i \cdot \mathbbm{1}(t = 2) \big] + \epsilon_{it}.
 \]
 
+\textbf{Answer}
+
 You can check that we get same results as in example in the main book.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
@@ -453,6 +455,77 @@ print(ggp)
 post_fit1 <- MCMCpack::MCMCregress(Y ~ 1 + factor(id) + factor(t) + I(D * post), data = did, burnin = 100, mcmc = 1000)
 tau_draws1 <- post_fit1[, "I(D * post)"]
 quantile(tau_draws1, c(.025,.5,.975))
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}  
+
+\item \textbf{Difference-in-Differences simulation continues II}
+
+Note that another strategy to perform inference on the ATT is to estimate the saturated model
+\[
+Y_{it} = \sum_{t,d} \mu_{tl} \big[ D_{il} \cdot \mathbbm{1}(t = t) \big] + \epsilon_{it}, \quad t = 1, 2, \ d = 1, 0,
+\]
+and then use the posterior draws to compute
+\[
+\tau_2 = (\mu_{21} - \mu_{11}) - (\mu_{20} - \mu_{10}).
+\]
+Inference on $\tau_2$ using this approach in the simulation setting shows that the posterior mean is similar to that from the previous approaches, but the level of uncertainty is higher.
+
+\textbf{Answer}
+
+There is more uncertainty because performing inference on $\tau_2$ uses four parameters in this setting, whereas in the previous we use only one parameter.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Difference-in-Differences: Simulation exercise}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(10101)
+library(ggplot2); library(dplyr); library(fastDummies)
+# Parameters
+N_per_group <- 200          # units per group
+T_periods    <- 2           # keep 2x2 for clarity
+tau_true     <- 1           # ATT
+sigma_eps    <- 0.5         # noise SD
+# Panel index
+id  <- rep(1:(2*N_per_group), each = T_periods)
+t   <- rep(1:T_periods, times = 2*N_per_group)
+# Group: treated (D=1) vs control (D=0)
+D   <- rep(c(rep(0, N_per_group), rep(1, N_per_group)), each = T_periods)
+# Post indicator (t=2 is post)
+post <- as.integer(t == 2)
+# Unit fixed effects (random heterogeneity)
+alpha_i <- rnorm(2*N_per_group, 0, 0.8)
+alpha   <- alpha_i[id]
+# Time effects
+phi_t <- c(0, -1.8)  # common decline from t=1 to t=2
+phi   <- phi_t[t]
+# No anticipation: effect is zero in pre, equals tau in post *only for treated*
+treat_effect <- tau_true * (D * post)
+# Outcome: Y_it(0) = alpha_i + phi_t + linear trend if you want; here just FE + shock
+eps <- rnorm(length(id), 0, sigma_eps)
+Y   <- alpha + phi + treat_effect + eps
+did <- data.frame(id, t, D, post, Y)
+# Calculating the means at each level, and then ATT
+# ---- Build 2x2 cell indicators (no intercept model) ----
+did$c_pre  <- as.integer(did$D == 0 & did$t == 1)
+did$c_post <- as.integer(did$D == 0 & did$t == 2)
+did$t_pre  <- as.integer(did$D == 1 & did$t == 1)
+did$t_post <- as.integer(did$D == 1 & did$t == 2)
+# Sanity check: each row must belong to exactly one cell
+stopifnot(all(did$c_pre + did$c_post + did$t_pre + did$t_post == 1))
+# ---- Bayesian saturated cell-mean model (compatible priors) ----
+# No intercept: each coefficient IS a cell mean.
+fit_cells <- MCMCpack::MCMCregress(
+Y ~ 0 + c_pre + c_post + t_pre + t_post, data  = did, burnin = 1000, mcmc = 10000, thin = 5)
+draws_cells <- as.matrix(fit_cells)
+colnames(draws_cells)  # should be c("c_pre","c_post","t_pre","t_post", "sigma2")
+# Posterior of the four cell means
+mu_c_pre_draw  <- draws_cells[, "c_pre"]; mu_c_post_draw <- draws_cells[, "c_post"]
+mu_t_pre_draw  <- draws_cells[, "t_pre"]; mu_t_post_draw <- draws_cells[, "t_post"]
+# ATT = (mu_t,post - mu_t,pre) - (mu_c,post - mu_c,pre)
+ATT_cells_draw <- (mu_t_post_draw - mu_t_pre_draw) - (mu_c_post_draw - mu_c_pre_draw)
+quantile(ATT_cells_draw, c(.025, .5, .975))
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}  

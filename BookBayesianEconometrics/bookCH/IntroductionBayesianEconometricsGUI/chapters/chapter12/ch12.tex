@@ -1235,8 +1235,16 @@ quantile(post_fit[,1], c(.025,.5,.975))
 \end{tcolorbox}  
  
 
-The DiD framework can be extended to condition on pre-treatment covariates. In this case, we assume that the underlying identification assumptions are more plausible among units that are similar in terms of observed characteristics. Thus, the identification assumptions are stated conditional on the exogenous variables. 
-The \textit{parallel trends} assumption becomes
+The DiD framework can be extended to condition on pre-treatment covariates. In this case, we assume that the underlying identification assumptions are more plausible among units that are similar in terms of observed characteristics. Thus, the identification assumptions are stated conditional on the exogenous variables.
+
+Therefore, we can use pre-treatment variables to assess the balance between control and treated groups in terms of covariate levels ($X$) or trends ($\Delta X$) before and after treatment:
+\[
+\frac{\bar{X}_0-\bar{X}_1}{\sqrt{\hat{\sigma}_0^2+\hat{\sigma}_1^2}},
+\] 
+where $\hat{\sigma}_l^2$ is the sample variance of $X_l$, $l=\left\{0,1\right\}$. 
+As a rule of thumb, absolute standardized differences greater than 0.25 indicate potentially problematic imbalance \cite{baker2025did_guide}. Imbalance in pre-treatment variables can lead to violations of the parallel trends assumption if these covariates would generate different outcomes under the counterfactual scenarios.
+
+In this setting, the \textit{conditional parallel trends} assumption becomes
 \begin{equation}
 	\mathbb{E}[Y_{i2}(0,0) - Y_{i1}(0,0) \mid D_i = 1, \mathbf{X}_i] 
 	= \mathbb{E}[Y_{i2}(0,0) - Y_{i1}(0,0) \mid D_i = 0, \mathbf{X}_i], \ \text{almost surely}
@@ -1251,32 +1259,35 @@ In addition, the \textit{overlap} assumption is required: there exists a treatme
 P(D_i = 1 \mid \mathbf{X}_i) < 1 - \epsilon, \ \epsilon >0, \ \text{almost surely, and,} \ P(D_i=1)>0.
 \]
 
-Following similar arguments as before, we obtain the \textit{conditional average treatment effect on the treated} (CATT):
+Following similar arguments as before, we obtain the \textit{conditional average treatment effect on the treated} (CATT) \cite{baker2025did_guide}:
 \[
 \tau_2(\mathbf{X}_i)= \mathbb{E}[Y_{i2} - Y_{i1} \mid D_i = 1, \mathbf{X}_i] - \mathbb{E}[Y_{i2} - Y_{i1} \mid D_i = 0, \mathbf{X}_i].
 \]
 The overall ATT can then be recovered by averaging over the distribution of $\mathbf{X}_i$ in the treated population:
+\begin{align*}
+	\tau_2 & = \mathbb{E}_{\mathbf{X}}\left\{\mathbb{E}[Y_{i2} - Y_{i1} \mid D_i = 1, \mathbf{X}_i] - \mathbb{E}[Y_{i2} - Y_{i1} \mid D_i = 0, \mathbf{X}_i] \mid D_i = 1\right\}\\
+	&=\mathbb{E}[Y_{i2} - Y_{i1} \mid D_i = 1]-\mathbb{E}_{\mathbf{X}}\left\{\mathbb{E}[Y_{i2} - Y_{i1} \mid D_i = 0, \mathbf{X}_i]\mid D_i=1\right\}.
+\end{align*}
+
+Assuming a linear CEF and a homogeneous ATT, that is, treatment effects do not vary across $\mathbf{X}_{it}$, we can use the first–difference specification
 \[
-\tau_2 = \mathbb{E}_{\mathbf{X}}[\tau_2(\mathbf{X}_i) \mid D_i = 1].
+\Delta Y_{i2} = \alpha + \beta D_i + \sum_{k=1}^K \beta_k \Delta X_{ik2} + \Delta\mu_{i2},
 \]
+where $\Delta Y_{i2} = Y_{i2} - Y_{i1}$ and $\Delta X_{ik2} = X_{ik2} - X_{ik1}$. This specification identifies the ATT under the homogeneity assumption, in which case $\tau_2 = \beta$; otherwise, it identifies a weighted average of the conditional ATTs across covariates, with the possibility of negative weights that do not sum to one (\textit{non-convex weights}) \cite{baker2025did_guide}.
 
-Assuming a linear CEF and a homogeneous ATT, we can use either the first–difference specification
-\[
-\Delta Y_{i2} = \alpha + \tau_2 D_i + \sum_{k=1}^K \beta_k X_{ik} + \epsilon_i,
-\]
-where $\Delta Y_{i2}= Y_{i2} - Y_{i1}$, or the TWFE specification
-\[
-Y_{it} = \alpha + \alpha_i + \phi_t + \tau_2 \big[D_i \cdot \mathbbm{1}(t=2)\big]
-+ \sum_{k=1}^K \beta_k X_{ik} + \epsilon_{it}.
-\]
+An alternative specification is the TWFE
+\begin{align*}
+	Y_{it} & = \alpha + \alpha_i + \phi_t + \beta (\mathbbm{1}(t=2)\cdot D_i) +   \sum_{k=1}^K \beta_k (\mathbbm{1}(t=2)\cdot X_{ik1})\\
+	& +  \sum_{k=1}^K \delta_k (\mathbbm{1}(t=2)\cdot D_i \cdot X_{ik1}) + \epsilon_{it}.
+\end{align*}
 
-Note that these are \emph{not} equivalent. The first works in first differences and conditions on (typically time-invariant) $X_{ik}$, whereas the second is in levels with unit and time effects; with $\alpha_i$, time-invariant covariates are absorbed and cannot be separately identified. They coincide only in the special two-period case with no covariates (or when $X$ enters in differences), where regressing $\Delta Y_i$ on $D_i$ yields the same estimate of $\tau_2$ as the TWFE model.
+This specification can identify heterogeneous ATT under the assumption of a linear CEF.
 
-For instance, \cite{normington2019bayesian,normington2022bayesian} use the first–difference specification to implement DiD in a Bayesian hierarchical framework, given the data structure they faced.
+%For instance, \cite{normington2019bayesian,normington2022bayesian} use the first–difference specification to implement DiD in a Bayesian hierarchical framework, given the data structure they faced.
 
-However, if the treatment effect varies with pre-treatment covariates, the ATT estimator will be inconsistent \cite{abadie2005semiparametric}. Therefore, alternative \textit{semi-parametric} or \textit{non-parametric} approaches, such as \textit{inverse probability weighting} and \textit{doubly robust} estimators, are preferable, as they provide consistent estimators under conditional parallel trends \cite{roth2023whats}. For instance, \cite{breunig2025double} propose a double robust Bayesian inferential framework for average treatment effects.
+However, alternative \textit{semi-parametric} or \textit{non-parametric} approaches, such as \textit{regression adjustment}, \textit{inverse probability weighting}, and \textit{doubly robust} estimators, which combine the first two, are preferable, as they provide consistent estimators under conditional parallel trends without necessarily imposing a linear CEF \cite{abadie2005semiparametric,roth2023whats}. An important consideration in these strategies is the propagation of uncertainty, as they rely on two-stage procedures: first, estimate a conditional mean of the outcome or the propensity score (probability of treatment; \cite{rosenbaum1983central}), and second, use these estimates in a plug-in step to perform inference on the ATT. A Bayesian framework can offer advantages by naturally incorporating uncertainty propagation in such two-stage approaches. For instance, \cite{breunig2025double} propose a doubly robust Bayesian inferential framework for average treatment effects.
 
-Another limitation of DiD is that the parallel trends assumption is generally not robust to functional form transformations of the outcome. That is, it may hold when the outcome is measured in levels, but fail when it is expressed in logarithms. This is because two groups can have the same absolute increase (parallel trends in levels) but different percentage increases (non-parallel in logs).
+Another point to be aware of when performing DiD identification strategies is that the parallel trends assumption is generally not robust to functional form transformations of the outcome. That is, it may hold when the outcome is measured in levels but fail when it is expressed in logarithms. This is because two groups can have the same absolute increase (parallel trends in levels) but different percentage increases (non-parallel in logs).
 
 We can check for pre-existing differences in trends (``pre-trends'') as a test of the plausibility of the parallel trends assumption. Given a time period $t = 0$, we know from the no-anticipation assumption that $\mathbb{E}[Y_{it}(0,0)] = \mathbb{E}[Y_{it}]$ for all $i$ and $t = 0,1$. Therefore, we can test whether  
 \begin{equation}
@@ -1288,24 +1299,81 @@ However, the results of this test should be interpreted with caution. Even if pr
   
 Therefore, it is advisable to perform sensitivity analyses regarding the parallel trends assumption, using context-specific knowledge about plausible confounding factors.
 
+\section{Staggered event studies}
+There are situations that are more complex than the two-period and two-group ($2\times 2$) setup. For instance, there may be more than two periods and two groups, and a hierarchical structure in which treatment occurs at an upper level, and observed units at a lower level, for instance, treatment at school level while the observed units are students. However, the good news is that even in these complex situations, we can still understand the framework as an aggregation of $2\times 2$ comparisons between one set of units that receive treatment and another set that have not yet received treatment \cite{baker2025did_guide}.
+
+In a setting with multiple periods, different groups, and a hierarchical structure, assuming that treatment is an absorbing state —that is, once treated, units remain treated— DiD analyses seek to estimate a weighted average of heterogeneous ATTs, where the weights may be based on economic/policy relevance, for instance, the number of units within a particular higher-level structure where treatment is applied. 
+
+Given $t = 1, 2, \dots, T$, a unit can be treated at $t = g > 1$,  
+\[
+Y_{it}(g) := Y_{it}\big(\underbrace{0, \dots, 0}_{g-1}, \underbrace{1, \dots, 1}_{T-g+1}\big)
+\]
+denotes the potential outcome path for a unit treated at $g$, and
+\[
+Y_{it}(\infty) := Y_{it}\big(\underbrace{0, \dots, 0}_{T}\big)
+\]
+denotes the potential outcome path for a never-treated unit.  
+Under the absorbing treatment assumption, $D_{it} = 1$ for all $t \geq g$. Let
+\[
+G_i = \min\left\{ t : D_{it} = 1 \right\}
+\]
+denote the first period in which unit $i$ is treated.
+
+The average treatment effect for units first treated in period $g$ at time $t$ is
+\[
+ATT(t,g) = \mathbb{E}\left[ Y_{it}(g) - Y_{it}(\infty) \,\middle|\, G_i = g \right].
+\]
+
+The identifying assumptions for $ATT(t,g)$ are:
+
+\textit{1. Staggered parallel trends}:
+\begin{equation}
+	\mathbb{E}[Y_{it}(\infty) - Y_{it'}(\infty) \mid G_i = g] 
+	= \mathbb{E}[Y_{it}(\infty) - Y_{it'}(\infty) \mid G_i = g'], \quad \forall\, t, t' \geq g_{\min} - 1,
+\end{equation}
+where $g_{\min}$ is the earliest treatment period across all units.
+
+\textit{2. Staggered no anticipation}:
+\begin{equation}
+	\mathbb{E}[Y_{it}(g)] = \mathbb{E}[Y_{it}(\infty)], \quad \forall\, i,\ t < g.
+\end{equation} 
+
+Thus, to identify long-term effects, the parallel trends assumption must hold for all periods after the earliest treatment period. If the goal is to estimate effects in a specific short-term period, parallel trends must hold in that period.
+
+Note that under these assumptions, we can express $ATT(t,g)$ in terms of observable outcomes as
+\begin{align*}
+	ATT(t,g) 
+	= \mathbb{E}\big[ Y_{it} - Y_{i, g-1} \mid G_i = g \big]
+	- \mathbb{E}\big[ Y_{it} - Y_{i, g-1} \mid G_i = g', \ g' > t \big].
+\end{align*}
+This formulation makes explicit the choice of the comparison group, which can consist of not-yet-treated or never-treated units.
+
+To study the dynamics of treatment effects, we can use \textit{event study} plots. These involve estimating and reporting effects for a range of periods before and after treatment, allowing us to analyze the temporal pattern of the ATTs \cite{baker2025did_guide}. In this context, we can perform inference on
+\[
+ATT_l^w = \sum_g w_g \, ATT(g, g+l),
+\]
+where $w_g$ denotes the weight for cohort $g$. For instance, if the outcome variable is defined at the school level (e.g., the proportion of dropouts), then $ATT(t,g)$ is a school-level effect, and $w_g$ could be the proportion of students in that school relative to the total student population.
+
+%Here, $Y_{it}(g)$ denotes the potential outcome for unit $i$ at time $t$ if treated at $g$, and $Y_{it}(\infty)$ denotes the potential outcome if never-treated. For units not yet treated by period $t = g$, $Y_{it} = Y_{it}(0)$; for units treated in period $t = g$, $Y_{it} = Y_{it}(1)$ for all $t \ge g$ under the absorbing treatment assumption.  
+
+These weights can be constructed in several ways depending on the aggregation scheme and the estimand of interest \cite{goodman2021difference}. For example, $w$ can be based on:
+\begin{enumerate}
+	\item \textbf{Unit counts}: the number of observations in the treated and control groups within each comparison.
+	\item \textbf{Population shares}: the proportion of the population (e.g., students, residents) in the treated and control groups.
+	\item \textbf{Variance weights}: inverse-variance weights reflecting the precision of each $2\times2$ comparison.
+\end{enumerate}
+Note that, regardless of the weighting scheme, clustering must be taken into account when quantifying uncertainty, especially when treatment is assigned at the higher-level unit.
 
 
-\section{Staggered settings} 
-treatment is an absorbing state
 
-not-yet-treated or never-treated units
 
 a TWFE specification may be justified for efficiency reasons if one is confident that treatment effects are homogeneous, but researchers are often unwilling to restrict treatment effect heterogeneity.
-
-Parallel trend is not robust to functional forms, except in particular cases, like random assignment.
 
 
 Remember the role of $\rho$, the correlation of the potential outcomes $Y(1)$ and $Y(0)$, where the likelihood does not have information about it!
 
 
 
-
-\cite{normington2019bayesian,normington2022bayesian,breunig2024semiparametric}
 
 
 
@@ -1401,13 +1469,26 @@ Introduce \cite{bissiri2016general} as a generalization of \cite{chernozhukov200
 	
 	Use the function \textit{rivDP} from the \textit{bayesm} package to perform inference on 401(k) participation and its effect on net financial assets using the same specification as in the main text, and plot the LATE.
 	
-	\item \textbf{Difference-in-Differences simulation continues}
+	\item \textbf{Difference-in-Differences simulation continues I}
 	
 	Perform the simulation of the DiD example, and perform inference using the specification:
 	
 	\[
 	Y_{it} = \alpha + \alpha_i + \phi_t + \tau_2 \,\big[ D_i \cdot \mathbbm{1}(t = 2) \big] + \epsilon_{it},
-	\] 
+	\]
+	
+	\item \textbf{Difference-in-Differences simulation continues II}
+	
+	Note that another strategy to perform inference on the ATT is to estimate the saturated model
+	\[
+	Y_{it} = \sum_{t,l} \mu_{tl} \big[ D_{il} \cdot \mathbbm{1}(t = t) \big] + \epsilon_{it}, \quad t = 1, 2, \ l = 1, 0,
+	\]
+	and then use the posterior draws to compute
+	\[
+	\tau_2 = (\mu_{21} - \mu_{11}) - (\mu_{20} - \mu_{10}).
+	\]
+	Inference on $\tau_2$ using this approach in the simulation setting shows that the posterior mean is similar to that from the previous approaches, but the level of uncertainty is higher.
+	
 	  
 	 
 	

@@ -251,3 +251,103 @@ ggplot(df_ITT, aes(x = ITT)) +
   ) +
   theme_minimal(base_size = 14)
 
+#### Synthetic DiD data: parallel trends + no anticipation ####
+rm(list = ls()); set.seed(10101)
+library(ggplot2); library(dplyr); library(fastDummies)
+
+# Parameters
+N_per_group <- 200          # units per group
+T_periods    <- 2           # keep 2x2 for clarity
+tau_true     <- 1         # ATT
+sigma_eps    <- 0.5         # noise SD
+
+# Panel index
+id  <- rep(1:(2*N_per_group), each = T_periods)
+t   <- rep(1:T_periods, times = 2*N_per_group)
+
+# Group: treated (D=1) vs control (D=0)
+D   <- rep(c(rep(0, N_per_group), rep(1, N_per_group)), each = T_periods)
+
+# Post indicator (t=2 is post)
+post <- as.integer(t == 2)
+
+# Unit fixed effects (random heterogeneity)
+alpha_i <- rnorm(2*N_per_group, 0, 0.8)
+alpha   <- alpha_i[id]
+
+# Time effects (common shocks) – parallel trends built in here
+phi_t <- c(0, -1.8)  # common decline from t=1 to t=2
+phi   <- phi_t[t]
+
+# No anticipation: effect is zero in pre, equals tau in post *only for treated*
+treat_effect <- tau_true * (D * post)
+
+# Outcome: Y_it(0) = alpha_i + phi_t + linear trend if you want; here just FE + shock
+eps <- rnorm(length(id), 0, sigma_eps)
+Y   <- alpha + phi + treat_effect + eps
+
+did <- data.frame(id, t, D, post, Y)
+
+# --- Quick check: cell means --------------------------------------------------
+with(did, tapply(Y, list(Group = D, Time = t), mean))
+
+# --- Plot group means over time (shows parallel trends + no anticipation) ----
+
+plot_data <- did %>%
+  group_by(D, t) %>%
+  summarise(meanY = mean(Y), .groups = "drop") %>%
+  mutate(Group = ifelse(D == 1, "Treated", "Control"))
+
+ggp <- ggplot(plot_data, aes(x = t, y = meanY, group = Group, linetype = Group)) +
+  geom_line(linewidth = 1) +
+  geom_point() +
+  scale_x_continuous(breaks = c(1, 2), labels = c("t = 1 (pre)", "t = 2 (post)")) +
+  labs(x = "Time", y = "Mean outcome", title = "Synthetic DiD: Parallel Trends & No Anticipation") +
+  theme_minimal(base_size = 12)
+print(ggp)
+
+# Bayesian inference: Model in differences
+dY <- did$Y[did$t==2] - did$Y[did$t==1]
+D  <- did$D[did$t==1]
+post_fit <- MCMCpack::MCMCregress(dY ~ 1 + D, burnin = 100, mcmc = 1000)
+tau_draws <- post_fit[, "D"]
+quantile(tau_draws, c(.025,.5,.975))
+quantile(post_fit[,1], c(.025,.5,.975))
+
+# Bayesian inference: Model with interaction treatment x post period
+post_fit1 <- MCMCpack::MCMCregress(Y ~ 1 + factor(id) + factor(t) + I(D * post), data = did, burnin = 100, mcmc = 1000)
+tau_draws1 <- post_fit1[, "I(D * post)"]
+quantile(tau_draws1, c(.025,.5,.975))
+
+# Calculating the means at each level, and then ATT
+# ---- Build 2x2 cell indicators (no intercept model) ----
+did$c_pre  <- as.integer(did$D == 0 & did$t == 1)
+did$c_post <- as.integer(did$D == 0 & did$t == 2)
+did$t_pre  <- as.integer(did$D == 1 & did$t == 1)
+did$t_post <- as.integer(did$D == 1 & did$t == 2)
+
+# Sanity check: each row must belong to exactly one cell
+stopifnot(all(did$c_pre + did$c_post + did$t_pre + did$t_post == 1))
+
+# ---- Bayesian saturated cell-mean model (compatible priors) ----
+# Y_it = mu_c,pre * 1{c,pre} + mu_c,post * 1{c,post} + mu_t,pre * 1{t,pre} + mu_t,post * 1{t,post} + eps
+# No intercept: each coefficient IS a cell mean.
+fit_cells <- MCMCpack::MCMCregress(
+  Y ~ 0 + c_pre + c_post + t_pre + t_post,
+  data  = did,
+  burnin = 1000, mcmc = 10000, thin = 5
+)
+
+draws_cells <- as.matrix(fit_cells)
+colnames(draws_cells)  # should be c("c_pre","c_post","t_pre","t_post", "sigma2")
+
+# Posterior of the four cell means
+mu_c_pre_draw  <- draws_cells[, "c_pre"]
+mu_c_post_draw <- draws_cells[, "c_post"]
+mu_t_pre_draw  <- draws_cells[, "t_pre"]
+mu_t_post_draw <- draws_cells[, "t_post"]
+
+# ATT as a linear combination of cell means:
+# ATT = (mu_t,post - mu_t,pre) - (mu_c,post - mu_c,pre)
+ATT_cells_draw <- (mu_t_post_draw - mu_t_pre_draw) - (mu_c_post_draw - mu_c_pre_draw)
+quantile(ATT_cells_draw, c(.025, .5, .975))
