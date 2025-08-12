@@ -1299,10 +1299,10 @@ However, the results of this test should be interpreted with caution. Even if pr
   
 Therefore, it is advisable to perform sensitivity analyses regarding the parallel trends assumption, using context-specific knowledge about plausible confounding factors.
 
-\section{Staggered event studies}
+\section{Staggered difference-in-differences (SDiD)}
 There are situations that are more complex than the two-period and two-group ($2\times 2$) setup. For instance, there may be more than two periods and two groups, and a hierarchical structure in which treatment occurs at an upper level, and observed units at a lower level, for instance, treatment at school level while the observed units are students. However, the good news is that even in these complex situations, we can still understand the framework as an aggregation of $2\times 2$ comparisons between one set of units that receive treatment and another set that have not yet received treatment \cite{baker2025did_guide}.
 
-In a setting with multiple periods, different groups, and a hierarchical structure, assuming that treatment is an absorbing state —that is, once treated, units remain treated— DiD analyses seek to estimate a weighted average of heterogeneous ATTs, where the weights may be based on economic/policy relevance, for instance, the number of units within a particular higher-level structure where treatment is applied. 
+In a setting with multiple periods and different groups, assuming that treatment is an absorbing state —that is, once treated, units remain treated— DiD analyses seek to estimate a weighted average of heterogeneous ATTs, where the weights may be based on economic/policy relevance, for instance, the number of units within a particular higher-level structure where treatment is applied. 
 
 Given $t = 1, 2, \dots, T$, a unit can be treated at $t = g > 1$,  
 \[
@@ -1328,19 +1328,24 @@ The identifying assumptions for $ATT(t,g)$ are:
 
 \textit{1. Staggered parallel trends}:
 \begin{equation}
-	\mathbb{E}[Y_{it}(\infty) - Y_{it'}(\infty) \mid G_i = g] 
-	= \mathbb{E}[Y_{it}(\infty) - Y_{it'}(\infty) \mid G_i = g'], \quad \forall\, t, t' \geq g_{\min} - 1,
+	\mathbb{E}[Y_{it}(\infty) - Y_{it-1}(\infty) \mid G_i = g] 
+	= \mathbb{E}[Y_{it}(\infty) - Y_{it-1}(\infty) \mid G_i = g'], \quad \forall\, t \geq g, g'>t.
 \end{equation}
-where $g_{\min}$ is the earliest treatment period across all units.
+In staggered settings, the parallel-trends assumption typically compares treated cohorts to the \emph{not-yet-treated}. This can be modified to use \emph{never-treated} units as the comparison group, or to impose parallel trends across \emph{all} groups and periods. The all-groups, all-periods version is more demanding but can deliver more precise estimates; the never-treated version imposes fewer assumptions. The not-yet-treated version is a middle ground between these two. Ultimately, which parallel-trends assumption to use is context specific \cite{baker2025did_guide}.
+
+
+The not-yet-treated staggered parallel assumption establishes that the average change in potential outcomes for all treated groups would have evolved in parallel after treatment began, under the counterfactual scenario in which they had not received treatment.
 
 \textit{2. Staggered no anticipation}:
 \begin{equation}
 	\mathbb{E}[Y_{it}(g)] = \mathbb{E}[Y_{it}(\infty)], \quad \forall\, i,\ t < g.
-\end{equation} 
+\end{equation}
+
+That is, treated units do not change their potential outcomes in anticipation of future treatment before treatment begins.
 
 Thus, to identify long-term effects, the parallel trends assumption must hold for all periods after the earliest treatment period. If the goal is to estimate effects in a specific short-term period, parallel trends must hold in that period.
 
-Note that under these assumptions, we can express $ATT(t,g)$ in terms of observable outcomes as
+Note that under these assumptions, we can express $ATT(t,g)$ in terms of observable outcomes as \cite{roth2023whats}
 \begin{align*}
 	ATT(t,g) 
 	= \mathbb{E}\big[ Y_{it} - Y_{i, g-1} \mid G_i = g \big]
@@ -1352,7 +1357,7 @@ To study the dynamics of treatment effects, we can use \textit{event study} plot
 \[
 ATT_l^w = \sum_g w_g \, ATT(g, g+l),
 \]
-where $w_g$ denotes the weight for cohort $g$. For instance, if the outcome variable is defined at the school level (e.g., the proportion of dropouts), then $ATT(t,g)$ is a school-level effect, and $w_g$ could be the proportion of students in that school relative to the total student population.
+where $w_g$ denotes the weight for cohort $g$. For instance, if the outcome variable is defined at the school level (e.g., the proportion of dropouts), then $ATT(t,g)$ is a school-level effect, and $w_g$ could be the proportion of students in that school relative to the total student population.\footnote{In general, given a hierarchical structure, all the expected values in this section can be defined as $w$-weighted population expectations; see \cite{baker2025did_guide}.}
 
 %Here, $Y_{it}(g)$ denotes the potential outcome for unit $i$ at time $t$ if treated at $g$, and $Y_{it}(\infty)$ denotes the potential outcome if never-treated. For units not yet treated by period $t = g$, $Y_{it} = Y_{it}(0)$; for units treated in period $t = g$, $Y_{it} = Y_{it}(1)$ for all $t \ge g$ under the absorbing treatment assumption.  
 
@@ -1364,7 +1369,25 @@ These weights can be constructed in several ways depending on the aggregation sc
 \end{enumerate}
 Note that, regardless of the weighting scheme, clustering must be taken into account when quantifying uncertainty, especially when treatment is assigned at the higher-level unit.
 
+An advantage of having multiple pre-treatment periods in the design is that it allows calculating \textit{falsification/placebo tests}. Under the \textit{no anticipation} assumption, any $ATT(t)$ before $G_i$ must be zero. That is, 
+\begin{align*}
+	ATT(t,g) 
+	&= \mathbb{E}\big[ Y_{it} - Y_{i, g-1} \mid G_i = g \big]
+	- \mathbb{E}\big[ Y_{it} - Y_{i, g-1} \mid G_i = g' \big] = 0, \\
+	&\quad \text{for } g \neq g', \quad g, g' \leq t < \min\{g, g'\}.
+\end{align*}
+Thus, we can test whether the differences in the expected changes of the outcome variable before treatment between different groups are statistically indistinguishable from zero. If this is the case, common practice would suggest that there is evidence in favor of parallel trends. However, the parallel trends assumption is essentially untestable because it imposes restrictions on post-treatment periods, not on pre-treatment periods. Consequently, the same recommendations as those at the end of the previous section apply: perform sensitivity analyses regarding potential violations of the parallel trends assumption.
 
+We can use a TWFE specification to perform inference on $ATT(t,g)$:
+\begin{align*}
+	Y_{it} &= \alpha + \alpha_i + \phi_t 
+	+ \sum_{k=1}^{g-2} \beta_k \big( \mathbbm{1}(t=k) \cdot \mathbbm{1}(G_i=g) \big) 
+	+ \sum_{k=g}^{T} \beta_k \big( \mathbbm{1}(t=k) \cdot \mathbbm{1}(G_i=g) \big) 
+	+ \epsilon_{it}.
+\end{align*}
+In this specification, we should account for clustering in the standard errors and for joint uncertainty when evaluating hypotheses about the entire event study.
+
+ 
 
 
 a TWFE specification may be justified for efficiency reasons if one is confident that treatment effects are homogeneous, but researchers are often unwilling to restrict treatment effect heterogeneity.
