@@ -1235,14 +1235,14 @@ quantile(post_fit[,1], c(.025,.5,.975))
 \end{tcolorbox}  
  
 
-The DiD framework can be extended to condition on pre-treatment covariates. In this case, we assume that the underlying identification assumptions are more plausible among units that are similar in terms of observed characteristics. Thus, the identification assumptions are stated conditional on the exogenous variables.
+The DiD framework can be extended to condition on covariates. In this case, we assume that the underlying identification assumptions are more plausible among units that are similar in terms of observed characteristics. Thus, the identification assumptions are stated conditional on the exogenous variables.
 
-Therefore, we can use pre-treatment variables to assess the balance between control and treated groups in terms of covariate levels ($X$) or trends ($\Delta X$) before and after treatment:
+Therefore, we can use covariates to assess the balance between control and treated groups in terms of levels ($X$) or ($\Delta X$) before and after treatment:
 \[
 \frac{\bar{X}_0-\bar{X}_1}{\sqrt{\hat{\sigma}_0^2+\hat{\sigma}_1^2}},
 \] 
 where $\hat{\sigma}_l^2$ is the sample variance of $X_l$, $l=\left\{0,1\right\}$. 
-As a rule of thumb, absolute standardized differences greater than 0.25 indicate potentially problematic imbalance \cite{baker2025did_guide}. Imbalance in pre-treatment variables can lead to violations of the parallel trends assumption if these covariates would generate different outcomes under the counterfactual scenarios.
+As a rule of thumb, absolute standardized differences greater than 0.25 indicate potentially problematic imbalance \cite{baker2025did_guide}. Imbalance in covariates can lead to violations of the parallel trends assumption if these covariates would generate different outcomes under the counterfactual scenarios.
 
 In this setting, the \textit{conditional parallel trends} assumption becomes
 \begin{equation}
@@ -1300,9 +1300,9 @@ However, the results of this test should be interpreted with caution. Even if pr
 Therefore, it is advisable to perform sensitivity analyses regarding the parallel trends assumption, using context-specific knowledge about plausible confounding factors.
 
 \section{Staggered difference-in-differences (SDiD)}
-There are situations that are more complex than the two-period and two-group ($2\times 2$) setup. For instance, there may be more than two periods and two groups, and a hierarchical structure in which treatment occurs at an upper level, and observed units at a lower level, for instance, treatment at school level while the observed units are students. However, the good news is that even in these complex situations, we can still understand the framework as an aggregation of $2\times 2$ comparisons between one set of units that receive treatment and another set that have not yet received treatment \cite{baker2025did_guide}.
+Many empirical settings are more complex than the two-period, two-group ($2\times 2$) design. Nevertheless, even in such settings we can view the design as an aggregation of $2\times 2$ comparisons between units that receive treatment and units that are not yet treated at the relevant time \cite{baker2025did_guide}.
 
-In a setting with multiple periods and different groups, assuming that treatment is an absorbing state —that is, once treated, units remain treated— DiD analyses seek to estimate a weighted average of heterogeneous ATTs, where the weights may be based on economic/policy relevance, for instance, the number of units within a particular higher-level structure where treatment is applied. 
+In a setting with multiple periods and different groups, assuming that treatment is an absorbing state —that is, once treated, units remain treated— staggered DiD (SDiD) analyses seek to estimate a weighted average of heterogeneous ATTs, where the weights may be based on economic/policy relevance. 
 
 Given $t = 1, 2, \dots, T$, a unit can be treated at $t = g > 1$,  
 \[
@@ -1321,20 +1321,19 @@ denote the first period in which unit $i$ is treated.
 
 The average treatment effect for units first treated in period $g$ at time $t$ is
 \[
-ATT(t,g) = \mathbb{E}\left[ Y_{it}(g) - Y_{it}(\infty) \,\middle|\, G_i = g \right].
+ATT(g,t) = \mathbb{E}\left[ Y_{it}(g) - Y_{it}(\infty) \,\middle|\, G_i = g \right].
 \]
 
-The identifying assumptions for $ATT(t,g)$ are:
+The identifying assumptions for $ATT(g,t)$ are:
 
-\textit{1. Staggered parallel trends}:
+\textit{1. Staggered parallel trends based on not-yet-treated units}:
 \begin{equation}
 	\mathbb{E}[Y_{it}(\infty) - Y_{it-1}(\infty) \mid G_i = g] 
 	= \mathbb{E}[Y_{it}(\infty) - Y_{it-1}(\infty) \mid G_i = g'], \quad \forall\, t \geq g, g'>t.
 \end{equation}
-In staggered settings, the parallel-trends assumption typically compares treated cohorts to the \emph{not-yet-treated}. This can be modified to use \emph{never-treated} units as the comparison group, or to impose parallel trends across \emph{all} groups and periods. The all-groups, all-periods version is more demanding but can deliver more precise estimates; the never-treated version imposes fewer assumptions. The not-yet-treated version is a middle ground between these two. Ultimately, which parallel-trends assumption to use is context specific \cite{baker2025did_guide}.
+The \textit{not-yet-treated} staggered parallel assumption establishes that the average change in potential outcomes for all treated groups would have evolved in parallel after treatment began, under the counterfactual scenario in which they had not received treatment.
 
-
-The not-yet-treated staggered parallel assumption establishes that the average change in potential outcomes for all treated groups would have evolved in parallel after treatment began, under the counterfactual scenario in which they had not received treatment.
+Note that this \textit{not-yet-treated} parallel trends assumption can be modified to use \textit{never-treated} units as the comparison group, or to impose parallel trends across \textit{all} groups and periods. The \textit{all-groups, all-periods} version is more demanding but can deliver more precise estimates; the never-treated version imposes fewer assumptions. The not-yet-treated version is a middle ground between these two. Ultimately, which parallel-trends assumption to use is context specific \cite{baker2025did_guide}.
 
 \textit{2. Staggered no anticipation}:
 \begin{equation}
@@ -1343,71 +1342,80 @@ The not-yet-treated staggered parallel assumption establishes that the average c
 
 That is, treated units do not change their potential outcomes in anticipation of future treatment before treatment begins.
 
-Thus, to identify long-term effects, the parallel trends assumption must hold for all periods after the earliest treatment period. If the goal is to estimate effects in a specific short-term period, parallel trends must hold in that period.
+Thus, to identify long-term effects, the parallel trends assumption must hold for all periods after the earliest treatment period in the not-yet-treated case. If the goal is to estimate effects in a specific short-term period, parallel trends must hold in that period.
 
-Note that under these assumptions, we can express $ATT(t,g)$ in terms of observable outcomes as \cite{roth2023whats}
+Note that under these assumptions, we can express $ATT(g,t)$ in terms of observable outcomes as \cite{roth2023whats}
 \begin{align*}
-	ATT(t,g) 
+	ATT(g,t) 
 	= \mathbb{E}\big[ Y_{it} - Y_{i, g-1} \mid G_i = g \big]
 	- \mathbb{E}\big[ Y_{it} - Y_{i, g-1} \mid G_i = g', \ g' > t \big].
 \end{align*}
-This formulation makes explicit the choice of the comparison group, which can consist of not-yet-treated or never-treated units.
+This formulation makes explicit the choice of the comparison group, either not-yet-treated or never-treated units. Moreover, cohorts are indexed by the first treatment date $g$, and effects are evaluated at calendar time $t$. Hence the object of interest is cohort–time specific, $ATT(g,t)$, and staggered designs generally imply a multiplicity of ATT parameters.
 
-To study the dynamics of treatment effects, we can use \textit{event study} plots. These involve estimating and reporting effects for a range of periods before and after treatment, allowing us to analyze the temporal pattern of the ATTs \cite{baker2025did_guide}. In this context, we can perform inference on
-\[
-ATT_l^w = \sum_g w_g \, ATT(g, g+l),
-\]
-where $w_g$ denotes the weight for cohort $g$. For instance, if the outcome variable is defined at the school level (e.g., the proportion of dropouts), then $ATT(t,g)$ is a school-level effect, and $w_g$ could be the proportion of students in that school relative to the total student population.\footnote{In general, given a hierarchical structure, all the expected values in this section can be defined as $w$-weighted population expectations; see \cite{baker2025did_guide}.}
+To study the dynamics of treatment effects, we can use \textit{event study} plots. These involve estimating and reporting effects for a range of periods before and after treatment, allowing us to analyze the temporal pattern of the ATTs \cite{baker2025did_guide}. 
 
+%In this context, we can perform inference on
+%\[
+%ATT_l^w = \sum_g w_g \, ATT(g, g+l),
+%\]
+%where $w_g$ denotes the weight for cohort $g$. For instance, if the outcome variable is defined at the school level (e.g., the proportion of dropouts), then $ATT(g,t)$ is a school-level effect, and $w_g$ could be the proportion of students in that school relative to the total student population.\footnote{In general, given a hierarchical structure, all the expected values in this section can be defined as $w$-weighted population expectations; see \cite{baker2025did_guide}.}
+%
 %Here, $Y_{it}(g)$ denotes the potential outcome for unit $i$ at time $t$ if treated at $g$, and $Y_{it}(\infty)$ denotes the potential outcome if never-treated. For units not yet treated by period $t = g$, $Y_{it} = Y_{it}(0)$; for units treated in period $t = g$, $Y_{it} = Y_{it}(1)$ for all $t \ge g$ under the absorbing treatment assumption.  
-
-These weights can be constructed in several ways depending on the aggregation scheme and the estimand of interest \cite{goodman2021difference}. For example, $w$ can be based on:
-\begin{enumerate}
-	\item \textbf{Unit counts}: the number of observations in the treated and control groups within each comparison.
-	\item \textbf{Population shares}: the proportion of the population (e.g., students, residents) in the treated and control groups.
-	\item \textbf{Variance weights}: inverse-variance weights reflecting the precision of each $2\times2$ comparison.
-\end{enumerate}
-Note that, regardless of the weighting scheme, clustering must be taken into account when quantifying uncertainty, especially when treatment is assigned at the higher-level unit.
+%
+%These weights can be constructed in several ways depending on the aggregation scheme and the estimand of interest \cite{goodman2021difference}. For example, $w$ can be based on:
+%\begin{enumerate}
+%	\item \textbf{Unit counts}: the number of observations in the treated and control groups within each comparison.
+%	\item \textbf{Population shares}: the proportion of the population (e.g., students, residents) in the treated and control groups.
+%	\item \textbf{Variance weights}: inverse-variance weights reflecting the precision of each $2\times2$ comparison.
+%\end{enumerate}
+%Note that, regardless of the weighting scheme, clustering must be taken into account when quantifying uncertainty, especially when treatment is assigned at the higher-level unit.
 
 An advantage of having multiple pre-treatment periods in the design is that it allows calculating \textit{falsification/placebo tests}. Under the \textit{no anticipation} assumption, any $ATT(t)$ before $G_i$ must be zero. That is, 
 \begin{align*}
-	ATT(t,g) 
+	ATT(g,t) 
 	&= \mathbb{E}\big[ Y_{it} - Y_{i, g-1} \mid G_i = g \big]
 	- \mathbb{E}\big[ Y_{it} - Y_{i, g-1} \mid G_i = g' \big] = 0, \\
 	&\quad \text{for } g \neq g', \quad g, g' \leq t < \min\{g, g'\}.
 \end{align*}
 Thus, we can test whether the differences in the expected changes of the outcome variable before treatment between different groups are statistically indistinguishable from zero. If this is the case, common practice would suggest that there is evidence in favor of parallel trends. However, the parallel trends assumption is essentially untestable because it imposes restrictions on post-treatment periods, not on pre-treatment periods. Consequently, the same recommendations as those at the end of the previous section apply: perform sensitivity analyses regarding potential violations of the parallel trends assumption.
 
-We can use a TWFE specification to perform inference on $ATT(t,g)$:
+Assuming that parallel trends hold conditional on covariates, we obtain identification under the following assumptions:
+
+\textit{1. Staggered parallel trends with not-yet-treated comparison (conditional on $\mathbf X_i$):}
+\[
+\mathbb{E}\!\left[Y_{it}(\infty)-Y_{i,t-1}(\infty)\mid G_i=g,\ \mathbf X_i\right]
+=
+\mathbb{E}\!\left[Y_{it}(\infty)-Y_{i,t-1}(\infty)\mid G_i>t,\ \mathbf X_i\right],
+\quad \forall\, g,\ t<g.
+\]
+
+\textit{2. Staggered overlap (positivity) for not-yet-treated comparisons:}
+\[
+\epsilon \le P(G_i=g \mid \mathbf X_i)
+\quad \text{and} \quad
+\epsilon \le P(G_i>t \mid \mathbf X_i),
+\quad \forall\, g,\ t<g,\ \text{for some } \epsilon>0.
+\]
+
+That is, conditional on covariates, pre-treatment changes in untreated potential outcomes for cohort $g$ match those of units not yet treated at time $t$, and there is positive probability of belonging to cohort $g$ and of being not yet treated at $t$.
+
+Given these assumptions and no anticipation, the $ATT(g,t)$ can be expressed as
 \begin{align*}
-	Y_{it} &= \alpha + \alpha_i + \phi_t 
-	+ \sum_{k=1}^{g-2} \beta_k \big( \mathbbm{1}(t=k) \cdot \mathbbm{1}(G_i=g) \big) 
-	+ \sum_{k=g}^{T} \beta_k \big( \mathbbm{1}(t=k) \cdot \mathbbm{1}(G_i=g) \big) 
-	+ \epsilon_{it}.
+	ATT(g,t) &=\mathbb{E}[Y_{it} - Y_{ig-1} \mid G_i = g]-\mathbb{E}_{\mathbf{X}}\left\{\mathbb{E}[Y_{it} - Y_{ig-1} \mid\mathbf{X}_i,  G_i = g'>t]\mid G_i=g\right\}.
 \end{align*}
-In this specification, we should account for clustering in the standard errors and for joint uncertainty when evaluating hypotheses about the entire event study.
 
- 
+Again, inference on $ATT(g,t)$ can be conducted using regression adjustment, inverse-probability weighting, or doubly robust estimators. Although TWFE specifications are often used to estimate $ATT(g,t)$, \cite{baker2025did_guide} recommend avoiding them in staggered DiD settings because they generally do not identify $ATT(g,t)$. Instead, they recover a complicated, non-convex weighted average of cohort–time effects, with potentially negative weights.\\
+
+\textbf{Example:...}
 
 
-a TWFE specification may be justified for efficiency reasons if one is confident that treatment effects are homogeneous, but researchers are often unwilling to restrict treatment effect heterogeneity.
 
 
 Remember the role of $\rho$, the correlation of the potential outcomes $Y(1)$ and $Y(0)$, where the likelihood does not have information about it!
 
-
-
-
-
-
-
-
-
 In this framework, there is a model for the assignment mechanism $P(D_i\mid Y_i(1), Y_i(0), \mathbf{X}_i)$, like randomization or propensity score matching \cite{rosenbaum1983central}, supplemented by a model for the data $P(Y_i(1), Y_i(0)\mid \mathbf{X}_i)$. A causal inference is delivered by conditioning in what is observed to calculate the posterior distribution of the causal estimand given also the models for the assignment mechanisms and data. Therefore, there is a model to input the potential outcome missing value that allows to get the predictive distribution, and then, the posterior predictive distribution of the treatment effect ($Y_i(1)-Y_i(0)$) is calculated. We should take into account that the parameters of the models for predicting the missing potential outcomes are generally not causal effects. Due to using models for the data based on simulation, the Bayesian approach is by far the most direct and flexible of the modes of inference for causal effects. However, it relies on assumptions on the assignment mechanism and data.
 
 Given pretreatment variables, it improves the predictive power of the potential outcome missing data
-
-
 
 There, no compliance is explicitly treated as missing data. A nice advantage of the Bayesian approach is to relax the exclusion restriction \cite{rubin2004teaching}.
 
@@ -1421,18 +1429,13 @@ Introduce maximum entropy using identification conditions to build likelihood fu
 
 Instrumental variables change the level of the treatment, without affecting the potential outcomes associated with these treatment levels \cite{imbens2014ivperspective}.
 
- 
- 
 The gold standard in identification of causal effects is \textit{randomized controlled trial (RCT)}, where assignment to treatment is random, independent of the outcome and other potential exogenous determinants of the outcome. However, most of the time practitioners use \textit{observational data}, where the treatment status/level is \textit{endogenous} due to units actively defining the treatment that they receive \cite{imbens2014ivperspective}. Thus the assignment mechanism in RCTs are given by chance, whereas in observational studies by choice. This makes a subtantial methodological difference such that the latter implies looking a source of \textit{exogenous variation} that influences the \textit{treatment status/level}.
 
 Two critical aspects in the identification of causal effects are: (i) the presence of a strong source of \textit{exogenous variation} that influences the \textit{endogenous regressors}, which are often the primary variables of interest to researchers, as they may directly affect the outcome or response variables and can be influenced by policy decisions, for example, identifying the causal effects of social programs on income or education, or evaluating strategic interventions in industry, such as estimating the price elasticity of demand for a specific product; and (ii) the effective \textit{control of other relevant exogenous covariates}, such as pre-treatment characteristics or external factors in a demand model.
 
 In this context, the use of \textit{non-parametric models} (see Chapters~\ref{chap12} and~\ref{chap13}) is valuable due to their flexibility and weaker structural assumptions. Therefore, non-parametric and machine learning approaches serve as \textit{powerful tools} that can be combined with strong exogenous variation to robustly identify causal effects \cite{chernozhukov2018double,chernozhukov2024applied}.
 
-
 Read this reference \cite{iacovone2023bayesian} before begin working in this chapter! Also read \cite{imbens1997bayesian}.
-
-
 
 \section{Sample selection}\label{sec12_2}
 \cite{greenberg2012introduction}
