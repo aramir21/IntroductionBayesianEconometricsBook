@@ -1409,7 +1409,221 @@ Again, inference on $ATT(g,t)$ can be conducted using regression adjustment, inv
 \textbf{Example:...}
 
 
+\section{Regression discontinuity design (RDD)}
 
+We study the causal effect of a binary treatment $D_i$ on an outcome $Y_i$ within the potential outcomes (Rubin causal model) framework, namely $Y_i(1)-Y_i(0)$. As usual, we face the fundamental problem of causal inference. Identification in regression discontinuity design (RDD) relies on a \textit{running variable} $Z_i$ that determines treatment assignment, either completely or partially, according to whether a unit lies on either side of a known cutoff $c$. The running variable may be associated with the potential outcomes, but this association is assumed to be smooth at $c$. Under this smoothness assumption (and absent precise manipulation at $c$), any discontinuity in the conditional mean of $Y_i$ as a function of $Z_i$ at $c$ identifies the causal effect of the treatment at the cutoff \cite{imbens2008regression}.
+
+There are two common versions of RDD: \emph{sharp} and \emph{fuzzy}. In the former, the change (jump) in the conditional probability of treatment at the cutoff equals one; in the latter, it is strictly between zero and one:
+\[
+\Delta \;=\; \lim_{z \downarrow c}\Pr(D_i=1\mid Z_i=z)-\lim_{z \uparrow c}\Pr(D_i=1\mid Z_i=z)
+=
+\begin{cases}
+	1, & \text{sharp RDD},\\[2pt]
+	\in(0,1), & \text{fuzzy RDD}.
+\end{cases}
+\]
+Here $\lim_{z \downarrow c}$ and $\lim_{z \uparrow c}$ denote the right (approach from above) and left (approach from below) limits, respectively.
+
+\subsection{Sharp regression discontinuity design (SRDD)}
+
+In the sharp case, treatment assignment is a deterministic function of the running variable:
+\[
+D_i = \mathbbm{1}\{Z_i \ge c\},
+\]
+so the conditional probability of treatment jumps from $0$ to $1$ at $Z_i=c$. All units with $Z_i \ge c$ are treated, whereas those with $Z_i < c$ serve as the control group. Therefore, assignment is identical to treatment in the sharp RDD (perfect compliance). Figure \ref{Fig:SRDD} displays the conditional probability of treatment. 
+
+\begin{figure}[ht]
+	\centering
+	\begin{tikzpicture}
+		\begin{axis}[
+			width=10cm,height=8cm,
+			xmin=-1, xmax=1, ymin=0, ymax=1.05,
+			axis lines=left,
+			grid=both, grid style={gray!20},
+			xlabel={Running variable ($Z$)},
+			ylabel={Conditional probability of treatment},
+			xtick={0}, xticklabels={$c$},
+			ytick={0,0.5,1},
+			clip=false
+			]
+			% Sharp RD step:
+			\addplot[very thick] coordinates {(-1,0) (0,0)};
+			\addplot[very thick]  coordinates {(0,1) (1,1)};
+			
+			% Cutoff (vertical dashed line)
+			\addplot[black, densely dashed, very thick] coordinates {(0,0) (0,1.02)};
+			
+			% Labels
+			\node[black] at (axis cs:-0.52,0.92) {\large Assigned to Control};
+			\node[black]  at (axis cs: 0.52,0.92) {\large Assigned to Treatment};
+			
+			% Arrow and text to mark "Cutoff"
+			\draw[->] (axis cs:0.28,0.2) -- (axis cs:0.02,0.2);
+			\node[anchor=west] at (axis cs:0.3,0.2) {Cutoff};
+			
+			% Bracket showing jump size (optional)
+			\draw[<->, thick] (axis cs:0.04,0.0) -- (axis cs:0.04,1);
+			\node[anchor=west] at (axis cs:0.06,0.50) {$\Delta P$};
+		\end{axis}
+	\end{tikzpicture}
+\caption{Sharp regression discontinuity design: Conditional probability of treatment}
+\label{Fig:SRDD}
+\end{figure}
+
+The observed outcome is given by
+\begin{align*}
+	Y_i=(1-D_i)\cdot Y_i(0) + D_i\cdot Y_i(1)=\begin{Bmatrix}
+		Y_i(0), & Z_i < c\\
+		Y_i(1), & Z_i \geq c.
+	\end{Bmatrix}
+\end{align*}
+
+Thus, the causal effect that we target in SRDD is
+\[
+\tau_{SRD}=\mathbb{E}[Y_i(1)-Y_i(0)\mid Z_i=c].
+\]
+
+Note that the treatment effect is evaluated at the cutoff, which is a single point in the support of the running variable. Hence $\tau_{\text{SRD}}$ is inherently local and need not be representative of units whose running variable lies far from $c$.
+The identification of $\tau_{\text{SRD}}$ requires \emph{continuity of the potential outcome regression functions}, that is,
+\[
+\mathbb{E}[Y_i(0)\mid Z_i=z]\ \text{and}\ \mathbb{E}[Y_i(1)\mid Z_i=z]
+\]
+are continuous at $z$. Strictly speaking, it suffices that the left- and right-hand limits of $\mathbb{E}[Y_i(d)\mid Z_i=z]$ coincide at $z=c$ for $d\in\{0,1\}$.
+
+This implies
+\begin{align*}
+	\mathbb{E}[Y_i(0)\mid Z_i=c]
+	&= \lim_{z \uparrow c}\mathbb{E}[Y_i(0)\mid Z_i=z] \\
+	&= \lim_{z \uparrow c}\mathbb{E}[Y_i(0)\mid Z_i=z, D_i=0] \\
+	&= \lim_{z \uparrow c}\mathbb{E}[Y_i\mid Z_i=z],
+\end{align*}
+since for $z<c$ we have $D_i=0$. Similarly,
+\begin{align*}
+	\mathbb{E}[Y_i(1)\mid Z_i=c]
+	&= \lim_{z \downarrow c}\mathbb{E}[Y_i(1)\mid Z_i=z] \\
+	&= \lim_{z \downarrow c}\mathbb{E}[Y_i\mid Z_i=z],
+\end{align*}
+because for $z>c$ we have $D_i=1$. Therefore,
+\[
+\tau_{\text{SRD}}
+= \lim_{z \downarrow c}\mathbb{E}[Y_i\mid Z_i=z]
+- \lim_{z \uparrow c}\mathbb{E}[Y_i\mid Z_i=z],
+\]
+i.e., the target estimand is the jump in the conditional mean at the discontinuity point $c$. See Figure \ref{fig:SRD-muplus-muminus}.
+
+\begin{figure}[ht]
+	\centering
+	\begin{tikzpicture}
+		\begin{axis}[
+			width=12cm,height=9cm,
+			xmin=-1, xmax=1, ymin=0, ymax=1.05,
+			axis lines=left,
+			grid=both, grid style={gray!20},
+			xlabel={Running variable ($Z$)},
+			ylabel={$\mathbb{E}[Y(1)\mid Z],\ \mathbb{E}[Y(0)\mid Z]$},
+			xtick={0}, xticklabels={$c$},
+			ytick=\empty,
+			clip=false
+			]
+			
+			% --- Choose smooth functions for illustration ---
+			% E[Y(0)|X]: observed (solid) for X<c, counterfactual (dashed) for X>=c
+			\addplot[black, very thick, domain=-1:0, samples=200] {0.35 + 0.1*x + 0.05*x^2};
+			\addplot[black, very thick, dashed, domain=0:1, samples=200] {0.35 + 0.1*x + 0.05*x^2};
+			
+			% E[Y(1)|X]: counterfactual (dashed) for X<c, observed (solid) for X>=c
+			\addplot[black, very thick, dashed, domain=-1:0, samples=200] {0.62 + 0.06*x + 0.08*x^2};
+			\addplot[black, very thick, domain=0:1, samples=200] {0.62 + 0.06*x + 0.08*x^2};
+			
+			% --- Cutoff (vertical dashed line) ---
+			\addplot[black, densely dashed, very thick] coordinates {(0,0) (0,1.02)};
+			
+			% --- Points at the cutoff (mu_- and mu_+) ---
+			\filldraw[black] (axis cs:0,0.35) circle (2pt);  % mu_-
+			\filldraw[black] (axis cs:0,0.62) circle (2pt);  % mu_+
+			
+			% Labels mu_- and mu_+
+			% \node[anchor=east] at (axis cs:-0.02,0.35) {$\mu_-$};
+			% \node[anchor=east] at (axis cs:-0.02,0.62) {$\mu_+$};
+			
+			% --- Jump size tau_SRD ---
+			\draw[<->, thick] (axis cs:0.06,0.35) -- (axis cs:0.06,0.62);
+			\node[anchor=west] at (axis cs:0.07,0.485) {$\tau_{\text{SRD}}$};
+			
+			% --- Arrow + label "Cutoff" ---
+			\draw[->] (axis cs:0.28,0.08) -- (axis cs:0.02,0.08);
+			\node[anchor=west] at (axis cs:0.30,0.08) {Cutoff};
+			
+			% --- Curve labels ---
+			\node[black, anchor=west]  at (axis cs:0.45,0.80) {$\mathbb{E}[Y(1)\mid Z]$};
+			\node[black, anchor=west] at (axis cs:0.45,0.30) {$\mathbb{E}[Y(0)\mid Z]$};
+			
+		\end{axis}
+	\end{tikzpicture}
+	\caption{RD treatment effect in a sharp RD design. Solid segments are observed on each side of $c$; dashed segments are counterfactual \cite{cattaneo2019practical}.}
+	\label{fig:SRD-muplus-muminus}
+\end{figure}
+
+
+\subsection{Fuzzy regression discontinuity design (FRDD)}
+
+In the fuzzy case, the conditional probability of treatment has a discontinuous jump at the cutoff that is strictly between $0$ and $1$:
+\begin{align*}
+	\lim_{z \to c^-} \Pr(D_i=1 \mid Z_i=z) \ne \lim_{z \to c^+} \Pr(D_i=1 \mid Z_i=z),\\
+	0 \;<\; \lim_{z \to c^+} \Pr(D_i=1 \mid Z_i=z) \;-\; \lim_{z \to c^-} \Pr(D_i=1 \mid Z_i=z) \;<\; 1.
+\end{align*}
+Thus, the probability of treatment increases discontinuously at $c$. Note that in a fuzzy RDD, compliance is imperfect: some units assigned to treatment do not take it, and some units not assigned may nonetheless receive it. Figure \ref{Fig:FRDD} displays the conditional probability of treatment.
+
+% Requires: \usepackage{tikz,pgfplots}
+%           \pgfplotsset{compat=1.18}
+\begin{figure}[ht]
+	\centering
+	\begin{tikzpicture}
+		\begin{axis}[
+			width=10cm,height=8cm,
+			xmin=-1, xmax=1, ymin=0, ymax=1.05,
+			axis lines=left,
+			grid=both, grid style={gray!20},
+			xlabel={Running variable ($Z$)},
+			ylabel={Conditional probability of treatment},
+			xtick={0}, xticklabels={$c$},
+			ytick={0,0.5,1},
+			clip=false
+			]
+			% Fuzzy RD: probabilities below/above cutoff
+			\addplot[very thick] coordinates {(-1,0.20) (0,0.30)};  % left limit p^-
+			\addplot[very thick] coordinates {(0,0.80) (1,0.90)};   % right limit p^+
+			
+			% Open circles at the jump (left/right limits at c)
+			\draw[thick, fill=white] (axis cs:0,0.30) circle (2.2pt);
+			\draw[thick, fill=white] (axis cs:0,0.80) circle (2.2pt);
+			
+			% Cutoff (vertical dashed line)
+			\addplot[black, densely dashed, very thick] coordinates {(0,0) (0,1.02)};
+			
+			% Labels for regions
+			\node[black] at (axis cs:-0.52,0.92) {\large Assigned to Control};
+			\node[black] at (axis cs: 0.52,0.92) {\large Assigned to Treatment};
+			
+			% Arrow and text to mark "Cutoff"
+			\draw[->] (axis cs:0.28,0.12) -- (axis cs:0.02,0.12);
+			\node[anchor=west] at (axis cs:0.30,0.12) {Cutoff};
+			
+			% Bracket showing jump size (optional)
+			\draw[<->, thick] (axis cs:0.04,0.30) -- (axis cs:0.04,0.80);
+			\node[anchor=west] at (axis cs:0.06,0.50) {$\Delta P$};
+			
+		\end{axis}
+	\end{tikzpicture}
+	\caption{Fuzzy regression discontinuity design: conditional probability of treatment}
+	\label{Fig:FRDD}
+\end{figure}
+
+Therefore, RDD exploits that the probability of receiving the treatment changes discontinuously at the known cutoff to identify the causal effect of treatment.
+
+the regression discontinuity design (RDD) exploits a known cutoff in a continuous running variable that deterministically assigns treatment: units above the threshold receive treatment, while those below do not. The key identification assumption is the \textit{continuity of the potential outcome functions at the cutoff}, so any observed jump in the conditional expectation of the outcome at the threshold can be attributed to the treatment effect. In a sharp RDD, treatment status changes deterministically at the cutoff, while in a fuzzy RDD the probability of treatment changes discontinuously. \cite{chib2016bayesian} propose a Bayesian inferential framework in which the type of unit (complier, always-taker, and never-taker) is explicitly modeled, allowing for the implementation of a Gibbs sampler. In addition, \cite{rischard2020bayesian} propose a Bayesian framework for performing inference nonparametrically in spatial RDD, and \cite{chib2023nonparametric} develop the theory for nonparametric sharp and fuzzy RDD using basis expansion methods.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
 
 Remember the role of $\rho$, the correlation of the potential outcomes $Y(1)$ and $Y(0)$, where the likelihood does not have information about it!
 
@@ -1441,7 +1655,7 @@ Read this reference \cite{iacovone2023bayesian} before begin working in this cha
 \cite{greenberg2012introduction}
 
 \section{Other approaches}\label{sec12_3}
-There are other causal inference approaches that we do not cover in this chapter but are worth mentioning. In particular, the regression discontinuity design (RDD) exploits a known cutoff in a continuous running variable that deterministically assigns treatment: units above the threshold receive treatment, while those below do not. The key identification assumption is the \textit{continuity of the potential outcome functions at the cutoff}, so any observed jump in the conditional expectation of the outcome at the threshold can be attributed to the treatment effect. In a sharp RDD, treatment status changes deterministically at the cutoff, while in a fuzzy RDD the probability of treatment changes discontinuously. \cite{chib2016bayesian} propose a Bayesian inferential framework in which the type of unit (complier, always-taker, and never-taker) is explicitly modeled, allowing for the implementation of a Gibbs sampler. In addition, \cite{rischard2020bayesian} propose a Bayesian framework for performing inference nonparametrically in spatial RDD, and \cite{chib2023nonparametric} develop the theory for nonparametric sharp and fuzzy RDD using basis expansion methods.
+There are other causal inference approaches that we do not cover in this chapter but are worth mentioning. In particular, 
 
 Another interesting approach is the synthetic control method, which estimates a treatment effect by constructing a weighted combination of untreated units that best matches the treated unit's pre-treatment outcomes, and then comparing post-treatment differences. Identification relies on \textit{no interference between units}, \textit{parallel trends between the treated unit and its synthetic control in the absence of treatment}, and \textit{no anticipation of treatment} \cite{abadie2010synthetic}. Several proposals extend this framework to the Bayesian setting \cite{amjad2018robust,kim2020bayesian,pang2022bayesian}.
 
