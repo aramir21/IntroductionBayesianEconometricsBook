@@ -1409,22 +1409,22 @@ Again, inference on $ATT(g,t)$ can be conducted using regression adjustment, inv
 \textbf{Example:...}
 
 
-\section{Regression discontinuity design (RDD)}
+\section{Regression discontinuity design (RD)}
 
-We study the causal effect of a binary treatment $D_i$ on an outcome $Y_i$ within the potential outcomes (Rubin causal model) framework, namely $Y_i(1)-Y_i(0)$. As usual, we face the fundamental problem of causal inference. Identification in regression discontinuity design (RDD) relies on a \textit{running variable} $Z_i$ that determines treatment assignment, either completely or partially, according to whether a unit lies on either side of a known cutoff $c$. The running variable may be associated with the potential outcomes, but this association is assumed to be smooth at $c$. Under this smoothness assumption (and absent precise manipulation at $c$), any discontinuity in the conditional mean of $Y_i$ as a function of $Z_i$ at $c$ identifies the causal effect of the treatment at the cutoff \cite{imbens2008regression}.
+We study the causal effect of a binary treatment $D_i$ on an outcome $Y_i$ within the potential outcomes (Rubin causal model) framework, namely $Y_i(1)-Y_i(0)$. As usual, we face the fundamental problem of causal inference. Identification in regression discontinuity design (RD) relies on a \textit{running variable} $Z_i$ that determines treatment assignment, either completely or partially, according to whether a unit lies on either side of a known cutoff $c$. The running variable may be associated with the potential outcomes, but this association is assumed to be smooth at $c$. Under this smoothness assumption (and absent precise manipulation at $c$), any discontinuity in the conditional mean of $Y_i$ as a function of $Z_i$ at $c$ identifies the causal effect of the treatment at the cutoff \cite{imbens2008regression}.
 
-There are two common versions of RDD: \emph{sharp} and \emph{fuzzy}. In the former, the change (jump) in the conditional probability of treatment at the cutoff equals one; in the latter, it is strictly between zero and one:
+There are two common versions of RD: \emph{sharp} and \emph{fuzzy}. In the former, the change (jump) in the conditional probability of treatment at the cutoff equals one; in the latter, it is strictly between zero and one:
 \[
 \Delta \;=\; \lim_{z \downarrow c}\Pr(D_i=1\mid Z_i=z)-\lim_{z \uparrow c}\Pr(D_i=1\mid Z_i=z)
 =
 \begin{cases}
-	1, & \text{sharp RDD},\\[2pt]
-	\in(0,1), & \text{fuzzy RDD}.
+	1, & \text{sharp RD},\\[2pt]
+	\in(0,1), & \text{fuzzy RD}.
 \end{cases}
 \]
 Here $\lim_{z \downarrow c}$ and $\lim_{z \uparrow c}$ denote the right (approach from above) and left (approach from below) limits, respectively.
 
-\subsection{Sharp regression discontinuity design (SRDD)}
+\subsection{Sharp regression discontinuity design (SRD)}
 
 In the sharp case, treatment assignment is a deterministic function of the running variable:
 \[
@@ -1478,7 +1478,7 @@ The observed outcome is given by
 	\end{Bmatrix}
 \end{align*}
 
-Thus, the causal effect that we target in SRDD is
+Thus, the causal effect that we target in SRD is
 \[
 \tau_{SRD}=\mathbb{E}[Y_i(1)-Y_i(0)\mid Z_i=c].
 \]
@@ -1564,15 +1564,14 @@ i.e., the target estimand is the jump in the conditional mean at the discontinui
 	\label{fig:SRD-muplus-muminus}
 \end{figure}
 
-
-\subsection{Fuzzy regression discontinuity design (FRDD)}
+\subsection{Fuzzy regression discontinuity design (FRD)}
 
 In the fuzzy case, the conditional probability of treatment has a discontinuous jump at the cutoff that is strictly between $0$ and $1$:
 \begin{align*}
-	\lim_{z \to c^-} \Pr(D_i=1 \mid Z_i=z) \ne \lim_{z \to c^+} \Pr(D_i=1 \mid Z_i=z),\\
-	0 \;<\; \lim_{z \to c^+} \Pr(D_i=1 \mid Z_i=z) \;-\; \lim_{z \to c^-} \Pr(D_i=1 \mid Z_i=z) \;<\; 1.
+	\lim_{z \uparrow c} \Pr(D_i=1 \mid Z_i=z) \ne \lim_{z \downarrow c} \Pr(D_i=1 \mid Z_i=z),\\
+	0 \;<\; \lim_{z \downarrow c} \Pr(D_i=1 \mid Z_i=z) \;-\; \lim_{z \uparrow c} \Pr(D_i=1 \mid Z_i=z) \;<\; 1.
 \end{align*}
-Thus, the probability of treatment increases discontinuously at $c$. Note that in a fuzzy RDD, compliance is imperfect: some units assigned to treatment do not take it, and some units not assigned may nonetheless receive it. Figure \ref{Fig:FRDD} displays the conditional probability of treatment.
+Thus, the probability of treatment increases discontinuously at $c$. Note that in a fuzzy RD, compliance is imperfect: some units assigned to treatment do not take it, and some units not assigned may nonetheless receive it. Figure \ref{Fig:FRDD} displays the conditional probability of treatment.
 
 % Requires: \usepackage{tikz,pgfplots}
 %           \pgfplotsset{compat=1.18}
@@ -1615,13 +1614,115 @@ Thus, the probability of treatment increases discontinuously at $c$. Note that i
 			
 		\end{axis}
 	\end{tikzpicture}
-	\caption{Fuzzy regression discontinuity design: conditional probability of treatment}
+	\caption{Fuzzy regression discontinuity design: Conditional probability of treatment}
 	\label{Fig:FRDD}
 \end{figure}
 
-Therefore, RDD exploits that the probability of receiving the treatment changes discontinuously at the known cutoff to identify the causal effect of treatment.
+Note that the expected value of the observed outcome given the running variable is given by
+\begin{align*}
+	\mathbb{E}[Y_i\mid Z_i=z]&=\mathbb{E}[Y_i(0)\mid D_i=0, Z_i=z]P(D_i=0\mid Z_i=z)\\
+	&+\mathbb{E}[Y_i(1)\mid D_i=1, Z_i=z]P(D_i=1\mid Z_i=z).
+\end{align*}
 
-the regression discontinuity design (RDD) exploits a known cutoff in a continuous running variable that deterministically assigns treatment: units above the threshold receive treatment, while those below do not. The key identification assumption is the \textit{continuity of the potential outcome functions at the cutoff}, so any observed jump in the conditional expectation of the outcome at the threshold can be attributed to the treatment effect. In a sharp RDD, treatment status changes deterministically at the cutoff, while in a fuzzy RDD the probability of treatment changes discontinuously. \cite{chib2016bayesian} propose a Bayesian inferential framework in which the type of unit (complier, always-taker, and never-taker) is explicitly modeled, allowing for the implementation of a Gibbs sampler. In addition, \cite{rischard2020bayesian} propose a Bayesian framework for performing inference nonparametrically in spatial RDD, and \cite{chib2023nonparametric} develop the theory for nonparametric sharp and fuzzy RDD using basis expansion methods.
+Thus, the observed outcome is a weighted average of potential outcomes. Figure \ref{fig:FRD-muplus-muminus} displays the treatment effect that we are targeting.
+
+\begin{figure}[ht]
+	\centering
+	\begin{tikzpicture}
+		\begin{axis}[
+			width=12cm,height=9cm,
+			xmin=-1, xmax=1, ymin=0, ymax=1.05,
+			axis lines=left,
+			grid=both, grid style={gray!20},
+			xlabel={Running variable ($Z$)},
+			ylabel={$\mathbb{E}[Y(1)\mid Z],\ \mathbb{E}[Y(0)\mid Z]$, \ $\mathbb{E}[Y\mid Z]$},
+			xtick={0}, xticklabels={$c$},
+			ytick=\empty,
+			clip=false
+			]
+			
+			% --- Choose smooth functions for illustration ---
+			% E[Y(0)|X]: observed (solid) for X<c, counterfactual (dashed) for X>=c
+			\addplot[black, very thick, dashed, domain=-1:0, samples=200] {0.35 + 0.1*x + 0.05*x^2};
+			\addplot[black, very thick, dashed, domain=0:1, samples=200] {0.35 + 0.1*x + 0.05*x^2};
+			
+			% E[Y(1)|X]: counterfactual (dashed) for X<c, observed (solid) for X>=c
+			\addplot[black, very thick, dashed, domain=-1:0, samples=200] {0.62 + 0.06*x + 0.08*x^2};
+			\addplot[black, very thick, dashed, domain=0:1, samples=200] {0.62 + 0.06*x + 0.08*x^2};
+			
+			% E[Y(1)|X]: counterfactual (dashed) for X<c, observed (solid) for X>=c
+			\addplot[black, very thick, domain=-1:0, samples=200] {0.4 + 0.09*x + 0.06*x^2};
+			\addplot[black, very thick, domain=0:1, samples=200] {0.58 + 0.07*x + 0.07*x^2};
+			
+			% --- Cutoff (vertical dashed line) ---
+			\addplot[black, densely dashed, very thick] coordinates {(0,0) (0,1.02)};
+			
+			% --- Points at the cutoff (mu_- and mu_+) ---
+			\filldraw[black] (axis cs:0,0.4) circle (2pt);  % mu_-
+			\filldraw[black] (axis cs:0,0.58) circle (2pt);  % mu_+
+			
+			% Labels mu_- and mu_+
+			% \node[anchor=east] at (axis cs:-0.02,0.35) {$\mu_-$};
+			% \node[anchor=east] at (axis cs:-0.02,0.62) {$\mu_+$};
+			
+			% --- Jump size tau_SRD ---
+			\draw[<->, thick] (axis cs:0.06,0.4) -- (axis cs:0.06,0.58);
+			\node[anchor=west] at (axis cs:0.07,0.485) {$\tau_{\text{FRD}}$};
+			
+			% --- Arrow + label "Cutoff" ---
+			\draw[->] (axis cs:0.28,0.08) -- (axis cs:0.02,0.08);
+			\node[anchor=west] at (axis cs:0.30,0.08) {Cutoff};
+			
+			% --- Curve labels ---
+			\node[black, anchor=west]  at (axis cs:0.45,0.80) {$\mathbb{E}[Y(1)\mid Z]$};
+			\node[black, anchor=west] at (axis cs:0.45,0.30) {$\mathbb{E}[Y(0)\mid Z]$};
+			\node[black, anchor=west] at (axis cs:0.45,0.50) {$\mathbb{E}[Y\mid Z]$};
+			
+		\end{axis}
+	\end{tikzpicture}
+	\caption{RD treatment effect in a fuzzy RD design. Solid segments are observed on each side of $c$; dashed segments are counterfactual.}
+	\label{fig:FRD-muplus-muminus}
+\end{figure}
+
+The target causal effect in the FRD is (see \cite{hahn2001rdd} for a proof)
+\begin{align*}
+\tau_{\text{FRD}}
+&=
+\frac{\lim_{z \downarrow c}\mathbb{E}[Y_i\mid Z_i=z]-\lim_{z \uparrow c}\mathbb{E}[Y_i\mid Z_i=z]}
+{\lim_{z \downarrow c}\mathbb{E}[D_i\mid Z_i=z]-\lim_{z \uparrow c}\mathbb{E}[D_i\mid Z_i=z]}\\
+&=\mathbb{E}[Y_i(1)-Y_i(0)\mid Z_i=c], \text{units are compliers}.
+\end{align*}
+Note that $\tau_{\text{FRD}}$ encompasses $\tau_{\text{SRD}}$ as $\lim_{z \downarrow c}\mathbb{E}[D_i\mid Z_i=z]-\lim_{z \uparrow c}\mathbb{E}[D_i\mid Z_i=z]=1$ in the SRD. In addition, $\tau_{\text{FRD}}$ has the same structure as the local average treatment effect (LATE) in the IV literature, with the instrument given by the eligibility indicator \(T_i=\mathbf{1}\{Z_i\ge c\}\). Because compliance is imperfect (some eligible units do not take treatment and some ineligible units receive it), \(D_i \neq T_i\) for some units, and the estimand pertains to \emph{compliers at the cutoff}.
+
+Let \(D_i(z)\) denote the potential treatment status if the cutoff were \(z\) (for \(z\) in a neighborhood of \(c\)) such that $D_i(z)=1$ implies that the unit would be treated if the cutoff is $z$. The identification assumptions are: 
+
+\textit{1. Continuity of the potential outcome regression functions}, particularly at \(c\).
+
+\textit{2. A nontrivial first stage},
+\(\lim_{z \downarrow c}\mathbb{E}[D_i\mid Z_i=z]-\lim_{z \uparrow c}\mathbb{E}[D_i\mid Z_i=z]\neq 0\),
+
+and 
+
+\textit{3. Monotonicity}: \(D_i(z)\) is non-increasing in \(z\) at \(z=c\).
+
+We can classify unit types (locally around the cutoff $c$) using the potential treatment under a hypothetical cutoff $z$, $D_i(z)$ as follows:
+
+\textit{Complier status} \[ \lim_{z\downarrow Z_i}D_i(z)=0, \ \text{and} \ \lim_{z\uparrow Z_i}D_i(z)=1, \] 
+\textit{Never-takers} \[ \lim_{z\downarrow Z_i}D_i(z)=0, \ \text{and} \ \lim_{z\uparrow Z_i}D_i(z)=0, \] 
+and 
+\textit{Always-takers} \[ \lim_{z\downarrow Z_i}D_i(z)=1, \ \text{and} \ \lim_{z\uparrow Z_i}D_i(z)=1. \]
+
+Thus, compliers are units that would be treated if the cutoff were at or below their score $Z_i$, and would not be treated if the cutoff were above $Z_i$. Never-takers and always-takers do not change treatment status regardless of the cutoff: the former are always untreated, whereas the latter are always treated. Monotonicity precludes \emph{defiers}.\\
+
+\textbf{Example: Returns to compulsory schooling \cite{chib2016bayesian}}
+
+\cite{chib2016bayesian} propose a Bayesian inferential framework that explicitly models unit type (complier, always-taker, and never-taker), which enables implementation of a Gibbs sampler. Their empirical application is motivated by the April 1947 reform in the United Kingdom that raised the minimum school-leaving age from 14 to 15.
+
+In the example below, we construct a simulation calibrated to their application to illustrate Bayesian inference in a fuzzy RD. In particular, we specify priors, derive the full conditional distributions, and implement a Gibbs sampler to estimate the treatment effect at the cutoff.
+
+
+Other Bayesian approaches to inference in RD include \cite{branson2019nonparametric}, who use Gaussian process regression to model the conditional expectation function; \cite{rischard2020bayesian}, who develop a nonparametric Bayesian framework for spatial RDD; and \cite{chib2023nonparametric}, who develop the theory for nonparametric sharp and fuzzy RDD using basis-expansion methods.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
 
