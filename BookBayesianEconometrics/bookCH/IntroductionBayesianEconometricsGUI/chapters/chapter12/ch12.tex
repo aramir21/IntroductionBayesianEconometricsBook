@@ -1722,44 +1722,93 @@ In the example below, we construct a simulation calibrated to their application 
 
 There are three types of individuals: compliers ($c$), never-takers ($n$), and always-takers ($a$). These imply four potential outcomes $Y_{ic}(0)$, $Y_{ic}(1)$, $Y_{in}(0)$, and $Y_{ia}(1)$. \cite{chib2016bayesian} assume
 \[
-Y_{ic}(0)=\beta_{0c0}+\beta_{0c1}Z_i+\mathbf{X}_i^{\top}\boldsymbol{\beta}_c+\mu_{0ci}=\mathbf{w}_{ic}^{\top}\beta_{0c}+\mu_{0ci},
+Y_{ic}(0)=\beta_{0c0}+\beta_{0c1}Z_i+\mathbf{X}_i^{\top}\boldsymbol{\beta}_c+\mu_{0ci}=\mathbf{W}_{ic}^{\top}\beta_{0c}+\mu_{0ci},
 \]
 \[
-Y_{ic}(1)=\beta_{1c0}+\beta_{1c1}Z_i+\mathbf{X}_i^{\top}\boldsymbol{\beta}_c+\mu_{1ci}=\mathbf{w}_{ic}^{\top}\beta_{1c}+\mu_{1ci},
+Y_{ic}(1)=\beta_{1c0}+\beta_{1c1}Z_i+\mathbf{X}_i^{\top}\boldsymbol{\beta}_c+\mu_{1ci}=\mathbf{W}_{ic}^{\top}\beta_{1c}+\mu_{1ci},
 \]
 \[
-Y_{in}(0)=\beta_{n0}+\mathbf{X}_i^{\top}\boldsymbol{\beta}_n+\mu_{ni}=\mathbf{w}_{in}^{\top}\beta_{n}+\mu_{ni},
+Y_{in}(0)=\beta_{n0}+\mathbf{X}_i^{\top}\boldsymbol{\beta}_n+\mu_{ni}=\mathbf{W}_{in}^{\top}\beta_{0n}+\mu_{ni},
 \]
 and
 \[
-Y_{ia}(1)=\beta_{a0}+\mathbf{X}_i^{\top}\boldsymbol{\beta}_a+\mu_{ai}=\mathbf{w}_{ia}^{\top}\beta_{a}+\mu_{ai},
+Y_{ia}(1)=\beta_{a0}+\mathbf{X}_i^{\top}\boldsymbol{\beta}_a+\mu_{ai}=\mathbf{W}_{ia}^{\top}\beta_{1a}+\mu_{ai},
 \]
-where $\mu_{jci}\sim t_v(0,\sigma^2_{jc})$ for $j\in\{0,1\}$, $\mu_{ni}\sim t_v(0,\sigma^2_{n})$, and $\mu_{ai}\sim t_v(0,\sigma^2_{a})$; here $t_v$ denotes the Student-$t$ distribution with $v$ degrees of freedom. The running variable is centered at the cutoff, so $Z_i=0$ at the threshold, and the FRD treatment effect is
+where $\mu_{dci}\sim t_v(0,\sigma^2_{dc})$ for $d\in\{0,1\}$, $\mu_{ni}\sim t_v(0,\sigma^2_{0n})$, and $\mu_{ai}\sim t_v(0,\sigma^2_{1a})$; here $t_v$ denotes the Student-$t$ distribution with $v$ degrees of freedom. The running variable is centered at the cutoff, so $Z_i=0$ at the threshold, and the FRD treatment effect is
 \[
 \tau_{\text{FRD}}=\beta_{1c1}-\beta_{0c1}.
 \]
 
-Under a Bayesian approach, posterior simulation simplifies because we sample each unit’s latent type ($C_i=\left\{c,n,a\right\}$). If we observe $Z_i<0$ and $D_i=0$, only two types are possible -compliers and never-takers- so
+There are four cells in this setting, defined by policy epochs $\mathbbm{1}(Z_i < 0)$ and $\mathbbm{1}(Z_i \geq 0)$, and treatment values $D_i = 0$ and $D_i = 1$. Table \ref{tab:appCJ} shows the case where, in the cell without treatment under the old policy ($K_{00}$), there are compliers and never-takers, while in the cell with treatment under the new policy ($K_{11}$), there are compliers and always-takers.
+
+\begin{table}[ht]
+	\centering
+	\caption{Distribution of subject type by observed policy regime and treatment}\label{tab:appCJ}
+	\begin{tabular}{lcc}
+		\hline
+		& \multicolumn{2}{c}{\textbf{Treatment}} \\ 
+		\cline{2-3}
+		\textbf{Policy indicator} & $D_i = 0$ & $D_i = 1$ \\ 
+		\hline
+		$\mathbbm{1}(Z_i < 0)$ (old policy) & c, n & a \\
+		$\mathbbm{1}(Z_i \geq 0)$ (new policy) & n & c, a \\
+		\hline
+	\end{tabular}
+\end{table}
+
+The four cells by policy and treatment status are:
 \[
-P(C_i=c\mid Y_i, D_i=0,\boldsymbol{\theta})
-=\frac{\eta_{c0}\,t_v\!\big(Y_i\mid \mathbf{w}_{ic}^{\top}\boldsymbol{\beta}_{0c},\sigma^2_{0c}\big)}
-{\eta_{c0}\,t_v\!\big(Y_i\mid \mathbf{w}_{ic}^{\top}\boldsymbol{\beta}_{0c},\sigma^2_{0c}\big)+
-	\eta_{n}\,t_v\!\big(Y_i\mid \mathbf{w}_{in}^{\top}\boldsymbol{\beta}_{n},\sigma^2_{n}\big)},
+K_{00} = \{c, n\}, \quad K_{10} = \{n\}, \quad K_{01} = \{a\}, \quad K_{11} = \{c, a\},
 \]
-where $\boldsymbol{\theta}$ is the set of parameters in the model, $\eta_{c0}$ and $\eta_{n}$ are the (current) mixture weights for a complier not taking treatment and for a never-taker, respectively.
-
-Conversely, if we observe $Z_i\ge 0$ and $D_i=1$, only compliers and always-takers are possible, and
+and the two cells by treatment status are:
 \[
-P(C_i=c\mid Y_i, D_i=1,\boldsymbol{\theta})
-=\frac{\eta_{c1}\,t_v\!\big(Y_i\mid \mathbf{w}_{ic}^{\top}\boldsymbol{\beta}_{1c},\sigma^2_{1c}\big)}
-{\eta_{c1}\,t_v\!\big(Y_i\mid \mathbf{w}_{ic}^{\top}\boldsymbol{\beta}_{1c},\sigma^2_{1c}\big)+
-	\eta_{a}\,t_v\!\big(Y_i\mid \mathbf{w}_{ia}^{\top}\boldsymbol{\beta}_{a},\sigma^2_{a}\big)},
+K_0 = \{c, n\}, \quad K_1 = \{c, a\}.
 \]
-where $\eta_{c1}$ and $\eta_{a}$ are the mixture weights for a treated complier and an always-taker, respectively.
 
-\cite{chib2016bayesian} assume a Dirichlet prior for the mixing probabilities
+Under a Bayesian framework, posterior simulation simplifies because we sample each unit’s latent type $C_i \in \{c, n, a\}$. If we observe $Z_i < 0$ and $D_i = 0$, only compliers and never-takers are possible. Then,
+\[
+P(C_i = c \mid Y_i, D_i = 0, \boldsymbol{\theta})
+= \frac{\eta_{c} \, t_v\!\big(Y_i \mid \mathbf{W}_{ic}^{\top} \boldsymbol{\beta}_{0c}, \sigma^2_{0c} \big)}
+{\eta_{c} \, t_v\!\big(Y_i \mid \mathbf{W}_{ic}^{\top} \boldsymbol{\beta}_{0c}, \sigma^2_{0c} \big) +
+	\eta_{n} \, t_v\!\big(Y_i \mid \mathbf{W}_{in}^{\top} \boldsymbol{\beta}_{0n}, \sigma^2_{0n} \big)}, i \in K_{00}
+\]
+where $\boldsymbol{\theta}$ denotes the set of model parameters, and $\eta_{c}$ and $\eta_{n}$ are the current mixture weights for a complier and a never-taker, respectively.
 
+Conversely, if $Z_i \geq 0$ and $D_i = 1$, only compliers and always-takers are possible:
+\[
+P(C_i = c \mid Y_i, D_i = 1, \boldsymbol{\theta})
+= \frac{\eta_{c} \, t_v\!\big(Y_i \mid \mathbf{W}_{ic}^{\top} \boldsymbol{\beta}_{1c}, \sigma^2_{1c} \big)}
+{\eta_{c} \, t_v\!\big(Y_i \mid \mathbf{W}_{ic}^{\top} \boldsymbol{\beta}_{1c}, \sigma^2_{1c} \big) +
+	\eta_{a} \, t_v\!\big(Y_i \mid \mathbf{W}_{ia}^{\top} \boldsymbol{\beta}_{1a}, \sigma^2_{1a} \big)}, i \in K_{11}
+\]
+where $\eta_{a}$ is the mixture weight for an always-taker.
 
+Following \cite{chib2016bayesian}, we assume a Dirichlet prior for the mixing probabilities with hyperparameters $\alpha_{0k}$, $k \in \{c, n, a\}$. The posterior distribution is then Dirichlet with parameters $\alpha_{0k} + \sum_{i=1}^N \mathbbm{1}(C_i = k)$.
+
+In addition, \cite{chib2016bayesian} use the normal--gamma mixture representation of the Student-$t$ distribution, where the mixing parameter satisfies $\lambda_i \sim G(v/2, v/2)$. Consequently, the posterior distribution of $\lambda_i$ is gamma with parameters $(v+1)/2$ and $(y_i - \mathbf{W}_{ik}^{\top} \boldsymbol{\beta}_{dk})^2 / \sigma_{dk}^2$.
+
+The prior distribution for the location parameters $\boldsymbol{\beta}_{dk}$ is independent normal with mean $\boldsymbol{\beta}_{dk,0}$ and variance matrix $\mathbf{B}_{dk,0}$. The posterior distribution of $\boldsymbol{\beta}_{dk}$ is normal with mean
+\[
+\boldsymbol{\beta}_{dk,n} = \mathbf{B}_{dk,n} \left( \mathbf{B}_{dk,0}^{-1} \boldsymbol{\beta}_{dk,0} + \sigma_{dk}^{-2} \sum_{i \in I_{dk}} \lambda_i \mathbf{W}_{ik} Y_i \right),
+\]
+and covariance matrix
+\[
+\mathbf{B}_{dk,n} = \left( \mathbf{B}_{dk,0}^{-1} + \sigma_{dk}^{-2} \sum_{i \in I_{dk}} \lambda_i \mathbf{W}_{ik} \mathbf{W}_{ik}^{\top} \right)^{-1},
+\]
+where $I_{dk} = \{i : D_i = d, C_i = k\}$ is the set of indices for observations by treatment status and unit type. Note that there are only four possible combinations determined by policy and treatment status, namely, $I_{0c}$, $I_{1c}$, $I_{0n}$ and $I_{1a}$.
+
+Finally, assuming that the prior distributions of the variances are independent inverse-gamma, $\sigma_{dk}^2 \sim IG(\alpha_{dk,0}/2, \delta_{dk,0}/2)$, the posterior distributions are also inverse-gamma, $\sigma_{dk}^2 \sim IG(\alpha_{dk,n}/2, \delta_{dk,n}/2)$, where
+\[
+\alpha_{dk,n} = \alpha_{dk,0} + N_{dk},
+\]
+and
+\[
+\delta_{dk,n} = \delta_{dk,0} + \sum_{i \in I_{dk}} \lambda_i \left(Y_i - \mathbf{w}_{ik}^{\top} \boldsymbol{\beta}_{dk} \right)^2.
+\]
+Here, $N_{dk}$ denotes the number of elements (cardinality) of $I_{dk}$.
+
+The following code performs a simulation assuming that $Z_i$ follows a discrete uniform distribution from $-24$ to $24$, where the policy indicator equals one if $Z_i \geq 0$. Next, $X_i$ follows a discrete uniform distribution between $85$ and $95$. We set $\boldsymbol{\beta}_{0c} = [4.5 \ -0.20 \ 0.03]^{\top}$ and $\boldsymbol{\beta}_{1c} = [4.55 \ 0.40 \ 0.03]^{\top}$, so that the treatment effect is $0.05$. In addition, $\boldsymbol{\beta}_{0n} = [6.8 \ -0.02]^{\top}$ and $\boldsymbol{\beta}_{1a} = [5.5 \ -0.04]^{\top}$, with $\sigma_{0c}^2 = \sigma_{1c}^2 = 0.1$, $\sigma_{0n}^2 = 0.15$, and $\sigma_{1a}^2 = 0.2$. The type probabilities are $\eta_{c} = 0.7$, $\eta_{n} = 0.15$, and $\eta_{a} = 0.15$. We set the sample size to $1{,}500$ and $v = 5$.
+  
 
 Other Bayesian approaches to inference in RD include \cite{branson2019nonparametric}, who use Gaussian process regression to model the conditional expectation function; \cite{rischard2020bayesian}, who develop a nonparametric Bayesian framework for spatial RDD; and \cite{chib2023nonparametric}, who develop the theory for nonparametric sharp and fuzzy RDD using basis-expansion methods.
 
