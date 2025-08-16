@@ -608,7 +608,11 @@ In many real-world situations, we face biases such as those described in the pre
 
 Relevance is testable, typically by checking whether instruments significantly predict the endogenous variable \cite{staiger1997instrumental,cragg1993testing,kleibergen2006generalized,stock2005asymptotic}. However, \textit{weak instruments}, those that exhibit only a weak association with the treatment, can lead to serious consequences, including a high level of uncertainty and the potential amplification of even small biases when estimating the causal effect.
 
-Exogeneity is fundamentally untestable. However, when the number of instruments exceeds the number of endogenous variables, the Sargan test (or its robust version, the Hansen $J$-test) can be used to assess the validity of overidentifying restrictions. However, it should not be misinterpreted as a direct test of the exclusion restriction. Instead, the test evaluates whether the overidentifying restrictions implied by the IV model hold. Specifically, the null hypothesis states that all instruments are jointly uncorrelated with the structural error term: $\mathbb{E}[\mathbf{Z}^\top \mu] = \mathbf{0}$ \cite{sargan1958econometric,hansen1982large}. If the test rejects, it indicates that at least one instrument is invalid, but it does not reveal whether the violation results from a failure of the exclusion restriction, correlation with unobserved confounders, or model misspecification. Conversely, if the test fails to reject, it suggests that the sample moment conditions do not provide evidence against instrument validity under the maintained model, but this does not prove that the exclusion restrictions hold. Therefore, while the Sargan test is informative about overall instrument validity, it is not a separate or definitive test of the exclusion restriction \cite{wooldridge2010econometric,hayashi2000econometrics}.
+Exogeneity is fundamentally untestable. However, when the number of instruments exceeds the number of endogenous variables, the Sargan test (or its robust version, the Hansen $J$-test) can be used to assess the validity of overidentifying restrictions. This test should not be misinterpreted as a direct test of the exclusion restriction. Instead, it evaluates whether the overidentifying restrictions implied by the IV model hold. Specifically, the null hypothesis states that all instruments are jointly uncorrelated with the structural error term, $\mathbb{E}[\mathbf{Z}^\top \mu] = \mathbf{0}$ \cite{sargan1958econometric,hansen1982large}. 
+
+If the test rejects, it indicates that at least one instrument is invalid, but it does not reveal whether the violation arises from a failure of the exclusion restriction, correlation with unobserved confounders, or model misspecification. Conversely, if the test fails to reject, it only suggests that the sample moment conditions do not provide evidence against instrument validity under the maintained model. This outcome does not prove that the exclusion restrictions hold: the test may have low power, a mix of valid and invalid instruments could pass if violations ``cancel out'', and if the model is misspecified, a ``passing'' test is uninformative. 
+
+In general, the exclusion restriction concerns unobservables (no correlation with the error term). Since the error term is not observed, the exclusion restriction can never be proven from the data; we can only look for evidence against it. Therefore, while the Sargan test is informative about overall instrument validity, it is not a separate or definitive test of the exclusion restriction \cite{wooldridge2010econometric,hayashi2000econometrics}.
 
 Figure~\ref{DAG4} illustrates a situation where pre-treatment variables that influence both the treatment and the outcome are partially observed or measured with error. In such cases, an instrument can help identify the causal effect of the treatment on the outcome.
 
@@ -636,9 +640,53 @@ However, the two conditions of the instruments only imply partial identification
 \[
 D_i(1)\geq D_i(0), i=1,2,\dots,N,
 \]
-with equality for at least one unit $i$, and assuming a binary instrument $Z_i=\left\{0,1\right\}$. 
+assuming a binary instrument $Z_i=\left\{0,1\right\}$. 
+
+Note that monotonicity is also fundamentally untestable, as it refers to unobserved potential outcomes. However, we can examine whether the instrument shifts treatment in the expected direction. Moreover, if rich covariates are available, we can stratify by them and verify that, within each subgroup, the instrument increases (or at least does not decrease) the probability of treatment.
 
 In the case where $Z_i$ denotes the assignment to treatment and $D_i$ the actual treatment status, there are four potential groups: \textit{always-takers} ($D = 1 \mid Z = 1$ and $D = 1 \mid Z = 0$), \textit{never-takers} ($D = 0 \mid Z = 1$ and $D = 0 \mid Z = 0$), \textit{compliers} ($D = 1 \mid Z = 1$ and $D = 0 \mid Z = 0$), and \textit{defiers} ($D = 0 \mid Z = 1$ and $D = 1 \mid Z = 0$). Note that these groups are not identified; for instance, we do not know whether an individual with $Z_i = 1$ and $D_i = 1$ is a complier or an always taker. The monotonicity assumption rules out defiers, meaning that the instrument (assignment to treatment) either does not change treatment status or only increases it.
+
+Table \ref{tab:2x2} displays the distribution of unit types when defiers are ruled out by the monotonicity assumption. 
+
+\begin{table}[ht]
+	\centering
+	\caption{Distribution of compliance types by instrument and treatment}\label{tab:2x2}
+	\begin{tabular}{lcc}
+		\hline
+		& \multicolumn{2}{c}{\textbf{Treatment}} \\ 
+		\cline{2-3}
+		\textbf{Instrument} & $D_i = 0$ & $D_i = 1$ \\ 
+		\hline
+		$Z_i=0$  & Compliers, Never-takers & Always-takers \\[0.25em]
+		$Z_i=1$  & Never-takers & Compliers, Always-takers \\ 
+		\hline
+	\end{tabular}
+\end{table}
+
+From this table we can identify the proportions of compliance types as follows. The probability of always-takers (a) is
+\[
+P(C_i = a) = P(D_i=1 \mid Z_i=0),
+\]
+and the probability of never-takers (n) is
+\[
+P(C_i = n) = P(D_i=0 \mid Z_i=1).
+\]
+For compliers (c), note that
+\[
+P(D_i=1 \mid Z_i=1) = P(C_i=c) + P(C_i=a),
+\]
+so that
+\[
+P(C_i = c) = P(D_i=1 \mid Z_i=1) - P(D_i=1 \mid Z_i=0).
+\]
+Equivalently, using $D_i=0$,
+\[
+P(D_i=0 \mid Z_i=0) = P(C_i=n) + P(C_i=c),
+\]
+so that
+\[
+P(C_i = c) = P(D_i=0 \mid Z_i=0) - P(D_i=0 \mid Z_i=1).
+\]
 
 Therefore, under relevance, exogeneity, monotonicity, and SUTVA, IV methods allow identification of the causal effect for the subgroup of \textit{compliers}, that is, individuals who take the treatment when encouraged by the instrument and do not take it otherwise \cite{imbens1994identification,angrist1996identification}. This estimand is known as the \textit{Local Average Treatment Effect} (LATE) because it applies to a specific subpopulation rather than the entire population \cite{hernan2020causal}:
 
@@ -687,24 +735,127 @@ Under the assumption that the instrument \( Z_i \) is independent of the potenti
 = \frac{\mathbb{E}[Y_i \mid Z_i = 1] - \mathbb{E}[Y_i \mid Z_i = 0]}{P(D_i(1) = 1, D_i(0) = 0)}.
 \]
 
-Note that \( P(D_i = 1 \mid Z_i = 1) = P(\text{compliers}) + P(\text{always-takers}) \), because only these groups can receive treatment when \( Z_i = 1 \). Also, under monotonicity (which rules out defiers), \( P(D_i = 1 \mid Z_i = 0) = P(\text{always-takers}) \). Thus,
-\[
-P(D_i = 1 \mid Z_i = 1) - P(D_i = 1 \mid Z_i = 0) = P(\text{compliers}) = P(D_i(1) = 1, D_i(0) = 0).
-\]
-
-Finally, taking into account that \( \mathbb{E}[D_i \mid Z_i] = P(D_i = 1 \mid Z_i) \), we obtain
+We know that $P(D_i(1) = 1, D_i(0) = 0)=P(D_i = 1 \mid Z_i = 1) - P(D_i = 1 \mid Z_i = 0)$, and taking into account that \( \mathbb{E}[D_i \mid Z_i] = P(D_i = 1 \mid Z_i) \), we obtain
 \[
 \tau_{LATE} = \frac{\mathbb{E}[Y_i \mid Z_i = 1] - \mathbb{E}[Y_i \mid Z_i = 0]}{\mathbb{E}[D_i \mid Z_i = 1] - \mathbb{E}[D_i \mid Z_i = 0]}.
 \]
 
 This is the standard instrumental variables (IV) estimand, often referred to as the \textit{Wald estimator}. Note that the \textit{relevance condition} is required to ensure identification, i.e.,
 \[
-\mathbb{E}[D_i \mid Z_i = 1] - \mathbb{E}[D_i \mid Z_i = 0] \neq 0.
+\mathbb{E}[D_i \mid Z_i = 1] - \mathbb{E}[D_i \mid Z_i = 0] \neq 0,
 \]
+that is, the instrument is strong enough that some units actually comply, this means, there is a proportion of compliers in the population.
 
 The IV estimand represents the ratio of the intention-to-treat effect on the outcome to the intention-to-treat effect on the treatment (i.e., the proportion of compliers). The instrument induces random variation in treatment: the numerator captures how outcomes respond to the instrument, and the denominator captures how treatment responds to the instrument. Dividing the two isolates the causal effect for compliers.
 
 Note that the LATE is not the global average causal effect, and has been subject to several criticisms. First, the proportion of compliers in the population may be small, raising concerns about the policy relevance of this estimand. Observe that while we cannot identify all four principal strata (compliers, never-takers, always-takers, and defiers), the proportion of compliers is identifiable. Second, the monotonicity assumption is not always plausible, particularly in observational studies where instruments may induce heterogeneous behavioral responses. Third, partitioning the population into four strata can become ill-defined in settings where instruments arise from different mechanisms or individual-specific criteria \cite{deaton2010instruments,hernan2020causal}. For arguments in defense of LATE against these critiques, see \cite{angrist2010better}.\\
+
+\textbf{Example: A simple setting for point and set identified LATE}
+
+Assume that we see the results display in Table \ref{tab:types}.
+
+\begin{table}[ht]
+	\centering
+	\caption{Distribution of units by type, instrument, treatment, and outcomes}
+	\label{tab:types}
+	\begin{tabular}{lcccc}
+		\hline
+		Type & $Z_{obs}$ & $D_{obs}$ & $Y_{obs}$ & Units \\
+		\hline
+		Compliers, Never-takers & 0 & 0 & 3 & 50 \\
+		Never-takers   & 1 & 0 & 4 & 20  \\
+		Compliers, Always-takers & 1 & 1 & 7 & 100  \\
+		 Always-takers   & 0 & 1 & 5 & 30  \\
+		\hline
+	\end{tabular}
+\end{table}
+
+Let's calculate the LATE assuming exclusion restrictions, and without assuming exclusion restrictions.
+
+We first estimate the \textit{first stage and reduced form.}
+
+\[
+E[D \mid Z=0] = \tfrac{30}{80} = 0.37, \quad
+E[D \mid Z=1] = \tfrac{100}{120} = 0.83,
+\]
+\[
+\Delta_D = E[D \mid Z=1] - E[D \mid Z=0] = 0.46.
+\]
+
+\[
+E[Y \mid Z=0] = \tfrac{3 \cdot 50 + 5 \cdot 30}{80} = 3.75, \quad
+E[Y \mid Z=1] = \tfrac{4 \cdot 20 + 7 \cdot 100}{120} = 6.50,
+\]
+\[
+\Delta_Y = E[Y \mid Z=1] - E[Y \mid Z=0] = 2.75.
+\]
+
+From these we also recover the compliance shares:
+\[
+\eta_a = P(D=1 \mid Z=0) = \tfrac{3}{8}=0.375, \quad
+\eta_c = \Delta_D = \tfrac{11}{24}=0.458,
+\]
+thus,
+\[
+\eta_n = 1 - \eta_a - \eta_c = \tfrac{1}{6}=0.166.
+\]
+
+Then, we can \textit{point-identified} the LATE under exclusion restriction,
+
+\[
+\text{LATE} = \frac{\Delta_Y}{\Delta_D}
+= \frac{2.75}{0.46}
+= 6.
+\]
+
+We achieved point identification by imposing the exclusion restriction, which requires that treatment assignment is unrelated to potential outcomes for never-takers and always-takers.\footnote{Note that under monotonicity, defiers are ruled out, whereas for compliers, the exclusion restriction is not a separate assumption: by construction, their potential outcomes are indexed only by treatment status, since the instrument deterministically shifts them between $D_i=0$ and $D_i=1$. Thus, the exclusion restriction applies only to never-takers and always-takers, whose treatment status does not vary with the instrument.} This, is
+\[
+E[Y \mid Z=1, C=n] = E[Y \mid Z=0, C=n],
+\]
+and
+\[
+E[Y \mid Z=1, C=a] = E[Y \mid Z=0, C=a].
+\]
+Without exclusion restrictions, we should take into account that 
+
+\[
+\delta_n = E[Y \mid Z=1, C=n] - E[Y \mid Z=0, C=n] \neq 0,
+\]
+\[
+\delta_a = E[Y \mid Z=1, C=a] - E[Y \mid Z=0, C=a] \neq 0.
+\]
+
+Then
+\[
+\Delta_Y = \eta_c \cdot \text{LATE} + \eta_n \delta_n + \eta_a \delta_a,
+\]
+Thus,
+\[
+\text{LATE} = \frac{\Delta_Y - \eta_n \delta_n - \eta_a \delta_a}{\eta_c}.
+\]
+
+From the table we know
+\[
+E[Y \mid Z=1, C=n] = 4, \quad E[Y \mid Z=0, C=a] = 5.
+\]
+
+We assume that the bounding outcomes come from the observed support \(Y \in [3,7]\). Then,
+\[
+\delta_n \in [-3,1], \quad \delta_a \in [-2,2].
+\]
+
+Therefore,
+\[
+\text{LATE}_{\min} = \frac{\Delta_Y - \eta_n \cdot 1 - \eta_a \cdot 2}{\eta_c}
+= 4,
+\]
+
+\[
+\text{LATE}_{\max} = \frac{\Delta_Y - \eta_n (-3) - \eta_a (-2)}{\eta_c}
+= 8.73.
+\]
+
+Then, without exclusion restrictions the LATE is \textit{set identified}, \(\text{LATE} \in [4, 8.73]\), and with exclusion restrictions, LATE is \textit{point identified}, \(\text{LATE} = 6\).\\
 
 \textbf{Example: Effects of vitamin A supplements on children's survival}
 
@@ -795,9 +946,9 @@ The CACE is only set-identified, yielding the interval
 \[
 \hat{\tau}_{CACE} \in [-0.001, 0.007],
 \]
-meaning that the survival rate among compliers can vary between 1 and 7 per 1,000 children due to vitamin A supplementation.
+meaning that the survival rate among compliers can vary between -1 and 7 per 1,000 children due to vitamin A supplementation.
 
-Point identification can be achieved by imposing the exclusion restriction, which states that treatment assignment is unrelated to potential outcomes for never-takers and always-takers. Under this assumption,
+Remember that point identification can be achieved by imposing the exclusion restriction, which requires that treatment assignment is unrelated to potential outcomes for never-takers and always-takers. Under this assumption,
 \[
 P(Y_i = y \mid C_i = n, Z_i = z) = P(Y_i = y \mid C_i = n),
 \]
@@ -1411,7 +1562,7 @@ Again, inference on $ATT(g,t)$ can be conducted using regression adjustment, inv
 
 \section{Regression discontinuity design (RD)}
 
-We study the causal effect of a binary treatment $D_i$ on an outcome $Y_i$ within the potential outcomes (Rubin causal model) framework, namely $Y_i(1)-Y_i(0)$. As usual, we face the fundamental problem of causal inference. Identification in regression discontinuity design (RD) relies on a \textit{running variable} $Z_i$ that determines treatment assignment, either completely or partially, according to whether a unit lies on either side of a known cutoff $c$. The running variable may be associated with the potential outcomes, but this association is assumed to be smooth at $c$. Under this smoothness assumption (and absent precise manipulation at $c$), any discontinuity in the conditional mean of $Y_i$ as a function of $Z_i$ at $c$ identifies the causal effect of the treatment at the cutoff \cite{imbens2008regression}.
+We study the causal effect of a binary treatment $D_i$ on an outcome $Y_i$ within the potential outcomes (Rubin causal model) framework, namely $Y_i(1)-Y_i(0)$. As usual, we face the fundamental problem of causal inference. Identification in regression discontinuity design (RD) relies on a \textit{running variable} $Z_i$, also known as forcing, index or score variable, that determines treatment assignment, either completely or partially, according to whether a unit lies on either side of a known cutoff $c$. The running variable may be associated with the potential outcomes, but this association is assumed to be smooth at $c$. Under this smoothness assumption (and absent precise manipulation at $c$), any discontinuity in the conditional mean of $Y_i$ as a function of $Z_i$ at $c$ identifies the causal effect of the treatment at the cutoff \cite{imbens2008regression}.
 
 There are two common versions of RD: \emph{sharp} and \emph{fuzzy}. In the former, the change (jump) in the conditional probability of treatment at the cutoff equals one; in the latter, it is strictly between zero and one:
 \[
@@ -1707,9 +1858,12 @@ and
 
 We can classify unit types (locally around the cutoff $c$) using the potential treatment under a hypothetical cutoff $z$, $D_i(z)$ as follows:
 
-\textit{Complier status} \[ \lim_{z\downarrow Z_i}D_i(z)=0, \ \text{and} \ \lim_{z\uparrow Z_i}D_i(z)=1, \] 
+\textit{Complier status} \[ \lim_{z\downarrow Z_i}D_i(z)=0, \ \text{and} \ \lim_{z\uparrow Z_i}D_i(z)=1, \]
+ 
 \textit{Never-takers} \[ \lim_{z\downarrow Z_i}D_i(z)=0, \ \text{and} \ \lim_{z\uparrow Z_i}D_i(z)=0, \] 
-and 
+
+and
+ 
 \textit{Always-takers} \[ \lim_{z\downarrow Z_i}D_i(z)=1, \ \text{and} \ \lim_{z\uparrow Z_i}D_i(z)=1. \]
 
 Thus, compliers are units that would be treated if the cutoff were at or below their score $Z_i$, and would not be treated if the cutoff were above $Z_i$. Never-takers and always-takers do not change treatment status regardless of the cutoff: the former are always untreated, whereas the latter are always treated. Monotonicity precludes \emph{defiers}.\\
@@ -1765,7 +1919,9 @@ and the two cells by treatment status are:
 K_0 = \{c, n\}, \quad K_1 = \{c, a\}.
 \]
 
-Under a Bayesian framework, posterior simulation simplifies because we sample each unit’s latent type $C_i \in \{c, n, a\}$. If we observe $Z_i < 0$ and $D_i = 0$, only compliers and never-takers are possible. Then,
+Under a Bayesian framework, posterior simulation simplifies because we sample each unit’s latent type $C_i \in \{c, n, a\}$. This contrasts with the Frequentist literature, where types are not modeled explicitly. Thus, the Bayesian approach requires setting assumptions about the types (see \cite{chib2016bayesian} for details); for instance, types may be distributed smoothly around the cutoff with unknown distributions. In addition, given monotonicity, there are models for four potential outcomes. This differs from the Frequentist literature, which considers only two potential outcomes, given the binary treatment, and a model for the treatment.
+
+Note that if we observe $Z_i < 0$ and $D_i = 0$, only compliers and never-takers are possible. Then,
 \[
 P(C_i = c \mid Y_i, D_i = 0, \boldsymbol{\theta})
 = \frac{\eta_{c} \, t_v\!\big(Y_i \mid \mathbf{W}_{ic}^{\top} \boldsymbol{\beta}_{0c}, \sigma^2_{0c} \big)}
@@ -1785,7 +1941,7 @@ where $\eta_{a}$ is the mixture weight for an always-taker.
 
 Following \cite{chib2016bayesian}, we assume a Dirichlet prior for the mixing probabilities with hyperparameters $\alpha_{0k}$, $k \in \{c, n, a\}$. The posterior distribution is then Dirichlet with parameters $\alpha_{0k} + \sum_{i=1}^N \mathbbm{1}(C_i = k)$.
 
-In addition, \cite{chib2016bayesian} use the normal--gamma mixture representation of the Student-$t$ distribution, where the mixing parameter satisfies $\lambda_i \sim G(v/2, v/2)$. Consequently, the posterior distribution of $\lambda_i$ is gamma with parameters $(v+1)/2$ and $(y_i - \mathbf{W}_{ik}^{\top} \boldsymbol{\beta}_{dk})^2 / \sigma_{dk}^2$.
+In addition, \cite{chib2016bayesian} use the normal--gamma mixture representation of the Student-$t$ distribution, where the mixing parameter satisfies $\lambda_i \sim G(v/2, v/2)$. Consequently, the posterior distribution of $\lambda_i$ is gamma with parameters $(v+1)/2$ and $(v + \sigma_{dk}^{-2}(y_i - \mathbf{W}_{ik}^{\top} \boldsymbol{\beta}_{dk})^2) / 2$.
 
 The prior distribution for the location parameters $\boldsymbol{\beta}_{dk}$ is independent normal with mean $\boldsymbol{\beta}_{dk,0}$ and variance matrix $\mathbf{B}_{dk,0}$. The posterior distribution of $\boldsymbol{\beta}_{dk}$ is normal with mean
 \[
@@ -1808,10 +1964,9 @@ and
 Here, $N_{dk}$ denotes the number of elements (cardinality) of $I_{dk}$.
 
 The following code performs a simulation assuming that $Z_i$ follows a discrete uniform distribution from $-24$ to $24$, where the policy indicator equals one if $Z_i \geq 0$. Next, $X_i$ follows a discrete uniform distribution between $85$ and $95$. We set $\boldsymbol{\beta}_{0c} = [4.5 \ -0.20 \ 0.03]^{\top}$ and $\boldsymbol{\beta}_{1c} = [4.55 \ 0.40 \ 0.03]^{\top}$, so that the treatment effect is $0.05$. In addition, $\boldsymbol{\beta}_{0n} = [6.8 \ -0.02]^{\top}$ and $\boldsymbol{\beta}_{1a} = [5.5 \ -0.04]^{\top}$, with $\sigma_{0c}^2 = \sigma_{1c}^2 = 0.1$, $\sigma_{0n}^2 = 0.15$, and $\sigma_{1a}^2 = 0.2$. The type probabilities are $\eta_{c} = 0.7$, $\eta_{n} = 0.15$, and $\eta_{a} = 0.15$. We set the sample size to $1{,}500$ and $v = 5$.
-  
 
-Other Bayesian approaches to inference in RD include \cite{branson2019nonparametric}, who use Gaussian process regression to model the conditional expectation function; \cite{rischard2020bayesian}, who develop a nonparametric Bayesian framework for spatial RDD; and \cite{chib2023nonparametric}, who develop the theory for nonparametric sharp and fuzzy RDD using basis-expansion methods.
 
+A difference in this example is that, unlike most of the Frequentist literature, the entire dataset on the forcing variable is used. \cite{chib2023nonparametric} propose a non-parametric Bayesian framework that emphasizes the data near the cutoff using a \textit{soft-window} approach. Other Bayesian approaches to inference in RD include \cite{branson2019nonparametric}, who use Gaussian process regression to model the conditional expectation function, and \cite{rischard2020bayesian}, who develop a non-parametric Bayesian framework for spatial RDD.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
 

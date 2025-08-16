@@ -728,3 +728,190 @@ ggdid(es) +
        x = "Time relative to treatment",
        y = "ATT")
 
+#### Regression discontinuity design ####
+rm(list = ls()); set.seed(10101)
+
+# --- Simulation setup
+N <- 1500
+Z <- sample(seq(-24, 24, 1), N, replace = TRUE)       # Running var
+T <- as.integer(Z >= 0)                                # Policy indicator (0/1)
+X <- sample(seq(85, 95, 1), N, replace = TRUE)         # Regressor
+
+Wc <- cbind(1, Z, X)                                   # For compliers (includes Z)
+W  <- cbind(1, X)                                      # For n/a (no Z effect)
+
+B0c <- c(4.5, -0.2, 0.03)
+B1c <- c(4.55, 0.4,  0.03)
+B0n <- c(6.8,  -0.02)
+B1a <- c(5.5,  -0.04)
+
+s2c <- 0.1; s2n <- 0.15; s2a <- 0.2
+Etac <- 0.7; Etan <- 0.15; Etaa <- 0.15
+v <- 5
+
+# --- Potential outcomes (Student-t noise scaled to match variances)
+mu0c <- sqrt(s2c) * rt(N, v);  Y0c <- as.numeric(Wc %*% B0c + mu0c)
+mu1c <- sqrt(s2c) * rt(N, v);  Y1c <- as.numeric(Wc %*% B1c + mu1c)
+mu0n <- sqrt(s2n) * rt(N, v);  Y0n <- as.numeric(W  %*% B0n + mu0n)
+mu1a <- sqrt(s2a) * rt(N, v);  Y1a <- as.numeric(W  %*% B1a + mu1a)
+
+# --- Latent types: first n, then a, remaining are c
+id    <- seq_len(N)
+n_n   <- as.integer(round(Etan * N))
+n_a   <- as.integer(round(Etaa * N))
+
+id0n  <- sample(id, n_n, replace = FALSE)                  # never-takers
+id_rem <- setdiff(id, id0n)
+id1a  <- sample(id_rem, n_a, replace = FALSE)              # always-takers
+idc   <- setdiff(id, c(id0n, id1a))                        # compliers
+
+type <- rep(NA_character_, N)
+type[id0n] <- "n"
+type[id1a] <- "a"
+type[idc]  <- "c"
+
+# --- Realized treatment under monotonicity:
+# n -> D=0, a -> D=1, c -> D=T
+D <- integer(N)
+D[type == "n"] <- 0
+D[type == "a"] <- 1
+D[type == "c"] <- T[type == "c"]
+
+# --- 2x2 table of D vs T
+tab_DT <- table(T = factor(T, levels = 0:1), D = factor(D, levels = 0:1))
+print(tab_DT)
+
+# --- Plot potential outcomes as functions of Z
+# We'll show the simulated potential outcomes (not the realized Y).
+suppressPackageStartupMessages({
+  library(ggplot2)
+  library(tidyr)
+  library(dplyr)
+})
+
+df_plot <- data.frame(
+  Z, X, T, 
+  Y0c = Y0c, Y1c = Y1c, Y0n = Y0n, Y1a = Y1a
+)
+
+long <- df_plot |>
+  select(Z, Y0c, Y1c, Y0n, Y1a) |>
+  pivot_longer(cols = -Z, names_to = "outcome", values_to = "Y")
+
+ggplot(long, aes(x = Z, y = Y)) +
+  geom_point(alpha = 0.15, size = 1) +
+  geom_smooth(se = FALSE, method = "loess", formula = y ~ x, span = 0.6) +
+  facet_wrap(~ outcome, ncol = 2, scales = "free_y") +
+  labs(title = "Potential outcomes as functions of Z",
+       x = "Running variable Z", y = "Potential outcome") +
+  theme_bw()
+
+# Y
+Y <- ifelse(type == "n", Y0n,
+            ifelse(type == "a", Y1a,
+                   ifelse(D == 0, Y0c, Y1c)))
+
+# Plot Y vs Z
+df_obs <- data.frame(Z = Z, Y = Y, D = factor(D), T = factor(T))
+
+ggplot(df_obs, aes(x = Z, y = Y, color = D)) +
+  geom_point(alpha = 0.3, size = 1) +
+  geom_smooth(se = FALSE, method = "loess", formula = y ~ x, span = 0.6) +
+  labs(title = "Observed outcome Y vs running variable Z",
+       x = "Running variable Z",
+       y = "Observed outcome Y",
+       color = "Treatment D") +
+  theme_bw()
+
+## Gibbs sampler ##
+# Prob complier | D=0
+Pc0 <- function(b0c, sigma20c, etac, b0n, sigma20n, etan, i){
+  p0c <- etac*dt(Y[i], v, Wc[i,]%*%b0c)*sigma20c^0.5
+  p0n <- etan*dt(Y[i], v, W[i,]%*%b0n)*sigma20n^0.5
+  pc0 <- p0c / (p0c + p0n)
+  return(pc0)
+}
+b0c <- B0c; sigma20c <- s2c; etac <- Etac
+b0n <- B0n; sigma20n <- s2n; etan <- Etan; i <- 4
+Pc0(b0c, sigma20c, etac, b0n, sigma20n, etan, i)
+# Prob complier | D=1
+Pc1 <- function(b1c, sigma21c, etac, b1a, sigma21a, etaa, i){
+  p1c <- etac*dt(Y[i], v, Wc[i,]%*%b1c)*sigma21c^0.5
+  p1a <- etaa*dt(Y[i], v, W[i,]%*%b1a)*sigma21a^0.5
+  pc1 <- p1c / (p1c + p1a)
+  return(pc1)
+}
+b1c <- B1c; sigma21c <- s2c; etac <- Etac
+b1a <- B1a; sigma21a <- s2a; etaa <- Etaa; i <- 8
+Pc1(b1c, sigma21c, etac, b1a, sigma21a, etaa, i)
+I00 <- which(T == 0 & D == 0)
+I11 <- which(T == 1 & D == 1)
+I01 <- which(T == 0 & D == 1)
+I10 <- which(T == 1 & D == 0)
+ProbC0 <- sapply(I00, function(i)Pc0(b0c, sigma20c, etac, b0n, sigma20n, etan, i = i))
+ProbC1 <- sapply(I11, function(i)Pc1(b1c, sigma21c, etac, b1a, sigma21a, etaa, i = i))
+Typec0 <- sapply(ProbC0, function(p) {sample(c("c", "n"), 1, p = c(p, 1-p))})
+Typec1 <- sapply(ProbC1, function(p) {sample(c("c", "a"), 1, p = c(p, 1-p))})
+typeNew <- rep(NA_character_, N)
+typeNew[I10] <- "n"
+typeNew[I01] <- "a"
+typeNew[I00]  <- Typec0
+typeNew[I11]  <- Typec1
+Nc <- sum(typeNew == "c")
+Na <- sum(typeNew == "a")
+Nn <- sum(typeNew == "n")
+a0c <- 1; a0n <- 1; a0a <- 1
+anc <- a0c + Nc; ann <- a0n + Nn; ana <- a0a + Na 
+rtype <- function(alphas){
+  types <- MCMCpack::rdirichlet(1, alphas)
+  return(types)
+}
+alphas <- c(anc, ann, ana)
+EtasNew <- rtype(alphas = alphas)
+EtacNew <- EtasNew[1]; EtanNew <- EtasNew[2]; EtaaNew <- EtasNew[3]
+
+PostLambda_i <- function(sig2, Beta, yi, hi, v){
+  shape <- (v + 1)/2
+  rate  <- (v + (yi - sum(hi * Beta))^2 / sig2)/2
+  rgamma(1, shape = shape, rate = rate)
+}
+
+Lambda <- numeric(N)
+idx_n <- which(typeNew == "n")
+idx_a <- which(typeNew == "a")
+idx_c0 <- which(typeNew == "c" & D == 0)
+idx_c1 <- which(typeNew == "c" & D == 1)
+v <- 5
+Lambda[idx_n]  <- sapply(idx_n,  function(i) PostLambda_i(s2n, B0n, Y[i],  W[i, ],  v))
+Lambda[idx_a]  <- sapply(idx_a,  function(i) PostLambda_i(s2a, B1a, Y[i],  W[i, ],  v))
+Lambda[idx_c0] <- sapply(idx_c0, function(i) PostLambda_i(s2c, B0c, Y[i], Wc[i, ], v))
+Lambda[idx_c1] <- sapply(idx_c1, function(i) PostLambda_i(s2c, B1c, Y[i], Wc[i, ], v))
+
+PostBeta <- function(sig2, lambda, y, H){
+  k <- dim(H)[2]
+  B0i <- solve(1000*diag(k))
+  b0 <- rep(0, k)
+  Bn <- solve(B0i + sig2^(-1)*t(H)%*%diag(lambda)%*%H)
+  bn <- Bn%*%(B0i%*%b0 + sig2^(-1)*t(H)%*%diag(lambda)%*%y)
+  Beta <- MASS::mvrnorm(1, bn, Bn)
+  return(Beta)
+}
+
+b1a <- PostBeta(sig2 = s2a, lambda = Lambda[idx_a], y = Y[idx_a], H = W[idx_a,])
+b0n <- PostBeta(sig2 = s2n, lambda = Lambda[idx_n], y = Y[idx_n], H = W[idx_n,])
+b0c <- PostBeta(sig2 = s2c, lambda = Lambda[idx_c0], y = Y[idx_c0], H = Wc[idx_c0,])
+b1c <- PostBeta(sig2 = s2c, lambda = Lambda[idx_c1], y = Y[idx_c1], H = Wc[idx_c1,])
+
+a0 <- 0.01; d0 <- 0.01
+PostSig2 <- function(Beta, lambda, y, H){
+  Ndk <- length(y)
+  an <- a0 + Ndk 
+  dn <- d0 + t(y - H%*%Beta)%*%diag(lambda)%*%(y - H%*%Beta)
+  sig2 <- invgamma::rinvgamma(1, shape = an/2, rate = dn/2)
+  return(sig2)
+}
+sigma21a <- PostSig2(Beta = b1a, lambda = Lambda[idx_a], y = Y[idx_a], H = W[idx_a,])
+sigma20n <- PostSig2(Beta = b0n, lambda = Lambda[idx_n], y = Y[idx_n], H = W[idx_n,])
+sigma20c <- PostSig2(Beta = b0c, lambda = Lambda[idx_c0], y = Y[idx_c0], H = Wc[idx_c0,])
+sigma21c <- PostSig2(Beta = b1c, lambda = Lambda[idx_c1], y = Y[idx_c1], H = Wc[idx_c1,])
+
