@@ -733,7 +733,8 @@ rm(list = ls()); set.seed(10101)
 
 # --- Simulation setup
 N <- 1500
-Z <- sample(seq(-24, 24, 1), N, replace = TRUE)       # Running var
+Zi <- sample(seq(-24, 24, 1), N, replace = TRUE)       # Running var
+Z <- Zi - mean(Zi)
 T <- as.integer(Z >= 0)                                # Policy indicator (0/1)
 X <- sample(seq(85, 95, 1), N, replace = TRUE)         # Regressor
 
@@ -824,68 +825,45 @@ ggplot(df_obs, aes(x = Z, y = Y, color = D)) +
   theme_bw()
 
 ## Gibbs sampler ##
-# Prob complier | D=0
-Pc0 <- function(b0c, sigma20c, etac, b0n, sigma20n, etan, i){
-  p0c <- etac*dt(Y[i], v, Wc[i,]%*%b0c)*sigma20c^0.5
-  p0n <- etan*dt(Y[i], v, W[i,]%*%b0n)*sigma20n^0.5
-  pc0 <- p0c / (p0c + p0n)
-  return(pc0)
-}
-b0c <- B0c; sigma20c <- s2c; etac <- Etac
-b0n <- B0n; sigma20n <- s2n; etan <- Etan; i <- 4
-Pc0(b0c, sigma20c, etac, b0n, sigma20n, etan, i)
-# Prob complier | D=1
-Pc1 <- function(b1c, sigma21c, etac, b1a, sigma21a, etaa, i){
-  p1c <- etac*dt(Y[i], v, Wc[i,]%*%b1c)*sigma21c^0.5
-  p1a <- etaa*dt(Y[i], v, W[i,]%*%b1a)*sigma21a^0.5
-  pc1 <- p1c / (p1c + p1a)
-  return(pc1)
-}
-b1c <- B1c; sigma21c <- s2c; etac <- Etac
-b1a <- B1a; sigma21a <- s2a; etaa <- Etaa; i <- 8
-Pc1(b1c, sigma21c, etac, b1a, sigma21a, etaa, i)
 I00 <- which(T == 0 & D == 0)
 I11 <- which(T == 1 & D == 1)
 I01 <- which(T == 0 & D == 1)
 I10 <- which(T == 1 & D == 0)
-ProbC0 <- sapply(I00, function(i)Pc0(b0c, sigma20c, etac, b0n, sigma20n, etan, i = i))
-ProbC1 <- sapply(I11, function(i)Pc1(b1c, sigma21c, etac, b1a, sigma21a, etaa, i = i))
-Typec0 <- sapply(ProbC0, function(p) {sample(c("c", "n"), 1, p = c(p, 1-p))})
-Typec1 <- sapply(ProbC1, function(p) {sample(c("c", "a"), 1, p = c(p, 1-p))})
-typeNew <- rep(NA_character_, N)
-typeNew[I10] <- "n"
-typeNew[I01] <- "a"
-typeNew[I00]  <- Typec0
-typeNew[I11]  <- Typec1
-Nc <- sum(typeNew == "c")
-Na <- sum(typeNew == "a")
-Nn <- sum(typeNew == "n")
-a0c <- 1; a0n <- 1; a0a <- 1
-anc <- a0c + Nc; ann <- a0n + Nn; ana <- a0a + Na 
+# Hyperparameters
+a0c <- 1; a0n <- 1; a0a <- 1 # Hyperpar Dirichlet
+v <- 5 # Student-t
+a0 <- 0.01; d0 <- 0.01 # Inv-Gamma
+# Prob complier | D=0
+dens_t_locscale <- function(y, mu, sig2, v) {
+  z <- (y - mu) / sqrt(sig2)
+  dt(z, df = v) / sqrt(sig2)
+}
+# Prob complier | D=0
+Pc0 <- function(b0c, sigma20c, etac, b0n, sigma20n, etan, i){
+  p0c <- etac * dens_t_locscale(Y[i], mu = sum(Wc[i,]*b0c), sig2 = sigma20c, v = v)
+  p0n <- etan * dens_t_locscale(Y[i], mu = sum(W[i, ]*b0n), sig2 = sigma20n, v = v)
+  pc0 <- p0c / (p0c + p0n + 1e-12)
+  return(pc0)
+}
+# Prob complier | D=1
+Pc1 <- function(b1c, sigma21c, etac, b1a, sigma21a, etaa, i){
+  p1c <- etac * dens_t_locscale(Y[i], mu = sum(Wc[i,]*b1c), sig2 = sigma21c, v = v)
+  p1a <- etaa * dens_t_locscale(Y[i], mu = sum(W[i, ]*b1a), sig2 = sigma21a, v = v)
+  pc1 <- p1c / (p1c + p1a + 1e-12)
+  return(pc1)
+}
+
+# Function probability type
 rtype <- function(alphas){
   types <- MCMCpack::rdirichlet(1, alphas)
   return(types)
 }
-alphas <- c(anc, ann, ana)
-EtasNew <- rtype(alphas = alphas)
-EtacNew <- EtasNew[1]; EtanNew <- EtasNew[2]; EtaaNew <- EtasNew[3]
 
 PostLambda_i <- function(sig2, Beta, yi, hi, v){
   shape <- (v + 1)/2
   rate  <- (v + (yi - sum(hi * Beta))^2 / sig2)/2
   rgamma(1, shape = shape, rate = rate)
 }
-
-Lambda <- numeric(N)
-idx_n <- which(typeNew == "n")
-idx_a <- which(typeNew == "a")
-idx_c0 <- which(typeNew == "c" & D == 0)
-idx_c1 <- which(typeNew == "c" & D == 1)
-v <- 5
-Lambda[idx_n]  <- sapply(idx_n,  function(i) PostLambda_i(s2n, B0n, Y[i],  W[i, ],  v))
-Lambda[idx_a]  <- sapply(idx_a,  function(i) PostLambda_i(s2a, B1a, Y[i],  W[i, ],  v))
-Lambda[idx_c0] <- sapply(idx_c0, function(i) PostLambda_i(s2c, B0c, Y[i], Wc[i, ], v))
-Lambda[idx_c1] <- sapply(idx_c1, function(i) PostLambda_i(s2c, B1c, Y[i], Wc[i, ], v))
 
 PostBeta <- function(sig2, lambda, y, H){
   k <- dim(H)[2]
@@ -897,12 +875,6 @@ PostBeta <- function(sig2, lambda, y, H){
   return(Beta)
 }
 
-b1a <- PostBeta(sig2 = s2a, lambda = Lambda[idx_a], y = Y[idx_a], H = W[idx_a,])
-b0n <- PostBeta(sig2 = s2n, lambda = Lambda[idx_n], y = Y[idx_n], H = W[idx_n,])
-b0c <- PostBeta(sig2 = s2c, lambda = Lambda[idx_c0], y = Y[idx_c0], H = Wc[idx_c0,])
-b1c <- PostBeta(sig2 = s2c, lambda = Lambda[idx_c1], y = Y[idx_c1], H = Wc[idx_c1,])
-
-a0 <- 0.01; d0 <- 0.01
 PostSig2 <- function(Beta, lambda, y, H){
   Ndk <- length(y)
   an <- a0 + Ndk 
@@ -910,8 +882,75 @@ PostSig2 <- function(Beta, lambda, y, H){
   sig2 <- invgamma::rinvgamma(1, shape = an/2, rate = dn/2)
   return(sig2)
 }
-sigma21a <- PostSig2(Beta = b1a, lambda = Lambda[idx_a], y = Y[idx_a], H = W[idx_a,])
-sigma20n <- PostSig2(Beta = b0n, lambda = Lambda[idx_n], y = Y[idx_n], H = W[idx_n,])
-sigma20c <- PostSig2(Beta = b0c, lambda = Lambda[idx_c0], y = Y[idx_c0], H = Wc[idx_c0,])
-sigma21c <- PostSig2(Beta = b1c, lambda = Lambda[idx_c1], y = Y[idx_c1], H = Wc[idx_c1,])
+
+# MCMC parameter
+burnin <- 500; S <- 2000; tot <- S + burnin 
+PosteriorDraws <- matrix(NA, tot, 5)
+ETAs <- matrix(NA, tot, 3)
+BETAS0C <- matrix(NA, tot, 3)
+BETAS1C <- matrix(NA, tot, 3)
+BETASA <- matrix(NA, tot, 2)
+BETASN <- matrix(NA, tot, 2)
+SIGMAS <- matrix(NA, tot, 4)
+b0c <- rep(0, 3); b1c <- rep(0, 3); b1a <- rep(0, 2); b0n <- rep(0, 2)
+sigma21c <- 0.1; sigma20c <- 0.1; sigma20n <- 0.1; sigma21a <- 0.1
+EtacNew <- 0.5; EtanNew <- 0.25; EtaaNew <- 0.25
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for(s in 1:tot){
+  ProbC0 <- sapply(I00, function(i)Pc0(b0c, sigma20c, EtacNew, b0n, sigma20n, EtanNew, i = i))
+  ProbC1 <- sapply(I11, function(i)Pc1(b1c, sigma21c, EtacNew, b1a, sigma21a, EtaaNew, i = i))
+  Typec0 <- sapply(ProbC0, function(p) {sample(c("c", "n"), 1, prob = c(p, 1-p))})
+  Typec1 <- sapply(ProbC1, function(p) {sample(c("c", "a"), 1, prob = c(p, 1-p))})
+  typeNew <- rep(NA_character_, N)
+  typeNew[I10] <- "n"
+  typeNew[I01] <- "a"
+  typeNew[I00]  <- Typec0
+  typeNew[I11]  <- Typec1
+  Nc <- sum(typeNew == "c")
+  Na <- sum(typeNew == "a")
+  Nn <- sum(typeNew == "n")
+  anc <- a0c + Nc; ann <- a0n + Nn; ana <- a0a + Na
+  alphas <- c(anc, ann, ana)
+  EtasNew <- rtype(alphas = alphas)
+  EtacNew <- EtasNew[1]; EtanNew <- EtasNew[2]; EtaaNew <- EtasNew[3]
+  ETAs[s, ] <- EtasNew
+  Lambda <- numeric(N)
+  idx_n <- which(typeNew == "n")
+  idx_a <- which(typeNew == "a")
+  idx_c0 <- which(typeNew == "c" & D == 0)
+  idx_c1 <- which(typeNew == "c" & D == 1)
+  Lambda[idx_n]  <- sapply(idx_n,  function(i) PostLambda_i(sigma20n, b0n, Y[i],  W[i, ], v))
+  Lambda[idx_a]  <- sapply(idx_a,  function(i) PostLambda_i(sigma21a, b1a, Y[i],  W[i, ], v))
+  Lambda[idx_c0] <- sapply(idx_c0, function(i) PostLambda_i(sigma20c, b0c, Y[i], Wc[i, ], v))
+  Lambda[idx_c1] <- sapply(idx_c1, function(i) PostLambda_i(sigma21c, b1c, Y[i], Wc[i, ], v))
+  b1a <- PostBeta(sig2 = sigma21a, lambda = Lambda[idx_a], y = Y[idx_a], H = W[idx_a,])
+  b0n <- PostBeta(sig2 = sigma20n, lambda = Lambda[idx_n], y = Y[idx_n], H = W[idx_n,])
+  b0c <- PostBeta(sig2 = sigma20c, lambda = Lambda[idx_c0], y = Y[idx_c0], H = Wc[idx_c0,])
+  b1c <- PostBeta(sig2 = sigma21c, lambda = Lambda[idx_c1], y = Y[idx_c1], H = Wc[idx_c1,])
+  BETASA[s, ] <- b1a
+  BETASN[s, ] <- b0n
+  BETAS0C[s, ] <- b0c
+  BETAS1C[s, ] <- b1c 
+  sigma21a <- PostSig2(Beta = b1a, lambda = Lambda[idx_a], y = Y[idx_a], H = W[idx_a,])
+  sigma20n <- PostSig2(Beta = b0n, lambda = Lambda[idx_n], y = Y[idx_n], H = W[idx_n,])
+  sigma20c <- PostSig2(Beta = b0c, lambda = Lambda[idx_c0], y = Y[idx_c0], H = Wc[idx_c0,])
+  sigma21c <- PostSig2(Beta = b1c, lambda = Lambda[idx_c1], y = Y[idx_c1], H = Wc[idx_c1,])
+  SIGMAS[s, ] <- c(sigma21a, sigma20n, sigma20c, sigma21c)
+  setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+}
+close(pb)
+keep <- seq((burnin+1), tot)
+summary(coda::mcmc(BETASA[keep, ]))
+summary(coda::mcmc(BETASN[keep, ]))
+summary(coda::mcmc(BETAS0C[keep, ]))
+summary(coda::mcmc(BETAS1C[keep, ]))
+summary(coda::mcmc(SIGMAS[keep, ]))
+LATE <- coda::mcmc(BETAS1C[keep, 1] - BETAS0C[keep, 1])
+summary(LATE)
+plot(LATE)
+LATEmean <- mean(LATE)
+LATEci <- quantile(LATE, c(0.025, 0.975))
+
+
+
 
