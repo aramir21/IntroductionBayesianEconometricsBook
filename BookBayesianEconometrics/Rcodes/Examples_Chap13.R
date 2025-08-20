@@ -732,7 +732,7 @@ ggdid(es) +
 rm(list = ls()); set.seed(10101)
 
 # --- Simulation setup
-N <- 1500
+N <- 3000
 Zi <- sample(seq(-24, 24, 1), N, replace = TRUE)       # Running var
 Z <- Zi - mean(Zi)
 T <- as.integer(Z >= 0)                                # Policy indicator (0/1)
@@ -742,7 +742,7 @@ Wc <- cbind(1, Z, X)                                   # For compliers (includes
 W  <- cbind(1, X)                                      # For n/a (no Z effect)
 
 B0c <- c(4.5, -0.2, 0.03)
-B1c <- c(4.55, 0.4,  0.03)
+B1c <- c(5.5, 0.4,  0.03)
 B0n <- c(6.8,  -0.02)
 B1a <- c(5.5,  -0.04)
 
@@ -884,8 +884,7 @@ PostSig2 <- function(Beta, lambda, y, H){
 }
 
 # MCMC parameter
-burnin <- 500; S <- 2000; tot <- S + burnin 
-PosteriorDraws <- matrix(NA, tot, 5)
+burnin <- 1000; S <- 5000; tot <- S + burnin 
 ETAs <- matrix(NA, tot, 3)
 BETAS0C <- matrix(NA, tot, 3)
 BETAS1C <- matrix(NA, tot, 3)
@@ -948,9 +947,21 @@ summary(coda::mcmc(SIGMAS[keep, ]))
 LATE <- coda::mcmc(BETAS1C[keep, 1] - BETAS0C[keep, 1])
 summary(LATE)
 plot(LATE)
-LATEmean <- mean(LATE)
-LATEci <- quantile(LATE, c(0.025, 0.975))
+# Extract samples as numeric
+late_draws <- as.numeric(LATE)
+# Posterior mean and 95% CI
+LATEmean <- mean(late_draws)
+LATEci   <- quantile(late_draws, c(0.025, 0.975))
+# Plot posterior density
+df <- data.frame(LATE = late_draws)
 
-
-
+ggplot(df, aes(x = LATE)) +
+  geom_density(fill = "skyblue", alpha = 0.5, color = "blue") +
+  geom_vline(xintercept = LATEmean, color = "red", linetype = "dashed", linewidth = 1) +
+  geom_vline(xintercept = LATEci, color = "black", linetype = "dotted", linewidth = 1) +
+  labs(title = "Posterior distribution of LATE",
+       subtitle = paste0("Mean = ", round(LATEmean,3),
+                         " | 95% CI = [", round(LATEci[1],3), ", ", round(LATEci[2],3), "]"),
+       x = "LATE", y = "Density") +
+  theme_bw(base_size = 14)
 
