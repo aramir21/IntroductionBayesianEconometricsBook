@@ -2362,34 +2362,187 @@ D_i^* \sim
 where $TN_{A}(\mu,\sigma^2)$ denotes a normal distribution with mean $\mu$ and variance $\sigma^2$, truncated to the set $A$.\\
 
 \textbf{Example: Simulation of the sample selection model}
+We simulate the model 
+\[
+Y_i = 12 + X_{i1} + X_{i2} + \mu_i,
+\]
+where $X_{i1}\sim N(0,4)$, $X_{i2}\sim \text{Bin}(1,0.5)$, and $\mu_i\sim N(0,1.2)$ for $i=1,2,\dots,1000$.  
+In addition, 
+\[
+D_i^* = 1 + Z_{i1} - X_{i2} + \nu_i,
+\]
+where $Z_{i1}\sim N(0,4)$.
 
+The covariance between $\mu_i$ and $\nu_i$ is set to $0.6$.
 
+The hyperparameters are $\boldsymbol{\delta}_0=[0 \ 0 \ 0 \ 0 \ 0 \ 0]^{\top}$, $\mathbf{D}_0=1000\mathbf{I}_6$, $\alpha_0=\delta_0=0.001$, $s_0=0$, and $S_0=1000$. We perform 1,500 iterations with a burn-in of 500. The following code illustrates the Gibbs sampler. Finally, we compare the results with an implementation that does not account for the sample selection issue.
 
+Figure \ref{fig12_SEL} shows the posterior distributions of the second parameter in the outcome equation, whose population value is 1 (black dashed line). The posterior distribution of the model that accounts for selection encompasses the population value, whereas the model that ignores selection does not.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation: Sample selection model}
+	\begin{VF}
+		\begin{lstlisting}[language=R]	
+rm(list = ls()); set.seed(10101)
+library(doParallel); library(snow)
+N <- 1000
+w1 <- rbinom(N, 1, 0.5) # rnorm(N, 0, sigExo); 
+delta <- c(1, 1, -1); beta <- c(2,1,1)
+zx <- MASS::mvrnorm(N, mu = rep(0, 2), matrix(c(1,0.7,0.7,1),2,2))
+z1 <- zx[,1]
+Z <- cbind(1, z1, w1)
+sig12 <- 0.8; sig11 <- 1.2
+SIGMA <- matrix(c(sig11, sig12, sig12, 1), 2, 2)
+E <- MASS::mvrnorm(N, mu = rep(0, 2), SIGMA)
+cl <- Z%*%delta + E[,2]; c <- cl > 0
+x1 <- zx[,2]; X <- cbind(1, x1, w1)
+y <- X%*%beta + E[,1]
+y[c==0] <- NA
+# Hyperparameters
+b0 <- rep(0, 6); B0 <- 1000*diag(6); B0i <- solve(B0)
+a0 <- 0.001; d0 <- 0.001
+s0 <- 0; S0 <- 1000; S0i <- 1/S0
+# Location
+idc1 <- which(c==1)
+nc1 <- length(idc1)
+PostThetaNew <- function(Sigma, clat){
+	J <- matrix(c(0,0,0,1),2,2)
+	WW <- matrix(0, 6, 6)
+	Wy <- matrix(0, 6, 1)
+	for(i in 1:N){
+		if(i %in% idc1){
+			yclat <- c(y[i], clat[i])
+			Auxi <- solve(Sigma)
+		}else{
+			yclat <- c(0, clat[i])
+			Auxi <- J
+		}
+		Wi <- as.matrix(Matrix::bdiag(X[i,], Z[i,]))
+		WWi <- Wi%*%Auxi%*%t(Wi)
+		Wyi <- Wi%*%Auxi%*%yclat
+		WW <- WW + WWi
+		Wy <- Wy + Wyi
+	}
+	Bn <- solve(B0i + WW)
+	bn <- Bn%*%(B0i%*%b0 + Wy)
+	Beta <- MASS::mvrnorm(1, bn, Bn)
+	return(Beta)
+}
+PostOmega11 <- function(theta, sig12, clat){
+	an <- a0 + nc1
+	mui <- y[idc1] -X[idc1, ]%*%theta[1:3] - sig12*(clat[idc1] - Z[idc1,]%*%theta[4:6])
+	dn <- d0 + t(mui)%*%mui
+	omega11 <- LaplacesDemon::rinvgamma(1, an/2, dn/2)
+	return(omega11)
+}
+\end{lstlisting}
+\end{VF}
+\end{tcolorbox}  
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation: Sample selection model}
+	\begin{VF}
+		\begin{lstlisting}[language=R]	
+PostSig12 <- function(omega11, theta, clat){
+	Sn <- (omega11^(-1)*sum((clat[idc1] - Z[idc1,]%*%theta[4:6])^2) + S0i)^(-1)
+	sn <- Sn*(omega11^(-1)*sum((clat[idc1] - Z[idc1,]%*%theta[4:6])*(y[idc1] - X[idc1,]%*%theta[1:3])) + s0*S0i)
+	sig12 <- rnorm(1, sn, sd = Sn^0.5)
+	return(sig12)
+}
+PostClat <- function(theta, sig12, omega11, i){
+	if(i %in% idc1){
+		mu <- Z[i,]%*%theta[4:6] + (sig12/(omega11+sig12^2))*(y[i] - X[i,]%*%theta[1:3])
+		sig2 <- omega11/(omega11+sig12^2)
+		clat <- EnvStats::rnormTrunc(1, mean = mu, sd = sig2^0.5, min = 0, max = Inf)
+	}else{
+		mu <- Z[i,]%*%theta[4:6]
+		clat <- EnvStats::rnormTrunc(1, mean = mu, sd = 1, min = -Inf, max = 0)
+	}
+	return(clat)
+}
+# Sampler
+S <- 1500; burnin <- 500; thin <- 2
+keep <- seq(burnin+thin, S, thin)
+PostThetasDraws <- matrix(NA, S, 6)
+PostSigmaDraws <- matrix(NA, S, 2)
+# Initial parameters
+Thetap <- rep(0, 6); Sigmap <- diag(2) 
+Sig12p <- 0; Omega11p <- 1
+for(i in 1:N){
+	if(c[i] == 0){
+		LatPost <- EnvStats::rnormTrunc(1, mean = 0, sd = 1, min = -Inf, max = 0)
+	}else{
+		LatPost <- EnvStats::rnormTrunc(1, mean = 0, sd = 1, min = 0, max = Inf)
+	}
+}
+#### Parallel code ####
+cn <- detectCores() 
+ClusterHope <- makeCluster(cn, type = "SOCK")
+registerDoParallel(ClusterHope)
+clusterExport(ClusterHope, list("Z", "X", "c", "y", "N", "idc1", "nc1", "PostClat","Thetap", "Sig12p", "Omega11p"))
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}  
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation: Sample selection model}
+	\begin{VF}
+		\begin{lstlisting}[language=R]	
+pb <- winProgressBar(title = "progress bar", min = 0, max = S, width = 300)
+for(rep in 1:S){
+	LatPost <- t(parSapply(ClusterHope, 1:N, function(i){PostClat(theta = Thetap, sig12 = Sig12p, omega11 = Omega11p, i)}))
+	Thetap <- PostThetaNew(Sigma = Sigmap, clat = LatPost)
+	Omega11p <- PostOmega11(theta = Thetap, sig12 = Sig12p, clat = LatPost)
+	Sig12p <- PostSig12(omega11 = Omega11p, theta = Thetap, clat = LatPost)
+	Sigmap <- matrix(c(Omega11p+Sig12p^2, Sig12p, Sig12p, 1),2,2)
+	PostThetasDraws[rep,] <- Thetap
+	PostSigmaDraws[rep, ] <- c(Omega11p+Sig12p^2, Sig12p)
+	clusterExport(ClusterHope, list("Thetap", "Sig12p", "Omega11p"))
+	setWinProgressBar(pb, rep, title=paste( round(rep/S*100, 0),"% done"))
+}
+stopCluster(ClusterHope)
+close(pb)
+thetaHat <- coda::mcmc(PostThetasDraws[keep,])
+PostDrawsSigma <- coda::mcmc(PostSigmaDraws[keep,])
+summary(thetaHat)
+summary(PostDrawsSigma)
+RegNOsel <- MCMCpack::MCMCregress(y ~ X - 1)
+summary(RegNOsel)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{figure}[h!]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter12/figures/FigSEL.png}
+	\caption[List of figure caption goes here]{Posterior distribution second parameter in outcome: Selection vs no selection models}\label{fig12_SEL}
+\end{figure}
+  
 The original Heckman selection model was not intended to calculate the ATE, since $Y_i(0)$ is not observed and, therefore, a treatment effect is not defined. Its main purpose is to correct the expected value of $Y_i \mid D_i=1$ by accounting for sample selection. Subsequently, \cite{heckman1990varieties} and \cite{heckman2005structural} extended the sample selection framework to incorporate $Y_i(0)$, framing the Roy model \cite{roy1951some} within the treatment effect literature and establishing the identification conditions for different treatment parameters. In particular, \cite{heckman2005structural} introduced the marginal treatment effect (MTE),
 \[
 \tau_{MTE}(x,u_D) = \mathbb{E}[Y_i(1)-Y_i(0)\mid \mathbf{X}_i=\mathbf{x}, \, U_{Di}=u_D],
 \]
-which is the expected effect of treatment for individuals with observed characteristics $\mathbf{X}_i=\mathbf{x}$ and unobserved resistance to treatment $U_{Di}=u_D$ \cite{heckman2005structural}.
+which is the expected effect of treatment for individuals with observed characteristics $\mathbf{X}_i=\mathbf{x}$ and unobservable factors from the treatment assignment $U_{Di}=u_D$ \cite{heckman2005structural}.
 
 The MTE is a unifying concept that connects the treatment effect, selection, and matching literatures. Moreover, these authors show that many treatment effect parameters, such as the ATE, ATT, and LATE, can be expressed as weighted averages of the MTE (see Table~IA in \cite{heckman2005structural}).
 
 In the Bayesian literature, several authors have estimated different versions of selection models. In particular, \cite{van2011bayesian} and \cite{ding2014bayesian} analyze the sample selection model using flexible specifications for the error terms, while \cite{koop1997learning} and \cite{chib2007analysis} estimate the Roy model. Furthermore, \cite{chib2009estimation} extend the basic framework to a semiparametric setting that accounts for endogeneity, and \cite{heckman2014treatment} introduce latent factors to address the fundamental problem of causal inference in the Roy model. This approach allows researchers to learn about the otherwise unidentified covariance between $Y_i(1)$ and $Y_i(0)$, which in turn enables the estimation of distributional versions of treatment effects that require the joint distribution of $Y_i(1)$ and $Y_i(0)$.
 
-\section{Reverse/Simultaneous causality}\label{sec12_9}
-
-\section{Bayesian exponential tilted empirical likelihood}\label{sec12_10}
+\section{Bayesian exponentially tilted empirical likelihood}\label{sec12_9}
 Bayesian parametric approaches are often criticized on the basis that they require arbitrary distribution assumptions which often are not examined. Partial information approaches are based only on certain moment assumptions without making specific distributional assumptions. However, there are no free lunch, as these methods imply efficiency losses.
 
 The point of departure of Bayesian exponential tilted empirical likelihood (BETEL) are moment conditions that are used to build the likelihood function.
 
-\section{A general framework for updating belief distributions}\label{sec12_11}
+\section{A general framework for updating belief distributions}\label{sec12_10}
 Introduce \cite{bissiri2016general} as a generalization of \cite{chernozhukov2003mcmc}.
 
 
-\section{Doubly robust Bayesian inferential framework}\label{sec12_12}
+\section{Doubly robust Bayesian inferential framework}\label{sec12_11}
 \cite{breunig2025double}
 
-\section{Other approaches}\label{sec12_13}
+\section{Other approaches}\label{sec12_12}
 There are other causal inference approaches that we do not cover in this chapter but are worth mentioning. In particular, 
 
 Another interesting approach is the synthetic control method, which estimates a treatment effect by constructing a weighted combination of untreated units that best matches the treated unit's pre-treatment outcomes, and then comparing post-treatment differences. Identification relies on \textit{no interference between units}, \textit{parallel trends between the treated unit and its synthetic control in the absence of treatment}, and \textit{no anticipation of treatment} \cite{abadie2010synthetic}. Several proposals extend this framework to the Bayesian setting \cite{amjad2018robust,kim2020bayesian,pang2022bayesian}.

@@ -965,3 +965,177 @@ ggplot(df, aes(x = LATE)) +
        x = "LATE", y = "Density") +
   theme_bw(base_size = 14)
 
+#### Sample selection models #####
+rm(list = ls()); set.seed(10101)
+library(doParallel); library(snow)
+N <- 1000
+w1 <- rbinom(N, 1, 0.5) # rnorm(N, 0, sigExo); 
+delta <- c(1, 1, -1); beta <- c(2,1,1)
+zx <- MASS::mvrnorm(N, mu = rep(0, 2), matrix(c(1,0.7,0.7,1),2,2))
+z1 <- zx[,1]
+Z <- cbind(1, z1, w1)
+sig12 <- 0.8
+sig11 <- 1.2
+SIGMA <- matrix(c(sig11, sig12, sig12, 1), 2, 2)
+E <- MASS::mvrnorm(N, mu = rep(0, 2), SIGMA)
+cl <- Z%*%delta + E[,2]
+c <- cl > 0
+table(c)
+x1 <- zx[,2]; X <- cbind(1, x1, w1)
+y <- X%*%beta + E[,1]
+y[c==0] <- NA
+# Hyperparameters
+b0 <- rep(0, 6); B0 <- 1000*diag(6); B0i <- solve(B0)
+a0 <- 0.001; d0 <- 0.001
+s0 <- 0; S0 <- 1000; S0i <- 1/S0
+# Location
+idc1 <- which(c==1)
+nc1 <- length(idc1)
+PostThetaNew <- function(Sigma, clat){
+  J <- matrix(c(0,0,0,1),2,2)
+  WW <- matrix(0, 6, 6)
+  Wy <- matrix(0, 6, 1)
+  for(i in 1:N){
+    if(i %in% idc1){
+      yclat <- c(y[i], clat[i])
+      Auxi <- solve(Sigma)
+    }else{
+      yclat <- c(0, clat[i])
+      Auxi <- J
+    }
+    Wi <- as.matrix(Matrix::bdiag(X[i,], Z[i,]))
+    WWi <- Wi%*%Auxi%*%t(Wi)
+    Wyi <- Wi%*%Auxi%*%yclat
+    WW <- WW + WWi
+    Wy <- Wy + Wyi
+  }
+  Bn <- solve(B0i + WW)
+  bn <- Bn%*%(B0i%*%b0 + Wy)
+  Beta <- MASS::mvrnorm(1, bn, Bn)
+  return(Beta)
+}
+# clat <- cl; Sigma <- SIGMA[1:2,1:2]
+# PostThetaNew(Sigma = Sigma, clat = clat)
+
+PostOmega11 <- function(theta, sig12, clat){
+  # sig12 <- SIGMA[1,2]; theta <- c(beta, delta); clat <- cl
+  an <- a0 + nc1
+  mui <- y[idc1] -X[idc1, ]%*%theta[1:3] - sig12*(clat[idc1] - Z[idc1,]%*%theta[4:6])
+  dn <- d0 + t(mui)%*%mui
+  omega11 <- LaplacesDemon::rinvgamma(1, an/2, dn/2)
+  return(omega11)
+}
+# sig12 <- SIGMA[1,2]; theta <- c(beta, delta); clat <- cl
+# PostOmega11(theta, sig12, clat)
+
+PostSig12 <- function(omega11, theta, clat){
+  Sn <- (omega11^(-1)*sum((clat[idc1] - Z[idc1,]%*%theta[4:6])^2) + S0i)^(-1)
+  sn <- Sn*(omega11^(-1)*sum((clat[idc1] - Z[idc1,]%*%theta[4:6])*(y[idc1] - X[idc1,]%*%theta[1:3])) + s0*S0i)
+  sig12 <- rnorm(1, sn, sd = Sn^0.5)
+  return(sig12)
+}
+# omega11 <- SIGMA[1,1] - SIGMA[1,2]^2; theta <- c(beta, delta); clat <- cl
+# PostSig12(omega11, theta, cl)
+# PostOmega11(theta, sig12, clat)+PostSig12(omega11, theta, cl)^2
+
+PostClat <- function(theta, sig12, omega11, i){
+  if(i %in% idc1){
+    mu <- Z[i,]%*%theta[4:6] + (sig12/(omega11+sig12^2))*(y[i] - X[i,]%*%theta[1:3])
+    sig2 <- omega11/(omega11+sig12^2)
+    clat <- EnvStats::rnormTrunc(1, mean = mu, sd = sig2^0.5, min = 0, max = Inf)
+  }else{
+    mu <- Z[i,]%*%theta[4:6]
+    clat <- EnvStats::rnormTrunc(1, mean = mu, sd = 1, min = -Inf, max = 0)
+  }
+  return(clat)
+}
+# i <- 3
+# omega11 <- SIGMA[1,1] - SIGMA[1,2]^2; sig12 <- SIGMA[1,2]; theta <- c(beta, delta)
+# PostClat(theta, sig12, omega11, i)
+
+# Sampler
+S <- 1500
+burnin <- 500
+thin <- 2
+keep <- seq(burnin+thin, S, thin)
+PostThetasDraws <- matrix(NA, S, 6)
+PostSigmaDraws <- matrix(NA, S, 2)
+
+# Initial conditions
+Thetap <- rep(0, 6)
+Sigmap <- diag(2) 
+Sig12p <- 0
+Omega11p <- 1
+for(i in 1:N){
+  if(c[i] == 0){
+    LatPost <- EnvStats::rnormTrunc(1, mean = 0, sd = 1, min = -Inf, max = 0)
+  }else{
+    LatPost <- EnvStats::rnormTrunc(1, mean = 0, sd = 1, min = 0, max = Inf)
+  }
+}
+
+#### Parallel code ####
+cn <- detectCores() 
+ClusterHope <- makeCluster(cn, type = "SOCK")
+registerDoParallel(ClusterHope)
+clusterExport(ClusterHope, list("Z", "X", "c", "y", "N", "idc1", "nc1", 
+                                "PostClat","Thetap", "Sig12p", "Omega11p"))
+pb <- winProgressBar(title = "progress bar", min = 0, max = S, width = 300)
+for(rep in 1:S){
+  LatPost <- t(parSapply(ClusterHope, 1:N, function(i){PostClat(theta = Thetap, sig12 = Sig12p, omega11 = Omega11p, i)}))
+  Thetap <- PostThetaNew(Sigma = Sigmap, clat = LatPost)
+  Omega11p <- PostOmega11(theta = Thetap, sig12 = Sig12p, clat = LatPost)
+  Sig12p <- PostSig12(omega11 = Omega11p, theta = Thetap, clat = LatPost)
+  Sigmap <- matrix(c(Omega11p+Sig12p^2, Sig12p, Sig12p, 1),2,2)
+  PostThetasDraws[rep,] <- Thetap
+  PostSigmaDraws[rep, ] <- c(Omega11p+Sig12p^2, Sig12p)
+  clusterExport(ClusterHope, list("Thetap", "Sig12p", "Omega11p"))
+  setWinProgressBar(pb, rep, title=paste( round(rep/S*100, 0),"% done"))
+}
+stopCluster(ClusterHope)
+close(pb)
+thetaHat <- coda::mcmc(PostThetasDraws[keep,])
+PostDrawsSigma <- coda::mcmc(PostSigmaDraws[keep,])
+summary(thetaHat)
+summary(PostDrawsSigma)
+
+RegNOsel <- MCMCpack::MCMCregress(y ~ X - 1)
+summary(RegNOsel)
+
+# --- Inputs you already have:
+# RegNOsel <- MCMCpack::MCMCregress(y ~ X - 1)
+# thetaHat <- coda::mcmc(PostThetasDraws[keep, ])   # takes selection into account
+
+library(coda)
+library(ggplot2)
+
+# 1) Extract the 2nd coefficient draws from each object
+# For MCMCpack::MCMCregress, coefficients are first columns of the mcmc matrix.
+# We'll grab column 2 explicitly. Adjust if your 2nd coefficient has a name you prefer.
+beta2_nosel <- as.numeric(RegNOsel[, 2])
+
+# For thetaHat (coda mcmc), also grab the 2nd parameter.
+beta2_sel   <- as.numeric(thetaHat[, 2])
+
+# 2) Put into a long data frame for ggplot
+df <- rbind(
+  data.frame(value = beta2_nosel, model = "No selection"),
+  data.frame(value = beta2_sel,   model = "With selection")
+)
+
+# 3) Compute quick summaries
+summ <- function(x) c(mean = mean(x), quantile(x, c(0.025, 0.975)))
+cat("\nPosterior summaries (2nd coefficient)\n")
+cat("No selection : ", paste(round(summ(beta2_nosel), 4), collapse = "  "), "\n")
+cat("With selection: ", paste(round(summ(beta2_sel),   4), collapse = "  "), "\n\n")
+
+# 4) Plot both posteriors + true value line at 1
+ggplot(df, aes(x = value, fill = model, color = model)) +
+  geom_density(alpha = 0.25, linewidth = 0.8) +
+  geom_vline(xintercept = 1, linetype = 2) +
+  labs(x = "Coefficient (2nd parameter)", y = "Posterior density",
+       title = "Posterior of 2nd Coeff: No-Selection vs Selection Models",
+       subtitle = "Dashed line = population value (1)") +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "top")
+
