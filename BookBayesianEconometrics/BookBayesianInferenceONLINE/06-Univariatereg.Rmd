@@ -1264,9 +1264,10 @@ The algorithm to implement the Bayesian bootstrap is the following:
 <pre>
 Draw <b>g</b> ∼ Dir(α<sub>1</sub>, α<sub>2</sub>, ..., α<sub>N</sub>) such that α<sub>i</sub>=1 for all i 
 <b>g</b>=(g<sub>1</sub>, g<sub>2</sub>, ..., g<sub>N</sub>) is the vector of probabilities to attach to (y<sub>1</sub>,<b>x</b><sub>1</sub>), (y<sub>2</sub>,<b>x</b><sub>2</sub>), ..., (y<sub>N</sub>,<b>x</b><sub>N</sub>) for each Bayesian bootstrap replication.
-Sample (y<sub>i</sub>,<b>x</b><sub>i</sub>) N times with replacement and probabilities g<sub>i</sub>, i=1,2, ...,N.
-Estimate <b>β</b> using ordinary least squares in the model E(<b>y</b>|<b>X</b>)=<b>X</b><b>β</b>, <b>y</b> being a S<sub>1</sub> dimensional vector, and <b>X</b> a S<sub>1</sub> X K matrix from the previous stage. 
-Repeat this process S times.
+For \( s = 1, \dots, S \):
+  - Sample (y<sub>i</sub>,<b>x</b><sub>i</sub>) N times with replacement and probabilities g<sub>i</sub>, i=1,2, ...,N.
+  - Estimate <b>β</b><sup>(s)</sub> using weighted least squares in the model E(<b>y</b>|<b>X</b>)=<b>X</b><b>β</b>, where the weights are based on g<sub>i</sub>. 
+End for
 The distribution of <b>β</b><sup>(s)</sup> is the Bayesian distribution of <b>β</b>.
 </pre>
 </figure>
@@ -1308,35 +1309,31 @@ The following **R** code shows how to program the Bayesian bootstrap from scratc
 
 ```{r}
 rm(list = ls()); set.seed(010101)
+#--- Data
 N <- 1000; x1 <- runif(N); x2 <- rnorm(N)
-X <- cbind(x1, x2); k <- dim(X)[2]
-B <- rep(1, k+1); sig2 <- 1
-u <- rnorm(N, 0, sig2); y <- cbind(1, X)%*%B + u
-data <- as.data.frame(cbind(y, X))
-names(data) <- c("y", "x1", "x2")
-Reg <- function(d){
-	Reg <- lm(y ~ x1 + x2, data = d)
-	Bhat <- Reg$coef
-	return(Bhat)
-}
-S <- 10000; alpha <- 1
-BB <- function(S, df, alpha){
-	Betas <- matrix(NA, S, dim(df)[2])
-	N <- dim(df)[1]
+X <- cbind(1, x1, x2); B <- c(1, 1, 1); sig2 <- 1
+y <- as.numeric(X %*% B + rnorm(N, 0, sqrt(sig2)))
+data <- data.frame(y, x1, x2)
+
+#--- Bayesian bootstrap (Rubin) for OLS coefficients
+BB <- function(S, df, alpha = 1) {
+	N <- nrow(df)
+	Betas <- matrix(NA_real_, nrow = S, ncol = 3)
+	colnames(Betas) <- c("(Intercept)", "x1", "x2")
 	pb <- winProgressBar(title = "progress bar", min = 0, max = S, width = 300)
-	for(s in 1:S){
-		g <- LaplacesDemon::rdirichlet(N, alpha)
-		ids <- sample(1:N, size = N, replace = TRUE, prob = g)
-		datas <- df[ids,]
-		names(datas) <- names(df)
-		Bs <- Reg(d = datas)
-		Betas[s, ] <- Bs
+	for (s in 1:S) {
+		# One Dirichlet weight vector over the N observations
+		w <- as.numeric(LaplacesDemon::rdirichlet(1, rep(alpha, N)))
+		# Weighted least squares = Bayesian bootstrap draw of the OLS functional
+		fit <- lm(y ~ x1 + x2, data = df, weights = w)
+		Betas[s, ] <- coef(fit)
 		setWinProgressBar(pb, s, title=paste( round(s/S*100, 0), "% done"))
 	}
 	close(pb)
 	return(Betas)
 }
-BBs <- BB(S = S, df = data, alpha = alpha)
+S <- 10000
+BBs <- BB(S = S, df = data, alpha = 1)
 summary(coda::mcmc(BBs))
 ```
 

@@ -517,39 +517,29 @@ posterior  <- MCMCpack::MCMCquantreg(y~X-1, tau = q, b0=b0, B0 = B0i, burnin = b
 summary(coda::mcmc(posterior))
 
 ########################## Bayesian bootstrap: Simulation ##########################
-rm(list = ls())
-set.seed(010101)
-N <- 1000 # Sample size
-x1 <- runif(N); x2 <- rnorm(N)
-X <- cbind(x1, x2)
-k <- dim(X)[2]
-B <- rep(1, k+1)
-sig2 <- 1
-u <- rnorm(N, 0, sig2)
-y <- cbind(1, X)%*%B + u
-data <- as.data.frame(cbind(y, X))
-names(data) <- c("y", "x1", "x2")
-Reg <- function(d){
-  Reg <- lm(y ~ x1 + x2, data = d)
-  Bhat <- Reg$coef
-  return(Bhat)
-}
-S <- 10000; alpha <- 1
-BB <- function(S, df, alpha){
-  Betas <- matrix(NA, S, dim(df)[2])
-  N <- dim(df)[1]
-  pb <- winProgressBar(title = "progress bar", min = 0, max = S, width = 300)
-  for(s in 1:S){
-    g <- LaplacesDemon::rdirichlet(N, alpha)
-    ids <- sample(1:N, size = N, replace = TRUE, prob = g)
-    datas <- df[ids,]
-    names(datas) <- names(df)
-    Bs <- Reg(d = datas)
-    Betas[s, ] <- Bs
-    setWinProgressBar(pb, s, title=paste( round(s/S*100, 0), "% done"))
+rm(list = ls()); set.seed(10101)
+
+#--- Data
+N <- 1000; x1 <- runif(N); x2 <- rnorm(N)
+X <- cbind(1, x1, x2); B <- c(1, 1, 1); sig2 <- 1
+y <- as.numeric(X %*% B + rnorm(N, 0, sqrt(sig2)))
+data <- data.frame(y, x1, x2)
+
+#--- Bayesian bootstrap (Rubin) for OLS coefficients
+BB <- function(S, df, alpha = 1) {
+  N <- nrow(df)
+  Betas <- matrix(NA_real_, nrow = S, ncol = 3)
+  colnames(Betas) <- c("(Intercept)", "x1", "x2")
+  for (s in 1:S) {
+    # One Dirichlet weight vector over the N observations
+    w <- as.numeric(LaplacesDemon::rdirichlet(1, rep(alpha, N)))
+    # Weighted least squares = Bayesian bootstrap draw of the OLS functional
+    fit <- lm(y ~ x1 + x2, data = df, weights = w)
+    Betas[s, ] <- coef(fit)
   }
-  close(pb)
-  return(Betas)
+  Betas
 }
-BBs <- BB(S = S, df = data, alpha = alpha)
+
+S <- 10000
+BBs <- BB(S = S, df = data, alpha = 1)
 summary(coda::mcmc(BBs))

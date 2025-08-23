@@ -1446,10 +1446,11 @@ The algorithm to implement the Bayesian bootstrap is the following:
 	\begin{algorithmic}[1]
 		\State Draw $\bm{g}\sim Dir(\alpha_1,\alpha_2,\dots,\alpha_N)$ such that $\alpha_i=1 \ \forall i$.
 		\State $\bm{g}=(g_1,g_2,\dots,g_N)$ is the vector of probabilities to attach to $(y_1,\bm{x}_1^{\top}),(y_2,\bm{x}_2^{\top}),\dots,(y_n,\bm{x}_N^{\top})$ for each Bayesian bootstrap replication.
-		\State Sample $(y_i,\bm{x}_i^{\top})$ $N$ times with replacement and probabilities $g_i$, $i=1,2,\dots,N$.
-		\State Estimate $\bm{\beta}$ using ordinary least squares in the model $\mathbb{E}(\bm{y}\mid \bm{X})=\bm{X}\bm{\beta}$, $\bm{y}$ being a $S_1$ dimensional vector, and $\bm{X}$ a $S_1\times K$ matrix from the previous stage.$^*$ 
-		\State Repeat this process $S$ times.
-		\State The distribution of $\bm{\beta}^{(s_2)}$ is the Bayesian distribution of $\bm{\beta}$.		
+		\For{\texttt{$s=1,\dots,S$}}
+			\State Sample $(y_i,\bm{x}_i^{\top})$ $N$ times with replacement and probabilities $g_i$, $i=1,2,\dots,N$.
+			\State Estimate $\bm{\beta}^{(s)}$ using weighted least squares in the model $\mathbb{E}(\bm{y}\mid \bm{X})=\bm{X}\bm{\beta}$, where the weights are based on $g_i$.$^*$ 
+		\EndFor
+		\State The distribution of $\bm{\beta}^{(s)}$ is the posterior distribution of $\bm{\beta}$.		
 	\end{algorithmic}
 	$^*${\footnotesize{Ordinary least squares is the posterior mean of $\bm{\beta}$ using Jeffrey's prior in a linear regression.}}
 \end{algorithm}
@@ -1483,35 +1484,29 @@ The following \textbf{R} code shows how to program the Bayesian bootstrap from s
 	\begin{VF}
 		\begin{lstlisting}[language=R]
 rm(list = ls()); set.seed(010101)
+
+#--- Data
 N <- 1000; x1 <- runif(N); x2 <- rnorm(N)
-X <- cbind(x1, x2); k <- dim(X)[2]
-B <- rep(1, k+1); sig2 <- 1
-u <- rnorm(N, 0, sig2); y <- cbind(1, X)%*%B + u
-data <- as.data.frame(cbind(y, X))
-names(data) <- c("y", "x1", "x2")
-Reg <- function(d){
-	Reg <- lm(y ~ x1 + x2, data = d)
-	Bhat <- Reg$coef
-	return(Bhat)
-}
-S <- 10000; alpha <- 1
-BB <- function(S, df, alpha){
-	Betas <- matrix(NA, S, dim(df)[2])
-	N <- dim(df)[1]
-	pb <- winProgressBar(title = "progress bar", min = 0, max = S, width = 300)
-	for(s in 1:S){
-		g <- LaplacesDemon::rdirichlet(N, alpha)
-		ids <- sample(1:N, size = N, replace = TRUE, prob = g)
-		datas <- df[ids,]
-		names(datas) <- names(df)
-		Bs <- Reg(d = datas)
-		Betas[s, ] <- Bs
-		setWinProgressBar(pb, s, title=paste( round(s/S*100, 0), "% done"))
+X <- cbind(1, x1, x2); B <- c(1, 1, 1); sig2 <- 1
+y <- as.numeric(X %*% B + rnorm(N, 0, sqrt(sig2)))
+data <- data.frame(y, x1, x2)
+
+#--- Bayesian bootstrap (Rubin) for OLS coefficients
+BB <- function(S, df, alpha = 1) {
+	N <- nrow(df)
+	Betas <- matrix(NA_real_, nrow = S, ncol = 3)
+	colnames(Betas) <- c("(Intercept)", "x1", "x2")
+	for (s in 1:S) {
+		# One Dirichlet weight vector over the N observations
+		w <- as.numeric(LaplacesDemon::rdirichlet(1, rep(alpha, N)))
+		# Weighted least squares = Bayesian bootstrap draw of the OLS functional
+		fit <- lm(y ~ x1 + x2, data = df, weights = w)
+		Betas[s, ] <- coef(fit)
 	}
-	close(pb)
-	return(Betas)
+	Betas
 }
-BBs <- BB(S = S, df = data, alpha = alpha)
+S <- 10000
+BBs <- BB(S = S, df = data, alpha = 1)
 summary(coda::mcmc(BBs))
 \end{lstlisting}
 	\end{VF}
@@ -1526,17 +1521,21 @@ Iterations = 1:10000
 Thinning interval = 1 
 Number of chains = 1 
 Sample size per chain = 10000 
+
 1. Empirical mean and standard deviation for each variable,
 plus standard error of the mean:
-			Mean      SD  Naive SE Time-series SE
-[1,] 0.9172 0.06386 0.0006386      0.0006291
-[2,] 1.1733 0.10888 0.0010888      0.0010201
-[3,] 1.0137 0.03386 0.0003386      0.0003386
+
+Mean      SD  Naive SE Time-series SE
+(Intercept) 0.9169 0.06359 0.0006359      0.0006359
+x1          1.1738 0.10698 0.0010698      0.0010698
+x2          1.0136 0.03337 0.0003337      0.0003337
+
 2. Quantiles for each variable:
-			2.5%    25%    50%    75% 97.5%
-var1 0.7926 0.8743 0.9169 0.9599 1.043
-var2 0.9608 1.0984 1.1739 1.2468 1.389
-var3 0.9473 0.9910 1.0136 1.0365 1.079
+
+2.5%    25%   50%    75% 97.5%
+(Intercept) 0.7934 0.8732 0.917 0.9595 1.042
+x1          0.9647 1.1019 1.173 1.2462 1.381
+x2          0.9477 0.9911 1.014 1.0362 1.079
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
