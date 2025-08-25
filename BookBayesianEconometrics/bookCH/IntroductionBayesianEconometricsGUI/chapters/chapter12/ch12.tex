@@ -2161,7 +2161,7 @@ A difference in this example is that, unlike most of the Frequentist literature,
 
 \section{Sample selection}\label{sec12_8}
 
-In Figure \ref{DAG3} in Section \ref{sec12_3}, we depict a situation of collider bias that induces selection bias. Specifically, conditioning on a particular subset of the population ($D_i=1$), where $D_i$ is influenced by both the treatment and confounders, opens a back-door path and creates a spurious association between their causes. Placing this situation within the well-known sample selection framework \cite{heckman1979sample}, the observed outcome can be represented as
+In Figure \ref{DAG3} in Section \ref{chap12_3}, we depict a situation of collider bias that induces selection bias. Specifically, conditioning on a particular subset of the population ($D_i=1$), where $D_i$ is influenced by both the treatment and confounders, opens a back-door path and creates a spurious association between their causes. Placing this situation within the well-known sample selection framework \cite{heckman1979sample}, the observed outcome can be represented as
 \begin{align*}
 	Y_i = \begin{cases}
 		Y_i(1) & \text{if } D_i=1, \\
@@ -2531,9 +2531,112 @@ The MTE is a unifying concept that connects the treatment effect, selection, and
 In the Bayesian literature, several authors have estimated different versions of selection models. In particular, \cite{van2011bayesian} and \cite{ding2014bayesian} analyze the sample selection model using flexible specifications for the error terms, while \cite{koop1997learning} and \cite{chib2007analysis} estimate the Roy model. Furthermore, \cite{chib2009estimation} extend the basic framework to a semiparametric setting that accounts for endogeneity, and \cite{heckman2014treatment} introduce latent factors to address the fundamental problem of causal inference in the Roy model. This approach allows researchers to learn about the otherwise unidentified covariance between $Y_i(1)$ and $Y_i(0)$, which in turn enables the estimation of distributional versions of treatment effects that require the joint distribution of $Y_i(1)$ and $Y_i(0)$.
 
 \section{Bayesian exponentially tilted empirical likelihood}\label{sec12_9}
-Bayesian parametric approaches are often criticized on the basis that they require arbitrary distribution assumptions which often are not examined. Partial information approaches are based only on certain moment assumptions without making specific distributional assumptions. However, there are no free lunch, as these methods imply efficiency losses.
 
-The point of departure of Bayesian exponential tilted empirical likelihood (BETEL) are moment conditions that are used to build the likelihood function.
+Bayesian parametric approaches are often criticized because they require distributional assumptions that may be arbitrary or remain unchecked. For example, in this chapter we model a continuous outcome as normally distributed. This choice is defensible: among all distributions with a fixed mean and variance, the normal imposes the least prior structure (it maximizes entropy; see Exercise~2), and the same reasoning extends to regression via Gaussian errors with fixed conditional variance \cite{zellner1996bmom}. Nevertheless, in some settings it may be preferable to use partial information methods that rely only on moment conditions rather than full distributional assumptions. The trade-off is familiar: unless the parametric model is correctly specified, these semiparametric approaches typically reduce efficiency relative to a well-specified parametric model.
+
+The point of departure is a set of moment conditions
+\[
+\mathbb{E}\!\big[\mathbf{g}(\mathbf{W},\boldsymbol{\theta})\big]=\mathbf{0}_{d},
+\]
+where the expectation is with respect to the population distribution, $\mathbf{W}\in\mathbb{R}^{d_w}$ is a random sample composed by $\mathbf{w}_{1:N}:=[\mathbf{w}_1 \ \mathbf{w}_2 \ \dots \ \mathbf{w}_N]$, 
+$\mathbf{g}:\mathbb{R}^{d_w}\times\boldsymbol{\Theta}\to\mathbb{R}^{d}$ is a vector of known functions, and 
+$\boldsymbol{\theta}=[\theta_{1}\ \theta_{2}\ \dots\ \theta_{p}]^{\top}\in\boldsymbol{\Theta}\subset\mathbb{R}^{p}$.
+If $d>p$ the model is \emph{over-identified}; if $d=p$ it is \emph{exactly identified} (and if $d<p$ it is \emph{under-identified}).\\
+
+\textbf{Example: Linear regression}
+
+Let
+\[
+y_i=\mathbf{x}_i^{\top}\boldsymbol{\beta}+\mu_i,\qquad \mathbb{E}[\mu_i\mid \mathbf{x}_i]=0,
+\]
+with $\mathbf{x}_i\in\mathbb{R}^{p}$ and $\boldsymbol{\beta}\in\mathbb{R}^{p}$. Then the unconditional moment conditions are
+\begin{align*}
+	\mathbb{E}\!\left[\mathbf{x}_i\,\mu_i\right]
+	&=\mathbb{E}\!\left[\mathbf{x}_i\,(y_i-\mathbf{x}_i^{\top}\boldsymbol{\beta})\right]
+	=\mathbf{0}_{p}.
+\end{align*}
+
+\textbf{Example: Instrumental variables}
+
+If there is endogeneity, $\mathbb{E}[\mu_i\mid \mathbf{x}_i]\neq 0$, but there exist instruments $\mathbf{z}_i\in\mathbb{R}^{d}$ that are exogenous, $\mathbb{E}[\mu_i\mid \mathbf{z}_i]=0$, and relevant, $\operatorname{rank}\!\big(\mathbb{E}[\mathbf{z}_i\mathbf{x}_i^{\top}]\big)=p$, then
+\begin{align*}
+	\mathbb{E}\!\left[\mathbf{z}_i\,\mu_i\right]
+	=\mathbb{E}\!\left[\mathbf{z}_i\,(y_i-\mathbf{x}_i^{\top}\boldsymbol{\beta})\right]
+	=\mathbf{0}_{d},
+\end{align*}
+with $d\ge p$.
+
+Moment conditions can be used in a Bayesian framework via \emph{Bayesian Empirical Likelihood} (BEL) \cite{lazar2003bel} and \emph{Bayesian Exponentially Tilted Empirical Likelihood} (BETEL) \cite{schennach2005betel}. We focus on BETEL because, while BEL inherits the attractive properties of empirical likelihood under correct specification, it can lose them under model misspecification. In contrast, Exponentially Tilted Empirical Likelihood (ETEL) remains well behaved under misspecification and retains root-$n$ consistency and asymptotic normality \cite{schennach2007etel}.
+
+Thus, the posterior distribution is
+\[
+\pi(\boldsymbol{\theta}\mid \mathbf{w}_{1:N})
+\;\propto\;
+\pi(\boldsymbol{\theta})\; L_{\mathrm{ETEL}}(\boldsymbol{\theta}),
+\qquad
+L_{\mathrm{ETEL}}(\boldsymbol{\theta})=\prod_{i=1}^N p_i^{*}(\boldsymbol{\theta}),
+\]
+where $\pi(\boldsymbol{\theta})$ is the prior and $L_{\mathrm{ETEL}}$ is the exponentially tilted empirical likelihood. The weights
+$\big(p_1^{*}(\boldsymbol{\theta}),\dots,p_N^{*}(\boldsymbol{\theta})\big)$ are obtained from the maximum-entropy problem
+\[
+\max_{\{p_i\}_{i=1}^N}\;\Big\{-\sum_{i=1}^N p_i\log p_i\Big\}
+\quad\text{subject to}\quad
+\sum_{i=1}^N p_i=1,\;\; p_i\ge 0,\;\;
+\sum_{i=1}^N p_i\,\mathbf{g}(\mathbf{w}_i,\boldsymbol{\theta})=\mathbf{0}_d.
+\]
+Equivalently (dual/saddlepoint form; see \cite{schennach2005betel,chib2018moment,schennach2007etel}),
+\[
+p_i^{*}(\boldsymbol{\theta})
+=\frac{\exp\!\big(\boldsymbol{\lambda}(\boldsymbol{\theta})^{\top}\mathbf{g}(\mathbf{w}_i,\boldsymbol{\theta})\big)}
+{\sum_{j=1}^N \exp\!\big(\boldsymbol{\lambda}(\boldsymbol{\theta})^{\top}\mathbf{g}(\mathbf{w}_j,\boldsymbol{\theta})\big)},
+\quad\text{where}\quad
+\sum_{i=1}^N p_i^{*}(\boldsymbol{\theta})\,\mathbf{g}(\mathbf{w}_i,\boldsymbol{\theta})=\mathbf{0}_d.
+\]
+Equivalently, $\boldsymbol{\lambda}(\boldsymbol{\theta})$ can be characterized as
+\begin{align}\label{eqLambda}
+\boldsymbol{\lambda}(\boldsymbol{\theta})
+=\arg\min_{\boldsymbol{\lambda}\in\mathbb{R}^{d}}
+\;\log\!\left(\frac{1}{N}\sum_{i=1}^N
+\exp\!\big(\boldsymbol{\lambda}^{\top}\mathbf{g}(\mathbf{w}_i,\boldsymbol{\theta})\big)\right),
+\end{align}
+whose gradient condition is precisely the moment constraint above. Therefore, the BETEL posterior is
+\[
+\pi(\boldsymbol{\theta}\mid \mathbf{w}_{1:N})
+\;\propto\;
+\pi(\boldsymbol{\theta})\;
+\prod_{i=1}^N
+\frac{\exp\!\big(\boldsymbol{\lambda}(\boldsymbol{\theta})^{\top}\mathbf{g}(\mathbf{w}_i,\boldsymbol{\theta})\big)}
+{\sum_{j=1}^N \exp\!\big(\boldsymbol{\lambda}(\boldsymbol{\theta})^{\top}\mathbf{g}(\mathbf{w}_j,\boldsymbol{\theta})\big)}.
+\]
+
+Posterior inference of the BETEL can be performed using a Metropolis-Hastings algorithm where the proposal distribution is $q(\boldsymbol{\theta}\mid \mathbf{w}_{1:N})$. See Algorithm \ref{BETEL} \cite{chib2018moment}.
+
+\begin{algorithm}
+	\caption{Bayesian Exponentially Tilted Empirical Likelihood: Metropolis-Hastings algorithm}\label{BETEL}
+	\begin{algorithmic}[1]
+		\State Set $\boldsymbol{\theta}^0$ in the support of $\pi(\boldsymbol{\theta}\mid \mathbf{w}_{1:N})$ 
+		\For{\texttt{$s=1,\dots,S$}}
+			\State Propose $\boldsymbol{\theta}^c$ from $q(\boldsymbol{\theta}\mid \mathbf{w}_{1:N})$, and solve for $p_i^{*}(\boldsymbol{\theta}^c), i=1,2,\dots,N$ in Equation~\ref{eqLambda} 
+			\State Calculate the acceptance probability
+			\[
+			\alpha(\boldsymbol{\theta}^{(s-1)},\boldsymbol{\theta}^c\mid \mathbf{w}_{1:N})=\min\left(1,\frac{\pi(\boldsymbol{\theta}^{c}\mid \mathbf{w}_{1:N})}{\pi(\boldsymbol{\theta}^{(s-1)}\mid \mathbf{w}_{1:N})}\frac{q(\boldsymbol{\theta}^{(s-1)}\mid \mathbf{w}_{1:N})}{q(\boldsymbol{\theta}^{c}\mid \mathbf{w}_{1:N})}\right)
+			\]
+			\State Draw $U$ from $U(0,1)$
+			\State $\boldsymbol{\theta}^{(s)}=\begin{Bmatrix}
+			\boldsymbol{\theta}^{c} & \text{if }U\leq \alpha(\boldsymbol{\theta}^{(s-1)},\boldsymbol{\theta}^c\mid \mathbf{w}_{1:N})\\
+			 \boldsymbol{\theta}^{(s-1)} & \text{otherwise}
+		\end{Bmatrix}$
+		\EndFor  
+	\end{algorithmic}
+\end{algorithm}
+
+\textbf{Example: Omission of correlated relevant regressors}
+
+\textbf{Example: Measurement error in regressors}
+
+\textbf{Example: Reverse or simultaneous causality}
+
+
 
 \section{A general framework for updating belief distributions}\label{sec12_10}
 Introduce \cite{bissiri2016general} as a generalization of \cite{chernozhukov2003mcmc}.
