@@ -1227,48 +1227,42 @@ ggplot(df_long, aes(x = Posterior, color = Method, fill = Method)) +
 summary(AER::ivreg(y ~ x | z))
 summary(lm(y ~ x))
 
-
-
-# Instal other required packages (nor1mix, ucminf)
-rm(list = ls()); set.seed(10101)
-library(betel); library(ucminf) # library(nor1mix) for mixture errors example in CSS (2018) we page
-# Simulate data
-N <- 1000
-k <- 2; d <- 3
-B <- rep(1, k)
-G <- rep(1, d)
-s12 <- 0.8
-SIGMA <- matrix(c(1, s12, s12, 1), 2, 2)
-z1 <- rnorm(N); z2 <- rnorm(N)
-U <- MASS::mvrnorm(n = N, mu = rep(0, 2), SIGMA)
-x <- G[1] + G[2]*z1 + G[3]*z2 + U[,2]
-y <- B[1] + B[2]*x + U[,1]
-VarX <- G[2]^2+G[3]^2+1 # Population variance of x
-EU1U2 <- s12 # Covariance U1
-BiasPopB2 <- EU1U2/VarX
-dat <- cbind(1,x,z1,z2) # Data
-# Function g_i by row
-gfunc <- function(psi = psi, y = y, dat = dat) {
-  X <- dat[,1:2]
+########################## Demand and supply: Simulation ##########################
+# Simulation
+rm(list = ls()); set.seed(12345)
+B1 <- 5; B2 <- -0.5; B3 <- 0.8; B4 <- -0.4; B5 <- 0.7; SD <- 0.5
+A1 <- -2; A2 <- 0.5; A3 <- -0.4; SS <- 0.5
+P0 <- (A1-B1)/(B2-A2); P2 <- -B3/(B2-A2); P3 <- -B4/(B2-A2); P1 <- A3/(B2-A2); P4 <- -B5/(B2-A2)
+T0 <- B1+B2*P0; T2 <- B3+B2*P2; T3 <- B4+B2*P3; T1 <- B2*P1; T4 <- B5+B2*P4;
+n <- 5000
+ED <- rnorm(n, 0, SD); ES <- rnorm(n, 0, SS)
+VP <- (ES-ED)/(B2-A2); UQ <- B2*VP+ED
+y <- rnorm(n, 10, 1); pc <- rnorm(n, 5, 1); er <- rnorm(n, 15, 1); ps <- rnorm(n, 5, 1);
+p <- P0+P1*er+P2*y+P3*pc+P4*ps+VP
+q <- T0+T1*er+T2*y+T3*pc+T4*ps+UQ
+dat <- cbind(1,p,y,pc,ps,er) # Data
+# Function g_i by row for demand
+gfuncDem <- function(psi = psi, y = q, dat = dat) {
+  X <- dat[,1:5]
   e <- y - X %*% psi
-  E <- e %*% rep(1,d)
-  Z <- dat[,c(1,3:4)]
+  E <- e %*% rep(1,5)
+  Z <- dat[,c(1,3:6)]
   G <- E * Z;
   return(G)
 }
-nt <- round(N * 0.1, 0); # training sample size for prior
-psi0 <- lm(y[1:nt]~x[1:nt])$coefficients # Starting value of psi = (theta, v), v is the slack parameter in CSS (2018)
-names(psi0) <- c("alpha","beta")
+nt <- round(n * 0.1, 0); # training sample size for prior
+psi0 <- lm(q[1:nt]~dat[1:nt,2:5])$coefficients # Starting value of psi = (theta, v), v is the slack parameter in CSS (2018)
+names(psi0) <- c("beta1","beta2","beta3","beta4","beta5")
 psi0_ <- as.matrix(psi0) # Prior mean of psi 
-Psi0_ <- 5*rep(1,k) # Prior dispersions of psi
-lam0 <- .5*rnorm(d) # Starting value of lambda
+Psi0_ <- 1000*rep(1,5) # Prior dispersions of psi
+lam0 <- .5*rnorm(5) # Starting value of lambda
 nu <- 2.5 # df of the prior student-t
 nuprop <- 15 # df of the student-t proposal
 n0 <- 1000 # burn-in
 m <- 10000 # iterations beyond burn-in
 # MCMC ESTIMATION BY THE CSS (2018) method
-psim = betel::bayesetel(gfunc = gfunc,
-                        y = y[-(1:nt)],
+psim <- betel::bayesetel(gfunc = gfuncDem,
+                        y = q[-(1:nt)],
                         dat = dat[-(1:nt),],
                         psi0 = psi0,
                         lam0 = lam0,
@@ -1281,6 +1275,41 @@ psim = betel::bayesetel(gfunc = gfunc,
                         controllam = list(maxiterlam = 50, # list of parameters in minimizing dual over lambda
                                           mingrlam = 1.0e-7),
                         n0 = n0, m = m)
-summarymcmc(psim)
-summary(AER::ivreg(y ~ x | z1 + z2))
-summary(lm(y ~ x))
+summary(psim)
+ElastDemPrice <- psim[,2]
+# Function g_i by row for supply
+gfuncSup <- function(psi = psi, y = q, dat = dat) {
+  X <- dat[,c(1:2,6)]
+  e <- y - X %*% psi
+  E <- e %*% rep(1,5)
+  Z <- dat[,c(1,3:6)]
+  G <- E * Z;
+  return(G)
+}
+nt <- round(n * 0.1, 0); # training sample size for prior
+psi0 <- lm(q[1:nt]~dat[1:nt,c(2,6)])$coefficients # Starting value of psi = (theta, v), v is the slack parameter in CSS (2018)
+names(psi0) <- c("alpha1","alpha2","alpha3")
+psi0_ <- as.matrix(psi0) # Prior mean of psi 
+Psi0_ <- 100*rep(1,3) # Prior dispersions of psi
+lam0 <- .5*rnorm(5) # Starting value of lambda
+nu <- 2.5 # df of the prior student-t
+nuprop <- 15 # df of the student-t proposal
+# MCMC ESTIMATION BY THE CSS (2018) method
+psim1 <- betel::bayesetel(gfunc = gfuncSup,
+                        y = q[-(1:nt)],
+                        dat = dat[-(1:nt),],
+                        psi0 = psi0,
+                        lam0 = lam0,
+                        psi0_ = psi0_,
+                        Psi0_ = Psi0_,
+                        nu = nu,
+                        nuprop = nuprop,
+                        controlpsi = list(maxiterpsi = 50,
+                                          mingrpsi = 1.0e-8), #  list of parameters in maximizing likelihood over psi
+                        controllam = list(maxiterlam = 50, # list of parameters in minimizing dual over lambda
+                                          mingrlam = 1.0e-7),
+                        n0 = n0, m = m)
+summary(psim1)
+ElastSupPrice <- psim[,2]
+tax <- 0.1
+CausalEffect <- (ElastSupPrice*ElastDemPrice)*log(1+tax)/(ElastSupPrice-ElastDemPrice) 

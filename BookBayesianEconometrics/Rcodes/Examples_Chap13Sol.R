@@ -366,7 +366,7 @@ rm(list = ls()); set.seed(10101)
 library(betel); library(ucminf)
 # Simulate data
 N <- 2000; d <- 2; k <- 2
-gamma <- 0.5; beta <- c(1, 1.2, -0.7); rho <- 0
+gamma <- 0.5; beta <- c(1, 1.2, -0.7); rho <- 0.7
 # Mixture
 mum1 <- 1/2; mum2 <- -1/2
 mu1 <- rnorm(N, mum1, 0.5); mu2 <- rnorm(N, mum2, 1.2)
@@ -398,20 +398,15 @@ nuprop <- 15 # df of the student-t proposal
 n0 <- 1000 # burn-in
 m <- 10000 # iterations beyond burn-in
 # MCMC ESTIMATION BY THE CSS (2018) method
-psim <- betel::bayesetel(gfunc = gfunc, y = y[-(1:nt)], dat = dat[-(1:nt),], psi0 = psi0, lam0 = lam0, psi0_ = psi0_, Psi0_ = Psi0_, nu = nu, nuprop = nuprop,
+psim2 <- betel::bayesetel(gfunc = gfunc, y = y[-(1:nt)], dat = dat[-(1:nt),], psi0 = psi0, lam0 = lam0, psi0_ = psi0_, Psi0_ = Psi0_, nu = nu, nuprop = nuprop,
                          controlpsi = list(maxiterpsi = 50, mingrpsi = 1.0e-8), #  list of parameters in maximizing likelihood over psi
                          controllam = list(maxiterlam = 50, # list of parameters in minimizing dual over lambda
                                            mingrlam = 1.0e-7),
                          n0 = n0, m = m)
 
-MCMCexg <- MCMCpack::MCMCregress(y ~ x, burnin = n0, mcmc = m)
-Data <- list(y = c(y), x = x, z = matrix(z, N, 1), w = matrix(rep(1, N), N, 1))
-Mcmc <- list(R = m)
-MCMCivr <- bayesm::rivGibbs(Data, Mcmc = Mcmc)
-
-dfplot <- data.frame(betel = psim[,2], iv = MCMCivr[["betadraw"]], exo = MCMCexg[,2])
-colnames(dfplot) <- c("betel", "iv", "exo")
-
+MCMCreg2 <- MCMCpack::MCMCregress(y~x)
+dfplot <- data.frame(betel1 = psim1[,2], betel2 = psim2[,2], Exo = MCMCreg1[,2], Exo1 = MCMCreg2[,2])
+colnames(dfplot) <- c("betel0.0", "betel0.7", "MCMCreg0.0", "MCMCreg0.7")
 library(tidyr)
 library(dplyr)
 library(ggplot2)
@@ -419,8 +414,8 @@ library(ggplot2)
 df_long <- dfplot |>
   pivot_longer(everything(), names_to = "Method", values_to = "Posterior") |>
   mutate(Method = factor(Method,
-                         levels = c("betel","iv","exo"),
-                         labels = c("betel","rivGibbs","MCMCregress")))
+                         levels = c("betel0.0","betel0.7", "MCMCreg0.0", "MCMCreg0.7"),
+                         labels = c("BETEL: 0","BETEL: 0.7","Exo: 0", "Exo: 0.7")))
 
 ggplot(df_long, aes(x = Posterior, color = Method, fill = Method)) +
   geom_density(alpha = 0.3, linewidth = 1) +

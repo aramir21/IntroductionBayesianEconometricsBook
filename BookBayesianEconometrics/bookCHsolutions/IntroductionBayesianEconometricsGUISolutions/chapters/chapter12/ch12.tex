@@ -534,6 +534,81 @@ quantile(ATT_cells_draw, c(.025, .5, .975))
 
 \textbf{Answer}
 
+We simulate the observed process $X_i = 0.5Z_i + e_i$, with the unobserved regressor defined as $W_i = H_i + \nu_i$, where 
+\[
+\begin{bmatrix}
+	e_i \\
+	\nu_i
+\end{bmatrix}\sim N\left(\begin{bmatrix}
+0\\
+0
+\end{bmatrix},\begin{bmatrix}
+1 & \rho\\
+\rho & 1
+\end{bmatrix}\right).
+\]
+Thus, $\rho$ defines the degree of correlation between $X_i$ and $W_i$, and we perform two exercises with $\rho \in \{0.0, 0.7\}$. The variables $Z_i$ and $H_i$ are standard normal. The dependent variable is specified as 
+\[
+Y_i = 1 + 1.2X_i - 0.7W_i + \mu_i,
+\]
+where $\mu_i$ follows a mixture of two normal distributions with means $0.5$ and $-0.5$, and standard deviations $0.5$ and $1.2$. The sample size is 2{,}000, the burn-in is 1{,}000, and the number of MCMC draws retained after burn-in is 10{,}000. We adopt the default hyperparameter values provided in the \textit{betel} package. For comparison, we also perform the analysis under the assumption of no endogeneity using the package \textit{MCMCpack} using default values for the hyperparameters. 
 
+The following code shows the implementation, and Figure~\ref{fig12_Omission} displays the posterior distributions. When $\rho = 0$, implying no association between the regressors, there are no endogeneity issues, and assuming exogeneity yields more efficient posterior estimates. In contrast, when $\rho = 0.7$, endogeneity arises, and assuming exogeneity produces a biased posterior distribution. BETEL performs relatively well in both settings, although it is less efficient.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. BETEL: Omission of a relevant regressor}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(10101)
+library(betel); library(ucminf)
+# Simulate data
+N <- 2000; d <- 2; k <- 2
+gamma <- 0.5; beta <- c(1, 1.2, -0.7); rho <- 0.7
+# Mixture
+mum1 <- 1/2; mum2 <- -1/2
+mu1 <- rnorm(N, mum1, 0.5); mu2 <- rnorm(N, mum2, 1.2)
+mu <- sapply(1:N, function(i){sample(c(mu1[i], mu2[i]), 1, prob = c(0.5, 0.5))})
+z <- rnorm(N) # Instrument
+E <- MASS::mvrnorm(n = N, mu = c(0, 0), Sigma = matrix(c(1,rho,rho,1),2,2))
+x <- gamma*z + E[,1] # Observed regressor
+w <- rnorm(N) + E[,2] # Unobserved correlated regressor
+X <- cbind(1, x, w)
+y <- X%*%beta + mu
+dat <- cbind(1, x, z) # Data
+# Function g_i by row in BETEL
+gfunc <- function(psi = psi, y = y, dat = dat) {
+	X <- dat[,1:2]
+	e <- y - X %*% psi
+	E <- e %*% rep(1,d)
+	Z <- dat[,c(1,3)]
+	G <- E * Z;
+	return(G)
+}
+nt <- round(N * 0.1, 0); # training sample size for prior
+psi0 <- lm(y[1:nt]~x[1:nt])$coefficients # Starting value of psi = (theta, v), v is the slack parameter in CSS (2018)
+names(psi0) <- c("alpha","beta")
+psi0_ <- as.matrix(psi0) # Prior mean of psi 
+Psi0_ <- 5*rep(1,k) # Prior dispersions of psi
+lam0 <- .5*rnorm(d) # Starting value of lambda
+nu <- 2.5 # df of the prior student-t
+nuprop <- 15 # df of the student-t proposal
+n0 <- 1000 # burn-in
+m <- 10000 # iterations beyond burn-in
+# MCMC ESTIMATION BY THE CSS (2018) method
+psim2 <- betel::bayesetel(gfunc = gfunc, y = y[-(1:nt)], dat = dat[-(1:nt),], psi0 = psi0, lam0 = lam0, psi0_ = psi0_, Psi0_ = Psi0_, nu = nu, nuprop = nuprop,
+controlpsi = list(maxiterpsi = 50, mingrpsi = 1.0e-8), #  list of parameters in maximizing likelihood over psi
+controllam = list(maxiterlam = 50, # list of parameters in minimizing dual over lambda
+mingrlam = 1.0e-7),
+n0 = n0, m = m)
+MCMCreg2 <- MCMCpack::MCMCregress(y~x)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{figure}[h!]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter12/figures/FigOM.png}
+	\caption[List of figure caption goes here]{Posterior distribution slope parameter given omission of relevant regressor: betel and MCMCregress}\label{fig12_Omission}
+\end{figure} 
 
 \end{enumerate}
