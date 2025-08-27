@@ -2630,15 +2630,235 @@ Posterior inference of the BETEL can be performed using a Metropolis-Hastings al
 	\end{algorithmic}
 \end{algorithm}
 
-\textbf{Example: Omission of correlated relevant regressors}
+\textbf{Example: Classical measurement error in regressor}
 
-\textbf{Example: Measurement error in regressors}
+Let's set the unobserved (latent) regressor $X_i^*$ such that
+\[
+X_i = X_i^* + \nu_i,
+\]
+where $X_i$ is the observed regressor, and $\nu_i$ is a \textit{classical measurement error} such that 
+$\mathbb{E}[\nu_i]=0$ and $\nu_i \perp \{X_i^*,\mu_i\}$, where $\mu_i$ is the stochastic error of the structural model
+\[
+Y_i=\beta_0+\beta_1X_i^*+\mu_i,
+\] 
+where $\mathbb{E}[\mu_i]=0$ and $\mu_i\perp X_i^*$.
+
+If we perform the regression using the observed regressor, then
+\[
+Y_i=\beta_0+\beta_1(X_i-\nu_i)+\mu_i
+=\beta_0+\beta_1X_i+\underbrace{\mu_i-\beta_1\nu_i}_{\epsilon_i},
+\]
+where the new error term is $\epsilon_i=\mu_i-\beta_1\nu_i$. We will show that
+\[
+\mathbb{E}[\epsilon_i\mid X_i]\neq 0.
+\]
+
+By the law of iterated expectations, 
+\[
+\mathbb{E}[\nu_i X_i] = \mathbb{E}\!\left[X_i \, \mathbb{E}[\nu_i \mid X_i]\right].
+\]
+This implies:
+
+- If $\mathbb{E}[\nu_i \mid X_i] = 0$ almost surely, then $\mathbb{E}[\nu_i X_i] = 0$.  
+
+- If $\mathbb{E}[\nu_i X_i] \neq 0$, then $\mathbb{E}[\nu_i \mid X_i]$ cannot be equal to zero almost surely.
+
+Now compute
+\[
+\mathbb{E}[\nu_iX_i] 
+= \mathbb{E}[\nu_i(X_i^*+\nu_i)]
+= \underbrace{\mathbb{E}[\nu_i X_i^*]}_{=0} + \mathbb{E}[\nu_i^2]
+= \sigma^2_{\nu} \neq 0.
+\]
+Hence it must be that $\mathbb{E}[\nu_i\mid X_i]\neq 0$. Therefore,
+\[
+\mathbb{E}[\epsilon_i\mid X_i]
+=\underbrace{\mathbb{E}[\mu_i\mid X_i]}_{=0}
+- \beta_1\underbrace{\mathbb{E}[\nu_i\mid X_i]}_{\neq 0}
+\neq 0,
+\]
+that is, the regressor is not exogenous, and consequently,
+
+\[
+\mathbb{E}[X_i\underbrace{(Y_i-\beta_0-\beta_1X_i)}_{\epsilon_i}]\neq 0,
+\] 
+thus, we need a relevant (strong) ($\mathbb{E}[Z_iX_i^*]\neq 0$) and exogeneous ($\mathbb{E}[Z_i\mid \mu_i]=\mathbb{E}[Z_i\mid \nu_i]= 0$) instrument that tackles this issue. Therefore,
+\[
+\mathbb{E}[Z_i(Y_i-\beta_0-\beta_1X_i)]= 0.
+\] 
+
+The DAG~\ref{fig:DAG_IV_meas_error} illustrates the situation of measurement error, and how the instrument helps to identify the causal effect. The instrument solves the endogeneity problem because it exploits variation in the regressor $X_i$ that is correlated with the true latent regressor $X_i^*$ but uncorrelated with the measurement error $\nu_i$. See Chapter 9 in \cite{hernan2020causal} for a nice review of the effects of measurement error in causal inference.
+
+\begin{figure}[h]
+	\centering
+	\begin{tikzpicture}[->,>=Stealth,shorten >=1pt,node distance=2.5cm,
+		thick,main node/.style={circle,draw,minimum size=7mm}]
+		
+		% Nodes
+		\node[main node] (z) {$Z$};
+		\node[main node, dashed] (xstar) [right of=z] {$X^{*}$};
+		\node[main node] (x) [right of=xstar] {$X$};
+		\node[main node] (y) [right of=x] {$Y$};
+		\node[main node, dashed] (nu) [below of=x, node distance=2cm] {$\nu$};
+		\node[main node, dashed] (mu) [above of=y, node distance=2cm] {$\mu$};
+%		\node[main node, dashed] (eps) [below of=y, node distance=2cm] {$\epsilon=\mu-\beta_1\nu$};
+		
+		% Edges
+		\path (z) edge (xstar)                   % IV relevance
+		(xstar) edge (x)                   % measurement equation
+		(xstar) edge[bend left=20] (y)     % structural effect
+		(nu) edge (x)                      % measurement error
+%		(mu) edge[bend left=20] (eps)      % composite error definition
+		(mu) edge (y);
+%		(nu) edge (eps)                    % composite error definition
+%		(eps) edge (y);                    % epsilon enters regression
+		
+	\end{tikzpicture}
+	\caption{DAG with measurement error and instrument $Z$.	Observed $X$ depends on the latent $X^{*}$ and error $\nu$. Because the composed error in the estimated equation includes $\nu$, $X$ is endogenous when regressed on $Y$. Instrument $Z$ isolates exogenous variation in $X^{*}$.}
+	\label{fig:DAG_IV_meas_error}
+\end{figure}
+
+We simulate the latent process $X_i^* = 0.5Z_i + e_i$, with the observed regressor defined as $X_i = X_i^* + \nu_i$, and the outcome equation specified as $Y_i = 1 + 1.2X_i^* + \mu_i$. The variables $Z_i$, $e_i$, and $\nu_i$ are standard normal, while $\mu_i$ follows a mixture of two normal distributions with means $0.5$ and $-0.5$, and standard deviations $0.5$ and $1.2$. The sample size is 2{,}000, the burn-in is 1{,}000, and the number of MCMC draws retained after burn-in is 10{,}000. We adopt the default hyperparameter values provided on the \textit{betel} package webpage (see below).
+
+We perform Bayesian exponentially tilted empirical likelihood (BETEL) using the package \textit{betel}.\footnote{Available at \textit{https://apps.olin.wustl.edu/faculty/chib/rpackages/betel/}.} This package implements Bayesian estimation and marginal likelihood computation for moment condition models based on \cite{chib2018moment}. We also compare the results with a model that assumes $X_i$ is exogenous, and with an instrumental Gibbs sampler that assumes $Y_i$ is normally distributed. 
+
+Figure \ref{fig12_Measurement} displays the posterior distributions. We see that ignoring measurement error produces a biased posterior distribution, whereas methods that account for measurement error and use valid instruments yield well-centered posterior distributions.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation: Classical measurement error in regressor}
+	\begin{VF}
+		\begin{lstlisting}[language=R]	
+rm(list = ls()); set.seed(10101)
+library(betel); library(ucminf)
+# Simulate data
+N <- 2000; d <- 2; k <- 2
+gamma <- 0.5; beta <- c(1, 1.2)
+# Mixture
+mum1 <- 1/2; mum2 <- -1/2
+mu1 <- rnorm(N, mum1, 0.5); mu2 <- rnorm(N, mum2, 1.2)
+mu <- sapply(1:N, function(i){sample(c(mu1[i], mu2[i]), 1, prob = c(0.5, 0.5))})
+e <- rnorm(N)
+z <- rnorm(N) # Instrument
+xlat <- gamma*z + e # Unobserved regressor
+nu <- rnorm(N) # Measurement error
+x <- xlat + nu # Observed regressor
+Xlat <- cbind(1, xlat)
+y <- Xlat%*%beta + mu
+dat <- cbind(1, x, z) # Data
+# Function g_i by row in BETEL
+gfunc <- function(psi = psi, y = y, dat = dat) {
+	X <- dat[,1:2]
+	e <- y - X %*% psi
+	E <- e %*% rep(1,d)
+	Z <- dat[,c(1,3)]
+	G <- E * Z;
+	return(G)
+}
+nt <- round(N * 0.1, 0); # training sample size for prior
+psi0 <- lm(y[1:nt]~x[1:nt])$coefficients # Starting value of psi = (theta, v), v is the slack parameter in CSS (2018)
+names(psi0) <- c("alpha","beta")
+psi0_ <- as.matrix(psi0) # Prior mean of psi 
+Psi0_ <- 5*rep(1,k) # Prior dispersions of psi
+lam0 <- .5*rnorm(d) # Starting value of lambda
+nu <- 2.5 # df of the prior student-t
+nuprop <- 15 # df of the student-t proposal
+n0 <- 1000 # burn-in
+m <- 10000 # iterations beyond burn-in
+# MCMC ESTIMATION BY THE CSS (2018) method
+psim <- betel::bayesetel(gfunc = gfunc, y = y[-(1:nt)], dat = dat[-(1:nt),], psi0 = psi0, lam0 = lam0, psi0_ = psi0_, Psi0_ = Psi0_, nu = nu, nuprop = nuprop,
+ controlpsi = list(maxiterpsi = 50, mingrpsi = 1.0e-8), #  list of parameters in maximizing likelihood over psi
+controllam = list(maxiterlam = 50, # list of parameters in minimizing dual over lambda
+mingrlam = 1.0e-7),
+n0 = n0, m = m)
+MCMCexg <- MCMCpack::MCMCregress(y ~ x, burnin = n0, mcmc = m)
+Data <- list(y = c(y), x = x, z = matrix(z, N, 1), w = matrix(rep(1, N), N, 1))
+Mcmc <- list(R = m)
+MCMCivr <- bayesm::rivGibbs(Data, Mcmc = Mcmc)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{figure}[h!]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter12/figures/FigME.png}
+	\caption[List of figure caption goes here]{Posterior distribution slope parameter: betel, ivGibbs and MCMCregress}\label{fig12_Measurement}
+\end{figure} 
+ 
+\textbf{Example: Omission of relevant correlated regressor}
+
+Consider the true model
+\[
+Y_i = \beta_0 + \beta_1 X_i + \gamma W_i + \mu_i,
+\qquad \mathbb{E}[\mu_i \mid X_i, W_i] = 0.
+\]
+Suppose that the relevant regressor $W_i$ is omitted from the specification, with $\gamma \neq 0$ and \(\operatorname{Cov}(X_i, W_i) \neq 0\).
+
+Thus, if we regress $Y_i$ only on $X_i$, the composite error is
+\[
+\epsilon_i = \gamma W_i + \mu_i.
+\]
+
+Therefore,
+\[
+\mathbb{E}[\epsilon_i \mid X_i] 
+= \gamma \, \mathbb{E}[W_i \mid X_i] + \mathbb{E}[\mu_i \mid X_i]
+= \gamma \, \mathbb{E}[W_i \mid X_i] \neq 0,
+\]
+since $\mathbb{E}[W_i \mid X_i]$ is nonconstant whenever $X_i$ and $W_i$ are correlated, that is, the expected value of $W_i$ is a function of $X_i$.
+
+Consequently,
+\[
+\mathbb{E}[\epsilon_i X_i] 
+= \gamma \, \mathbb{E}[W_i X_i] + \mathbb{E}[\mu_i X_i].
+\]
+Because $\mathbb{E}[\mu_i X_i]=0$, we obtain
+\[
+\mathbb{E}[\epsilon_i X_i] = \gamma (\operatorname{Cov}(W_i,X_i) 
++ \mathbb{E}[W_i] \, \mathbb{E}[X_i])\neq 0.
+\]
+
+In this situation, we can use an instrument that is relevant ($\mathbb{E}[Z_i X_i] \neq 0$) and exogenous ($\mathbb{E}[Z_i \mid \mu_i] = \mathbb{E}[Z_i \mid W_i] = 0$) to address the endogeneity problem.\footnote{Another potential solution for the omission of relevant variables is the use of \textit{proxy variables}; see \cite{wooldridge2010econometric} for details.} Therefore,
+\[
+\mathbb{E}[Z_i \,(Y_i - \beta_0 - \beta_1 X_i)] = 0.
+\]
+
+Figure~\ref{fig:DAG_OVB_IV} illustrates the case of an omitted relevant regressor that is correlated with $X_i$, and how an instrument can be used to identify the causal effect. The instrument resolves the endogeneity problem by exploiting variation in $X_i$ that is driven by $Z_i$, which is orthogonal to the problematic error term. In other words, it replaces ``bad'' correlation with ``clean'' variation.
+ 
+\begin{figure}[h]
+	\centering
+	\begin{tikzpicture}[->,>=Stealth,shorten >=1pt,node distance=2.5cm,
+		thick,main node/.style={circle,draw,minimum size=7mm}]
+		% Nodes
+		\node[main node]            (z)    {$Z$};
+		\node[main node]            (x) [right=2.6cm of z] {$X$};
+		\node[main node]            (y) [right=2.6cm of x] {$Y$};
+		\node[main node, dashed]    (w) [above=1.8cm of x] {$W$};
+		\node[main node, dashed]    (u) [above=1.8cm of y] {$\mu$};
+		
+		% Edges
+		\path (x) edge (y)                    % causal effect of interest
+		(w) edge (x)                    % omitted variable shifts X
+		(w) edge (y)                    % omitted variable shifts Y (relevance)
+		(z) edge (x)                    % instrument relevance
+		(u) edge (y);                   % structural error
+		
+		% Optional curved arrow to highlight X-W correlation path
+		% \draw[bend left=18] (z) to (x);
+		
+	\end{tikzpicture}
+	\caption{DAG with omitted relevant regressor $W$ (dashed, unobserved) that is correlated with $X$ and affects $Y$, inducing endogeneity of $X$ in a regression of $Y$ on $X$. A valid instrument $Z$ affects $X$ (relevance) but has no direct path to $Y$ and is independent of $W$ and $u$ (exclusion/independence), enabling identification of the causal effect $X \to Y$.}
+	\label{fig:DAG_OVB_IV}
+\end{figure}
+
+We ask in Exercise~10 to erform a simulation exercise to assess the ability of BETEL to identify the causal effect when an instrument is used to address the omission of relevant regressors.
 
 \textbf{Example: Reverse or simultaneous causality}
 
 
+\cite{chib2018moment} propose a unified framework based on marginal likelihoods and Bayes factors for comparing different moment-restricted models and for discarding misspecified restrictions. They demonstrate the model selection consistency of the marginal likelihood, showing that it favors the specification with the fewest parameters and the largest number of valid moment restrictions. When models are misspecified, the marginal likelihood procedure selects the model that is closest to the (unknown) true data-generating process in terms of Kullback–Leibler divergence. See \cite{lazar2021review, liu2023review} for comprehensive reviews of recent advances in empirical likelihood and exponentially tilted empirical likelihood methods, including their Bayesian variants.
 
 \section{A general framework for updating belief distributions}\label{sec12_10}
+
 Introduce \cite{bissiri2016general} as a generalization of \cite{chernozhukov2003mcmc}.
 
 
@@ -2738,6 +2958,12 @@ Read this reference \cite{iacovone2023bayesian} before begin working in this cha
 	\tau_2 = (\mu_{21} - \mu_{11}) - (\mu_{20} - \mu_{10}).
 	\]
 	Inference on $\tau_2$ using this approach in the simulation setting shows that the posterior mean is similar to that from the previous approaches, but the level of uncertainty is higher.
+	
+	\item Perform a simulation exercise to assess the ability of BETEL to identify the causal effect when an instrument is used to address the omission of relevant regressors. Illustrate the consequences of varying the dependence between the omitted regressor and the observed regressor.
+	
+	
+	\item Program a BETEL from scratch and compare the results of the simulation exercise of measurement error using the package \textit{betel}.
+	
 	
 	  
 	 

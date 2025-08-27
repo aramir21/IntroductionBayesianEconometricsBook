@@ -351,3 +351,90 @@ mu_t_post_draw <- draws_cells[, "t_post"]
 # ATT = (mu_t,post - mu_t,pre) - (mu_c,post - mu_c,pre)
 ATT_cells_draw <- (mu_t_post_draw - mu_t_pre_draw) - (mu_c_post_draw - mu_c_pre_draw)
 quantile(ATT_cells_draw, c(.025, .5, .975))
+
+#### BETEL ####
+
+# To install betel package
+# Go to: https://apps.olin.wustl.edu/faculty/chib/rpackages/betel/
+# Download: betel_1.0.zip (windows) or betel_1.0.tgz (mac)
+# Then Rstudio -> Tools -> Install Package -> and changing the Install from option to
+# Package Archive file. Then, scroll to the location where the downloaded package was
+# saved (typically the download files folder), and select the file.
+
+#### BETEL: Omission relevant correlated regressor #####
+rm(list = ls()); set.seed(10101)
+library(betel); library(ucminf)
+# Simulate data
+N <- 2000; d <- 2; k <- 2
+gamma <- 0.5; beta <- c(1, 1.2, -0.7); rho <- 0
+# Mixture
+mum1 <- 1/2; mum2 <- -1/2
+mu1 <- rnorm(N, mum1, 0.5); mu2 <- rnorm(N, mum2, 1.2)
+mu <- sapply(1:N, function(i){sample(c(mu1[i], mu2[i]), 1, prob = c(0.5, 0.5))})
+z <- rnorm(N) # Instrument
+E <- MASS::mvrnorm(n = N, mu = c(0, 0), Sigma = matrix(c(1,rho,rho,1),2,2))
+x <- gamma*z + E[,1] # Observed regressor
+w <- rnorm(N) + E[,2] # Unobserved correlated regressor
+X <- cbind(1, x, w)
+y <- X%*%beta + mu
+dat <- cbind(1, x, z) # Data
+# Function g_i by row in BETEL
+gfunc <- function(psi = psi, y = y, dat = dat) {
+  X <- dat[,1:2]
+  e <- y - X %*% psi
+  E <- e %*% rep(1,d)
+  Z <- dat[,c(1,3)]
+  G <- E * Z;
+  return(G)
+}
+nt <- round(N * 0.1, 0); # training sample size for prior
+psi0 <- lm(y[1:nt]~x[1:nt])$coefficients # Starting value of psi = (theta, v), v is the slack parameter in CSS (2018)
+names(psi0) <- c("alpha","beta")
+psi0_ <- as.matrix(psi0) # Prior mean of psi 
+Psi0_ <- 5*rep(1,k) # Prior dispersions of psi
+lam0 <- .5*rnorm(d) # Starting value of lambda
+nu <- 2.5 # df of the prior student-t
+nuprop <- 15 # df of the student-t proposal
+n0 <- 1000 # burn-in
+m <- 10000 # iterations beyond burn-in
+# MCMC ESTIMATION BY THE CSS (2018) method
+psim <- betel::bayesetel(gfunc = gfunc, y = y[-(1:nt)], dat = dat[-(1:nt),], psi0 = psi0, lam0 = lam0, psi0_ = psi0_, Psi0_ = Psi0_, nu = nu, nuprop = nuprop,
+                         controlpsi = list(maxiterpsi = 50, mingrpsi = 1.0e-8), #  list of parameters in maximizing likelihood over psi
+                         controllam = list(maxiterlam = 50, # list of parameters in minimizing dual over lambda
+                                           mingrlam = 1.0e-7),
+                         n0 = n0, m = m)
+
+MCMCexg <- MCMCpack::MCMCregress(y ~ x, burnin = n0, mcmc = m)
+Data <- list(y = c(y), x = x, z = matrix(z, N, 1), w = matrix(rep(1, N), N, 1))
+Mcmc <- list(R = m)
+MCMCivr <- bayesm::rivGibbs(Data, Mcmc = Mcmc)
+
+dfplot <- data.frame(betel = psim[,2], iv = MCMCivr[["betadraw"]], exo = MCMCexg[,2])
+colnames(dfplot) <- c("betel", "iv", "exo")
+
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+
+df_long <- dfplot |>
+  pivot_longer(everything(), names_to = "Method", values_to = "Posterior") |>
+  mutate(Method = factor(Method,
+                         levels = c("betel","iv","exo"),
+                         labels = c("betel","rivGibbs","MCMCregress")))
+
+ggplot(df_long, aes(x = Posterior, color = Method, fill = Method)) +
+  geom_density(alpha = 0.3, linewidth = 1) +
+  geom_vline(xintercept = 1.2, linetype = "dashed", linewidth = 1, color = "black") +
+  labs(
+    title = "Posterior Densities with Population Value",
+    x = expression(beta[1]),
+    y = "Density"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "top",
+    legend.title = element_blank()
+  )
+
+summary(AER::ivreg(y ~ x | z))
+summary(lm(y ~ x))
