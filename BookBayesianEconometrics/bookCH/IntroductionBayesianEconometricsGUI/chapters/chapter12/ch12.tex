@@ -579,7 +579,7 @@ ggplot(df_long, aes(x = estimate, fill = model)) + geom_density(alpha = 0.5) + g
 
 Collider (selection) bias is one possible source of bias in the identification of causal effects. The well-known Heckman’s sample selection problem in econometrics \cite{heckman1979sample} can be interpreted as a form of collider bias because restricting the analysis to selected observations (e.g., those with positive wages) conditions on a variable that is a common effect of observed and unobserved factors, thereby opening a non-causal path and creating bias. In other words, the sample is no longer representative of the population, which undermines the identification of the causal effect. 
 
-Other well-known sources of bias in econometrics include the omission of common causes affecting both the treatment and the outcome, that is, \textit{omission of correlated relevant regressors}, measurement error in regressors leading to \textit{attenuation bias} (where the estimated causal effect is biased toward zero), and \textit{reverse or simultaneous causality}, which often arises in systems of equations (see \cite{wooldridge2010econometric} for details). We will discuss these additional sources of bias later.
+Other well-known sources of bias in econometrics include the omission of common causes affecting both the treatment and the outcome, that is, \textit{omission of correlated relevant regressors}, measurement error in regressors leading to \textit{attenuation bias} (where the estimated causal effect is biased toward zero), and \textit{simultaneous causality}, which often arises in systems of equations (see \cite{wooldridge2010econometric} for details). We will discuss these additional sources of bias later.
 
 \section{Instrumental variables (IV)}\label{chap12_4}
 
@@ -2858,7 +2858,7 @@ Figure~\ref{fig:DAG_OVB_IV} illustrates the case of an omitted relevant regresso
 
 We ask in Exercise~10 to perform a simulation exercise to assess the ability of BETEL to identify the causal effect when an instrument is used to address the omission of relevant regressors.\\
 
-\textbf{Example: Reverse or simultaneous causality}
+\textbf{Example: Simultaneous causality}
 
 This example is based on \cite{imbens2014ivperspective}, where Professor Imbens illustrates the problem of analyzing the causal effect on traded quantity of a tax of $100 \times r\%$ in a market. He defines the average causal effect on the logarithm of traded quantity as
 \[
@@ -2955,7 +2955,7 @@ Thus, the average causal effect on the logarithm of traded quantity as
 \tau = \mathbb{E}[q_i(r) - q_i(0)]= \frac{\alpha_2 \, \beta_2}{\alpha_2 - \beta_2}\,\log(1+r).
 \]
 
-Note that the treatment effect depends on the price elasticities of supply and demand. Therefore, we need to identify the demand and supply functions using instruments, since the observed quantities and prices cannot be used directly due to the issue of reverse causality. In particular, given the assumption of exogeneity of the other control variables, the only part of $p_i^{Obs}$ that can correlate with $u_{i1}$ or $u_{i2}$ is the error component
+Note that the treatment effect depends on the price elasticities of supply and demand. Therefore, we need to identify the demand and supply functions using instruments, since the observed quantities and prices cannot be used directly due to the issue of simultaneous causality. In particular, given the assumption of exogeneity of the other control variables, the only part of $p_i^{Obs}$ that can correlate with $u_{i1}$ or $u_{i2}$ is the error component
 \[
 \frac{u_{i2}-u_{i1}}{\beta_2-\alpha_2}.
 \]
@@ -2997,7 +2997,70 @@ and
 \]
 to identify the demand and supply functions. Note that the demand equation is \textit{exactly identified}, whereas the supply equation is \textit{over identified}. See Section \ref{sec71} for details about identification of linear systems of equations.
 
-We perform a simulation exercise to analyze the hypothetical causal effects of a new tax rate of 10\% simulating the demand and supply equations using the following structural parameters $\bm{\beta} = \left[ 5 \ -0.5 \ 0.8 \ -0.4 \ 0.7 \right]^{\top}$, $\bm{\alpha} = \left[ -2 \ 0.5 \ -0.4 \right]^{\top}$, $u_1 \sim N(0, 0.5^2)$, and $u_2 \sim N(0, 0.5^2)$ assuming a sample size equal to 5,000. Additionally, assume that $y \sim N(10, 1)$, $pc \sim N(5, 1)$, $ps \sim N(5, 1)$, and $er \sim N(15, 1)$. We use the previous moment conditions, and the \textit{betel} package to perform this example.
+We perform a simulation exercise to analyze the hypothetical causal effects of a new tax rate of 10\% simulating the demand and supply equations using the following structural parameters $\bm{\beta} = \left[ 5 \ -0.5 \ 0.8 \ -0.4 \ 0.7 \right]^{\top}$, $\bm{\alpha} = \left[ -2 \ 0.5 \ -0.4 \right]^{\top}$, $u_1 \sim N(0, 0.5^2)$, and $u_2 \sim N(0, 0.5^2)$ assuming a sample size equal to 5,000. Additionally, assume that $y \sim N(10, 1)$, $pc \sim N(5, 1)$, $ps \sim N(5, 1)$, and $er \sim N(15, 1)$. We use the demand moment conditions and the \textit{betel} package to perform BETEL-based inference for the demand function. In Exercise~11, you will repeat the analysis for the supply function using its moment conditions and then estimate the causal effect of the tax. The population causal effect of the tax on quantity is
+\[
+\tau=\frac{(-0.5)\times 0.5}{0.5-(-0.5)}\log(1+0.1)\approx -0.0238,
+\]
+which implies that a \(10\%\) tax reduces traded quantity by approximately \(2.4\%\).
+
+The following code implements inference for the demand function. Figure~\ref{fig12_SimCausality} displays the posterior distribution of the causal effect. The 95\% credible interval contains the population value, and the posterior mean lies close to it.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation demand and supply: Simultaneous causality}
+	\begin{VF}
+		\begin{lstlisting}[language=R]	
+rm(list = ls()); set.seed(12345)
+# Population parameters demand
+B1 <- 5; B2 <- -0.5; B3 <- 0.8; B4 <- -0.4; B5 <- 0.7; SD <- 0.5
+# Population parameters supply
+A1 <- -2; A2 <- 0.5; A3 <- -0.4; SS <- 0.5
+# Reduced form parameters
+P0 <- (A1-B1)/(B2-A2); P2 <- -B3/(B2-A2); P3 <- -B4/(B2-A2); P1 <- A3/(B2-A2); P4 <- -B5/(B2-A2)
+T0 <- B1+B2*P0; T2 <- B3+B2*P2; T3 <- B4+B2*P3; T1 <- B2*P1; T4 <- B5+B2*P4;
+n <- 5000
+ED <- rnorm(n, 0, SD); ES <- rnorm(n, 0, SS)
+VP <- (ES-ED)/(B2-A2); UQ <- B2*VP+ED
+y <- rnorm(n, 10, 1); pc <- rnorm(n, 5, 1); er <- rnorm(n, 15, 1); ps <- rnorm(n, 5, 1);
+p <- P0+P1*er+P2*y+P3*pc+P4*ps+VP
+q <- T0+T1*er+T2*y+T3*pc+T4*ps+UQ
+dat <- cbind(1,p,y,pc,ps,er) # Data
+# Function g_i by row for demand
+gfuncDem <- function(psi = psi, y = q, dat = dat) {
+	X <- dat[,1:5]
+	e <- y - X %*% psi
+	E <- e %*% rep(1,5)
+	Z <- dat[,c(1,3:6)]
+	G <- E * Z;
+	return(G)
+}
+nt <- round(n * 0.1, 0); # training sample size for prior
+psi0 <- lm(q[1:nt]~dat[1:nt,2:5])$coefficients # Starting value of psi = (theta, v), v is the slack parameter in CSS (2018)
+names(psi0) <- c("beta1","beta2","beta3","beta4","beta5")
+psi0_ <- as.matrix(psi0) # Prior mean of psi 
+Psi0_ <- 1000*rep(1,5) # Prior dispersions of psi
+lam0 <- .5*rnorm(5) # Starting value of lambda
+nu <- 2.5 # df of the prior student-t
+nuprop <- 15 # df of the student-t proposal
+n0 <- 1000 # burn-in
+m <- 10000 # iterations beyond burn-in
+# MCMC ESTIMATION BY THE CSS (2018) method
+psim <- betel::bayesetel(gfunc = gfuncDem, y = q[-(1:nt)], dat = dat[-(1:nt),], psi0 = psi0, lam0 = lam0, psi0_ = psi0_, Psi0_ = Psi0_, nu = nu, nuprop = nuprop,
+controlpsi = list(maxiterpsi = 50,
+mingrpsi = 1.0e-8), #  list of parameters in maximizing likelihood over psi
+controllam = list(maxiterlam = 50, # list of parameters in minimizing dual over lambda
+mingrlam = 1.0e-7),
+n0 = n0, m = m)
+summary(psim)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{figure}[h!]
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter12/figures/FigME.png}
+	\caption[List of figure caption goes here]{Posterior distribution of the causal effect of a tax: BETEL}\label{fig12_SimCausality}
+\end{figure} 
+  
 
 
 \cite{chib2018moment} propose a unified framework based on marginal likelihoods and Bayes factors for comparing different moment-restricted models and for discarding misspecified restrictions. They demonstrate the model selection consistency of the marginal likelihood, showing that it favors the specification with the fewest parameters and the largest number of valid moment restrictions. When models are misspecified, the marginal likelihood procedure selects the model that is closest to the (unknown) true data-generating process in terms of Kullback–Leibler divergence. See \cite{lazar2021review, liu2023review} for comprehensive reviews of recent advances in empirical likelihood and exponentially tilted empirical likelihood methods, including their Bayesian variants.
@@ -3106,8 +3169,11 @@ Read this reference \cite{iacovone2023bayesian} before begin working in this cha
 	
 	\item Perform a simulation exercise to assess the ability of BETEL to identify the causal effect when an instrument is used to address the omission of relevant regressors. Illustrate the consequences of varying the dependence between the omitted regressor and the observed regressor.
 	
+	\item \textbf{Simultaneous causality continues}
 	
-	\item Program a BETEL from scratch and compare the results of the simulation exercise of measurement error using the package \textit{betel}.
+	Use the supply-side moment conditions to conduct inference for the supply function in the demand–supply example programming a BETEL from scratch. Then estimate the causal effect of the tax on the traded quantity.	
+	
+	
 	
 	
 	  

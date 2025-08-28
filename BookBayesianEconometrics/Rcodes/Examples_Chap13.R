@@ -1276,43 +1276,42 @@ psim <- betel::bayesetel(gfunc = gfuncDem,
                                           mingrlam = 1.0e-7),
                         n0 = n0, m = m)
 summary(psim)
-ElastDemPrice <- psim[,2]
-# Function g_i by row for supply
-gfuncSup <- function(psi = psi, y = q, dat = dat) {
-  X <- dat[,c(1:2,6)]
-  e <- y - X %*% psi
-  E <- e %*% rep(1,5)
-  Z <- dat[,c(1,3:6)]
-  G <- E * Z;
-  return(G)
-}
-nt <- round(n * 0.1, 0); # training sample size for prior
-psi0 <- lm(q[1:nt]~dat[1:nt,c(2,6)])$coefficients # Starting value of psi = (theta, v), v is the slack parameter in CSS (2018)
-names(psi0) <- c("alpha1","alpha2","alpha3")
-psi0_ <- as.matrix(psi0) # Prior mean of psi 
-Psi0_ <- 1000*rep(1,3) # Prior dispersions of psi
-lam0 <- .5*rnorm(5) # Starting value of lambda
-nu <- 2.5 # df of the prior student-t
-nuprop <- 15 # df of the student-t proposal
-# MCMC ESTIMATION BY THE CSS (2018) method
-psim1 <- betel::bayesetel(gfunc = gfuncSup,
-                        y = q[-(1:nt)],
-                        dat = dat[-(1:nt),],
-                        psi0 = psi0,
-                        lam0 = lam0,
-                        psi0_ = psi0_,
-                        Psi0_ = Psi0_,
-                        nu = nu,
-                        nuprop = nuprop,
-                        controlpsi = list(maxiterpsi = 50,
-                                          mingrpsi = 1.0e-8), #  list of parameters in maximizing likelihood over psi
-                        controllam = list(maxiterlam = 50, # list of parameters in minimizing dual over lambda
-                                          mingrlam = 1.0e-7),
-                        n0 = n0, m = m)
-summary(psim1)
-ElastSupPrice <- psim[,2]
-tax <- 0.1
-CausalEffect <- (ElastSupPrice*ElastDemPrice)*log(1+tax)/(ElastSupPrice-ElastDemPrice) 
+
+# BETEL did not work for the supply equation
+# # Function g_i by row for supply
+# gfuncSup <- function(psi = psi, y = q, dat = dat) {
+#   X <- dat[,c(1:2,6)]
+#   e <- y - X %*% psi
+#   E <- e %*% rep(1,5)
+#   Z <- dat[,c(1,3:6)]
+#   G <- E * Z;
+#   return(G)
+# }
+# nt <- round(n * 0.1, 0); # training sample size for prior
+# psi0 <- lm(q[1:nt]~dat[1:nt,c(2,6)])$coefficients # Starting value of psi = (theta, v), v is the slack parameter in CSS (2018)
+# names(psi0) <- c("alpha1","alpha2","alpha3")
+# psi0_ <- as.matrix(psi0) # Prior mean of psi 
+# Psi0_ <- 1000*rep(1,3) # Prior dispersions of psi
+# lam0 <- .5*rnorm(5) # Starting value of lambda
+# nu <- 2.5 # df of the prior student-t
+# nuprop <- 15 # df of the student-t proposal
+# # MCMC ESTIMATION BY THE CSS (2018) method
+# psim1 <- betel::bayesetel(gfunc = gfuncSup,
+#                         y = q[-(1:nt)],
+#                         dat = dat[-(1:nt),],
+#                         psi0 = psi0,
+#                         lam0 = lam0,
+#                         psi0_ = psi0_,
+#                         Psi0_ = Psi0_,
+#                         nu = nu,
+#                         nuprop = nuprop,
+#                         controlpsi = list(maxiterpsi = 50,
+#                                           mingrpsi = 1.0e-8), #  list of parameters in maximizing likelihood over psi
+#                         controllam = list(maxiterlam = 50, # list of parameters in minimizing dual over lambda
+#                                           mingrlam = 1.0e-7),
+#                         n0 = n0, m = m)
+# summary(psim1)
+# ElastSupPrice <- psim[,2]
 
 #### BETEL from scratch ####
 rm(list = ls()); set.seed(12345)
@@ -1359,13 +1358,13 @@ Probs <- probsfunc(lambda = lambda, theta = theta0, q = q, X = X, Z = Z)
 # Hyperparameters
 b0 <- rep(0, k)
 B0 <- 1000*diag(k)
-tune <- 0.001
+tune <- 0.0005
 # Number of samples
-S <- 1000; burnin <- 100; thin <- 1
+S <- 10000; burnin <- 2000; thin <- 5; tot <- S + burnin
 # Initialize vectors
-accept <- logical(S)
-BETA <- matrix(NA, S, k)
-LAMBDA <- matrix(NA, S, d)
+accept <- logical(tot)
+BETA <- matrix(NA, tot, k)
+LAMBDA <- matrix(NA, tot, d)
 # Initial value
 Reg <- lm(q ~ p + er)
 BETA[1, ] <- Reg$coefficients
@@ -1373,8 +1372,8 @@ ResOpt <- optim(par = rnorm(d), fn = lambdafunc, control = control, theta = BETA
 LAMBDA[1, ] <- ResOpt$par
 Probs <- probsfunc(lambda = ResOpt$par, theta = BETA[1, ], q = q, X = X, Z = Z)
 # Metropolis-Hastings sampling
-pb <- winProgressBar(title = "progress bar", min = 0, max = S, width = 300)
-for (s in 2:(burnin + S)) {
+pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+for (s in 2:tot) {
   epsilon <- rnorm(k, mean = 0, sd = tune)
   candidate <- BETA[s - 1, ] + epsilon
   lambdac <- LAMBDA[s - 1, ]
@@ -1417,11 +1416,49 @@ for (s in 2:(burnin + S)) {
     Probs <- Probs
     LAMBDA[s, ] <- LAMBDA[s - 1, ]
   }
-  setWinProgressBar(pb, s, title=paste( round(s/S*100, 0),"% done"))
+  setWinProgressBar(pb, s, title=paste( round(s/(tot)*100, 0),"% done"))
 }
 close(pb)
 mean(accept)
-keep <- seq(burnin, S+burnin, thin)
-mcmcBETA <- coda::mcmc(BETA) 
+keep <- seq(burnin, tot, thin)
+mcmcBETA <- coda::mcmc(BETA[keep,]) 
 summary(mcmcBETA)
 plot(mcmcBETA)
+ElastSupPrice <- mcmcBETA[,2]
+ElastDemPrice <- psim[keep,2]
+
+tax <- 0.1
+CausalEffect <- (ElastSupPrice*ElastDemPrice)*log(1+tax)/(ElastSupPrice-ElastDemPrice) 
+popCauEff <- (A2 * B2)/(A2 - B2) * log(1 + tax)
+
+library(ggplot2)
+
+post_draws <- as.numeric(CausalEffect)
+
+dens <- density(post_draws, adjust = 1)
+df   <- data.frame(x = dens$x, y = dens$y)
+ci   <- quantile(post_draws, c(0.025, 0.975))
+pm   <- mean(post_draws)
+
+lines_df <- data.frame(
+  x    = c(pm, as.numeric(popCauEff)),
+  name = c("Posterior mean", "Population value")
+)
+
+ggplot(df, aes(x, y)) +
+  geom_area(data = subset(df, x >= ci[1] & x <= ci[2]), alpha = 0.15) +
+  geom_line(linewidth = 1) +
+  geom_vline(data = lines_df,
+             aes(xintercept = x, color = name, linetype = name),
+             linewidth = 0.8) +
+  labs(
+    x = expression(tau), y = "Density",
+    title = "Posterior of the causal effect",
+    subtitle = sprintf("95%% CrI: [%.3f, %.3f]; mean = %.3f", ci[1], ci[2], pm),
+    color = NULL, linetype = NULL
+  ) +
+  scale_linetype_manual(values = c("Posterior mean" = "solid",
+                                   "Population value" = "dashed")) +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "top")
+
