@@ -312,8 +312,7 @@ MHfunc <- function(y, X, b0 = rep(0, dim(X)[2] + 1), B0 = 1000*diag(dim(X)[2] + 
 	COVt <- tau^2*solve(solve(B0) + solve(COV)) # Covariance matrix for the proposal distribution
 	Accep <- rep(0, tot) # Space for calculating the acceptance rate
 	# Create progress bar in case that you want to see iterations progress
-	pb <- winProgressBar(title = "progress bar", min = 0,
-	max = tot, width = 300)
+	pb <- txtProgressBar(min = 0, max = tot, style = 3)
 	for(it in 1:tot){
 		BETAc <- BETA + MASS::mvrnorm(n = 1, mu = rep(0, K), Sigma = COVt) # Candidate location parameter
 		likecand <- sum((Xm%*%BETAc) * Y - apply(Xm%*%BETAc, 1, function(x) log(1 + exp(x)))) # Log likelihood for the candidate
@@ -327,8 +326,7 @@ MHfunc <- function(y, X, b0 = rep(0, dim(X)[2] + 1), B0 = 1000*diag(dim(X)[2] + 
 			Accep[it] <- 1 # Indicator if the candidate is accepted
 		} 
 		BETAS[it, ] <- BETA # Saving draws
-		setWinProgressBar(pb, it, title=paste( round(it/tot*100, 0),
-		"% done"))
+		setTxtProgressBar(pb, it)
 	}
 	close(pb)
 	keep <- seq(burnin, tot, thin)
@@ -753,7 +751,7 @@ B0 <- 1000*diag(k); b0 <- rep(0, k)
 MHfunction <- function(iter, tuning){
 	Beta <- rep(0, k); Acept <- NULL 
 	BetasPost <- matrix(NA, iter, k)
-	pb <- winProgressBar(title = "progress bar", min = 0, max = iter, width = 300)
+	pb <- txtProgressBar(min = 0, max = iter, style = 3)
 	for(s in 1:iter){
 		LogPostBeta <- -log.L(Beta) + mvtnorm::dmvnorm(Beta, mean = b0, sigma = B0, log = TRUE)
 		BetaC <- c(LaplacesDemon::rmvt(n=1, mu = MeanT, S = ScaleT, df = tuning))
@@ -766,7 +764,7 @@ MHfunction <- function(iter, tuning){
 			Acepti <- 0; Beta <- Beta
 		}
 		BetasPost[s, ] <- Beta; Acept <- c(Acept, Acepti)
-		setWinProgressBar(pb, s, title=paste( round(s/iter*100, 0),"% done"))
+		setTxtProgressBar(pb, s)
 	}
 	close(pb); AcepRate <- mean(Acept)
 	Results <- list(AcepRate = AcepRate, BetasPost = BetasPost)
@@ -1051,7 +1049,7 @@ MHfunction <- function(iter, sbeta, salpha){
 	Beta <- rep(0, k); 	Acept1 <- NULL; Acept2 <- NULL
 	BetasPost <- matrix(NA, iter, k); alpha <- 1
 	alphaPost <- rep(NA, iter); par <- c(alpha, Beta)
-	pb <- winProgressBar(title = "progress bar", min = 0, max = iter, width = 300)
+	pb <- txtProgressBar(min = 0, max = iter, style = 3)
 	for(s in 1:iter){
 		LogPostBeta <- -logLik(par) + dgamma(alpha, shape = alpha0, scale = delta0, log = TRUE) + mvtnorm::dmvnorm(Beta, mean = b0, sigma = B0, log = TRUE)
 		BetaC <- c(MASS::mvrnorm(1, mu = Beta, Sigma = sbeta^2*CovarBetas))
@@ -1075,7 +1073,7 @@ MHfunction <- function(iter, sbeta, salpha){
 		
 		BetasPost[s, ] <- Beta; alphaPost[s] <- alpha
 		Acept1 <- c(Acept1, Acept1i); Acept2 <- c(Acept2, Acept2i)
-		setWinProgressBar(pb, s, title=paste( round(s/iter*100, 0),"% done"))
+		setTxtProgressBar(pb, s)
 	}
 	close(pb)
 	AcepRateBeta <- mean(Acept1); AcepRateAlpha <- mean(Acept2)
@@ -1288,13 +1286,13 @@ PostBetas <- matrix(0, mcmc+burnin, k); Beta <- rep(0, k)
 PostSigma2 <- rep(0, mcmc+burnin); sig2 <- 1
 L <- log(1000000); U <- Inf
 # create progress bar in case that you want to see iterations progress
-pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+pb <- txtProgressBar(min = 0, max = tot, style = 3)
 for(s in 1:tot){
 	Yl <- sapply(1:N, function(i){PostYl(Beta = Beta, sig2 = sig2, L = L, U = U, i)})
 	Beta <- PostBeta(Yl = Yl, sig2 = sig2)
 	sig2 <- PostSig2(Beta = Beta, Yl = Yl) 
 	PostBetas[s,] <- Beta; PostSigma2[s] <- sig2
-	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0), "% done"))
+	setTxtProgressBar(pb, s)
 }
 close(pb)
 keep <- seq((burnin+1), tot, thin)

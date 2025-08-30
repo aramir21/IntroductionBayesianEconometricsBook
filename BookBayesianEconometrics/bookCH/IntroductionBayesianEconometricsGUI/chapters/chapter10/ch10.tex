@@ -356,7 +356,7 @@ Models <- matrix(rbinom(K*M, 1, p = 0.5), ncol=K, nrow = M)
 mllnew <- sapply(1:M,function(s){LogMLfunt(matrix(Models[s,], 1, K))})
 oind <- order(mllnew, decreasing = TRUE)
 mllnew <- mllnew[oind]; Models <- Models[oind, ]; iter <- 1000
-pb <- winProgressBar(title = "progress bar", min = 0, max = iter, width = 300); s <- 1
+pb <- txtProgressBar(min = 0, max = iter, style = 3); s <- 1
 while(s <= iter){
 	ActModel <- Models[M,]; idK <- which(ActModel == 1)
 	Kact <- length(idK)
@@ -424,7 +424,7 @@ while(s <= iter){
 		mllnew <- mllnew; Models <- Models
 	}
 	s <- s + 1
-	setWinProgressBar(pb, s, title=paste( round(s/iter*100, 0),"% done"))
+	setTxtProgressBar(pb, s)
 }
 close(pb)
 ModelsUni <- unique(Models)
@@ -836,7 +836,7 @@ oind <- order(mllnew, decreasing = TRUE)
 mllnew <- mllnew[oind]; Models <- Models[oind, ]
 # Hyperparameters MC3
 iter <- 25000
-pb <- winProgressBar(title = "progress bar", min = 0, max = iter, width = 300)
+pb <- txtProgressBar(min = 0, max = iter, style = 3)
 s <- 1
 while(s <= iter){
 	ActModel <- Models[M,]
@@ -918,7 +918,7 @@ while(s <= iter){
 		Models <- Models
 	}
 	s <- s + 1
-	setWinProgressBar(pb, s, title=paste( round(s/iter*100, 0),"% done"))
+	setTxtProgressBar(pb, s)
 }
 close(pb)
 \end{lstlisting}
@@ -1226,12 +1226,12 @@ iVarThetas <- solve(VarThetas)
 ChiSQ <- sapply(1:S, function(s){(Thetas[s,]-MeanThetas)%*%iVarThetas%*%(Thetas[s,]-MeanThetas)})
 alpha <- 0.01; criticalval <- qchisq(1-alpha, K + 1)
 idGoodThetas <- which(ChiSQ <= criticalval)
-pb <- winProgressBar(title = "progress bar", min = 0, max = S, width = 300)
+pb <- txtProgressBar(min = 0, max = S, style = 3)
 InvMargLik2 <- NULL
 for(s in idGoodThetas){
 	LogInvs <- GDmarglik(ids = s, X = X, Betas = Betas, MeanThetas = MeanThetas, VarThetas = VarThetas, sig2Post = sig2Post)
 	InvMargLik2 <- c(InvMargLik2, LogInvs)
-	setWinProgressBar(pb, s, title=paste( round(s/S*100, 0),"% done"))
+	setTxtProgressBar(pb, s)
 }
 close(pb); mean(InvMargLik2)
 # Restricted model
@@ -1260,12 +1260,12 @@ iVarThetasRest <- solve(VarThetasRest)
 		\begin{lstlisting}[language=R]
 ChiSQRest <- sapply(1:S, function(s){(ThetasRest[s,]-MeanThetasRest)%*%iVarThetasRest%*%(ThetasRest[s,]-MeanThetasRest)})
 idGoodThetasRest <- which(ChiSQRest <= criticalval)
-pb <- winProgressBar(title = "progress bar", min = 0, max = S, width = 300)
+pb <- txtProgressBar(min = 0, max = S, style = 3)
 InvMargLik1 <- NULL
 for(s in idGoodThetasRest){
 	LogInvs <- GDmarglik(ids = s, X = XRest, Betas = BetasRest, MeanThetas = MeanThetasRest, VarThetas = VarThetasRest, sig2Post = sig2PostRest)
 	InvMargLik1 <- c(InvMargLik1, LogInvs)
-	setWinProgressBar(pb, s, title=paste( round(s/S*100, 0),"% done"))
+	setTxtProgressBar(pb, s)
 }
 close(pb); summary(coda::mcmc(InvMargLik1))
 mean(InvMargLik1)

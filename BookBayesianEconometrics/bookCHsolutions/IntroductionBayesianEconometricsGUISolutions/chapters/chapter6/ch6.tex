@@ -167,14 +167,14 @@ PostSigma2 <- rep(0, mcmc+burnin)
 Beta <- rep(0, k)
 tau <- rep(1, N)
 # create progress bar in case that you want to see iterations progress
-pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+pb <- txtProgressBar(min = 0, max = tot, style = 3)
 for(s in 1:tot){
 	sig2 <- PostSig2(Beta = Beta, tau = tau)
 	PostSigma2[s] <- sig2
 	Beta <- PostBeta(sig2 = sig2, tau = tau)
 	PostBetas[s,] <- Beta
 	tau <- sapply(1:N, function(i){PostTau(sig2 = sig2, Beta = Beta, i)})
-	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0), "% done"))
+	setTxtProgressBar(pb, s)
 }
 close(pb)
 keep <- seq((burnin+1), tot, thin)
@@ -247,12 +247,12 @@ PostYl <- function(Beta, i){
 PostBetas <- matrix(0, mcmc+burnin, K)
 Beta <- rep(0, K)
 # create progress bar in case that you want to see iterations progress
-pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+pb <- txtProgressBar(min = 0, max = tot, style = 3)
 for(s in 1:tot){
 	Yl <- sapply(1:N, function(i){PostYl(Beta = Beta, i)})
 	Beta <- PostBeta(Yl = Yl)
 	PostBetas[s,] <- Beta
-	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0), "% done"))	
+	setTxtProgressBar(pb, s)
 }
 close(pb)
 keep <- seq((burnin+1), tot, thin)
@@ -495,7 +495,7 @@ mhop <- function(param0, G){
 	tau <- matrix(c(0), nrow = G, ncol = dplyr::n_distinct(y) - 2)
 	tau[1,] <- param0[(ncol(X)+1):(ncol(X) + dplyr::n_distinct(y) - 2)]
 	yl <- rep(0,length(y)); ar <- rep(0,G); B1 <- solve(t(X)%*%X+solve(B0))
-	pb <- winProgressBar(title = "progress bar", min = 0, max = G, width = 300)
+	pb <- txtProgressBar(min = 0, max = G, style = 3)
 	for(g in 2:G){
 		bg <- betasamples[g-1,]; tg <- tau[g-1,]
 		#Random walk M-H for delta
@@ -528,7 +528,7 @@ mhop <- function(param0, G){
 			b1 <- B1%*%(t(X)%*%yl + solve(B0)%*%b0)
 			betasamples[g,] <- mvrnorm(1, mu = b1, Sigma = B1)
 		}
-		setWinProgressBar(pb, g, title=paste( round(g/G*100, 0),"% done"))
+		setTxtProgressBar(pb, g)
 	}
 	close(pb)
 	return(cbind(betasamples, tau, ar))
@@ -725,12 +725,12 @@ PostE <- function(Beta, i){
 }
 PostBetas <- matrix(0, mcmc+burnin, k)
 Beta <- RegLS$coefficients
-pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+pb <- txtProgressBar(min = 0, max = tot, style = 3)
 for(s in 1:tot){
 	e <- sapply(1:N, function(i){PostE(Beta = Beta, i)})
 	Beta <- PostBeta(e = e)
 	PostBetas[s,] <- Beta
-	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+	setTxtProgressBar(pb, s)
 }
 close(pb)
 keep <- seq((burnin+1), tot, thin)

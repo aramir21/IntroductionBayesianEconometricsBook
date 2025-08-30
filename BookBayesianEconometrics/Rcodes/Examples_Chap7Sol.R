@@ -84,7 +84,7 @@ summary(coda::mcmc(alpha2_3))
 
 ########################## SUR: Utilities demand ########################## 
 rm(list = ls())
-set.seed(010101)
+set.seed(10101)
 library(dplyr)
 DataUt <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/Utilities.csv", sep = ",", header = TRUE, quote = "")
 DataUtEst <- DataUt %>%  

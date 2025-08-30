@@ -333,7 +333,7 @@ SumLS <- summary(RegLS)
 Beta <- SumLS[["coefficients"]][,1]
 sig2 <- SumLS[["sigma"]]^2; D <- diag(K2)
 tau <- rgamma(NT, shape = v/2, rate = v/2) 
-pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+pb <- txtProgressBar(min = 0, max = tot, style = 3)
 for(s in 1:tot){
 	bs <- Postb(Beta = Beta, sig2 = sig2, D = D, tau = tau)
 	D <- PostD(bs = bs)
@@ -345,7 +345,7 @@ for(s in 1:tot){
 	PostSig2s[s] <- sig2
 	Postbs[, , s] <- bs
 	PostTaus[s,] <- tau
-	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+	setTxtProgressBar(pb, s)
 }
 close(pb)
 keep <- seq((burnin+1), tot, thin)
@@ -655,7 +655,7 @@ D <- diag(K2); bs1 <- rnorm(N, 0, sd = D[1,1]^0.5)
 bs2 <- rnorm(N, 0, sd = D[2,2]^0.5); bs <- cbind(bs1, bs2)
 tuning <- 0.1; ropt <- 0.44
 tunepariter <- seq(round(tot/10, 0), tot, round(tot/10, 0));   l <- 1
-pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+pb <- txtProgressBar(min = 0, max = tot, style = 3)
 for(s in 1:tot){
 	LatY <- LatentMHV1(tuning = tuning, Beta = Beta, bs = bs, sig2 = sig2)
 	ylhat <- LatY[["ylhat"]]
@@ -676,7 +676,7 @@ for(s in 1:tot){
 	if(s == tunepariter[l]){
 		print(AcceptRate); l <- l + 1
 	}
-	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+	setTxtProgressBar(pb, s)
 }
 close(pb)
 keep <- seq((burnin+1), tot, thin)

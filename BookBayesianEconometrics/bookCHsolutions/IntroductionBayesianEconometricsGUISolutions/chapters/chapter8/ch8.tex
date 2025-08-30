@@ -245,7 +245,7 @@ S <- 2000; burnin <- 500; tot <- S + burnin; thin <- 5
 # Posterior draws
 sig2s <- rep(NA, tot); tau2s <- rep(NA, tot)
 alphas <- rep(NA, tot); betas <- matrix(NA, tot, T)
-pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+pb <- txtProgressBar(min = 0, max = tot, style = 3)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
@@ -288,7 +288,7 @@ for (s in 1:tot){
 	tau2s[s] <- tau2post
 	alphas[s] <- alphapost
 	betas[s,] <- Bt1DSpost
-	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0), "% done"))
+	setTxtProgressBar(pb, s)
 }
 close(pb); keep <- seq((burnin+1), tot, thin)
 betasF <- betas[keep,]; sig2sF <- coda::mcmc(sig2s[keep])
@@ -468,7 +468,7 @@ ProbAcept <- rep(NA, tot)
 # theta0 <- theta0
 theta0 <- c(mean(y), 0, 0, exp(var(y)))  
 M <- solve(VarPost); epsilon0 <- 0.4
-pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+pb <- txtProgressBar(min = 0, max = tot, style = 3)
 for(s in 1:tot){
 	epsilon <- runif(1, 0, 2*epsilon0)
 	L <- ceiling(1/epsilon)
@@ -476,7 +476,7 @@ for(s in 1:tot){
 	theta0 <- HMCs$theta 
 	thetaPost[s,] <- HMCs$theta
 	ProbAcept[s] <- HMCs$Prob
-	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0), "% done"))
+	setTxtProgressBar(pb, s)
 }
 close(pb)
 keep <- seq((burnin+1), tot, thin)
@@ -597,7 +597,7 @@ ind <- sample(1:N, size = N, replace = TRUE, prob = WeightsST[, 1]) # Resample
 particles[, 1] <- particles[, 1] # Resampled particles
 particlesT[, 1] <- particles[ind, 1] # Resampled particles
 WeightsST[, 1] <- rep(1/N, N) # Resampled weights
-pb <- winProgressBar(title = "progress bar", min = 0, max = T, width = 300)
+pb <- txtProgressBar(min = 0, max = T, style = 3)
 for (t in 2:T) {
 	particles[, t] <- rnorm(N, mu + phi*(particles[, t - 1] - mu), sigma)  # Sample from proposal
 	logalphas[, t] <- dnorm(y[t], 0, sd = exp(0.5*particles[,t]), log = TRUE) 
@@ -613,7 +613,7 @@ for (t in 2:T) {
 		ind <- sample(1:N, size = N, replace = TRUE, prob = WeightsST[, t])
 		particlesT[, 1:t] <- particles[ind, 1:t]
 	}
-	setWinProgressBar(pb, t, title=paste( round(t/T*100, 0), "% done"))
+	setTxtProgressBar(pb, t)
 }
 close(pb)
 \end{lstlisting}

@@ -434,11 +434,14 @@ ggplot(df_long, aes(x = Posterior, color = Method, fill = Method)) +
 summary(AER::ivreg(y ~ x | z))
 summary(lm(y ~ x))
 
-########################## Demand and supply: Simulation ##########################
+##################### BETEL: Demand vs Supply ######################
 # Simulation
 rm(list = ls()); set.seed(12345)
+# Population parameters demand
 B1 <- 5; B2 <- -0.5; B3 <- 0.8; B4 <- -0.4; B5 <- 0.7; SD <- 0.5
+# Population parameters supply
 A1 <- -2; A2 <- 0.5; A3 <- -0.4; SS <- 0.5
+# Reduced form parameters
 P0 <- (A1-B1)/(B2-A2); P2 <- -B3/(B2-A2); P3 <- -B4/(B2-A2); P1 <- A3/(B2-A2); P4 <- -B5/(B2-A2)
 T0 <- B1+B2*P0; T2 <- B3+B2*P2; T3 <- B4+B2*P3; T1 <- B2*P1; T4 <- B5+B2*P4;
 n <- 5000
@@ -447,183 +450,207 @@ VP <- (ES-ED)/(B2-A2); UQ <- B2*VP+ED
 y <- rnorm(n, 10, 1); pc <- rnorm(n, 5, 1); er <- rnorm(n, 15, 1); ps <- rnorm(n, 5, 1);
 p <- P0+P1*er+P2*y+P3*pc+P4*ps+VP
 q <- T0+T1*er+T2*y+T3*pc+T4*ps+UQ
-dat <- cbind(1,p,y,pc,ps,er) # Data
-# Function g_i by row for demand
-gfuncDem <- function(psi = psi, y = q, dat = dat) {
-  X <- dat[,1:5]
-  e <- y - X %*% psi
-  E <- e %*% rep(1,5)
-  Z <- dat[,c(1,3:6)]
-  G <- E * Z;
-  return(G)
-}
-nt <- round(n * 0.1, 0); # training sample size for prior
-psi0 <- lm(q[1:nt]~dat[1:nt,2:5])$coefficients # Starting value of psi = (theta, v), v is the slack parameter in CSS (2018)
-names(psi0) <- c("beta1","beta2","beta3","beta4","beta5")
-psi0_ <- as.matrix(psi0) # Prior mean of psi 
-Psi0_ <- 1000*rep(1,5) # Prior dispersions of psi
-lam0 <- .5*rnorm(5) # Starting value of lambda
-nu <- 2.5 # df of the prior student-t
-nuprop <- 15 # df of the student-t proposal
-n0 <- 1000 # burn-in
-m <- 10000 # iterations beyond burn-in
-# MCMC ESTIMATION BY THE CSS (2018) method
-psim <- betel::bayesetel(gfunc = gfuncDem,
-                         y = q[-(1:nt)],
-                         dat = dat[-(1:nt),],
-                         psi0 = psi0,
-                         lam0 = lam0,
-                         psi0_ = psi0_,
-                         Psi0_ = Psi0_,
-                         nu = nu,
-                         nuprop = nuprop,
-                         controlpsi = list(maxiterpsi = 50,
-                                           mingrpsi = 1.0e-8), #  list of parameters in maximizing likelihood over psi
-                         controllam = list(maxiterlam = 50, # list of parameters in minimizing dual over lambda
-                                           mingrlam = 1.0e-7),
-                         n0 = n0, m = m)
-summary(psim)
-ElastDemPrice <- psim[,2]
 
-# BETEL did not work for the supply equation
-# # Function g_i by row for supply
-# gfuncSup <- function(psi = psi, y = q, dat = dat) {
-#   X <- dat[,c(1:2,6)]
-#   e <- y - X %*% psi
-#   E <- e %*% rep(1,5)
-#   Z <- dat[,c(1,3:6)]
-#   G <- E * Z;
-#   return(G)
-# }
-# nt <- round(n * 0.1, 0); # training sample size for prior
-# psi0 <- lm(q[1:nt]~dat[1:nt,c(2,6)])$coefficients # Starting value of psi = (theta, v), v is the slack parameter in CSS (2018)
-# names(psi0) <- c("alpha1","alpha2","alpha3")
-# psi0_ <- as.matrix(psi0) # Prior mean of psi 
-# Psi0_ <- 1000*rep(1,3) # Prior dispersions of psi
-# lam0 <- .5*rnorm(5) # Starting value of lambda
-# nu <- 2.5 # df of the prior student-t
-# nuprop <- 15 # df of the student-t proposal
-# # MCMC ESTIMATION BY THE CSS (2018) method
-# psim1 <- betel::bayesetel(gfunc = gfuncSup,
-#                         y = q[-(1:nt)],
-#                         dat = dat[-(1:nt),],
-#                         psi0 = psi0,
-#                         lam0 = lam0,
-#                         psi0_ = psi0_,
-#                         Psi0_ = Psi0_,
-#                         nu = nu,
-#                         nuprop = nuprop,
-#                         controlpsi = list(maxiterpsi = 50,
-#                                           mingrpsi = 1.0e-8), #  list of parameters in maximizing likelihood over psi
-#                         controllam = list(maxiterlam = 50, # list of parameters in minimizing dual over lambda
-#                                           mingrlam = 1.0e-7),
-#                         n0 = n0, m = m)
-# summary(psim1)
-# ElastSupPrice <- psim[,2]
+# Supply
+p_s  <- as.numeric(scale(p,  TRUE, TRUE))
+er_s <- as.numeric(scale(er, TRUE, TRUE))
 
-#### BETEL from scratch ####
+X <- cbind(1, p_s, er_s)  # k = 3  (STRUCTURAL: intercept, p, er)
+Z <- cbind(1,
+           as.numeric(scale(y,  TRUE, TRUE)),
+           as.numeric(scale(pc, TRUE, TRUE)),
+           as.numeric(scale(ps, TRUE, TRUE)),
+           er_s)          # EXCLUDED instruments y,pc,ps, plus er
+
+k <- ncol(X); d <- ncol(Z)
+
+# ----- objective (stable) -----
 lambdafunc <- function(lambda, theta, q, X, Z){
-  e <- q - X %*% theta
-  E <- e %*% rep(1,5)
-  G <- E * Z
-  LamG <- mean(exp(G%*%lambda))
-  logLamG <- log(LamG)
-  return(logLamG)
+  e <- as.numeric(q - X %*% theta); if (!all(is.finite(e))) return(1e300)
+  G <- Z * e
+  eta <- as.numeric(G %*% lambda); if (!all(is.finite(eta))) return(1e300)
+  m <- max(eta); m + log(mean(exp(eta - m)))
 }
-lambda0 <- rnorm(5)
-X <- cbind(1,p,er); Z <- cbind(1,y,pc,ps,er); theta0 <- rnorm(k) # c(A1, A2, A3) 
-control <- list(maxit =10000)
-ResOpt <- optim(par = lambda0, fn = lambdafunc, control = control, theta = theta0, q = q, X = X, Z = Z)
-lambda <- ResOpt$par; theta <- theta0
-probsfunc <- function(lambda, theta, q, X, Z){
-  e <- q - X %*% theta
-  E <- e %*% rep(1,5)
-  G <- E * Z
-  Ps <- exp(G%*%lambda) / sum(exp(G%*%lambda))
-  if(round(sum(abs(t(Ps)%*%G)), 2) == 0){
-    Check <- "Yes"
-  }else{
-    Check <- "No"
-  }
-  return(list(Check = Check, Probs = Ps))
-  
+
+# ----- Profile ETEL log-likelihood (use this in MH) -----
+loglik_etel <- function(theta, q, X, Z){
+  e <- as.numeric(q - X %*% theta); if (!all(is.finite(e))) return(-Inf)
+  G <- Z * e
+  op <- optim(par = rep(0, ncol(G)), fn = function(l){
+    eta <- as.numeric(G %*% l); m <- max(eta)
+    m + log(mean(exp(eta - m)))
+  }, method="BFGS", control=list(maxit=2000))
+  if (!is.finite(op$value)) return(-Inf)
+  lam <- op$par
+  eta <- as.numeric(G %*% lam)
+  sum(eta) - length(e) * log(sum(exp(eta)))   # ∑ log p_i(θ)
 }
-Probs <- probsfunc(lambda = lambda, theta = theta0, q = q, X = X, Z = Z)
-# Metropolis-Hastings
-# Hyperparameters
-b0 <- rep(0, k)
-B0 <- 1000*diag(k)
-tune <- 0.0005
-# Number of samples
-S <- 10000; burnin <- 1000; thin <- 5; tot <- S + burnin
-# Initialize vectors
-accept <- logical(tot)
-BETA <- matrix(NA, tot, k)
-LAMBDA <- matrix(NA, tot, d)
-# Initial value
-Reg <- lm(q ~ p + er)
-BETA[1, ] <- Reg$coefficients
-ResOpt <- optim(par = rnorm(d), fn = lambdafunc, control = control, theta = BETA[1, ], q = q, X = X, Z = Z)
-LAMBDA[1, ] <- ResOpt$par
-Probs <- probsfunc(lambda = ResOpt$par, theta = BETA[1, ], q = q, X = X, Z = Z)
-# Metropolis-Hastings sampling
-pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
-for (s in 2:tot) {
-  epsilon <- rnorm(k, mean = 0, sd = tune)
-  candidate <- BETA[s - 1, ] + epsilon
-  lambdac <- LAMBDA[s - 1, ]
-  # Try to catch potential errors in the optimization
-  Res <- tryCatch(
-    optim(par = lambdac, fn = lambdafunc, control = control, theta = candidate, q = q, X = X, Z = Z),
-    error = function(e) { last_err <<- e; NULL }
-  )
-  if(!is.null(Res)){
-    lambdac <- Res$par
-  }else{
-    t <- 1
-    while(is.null(Res) && t < 20){
-      lambdac <- LAMBDA[s - 1, ] + rnorm(d)
-      Res <- tryCatch(
-        optim(par = lambdac, fn = lambdafunc, control = control, theta = candidate, q = q, X = X, Z = Z),
-        error = function(e) { last_err <<- e; NULL }
-      )
-      t <- t + 1
-    }
-    if(t < 20){
-      lambdac <- Res$par
-    }else{
-      lambdac <- LAMBDA[s - 1, ]
-    }
-  }
-  Probcs <- probsfunc(lambda = lambdac, theta = candidate, q = q, X = X, Z = Z)
-  priorRat <- mvtnorm::dmvnorm(candidate, mean = b0, sigma = B0, log=TRUE) - mvtnorm::dmvnorm(BETA[s-1,], mean = b0, sigma = B0, log=TRUE) 
-  LikRat <- sum(log(Probcs$Probs)) - sum(log(Probs$Probs)) 
-  alpha <- min(1, exp(priorRat + LikRat))
-  u <- runif(1)
-  if (u <= alpha) {
-    BETA[s, ] <- candidate
-    accept[s] <- TRUE
-    Probs <- Probcs
-    LAMBDA[s, ] <- lambdac
+
+theta0 <- coef(lm(q ~ p_s + er_s))
+# ----- MH using profile ETEL -----
+b0 <- rep(0, k); B0 <- 1000*diag(k)
+S <- 10000; burnin <- 2000; thin <- 5; tot <- S + burnin
+BETA <- matrix(NA, tot, k); accept <- logical(tot)
+step <- c(0.05, 0.02, 0.02)                  # preconditioned steps
+
+BETA[1,] <- theta0
+LL <- loglik_etel(BETA[1,], q, X, Z)
+
+pb <- txtProgressBar(min=0, max=tot, style=3)
+for(s in 2:tot){
+  cand <- BETA[s-1,] + rnorm(k, 0, step)
+  LLc  <- loglik_etel(cand, q, X, Z)
+  priorRat <- mvtnorm::dmvnorm(cand, b0, B0, log=TRUE) -
+    mvtnorm::dmvnorm(BETA[s-1,], b0, B0, log=TRUE)
+  loga <- (LLc - LL) + priorRat
+  if (is.finite(loga) && log(runif(1)) <= loga) {
+    BETA[s,] <- cand; LL <- LLc; accept[s] <- TRUE
   } else {
-    BETA[s, ] <- BETA[s - 1, ]
-    accept[s] <- FALSE
-    Probs <- Probs
-    LAMBDA[s, ] <- LAMBDA[s - 1, ]
+    BETA[s,] <- BETA[s-1,]; accept[s] <- FALSE
   }
-  setWinProgressBar(pb, s, title=paste( round(s/(tot)*100, 0),"% done"))
+  if (s %% 200 == 0) {          # gentle adaptation
+    acc <- mean(accept[(s-199):s])
+    if (acc > 0.4) step <- step * 1.25
+    if (acc < 0.15) step <- step / 1.25
+  }
+  setTxtProgressBar(pb, s)
 }
 close(pb)
-mean(accept)
-keep <- seq(burnin, tot, thin)
-mcmcBETA <- coda::mcmc(BETA[keep,]) 
-summary(mcmcBETA)
-plot(mcmcBETA)
-ElastSupPrice <- mcmcBETA[,2] 
+
+cat("\nAcceptance rate:", mean(accept), "\n")
+
+keep <- seq(burnin, tot, by = thin)
+post_s <- BETA[keep, , drop=FALSE]   # posterior draws in scaled space
+
+## ---------- Back-transform each draw to original scale ----------
+# If q = β0 + βp * (p - μp)/σp + βer * (er - μer)/σer + u
+# Then:
+# αp   = βp / σp
+# αer  = βer / σer
+# α0   = β0 - βp * μp/σp - βer * μer/σer
+p_mu <- mean(p);   p_sd <- sd(p)
+er_mu <- mean(er); er_sd <- sd(er)
+alpha_draws <- cbind(
+  alpha0  = post_s[,1] - post_s[,2] * (p_mu/p_sd) - post_s[,3] * (er_mu/er_sd),
+  alphap  = post_s[,2] / p_sd,
+  alphaer = post_s[,3] / er_sd
+)
+
+## ---------- Summaries ----------
+summ <- function(x) c(mean=mean(x), sd=sd(x), quantile(x, c(.025,.25,.5,.75,.975)))
+cat("\nPosterior (original scale):\n")
+print(rbind(
+  alpha0  = summ(alpha_draws[,"alpha0"]),
+  alphap  = summ(alpha_draws[,"alphap"]),
+  alphaer = summ(alpha_draws[,"alphaer"])
+))
+cat("\nTrue (original scale):\n")
+print(c(alpha0=A1, alphap=A2, alphaer=A3))
+ElastSupPrice <- alpha_draws[,2]
+
+# Demand
+y_s <- as.numeric(scale(y))
+pc_s <- as.numeric(scale(pc))
+ps_s <- as.numeric(scale(ps))
+Xdem <- cbind(1, p_s, y_s, pc_s, ps_s) 
+k <- ncol(Xdem); d <- ncol(Z)
+
+theta0 <- coef(lm(q ~ p_s + y_s + pc_s + ps_s))
+# ----- MH over θ using profile ETEL -----
+b0 <- rep(0, k); B0 <- 1000*diag(k)
+S <- 10000; burnin <- 2000; thin <- 5; tot <- S + burnin
+BETAdem <- matrix(NA, tot, k); accept <- logical(tot)
+step <- c(0.05, 0.02, 0.02)                  # preconditioned steps
+
+BETAdem[1,] <- theta0
+LL <- loglik_etel(BETAdem[1,], q, X = Xdem, Z)
+
+pb <- txtProgressBar(min=0, max=tot, style=3)
+for(s in 2:tot){
+  cand <- BETAdem[s-1,] + rnorm(k, 0, step)
+  LLc  <- loglik_etel(cand, q, X = Xdem, Z)
+  priorRat <- mvtnorm::dmvnorm(cand, b0, B0, log=TRUE) -
+    mvtnorm::dmvnorm(BETAdem[s-1,], b0, B0, log=TRUE)
+  loga <- (LLc - LL) + priorRat
+  if (is.finite(loga) && log(runif(1)) <= loga) {
+    BETAdem[s,] <- cand; LL <- LLc; accept[s] <- TRUE
+  } else {
+    BETAdem[s,] <- BETAdem[s-1,]; accept[s] <- FALSE
+  }
+  if (s %% 200 == 0) {          # gentle adaptation
+    acc <- mean(accept[(s-199):s])
+    if (acc > 0.4) step <- step * 1.25
+    if (acc < 0.15) step <- step / 1.25
+  }
+  setTxtProgressBar(pb, s)
+}
+close(pb)
+
+cat("\nAcceptance rate:", mean(accept), "\n")
+
+keep <- seq(burnin, tot, by = thin)
+postDem_s <- BETAdem[keep, , drop=FALSE]   # posterior draws in scaled space
+
+## ---------- Back-transform each draw to original scale ----------
+p_mu <- mean(p);   p_sd <- sd(p)
+y_mu <- mean(y); y_sd <- sd(y)
+pc_mu <- mean(pc); pc_sd <- sd(pc)
+ps_mu <- mean(ps); ps_sd <- sd(ps)
+alphaDem_draws <- cbind(
+  alpha0  = postDem_s[,1] - postDem_s[,2] * (p_mu/p_sd) - postDem_s[,3] * (y_mu/y_sd)
+  - postDem_s[,4] * (pc_mu/pc_sd) - postDem_s[,5] * (pc_mu/pc_sd),
+  alphap  = postDem_s[,2] / p_sd,
+  alphay = postDem_s[,3] / y_sd,
+  alphapc = postDem_s[,4] / pc_sd,
+  alphaps = postDem_s[,5] / ps_sd
+)
+
+## ---------- Summaries ----------
+summ <- function(x) c(mean=mean(x), sd=sd(x), quantile(x, c(.025,.25,.5,.75,.975)))
+cat("\nPosterior (original scale):\n")
+print(rbind(
+  alpha0  = summ(alphaDem_draws[,"alpha0"]),
+  alphap  = summ(alphaDem_draws[,"alphap"]),
+  alphay = summ(alphaDem_draws[,"alphay"]),
+  alphapc = summ(alphaDem_draws[,"alphapc"]),
+  alphaps = summ(alphaDem_draws[,"alphaps"])
+))
+cat("\nTrue (original scale):\n")
+print(c(alpha0=B1, alphap=B2, alphay=B3, alphpc=B4, alphaps=B5))
+ElastDemPrice <- alphaDem_draws[,2]
 tax <- 0.1
 CausalEffect <- (ElastSupPrice*ElastDemPrice)*log(1+tax)/(ElastSupPrice-ElastDemPrice) 
 popCauEff <- (A2 * B2)/(A2 - B2) * log(1 + tax)
 
+library(ggplot2)
 
+post_draws <- as.numeric(CausalEffect)
+
+dens <- density(post_draws, adjust = 1)
+df   <- data.frame(x = dens$x, y = dens$y)
+ci   <- quantile(post_draws, c(0.025, 0.975))
+pm   <- mean(post_draws)
+
+lines_df <- data.frame(
+  x    = c(pm, as.numeric(popCauEff)),
+  name = c("Posterior mean", "Population value")
+)
+
+ggplot(df, aes(x, y)) +
+  geom_area(data = subset(df, x >= ci[1] & x <= ci[2]), alpha = 0.15) +
+  geom_line(linewidth = 1) +
+  geom_vline(data = lines_df,
+             aes(xintercept = x, color = name, linetype = name),
+             linewidth = 0.8) +
+  labs(
+    x = expression(tau), y = "Density",
+    title = "Posterior of the causal effect",
+    subtitle = sprintf("95%% CrI: [%.3f, %.3f]; mean = %.3f", ci[1], ci[2], pm),
+    color = NULL, linetype = NULL
+  ) +
+  scale_linetype_manual(values = c("Posterior mean" = "solid",
+                                   "Population value" = "dashed")) +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "top")
 
 

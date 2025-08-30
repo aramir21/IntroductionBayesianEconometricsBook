@@ -1053,7 +1053,7 @@ Clat <- sapply(1:N, function(i){SampleType(z = Z[i], d = D[i], y = Y[i], wc = wc
 a0 <- 1; b0 <- 1 # Hyperparameters beta priors
 burnin <- 500; S <- 2000; tot <- S + burnin 
 PosteriorDraws <- matrix(NA, tot, 5)
-pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+pb <- txtProgressBar(min = 0, max = tot, style = 3)
 
 for(s in 1:tot){
 	dataLat <- cbind(mydata, Clat)
@@ -1070,7 +1070,7 @@ for(s in 1:tot){
 	nn0 <- rbeta(1, 1 + Nn001, 1 + Nn000)
 	Clat <- sapply(1:N, function(i){SampleType(z = Z[i], d = D[i], y = Y[i], wc = wc, nc0 = nc0, nn0 = nn0)})
 	PosteriorDraws[s, ] <- c(wc, nc1, nc0, nn1, nn0)
-	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+	setTxtProgressBar(pb, s)
 }
 close(pb)
 keep <- seq((burnin+1), tot)
@@ -1113,7 +1113,7 @@ Thus, this example illustrates how the Bayesian framework provides a way to quan
 	\begin{VF}
 		\begin{lstlisting}[language=R]
 PosteriorDrawsER <- matrix(NA, tot, 4)
-pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+pb <- txtProgressBar(min = 0, max = tot, style = 3)
 
 for(s in 1:tot){
 	dataLat <- cbind(mydata, Clat)
@@ -1129,7 +1129,7 @@ for(s in 1:tot){
 	nc0 <- rbeta(1, 1 + Nc011, 1 + Nc010)
 	Clat <- sapply(1:N, function(i){SampleType(z = Z[i], d = D[i], y = Y[i], wc = wc, nc0 = nc0, nn0 = nn)})
 	PosteriorDrawsER[s, ] <- c(wc, nc1, nc0, nn)
-	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+	setTxtProgressBar(pb, s)
 }
 close(pb)
 keep <- seq((burnin+1), tot)
@@ -1225,7 +1225,7 @@ PostBetas <- matrix(0, tot, k)
 PostGammas <- matrix(0, tot, kz)
 PostSigmas <- matrix(0, tot, 2*(2+1)/2)
 Beta <- rep(0, k); Gamma <- rep(0, kz)
-pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+pb <- txtProgressBar(min = 0, max = tot, style = 3)
 for(s in 1:tot){
 	Sigma <- PostSigma(Beta = Beta, Gamma = Gamma)
 	Beta <- PostBeta(Sigma = Sigma, Gamma = Gamma)
@@ -1233,7 +1233,7 @@ for(s in 1:tot){
 	PostBetas[s,] <- Beta
 	PostGammas[s,] <- Gamma
 	PostSigmas[s,] <- matrixcalc::vech(Sigma)
-	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+	setTxtProgressBar(pb, s)
 }
 close(pb)
 keep <- seq((burnin+1), tot, thin)
@@ -2087,7 +2087,7 @@ SIGMAS <- matrix(NA, tot, 4)
 b0c <- rep(0, 3); b1c <- rep(0, 3); b1a <- rep(0, 2); b0n <- rep(0, 2)
 sigma21c <- 0.1; sigma20c <- 0.1; sigma20n <- 0.1; sigma21a <- 0.1
 EtacNew <- 0.5; EtanNew <- 0.25; EtaaNew <- 0.25
-pb <- winProgressBar(title = "progress bar", min = 0, max = tot, width = 300)
+pb <- txtProgressBar(min = 0, max = tot, style = 3)
 for(s in 1:tot){
 	ProbC0 <- sapply(I00, function(i)Pc0(b0c, sigma20c, EtacNew, b0n, sigma20n, EtanNew, i = i))
 	ProbC1 <- sapply(I11, function(i)Pc1(b1c, sigma21c, EtacNew, b1a, sigma21a, EtaaNew, i = i))
@@ -2131,7 +2131,7 @@ for(s in 1:tot){
 	sigma20c <- PostSig2(Beta = b0c, lambda = Lambda[idx_c0], y = Y[idx_c0], H = Wc[idx_c0,])
 	sigma21c <- PostSig2(Beta = b1c, lambda = Lambda[idx_c1], y = Y[idx_c1], H = Wc[idx_c1,])
 	SIGMAS[s, ] <- c(sigma21a, sigma20n, sigma20c, sigma21c)
-	setWinProgressBar(pb, s, title=paste( round(s/tot*100, 0),"% done"))
+	setTxtProgressBar(pb, s)
 }
 close(pb)
 keep <- seq((burnin+1), tot)
@@ -2491,7 +2491,7 @@ clusterExport(ClusterHope, list("Z", "X", "c", "y", "N", "idc1", "nc1", "PostCla
 	\textit{R code. Simulation: Sample selection model}
 	\begin{VF}
 		\begin{lstlisting}[language=R]	
-pb <- winProgressBar(title = "progress bar", min = 0, max = S, width = 300)
+pb <- txtProgressBar(min = 0, max = tot, style = 3)
 for(rep in 1:S){
 	LatPost <- t(parSapply(ClusterHope, 1:N, function(i){PostClat(theta = Thetap, sig12 = Sig12p, omega11 = Omega11p, i)}))
 	Thetap <- PostThetaNew(Sigma = Sigmap, clat = LatPost)
@@ -2501,7 +2501,7 @@ for(rep in 1:S){
 	PostThetasDraws[rep,] <- Thetap
 	PostSigmaDraws[rep, ] <- c(Omega11p+Sig12p^2, Sig12p)
 	clusterExport(ClusterHope, list("Thetap", "Sig12p", "Omega11p"))
-	setWinProgressBar(pb, rep, title=paste( round(rep/S*100, 0),"% done"))
+	setTxtProgressBar(pb, rep)
 }
 stopCluster(ClusterHope)
 close(pb)
@@ -2997,72 +2997,21 @@ and
 \]
 to identify the demand and supply functions. Note that the demand equation is \textit{exactly identified}, whereas the supply equation is \textit{over identified}. See Section \ref{sec71} for details about identification of linear systems of equations.
 
-We perform a simulation exercise to analyze the hypothetical causal effects of a new tax rate of 10\% simulating the demand and supply equations using the following structural parameters $\bm{\beta} = \left[ 5 \ -0.5 \ 0.8 \ -0.4 \ 0.7 \right]^{\top}$, $\bm{\alpha} = \left[ -2 \ 0.5 \ -0.4 \right]^{\top}$, $u_1 \sim N(0, 0.5^2)$, and $u_2 \sim N(0, 0.5^2)$ assuming a sample size equal to 5,000. Additionally, assume that $y \sim N(10, 1)$, $pc \sim N(5, 1)$, $ps \sim N(5, 1)$, and $er \sim N(15, 1)$. We use the demand moment conditions and the \textit{betel} package to perform BETEL-based inference for the demand function. In Exercise~11, you will repeat the analysis for the supply function using its moment conditions and then estimate the causal effect of the tax. The population causal effect of the tax on quantity is
+We perform a simulation exercise to analyze the hypothetical causal effects of a new tax rate of 10\% simulating the demand and supply equations using the following structural parameters $\bm{\beta} = \left[ 5 \ -0.5 \ 0.8 \ -0.4 \ 0.7 \right]^{\top}$, $\bm{\alpha} = \left[ -2 \ 0.5 \ -0.4 \right]^{\top}$, $u_1 \sim N(0, 0.5^2)$, and $u_2 \sim N(0, 0.5^2)$ assuming a sample size equal to 5,000. Additionally, assume that $y \sim N(10, 1)$, $pc \sim N(5, 1)$, $ps \sim N(5, 1)$, and $er \sim N(15, 1)$. 
+
+The population causal effect of the tax on quantity is
 \[
 \tau=\frac{(-0.5)\times 0.5}{0.5-(-0.5)}\log(1+0.1)\approx -0.0238,
 \]
 which implies that a \(10\%\) tax reduces traded quantity by approximately \(2.4\%\).
 
-The following code implements inference for the demand function. Figure~\ref{fig12_SimCausality} displays the posterior distribution of the causal effect. The 95\% credible interval contains the population value, and the posterior mean lies close to it.
-
-\begin{tcolorbox}[enhanced,width=4.67in,center upper,
-	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Simulation demand and supply: Simultaneous causality}
-	\begin{VF}
-		\begin{lstlisting}[language=R]	
-rm(list = ls()); set.seed(12345)
-# Population parameters demand
-B1 <- 5; B2 <- -0.5; B3 <- 0.8; B4 <- -0.4; B5 <- 0.7; SD <- 0.5
-# Population parameters supply
-A1 <- -2; A2 <- 0.5; A3 <- -0.4; SS <- 0.5
-# Reduced form parameters
-P0 <- (A1-B1)/(B2-A2); P2 <- -B3/(B2-A2); P3 <- -B4/(B2-A2); P1 <- A3/(B2-A2); P4 <- -B5/(B2-A2)
-T0 <- B1+B2*P0; T2 <- B3+B2*P2; T3 <- B4+B2*P3; T1 <- B2*P1; T4 <- B5+B2*P4;
-n <- 5000
-ED <- rnorm(n, 0, SD); ES <- rnorm(n, 0, SS)
-VP <- (ES-ED)/(B2-A2); UQ <- B2*VP+ED
-y <- rnorm(n, 10, 1); pc <- rnorm(n, 5, 1); er <- rnorm(n, 15, 1); ps <- rnorm(n, 5, 1);
-p <- P0+P1*er+P2*y+P3*pc+P4*ps+VP
-q <- T0+T1*er+T2*y+T3*pc+T4*ps+UQ
-dat <- cbind(1,p,y,pc,ps,er) # Data
-# Function g_i by row for demand
-gfuncDem <- function(psi = psi, y = q, dat = dat) {
-	X <- dat[,1:5]
-	e <- y - X %*% psi
-	E <- e %*% rep(1,5)
-	Z <- dat[,c(1,3:6)]
-	G <- E * Z;
-	return(G)
-}
-nt <- round(n * 0.1, 0); # training sample size for prior
-psi0 <- lm(q[1:nt]~dat[1:nt,2:5])$coefficients # Starting value of psi = (theta, v), v is the slack parameter in CSS (2018)
-names(psi0) <- c("beta1","beta2","beta3","beta4","beta5")
-psi0_ <- as.matrix(psi0) # Prior mean of psi 
-Psi0_ <- 1000*rep(1,5) # Prior dispersions of psi
-lam0 <- .5*rnorm(5) # Starting value of lambda
-nu <- 2.5 # df of the prior student-t
-nuprop <- 15 # df of the student-t proposal
-n0 <- 1000 # burn-in
-m <- 10000 # iterations beyond burn-in
-# MCMC ESTIMATION BY THE CSS (2018) method
-psim <- betel::bayesetel(gfunc = gfuncDem, y = q[-(1:nt)], dat = dat[-(1:nt),], psi0 = psi0, lam0 = lam0, psi0_ = psi0_, Psi0_ = Psi0_, nu = nu, nuprop = nuprop,
-controlpsi = list(maxiterpsi = 50,
-mingrpsi = 1.0e-8), #  list of parameters in maximizing likelihood over psi
-controllam = list(maxiterlam = 50, # list of parameters in minimizing dual over lambda
-mingrlam = 1.0e-7),
-n0 = n0, m = m)
-summary(psim)
-\end{lstlisting}
-	\end{VF}
-\end{tcolorbox} 
+In Exercise~11, you are asked to program a BETEL algorithm from scratch to perform inference in this example. Figure~\ref{fig12_SimCausality} displays the posterior distribution of the causal effect. The 95\% credible interval contains the population value, and the posterior mean lies close to it.
 
 \begin{figure}[h!]
-	\includegraphics[width=340pt, height=200pt]{Chapters/chapter12/figures/FigME.png}
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter12/figures/fig12_SimCausality.png}
 	\caption[List of figure caption goes here]{Posterior distribution of the causal effect of a tax: BETEL}\label{fig12_SimCausality}
 \end{figure} 
   
-
-
 \cite{chib2018moment} propose a unified framework based on marginal likelihoods and Bayes factors for comparing different moment-restricted models and for discarding misspecified restrictions. They demonstrate the model selection consistency of the marginal likelihood, showing that it favors the specification with the fewest parameters and the largest number of valid moment restrictions. When models are misspecified, the marginal likelihood procedure selects the model that is closest to the (unknown) true data-generating process in terms of Kullback–Leibler divergence. See \cite{lazar2021review, liu2023review} for comprehensive reviews of recent advances in empirical likelihood and exponentially tilted empirical likelihood methods, including their Bayesian variants.
 
 \section{A general framework for updating belief distributions}\label{sec12_10}
@@ -3171,7 +3120,7 @@ Read this reference \cite{iacovone2023bayesian} before begin working in this cha
 	
 	\item \textbf{Simultaneous causality continues}
 	
-	Use the supply-side moment conditions to conduct inference for the supply function in the demand–supply example programming a BETEL from scratch. Then estimate the causal effect of the tax on the traded quantity.	
+	Use the demand–supply simulation and the moment conditions to infer the causal effect of a	10\% tax, implementing a BETEL algorithm from scratch.
 	
 	
 	
