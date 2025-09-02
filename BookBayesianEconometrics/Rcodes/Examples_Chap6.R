@@ -509,11 +509,11 @@ thin <- 1
 # Quantile
 q <- 0.5
 # Posterior distributions using packages: MCMCpack sets the model in terms of the precision matrix
-posterior  <- MCMCpack::MCMCquantreg(y~X-1, tau = q, b0=b0, B0 = B0i, burnin = burnin, mcmc = mcmc, thin = thin, below = 13.82, above = Inf)
+posterior  <- MCMCpack::MCMCquantreg(y~X-1, tau = q, b0=b0, B0 = B0i, burnin = burnin, mcmc = mcmc, thin = thin)
 summary(coda::mcmc(posterior))
 q <- 0.9
 # Posterior distributions using packages: MCMCpack sets the model in terms of the precision matrix
-posterior  <- MCMCpack::MCMCquantreg(y~X-1, tau = q, b0=b0, B0 = B0i, burnin = burnin, mcmc = mcmc, thin = thin, below = 13.82, above = Inf)
+posterior  <- MCMCpack::MCMCquantreg(y~X-1, tau = q, b0=b0, B0 = B0i, burnin = burnin, mcmc = mcmc, thin = thin)
 summary(coda::mcmc(posterior))
 
 ########################## Bayesian bootstrap: Simulation ##########################

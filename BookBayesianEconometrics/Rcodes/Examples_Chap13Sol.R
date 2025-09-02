@@ -653,4 +653,107 @@ ggplot(df, aes(x, y)) +
   theme_minimal(base_size = 12) +
   theme(legend.position = "top")
 
+############# Instrumental Variable Quantile Regression: Simulation ##############
+rm(list = ls()); set.seed(10101)
+library(quantreg)
+### Siulation ####
+# Asymmetric Laplace for general τ in (0,1) with location 0, scale > 0
+# Normal–Exponential mixture (Kozumi–Kobayashi, 2011)
+rALD <- function(n, tau) {
+  stopifnot(tau > 0, tau < 1)
+  theta <- (1 - 2*tau) / (tau * (1 - tau))
+  psi   <- 2 / (tau * (1 - tau))
+  v  <- rexp(n, rate = 1)
+  z  <- rnorm(n)
+  mu <- theta * v + sqrt(psi * v) * z
+  return(mu)
+}
+
+## --- Simulator for a given τ ---
+simulate_qr <- function(n = 5000, tau = 0.5,
+                        beta0 = 0.7,
+                        beta1_tau = 1.5,
+                        beta2_tau = 1,
+                        gamma = 1,
+                        delta = 0.5) {
+  # Nonnegative regressor stabilizes intercept & preserves τ-ordering of slopes
+  x <- runif(n, 0, 1)
+  # optional: anchor a portion at 0 to pin intercept
+  x[sample.int(n, size = round(0.1*n))] <- 0
+  mu <- rALD(n, tau = tau) # ALD error
+  z <- rnorm(n) # Instrument
+  d <- gamma * z + delta * mu
+  y <- beta0 + beta1_tau * x + beta2_tau * d + mu
+  df <- data.frame(y, x, d, z)
+}
+
+tau <- 0.75
+df <- simulate_qr(tau = tau, beta0 = 1, beta1_tau = 1,
+                  beta2_tau = 1, gamma = 1, delta = 1, n = 5000)
+Reg <- MCMCpack::MCMCquantreg(y~x+d, data = df, tau = tau)
+summary(Reg)
+summary(rq(y ~ x + d, tau = tau, data = df))
+
+LossFunct <- function(par, tau, y, z, x, d){
+  n <- length(y)
+  X <- cbind(1, x, d)
+  Z <- cbind(1, x, z)
+  Ind <- as.numeric(y <= X%*%par) 
+  gn <- colMeans((tau - Ind) * Z)
+  Wni <- lapply(1:n, function(i) {Z[i,] %*% t(Z[i,])}) 
+  Wn <- 1 / (tau * (1 - tau)) * solve(Reduce("+", Wni)/n)
+  Ln <- - 0.5 * n * t(gn) %*% Wn %*% gn
+  return(Ln)
+}
+
+par0 <- rnorm(3)
+LossFunct(par = par0, tau = tau, y = df$y, z = df$z, x = df$x, d = df$d)
+
+# ----- MH using Ln -----
+k <- 3
+b0 <- rep(0, k); B0 <- 1000*diag(k)
+S <- 5000; burnin <- 6000; thin <- 5; tot <- S + burnin
+BETA <- matrix(NA, tot, k); accept <- logical(tot)
+step <- 0.05
+
+BETA[1,] <- par0
+LL <- LossFunct(par = BETA[1,], tau = tau, y = df$y, z = df$z, x = df$x, d = df$d)
+
+pb <- txtProgressBar(min=0, max=tot, style=3)
+for(s in 2:tot){
+  cand <- BETA[s-1,] + rnorm(k, 0, step)
+  LLc  <- LossFunct(par = cand, tau = tau, y = df$y, z = df$z, x = df$x, d = df$d)
+  priorRat <- mvtnorm::dmvnorm(cand, b0, B0, log=TRUE) -
+    mvtnorm::dmvnorm(BETA[s-1,], b0, B0, log=TRUE)
+  loga <- (LLc - LL) + priorRat
+  if (is.finite(loga) && log(runif(1)) <= loga) {
+    BETA[s,] <- cand; LL <- LLc; accept[s] <- TRUE
+  } else {
+    BETA[s,] <- BETA[s-1,]; accept[s] <- FALSE
+  }
+  if (s <= burnin && s %% 200 == 0) {          # gentle adaptation
+    acc <- mean(accept[(s-199):s])
+    if (acc > 0.4) step <- step * 1.25
+    if (acc < 0.15) step <- step / 1.25
+  }
+  setTxtProgressBar(pb, s)
+}
+close(pb)
+
+cat("\nAcceptance rate:", mean(accept), "\n")
+
+keep <- seq(burnin, tot, by = thin)
+post <- BETA[keep, , drop=FALSE]   # posterior draws in scaled space
+
+colnames(post) <- c("beta0","beta_x","beta_d")
+
+# Posterior summaries
+post_mean <- colMeans(post)
+post_ci   <- apply(post, 2, quantile, c(0.025, 0.975))
+
+round(post_mean, 3)
+round(post_ci, 3)
+
+plot(coda::mcmc(post))
+
 
