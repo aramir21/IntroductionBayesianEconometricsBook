@@ -1240,12 +1240,12 @@ w <- as.matrix(cbind(age, inc, fsize, educ, marr, twoearn, db, pira, hown))  # E
 z <- as.matrix(e401)          # Instrument: eligibility (NO intercept here)
 
 library(quantreg)
-tau <- 0.5 
+tau <- 0.9 
 QuanReg <- rq(y ~ p401 + age + inc + fsize + educ + marr + twoearn + db + pira + hown, tau = tau, data = df)
 summary(QuanReg)
 
 Reg <- MCMCpack::MCMCquantreg(y ~ x + w, data = df, tau = tau)
-summary(Reg)
+BayesExo <- summary(Reg)
 
 LossFunct <- function(par, tau, y, z, x, w){
   n <- length(y)
@@ -1260,20 +1260,20 @@ LossFunct <- function(par, tau, y, z, x, w){
 }
 par0 <- colMeans(Reg)
 LossFunct(par = par0, tau = tau, y = y, z = z, x = x, w = w)
-
 # ----- MH using Ln -----
 k <- length(par0)
 b0 <- rep(0, k); B0 <- 1000*diag(k)
 S <- 10000; burnin <- 10000; thin <- 1; tot <- S + burnin
 BETA <- matrix(NA, tot, k); accept <- logical(tot)
-step <- 0.5
+SIGMA <- diag(BayesExo[["statistics"]][,2])
+tune <- 2.4 / sqrt(k)
 
 BETA[1,] <- par0
 LL <- LossFunct(par = BETA[1,], tau = tau, y = y, z = z, x = x, w = w)
 
 pb <- txtProgressBar(min=0, max=tot, style=3)
 for(s in 2:tot){
-  cand <- BETA[s-1,] + rnorm(k, 0, step)
+  cand <- BETA[s-1,] + MASS::mvrnorm(1, rep(0, k), tune*SIGMA)
   LLc  <- LossFunct(par = cand, tau = tau, y = y, z = z, x = x, w = w)
   priorRat <- mvtnorm::dmvnorm(cand, b0, B0, log=TRUE) -
     mvtnorm::dmvnorm(BETA[s-1,], b0, B0, log=TRUE)
@@ -1285,8 +1285,8 @@ for(s in 2:tot){
   }
   if (s <= burnin && s %% 100 == 0) {          # gentle adaptation
     acc <- mean(accept[(s-99):s])
-    if (acc > 0.40) step <- step * 1.25
-    if (acc < 0.15) step <- step / 1.25
+    if (acc > 0.35) tune <- tune * 1.25
+    if (acc < 0.15) tune <- tune / 1.25
   }
   setTxtProgressBar(pb, s)
 }

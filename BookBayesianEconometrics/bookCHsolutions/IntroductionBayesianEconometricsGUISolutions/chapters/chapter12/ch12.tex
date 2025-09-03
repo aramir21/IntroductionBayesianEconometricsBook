@@ -796,4 +796,128 @@ popCauEff <- (A2 * B2)/(A2 - B2) * log(1 + tax)
 	\caption[List of figure caption goes here]{Posterior distribution causal effect: BETEL}\label{fig12_Causal}
 \end{figure}
 
+	\item Perform a simulation of the instrumental variable quantile regression, and then perform inference using the general Bayes posterior framework. Use the Laplace asymmetric distribution to simulate the stochastic error, such that 
+\[
+\int_{-\infty}^{0} f_{\tau}(\mu_i) \, d\mu_i = \tau,
+\] 
+which implies that the $\tau$-th quantile of $\mu_i$ is 0. In addition, let 
+\[
+q_{\tau}(Y_i \mid X_i, D_i) = \beta_0 + \beta_1 X_i + \beta_2 D_i
+\] 
+denote the $\tau$-th quantile regression function of $Y_i$ given $X_i$ and $D_i$, with $0 < \tau < 1$. Specifically, consider the model
+\[
+Y_i = \beta_{0\tau} + \beta_{1\tau} X_i + \beta_{2\tau} D_i + \mu_i,
+\]
+together with 
+\[
+D_i = \gamma Z_i + \delta \mu_i, \quad Z_i \sim N(0,1).
+\]
+
+
+\textbf{Answer:}
+
+The following code shows how to perform inference in this simulation. The 95\% credible intervals encompass the population values, and the posterior means are also close to these values.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Instrumental Variable Quantile Regression: General Bayes posteriors}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+rm(list = ls()); set.seed(10101); library(quantreg)
+### Simulation ####
+# Asymmetric Laplace
+rALD <- function(n, tau) {
+	stopifnot(tau > 0, tau < 1)
+	theta <- (1 - 2*tau) / (tau * (1 - tau))
+	psi   <- 2 / (tau * (1 - tau))
+	v  <- rexp(n, rate = 1)
+	z  <- rnorm(n)
+	mu <- theta * v + sqrt(psi * v) * z
+	return(mu)
+}
+## --- Simulator for a given tau ---
+simulate_qr <- function(n = 5000, tau = 0.5,
+beta0 = 0.7,
+beta1_tau = 1.5,
+beta2_tau = 1,
+gamma = 1,
+delta = 0.5) {
+	# Nonnegative regressor stabilizes intercept & preserves tau-ordering of slopes
+	x <- runif(n, 0, 1)
+	# optional: anchor a portion at 0 to pin intercept
+	x[sample.int(n, size = round(0.1*n))] <- 0
+	mu <- rALD(n, tau = tau) # ALD error
+	z <- rnorm(n) # Instrument
+	d <- gamma * z + delta * mu
+	y <- beta0 + beta1_tau * x + beta2_tau * d + mu
+	df <- data.frame(y, x, d, z)
+}
+tau <- 0.75
+df <- simulate_qr(tau = tau, beta0 = 1, beta1_tau = 1,
+beta2_tau = 1, gamma = 1, delta = 1, n = 5000)
+Reg <- MCMCpack::MCMCquantreg(y~x+d, data = df, tau = tau)
+summary(Reg)
+summary(rq(y ~ x + d, tau = tau, data = df))
+LossFunct <- function(par, tau, y, z, x, d){
+	n <- length(y)
+	X <- cbind(1, x, d)
+	Z <- cbind(1, x, z)
+	Ind <- as.numeric(y <= X%*%par) 
+	gn <- colMeans((tau - Ind) * Z)
+	Wni <- lapply(1:n, function(i) {Z[i,] %*% t(Z[i,])}) 
+	Wn <- 1 / (tau * (1 - tau)) * solve(Reduce("+", Wni)/n)
+	Ln <- - 0.5 * n * t(gn) %*% Wn %*% gn
+	return(Ln)
+}
+par0 <- rnorm(3)
+LossFunct(par = par0, tau = tau, y = df$y, z = df$z, x = df$x, d = df$d)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Instrumental Variable Quantile Regression: General Bayes posteriors}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+# ----- MH using Ln -----
+k <- 3
+b0 <- rep(0, k); B0 <- 1000*diag(k)
+S <- 5000; burnin <- 6000; thin <- 5; tot <- S + burnin
+BETA <- matrix(NA, tot, k); accept <- logical(tot)
+step <- 0.05
+BETA[1,] <- par0
+LL <- LossFunct(par = BETA[1,], tau = tau, y = df$y, z = df$z, x = df$x, d = df$d)
+pb <- txtProgressBar(min=0, max=tot, style=3)
+for(s in 2:tot){
+	cand <- BETA[s-1,] + rnorm(k, 0, step)
+	LLc  <- LossFunct(par = cand, tau = tau, y = df$y, z = df$z, x = df$x, d = df$d)
+	priorRat <- mvtnorm::dmvnorm(cand, b0, B0, log=TRUE) -
+	mvtnorm::dmvnorm(BETA[s-1,], b0, B0, log=TRUE)
+	loga <- (LLc - LL) + priorRat
+	if (is.finite(loga) && log(runif(1)) <= loga) {
+		BETA[s,] <- cand; LL <- LLc; accept[s] <- TRUE
+	} else {
+		BETA[s,] <- BETA[s-1,]; accept[s] <- FALSE
+	}
+	if (s <= burnin && s %% 200 == 0) {          
+		acc <- mean(accept[(s-199):s])
+		if (acc > 0.4) step <- step * 1.25
+		if (acc < 0.15) step <- step / 1.25
+	}
+	setTxtProgressBar(pb, s)
+}
+close(pb)
+cat("\nAcceptance rate:", mean(accept), "\n")
+keep <- seq(burnin, tot, by = thin)
+post <- BETA[keep, , drop=FALSE]   # posterior draws in scaled space
+colnames(post) <- c("beta0","beta_x","beta_d")
+# Posterior summaries
+post_mean <- colMeans(post)
+post_ci   <- apply(post, 2, quantile, c(0.025, 0.975))
+round(post_mean, 3); round(post_ci, 3)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
 \end{enumerate}

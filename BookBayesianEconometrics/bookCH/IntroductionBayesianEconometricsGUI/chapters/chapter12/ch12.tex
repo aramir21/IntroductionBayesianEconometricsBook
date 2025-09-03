@@ -2538,8 +2538,7 @@ The point of departure is a set of moment conditions
 \[
 \mathbb{E}\!\big[\mathbf{g}(\mathbf{W},\boldsymbol{\theta})\big]=\mathbf{0}_{d},
 \]
-where the expectation is with respect to the population distribution, $\mathbf{W}\in\mathbb{R}^{d_w}$ is a random sample composed by $\mathbf{W}_{1:N}:=[\mathbf{W}_1 \ \mathbf{W}_2 \ \dots \ \mathbf{W}_N]$, 
-$\mathbf{g}:\mathbb{R}^{d_w}\times\boldsymbol{\Theta}\to\mathbb{R}^{d}$ is a vector of known functions, and 
+where the expectation is with respect to the population distribution, $\mathbf{W}_{1:N}:=[\mathbf{W}_1 \ \mathbf{W}_2 \ \dots \ \mathbf{W}_N]$ is a random sample from $\mathbf{W}$ , $\mathbf{g}:\mathbb{R}^{d_w}\times\boldsymbol{\Theta}\to\mathbb{R}^{d}$ is a vector of known functions, and 
 $\boldsymbol{\theta}=[\theta_{1}\ \theta_{2}\ \dots\ \theta_{p}]^{\top}\in\boldsymbol{\Theta}\subset\mathbb{R}^{p}$.
 If $d>p$ the model is \emph{over-identified}; if $d=p$ it is \emph{exactly identified} (and if $d<p$ it is \emph{under-identified}).\\
 
@@ -3014,28 +3013,264 @@ In Exercise~11, you are asked to program a BETEL algorithm from scratch to perfo
   
 \cite{chib2018moment} propose a unified framework based on marginal likelihoods and Bayes factors for comparing different moment-restricted models and for discarding misspecified restrictions. They demonstrate the model selection consistency of the marginal likelihood, showing that it favors the specification with the fewest parameters and the largest number of valid moment restrictions. When models are misspecified, the marginal likelihood procedure selects the model that is closest to the (unknown) true data-generating process in terms of Kullback–Leibler divergence. See \cite{lazar2021review, liu2023review} for comprehensive reviews of recent advances in empirical likelihood and exponentially tilted empirical likelihood methods, including their Bayesian variants.
 
-\section{A general framework for updating belief distributions}\label{sec12_10}
+\section{General Bayes posteriors}\label{sec12_10}
 
-It is well known that, under model misspecification, that is, when the assumed likelihood function does not coincide with the true data-generating likelihood, the posterior concentrates its mass near those points in the support of the prior that minimize the Kullback--Leibler divergence with respect to the true model \cite{Kleijn2006}. However, this updated belief process may yield credible sets that fail to achieve the desired coverage, Bayes factors that can be misleading, and predictions that may remain approximately valid but require careful checking. In addition, the misspecified posterior distribution may exhibit suboptimal risk performance. In this setting, a modified posterior directly linked to the risk function of interest, known as the \textit{Gibbs posterior}, can still perform very well \cite{Jiang2008},
+It is well known that, under model misspecification, that is, when the assumed likelihood function does not coincide with the true data-generating likelihood, the posterior concentrates its mass near those points in the support of the prior that minimize the Kullback--Leibler divergence with respect to the true model \cite{Kleijn2006}. However, this updating process may yield credible sets that fail to achieve the desired coverage, Bayes factors that can be misleading, and predictions that may remain approximately valid but require careful checking. In addition, the misspecified posterior distribution may exhibit suboptimal risk performance. In this setting, a modified posterior directly linked to the risk function of interest, known as the \textit{Gibbs posterior}, can still perform very well \cite{Jiang2008},
 \begin{equation}\label{eq:GibbsPost}
-p(\boldsymbol{\theta}|\mathbf{y})=\frac{\exp\left\{-NwR_N(\boldsymbol{\theta},\mathbf{y})\right\}\pi(\boldsymbol{\theta})}{\int_{\boldsymbol{\Theta}}\exp\left\{-NwR_N(\boldsymbol{\theta},\mathbf{y})\right\}\pi(\boldsymbol{\theta})d\boldsymbol{\theta}},
+	\hat{\pi}(\boldsymbol{\theta}\mid\mathbf{y})
+	=\frac{\exp\left\{-Nw\,R_N(\boldsymbol{\theta},\mathbf{y})\right\}\pi(\boldsymbol{\theta})}
+	{\int_{\boldsymbol{\Theta}}\exp\left\{-Nw\,R_N(\boldsymbol{\theta},\mathbf{y})\right\}\pi(\boldsymbol{\theta})\,d\boldsymbol{\theta}},
 \end{equation}
-where 
-\[R_N(\boldsymbol{\theta},\mathbf{y})=\frac{1}{N}\sum_{i=1}^N l(\boldsymbol{\theta},\mathbf{y}_i)
-\] 
-is the average risk function, $w$ is know as the \textit{learning rate} or the inverse of the temperature in simulated annealing, and $N$ is the sample size.
-
-In fact, Equation \ref{eq:GibbsPost} is a valid coherent mechanism to update prior beliefs \cite{bissiri2016general}. The point of departure is to set $\boldsymbol{\theta}$ that minimizes the expected loss function,
+where $w>0$ is the \textit{learning rate} (or the inverse temperature in simulated annealing), which balances the information in the data with that in the prior, $N$ is the sample size, and
 \[
-L(\boldsymbol{\theta})=\int_{\mathcal{Y}}R_N(\boldsymbol{\theta},\mathbf{y})dF_0(\mathbf{y}),
+R_N(\boldsymbol{\theta},\mathbf{y})=\frac{1}{N}\sum_{i=1}^N l(\boldsymbol{\theta},\mathbf{y}_i)
+\]
+is the empirical risk associated with the loss function $l(\boldsymbol{\theta},\mathbf{y}_i)$.
+
+Note that Equation~\ref{eq:GibbsPost} reduces to the ordinary Bayesian posterior when the loss is chosen as the negative log-likelihood, $l(\boldsymbol{\theta},y_i)=-\log p(y_i\mid\boldsymbol{\theta})$, under i.i.d.\ sampling and with $w=1$. In this case, we are asserting knowledge of the data-generating process $p(y_i\mid \boldsymbol{\theta})$. More generally, however, $R_N(\boldsymbol{\theta},\mathbf{y})$ can be based on any loss function that satisfies the required conditions for coherent belief updating: non-negativity, existence of a well-defined expectation, identifiability, and additivity across observations. Importantly, correctness of the parametric model is not required, since
+\[
+\frac{1}{N}\sum_{i=1}^N l(\boldsymbol{\theta},\mathbf{y}_i)\;\stackrel{p}{\longrightarrow}\;\int_{\mathcal{Y}} l(\boldsymbol{\theta},\mathbf{y})\,p(\mathbf{y}\mid \boldsymbol{\theta})\,d\mathbf{y},
+\]
+by the law of large numbers as $N\to\infty$.
+
+Thus, the Gibbs posterior provides inference on the parameter values that minimize the chosen risk function, with minimal modeling assumptions. In contrast, the standard Bayesian posterior allows inference on essentially any feature of the data-generating distribution, but at the cost of strong model assumptions \cite{Syring2019}.
+
+\cite{bissiri2016general} show that Equation~\ref{eq:GibbsPost} is a valid, coherent mechanism to update prior beliefs. In particular, there must exist a mapping $h$ such that
+\[
+\pi(\boldsymbol{\theta}\mid \mathbf{y}) = h\!\big(l(\boldsymbol{\theta},\mathbf{y}),\pi(\boldsymbol{\theta})\big),
+\]
+where $h$ satisfies the coherence property
+\[
+h\!\left[l(\boldsymbol{\theta},y_2),\,h\!\big(l(\boldsymbol{\theta},y_1),\pi(\boldsymbol{\theta})\big)\right]
+= h\!\big(l(\boldsymbol{\theta},y_2)+l(\boldsymbol{\theta},y_1),\pi(\boldsymbol{\theta})\big).
+\]
+This ensures that the updated posterior $\pi(\boldsymbol{\theta}\mid y_1,y_2)$ is the same whether we update with $(y_1,y_2)$ jointly or sequentially.
+
+Equation~\ref{eq:GibbsPost} is the solution of minimizing the loss function $L(\nu;\pi,\mathbf{y})$ on the space of probability measures on $\mathbf{\theta}-space$,
+\[
+\hat{\pi}=\arg\min_{\nu} L(\nu;\pi,\mathbf{y}),
+\]
+such that $\hat{\pi}$ is the representation of beliefs about $\boldsymbol{\theta}$ given prior beliefs ($\pi$) and data ($\mathbf{y}$). Given that the prior beliefs and the data are two independent pieces of information, it makes sense that the loss function is additive in these two arguments, 
+\[
+L(\nu;\pi,\mathbf{y})=h_1(\nu,\mathbf{y})+w^{-1}h_2(\nu,\pi),
 \] 
-where $F_0(\mathbf{y})$ is the unknown distribution function of the data $\mathbf{y}$. 
+where $h_1(\cdot)$ and $h_2(\cdot)$ are loss functions in their arguments.
+The coherence requirement implies that
+\[
+h_2(\nu,\pi)=d_{KL}(\nu,\pi)=\int \log\frac{\nu(d\boldsymbol{\theta})}{\pi(d\boldsymbol{\theta})} \nu(d\boldsymbol{\theta}),
+\]
+that is, $h_2(\nu,\pi)$ must be the Kullback-Leibler divergence \cite{bissiri2016general}.
+
+On the other hand, 
+\[
+h_1(\nu,\mathbf{y})=\int l(\boldsymbol{\theta},\mathbf{y})\nu(d\boldsymbol{\theta})
+\]  
+is the expected loss of the action with respect to the data.
+
+Therefore, the minimizer of
+
+\[
+L(\nu;\pi,\mathbf{y})=\int l(\boldsymbol{\theta},\mathbf{y})\nu(d\boldsymbol{\theta})+d_{KL}(\nu,\pi),
+\] 
+is given by Equation~\ref{eq:GibbsPost} \cite{Zhang2006KLentropy,Jiang2008,bissiri2016general}.
+
+A very important parameter in the Gibbs posterior \cite{Jiang2008}, or \textit{general Bayes posterior} \cite{bissiri2016general}, is the learning rate, as it determines the asymptotic sampling properties of $\hat{\pi}(\boldsymbol{\theta}\mid\mathbf{y})$ used to perform inference on $\boldsymbol{\theta}$. For instance, \cite{bissiri2016general} propose different strategies to set this parameter, and \cite{Syring2019} propose a Monte Carlo algorithm that selects the learning rate so that the resulting credible region attains the nominal frequentist coverage probability.
+
+\cite{chernozhukov2003mcmc} propose the \textit{Laplace Type Estimator} (LTE), which can be seen as a particular case of the \textit{general Bayes posterior} \cite{bissiri2016general}, where the risk function is based on the moment conditions. 
+
+In particular, given the moment conditions
+\[
+\mathbb{E}\!\big[\mathbf{g}_i(\mathbf{w}_i,\boldsymbol{\theta})\big]=\mathbf{0}_{d} 
+\quad \text{if and only if } \boldsymbol{\theta}=\boldsymbol{\theta}_0,
+\]
+where the expectation is taken with respect to the population distribution, 
+$\mathbf{w}_{1:N}:=[\mathbf{w}_1 \ \mathbf{w}_2 \ \dots \ \mathbf{w}_N]$ is a random sample from $\mathbf{W}$, 
+$\mathbf{g}:\mathbb{R}^{d_w}\times\boldsymbol{\Theta}\to\mathbb{R}^{d}$ is a vector of known functions, and 
+$\boldsymbol{\theta}=[\theta_{1}\ \theta_{2}\ \dots\ \theta_{p}]^{\top}\in\boldsymbol{\Theta}\subset\mathbb{R}^{p}$ with $d\geq p$, the risk function can be defined as
+\[
+R_N(\boldsymbol{\theta},\mathbf{w})=\tfrac{1}{2}\left(\underbrace{\frac{1}{N}\sum_{i=1}^N \mathbf{g}_i(\mathbf{w}_i,\boldsymbol{\theta})}_{\mathbf{g}_N(\boldsymbol{\theta})}\right)^{\top}\mathbf{W}_N\left(\underbrace{\frac{1}{N}\sum_{i=1}^N\mathbf{g}_i(\mathbf{w}_i,\boldsymbol{\theta})}_{\mathbf{g}_N(\boldsymbol{\theta})}\right),
+\]
+where $\mathbf{W}_N$ is a positive semi-definite weighting matrix such that
+\[
+\mathbf{W}_N \;\to\; 
+\Bigg(\text{Var}\left[\sqrt{N}\left(\tfrac{1}{N}\sum_{i=1}^N \mathbf{g}_i(\mathbf{w}_i,\boldsymbol{\theta}_0)\right)\right]\Bigg)^{-1}
+\quad \text{as } N\rightarrow \infty.
+\]  
+
+Then, the \textit{quasi-posterior} in \cite{chernozhukov2003mcmc} is equivalent to Equation~\ref{eq:GibbsPost} with $w=1$.
+
+Algorithm \ref{Alg:GibbsPosteior} shows the Metropolis-Hastings to perform inference using the general Bayes posterior.
+
+\begin{algorithm}[h!]
+	\caption{General Bayes posterior: Metropolis-Hastings algorithm}\label{Alg:GibbsPosteior}
+	\begin{algorithmic}[1]
+		\State Set $\bm{\theta}^{(0)}$ in the support of $\hat{\pi}(\bm{\theta}\mid \bm{y})$  		 			
+		\For{\texttt{$s=1,\dots,S$}}
+		\State Draw $\bm{\theta}^{c}$ from $q(\bm{\theta}^{c}\mid \bm{\theta}^{(s-1)})$
+		\State Calculate $\alpha(\bm{\theta}^{(s-1)}, \bm{\theta}^{c}) = 
+		\min\left\{\frac{q(\bm{\theta}^{(s-1)} \mid  \bm{\theta}^{c}) \exp\left\{-Nw\,R_N(\boldsymbol{\theta}^c,\mathbf{y})\right\}\pi(\boldsymbol{\theta}^c)}{q(\bm{\theta}^{c} \mid  \bm{\theta}^{(s-1)}) \exp\left\{-Nw\,R_N(\boldsymbol{\theta}^{(s-1)},\mathbf{y})\right\}\pi(\boldsymbol{\theta}^{(s-1)})}, 1\right\}$
+		\State Draw $U$ from $U(0,1)$
+		\State $\bm{\theta}^{(s)}=\begin{Bmatrix}
+			\bm{\theta}^{c} & \text{if } U\leq \alpha(\bm{\theta}^{(s-1)}, \bm{\theta}^{c})\\
+			\bm{\theta}^{(s-1)} & \text{otherwise}\\
+		\end{Bmatrix}$
+		\EndFor 
+	\end{algorithmic} 
+\end{algorithm}
 
 
- 
+\cite{chernozhukov2003mcmc} show that the posterior mean of the LTE is first-order equivalent to the efficient Generalized Method of Moments (GMM) estimator, and that the posterior quantiles yield asymptotically valid confidence intervals with correct frequentist coverage.\\
 
-Introduce  as a generalization of \cite{chernozhukov2003mcmc}.
+\textbf{Example: Instrumental variable quantile regression (IVQR)}
 
+\cite{Chernozhukov2005} propose an instrumental variable model of quantile treatment effects to characterize the heterogeneous impact of treatments across different points of the outcome distribution. Their model requires conditions that restrict the evolution of ranks across treatment states. Using these conditions, they address the endogeneity problem and recover quantile treatment effects using instrumental variables for the entire population, not only for compliers.  
+
+Assume a binary treatment variable $D_i\in\{0,1\}$, with potential outcomes $\{Y_i(0),Y_i(1)\}$. The estimand of interest is the quantile treatment effect, which summarizes the differences in the quantiles of potential outcomes across treatment states,
+\[
+q(D=1,\mathbf{X}=\mathbf{x},\tau)-q(D=0,\mathbf{X}=\mathbf{x},\tau),
+\] 
+where $q(D=d,\mathbf{X}=\mathbf{x},\tau)$ denotes the $\tau$-th quantile treatment response function.  
+
+The potential outcomes are related to the quantile treatment response via
+\[
+Y_i(d)=q(D=d,\mathbf{X}=\mathbf{x},U(d)),
+\]
+where $U(d)\sim U(0,1)$ is the \textit{rank variable}. This variable captures unobserved heterogeneity that explains differences in outcomes given observed characteristics $\mathbf{x}$ and treatment $d$.  
+
+For instance, consider a retirement savings model, where the potential outcome is net financial assets under different retirement plan statuses $d$, and $q(D=d,\mathbf{X}=\mathbf{x},\tau)$ is the net financial asset function describing how an individual with retirement status $d$ and ``financial ability'' $\tau$ is rewarded in the financial market. Because the function depends on $\tau$, treatment effects are heterogeneous.  
+
+The identification conditions for the IVQR model are stated in \cite{Chernozhukov2005} as follows:
+
+\textit{1. Potential outcomes:}  
+\[
+Y_i(d)=q(D=d,\mathbf{X}=\mathbf{x},U(d)),
+\]
+where $q(D=d,\mathbf{X}=\mathbf{x},\tau)$ is strictly increasing in $\tau$ and $U(d)\sim U(0,1)$.  
+
+\textit{2. Independence:} Conditional on $\mathbf{X}=\mathbf{x}$, the rank variables $\{U(d)\}$ are independent of the instruments $\mathbf{Z}$.  
+
+\textit{3. Selection:} The treatment assignment is given by $D=\delta(\mathbf{Z},\mathbf{X},\mathbf{V})$ for some unknown function $\delta$ and unobserved heterogeneity $\mathbf{V}$.  
+
+\textit{4. Rank invariance:} Conditional on $\mathbf{X}=\mathbf{x},\mathbf{Z}=\mathbf{z}$,
+
+- either $\{U(d)\}$ coincide ($U(d)=U$ for all $d$), or
+  
+- $\{U(d)\}$ are identically distributed conditional on $\mathbf{V}$.  
+
+\textit{5. Observables:} The observed data consist of $Y=q(D,\mathbf{X},U(D))$, $D$, $\mathbf{X}$, and $\mathbf{Z}$.  
+
+The most important identification restriction is \textit{rank invariance}, which implies that individuals with higher unobserved rank remain higher-ranked regardless of treatment status. This condition accommodates more general selection mechanisms than the monotonicity assumption used in the LATE framework, while being less restrictive than full independence assumptions between instruments ($\mathbf{Z}$) and unobserved variables in the selection equation ($\mathbf{V}$) in other common models (see \cite{chernozhukov2004effects,Chernozhukov2005} for details).\footnote{\cite{Chernozhukov2005}'s proposal allows for both discrete and continuous $D$ and $\mathbf{Z}$.} 
+
+The main testable implication of the identification restrictions is that
+\[
+P\!\left(Y \leq q(D,\mathbf{X},\tau)\mid \mathbf{X},\mathbf{Z}\right)
+= P\!\left(Y < q(D,\mathbf{X},\tau)\mid \mathbf{X},\mathbf{Z}\right)
+= \tau,
+\]
+for all $\tau$ almost surely, and $U(D)\sim U(0,1)$ conditional on $(\mathbf{X},\mathbf{Z})$.  
+
+This conditional moment restriction implies the unconditional moment conditions that form the basis for estimation and inference in the IVQR model \cite{chernozhukov2003mcmc,chernozhukov2004effects},
+\[
+\mathbf{g}_N(\boldsymbol{\theta})=\frac{1}{N}\sum_{i=1}^N (\tau-\mathbbm{1}(Y_i\leq \alpha_{\tau}D_i+\mathbf{X}_i\boldsymbol{\beta}_{\tau}))\begin{bmatrix}
+\mathbf{X}_i\\
+\mathbf{Z}_i
+\end{bmatrix}.
+\]
+Thus, the empirical risk function is given by 
+\[
+R_N(\boldsymbol{\theta},\mathbf{w})=\tfrac{1}{2}\mathbf{g}_N(\boldsymbol{\theta})^{\top}\mathbf{W}_N\mathbf{g}_N(\boldsymbol{\theta}),
+\]
+where
+\[
+\mathbf{W}_N=\frac{1}{\tau(1-\tau)}\left(\frac{1}{N}\sum_{i=1}^N \mathbf{Z}_i\mathbf{Z}_i^{\top}\right)^{-1}.
+\]
+
+The following code implements Algorithm~\ref{Alg:GibbsPosteior} to perform inference on the quantile treatment effect of participation in the 401(k) retirement program on net financial assets, using eligibility as an instrument (see the 401(k) treatment effects example in Section~\ref{chap12_4} for details of the data).
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Quantile treatment effects: 401(k) participation on net financial assets}
+	\begin{VF}
+		\begin{lstlisting}[language=R]	
+rm(list = ls()); set.seed(10101)
+# Load data
+df <- read.csv("https://raw.githubusercontent.com/BEsmarter-consultancy/BSTApp/refs/heads/master/DataApp/401k.csv",
+sep = ",", header = TRUE, quote = "")
+# Attach variables
+attach(df)
+y <- net_tfa/1000    # Outcome: net financial assets
+x <- as.vector(p401) # Endogenous regressor: participation
+w <- as.matrix(cbind(age, inc, fsize, educ, marr, twoearn, db, pira, hown))  # Exogenous regressors
+z <- as.matrix(e401)  # Instrument: eligibility (NO intercept here)
+library(quantreg)
+tau <- 0.5 
+QuanReg <- rq(y ~ p401 + age + inc + fsize + educ + marr + twoearn + db + pira + hown, tau = tau, data = df)
+summary(QuanReg)
+Reg <- MCMCpack::MCMCquantreg(y ~ x + w, data = df, tau = tau)
+BayesExo <- summary(Reg)
+LossFunct <- function(par, tau, y, z, x, w){
+	n <- length(y)
+	X <- cbind(1, x, w)
+	Z <- cbind(1, z, w)
+	Ind <- as.numeric(y <= X%*%par) 
+	gn <- colMeans((tau - Ind) * Z)
+	Wni <- lapply(1:n, function(i) {Z[i,] %*% t(Z[i,])}) 
+	Wn <- 1 / (tau * (1 - tau)) * solve(Reduce("+", Wni)/n)
+	Ln <- - 0.5 * n * t(gn) %*% Wn %*% gn
+	return(Ln)
+}
+par0 <- colMeans(Reg)
+LossFunct(par = par0, tau = tau, y = y, z = z, x = x, w = w)
+# ----- MH using Ln -----
+k <- length(par0); b0 <- rep(0, k); B0 <- 1000*diag(k)
+S <- 10000; burnin <- 10000; thin <- 1; tot <- S + burnin
+BETA <- matrix(NA, tot, k); accept <- logical(tot)
+SIGMA <- diag(BayesExo[["statistics"]][,2]); tune <- 2.4 / sqrt(k)
+BETA[1,] <- par0
+LL <- LossFunct(par = BETA[1,], tau = tau, y = y, z = z, x = x, w = w)
+pb <- txtProgressBar(min=0, max=tot, style=3)
+for(s in 2:tot){
+	cand <- BETA[s-1,] + MASS::mvrnorm(1, rep(0, k), tune*SIGMA)
+	LLc  <- LossFunct(par = cand, tau = tau, y = y, z = z, x = x, w = w)
+	priorRat <- mvtnorm::dmvnorm(cand, b0, B0, log=TRUE) -
+	mvtnorm::dmvnorm(BETA[s-1,], b0, B0, log=TRUE)
+	loga <- (LLc - LL) + priorRat
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Quantile treatment effects: 401(k) participation on net financial assets}
+	\begin{VF}
+		\begin{lstlisting}[language=R]	
+	if (is.finite(loga) && log(runif(1)) <= loga) {
+		BETA[s,] <- cand; LL <- LLc; accept[s] <- TRUE
+	} else {
+		BETA[s,] <- BETA[s-1,]; accept[s] <- FALSE
+	}
+	if (s <= burnin && s %% 100 == 0) {    
+		acc <- mean(accept[(s-99):s])
+		if (acc > 0.35) tune <- tune * 1.25
+		if (acc < 0.15) tune <- tune / 1.25
+	}
+	setTxtProgressBar(pb, s)
+}
+close(pb)
+cat("\nAcceptance rate:", mean(accept), "\n")
+keep <- seq(burnin, tot, by = thin)
+cat("\nAcceptance rate:", mean(accept[keep]), "\n")
+post <- BETA[keep, , drop=FALSE]   # posterior draws in scaled space
+colnames(post) <- c("Int", "p401", "age", "inc", "fsize", "educ", "marr", "twoearn", "db", "pira", "hown")
+# Posterior summaries
+post_mean <- colMeans(post)
+post_ci   <- apply(post, 2, quantile, c(0.025, 0.975))
+round(post_mean, 3); round(post_ci, 3)
+		\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+Setting $\tau=0.5$ (median), the quantile treatment effect is 6,719, and the 95\% credible interval is (6,612, 6,806).
 
 \section{Doubly robust Bayesian inferential framework}\label{sec12_11}
 \cite{breunig2025double}
@@ -3139,6 +3374,25 @@ Read this reference \cite{iacovone2023bayesian} before begin working in this cha
 	\item \textbf{Simultaneous causality continues}
 	
 	Use the demand–supply simulation and the moment conditions to infer the causal effect of a	10\% tax, implementing a BETEL algorithm from scratch.
+	
+	\item Perform a simulation of the instrumental variable quantile regression, and then perform inference using the general Bayes posterior framework. Use the Laplace asymmetric distribution to simulate the stochastic error, such that 
+	\[
+	\int_{-\infty}^{0} f_{\tau}(\mu_i) \, d\mu_i = \tau,
+	\] 
+	which implies that the $\tau$-th quantile of $\mu_i$ is 0. In addition, let 
+	\[
+	q_{\tau}(Y_i \mid X_i, D_i) = \beta_0 + \beta_1 X_i + \beta_2 D_i
+	\] 
+	denote the $\tau$-th quantile regression function of $Y_i$ given $X_i$ and $D_i$, with $0 < \tau < 1$. Specifically, consider the model
+	\[
+	Y_i = \beta_{0\tau} + \beta_{1\tau} X_i + \beta_{2\tau} D_i + \mu_i,
+	\]
+	together with 
+	\[
+	D_i = \gamma Z_i + \delta \mu_i, \quad Z_i \sim N(0,1),
+	\]
+	see Section~\ref{sec69}.
+	
 	
 	
 	
