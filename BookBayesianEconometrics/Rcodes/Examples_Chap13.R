@@ -1229,49 +1229,28 @@ summary(lm(y ~ x))
 
 ############# Instrumental Variable Quantile Regression: Simulation ##############
 rm(list = ls()); set.seed(10101)
+# Load data
+df <- read.csv("https://raw.githubusercontent.com/BEsmarter-consultancy/BSTApp/refs/heads/master/DataApp/401k.csv",
+                   sep = ",", header = TRUE, quote = "")
+# Attach variables
+attach(df)
+y <- net_tfa/1000             # Outcome: net financial assets
+x <- as.vector(p401)          # Endogenous regressor: participation
+w <- as.matrix(cbind(age, inc, fsize, educ, marr, twoearn, db, pira, hown))  # Exogenous regressors with intercept
+z <- as.matrix(e401)          # Instrument: eligibility (NO intercept here)
+
 library(quantreg)
-### Siulation ####
-# Asymmetric Laplace for general τ in (0,1) with location 0, scale > 0
-# Normal–Exponential mixture (Kozumi–Kobayashi, 2011)
-rALD <- function(n, tau) {
-  stopifnot(tau > 0, tau < 1)
-  theta <- (1 - 2*tau) / (tau * (1 - tau))
-  psi   <- 2 / (tau * (1 - tau))
-  v  <- rexp(n, rate = 1)
-  z  <- rnorm(n)
-  mu <- theta * v + sqrt(psi * v) * z
-  return(mu)
-}
+tau <- 0.5 
+QuanReg <- rq(y ~ p401 + age + inc + fsize + educ + marr + twoearn + db + pira + hown, tau = tau, data = df)
+summary(QuanReg)
 
-## --- Simulator for a given τ ---
-simulate_qr <- function(n = 5000, tau = 0.5,
-                        beta0 = 0.7,
-                        beta1_tau = 1.5,
-                        beta2_tau = 1,
-                        gamma = 1,
-                        delta = 0.5) {
-  # Nonnegative regressor stabilizes intercept & preserves τ-ordering of slopes
-  x <- runif(n, 0, 1)
-  # optional: anchor a portion at 0 to pin intercept
-  x[sample.int(n, size = round(0.1*n))] <- 0
-  mu <- rALD(n, tau = tau) # ALD error
-  z <- rnorm(n) # Instrument
-  d <- gamma * z + delta * mu
-  y <- beta0 + beta1_tau * x + beta2_tau * d + mu
-  df <- data.frame(y, x, d, z)
-}
-
-tau <- 0.75
-df <- simulate_qr(tau = tau, beta0 = 1, beta1_tau = 1,
-                  beta2_tau = 1, gamma = 1, delta = 1, n = 5000)
-Reg <- MCMCpack::MCMCquantreg(y~x+d, data = df, tau = tau)
+Reg <- MCMCpack::MCMCquantreg(y ~ x + w, data = df, tau = tau)
 summary(Reg)
-summary(rq(y ~ x + d, tau = tau, data = df))
 
-LossFunct <- function(par, tau, y, z, x, d){
+LossFunct <- function(par, tau, y, z, x, w){
   n <- length(y)
-  X <- cbind(1, x, d)
-  Z <- cbind(1, x, z)
+  X <- cbind(1, x, w)
+  Z <- cbind(1, z, w)
   Ind <- as.numeric(y <= X%*%par) 
   gn <- colMeans((tau - Ind) * Z)
   Wni <- lapply(1:n, function(i) {Z[i,] %*% t(Z[i,])}) 
@@ -1279,24 +1258,23 @@ LossFunct <- function(par, tau, y, z, x, d){
   Ln <- - 0.5 * n * t(gn) %*% Wn %*% gn
   return(Ln)
 }
-
-par0 <- rnorm(3)
-LossFunct(par = par0, tau = tau, y = df$y, z = df$z, x = df$x, d = df$d)
+par0 <- colMeans(Reg)
+LossFunct(par = par0, tau = tau, y = y, z = z, x = x, w = w)
 
 # ----- MH using Ln -----
-k <- 3
+k <- length(par0)
 b0 <- rep(0, k); B0 <- 1000*diag(k)
-S <- 5000; burnin <- 6000; thin <- 5; tot <- S + burnin
+S <- 10000; burnin <- 10000; thin <- 1; tot <- S + burnin
 BETA <- matrix(NA, tot, k); accept <- logical(tot)
-step <- 0.05
+step <- 0.5
 
 BETA[1,] <- par0
-LL <- LossFunct(par = BETA[1,], tau = tau, y = df$y, z = df$z, x = df$x, d = df$d)
+LL <- LossFunct(par = BETA[1,], tau = tau, y = y, z = z, x = x, w = w)
 
 pb <- txtProgressBar(min=0, max=tot, style=3)
 for(s in 2:tot){
   cand <- BETA[s-1,] + rnorm(k, 0, step)
-  LLc  <- LossFunct(par = cand, tau = tau, y = df$y, z = df$z, x = df$x, d = df$d)
+  LLc  <- LossFunct(par = cand, tau = tau, y = y, z = z, x = x, w = w)
   priorRat <- mvtnorm::dmvnorm(cand, b0, B0, log=TRUE) -
     mvtnorm::dmvnorm(BETA[s-1,], b0, B0, log=TRUE)
   loga <- (LLc - LL) + priorRat
@@ -1305,9 +1283,9 @@ for(s in 2:tot){
   } else {
     BETA[s,] <- BETA[s-1,]; accept[s] <- FALSE
   }
-  if (s <= burnin && s %% 200 == 0) {          # gentle adaptation
-    acc <- mean(accept[(s-199):s])
-    if (acc > 0.4) step <- step * 1.25
+  if (s <= burnin && s %% 100 == 0) {          # gentle adaptation
+    acc <- mean(accept[(s-99):s])
+    if (acc > 0.40) step <- step * 1.25
     if (acc < 0.15) step <- step / 1.25
   }
   setTxtProgressBar(pb, s)
@@ -1317,9 +1295,10 @@ close(pb)
 cat("\nAcceptance rate:", mean(accept), "\n")
 
 keep <- seq(burnin, tot, by = thin)
+cat("\nAcceptance rate:", mean(accept[keep]), "\n")
 post <- BETA[keep, , drop=FALSE]   # posterior draws in scaled space
 
-colnames(post) <- c("beta0","beta_x","beta_d")
+colnames(post) <- c("Int", "p401", "age", "inc", "fsize", "educ", "marr", "twoearn", "db", "pira", "hown")
 
 # Posterior summaries
 post_mean <- colMeans(post)

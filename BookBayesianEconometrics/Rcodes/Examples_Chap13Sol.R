@@ -656,7 +656,7 @@ ggplot(df, aes(x, y)) +
 ############# Instrumental Variable Quantile Regression: Simulation ##############
 rm(list = ls()); set.seed(10101)
 library(quantreg)
-### Siulation ####
+### Simulation ####
 # Asymmetric Laplace for general τ in (0,1) with location 0, scale > 0
 # Normal–Exponential mixture (Kozumi–Kobayashi, 2011)
 rALD <- function(n, tau) {
