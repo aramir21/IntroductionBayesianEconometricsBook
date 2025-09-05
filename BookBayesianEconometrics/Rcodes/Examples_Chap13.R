@@ -1309,3 +1309,233 @@ round(post_ci, 3)
 
 plot(coda::mcmc(post))
 
+######### Doubly Robust Bayesian #########
+
+# This code contains two parts
+# Part 1. Load and prepare the job-training data (Dehejia-Wahha Sample): NSW treated units + PSID control units
+# Part 2. Estimate the propensity score (PS) using Logit LASSO => save the data and PS estimate
+# Part 3.  By product: also calculate the optimal t using trimming rule proposed by Crump et al. [2009], see footnote 7 of our papar
+
+rm(list = ls()); library(glmnet)
+
+######## Part 1. Load the Job-training data (Dehejia-Wahha Sample) #########
+## Load the data from Folder "Data"
+## data originally downloaded from http://users.nber.org/~rdehejia/nswdata2.html
+
+data.merge <- read.csv("nswre_74Job_training_data.csv")
+n<-dim(data.merge)[1]
+D_data<-data.merge$treated # treatment indicator
+Y_data<-as.numeric(data.merge$re78>0) # employment status in 1978, the binary Y
+emp74<-as.numeric(data.merge$re74>0)
+emp75<-as.numeric(data.merge$re75>0)
+covars <- c("age","education","black","hispanic","married","re74","re75","ue74","ue75")
+Z_data<-cbind(data.merge$age,data.merge$education,data.merge$black,data.merge$hispanic,data.merge$married,
+              data.merge$re74,data.merge$re75,emp74,emp75) # level covariates=9
+p<-as.numeric(dim(Z_data)[2]) # number of covariares
+
+##### PART 2. Estimate PS and save ####################
+set.seed(1234)
+Y<-Y_data
+D<-D_data
+Z<-Z_data
+Z.df <- as.data.frame(Z) # covariates as a dataframe
+cvfit <- cv.glmnet(Z, D, family = "binomial", alpha=1, nfolds = 10) # lasso,min
+ps.coef <- coef(cvfit, s = "lambda.min")[0:p+1]
+ps_hat <- predict(cvfit, newx = Z, s = "lambda.min",type = "response")
+# Avoid 0/1
+ps_hat <- pmin(pmax(ps_hat, 1e-6), 1 - 1e-6)
+
+# Riesz representer gamma(d,x) = d/\pi(x) - (1-d)/(1-\pi(x))
+riesz_fun <- function(d, ps) d/ps - (1 - d)/(1 - ps)
+
+# -------------------------------
+# GP helpers
+# -------------------------------
+# Build a GP model with (optionally) an additive linear kernel on gamma
+make_gp <- function(X_train, y_bin, use_correction = FALSE, gamma_scaled = NULL,
+                    approx_method = gplite::approx_laplace(),
+                    init_lscale = 0.3) {
+  stopifnot(length(y_bin) == nrow(X_train))
+  # Base SE kernel (isotropic over all columns provided)
+  cf_se <- gplite::cf_sexp(vars = colnames(X_train), lscale = init_lscale, magn = 1, normalize = TRUE)
+  cfs <- list(cf_se)
+  if (use_correction) {
+    stopifnot(!is.null(gamma_scaled))
+    # Add linear kernel on the last column (gamma_scaled)
+    # Kernel: k_PS(i,j) = (gamma_scaled_i)*(gamma_scaled_j)
+    cf_lin <- gplite::cf_lin(vars = "gamma", magn = 1, normalize = FALSE)
+    cfs <- list(cf_se, cf_lin)
+  }
+  gp <- gplite::gp_init(cfs = cfs, lik = gplite::lik_bernoulli(), approx = approx_method)
+  gp <- gplite::gp_optim(gp, x = X_train, y = y_bin, maxiter = 500)
+  return(gp)
+}
+
+# Draw posterior of m(Z,d) at test inputs using GP classification
+# Returns a draws x n_test matrix on probability scale (logistic link applied)
+posterior_draws_prob <- function(gp, X_test, ndraws = 5000) {
+  # NOTE: gplite::gp_draw returns an N_test x draws matrix.
+  # We want draws x N_test to align with downstream code (weights W: N_post x n_eff).
+  out <- gplite::gp_draw(gp, xnew = X_test, draws = ndraws,
+                         transform = TRUE, target = FALSE, jitter = 1e-6)
+  t(out)
+}
+
+# -------------------------------
+# Main routine for a given trimming threshold t in {0.10, 0.05, 0.01}
+# -------------------------------
+run_trim <- function(t_trim = 0.10, N_post = 5000, h_r = 1/2, cor_size = 1) {
+  # Trim by estimated PS
+  keep <- which(ps_hat >= t_trim & ps_hat <= (1 - t_trim))
+  n_eff <- length(keep)
+  if (n_eff < 50) stop("Too few observations after trimming.")
+  
+  Yk  <- Y[keep]
+  Dk  <- D[keep]
+  Zk  <- Z[keep, , drop = FALSE]
+  psk <- ps_hat[keep]
+  
+  # Riesz representer and sigma_n choice
+  gamma_k <- riesz_fun(Dk, psk)
+  # sigma_n ≍ log(n) / ( n^{1/2} * mean|gamma| )  (scale-matched)
+  sigma_n <- cor_size * (log(n_eff) / ( (n_eff)^(h_r) * mean(abs(gamma_k)) ))
+  gamma_scaled <- sigma_n * gamma_k
+  
+  # Training inputs for GP: [Z, D] and, if corrected, an extra column 'gamma'
+  X_train_nc <- data.frame(Zk)
+  X_train_nc$D <- Dk
+  colnames(X_train_nc) <- c(covars, "D")
+  
+  X_train_c <- X_train_nc
+  X_train_c$gamma <- gamma_scaled
+  
+  # Test inputs: for each i, (Z_i, d=0) and (Z_i, d=1)
+  X_t0 <- X_train_nc; X_t0$D <- 0
+  X_t1 <- X_train_nc; X_t1$D <- 1
+  X_t0c <- X_t0; X_t1c <- X_t1
+  X_t0c$gamma <- sigma_n * riesz_fun(0, psk)   # = -sigma_n/(1-ps)
+  X_t1c$gamma <- sigma_n * riesz_fun(1, psk)   # =  sigma_n/ps
+  
+  # ---------------- GP WITHOUT prior correction ----------------
+  gp_nc <- make_gp(X_train = X_train_nc, y_bin = Yk, use_correction = FALSE)
+  # joint draws for [m(Z,0); m(Z,1)]
+  M_nc_0 <- posterior_draws_prob(gp_nc, X_t0, ndraws = N_post)  # N_post x n_eff
+  M_nc_1 <- posterior_draws_prob(gp_nc, X_t1, ndraws = N_post)
+  # observed arm probabilities
+  M_nc_obs <- ifelse(matrix(Dk, nrow = N_post, ncol = n_eff, byrow = TRUE) == 1, M_nc_1, M_nc_0)
+  
+  # ---------------- GP WITH prior correction -------------------
+  gp_c <- make_gp(X_train = X_train_c, y_bin = Yk, use_correction = TRUE, gamma_scaled = gamma_scaled)
+  M_c_0 <- posterior_draws_prob(gp_c, X_t0c, ndraws = N_post)
+  M_c_1 <- posterior_draws_prob(gp_c, X_t1c, ndraws = N_post)
+  M_c_obs <- ifelse(matrix(Dk, nrow = N_post, ncol = n_eff, byrow = TRUE) == 1, M_c_1, M_c_0)
+  
+  # ---------------- Bayesian bootstrap weights -----------------
+  W <- matrix(rexp(N_post * n_eff, rate = 1), nrow = N_post)
+  W <- W / rowSums(W)
+  
+  # ---------------- ATEs ----------------
+  # (1) Unadjusted Bayes
+  Ate_nc_draws <- rowSums((M_nc_1 - M_nc_0) * W)
+  # (2) Prior-adjusted Bayes
+  Ate_c_draws  <- rowSums((M_c_1 - M_c_0) * W)
+  # (3) DR Bayes (posterior recentering)
+  # Pre-centering using UNcorrected GP posterior means
+  mu_nc_diff <- colMeans(M_nc_1 - M_nc_0)                 # length n_eff
+  mu_nc_obs  <- colMeans(M_nc_obs)                        # length n_eff
+  ATE_dr_pre <- mean(mu_nc_diff + gamma_k * (Yk - mu_nc_obs))
+  # Recenter draws using corrected GP draws
+  DR_rec_1 <- (matrix(gamma_k, nrow = N_post, ncol = n_eff, byrow = TRUE)) * (matrix(Yk, nrow = N_post, ncol = n_eff, byrow = TRUE) - M_c_obs)
+  Ate_drb_draws <- rowSums((M_c_1 - M_c_0) * W) + ATE_dr_pre - rowSums(DR_rec_1) / n_eff - rowSums(M_c_1 - M_c_0) / n_eff
+  
+  qfun <- function(x) {
+    qs <- quantile(x, c(0.025, 0.975))
+    c(
+      mean   = mean(x),
+      median = median(x),
+      lo     = qs[1],
+      hi     = qs[2],
+      len    = diff(qs)
+    )
+  }
+  
+  vals <- list(
+    Bayes      = qfun(Ate_nc_draws),
+    `PA Bayes` = qfun(Ate_c_draws),
+    `DR Bayes` = qfun(Ate_drb_draws)
+  )
+  out_df <- as.data.frame(do.call(rbind, vals), check.names = FALSE)
+  # # Guarantee expected columns exist
+  # needed <- c("mean","lo","hi","len","median")
+  # for (nm in needed) if (!nm %in% colnames(out_df)) out_df[[nm]] <- NA_real_
+  # # Order the summary columns
+  # out_df <- out_df[, needed, drop = FALSE]
+  # # Add n_eff as a separate column (used only for the header line while printing)
+  # out_df$n_eff <- n_eff
+  list(t_trim = t_trim, results = out_df)
+}
+
+# -------------------------------
+# Run for t in {0.10, 0.05, 0.01} and print a LaTeX-like table
+# -------------------------------
+
+N_post <- 5000
+h_r    <- 1/2
+cor_size <- 1
+
+trims <- c(0.10, 0.05, 0.01)
+res_list <- lapply(trims, function(tt) run_trim(t_trim = tt, N_post = N_post, h_r = h_r, cor_size = cor_size))
+
+simple <- do.call(rbind, lapply(seq_along(res_list), function(i) {
+  r <- as.data.frame(res_list[[i]], check.names = FALSE)
+  data.frame(
+    t_trim = r$t_trim,
+    Method = rownames(r),
+    Mean   = round(r$results.mean, 3),
+    CI     = sprintf("[%.3f, %.3f]", r$`results.lo.2.5%`, r$`results.hi.97.5%`),
+    Length = round(r$`results.len.97.5%`, 3),
+    stringsAsFactors = FALSE
+  )
+}))
+print(simple)
+
+
+##### Calculate the optimal t using the trimming rule proposed by Crump et al. [2009]
+### footnote 7
+### user-defined functions 
+ps.trim<-function(ps,t){
+  n<-length(ps)
+  for(i in 1:n){
+    if (ps[i]<t){ps[i]<-t
+    }else if (ps[i]>1-t){ps[i]<-1-t}
+  }
+  return(ps)
+}
+
+lhs<-function(gam,ps){
+  result<-gam*sum(1/(ps*(1-ps))<=gam)
+  return(result)
+}
+
+rhs<-function(gam,ps){
+  result<-2*sum((1/(ps*(1-ps)))*(1/(ps*(1-ps))<=gam))
+  return(result)
+}
+
+Alp<-seq(from=0.01,to=0.5,by=0.001)
+Gam<-1/(Alp*(1-Alp))
+J<-length(Gam)
+Diff<-rep(NA,J)
+ps.est.trim<-ps.trim(ps.est,0)
+
+for(j in 1:J){
+  Diff[j]<-rhs(Gam[j],ps.est.trim)-lhs(Gam[j],ps.est.trim)
+}
+
+gam.star<-Gam[which(Diff>=0)[1]]
+alp.star<-1/2-sqrt(1/4-1/gam.star)
+print(c('Optimal t in footnote 7 =',round(alp.star,3)))
+
+
+
+
