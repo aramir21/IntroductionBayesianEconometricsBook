@@ -1357,6 +1357,7 @@ make_gp <- function(X_train, y_bin, use_correction = FALSE, gamma_scaled = NULL,
                     init_lscale = 0.3) {
   stopifnot(length(y_bin) == nrow(X_train))
   # Base SE kernel (isotropic over all columns provided)
+  # Initializing the covariance function using squared exponential kernel
   cf_se <- gplite::cf_sexp(vars = colnames(X_train), lscale = init_lscale, magn = 1, normalize = TRUE)
   cfs <- list(cf_se)
   if (use_correction) {
@@ -1366,7 +1367,9 @@ make_gp <- function(X_train, y_bin, use_correction = FALSE, gamma_scaled = NULL,
     cf_lin <- gplite::cf_lin(vars = "gamma", magn = 1, normalize = FALSE)
     cfs <- list(cf_se, cf_lin)
   }
+  # Initializes a GP model with given covariance function(s) and likelihood
   gp <- gplite::gp_init(cfs = cfs, lik = gplite::lik_bernoulli(), approx = approx_method)
+  # Optimizing hyperparameters
   gp <- gplite::gp_optim(gp, x = X_train, y = y_bin, maxiter = 500)
   return(gp)
 }
@@ -1407,6 +1410,9 @@ run_trim <- function(t_trim = 0.10, N_post = 5000, h_r = 1/2, cor_size = 1) {
   colnames(X_train_nc) <- c(covars, "D")
   
   X_train_c <- X_train_nc
+  # Note that in the paper says that the adjusted prior has the factor \lambda*\hat{\gamma},
+  # where \lambda \sim N(0,\sigma_n^2). There is multiplication by \lambda in the code
+  # because this is integrated out. This approach is equivalent what we see in the paper
   X_train_c$gamma <- gamma_scaled
   
   # Test inputs: for each i, (Z_i, d=0) and (Z_i, d=1)
@@ -1446,6 +1452,11 @@ run_trim <- function(t_trim = 0.10, N_post = 5000, h_r = 1/2, cor_size = 1) {
   ATE_dr_pre <- mean(mu_nc_diff + gamma_k * (Yk - mu_nc_obs))
   # Recenter draws using corrected GP draws
   DR_rec_1 <- (matrix(gamma_k, nrow = N_post, ncol = n_eff, byrow = TRUE)) * (matrix(Yk, nrow = N_post, ncol = n_eff, byrow = TRUE) - M_c_obs)
+  # The first component is \tau_{\eta}^s in Algorithm 1
+  # The second component is \hat{m} a scalar. This has positive sign because
+  # minus x minus, the bias is with minus, and then, this component enters with minus in the bias term
+  # The third component is \gamma_k x (y-m(d,x)), m(d,x) is with prior correction
+  # The fourth component is m(1,x)-m(0,x) also with correction in the prior
   Ate_drb_draws <- rowSums((M_c_1 - M_c_0) * W) + ATE_dr_pre - rowSums(DR_rec_1) / n_eff - rowSums(M_c_1 - M_c_0) / n_eff
   
   qfun <- function(x) {
@@ -1535,7 +1546,3 @@ for(j in 1:J){
 gam.star<-Gam[which(Diff>=0)[1]]
 alp.star<-1/2-sqrt(1/4-1/gam.star)
 print(c('Optimal t in footnote 7 =',round(alp.star,3)))
-
-
-
-

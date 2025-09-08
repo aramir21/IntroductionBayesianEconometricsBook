@@ -3076,7 +3076,7 @@ is given by Equation~\ref{eq:GibbsPost} \cite{Zhang2006KLentropy,Jiang2008,bissi
 
 A very important parameter in the Gibbs posterior \cite{Jiang2008}, or \textit{general Bayes posterior} \cite{bissiri2016general}, is the learning rate, as it determines the asymptotic sampling properties of $\hat{\pi}(\boldsymbol{\theta}\mid\mathbf{y})$ used to perform inference on $\boldsymbol{\theta}$. For instance, \cite{bissiri2016general} propose different strategies to set this parameter, and \cite{Syring2019} propose a Monte Carlo algorithm that selects the learning rate so that the resulting credible region attains the nominal frequentist coverage probability.
 
-\cite{chernozhukov2003mcmc} propose the \textit{Laplace Type Estimator} (LTE), which can be seen as a particular case of the \textit{general Bayes posterior} \cite{bissiri2016general}, where the risk function is based on the moment conditions. 
+\cite{chernozhukov2003mcmc} introduce the \emph{Laplace-type estimator} (LTE), which can be interpreted as a special case of the \emph{general Bayes} update of \cite{bissiri2016general}, taking as loss a scaled sample criterion based on the moment conditions (e.g., the GMM quadratic form).
 
 In particular, given the moment conditions
 \[
@@ -3119,7 +3119,7 @@ Algorithm \ref{Alg:GibbsPosteior} shows the Metropolis-Hastings to perform infer
 \end{algorithm}
 
 
-\cite{chernozhukov2003mcmc} show that the posterior mean of the LTE is first-order equivalent to the efficient Generalized Method of Moments (GMM) estimator, and that the posterior quantiles yield asymptotically valid confidence intervals with correct frequentist coverage.\\
+Under suitable regularity conditions, \cite{chernozhukov2003mcmc} show that the LTE posterior mean is first-order equivalent to the efficient GMM estimator and that posterior quantiles deliver confidence sets with asymptotically correct frequentist coverage. Relatedly, \cite{andrews2022weakgmm} study decision rules for weak GMM and provide support for quasi-Bayesian procedures built from the GMM quadratic form, aligning with the spirit of the LTE in settings with weak identification.\\
 
 \textbf{Example: Instrumental variable quantile regression (IVQR)}
 
@@ -3273,7 +3273,108 @@ round(post_mean, 3); round(post_ci, 3)
 Setting $\tau = 0.5$ (the median), the quantile treatment effect is USD 6,719, with a 95\% credible interval of (USD 6,612, USD 6,806). For $\tau = 0.9$, the treatment effect is USD 19,318, with a 95\% credible interval of (USD 18,634, USD 20,085). Note that, in the instrumental variable example, the posterior mean of the LATE was USD 8,520, which is higher than the treatment effect at the median ($\tau = 0.5$). This suggests that the LATE overstates the causal effect of 401(k) participation due to the large impact at higher quantiles of the outcome distribution.
 
 \section{Doubly robust Bayesian inferential framework}\label{sec12_11}
-\cite{breunig2025double}
+
+\cite{breunig2025double} propose a doubly robust Bayesian approach to inference on the average treatment effect (ATE) under unconfoundedness. They adjust the prior for the conditional mean outcome function using an estimator of the propensity score, the conditional probability of treatment assignment \cite{rosenbaum1983central}, and then re-center the posterior distribution of the treatment effect using the propensity score estimator together with a pilot estimator of the outcome regression. The authors show that under unconfoundedness and overlap, the corrected posterior converges in distribution to a normal law centered at a semiparametrically efficient estimator, and that the resulting credible intervals achieve asymptotically exact Frequentist coverage.
+
+Let $Y_i\in\{0,1\}$ be the outcome and $D_i\in\{0,1\}$ the treatment, thus
+\[
+Y_i = D_i\,Y_i(1) + (1-D_i)\,Y_i(0),
+\]
+where $Y_i(1)$ and $Y_i(0)$ are the potential outcomes.
+
+Let $\mathbf{X}_i$ denote pre-treatment covariates with distribution $F_0$ and density $f_0$, and define the propensity score
+\[
+\pi_0(\mathbf{x}) := \P(D_i=1\mid \mathbf{X}_i=\mathbf{x})
+\]
+and the conditional mean outcome (success probability)
+\[
+m_0(d,\mathbf{x}) := \P(Y_i=1\mid D_i=d,\mathbf{X}_i=\mathbf{x}).
+\]
+For an i.i.d. sample $W_i=(Y_i,D_i,\mathbf{X}_i)$, the joint density can be written as
+\[
+p_{f,\pi,m}(y,d,\mathbf{x})
+= f(\mathbf{x})\,[\pi(\mathbf{x})]^d\,[1-\pi(\mathbf{x})]^{1-d}\,[m(d,\mathbf{x})]^y\,[1-m(d,\mathbf{x})]^{1-y}.
+\]
+The parameter of interest is the average treatment effect (ATE),
+\[
+\tau_0 := \mathbb{E}_0\!\left[\,Y_i(1)-Y_i(0)\,\right].
+\]
+
+Following \cite{breunig2025double}, impose support via link functions. For the outcome regression and propensity score use logits:
+\[
+m_\eta(d,\mathbf{x})=\frac{1}{1+\exp\{-\eta^m(d,\mathbf{x})\}},
+\qquad
+\pi_\eta(\mathbf{x})=\frac{1}{1+\exp\{-\eta^\pi(\mathbf{x})\}},
+\]
+so that
+\[
+\eta^m(d,\mathbf{x})=\log\!\left(\frac{m_\eta(d,\mathbf{x})}{1-m_\eta(d,\mathbf{x})}\right),
+\qquad
+\eta^\pi(\mathbf{x})=\log\!\left(\frac{\pi_\eta(\mathbf{x})}{1-\pi_\eta(\mathbf{x})}\right).
+\]
+For the covariate density, use a log-density parametrization
+\[
+f_\eta(\mathbf{x})=\exp\{\eta^f(\mathbf{x})\},
+\qquad
+\eta^f(\mathbf{x})=\log f_\eta(\mathbf{x}).
+\]
+Given a prior on $(\eta^m,\eta^\pi,\eta^f)$, the induced ATE is
+\[
+\tau_\eta := \mathbb{E}_\eta\!\left[m_\eta(1,\mathbf{X})-m_\eta(0,\mathbf{X})\right].
+\]
+
+% EIF
+The basis for inference on $\tau_\eta$ is the \textit{efficient influence function} (EIF):
+\[
+\tilde{\tau}_\eta(W)
+= \big\{m_\eta(1,\mathbf{X})-m_\eta(0,\mathbf{X})\big\}
++ \gamma_\eta(D,\mathbf{X})\,\big\{Y-m_\eta(D,\mathbf{X})\big\}
+- \tau_\eta,
+\]
+where the Riesz representer for the ATE functional is
+\[
+\gamma_\eta(D,\mathbf{X})
+= \frac{D}{\pi_\eta(\mathbf{X})}
+- \frac{1-D}{1-\pi_\eta(\mathbf{X})}.
+\]
+
+% Properties and DR
+An influence function measures the first-order effect of an infinitesimal contamination of the underlying distribution on the estimand. The \emph{efficient} influence function attains the semiparametric efficiency bound (its variance is the minimal asymptotic variance in the model). At the truth $\eta_0$, the EIF is mean-zero: $\mathbb{E}_0[\tilde{\tau}_{\eta_0}(W)]=0$. Moreover, it is \emph{doubly robust}:
+\[
+\mathbb{E}_0\!\big[\tilde{\tau}_\eta(W)\big]=0
+\quad\text{if either } m_\eta \text{ or } \pi_\eta \text{ is correctly specified.}
+\]
+
+To conduct Bayesian inference, \cite{breunig2025double} place independent priors on the outcome regression and the covariate distribution (equivalently, on $\eta^m$ and $\eta^f$). For the covariates they use a Dirichlet Process (DP) prior on $F$ (hence on $f$; see Section \ref{sec11_12}), which, under standard conditions, induces posterior draws that approximate the Bayesian bootstrap for sample supported functionals \cite{Lo1987BayesianBootstrap} (see Section \ref{sec610}). 
+
+For the outcome regression they place a Gaussian Process (GP) prior on $\eta^m$ (see Section \ref{13_4}), with a correction term that incorporates a preliminary estimator of the Riesz representer. The propensity component $\eta^\pi$ is estimated in a separate first step and is used in the correction/recentering; a prior for $\eta^\pi$ is therefore not required for their procedure.
+
+Algorithm~\ref{Alg:DRBayes} outlines the doubly robust Bayesian procedure of \cite{breunig2025double}. 
+The pilot estimate of the Riesz representer, $\hat\gamma_\eta$, is obtained by plug–in, using a propensity score $\hat\pi(\mathbf{x})$ estimated via logistic Lasso.
+ 
+The pilot estimate of the outcome regression, $\hat m_\eta(d,\mathbf{x})=\Pr(Y=1\mid D=d,\mathbf{X}=\mathbf{x})$, is taken as the posterior mean from a GP \emph{classification} model fit with a Laplace approximation.
+
+Concretely, a GP prior is placed on a latent function $f(d,\mathbf{x})$ with a squared–exponential kernel, and the success probability is given by the logistic link $m(d,\mathbf{x})=\operatorname{logit}^{-1}\!\{f(d,\mathbf{x})\}$. Because the Bernoulli likelihood makes the required integrals over $f$ analytically intractable, the posterior is approximated using Laplace’s method (Expectation Propagation is an alternative). See Sections 3.3–3.5 of \cite{rasmussen2006gaussian} for details.
+ 
+
+\begin{algorithm}[h!]
+	\caption{Double Robust Bayesian Algorithm}\label{Alg:DRBayes}
+	\begin{algorithmic}[1]
+		\State Have initial estimates of $\hat{\gamma}_{\eta}$ based on logistic Lasso
+		\State Trim the propensity score using standard values, for instance, 10\%, or the optimal trimming rule proposed by \cite{Crump2009Overlap}
+		\State Estimate the Riesz representer using the estimate of the propensity score 
+		\State Calculate the prior correction term $\sigma_n=\frac{\log(n)}{n^{1/2}\Gamma_n}$, $\Gamma_n=\frac{1}{n}\sum_{i=1}^n |\hat{\gamma}_{\eta}(d_i,\mathbf{x}_i)|$, $n$ is the effective sample size
+		\State Calculate the prior adjustment $\sigma_n\times \hat{\gamma}_{\eta}$ 
+		\State Calculate $\hat{m}(d,\mathbf{x})=\frac{1}{1+\exp\left\{-\eta^m(d,\mathbf{x})\right\}}$ as the posterior mean of a Gaussian Process (GP) based on $d$ and $\mathbf{x}$ (unadjusted mean)
+		\State Set an initial GP prior for  the adjusted mean $m_{\eta}^c(d,\mathbf{x})=\frac{1}{1+\exp\left\{-\eta^m(d,\mathbf{x},\sigma_n\times \hat{\gamma})\right\}}$		 			
+		\For{\texttt{$s=1,\dots,S$}} 
+		\State Generate the $s-th$ draw of the adjusted GP posterior, $m_{\eta}^{c,s}(d,\mathbf{x})$
+		\State Draw Bayesian bootstrap weights $M^s_{ni}=\frac{e_i^s}{\sum_{j=1}^n e_j^s}$, $e_i^s\sim Exp(1)$, $i=1,2,\dots,n$
+		\State Calculate the corrected posterior draw for the ATE $\tilde{\tau}_{\eta}^s=\tau_{\eta}^s-\hat{b}_{\eta}^s$, where $\tau_{\eta}^s=M^s_{ni}(m_{\eta}^{c,s}(1,\mathbf{x})-m_{\eta}^{c,s}(0,\mathbf{x}))$, and $\hat{b}_{\eta}^s=\frac{1}{n}\sum_{i=1}^n\tau[m_{\eta}^s(\mathbf{w}_i)-\hat{m}(\mathbf{w}_i)]$, $\tau[m]=m(1,\mathbf{x})-m(0,\mathbf{x})+\hat{\gamma}(d,\mathbf{x})(y-m(d,\mathbf{x}))$ 
+		\EndFor 
+	\end{algorithmic} 
+\end{algorithm}      
+  
 
 \section{Other approaches}\label{sec12_12}
 There are other causal inference approaches that we do not cover in this chapter but are worth mentioning. In particular, 
