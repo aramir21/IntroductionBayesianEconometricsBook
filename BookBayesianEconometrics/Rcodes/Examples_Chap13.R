@@ -1309,32 +1309,141 @@ round(post_ci, 3)
 
 plot(coda::mcmc(post))
 
+######### Doubly Robust ########
+#### Consequences of misspecification ####
+set.seed(101)
+
+####--------------- TRUE DGP ---------------####
+# Covariates
+rX <- function(n){
+  X1 <- rnorm(n)
+  X2 <- rbinom(n,1,0.5)         # binary
+  X3 <- runif(n,-1,1)
+  data.frame(X1,X2,X3)
+}
+
+# True propensity and outcome
+logit <- function(t) 1/(1+exp(-t))
+
+true_pi  <- function(X){ logit(-0.3 + 0.8*X$X1 -0.5*X$X2 + 0.7*X$X3 + 0.7*X$X1*X$X3 + 0.5*sin(X$X1)) }
+true_eta <- function(d,X){ -0.2 + 0.6*d + 0.5*X$X1 -0.4*X$X2 + 0.3*X$X3 + 0.6*(X$X1^2) - 0.5*X$X1*X$X2 }
+true_p   <- function(d,X){ logit(true_eta(d,X)) }
+
+gen_data <- function(n){
+  X <- rX(n)
+  pi <- true_pi(X)
+  D  <- rbinom(n,1,pi)
+  p  <- true_p(D,X)
+  Y  <- rbinom(n,1,p)
+  data.frame(Y,D,X1=X$X1,X2=factor(X$X2),X3=X$X3)
+}
+
+# True ATE (via large-M MC integration)
+true_ate <- function(M=2e5){
+  X <- rX(M)
+  mean( true_p(1,X) - true_p(0,X) )
+}
+tau0 <- true_ate()   # population ATE
+
+####--------------- FIT (correct vs wrong) ---------------####
+fit_ps <- function(dat, spec=c("correct","wrong")){
+  spec <- match.arg(spec)
+  if(spec=="correct"){
+    glm(D ~ X1 + X2 + X3 + I(sin(X1)) + X1:X3, data=dat, family=binomial("logit"))
+  } else {
+    glm(D ~ X1 + X2 + X3, data=dat, family=binomial("logit"))
+  }
+}
+
+fit_or <- function(dat, spec=c("correct","wrong")){
+  spec <- match.arg(spec)
+  if(spec=="correct"){
+    glm(Y ~ D + X1 + X2 + X3 + I(X1^2) + X1:X2, data=dat, family=binomial("logit"))
+  } else {
+    glm(Y ~ D + X1 + X2 + X3, data=dat, family=binomial("logit"))
+  }
+}
+
+####--------------- ESTIMATORS ---------------####
+est_OR  <- function(dat, out_fit){
+  # standardized outcome regression
+  p1 <- predict(out_fit, newdata=transform(dat,D=1), type="response")
+  p0 <- predict(out_fit, newdata=transform(dat,D=0), type="response")
+  mean(p1 - p0)
+}
+
+est_IPW <- function(dat, ps_fit, eps=1e-3){
+  ps <- pmin(pmax(predict(ps_fit, type="response"), eps), 1-eps)
+  mean( dat$D*dat$Y/ps - (1-dat$D)*dat$Y/(1-ps) )
+}
+
+est_DR <- function(dat, ps_fit, out_fit, eps=1e-3){
+  ps  <- pmin(pmax(predict(ps_fit, type="response"), eps), 1-eps)
+  m1  <- predict(out_fit, newdata=transform(dat,D=1), type="response")
+  m0  <- predict(out_fit, newdata=transform(dat,D=0), type="response")
+  mu  <- (m1 - m0) +
+    dat$D   *(dat$Y - m1)/ps -
+    (1-dat$D)*(dat$Y - m0)/(1-ps)
+  mean(mu)
+}
+
+####--------------- MONTE CARLO ---------------####
+one_run <- function(n=2000, spec_ps=c("correct","wrong"), spec_or=c("correct","wrong")){
+  dat   <- gen_data(n)
+  psfit <- fit_ps(dat, spec_ps)
+  orfit <- fit_or(dat, spec_or)
+  c(OR = est_OR(dat, orfit),
+    IPW= est_IPW(dat, psfit),
+    DR = est_DR(dat, psfit, orfit))
+}
+
+run_mc <- function(B=500, n=2000, spec_ps, spec_or){
+  ests <- replicate(B, one_run(n, spec_ps, spec_or))
+  rowMeans(ests) -> means
+  apply(ests, 1, function(x) sqrt(mean( (x - tau0)^2 ))) -> rmse
+  bias <- means - tau0
+  data.frame(Estimator=c("OR","IPW","DR"),
+             Mean=as.numeric(means),
+             Bias=as.numeric(bias),
+             RMSE=as.numeric(rmse))
+}
+
+####--------------- SCENARIOS ---------------####
+A <- run_mc(spec_ps="wrong",  spec_or="correct")  # PS misspecified, OR correct  -> DR ok, OR ok, IPW biased
+B <- run_mc(spec_ps="correct",spec_or="wrong")    # PS correct, OR misspecified  -> DR ok, IPW ok, OR biased
+C <- run_mc(spec_ps="correct",spec_or="correct")  # Both correct                 -> all ok
+D <- run_mc(spec_ps="wrong",  spec_or="wrong")    # Both wrong                   -> DR fails too
+
+list(
+  tau_true = tau0,
+  Scenario_A = A,
+  Scenario_B = B,
+  Scenario_C = C,
+  Scenario_D = D
+)
+
 ######### Doubly Robust Bayesian: Simulation #########
 rm(list = ls()); set.seed(123)
 
 ## simulate covariates
-n  <- 2000; p <- 3
+n  <- 2000
 X1 <- rnorm(n)                 # continuous
 X2 <- rbinom(n, 1, 0.5)        # binary
 X3 <- runif(n, -1, 1)          # continuous
+Z <- cbind(X1, X2, X3)
+# True propensity and outcome
+logit <- function(t) 1/(1+exp(-t))
 
-## true parameters
-beta0 <- -0.3; beta1 <- 0.8; beta2 <- -0.5; beta3 <- 0.7
-alpha0 <- -0.2; tau <- 0.6; alpha1 <- 0.5; alpha2 <- -0.4; alpha3 <- 0.3
+true_pi  <- function(X){ logit(-0.3 + 0.8*X[,1] -0.5*X[,2] + 0.7*X[,3]) }
+true_eta <- function(d,X){ -0.2 + 0.6*d + 0.5*X[,1] -0.4*X[,2] + 0.3*X[,3] }
+true_p   <- function(d,X){ logit(true_eta(d,X)) }
 
-# Population ATE = E_X[ plogis(η1) - plogis(η0) ]
-eta0 <- alpha0 + alpha1*X1 + alpha2*X2 + alpha3*X3
-eta1 <- alpha0 + tau + alpha1*X1 + alpha2*X2 + alpha3*X3
+ATE  <- mean(true_p(1,Z) - true_p(0,Z))
 
-ATE  <- mean(plogis(eta1) - plogis(eta0))
-
-## treatment assignment D ~ logit(X)
-pi  <- plogis(beta0 + beta1*X1 + beta2*X2 + beta3*X3)  # logit^{-1}
-D   <- rbinom(n, 1, pi)
-
-## outcome Y ~ logit(D, X)
-P   <- plogis(alpha0 + tau*D + alpha1*X1 + alpha2*X2 + alpha3*X3)
-Y   <- rbinom(n, 1, P)
+pi <- true_pi(Z)
+D  <- rbinom(n,1,pi)
+P  <- true_p(D,Z)
+Y  <- rbinom(n,1,P)
 
 dat <- data.frame(Y, D, X1, X2 = factor(X2), X3)
 
@@ -1377,8 +1486,18 @@ c(SE_boot = SE_boot)
 ######### Doubly Robust Bayesian: Implementation #########
 
 library(glmnet)
+# OK specification propensity score
+# Consistent if the PS model is correctly specified (even if the outcome model is wrong). Requires positivity and often benefits from trimming/extreme-weight control.
 Z <- cbind(X1, X2, X3)
+p <- dim(Z)[2]
 covars <- c("X1","X2","X3")
+
+# # OK specification outcome regression
+# # Consistent if the outcome model is correctly specified (even if the PS is wrong).
+# Z <- cbind(X1, X2, X3, X1*X2, X1^2)
+# p <- dim(Z)[2]
+# covars <- c("X1","X2","X3", "X1X2", "X12")
+
 Z.df <- as.data.frame(Z) # covariates as a dataframe
 cvfit <- cv.glmnet(Z, D, family = "binomial", alpha=1, nfolds = 10) # lasso,min
 ps.coef <- coef(cvfit, s = "lambda.min")[0:p+1]
@@ -1411,7 +1530,7 @@ make_gp <- function(X_train, y_bin, use_correction = FALSE, gamma_scaled = NULL,
   # Initializes a GP model with given covariance function(s) and likelihood
   gp <- gplite::gp_init(cfs = cfs, lik = gplite::lik_bernoulli(), approx = approx_method)
   # Optimizing hyperparameters
-  gp <- gplite::gp_optim(gp, x = X_train, y = y_bin, maxiter = 500)
+  gp <- gplite::gp_optim(gp, x = X_train, y = y_bin, maxiter = 1000, restarts = 3, tol = 1e-05)
   return(gp)
 }
 

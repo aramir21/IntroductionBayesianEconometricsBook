@@ -756,4 +756,235 @@ round(post_ci, 3)
 
 plot(coda::mcmc(post))
 
+######### Doubly Robust Bayesian: Simulation with misspecification #########
+rm(list = ls()); set.seed(123)
+
+## simulate covariates
+n  <- 2000
+X1 <- rnorm(n)                 # continuous
+X2 <- rbinom(n, 1, 0.5)        # binary
+X3 <- runif(n, -1, 1)          # continuous
+Z <- cbind(X1, X2, X3)
+# True propensity and outcome
+logit <- function(t) 1/(1+exp(-t))
+
+true_pi  <- function(X){ logit(-0.3 + 0.8*X[,1] -0.5*X[,2] + 0.7*X[,3] + 0.7*X[,1]*X[,3] + 0.5*sin(X[,1])) }
+true_eta <- function(d,X){ -0.2 + 0.6*d + 0.5*X[,1] -0.4*X[,2] + 0.3*X[,3] + 0.6*(X[,1]^2) - 0.5*X[,1]*X[,2] }
+true_p   <- function(d,X){ logit(true_eta(d,X)) }
+
+ATE  <- mean(true_p(1,Z) - true_p(0,Z))
+
+pi <- true_pi(Z)
+D  <- rbinom(n,1,pi)
+P  <- true_p(D,Z)
+Y  <- rbinom(n,1,P)
+
+dat <- data.frame(Y, D, X1, X2 = factor(X2), X3)
+
+## fit parametric logit for treatment (propensity)
+ps_fit  <- glm(D ~ X1 + X2 + X3 + X1:X3 + I(sin(X1)), data = dat, family = binomial(link = "logit"))
+ps_hat  <- predict(ps_fit, type = "response")  # \hat{\pi}(X)
+
+## fit parametric logit for binary outcome (with treatment)
+out_fit <- glm(Y ~ D + X1 + X2 + X3 + I(X1^2) + X1:X2, data = dat, family = binomial(link = "logit"))
+p_hat   <- predict(out_fit, type = "response") # \hat{p}(D, X)
+
+summary(ps_fit)
+summary(out_fit)
+
+# potential-outcome predictions
+mu1_hat <- predict(out_fit, newdata = transform(dat, D = 1), type = "response")
+mu0_hat <- predict(out_fit, newdata = transform(dat, D = 0), type = "response")
+
+ATE_hat <- mean(mu1_hat - mu0_hat)                 # risk difference (ATE)
+
+# Standard error using bootstrap
+set.seed(123)
+B <- 500
+n <- nrow(dat)
+
+ATE_b <- replicate(B, {
+  idx <- sample.int(n, n, replace = TRUE)
+  db  <- dat[idx, ]
+  # skip degenerate resamples with one treatment level
+  if (length(unique(db$D)) < 2) return(NA_real_)
+  fit <- glm(Y ~ D + X1 + X2 + X3 + I(X1^2) + X1:X2, data = db, family = binomial("logit"))
+  p1  <- predict(fit, newdata = transform(db, D = 1), type = "response")
+  p0  <- predict(fit, newdata = transform(db, D = 0), type = "response")
+  mean(p1 - p0)
+})
+
+SE_boot <- sd(na.omit(ATE_b))
+c(SE_boot = SE_boot)
+
+######### Doubly Robust Bayesian: Implementation #########
+
+library(glmnet)
+# OK specification propensity score
+# Consistent if the PS model is correctly specified (even if the outcome model is wrong). Requires positivity and often benefits from trimming/extreme-weight control.
+Z <- cbind(X1, X2, X3, X1*X3, sin(X1))
+p <- dim(Z)[2]
+covars <- c("X1","X2","X3", "X1X3", "sinX1")
+
+# # OK specification outcome regression
+# # Consistent if the outcome model is correctly specified (even if the PS is wrong).
+# Z <- cbind(X1, X2, X3, X1*X2, X1^2)
+# p <- dim(Z)[2]
+# covars <- c("X1","X2","X3", "X1X2", "X12")
+
+Z.df <- as.data.frame(Z) # covariates as a dataframe
+cvfit <- cv.glmnet(Z, D, family = "binomial", alpha=1, nfolds = 10) # lasso,min
+ps.coef <- coef(cvfit, s = "lambda.min")[0:p+1]
+ps_hat <- predict(cvfit, newx = Z, s = "lambda.min",type = "response")
+# Avoid 0/1
+ps_hat <- pmin(pmax(ps_hat, 1e-6), 1 - 1e-6)
+
+# Riesz representer gamma(d,x) = d/\pi(x) - (1-d)/(1-\pi(x))
+riesz_fun <- function(d, ps) d/ps - (1 - d)/(1 - ps)
+
+# -------------------------------
+# GP helpers
+# -------------------------------
+# Build a GP model with (optionally) an additive linear kernel on gamma
+make_gp <- function(X_train, y_bin, use_correction = FALSE, gamma_scaled = NULL,
+                    approx_method = gplite::approx_laplace(),
+                    init_lscale = 0.3) {
+  stopifnot(length(y_bin) == nrow(X_train))
+  # Base SE kernel (isotropic over all columns provided)
+  # Initializing the covariance function using squared exponential kernel
+  cf_se <- gplite::cf_sexp(vars = colnames(X_train), lscale = init_lscale, magn = 1, normalize = TRUE)
+  cfs <- list(cf_se)
+  if (use_correction) {
+    stopifnot(!is.null(gamma_scaled))
+    # Add linear kernel on the last column (gamma_scaled)
+    # Kernel: k_PS(i,j) = (gamma_scaled_i)*(gamma_scaled_j)
+    cf_lin <- gplite::cf_lin(vars = "gamma", magn = 1, normalize = FALSE)
+    cfs <- list(cf_se, cf_lin)
+  }
+  # Initializes a GP model with given covariance function(s) and likelihood
+  gp <- gplite::gp_init(cfs = cfs, lik = gplite::lik_bernoulli(), approx = approx_method)
+  # Optimizing hyperparameters
+  gp <- gplite::gp_optim(gp, x = X_train, y = y_bin, maxiter = 1000, restarts = 3, tol = 1e-05)
+  return(gp)
+}
+
+# Draw posterior of m(Z,d) at test inputs using GP classification
+# Returns a draws x n_test matrix on probability scale (logistic link applied)
+posterior_draws_prob <- function(gp, X_test, ndraws = 5000) {
+  # NOTE: gplite::gp_draw returns an N_test x draws matrix.
+  # We want draws x N_test to align with downstream code (weights W: N_post x n_eff).
+  out <- gplite::gp_draw(gp, xnew = X_test, draws = ndraws,
+                         transform = TRUE, target = FALSE, jitter = 1e-6)
+  t(out)
+}
+
+# -------------------------------
+# Main routine for a given trimming threshold t in {0.10, 0.05, 0.01}
+# -------------------------------
+run_trim <- function(t_trim = 0.10, N_post = 5000, h_r = 1/2, cor_size = 1) {
+  # Trim by estimated PS
+  keep <- which(ps_hat >= t_trim & ps_hat <= (1 - t_trim))
+  n_eff <- length(keep)
+  if (n_eff < 50) stop("Too few observations after trimming.")
+  
+  Yk  <- Y[keep]
+  Dk  <- D[keep]
+  Zk  <- Z[keep, , drop = FALSE]
+  psk <- ps_hat[keep]
+  
+  # Riesz representer and sigma_n choice
+  gamma_k <- riesz_fun(Dk, psk)
+  # sigma_n ≍ log(n) / ( n^{1/2} * mean|gamma| )  (scale-matched)
+  sigma_n <- cor_size * (log(n_eff) / ( (n_eff)^(h_r) * mean(abs(gamma_k)) ))
+  gamma_scaled <- sigma_n * gamma_k
+  
+  # Training inputs for GP: [Z, D] and, if corrected, an extra column 'gamma'
+  X_train_nc <- data.frame(Zk)
+  X_train_nc$D <- Dk
+  colnames(X_train_nc) <- c(covars, "D")
+  
+  X_train_c <- X_train_nc
+  # Note that in the paper says that the adjusted prior has the factor \lambda*\hat{\gamma},
+  # where \lambda \sim N(0,\sigma_n^2). There is multiplication by \lambda in the code
+  # because this is integrated out. This approach is equivalent what we see in the paper
+  X_train_c$gamma <- gamma_scaled
+  
+  # Test inputs: for each i, (Z_i, d=0) and (Z_i, d=1)
+  X_t0 <- X_train_nc; X_t0$D <- 0
+  X_t1 <- X_train_nc; X_t1$D <- 1
+  X_t0c <- X_t0; X_t1c <- X_t1
+  X_t0c$gamma <- sigma_n * riesz_fun(0, psk)   # = -sigma_n/(1-ps)
+  X_t1c$gamma <- sigma_n * riesz_fun(1, psk)   # =  sigma_n/ps
+  
+  # ---------------- GP WITHOUT prior correction ----------------
+  gp_nc <- make_gp(X_train = X_train_nc, y_bin = Yk, use_correction = FALSE)
+  # joint draws for [m(Z,0); m(Z,1)]
+  M_nc_0 <- posterior_draws_prob(gp_nc, X_t0, ndraws = N_post)  # N_post x n_eff
+  M_nc_1 <- posterior_draws_prob(gp_nc, X_t1, ndraws = N_post)
+  # observed arm probabilities
+  M_nc_obs <- ifelse(matrix(Dk, nrow = N_post, ncol = n_eff, byrow = TRUE) == 1, M_nc_1, M_nc_0)
+  
+  # ---------------- GP WITH prior correction -------------------
+  gp_c <- make_gp(X_train = X_train_c, y_bin = Yk, use_correction = TRUE, gamma_scaled = gamma_scaled)
+  M_c_0 <- posterior_draws_prob(gp_c, X_t0c, ndraws = N_post)
+  M_c_1 <- posterior_draws_prob(gp_c, X_t1c, ndraws = N_post)
+  M_c_obs <- ifelse(matrix(Dk, nrow = N_post, ncol = n_eff, byrow = TRUE) == 1, M_c_1, M_c_0)
+  
+  # ---------------- Bayesian bootstrap weights -----------------
+  W <- matrix(rexp(N_post * n_eff, rate = 1), nrow = N_post)
+  W <- W / rowSums(W)
+  
+  # ---------------- ATEs ----------------
+  # (1) Unadjusted Bayes
+  Ate_nc_draws <- rowSums((M_nc_1 - M_nc_0) * W)
+  # (2) Prior-adjusted Bayes
+  Ate_c_draws  <- rowSums((M_c_1 - M_c_0) * W)
+  # (3) DR Bayes (posterior recentering)
+  # Pre-centering using UNcorrected GP posterior means
+  mu_nc_diff <- colMeans(M_nc_1 - M_nc_0)                 # length n_eff
+  mu_nc_obs  <- colMeans(M_nc_obs)                        # length n_eff
+  ATE_dr_pre <- mean(mu_nc_diff + gamma_k * (Yk - mu_nc_obs))
+  # Recenter draws using corrected GP draws
+  DR_rec_1 <- (matrix(gamma_k, nrow = N_post, ncol = n_eff, byrow = TRUE)) * (matrix(Yk, nrow = N_post, ncol = n_eff, byrow = TRUE) - M_c_obs)
+  # The first component is \tau_{\eta}^s in Algorithm 1
+  # The second component is \hat{m} a scalar. This has positive sign because
+  # minus x minus, the bias is with minus, and then, this component enters with minus in the bias term
+  # The third component is \gamma_k x (y-m(d,x)), m(d,x) is with prior correction
+  # The fourth component is m(1,x)-m(0,x) also with correction in the prior
+  Ate_drb_draws <- rowSums((M_c_1 - M_c_0) * W) + ATE_dr_pre - rowSums(DR_rec_1) / n_eff - rowSums(M_c_1 - M_c_0) / n_eff
+  
+  qfun <- function(x) {
+    qs <- quantile(x, c(0.025, 0.975))
+    c(
+      mean   = mean(x),
+      median = median(x),
+      lo     = qs[1],
+      hi     = qs[2],
+      len    = diff(qs)
+    )
+  }
+  
+  vals <- list(
+    Bayes      = qfun(Ate_nc_draws),
+    `PA Bayes` = qfun(Ate_c_draws),
+    `DR Bayes` = qfun(Ate_drb_draws)
+  )
+  out_df <- as.data.frame(do.call(rbind, vals), check.names = FALSE)
+  # # Guarantee expected columns exist
+  # needed <- c("mean","lo","hi","len","median")
+  # for (nm in needed) if (!nm %in% colnames(out_df)) out_df[[nm]] <- NA_real_
+  # # Order the summary columns
+  # out_df <- out_df[, needed, drop = FALSE]
+  # # Add n_eff as a separate column (used only for the header line while printing)
+  # out_df$n_eff <- n_eff
+  list(t_trim = t_trim, results = out_df)
+}
+
+N_post <- 5000
+h_r    <- 1/2
+cor_size <- 1
+trim <- 0.05
+res_list <- run_trim(t_trim = trim, N_post = N_post, h_r = h_r, cor_size = cor_size)
+print(res_list$results)
+ATE; ATE_hat; sd(ATE_b)
 

@@ -3272,11 +3272,11 @@ round(post_mean, 3); round(post_ci, 3)
 
 Setting $\tau = 0.5$ (the median), the quantile treatment effect is USD 6,719, with a 95\% credible interval of (USD 6,612, USD 6,806). For $\tau = 0.9$, the treatment effect is USD 19,318, with a 95\% credible interval of (USD 18,634, USD 20,085). Note that, in the instrumental variable example, the posterior mean of the LATE was USD 8,520, which is higher than the treatment effect at the median ($\tau = 0.5$). This suggests that the LATE overstates the causal effect of 401(k) participation due to the large impact at higher quantiles of the outcome distribution.
 
-\section{Doubly robust Bayesian inferential framework}\label{sec12_11}
+\section{Doubly robust Bayesian inferential framework (DRB)}\label{sec12_11}
 
-\cite{breunig2025double} propose a doubly robust Bayesian approach to inference on the average treatment effect (ATE) under unconfoundedness. They adjust the prior for the conditional mean outcome function using an estimator of the propensity score, the conditional probability of treatment assignment \cite{rosenbaum1983central}, and then re-center the posterior distribution of the treatment effect using the propensity score estimator together with a pilot estimator of the outcome regression. The authors show that under unconfoundedness and overlap, the corrected posterior converges in distribution to a normal law centered at a semiparametrically efficient estimator, and that the resulting credible intervals achieve asymptotically exact Frequentist coverage.
+\cite{breunig2025double} propose a doubly robust Bayesian (DRB) approach to inference on the average treatment effect (ATE) under unconfoundedness. They adjust the prior for the conditional mean outcome function using an estimator of the propensity score, the conditional probability of treatment assignment \cite{rosenbaum1983central}, and then re-center the posterior distribution of the treatment effect using the propensity score estimator together with a pilot estimator of the outcome regression. The authors show that under unconfoundedness and overlap, the corrected posterior converges in distribution to a normal law centered at a semiparametrically efficient estimator, and that the resulting credible intervals achieve asymptotically exact Frequentist coverage.
 
-Let $Y_i\in\{0,1\}$ be the outcome and $D_i\in\{0,1\}$ the treatment, thus
+Let $Y_i\in\{0,1\}$ be the outcome and $D_i\in\{0,1\}$ the treatment,\footnote{\cite{breunig2025double} extend their framework to continuous, counting and multinomial outcomes.} thus
 \[
 Y_i = D_i\,Y_i(1) + (1-D_i)\,Y_i(0),
 \]
@@ -3284,11 +3284,11 @@ where $Y_i(1)$ and $Y_i(0)$ are the potential outcomes.
 
 Let $\mathbf{X}_i$ denote pre-treatment covariates with distribution $F_0$ and density $f_0$, and define the propensity score
 \[
-\pi_0(\mathbf{x}) := \P(D_i=1\mid \mathbf{X}_i=\mathbf{x})
+\pi_0(\mathbf{x}) := P(D_i=1\mid \mathbf{X}_i=\mathbf{x})
 \]
 and the conditional mean outcome (success probability)
 \[
-m_0(d,\mathbf{x}) := \P(Y_i=1\mid D_i=d,\mathbf{X}_i=\mathbf{x}).
+m_0(d,\mathbf{x}) := P(Y_i=1\mid D_i=d,\mathbf{X}_i=\mathbf{x}).
 \]
 For an i.i.d. sample $W_i=(Y_i,D_i,\mathbf{X}_i)$, the joint density can be written as
 \[
@@ -3361,7 +3361,7 @@ $m(d,\mathbf{x})=\operatorname{logit}^{-1}\{\eta^m(d,\mathbf{x})\}$.
 Because the Bernoulli likelihood makes the required integrals over
 $\eta^m$ analytically intractable, the posterior is approximated using
 Laplace’s method (Expectation Propagation is a common alternative).
-See \S\S3.3–3.5 of \cite{rasmussen2006gaussian} for details.
+See Sections 3.3–3.5 of \cite{rasmussen2006gaussian} for details.
 
 The \emph{adjusted} GP prior specifies the latent logit as
 \[
@@ -3415,7 +3415,185 @@ $\mathbf{K} + \sigma_n^2\,\widehat{\boldsymbol{\gamma}}\,
 	\end{algorithmic} 
 \end{algorithm}      
  
-Algorithm~\ref{Alg:DRBayes} produces posterior draws of the ATE. The $(1-\alpha)\%$ credible interval is the interval between the empirical quantiles at levels $\alpha/2$ and $1-\alpha/2$.
+Algorithm~\ref{Alg:DRBayes} produces posterior draws of the ATE. The $(1-\alpha)\%$ credible interval is given by the empirical quantiles at levels $\alpha/2$ and $1-\alpha/2$. 
+
+It is worth noting that \cite{breunig2025double} do not perform sample splitting, whereas \cite{chernozhukov2018double} recommend it in the context of \textit{Double/Debiased Machine Learning for treatment and structural parameters}. While sample splitting (or cross-fitting) helps reduce overfitting, its role in \cite{chernozhukov2018double} is more fundamental: it ensures that the nuisance functions are estimated on data independent of the observations used for inference, which is critical for their theoretical guarantees of $\sqrt{n}$-consistency and valid asymptotic inference. Nevertheless, \cite{breunig2025double} report that they did not find evidence of overfitting in their setting and verified that their results are robust to the use of sample splitting.
+
+Finally, observe that the doubly robust approach does not propagate the uncertainty due to the estimation of the propensity score, which is treated as a plug-in. This omission is justified because the efficient influence function (EIF) is \textit{Neyman orthogonal}: estimation error in the propensity score enters only at second order and is therefore asymptotically negligible for uncertainty quantification.\\
+
+\textbf{Example: Doubly robust Bayesian inference}
+
+Let us simulate the process 
+\[
+\eta^{\pi}_i = -0.3 + 0.8X_{i1} - 0.5X_{i2} + 0.7X_{i3}, 
+\quad 
+\eta^{m}_i = -0.2 + 0.6D_i + 0.5X_{i1} - 0.4X_{i2} + 0.3X_{i3},
+\]
+where $X_{1}\sim N(0,1)$, $X_{2}\sim \mathrm{Bernoulli}(0.5)$, and $X_{3}\sim U(-1,1)$, and the sample size is 2,000.
+ 
+The population ATE from this simulation is approximately $0.138$. The posterior mean and 95\% credible interval of the ATE using the DRB are $0.155$ and $(0.107,\,0.206)$, respectively. 
+
+The following example shows how to perform inference in this setting.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Doubly robust Bayesian inference: Simulation exercise}
+	\begin{VF}
+		\begin{lstlisting}[language=R]	
+######### Doubly Robust Bayesian: Simulation #########
+rm(list = ls()); set.seed(123); library(glmnet)
+## simulate covariates
+n  <- 2000
+X1 <- rnorm(n)                 # continuous
+X2 <- rbinom(n, 1, 0.5)        # binary
+X3 <- runif(n, -1, 1)          # continuous
+Z <- cbind(X1, X2, X3)
+# True propensity and outcome
+logit <- function(t) 1/(1+exp(-t))
+true_pi  <- function(X){ logit(-0.3 + 0.8*X[,1] -0.5*X[,2] + 0.7*X[,3]) }
+true_eta <- function(d,X){ -0.2 + 0.6*d + 0.5*X[,1] -0.4*X[,2] + 0.3*X[,3] }
+true_p   <- function(d,X){ logit(true_eta(d,X)) }
+ATE  <- mean(true_p(1,Z) - true_p(0,Z)) # Population ATE
+# Data
+pi <- true_pi(Z); D  <- rbinom(n,1,pi)
+P  <- true_p(D,Z); Y  <- rbinom(n,1,P)
+dat <- data.frame(Y, D, X1, X2 = factor(X2), X3)
+######### Doubly Robust Bayesian: Implementation #########
+p <- dim(Z)[2]; covars <- c("X1","X2","X3")
+Z.df <- as.data.frame(Z) # covariates as a dataframe
+# Propensity score model: lasso
+cvfit <- cv.glmnet(Z, D, family = "binomial", alpha=1, nfolds = 10) # lasso,min
+ps.coef <- coef(cvfit, s = "lambda.min")[0:p+1]
+ps_hat <- predict(cvfit, newx = Z, s = "lambda.min",type = "response")
+ps_hat <- pmin(pmax(ps_hat, 1e-6), 1 - 1e-6)
+# Riesz representer
+riesz_fun <- function(d, ps) d/ps - (1 - d)/(1 - ps)
+# GP model
+make_gp <- function(X_train, y_bin, use_correction = FALSE, gamma_scaled = NULL,
+approx_method = gplite::approx_laplace(),
+init_lscale = 0.3) {
+	stopifnot(length(y_bin) == nrow(X_train))
+	# Initializing the covariance function
+	cf_se <- gplite::cf_sexp(vars = colnames(X_train), lscale = init_lscale, magn = 1, normalize = TRUE)
+	cfs <- list(cf_se)
+	if (use_correction) {
+		stopifnot(!is.null(gamma_scaled))
+		# Add linear kernel on the last column (gamma_scaled)
+		cf_lin <- gplite::cf_lin(vars = "gamma", magn = 1, normalize = FALSE)
+		cfs <- list(cf_se, cf_lin)
+	}
+	# Initializes a GP model
+	gp <- gplite::gp_init(cfs = cfs, lik = gplite::lik_bernoulli(), approx = approx_method)
+	# Optimizing hyperparameters
+	gp <- gplite::gp_optim(gp, x = X_train, y = y_bin, maxiter = 1000, restarts = 3, tol = 1e-05)
+	return(gp)
+}
+\end{lstlisting}
+\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Doubly robust Bayesian inference: Simulation exercise}
+	\begin{VF}
+		\begin{lstlisting}[language=R]	
+posterior_draws_prob <- function(gp, X_test, ndraws = 5000) {
+	out <- gplite::gp_draw(gp, xnew = X_test, draws = ndraws, transform = TRUE, target = FALSE, jitter = 1e-6)
+	return(t(out))
+}
+# Main function
+run_trim <- function(t_trim = 0.10, N_post = 5000, h_r = 1/2, cor_size = 1) {
+	# Trim by estimated PS
+	keep <- which(ps_hat >= t_trim & ps_hat <= (1 - t_trim))
+	n_eff <- length(keep)
+	if (n_eff < 50) stop("Too few observations after trimming.")
+	Yk  <- Y[keep]
+	Dk  <- D[keep]
+	Zk  <- Z[keep, , drop = FALSE]
+	psk <- ps_hat[keep]
+	# Riesz representer and sigma_n choice
+	gamma_k <- riesz_fun(Dk, psk)
+	sigma_n <- cor_size * (log(n_eff) / ( (n_eff)^(h_r) * mean(abs(gamma_k)) ))
+	gamma_scaled <- sigma_n * gamma_k
+	# Training inputs for GP: [Z, D] and, if corrected, an extra column 'gamma'
+	X_train_nc <- data.frame(Zk)
+	X_train_nc$D <- Dk
+	colnames(X_train_nc) <- c(covars, "D")
+	X_train_c <- X_train_nc
+	X_train_c$gamma <- gamma_scaled
+	# Test inputs: for each i, (Z_i, d=0) and (Z_i, d=1)
+	X_t0 <- X_train_nc; X_t0$D <- 0
+	X_t1 <- X_train_nc; X_t1$D <- 1
+	X_t0c <- X_t0; X_t1c <- X_t1
+	X_t0c$gamma <- sigma_n * riesz_fun(0, psk)   
+	X_t1c$gamma <- sigma_n * riesz_fun(1, psk) 
+	# GP WITHOUT prior correction #
+	gp_nc <- make_gp(X_train = X_train_nc, y_bin = Yk, use_correction = FALSE)
+	# joint draws for [m(Z,0); m(Z,1)]
+	M_nc_0 <- posterior_draws_prob(gp_nc, X_t0, ndraws = N_post)  # N_post x n_eff
+	M_nc_1 <- posterior_draws_prob(gp_nc, X_t1, ndraws = N_post)
+	# observed arm probabilities
+	M_nc_obs <- ifelse(matrix(Dk, nrow = N_post, ncol = n_eff, byrow = TRUE) == 1, M_nc_1, M_nc_0)
+	# GP WITH prior correction #
+	gp_c <- make_gp(X_train = X_train_c, y_bin = Yk, use_correction = TRUE, gamma_scaled = gamma_scaled)
+	M_c_0 <- posterior_draws_prob(gp_c, X_t0c, ndraws = N_post)
+	M_c_1 <- posterior_draws_prob(gp_c, X_t1c, ndraws = N_post)
+	M_c_obs <- ifelse(matrix(Dk, nrow = N_post, ncol = n_eff, byrow = TRUE) == 1, M_c_1, M_c_0)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Doubly robust Bayesian inference: Simulation exercise}
+	\begin{VF}
+		\begin{lstlisting}[language=R]	
+	# Bayesian bootstrap weights #
+	W <- matrix(rexp(N_post * n_eff, rate = 1), nrow = N_post)
+	W <- W / rowSums(W)
+	# ATEs
+	# (1) Unadjusted Bayes
+	Ate_nc_draws <- rowSums((M_nc_1 - M_nc_0) * W)
+	# (2) Prior-adjusted Bayes
+	Ate_c_draws  <- rowSums((M_c_1 - M_c_0) * W)
+	# (3) DR Bayes (posterior recentering)
+	# Pre-centering using UNcorrected GP posterior means
+	mu_nc_diff <- colMeans(M_nc_1 - M_nc_0)                
+	mu_nc_obs  <- colMeans(M_nc_obs)                       
+	ATE_dr_pre <- mean(mu_nc_diff + gamma_k * (Yk - mu_nc_obs))
+	# Recenter draws using corrected GP draws
+	DR_rec_1 <- (matrix(gamma_k, nrow = N_post, ncol = n_eff, byrow = TRUE)) * (matrix(Yk, nrow = N_post, ncol = n_eff, byrow = TRUE) - M_c_obs)
+	# The first component is \tau_{\eta}^s in Algorithm 1
+	# The second component is \hat{m} a scalar. This has positive sign because
+	# minus x minus, the bias is with minus, and then, this component enters with minus in the bias term
+	# The third component is \gamma_k x (y-m(d,x)), m(d,x) is with prior correction
+	# The fourth component is m(1,x)-m(0,x) also with correction in the prior
+	Ate_drb_draws <- rowSums((M_c_1 - M_c_0) * W) + ATE_dr_pre - rowSums(DR_rec_1) / n_eff - rowSums(M_c_1 - M_c_0) / n_eff
+	
+	qfun <- function(x) {
+		qs <- quantile(x, c(0.025, 0.975))
+		c(mean   = mean(x), 	median = median(x), lo = qs[1],	hi = qs[2],	len = diff(qs)
+		)
+	}	
+	vals <- list(
+	Bayes      = qfun(Ate_nc_draws),
+	`PA Bayes` = qfun(Ate_c_draws),
+	`DR Bayes` = qfun(Ate_drb_draws)
+	)
+	out_df <- as.data.frame(do.call(rbind, vals), check.names = FALSE)
+	list(t_trim = t_trim, results = out_df)
+}
+N_post <- 5000
+h_r    <- 1/2
+cor_size <- 1
+trim <- 0.05
+res_list <- run_trim(t_trim = trim, N_post = N_post, h_r = h_r, cor_size = cor_size)
+print(res_list$results)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+
 
 \section{Other approaches}\label{sec12_12}
 There are other causal inference approaches that we do not cover in this chapter but are worth mentioning. In particular, 
@@ -3456,6 +3634,16 @@ Read this reference \cite{iacovone2023bayesian} before begin working in this cha
 %\section{Double-Debiased machine learning causal effects}\label{sec12_11a}
 
 \section{Summary}
+
+In this chapter we review some of the most common approaches to causal inference. We begin by outlining the identification restrictions underlying each method and then describe how these restrictions are incorporated into a Bayesian framework for inference. A natural point of departure is the use of Directed Acyclic Graphs (DAGs), which provide a graphical representation of the underlying structural or causal model. The central idea is to identify an exogenous source of variation, possibly conditional, such as instruments or institutional arrangements. 
+
+Given such sources of variation, one can use parametric, semiparametric, or nonparametric models to specify the conditional means of the potential outcomes given treatment assignment, thereby constructing counterfactual scenarios and enabling inference on causal estimands, such as the average treatment effect (ATE). Particular attention must be paid to the correct specification of the treatment assignment mechanism (propensity score) and the outcome regression, as both play a crucial role in credible causal inference. 
+
+This highlights the growing importance of modern machine learning methods for estimating high-dimensional or complex nuisance functions (see Chapter \ref{chap13} and Section \ref{sec12_11}). At the same time, however, it is essential to address and correct for the biases that machine learning methods may introduce in order to obtain valid causal inference.
+
+Finally, the Bayesian framework provides a coherent way to integrate these identification strategies with prior information, to account for model uncertainty, and to deliver full posterior distributions of causal estimands, thereby offering a unified approach to causal inference.
+
+%There are other causal inference approaches that we do not cover in this chapter. For instance, the synthetic control method, which estimates a treatment effect by constructing a weighted combination of untreated units that best matches the treated unit's pre-treatment outcomes, and then comparing post-treatment differences. Identification relies on \textit{no interference between units}, \textit{parallel trends between the treated unit and its synthetic control in the absence of treatment}, and \textit{no anticipation of treatment} \cite{abadie2010synthetic}. Several proposals extend this framework to the Bayesian setting \cite{amjad2018robust,kim2020bayesian,pang2022bayesian}.
 
 \section{Exercises}
 
@@ -3535,12 +3723,7 @@ Read this reference \cite{iacovone2023bayesian} before begin working in this cha
 	\]
 	see Section~\ref{sec69}.
 	
+	\item \textbf{Example: Doubly robust Bayesian inference continues}
 	
-	
-	
-	
-	  
-	 
-	
-	
+	Perform a simulation exercise to assess the consequences of misspecifying the propensity score function and the outcome regression in doubly robust Bayesian inference.	
 \end{enumerate}
