@@ -3347,15 +3347,52 @@ An influence function measures the first-order effect of an infinitesimal contam
 
 To conduct Bayesian inference, \cite{breunig2025double} place independent priors on the outcome regression and the covariate distribution (equivalently, on $\eta^m$ and $\eta^f$). For the covariates they use a Dirichlet Process (DP) prior on $F$ (hence on $f$; see Section \ref{sec11_12}), which, under standard conditions, induces posterior draws that approximate the Bayesian bootstrap for sample supported functionals \cite{Lo1987BayesianBootstrap} (see Section \ref{sec610}). 
 
-For the outcome regression they place a Gaussian Process (GP) prior on $\eta^m$ (see Section \ref{13_4}), with a correction term that incorporates a preliminary estimator of the Riesz representer. The propensity component $\eta^\pi$ is estimated in a separate first step and is used in the correction/recentering; a prior for $\eta^\pi$ is therefore not required for their procedure.
+For the outcome regression they place a Gaussian Process (GP) prior on $\eta^m$ (see Section \ref{13_4}), with a correction term that incorporates a preliminary estimator of the Riesz representer. The propensity score is estimated in a separate first step and is used in the correction/recentering; thus, a prior for $\eta^\pi$ is not required for their procedure.
 
 Algorithm~\ref{Alg:DRBayes} outlines the doubly robust Bayesian procedure of \cite{breunig2025double}. 
 The pilot estimate of the Riesz representer, $\hat\gamma_\eta$, is obtained by plug–in, using a propensity score $\hat\pi(\mathbf{x})$ estimated via logistic Lasso.
  
 The pilot estimate of the outcome regression, $\hat m_\eta(d,\mathbf{x})=\Pr(Y=1\mid D=d,\mathbf{X}=\mathbf{x})$, is taken as the posterior mean from a GP \emph{classification} model fit with a Laplace approximation.
 
-Concretely, a GP prior is placed on a latent function $f(d,\mathbf{x})$ with a squared–exponential kernel, and the success probability is given by the logistic link $m(d,\mathbf{x})=\operatorname{logit}^{-1}\!\{f(d,\mathbf{x})\}$. Because the Bernoulli likelihood makes the required integrals over $f$ analytically intractable, the posterior is approximated using Laplace’s method (Expectation Propagation is an alternative). See Sections 3.3–3.5 of \cite{rasmussen2006gaussian} for details.
- 
+Concretely, place a Gaussian Process (GP) prior on the latent logit
+$\eta^m(d,\mathbf{x})$ with a squared exponential kernel, and map to
+success probabilities via the logistic link
+$m(d,\mathbf{x})=\operatorname{logit}^{-1}\{\eta^m(d,\mathbf{x})\}$.
+Because the Bernoulli likelihood makes the required integrals over
+$\eta^m$ analytically intractable, the posterior is approximated using
+Laplace’s method (Expectation Propagation is a common alternative).
+See \S\S3.3–3.5 of \cite{rasmussen2006gaussian} for details.
+
+The \emph{adjusted} GP prior specifies the latent logit as
+\[
+\eta^m(d,\mathbf{x}_i)
+\;=\;
+W^m(d,\mathbf{x}_i)\;+\;\lambda\,\widehat{\gamma}_\eta(d,\mathbf{x}_i),
+\qquad
+W^m \sim \mathrm{GP}\!\big(0, K\big),\ \ \lambda \sim N(0,\sigma_n^2),
+\]
+where $K$ is the base kernel. Following \cite{breunig2025double},
+take
+\[
+\sigma_n \;=\; \frac{\log n}{\sqrt{n}\,\Gamma_n},
+\qquad
+\Gamma_n \;:=\; \frac{1}{n}\sum_{i=1}^n
+\big|\widehat{\gamma}_\eta(d_i,\mathbf{x}_i)\big|.
+\]
+Since $W^m$ and $\lambda$ are Gaussian, this is equivalent to a GP with
+an augmented kernel,
+\[
+\eta^m \sim \mathrm{GP}\!\big(0,\, K_c\big),
+\quad
+K_c\big((d,\mathbf{x}),(d',\mathbf{x}')\big)
+= K\big((d,\mathbf{x}),(d',\mathbf{x}')\big)
++ \sigma_n^2\,\widehat{\gamma}_\eta(d,\mathbf{x})\,
+\widehat{\gamma}_\eta(d',\mathbf{x}'),
+\]
+which, for the vector of latent logits evaluated at the training inputs,
+corresponds to the covariance matrix
+$\mathbf{K} + \sigma_n^2\,\widehat{\boldsymbol{\gamma}}\,
+\widehat{\boldsymbol{\gamma}}^{\top}$. 
 
 \begin{algorithm}[h!]
 	\caption{Double Robust Bayesian Algorithm}\label{Alg:DRBayes}
@@ -3363,18 +3400,22 @@ Concretely, a GP prior is placed on a latent function $f(d,\mathbf{x})$ with a s
 		\State Have initial estimates of $\hat{\gamma}_{\eta}$ based on logistic Lasso
 		\State Trim the propensity score using standard values, for instance, 10\%, or the optimal trimming rule proposed by \cite{Crump2009Overlap}
 		\State Estimate the Riesz representer using the estimate of the propensity score 
-		\State Calculate the prior correction term $\sigma_n=\frac{\log(n)}{n^{1/2}\Gamma_n}$, $\Gamma_n=\frac{1}{n}\sum_{i=1}^n |\hat{\gamma}_{\eta}(d_i,\mathbf{x}_i)|$, $n$ is the effective sample size
+		\State Calculate the prior correction term $\sigma_n=\frac{\log(n)}{n^{1/2}\Gamma_n}$, $\Gamma_n=\frac{1}{n}\sum_{i=1}^n |\hat{\gamma}_{\eta}(d_i,\mathbf{x}_i)|$, $n$ is the effective sample size (after trimming)
 		\State Calculate the prior adjustment $\sigma_n\times \hat{\gamma}_{\eta}$ 
 		\State Calculate $\hat{m}(d,\mathbf{x})=\frac{1}{1+\exp\left\{-\eta^m(d,\mathbf{x})\right\}}$ as the posterior mean of a Gaussian Process (GP) based on $d$ and $\mathbf{x}$ (unadjusted mean)
-		\State Set an initial GP prior for  the adjusted mean $m_{\eta}^c(d,\mathbf{x})=\frac{1}{1+\exp\left\{-\eta^m(d,\mathbf{x},\sigma_n\times \hat{\gamma})\right\}}$		 			
+		\State Set an initial GP prior for  the adjusted mean $m_{\eta}^c(d,\mathbf{x})=\frac{1}{1+\exp\left\{-\eta^m\right\}}$, where $\eta^m \sim \mathrm{GP}\!\big(0,\, K_c\big)$, $K_c\big((d,\mathbf{x}),(d',\mathbf{x}')\big)
+		= K\big((d,\mathbf{x}),(d',\mathbf{x}')\big)
+		+ \sigma_n^2\,\widehat{\gamma}_\eta(d,\mathbf{x})\,
+		\widehat{\gamma}_\eta(d',\mathbf{x}')$ 		 			
 		\For{\texttt{$s=1,\dots,S$}} 
 		\State Generate the $s-th$ draw of the adjusted GP posterior, $m_{\eta}^{c,s}(d,\mathbf{x})$
 		\State Draw Bayesian bootstrap weights $M^s_{ni}=\frac{e_i^s}{\sum_{j=1}^n e_j^s}$, $e_i^s\sim Exp(1)$, $i=1,2,\dots,n$
-		\State Calculate the corrected posterior draw for the ATE $\tilde{\tau}_{\eta}^s=\tau_{\eta}^s-\hat{b}_{\eta}^s$, where $\tau_{\eta}^s=M^s_{ni}(m_{\eta}^{c,s}(1,\mathbf{x})-m_{\eta}^{c,s}(0,\mathbf{x}))$, and $\hat{b}_{\eta}^s=\frac{1}{n}\sum_{i=1}^n\tau[m_{\eta}^s(\mathbf{w}_i)-\hat{m}(\mathbf{w}_i)]$, $\tau[m]=m(1,\mathbf{x})-m(0,\mathbf{x})+\hat{\gamma}(d,\mathbf{x})(y-m(d,\mathbf{x}))$ 
+		\State Calculate the corrected posterior draw for the ATE $\tilde{\tau}_{\eta}^s=\tau_{\eta}^s-\hat{b}_{\eta}^s$, where $\tau_{\eta}^s=\sum_{i=1}^n M^s_{ni}(m_{\eta}^{c,s}(1,\mathbf{x}_i)-m_{\eta}^{c,s}(0,\mathbf{x}_i))$, and $\hat{b}_{\eta}^s=\frac{1}{n}\sum_{i=1}^n\tau[m_{\eta}^s(\mathbf{w}_i)-\hat{m}(\mathbf{w}_i)]$, $\tau[m]=m(1,\mathbf{x})-m(0,\mathbf{x})+\hat{\gamma}(d,\mathbf{x})(y-m(d,\mathbf{x}))$ 
 		\EndFor 
 	\end{algorithmic} 
 \end{algorithm}      
-  
+ 
+Algorithm~\ref{Alg:DRBayes} produces posterior draws of the ATE. The $(1-\alpha)\%$ credible interval is the interval between the empirical quantiles at levels $\alpha/2$ and $1-\alpha/2$.
 
 \section{Other approaches}\label{sec12_12}
 There are other causal inference approaches that we do not cover in this chapter but are worth mentioning. In particular, 
