@@ -1532,19 +1532,8 @@ h_r    <- 1/2
 cor_size <- 1
 trim <- 0.05
 res_list <- run_trim(t_trim = trim, N_post = N_post, h_r = h_r, cor_size = cor_size)
-
-simple <- do.call(rbind, lapply(seq_along(res_list), function(i) {
-  r <- as.data.frame(res_list[[i]], check.names = FALSE)
-  data.frame(
-    t_trim = r$t_trim,
-    Method = rownames(r),
-    Mean   = round(r$results.mean, 3),
-    CI     = sprintf("[%.3f, %.3f]", r$`results.lo.2.5%`, r$`results.hi.97.5%`),
-    Length = round(r$`results.len.97.5%`, 3),
-    stringsAsFactors = FALSE
-  )
-}))
-print(simple)
+print(res_list$results)
+ATE; ATE_hat; sd(ATE_b)
 
 
 #### Doubly Robust Bayesian Inference: Application ####
