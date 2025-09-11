@@ -1266,32 +1266,32 @@ geom_vline(xintercept = mean(beta_draws), color = "red", linetype = "dashed", li
 
 Following \cite{roth2023whats}, we consider a setting with two time periods, \( t = 1, 2 \), and two groups: a treated group (\( D_i = 1 \)) that receives the treatment between periods \( t = 1 \) and \( t = 2 \), and a control group that never receives the treatment (\( D_i = 0 \)). We observe outcomes \( Y_{it} \) and treatment status \( D_i \) for units \( i = 1, 2, \dots, N \), assuming a balanced panel data structure.
 
-Let \( Y_{it}(0,1) \) denote the potential outcome for unit \( i \) in period \( t \) if it is untreated in the first period and treated in the second, while \( Y_{it}(0,0) \) denotes the potential outcome if it is never treated.\footnote{We follow the notation presented in \cite{imbens1997bayesian}, but it is common in the econometrics literature to set \( Y_{it}(0,1)=Y_{it}(1) \) and \( Y_{it}(0,0)=Y_{it}(0) \).} In this framework, known as \textit{difference-in-differences} (DiD), the primary estimand of interest is the average treatment effect on the treated (ATT),
+Let \( Y_{it}(1) \) denote the potential outcome for unit \( i \) in period \( t \) if it is untreated in the first period and treated in the second, while \( Y_{it}(0) \) denotes the potential outcome if it is never treated. In this framework, known as \textit{difference-in-differences} (DiD), the primary estimand of interest is the average treatment effect on the treated (ATT),
 \[
-\tau_{2} = \mathbb{E}[Y_{i2}(0,1) - Y_{i2}(0,0) \mid D_i = 1].
+\tau_{2} = \mathbb{E}[Y_{i2}(1) - Y_{i2}(0) \mid D_i = 1].
 \]
 
-Note that we do not observe \( Y_{i2}(0,0) \mid D_i = 1 \); that is, the outcome in the second period for treated units had they not received the treatment. Thus, the identification conditions in DiD are designed to express this counterfactual outcome as a function of the data.
+Note that we do not observe \( Y_{i2}(0) \mid D_i = 1 \); that is, the outcome in the second period for treated units if they had not received the treatment. Thus, the identification conditions in DiD are designed to express this counterfactual outcome as a function of the data.
 
 There are two key identification assumptions:
 
 \textit{1. Parallel trends:}
 \begin{equation}
-	\mathbb{E}[Y_{i2}(0,0) - Y_{i1}(0,0) \mid D_i = 1] = \mathbb{E}[Y_{i2}(0,0) - Y_{i1}(0,0) \mid D_i = 0],
+	\mathbb{E}[Y_{i2}(0) - Y_{i1}(0) \mid D_i = 1] = \mathbb{E}[Y_{i2}(0) - Y_{i1}(0) \mid D_i = 0],
 \end{equation}
 which states that, in the absence of treatment, the average change in outcomes for the treated and control groups would have evolved similarly over time.
 
 \textit{2. No anticipation effects:}
 \begin{equation}
-	\mathbb{E}[Y_{i1}(0,0)\mid D_i=1] = \mathbb{E}[Y_{i1}(0,1)\mid D_i=1],
+	\mathbb{E}[Y_{i1}(0)\mid D_i=1] = \mathbb{E}[Y_{i1}(1)\mid D_i=1],
 \end{equation}
 meaning that the treatment has no causal effect prior to its implementation.
 
-Thus, we can use the parallel trends assumption to express \( \mathbb{E}[Y_{i2}(0,0) \mid D_i = 1] \) as
+Thus, we can use the parallel trends assumption to express \( \mathbb{E}[Y_{i2}(0) \mid D_i = 1] \) as
 \begin{align*}
-	\mathbb{E}[Y_{i2}(0,0)\mid D_i = 1] 
-	&= \mathbb{E}[Y_{i1}(0,0) \mid D_i = 1] + \mathbb{E}[Y_{i2}(0,0) - Y_{i1}(0,0) \mid D_i = 0] \\
-	&= \mathbb{E}[Y_{i1}(0,1) \mid D_i = 1] + \mathbb{E}[Y_{i2}(0,0) - Y_{i1}(0,0) \mid D_i = 0] \\
+	\mathbb{E}[Y_{i2}(0)\mid D_i = 1] 
+	&= \mathbb{E}[Y_{i1}(0) \mid D_i = 1] + \mathbb{E}[Y_{i2}(0) - Y_{i1}(0) \mid D_i = 0] \\
+	&= \mathbb{E}[Y_{i1}(1) \mid D_i = 1] + \mathbb{E}[Y_{i2}(0) - Y_{i1}(0) \mid D_i = 0] \\
 	&= \mathbb{E}[Y_{i1} \mid D_i = 1] + \mathbb{E}[Y_{i2} - Y_{i1} \mid D_i = 0],
 \end{align*}
 where the second equality follows from the no anticipation effects assumption.
@@ -1300,24 +1300,94 @@ Therefore,
 \[
 \tau_2 = \mathbb{E}[Y_{i2} - Y_{i1} \mid D_i = 1] - \mathbb{E}[Y_{i2} - Y_{i1} \mid D_i = 0],
 \]
-that is, the average treatment effect on the treated (ATT) is the difference in outcome differences between treated and control units. See Figure 16.2 in \cite{chernozhukov2024applied} for a nice graphical representation of the identification assumptions in DiD, and \cite{normington2022bayesian} for a DAG representation of DiD.
+that is, the ATT is the difference in outcome differences between treated and control units. 
+
+Figure \ref{Fig:DiD} shows a graphical representation of the identification assumptions in DiD \cite{chernozhukov2024applied}. \cite{normington2022bayesian} show a DAG representation of DiD.
+
+\begin{figure}[ht]
+	\centering
+	\begin{tikzpicture}
+		\begin{axis}[
+			width=10cm,height=8cm,
+			xmin=-0.6, xmax=1.5, ymin=0.3, ymax=1.3,
+			axis lines=left,
+			grid=both, grid style={gray!20},
+			xlabel={Time ($t$)},
+			ylabel={Outcome ($Y_{it}$)},
+			xtick={0.2, 1}, xticklabels={$t=1$, $t=2$},
+			ytick={0.5, 0.7, 1, 1.2},
+			clip=false
+			]
+			% Sharp RD step:
+			\addplot[dashed] coordinates {(-0.6,0.5) (1,0.5)};
+			\addplot[dashed] coordinates {(-0.6,0.7) (0.2,0.7)};
+			
+			\addplot[black, very thick] coordinates {(0.2,0.7) (1,0.6)};
+			\addplot[dashed] coordinates {(0.2,0.7) (1,0.5)};
+			\draw[<->] (axis cs:0.2,0.7) -- (axis cs:0.2,0.5);
+			\node[red] at (axis cs:-0.2,0.65) {\tiny Parallel trends};
+			\node[black] at (axis cs:-0.2,0.6) {\tiny $\mathbb{E}[Y_{i2}(0) - Y_{i1}(0) \mid D_i = 1] = $};
+			\node[blue] at (axis cs:-0.2,0.55) {\tiny $ \mathbb{E}[Y_{i2}(0) - Y_{i1}(0) \mid D_i = 0]$};
+			
+			\addplot[dashed] coordinates {(-0.6,1) (1,1)};
+			\addplot[dashed] coordinates {(-0.6,1.2) (0.2,1.2)};
+			
+			\addplot[black, very thick] coordinates {(0.2,1.2) (1,1)};
+			\draw[<->] (axis cs:0.2,1.2) -- (axis cs:0.2,1);
+			\node[blue] at (axis cs:-0.2,1.1) {\tiny $\mathbb{E}[Y_{i2}(0) - Y_{i1}(0) \mid D_i = 0]$};
+			\node[black] at (axis cs:0.2,1.22) {\tiny $\mathbb{E}[Y_{i1}(0) \mid D_i = 0]$};
+			\node[black] at (axis cs:1.25,1.02) {\tiny $\mathbb{E}[Y_{i2}(0) \mid D_i = 0]$};
+			\node[red] at (axis cs:0.2,0.72) {\tiny No anticipation: $\mathbb{E}[Y_{i1}(1) \mid D_i = 1]=\mathbb{E}[Y_{i1}(0) \mid D_i = 1]$};
+			\node[black] at (axis cs:1.22,0.62) {\tiny $\mathbb{E}[Y_{i2}(1) \mid D_i = 1]$};
+			\draw[<->, red] (axis cs:1,0.6) -- (axis cs:1,0.5);
+			\node[red] at (axis cs:1.4,0.555) {\tiny $ATT=\mathbb{E}[Y_{i2}(1) \mid D_i = 1]-$};
+			\node[red] at (axis cs:1.482,0.525) {\tiny $\mathbb{E}[Y_{i2}(0) \mid D_i = 1]$};
+			\node[red] at (axis cs:0.6,0.47) {\tiny $\mathbb{E}[Y_{i2}(0) \mid D_i = 1]=\mathbb{E}[Y_{i1} \mid D_i = 1] + \mathbb{E}[Y_{i2} - Y_{i1} \mid D_i = 0]$};
+			
+			\fill[black] (axis cs:0.2,1.2) circle (2pt);
+			\fill[black] (axis cs:1,1) circle (2pt);
+			\fill[black] (axis cs:0.2,0.7) circle (2pt);
+			\fill[black] (axis cs:1,0.6) circle (2pt);
+			\fill[red] (axis cs:1,0.5) circle (2pt);
+			%\draw[black, fill=black] (0.7,1) circle (2pt);
+			%\draw[black, fill=black] (0.2,0.7) circle (2pt);
+			%\draw[black, fill=black] (0.7,0.6) circle (2pt);
+			% Cutoff (vertical dashed line)
+			%\addplot[black, densely dashed, very thick] coordinates {(0,0) (0,1.02)};
+			
+			% Labels
+			%\node[black] at (axis cs:-0.52,0.92) {\large Assigned to Control};
+			%\node[black]  at (axis cs: 0.52,0.92) {\large Assigned to Treatment};
+			
+			% Arrow and text to mark "Cutoff"
+			%\draw[->] (axis cs:0.28,0.2) -- (axis cs:0.02,0.2);
+			%\node[anchor=west] at (axis cs:0.3,0.2) {Cutoff};
+			
+			% Bracket showing jump size (optional)
+			%\draw[<->, thick] (axis cs:0.04,0.0) -- (axis cs:0.04,1);
+			%\node[anchor=west] at (axis cs:0.06,0.50) {$\Delta P$};
+		\end{axis}
+	\end{tikzpicture}
+	\caption{Difference-in-Differences: Identification strategy}
+	\label{Fig:DiD}
+\end{figure}
 
 Note that we can express the observed outcome in terms of potential outcomes as
 \[
-Y_{it} = Y_{it}(0,0) + \big[\,Y_{it}(0,1) - Y_{it}(0,0)\,\big] D_i.
+Y_{it} = Y_{it}(0) + \big[\,Y_{it}(1) - Y_{it}(0)\,\big] D_i.
 \]
 Therefore,
 \[
-Y_{i1} = Y_{i1}(0,0) + \big[\,Y_{i1}(0,1) - Y_{i1}(0,0)\,\big] D_i,
+Y_{i1} = Y_{i1}(0) + \big[\,Y_{i1}(1) - Y_{i1}(0)\,\big] D_i,
 \]
 and
 \[
-Y_{i2} = Y_{i2}(0,0) + \big[\,Y_{i2}(0,1) - Y_{i2}(0,0)\,\big] D_i.
+Y_{i2} = Y_{i2}(0) + \big[\,Y_{i2}(1) - Y_{i2}(0)\,\big] D_i.
 \]
 Subtracting the first equation from the second yields
 \[
-Y_{i2} - Y_{i1} = \underbrace{Y_{i2}(0,0) - Y_{i1}(0,0)}_{\text{common trend}} 
-+ \underbrace{\big[(Y_{i2}(0,1) - Y_{i1}(0,1)) - (Y_{i2}(0,0) - Y_{i1}(0,0))\,\big]}_{\text{treatment effect in changes}} D_i.
+Y_{i2} - Y_{i1} = \underbrace{Y_{i2}(0) - Y_{i1}(0)}_{\text{common trend}} 
++ \underbrace{\big[(Y_{i2}(1) - Y_{i1}(1)) - (Y_{i2}(0) - Y_{i1}(0))\,\big]}_{\text{treatment effect in changes}} D_i.
 \]
 
 Under the \emph{parallel trends} assumption, the expected value of the common trend is the same for treated and control units. This assumption is compatible with the linear CEF function
@@ -1401,13 +1471,13 @@ As a rule of thumb, absolute standardized differences greater than 0.25 indicate
 
 In this setting, the \textit{conditional parallel trends} assumption becomes
 \begin{equation}
-	\mathbb{E}[Y_{i2}(0,0) - Y_{i1}(0,0) \mid D_i = 1, \mathbf{X}_i] 
-	= \mathbb{E}[Y_{i2}(0,0) - Y_{i1}(0,0) \mid D_i = 0, \mathbf{X}_i], \ \text{almost surely}
+	\mathbb{E}[Y_{i2}(0) - Y_{i1}(0) \mid D_i = 1, \mathbf{X}_i] 
+	= \mathbb{E}[Y_{i2}(0) - Y_{i1}(0) \mid D_i = 0, \mathbf{X}_i], \ \text{almost surely}
 \end{equation}
 and the \textit{no anticipation} assumption becomes
 \begin{equation}
-	\mathbb{E}[Y_{i1}(0,0) \mid D_i = 1, \mathbf{X}_i] 
-	= \mathbb{E}[Y_{i1}(0,1) \mid D_i = 1, \mathbf{X}_i].
+	\mathbb{E}[Y_{i1}(0) \mid D_i = 1, \mathbf{X}_i] 
+	= \mathbb{E}[Y_{i1}(1) \mid D_i = 1, \mathbf{X}_i].
 \end{equation} 
 In addition, the \textit{overlap} assumption is required: there exists a treatment group whose characteristics overlap with those of the control group,
 \[
@@ -1444,10 +1514,10 @@ However, alternative \textit{semi-parametric} or \textit{non-parametric} approac
 
 Another point to be aware of when performing DiD identification strategies is that the parallel trends assumption is generally not robust to functional form transformations of the outcome. That is, it may hold when the outcome is measured in levels but fail when it is expressed in logarithms. This is because two groups can have the same absolute increase (parallel trends in levels) but different percentage increases (non-parallel in logs).
 
-We can check for pre-existing differences in trends (``pre-trends'') as a test of the plausibility of the parallel trends assumption. Given a time period $t = 0$, we know from the no-anticipation assumption that $\mathbb{E}[Y_{it}(0,0)] = \mathbb{E}[Y_{it}]$ for all $i$ and $t = 0,1$. Therefore, we can test whether  
+We can check for pre-existing differences in trends (``pre-trends'') as a test of the plausibility of the parallel trends assumption. Given a time period $t = 0$, we know from the no-anticipation assumption that $\mathbb{E}[Y_{it}(0)] = \mathbb{E}[Y_{it}]$ for all $i$ and $t = 0,1$. Therefore, we can test whether  
 \begin{equation}
-	\mathbb{E}[Y_{i1}(0,0) - Y_{i0}(0,0) \mid D_i = 1] 
-	= \mathbb{E}[Y_{i1}(0,0) - Y_{i0}(0,0) \mid D_i = 0] = 0.
+	\mathbb{E}[Y_{i1}(0) - Y_{i0}(0,0) \mid D_i = 1] 
+	= \mathbb{E}[Y_{i1}(0) - Y_{i0}(0,0) \mid D_i = 0] = 0.
 \end{equation}
 
 However, the results of this test should be interpreted with caution. Even if pre-trends are exactly parallel, this does not guarantee that the parallel trends assumption holds in the post-treatment period. Moreover, there can be power issues: a pre-existing difference in trends may go undetected if our pre-treatment estimates are imprecise due to high variability.
