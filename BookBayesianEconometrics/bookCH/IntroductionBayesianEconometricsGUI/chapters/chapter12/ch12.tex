@@ -1416,7 +1416,7 @@ Y_{i2} - Y_{i1}
 + \tau_2 D_i + \epsilon_i.
 \]
 
-From the posterior results, we can verify that the 95\% credible interval contains the true ATT. We ask in Exercise~8 to repeat exactly the same simulation, and estimate the ATT using the specification with the interaction between treatment and the post-treatment period.
+The following code implements this example. From the posterior results, we can verify that the 95\% credible interval contains the true ATT. We ask in Exercise~8 to repeat exactly the same simulation, and estimate the ATT using the specification with the interaction between treatment and the post-treatment period.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -1462,11 +1462,11 @@ quantile(post_fit[,1], c(.025,.5,.975))
 
 The DiD framework can be extended to condition on covariates. In this case, we assume that the underlying identification assumptions are more plausible among units that are similar in terms of observed characteristics. Thus, the identification assumptions are stated conditional on the exogenous variables.
 
-Therefore, we can use covariates to assess the balance between control and treated groups in terms of levels ($X$) or ($\Delta X$) before and after treatment:
+Therefore, we can use covariates to assess the balance between control and treated groups in terms of levels ($X$) or differences ($\Delta X$) before and after treatment:
 \[
-\frac{\bar{X}_0-\bar{X}_1}{\sqrt{\hat{\sigma}_0^2+\hat{\sigma}_1^2}},
+\frac{\bar{X}_1-\bar{X}_2}{\sqrt{\hat{\sigma}_1^2+\hat{\sigma}_2^2}},
 \] 
-where $\hat{\sigma}_l^2$ is the sample variance of $X_l$, $l=\left\{0,1\right\}$. 
+where $\hat{\sigma}_l^2$ is the sample variance of $X_l$, $l=\left\{1,2\right\}$. 
 As a rule of thumb, absolute standardized differences greater than 0.25 indicate potentially problematic imbalance \cite{baker2025did_guide}. Imbalance in covariates can lead to violations of the parallel trends assumption if these covariates would generate different outcomes under the counterfactual scenarios.
 
 In this setting, the \textit{conditional parallel trends} assumption becomes
@@ -1491,10 +1491,15 @@ Following similar arguments as before, we obtain the \textit{conditional average
 The overall ATT can then be recovered by averaging over the distribution of $\mathbf{X}_i$ in the treated population:
 \begin{align*}
 	\tau_2 & = \mathbb{E}_{\mathbf{X}}\left\{\mathbb{E}[Y_{i2} - Y_{i1} \mid D_i = 1, \mathbf{X}_i] - \mathbb{E}[Y_{i2} - Y_{i1} \mid D_i = 0, \mathbf{X}_i] \mid D_i = 1\right\}\\
-	&=\mathbb{E}[Y_{i2} - Y_{i1} \mid D_i = 1]-\mathbb{E}_{\mathbf{X}}\left\{\mathbb{E}[Y_{i2} - Y_{i1} \mid D_i = 0, \mathbf{X}_i]\mid D_i=1\right\}.
+	&=\mathbb{E}[Y_{i2} - Y_{i1} \mid D_i = 1]-\mathbb{E}_{\mathbf{X}}\left\{\mathbb{E}[Y_{i2} - Y_{i1} \mid D_i = 0, \mathbf{X}_i]\mid D_i=1\right\},
 \end{align*}
+where the second line uses the law of iterated expectations:
+\[
+\mathbb{E}_{\mathbf{X}\mid D=1}\!\left( \mathbb{E}[Y_{i2}-Y_{i1} \mid D=1, \mathbf{X}_i] \right) 
+= \mathbb{E}[Y_{i2}-Y_{i1} \mid D=1].
+\]
 
-Assuming a linear CEF and a homogeneous ATT, that is, treatment effects do not vary across $\mathbf{X}_{it}$, we can use the first–difference specification
+Assuming a linear CEF and a homogeneous ATT, that is, treatment effects do not vary across $\mathbf{X}_{it}$, we can use the first–difference specification,
 \[
 \Delta Y_{i2} = \alpha + \beta D_i + \sum_{k=1}^K \beta_k \Delta X_{ik2} + \Delta\mu_{i2},
 \]
@@ -1510,19 +1515,28 @@ This specification can identify heterogeneous ATT under the assumption of a line
 
 %For instance, \cite{normington2019bayesian,normington2022bayesian} use the first–difference specification to implement DiD in a Bayesian hierarchical framework, given the data structure they faced.
 
-However, alternative \textit{semi-parametric} or \textit{non-parametric} approaches, such as \textit{regression adjustment}, \textit{inverse probability weighting}, and \textit{doubly robust} estimators, which combine the first two, are preferable, as they provide consistent estimators under conditional parallel trends without necessarily imposing a linear CEF \cite{abadie2005semiparametric,roth2023whats}. An important consideration in these strategies is the propagation of uncertainty, as they rely on two-stage procedures: first, estimate a conditional mean of the outcome or the propensity score (probability of treatment; \cite{rosenbaum1983central}), and second, use these estimates in a plug-in step to perform inference on the ATT. A Bayesian framework can offer advantages by naturally incorporating uncertainty propagation in such two-stage approaches. For instance, \cite{SaarelaBelzileStephens2016,YiuGoudieTom2020,LuoGrahamMcCoy2023,breunig2025double} propose a doubly robust Bayesian inferential framework for average treatment effects.
+However, alternative \textit{semiparametric} and \textit{nonparametric} approaches, such as \textit{regression adjustment}, \textit{inverse probability weighting}, and \textit{doubly robust} estimators (which combine the first two), are often preferable because they yield consistent estimates under conditional parallel trends without requiring a linear conditional expectation function (CEF) \cite{abadie2005semiparametric,roth2023whats}. These approaches typically involve two stages: first, estimating either the conditional mean of the outcome or the propensity score (probability of treatment; \cite{rosenbaum1983central}), and second, using these estimates in a plug-in step to perform inference on the ATT. For Bayesian doubly robust frameworks for average treatment effects, see \cite{SaarelaBelzileStephens2016,YiuGoudieTom2020,LuoGrahamMcCoy2023,breunig2025double} and Section \ref{sec12_11}.
 
-Another point to be aware of when performing DiD identification strategies is that the parallel trends assumption is generally not robust to functional form transformations of the outcome. That is, it may hold when the outcome is measured in levels but fail when it is expressed in logarithms. This is because two groups can have the same absolute increase (parallel trends in levels) but different percentage increases (non-parallel in logs).
+A point to be aware of when performing DiD identification strategies is that the parallel trends assumption is generally not robust to functional form transformations of the outcome. That is, it may hold when the outcome is measured in levels but fail when it is expressed in logarithms. This is because two groups can have the same absolute increase (parallel trends in levels) but different percentage increases (non-parallel in logs).
 
-We can check for pre-existing differences in trends (``pre-trends'') as a test of the plausibility of the parallel trends assumption. Given a time period $t = 0$, we know from the no-anticipation assumption that $\mathbb{E}[Y_{it}(0)] = \mathbb{E}[Y_{it}]$ for all $i$ and $t = 0,1$. Therefore, we can test whether  
+Note that the parallel trends and no anticipation assumptions in DiD are not fundamentally testable, since they are identifying restrictions about counterfactual outcomes that are never observed. However, we can examine pre-treatment dynamics to assess their plausibility. For instance, we can check for pre-existing differences in trends (``pre-trends'') as a diagnostic for the parallel trends assumption.  
+
+Given a pre-treatment period $t=0$, the no anticipation assumption implies that 
+\[
+\mathbb{E}[Y_{it}(0)] = \mathbb{E}[Y_{it}] \quad \text{for all } i \text{ and } t \leq 0.
+\]
+Thus, one can test whether
 \begin{equation}
-	\mathbb{E}[Y_{i1}(0) - Y_{i0}(0,0) \mid D_i = 1] 
-	= \mathbb{E}[Y_{i1}(0) - Y_{i0}(0,0) \mid D_i = 0] = 0.
+	\mathbb{E}[Y_{i1}(0) - Y_{i0}(0) \mid D_i = 1] 
+	= \mathbb{E}[Y_{i1}(0) - Y_{i0}(0) \mid D_i = 0],
 \end{equation}
+which corresponds to checking for differences in pre-treatment trends between treated and control groups.
 
-However, the results of this test should be interpreted with caution. Even if pre-trends are exactly parallel, this does not guarantee that the parallel trends assumption holds in the post-treatment period. Moreover, there can be power issues: a pre-existing difference in trends may go undetected if our pre-treatment estimates are imprecise due to high variability.
-  
-Therefore, it is advisable to perform sensitivity analyses regarding the parallel trends assumption, using context-specific knowledge about plausible confounding factors.
+The results of such tests should be interpreted with caution. Even if pre-trends are perfectly parallel, this does not guarantee that the parallel trends assumption will hold in the post-treatment period. Moreover, there may be power issues: a true pre-existing difference in trends may go undetected if pre-treatment estimates are imprecise due to high variability.
+
+In addition, one can conduct placebo tests by pretending that the policy started earlier and checking whether a spurious effect is detected prior to the true start. This provides indirect evidence on the plausibility of the no anticipation assumption.
+
+Therefore, it is advisable to complement pre-trend diagnostics with sensitivity analyses, incorporating context-specific knowledge about plausible confounding factors.
 
 \section{Staggered difference-in-differences (SDiD)}\label{chap12_6}
 Many empirical settings are more complex than the two-period, two-group ($2\times 2$) design. Nevertheless, even in such settings we can view the design as an aggregation of $2\times 2$ comparisons between units that receive treatment and units that are not yet treated at the relevant time \cite{baker2025did_guide}.
