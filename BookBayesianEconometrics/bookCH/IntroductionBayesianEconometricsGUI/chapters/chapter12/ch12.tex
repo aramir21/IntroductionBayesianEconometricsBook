@@ -1297,9 +1297,9 @@ Thus, we can use the parallel trends assumption to express \( \mathbb{E}[Y_{i2}(
 where the second equality follows from the no anticipation effects assumption.
 
 Therefore,
-\[
+\begin{equation}\label{eq:DiD}
 \tau_2 = \mathbb{E}[Y_{i2} - Y_{i1} \mid D_i = 1] - \mathbb{E}[Y_{i2} - Y_{i1} \mid D_i = 0],
-\]
+\end{equation}
 that is, the ATT is the difference in outcome differences between treated and control units. 
 
 Figure \ref{Fig:DiD} shows a graphical representation of the identification assumptions in DiD \cite{chernozhukov2024applied}. \cite{normington2022bayesian} show a DAG representation of DiD.
@@ -1563,21 +1563,23 @@ The average treatment effect for units first treated in period $g$ at time $t$ i
 ATT(g,t) = \mathbb{E}\left[ Y_{it}(g) - Y_{it}(\infty) \,\middle|\, G_i = g \right].
 \]
 
+Therefore, each cohort $g$ has its own $T-1$ ATT estimands. Each $ATT(g,t)$ represents the average treatment effect of initiating treatment in period $g$, relative to never receiving treatment.
+
 The identifying assumptions for $ATT(g,t)$ are:
 
 \textit{1. Staggered parallel trends based on not-yet-treated units}:
-\begin{equation}
+\begin{equation}\label{eq:SDiDNY}
 	\mathbb{E}[Y_{it}(\infty) - Y_{it-1}(\infty) \mid G_i = g] 
 	= \mathbb{E}[Y_{it}(\infty) - Y_{it-1}(\infty) \mid G_i = g'], \quad \forall\, t \geq g, g'>t.
 \end{equation}
 The \textit{not-yet-treated} staggered parallel assumption establishes that the average change in potential outcomes for all treated groups would have evolved in parallel after treatment began, under the counterfactual scenario in which they had not received treatment.
 
-Note that this \textit{not-yet-treated} parallel trends assumption can be modified to use \textit{never-treated} units as the comparison group, or to impose parallel trends across \textit{all} groups and periods. The \textit{all-groups, all-periods} version is more demanding but can deliver more precise estimates; the never-treated version imposes fewer assumptions. The not-yet-treated version is a middle ground between these two. Ultimately, which parallel-trends assumption to use is context specific \cite{baker2025did_guide}.
+Note that the \textit{not-yet-treated} parallel trends assumption can be modified to use \textit{never-treated} units as the comparison group (replace $g'$ by $\infty$ in Equation~\ref{eq:SDiDNY}), or to impose parallel trends across \textit{all} groups and periods (no restrictions on $g$ and $g'$). The \textit{all-groups, all-periods} version is more demanding but can yield more precise estimates because it exploits a larger set of observations. In contrast, the \textit{never-treated} version requires fewer assumptions about parallel trends but is typically less precise. The \textit{not-yet-treated} version represents a middle ground between these two. Ultimately, the choice of which parallel trends assumption to adopt is context-specific \cite{baker2025did_guide}.
 
 \textit{2. Staggered no anticipation}:
-\begin{equation}
+\begin{equation*}
 	\mathbb{E}[Y_{it}(g)] = \mathbb{E}[Y_{it}(\infty)], \quad \forall\, i,\ t < g.
-\end{equation}
+\end{equation*}
 
 That is, treated units do not change their potential outcomes in anticipation of future treatment before treatment begins.
 
@@ -1589,7 +1591,7 @@ Note that under these assumptions, we can express $ATT(g,t)$ in terms of observa
 	= \mathbb{E}\big[ Y_{it} - Y_{i, g-1} \mid G_i = g \big]
 	- \mathbb{E}\big[ Y_{it} - Y_{i, g-1} \mid G_i = g', \ g' > t \big].
 \end{align*}
-This formulation makes explicit the choice of the comparison group, either not-yet-treated or never-treated units. Moreover, cohorts are indexed by the first treatment date $g$, and effects are evaluated at calendar time $t$. Hence the object of interest is cohort–time specific, $ATT(g,t)$, and staggered designs generally imply a multiplicity of ATT parameters.
+This formulation makes explicit the choice of the comparison group, either not-yet-treated or never-treated units in this setting. Moreover, cohorts are indexed by the first treatment date $g$, and effects are evaluated at calendar time $t$. Hence the object of interest is cohort–time specific, $ATT(g,t)$, and staggered designs generally imply a multiplicity of ATT parameters, where each estimand can be seen as a multi-period version of a DiD causal effect (Equation~\ref{eq:DiD}).
 
 To study the dynamics of treatment effects, we can use \textit{event study} plots. These involve estimating and reporting effects for a range of periods before and after treatment, allowing us to analyze the temporal pattern of the ATTs \cite{baker2025did_guide}. 
 
@@ -1609,14 +1611,14 @@ To study the dynamics of treatment effects, we can use \textit{event study} plot
 %\end{enumerate}
 %Note that, regardless of the weighting scheme, clustering must be taken into account when quantifying uncertainty, especially when treatment is assigned at the higher-level unit.
 
-An advantage of having multiple pre-treatment periods in the design is that it allows calculating \textit{falsification/placebo tests}. Under the \textit{no anticipation} assumption, any $ATT(t)$ before $G_i$ must be zero. That is, 
-\begin{align*}
-	ATT(g,t) 
-	&= \mathbb{E}\big[ Y_{it} - Y_{i, g-1} \mid G_i = g \big]
-	- \mathbb{E}\big[ Y_{it} - Y_{i, g-1} \mid G_i = g' \big] = 0, \\
-	&\quad \text{for } g \neq g', \quad g, g' \leq t < \min\{g, g'\}.
-\end{align*}
-Thus, we can test whether the differences in the expected changes of the outcome variable before treatment between different groups are statistically indistinguishable from zero. If this is the case, common practice would suggest that there is evidence in favor of parallel trends. However, the parallel trends assumption is essentially untestable because it imposes restrictions on post-treatment periods, not on pre-treatment periods. Consequently, the same recommendations as those at the end of the previous section apply: perform sensitivity analyses regarding potential violations of the parallel trends assumption.
+An advantage of having multiple pre-treatment periods in the design is that it allows calculating \textit{falsification/placebo tests}. Under the \textit{no anticipation} assumption, any potential effect before $G_i$ must be zero. That is, given $b < \min\{g,g'\}$, for all $t \text{ with } b < t < \min\{g,g'\}$: 
+\[
+\mathbb{E}\!\left[\,Y_{it}-Y_{ib}\mid G_i=g\right]
+=
+\mathbb{E}\!\left[\,Y_{it}-Y_{ib}\mid G_i=g'\right].
+\]
+
+Thus, we can test whether the differences in the expected changes of the outcome variable before treatment between different groups are statistically indistinguishable from zero. If this is the case, common practice would suggest that there is evidence in favor of parallel trends. However, we should remember that the parallel trends assumption is essentially untestable because it imposes restrictions on post-treatment periods, not on pre-treatment periods. Consequently, the same recommendations as those at the end of the previous section apply: perform sensitivity analyses regarding potential violations of the parallel trends assumption.
 
 Assuming that parallel trends hold conditional on covariates, we obtain identification under the following assumptions:
 
@@ -1636,7 +1638,7 @@ Assuming that parallel trends hold conditional on covariates, we obtain identifi
 \quad \forall\, g,\ t<g,\ \text{for some } \epsilon>0.
 \]
 
-That is, conditional on covariates, pre-treatment changes in untreated potential outcomes for cohort $g$ match those of units not yet treated at time $t$, and there is positive probability of belonging to cohort $g$ and of being not yet treated at $t$.
+Condition 1 means that conditional on covariates, pre-treatment changes in untreated potential outcomes for cohort $g$ match those of units not yet treated at time $t$, and condition 2 means that there is positive probability of belonging to cohort $g$ and of being not yet treated at $t$.
 
 Given these assumptions and no anticipation, the $ATT(g,t)$ can be expressed as
 \begin{align*}
