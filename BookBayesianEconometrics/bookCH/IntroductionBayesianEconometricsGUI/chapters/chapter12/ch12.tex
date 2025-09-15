@@ -1262,11 +1262,17 @@ geom_vline(xintercept = mean(beta_draws), color = "red", linetype = "dashed", li
 	\caption[List of figure caption goes here]{Posterior distribution: Local average treatment effect 401k participation on net financial assets.}\label{fig12_3}
 \end{figure}
 
-\section{Difference-in-differences (DiD)}\label{sec12_5}
+\section{Difference-in-differences design (DiD)}\label{sec12_5}
+
+In this section, we present how to perform inference and discuss the identification conditions when working with panel (longitudinal) data or repeated cross-sectional data in the \textit{difference-in-differences} (DiD) framework. In DiD designs, we estimate causal effects by comparing changes over time between groups that receive the treatment and groups that do not (the ``control'' group). This approach is among the most widely used designs for identifying causal effects \cite{baker2025did_guide}. Its origins can be traced back to John Snow, the father of modern epidemiology, who in 1855 analyzed the spread of cholera through water in London \cite{chernozhukov2024applied}.
+
+In what follows, we first present the basic two-group, two-period ($2\times2$) DiD setup, and then introduce the staggered DiD design.
+
+\subsection{Classic DiD: two-group and two-period ($2\times2$) setup}\label{sec12_51}
 
 Following \cite{roth2023whats}, we consider a setting with two time periods, \( t = 1, 2 \), and two groups: a treated group (\( D_i = 1 \)) that receives the treatment between periods \( t = 1 \) and \( t = 2 \), and a control group that never receives the treatment (\( D_i = 0 \)). We observe outcomes \( Y_{it} \) and treatment status \( D_i \) for units \( i = 1, 2, \dots, N \), assuming a balanced panel data structure.
 
-Let \( Y_{it}(1) \) denote the potential outcome for unit \( i \) in period \( t \) if it is untreated in the first period and treated in the second, while \( Y_{it}(0) \) denotes the potential outcome if it is never treated. In this framework, known as \textit{difference-in-differences} (DiD), the primary estimand of interest is the average treatment effect on the treated (ATT),
+Let \( Y_{it}(1) \) denote the potential outcome for unit \( i \) in period \( t \) if it is untreated in the first period and treated in the second, while \( Y_{it}(0) \) denotes the potential outcome if it is never treated. In the DiD framework, the primary estimand of interest is the average treatment effect on the treated (ATT),
 \[
 \tau_{2} = \mathbb{E}[Y_{i2}(1) - Y_{i2}(0) \mid D_i = 1].
 \]
@@ -1404,61 +1410,7 @@ Another common formulation in the linear regression setting that recovers the AT
 \[
 Y_{it} = \alpha + \alpha_i + \phi_t + \tau_2 \,\big[ D_i \cdot \mathbbm{1}(t = 2) \big] + \epsilon_{it},
 \]
-where $\mathbbm{1}(t = 2)$ is an indicator for the post-treatment period \cite{roth2023whats}. The advantage of the regression setting is that it allows for the straightforward calculation of the standard error of the ATT, enabling the construction of confidence or credible intervals under the Frequentist and Bayesian approaches, respectively.\\
-
-\textbf{Example: Difference-in-Differences simulation}
-
-Let's simulate a DiD setting where the treatment effect is $1$ and the common trend is $-1.8$. We assume the default priors in the \textit{MCMCpack} package. We perform inference on the ATT using
-
-\[
-Y_{i2} - Y_{i1}
-= \underbrace{\phi_2 - \phi_1}_{\text{Common change}}
-+ \tau_2 D_i + \epsilon_i.
-\]
-
-The following code implements this example. From the posterior results, we can verify that the 95\% credible interval contains the true ATT. We ask in Exercise~8 to repeat exactly the same simulation, and estimate the ATT using the specification with the interaction between treatment and the post-treatment period.
-
-\begin{tcolorbox}[enhanced,width=4.67in,center upper,
-	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Difference-in-Differences: Simulation exercise}
-	\begin{VF}
-		\begin{lstlisting}[language=R]		
-rm(list = ls()); set.seed(10101)
-library(ggplot2); library(dplyr); library(fastDummies)
-# Parameters
-N_per_group <- 200          # units per group
-T_periods    <- 2           # keep 2x2 for clarity
-tau_true     <- 1           # ATT
-sigma_eps    <- 0.5         # noise SD
-# Panel index
-id  <- rep(1:(2*N_per_group), each = T_periods)
-t   <- rep(1:T_periods, times = 2*N_per_group)
-# Group: treated (D=1) vs control (D=0)
-D   <- rep(c(rep(0, N_per_group), rep(1, N_per_group)), each = T_periods)
-# Post indicator (t=2 is post)
-post <- as.integer(t == 2)
-# Unit fixed effects (random heterogeneity)
-alpha_i <- rnorm(2*N_per_group, 0, 0.8)
-alpha   <- alpha_i[id]
-# Time effects (common shocks)
-phi_t <- c(0, -1.8)  # common decline from t=1 to t=2
-phi   <- phi_t[t]
-treat_effect <- tau_true * (D * post)
-# Outcome:
-eps <- rnorm(length(id), 0, sigma_eps)
-Y   <- alpha + phi + treat_effect + eps
-did <- data.frame(id, t, D, post, Y)
-# Bayesian inference: Model in differences
-dY <- did$Y[did$t==2] - did$Y[did$t==1]
-D  <- did$D[did$t==1]
-post_fit <- MCMCpack::MCMCregress(dY ~ 1 + D, burnin = 100, mcmc = 1000)
-tau_draws <- post_fit[, "D"]
-quantile(tau_draws, c(.025,.5,.975))
-quantile(post_fit[,1], c(.025,.5,.975))
-\end{lstlisting}
-	\end{VF}
-\end{tcolorbox}  
- 
+where $\mathbbm{1}(t = 2)$ is an indicator for the post-treatment period \cite{roth2023whats}. The advantage of the regression setting is that it allows for the straightforward calculation of the standard error of the ATT, enabling the construction of confidence or credible intervals under the Frequentist and Bayesian approaches, respectively.
 
 The DiD framework can be extended to condition on covariates. In this case, we assume that the underlying identification assumptions are more plausible among units that are similar in terms of observed characteristics. Thus, the identification assumptions are stated conditional on the exogenous variables.
 
@@ -1515,7 +1467,7 @@ This specification can identify heterogeneous ATT under the assumption of a line
 
 %For instance, \cite{normington2019bayesian,normington2022bayesian} use the first–difference specification to implement DiD in a Bayesian hierarchical framework, given the data structure they faced.
 
-However, alternative \textit{semiparametric} and \textit{nonparametric} approaches, such as \textit{regression adjustment}, \textit{inverse probability weighting}, and \textit{doubly robust} estimators (which combine the first two), are often preferable because they yield consistent estimates under conditional parallel trends without requiring a linear conditional expectation function (CEF) \cite{abadie2005semiparametric,roth2023whats}. These approaches typically involve two stages: first, estimating either the conditional mean of the outcome or the propensity score (probability of treatment; \cite{rosenbaum1983central}), and second, using these estimates in a plug-in step to perform inference on the ATT. For Bayesian doubly robust frameworks for average treatment effects, see \cite{SaarelaBelzileStephens2016,YiuGoudieTom2020,LuoGrahamMcCoy2023,breunig2025double} and Section \ref{sec12_11}.
+However, alternative \textit{semiparametric} and \textit{nonparametric} approaches, such as \textit{outcome regression adjustment}, \textit{inverse probability weighting}, and \textit{doubly robust} estimators (which combine the first two), are often preferable because they yield consistent estimates under conditional parallel trends without requiring a linear conditional expectation function (CEF) \cite{abadie2005semiparametric,roth2023whats}. These approaches typically involve two stages: first, estimating either the conditional mean of the outcome or the propensity score (probability of treatment; \cite{rosenbaum1983central}), and second, using these estimates in a plug-in step to perform inference on the ATT. For Bayesian doubly robust frameworks for average treatment effects, see \cite{SaarelaBelzileStephens2016,YiuGoudieTom2020,LuoGrahamMcCoy2023,breunig2025double} and Section \ref{sec12_11}.
 
 A point to be aware of when performing DiD identification strategies is that the parallel trends assumption is generally not robust to functional form transformations of the outcome. That is, it may hold when the outcome is measured in levels but fail when it is expressed in logarithms. This is because two groups can have the same absolute increase (parallel trends in levels) but different percentage increases (non-parallel in logs).
 
@@ -1538,7 +1490,8 @@ In addition, one can conduct placebo tests by pretending that the policy started
 
 Therefore, it is advisable to complement pre-trend diagnostics with sensitivity analyses, incorporating context-specific knowledge about plausible confounding factors.
 
-\section{Staggered difference-in-differences (SDiD)}\label{chap12_6}
+\subsection{Staggered (SDiD): G-group and T-period ($G\times T$) setup}\label{chap12_52}
+
 Many empirical settings are more complex than the two-period, two-group ($2\times 2$) design. Nevertheless, even in such settings we can view the design as an aggregation of $2\times 2$ comparisons between units that receive treatment and units that are not yet treated at the relevant time \cite{baker2025did_guide}.
 
 In a setting with multiple periods and different groups, assuming that treatment is an absorbing state —that is, once treated, units remain treated— staggered DiD (SDiD) analyses seek to estimate a weighted average of heterogeneous ATTs, where the weights may be based on economic/policy relevance. 
@@ -1647,12 +1600,62 @@ Given these assumptions and no anticipation, the $ATT(g,t)$ can be expressed as
 
 Again, inference on $ATT(g,t)$ can be conducted using regression adjustment, inverse-probability weighting, or doubly robust estimators. Although TWFE specifications are often used to estimate $ATT(g,t)$, \cite{baker2025did_guide} recommend avoiding them in staggered DiD settings because they generally do not identify $ATT(g,t)$. Instead, they recover a complicated, non-convex weighted average of cohort–time effects, with potentially negative weights.\\
 
-\textbf{Example:...}
+\textbf{Example: Difference-in-Differences simulation}
 
+Let's simulate a DiD setting where the treatment effect is $1$ and the common trend is $-1.8$. We assume the default priors in the \textit{MCMCpack} package. We perform inference on the ATT using
+
+\[
+Y_{i2} - Y_{i1}
+= \underbrace{\phi_2 - \phi_1}_{\text{Common change}}
++ \tau_2 D_i + \epsilon_i.
+\]
+
+The following code implements this example. From the posterior results, we can verify that the 95\% credible interval contains the true ATT. We ask in Exercise~8 to repeat exactly the same simulation, and estimate the ATT using the specification with the interaction between treatment and the post-treatment period.
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Difference-in-Differences: Simulation exercise}
+	\begin{VF}
+		\begin{lstlisting}[language=R]		
+			rm(list = ls()); set.seed(10101)
+			library(ggplot2); library(dplyr); library(fastDummies)
+			# Parameters
+			N_per_group <- 200          # units per group
+			T_periods    <- 2           # keep 2x2 for clarity
+			tau_true     <- 1           # ATT
+			sigma_eps    <- 0.5         # noise SD
+			# Panel index
+			id  <- rep(1:(2*N_per_group), each = T_periods)
+			t   <- rep(1:T_periods, times = 2*N_per_group)
+			# Group: treated (D=1) vs control (D=0)
+			D   <- rep(c(rep(0, N_per_group), rep(1, N_per_group)), each = T_periods)
+			# Post indicator (t=2 is post)
+			post <- as.integer(t == 2)
+			# Unit fixed effects (random heterogeneity)
+			alpha_i <- rnorm(2*N_per_group, 0, 0.8)
+			alpha   <- alpha_i[id]
+			# Time effects (common shocks)
+			phi_t <- c(0, -1.8)  # common decline from t=1 to t=2
+			phi   <- phi_t[t]
+			treat_effect <- tau_true * (D * post)
+			# Outcome:
+			eps <- rnorm(length(id), 0, sigma_eps)
+			Y   <- alpha + phi + treat_effect + eps
+			did <- data.frame(id, t, D, post, Y)
+			# Bayesian inference: Model in differences
+			dY <- did$Y[did$t==2] - did$Y[did$t==1]
+			D  <- did$D[did$t==1]
+			post_fit <- MCMCpack::MCMCregress(dY ~ 1 + D, burnin = 100, mcmc = 1000)
+			tau_draws <- post_fit[, "D"]
+			quantile(tau_draws, c(.025,.5,.975))
+			quantile(post_fit[,1], c(.025,.5,.975))
+		\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}  
 
 \section{Regression discontinuity design (RD)}\label{chap12_7}
 
-We study the causal effect of a binary treatment $D_i$ on an outcome $Y_i$ within the potential outcomes (Rubin causal model) framework, namely $Y_i(1)-Y_i(0)$. As usual, we face the fundamental problem of causal inference. Identification in regression discontinuity design (RD) relies on a \textit{running variable} $Z_i$, also known as \textit{forcing}, \textit{index} or \textit{score variable}, that determines treatment assignment, either completely or partially, according to whether a unit lies on either side of a known cutoff $c$. The running variable may be associated with the potential outcomes, but this association is assumed to be smooth at $c$. Under this smoothness assumption (and absent precise manipulation at $c$), any discontinuity in the conditional mean of $Y_i$ as a function of $Z_i$ at $c$ identifies the causal effect of the treatment at the cutoff \cite{imbens2008regression}.
+In this section, we study the \textit{regression discontinuity} (RD) design. In particular, we analyze the causal effect of a binary treatment $D_i$ on an outcome $Y_i$ within the potential outcomes (Rubin causal model) framework, namely $Y_i(1)-Y_i(0)$. As usual, we face the fundamental problem of causal inference. Identification in RD relies on a \textit{running variable} $Z_i$, also known as the \textit{forcing}, \textit{index}, or \textit{score variable}, which determines treatment assignment, either completely or partially, depending on whether a unit lies on either side of a known cutoff $c$. The running variable may be associated with the potential outcomes, but this association is assumed to be smooth at $c$. Under this smoothness assumption (and in the absence of precise manipulation at $c$), any discontinuity in the conditional mean of $Y_i$ as a function of $Z_i$ at $c$ identifies the causal effect of the treatment at the cutoff \cite{imbens2008regression}.
 
 There are two common versions of RD: \emph{sharp} and \emph{fuzzy}. In the former, the change (jump) in the conditional probability of treatment at the cutoff equals one; in the latter, it is strictly between zero and one:
 \[
@@ -1933,7 +1936,7 @@ The target causal effect in the FRD is (see \cite{hahn2001rdd} for a proof)
 {\lim_{z \downarrow c}\mathbb{E}[D_i\mid Z_i=z]-\lim_{z \uparrow c}\mathbb{E}[D_i\mid Z_i=z]}\\
 &=\mathbb{E}[Y_i(1)-Y_i(0)\mid Z_i=c], \text{units are compliers}.
 \end{align*}
-Note that $\tau_{\text{FRD}}$ encompasses $\tau_{\text{SRD}}$ as $\lim_{z \downarrow c}\mathbb{E}[D_i\mid Z_i=z]-\lim_{z \uparrow c}\mathbb{E}[D_i\mid Z_i=z]=1$ in the SRD. In addition, $\tau_{\text{FRD}}$ has the same structure as the local average treatment effect (LATE) in the IV literature, with the instrument given by the eligibility indicator \(T_i=\mathbf{1}\{Z_i\ge c\}\). Because compliance is imperfect (some eligible units do not take treatment and some ineligible units receive it), \(D_i \neq T_i\) for some units, and the estimand pertains to \emph{compliers at the cutoff}.
+Note that $\tau_{\text{FRD}}$ encompasses $\tau_{\text{SRD}}$ as $\lim_{z \downarrow c}\mathbb{E}[D_i\mid Z_i=z]-\lim_{z \uparrow c}\mathbb{E}[D_i\mid Z_i=z]=1$ in the SRD. In addition, $\tau_{\text{FRD}}$ has the same structure as the local average treatment effect (LATE) in the IV literature, with the instrument given by the eligibility indicator \(T_i=\mathbbm{1}\{Z_i\ge c\}\). Because compliance is imperfect (some eligible units do not take treatment and some ineligible units receive it), \(D_i \neq T_i\) for some units, and the estimand pertains to \emph{compliers at the cutoff}.
 
 Let \(D_i(z)\) denote the potential treatment status if the cutoff were \(z\) (for \(z\) in a neighborhood of \(c\)) such that $D_i(z)=1$ implies that the unit would be treated if the cutoff is $z$. The identification assumptions are: 
 
@@ -2263,8 +2266,8 @@ that is, we only observe $Y_i = Y_i(1)$ for $i=1,2,\dots,N$, while $Y_i(0)$ rema
 In this setting, inference can be performed based on the likelihood of the observed outcomes together with the \textit{selection (missingness) mechanism} $(Y_i(1),D_i)$, integrating out the unobserved $Y_i(0)$ from the joint distribution of $\{Y_i(1),Y_i(0),D_i\}$. However, one must consider whether the missingness mechanism is \textit{ignorable} or not. According to \cite{little2019statistical}, the missingness mechanism is ignorable in Bayesian inference if the following two conditions hold:  
 i) the likelihood can be factorized as
 \[
-p(\boldsymbol{\theta},\boldsymbol{\gamma}\mid y_i, d_i) 
-= p(\boldsymbol{\theta}\mid y_i)\, p(y_i,d_i \mid \boldsymbol{\gamma}),
+p(y_i, d_i\mid \boldsymbol{\theta},\boldsymbol{\gamma}) 
+= p(y_i\mid \boldsymbol{\theta})\, p(y_i,d_i \mid \boldsymbol{\gamma}),
 \] 
 and  
 ii) the parameters $\boldsymbol{\theta}$ and $\boldsymbol{\gamma}$ are \emph{a priori} independent,
@@ -2278,7 +2281,7 @@ Under these conditions, posterior inference can be based on
 \pi(\boldsymbol{\theta}\mid \mathbf{y}) 
 \propto \pi(\boldsymbol{\theta})\, p(\mathbf{y} \mid \boldsymbol{\theta}).
 \]
-Thus, if the missingness mechanism is Missing At Random (MAR) and the parameters are \emph{a priori} independent, the missingness mechanism is ignorable for Bayesian inference (see Chapter~6 of \cite{little2019statistical}).
+Thus, if the missingness mechanism is \textit{Missing At Random} (MAR) and the parameters are \emph{a priori} independent, the missingness mechanism is ignorable for Bayesian inference (see Chapter~6 of \cite{little2019statistical}).
 
 In contrast, when the missingness mechanism is non-ignorable (i.e., Not Missing At Random, NMAR), the probability of observing $Y_i$ depends on the unobserved values themselves. In this case, Bayesian inference must be performed using the full joint likelihood,
 \[
@@ -2368,9 +2371,9 @@ Following Chapter~11 in \cite{greenberg2012introduction}, we set
 \[
 \boldsymbol{\eta}_i=
 \begin{cases}
-	[0, \, D_i^*]^{\top}, & i\in I_0,\\
-	[y_i, \, D_i^*]^{\top}, & i\in I_1,
-\end{cases}
+	[0, \, D_i^*]^{\top}, & i\in I_0\\
+	[y_i, \, D_i^*]^{\top}, & i\in I_1
+\end{cases},
 \qquad
 \mathbf{W}_i=\begin{bmatrix}
 	\mathbf{X}_i^{\top} & \mathbf{0}\\
@@ -2629,7 +2632,7 @@ The point of departure is a set of moment conditions
 \[
 \mathbb{E}\!\big[\mathbf{g}(\mathbf{W},\boldsymbol{\theta})\big]=\mathbf{0}_{d},
 \]
-where the expectation is with respect to the population distribution, $\mathbf{W}_{1:N}:=[\mathbf{W}_1 \ \mathbf{W}_2 \ \dots \ \mathbf{W}_N]$ is a random sample from $\mathbf{W}$ , $\mathbf{g}:\mathbb{R}^{d_w}\times\boldsymbol{\Theta}\to\mathbb{R}^{d}$ is a vector of known functions, and 
+where the expectation is with respect to the population distribution, $\mathbf{W}_{1:N}:=[\mathbf{W}_1 \ \mathbf{W}_2 \ \dots \ \mathbf{W}_N]$ is a random sample from $\mathbf{W}\subset \mathbb{R}^{d_w}$, $\mathbf{g}:\mathbb{R}^{d_w}\times\boldsymbol{\Theta}\to\mathbb{R}^{d}$ is a vector of known functions, and 
 $\boldsymbol{\theta}=[\theta_{1}\ \theta_{2}\ \dots\ \theta_{p}]^{\top}\in\boldsymbol{\Theta}\subset\mathbb{R}^{p}$.
 If $d>p$ the model is \emph{over-identified}; if $d=p$ it is \emph{exactly identified} (and if $d<p$ it is \emph{under-identified}).\\
 
@@ -2813,9 +2816,9 @@ The DAG~\ref{fig:DAG_IV_meas_error} illustrates the situation of measurement err
 
 We simulate the latent process $X_i^* = 0.5Z_i + e_i$, with the observed regressor defined as $X_i = X_i^* + \nu_i$, and the outcome equation specified as $Y_i = 1 + 1.2X_i^* + \mu_i$. The variables $Z_i$, $e_i$, and $\nu_i$ are standard normal, while $\mu_i$ follows a mixture of two normal distributions with means $0.5$ and $-0.5$, and standard deviations $0.5$ and $1.2$. The sample size is 2{,}000, the burn-in is 1{,}000, and the number of MCMC draws retained after burn-in is 10{,}000.
 
-We perform Bayesian exponentially tilted empirical likelihood (BETEL) using the package \textit{betel}, and adopt the default hyperparameter values provided there.\footnote{Available at \textit{https://apps.olin.wustl.edu/faculty/chib/rpackages/betel/}.} This package implements Bayesian estimation and marginal likelihood computation for moment condition models, employing a Student-t prior distribution and a Student-t proposal distribution following \cite{chib2018moment}. We also compare the results with a model that assumes $X_i$ is exogenous, and with an instrumental Gibbs sampler that assumes $Y_i$ is normally distributed. We also use the default hyperparameter of these packages. 
+We perform Bayesian exponentially tilted empirical likelihood (BETEL) using the package \textit{betel}, and adopt the default hyperparameter values provided there.\footnote{Available at \textit{https://apps.olin.wustl.edu/faculty/chib/rpackages/betel/}.} This package implements Bayesian estimation and marginal likelihood computation for moment condition models, employing a Student-t prior distribution and a Student-t proposal distribution following \cite{chib2018moment}. We also compare the results with a model that assumes $X_i$ is exogenous, and with an instrumental Gibbs sampler that assumes $Y_i$ is normally distributed. We also use the default hyperparameter of the used packages. The following code shows the implementation. 
 
-Figure \ref{fig12_Measurement} displays the posterior distributions. We see that ignoring measurement error produces a biased posterior distribution, whereas methods that account for measurement error and use valid instruments yield well-centered posterior distributions.
+Figure \ref{fig12_Measurement} displays the posterior distributions. We see that ignoring measurement error produces a biased posterior distribution. In particular, the absolute value of the causal effect is smaller than the population value; this is called \textit{attenuation bias}. By contrast, methods that account for measurement error and use valid instruments yield well-centered posterior distributions.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -2997,7 +3000,15 @@ The equation of price into the demand equation gives
 
 where $\tau_1=\beta_1+\beta_2\pi_1$, $\tau_2=\beta_2\pi_2$, $\tau_3=\beta_2\pi_3+\beta_3$, $\tau_4=\beta_2\pi_4+\beta_4$, $\tau_5=\beta_2\pi_5+\beta_5$, and $v_{i2}=\beta_2v_{i1}+u_{i1}$.
 
-This is the baseline setting where $r$\%=0. To analyze the causal effects of the new tax, we can find the new equilibrium,
+The expressions for $p_i^{Obs}$ and $q_i^{Obs}$ are called the \textit{reduced-form} representations. In Section \ref{sec71}, we presented the order condition, which is necessary, and the rank condition, which is both necessary and sufficient, to identify the structural parameters from the reduced-form parameters. A key point to note is that only the prior distribution of the reduced-form parameters is updated by the sample information, while the updating of the structural parameters occurs solely through the reduced-form parameters, that is,
+\[
+\pi(\boldsymbol{\beta},\boldsymbol{\alpha}\mid \boldsymbol{\gamma},\boldsymbol{\pi},\mathbf{W}_{1:N})
+\;\propto\;
+\pi(\boldsymbol{\beta},\boldsymbol{\alpha}\mid \boldsymbol{\gamma},\boldsymbol{\pi}).
+\]
+See Section~9.3 in \cite{zellner1996introduction} for details about identification in Bayesian inference. This implies that in \textit{under-identified} models, the posterior distribution of the structural parameters is not concentrated at a single point, but rather remains spread out (e.g., uniformly) over a range of values.\footnote{This identification issue is not peculiar to simultaneous equation models, it arises in other econometric/statistical models \cite{zellner1996introduction}. See for instance the example of the effects of vitamin A, Figures \ref{fig12_CACE} and \ref{fig12_LATE}.}
+
+To analyze the causal effects of the new tax, we can find the new equilibrium,
 \[
 q_i^d(P_i(r)\times (1+r))=q_i^s(P_i(r)),
 \] 
