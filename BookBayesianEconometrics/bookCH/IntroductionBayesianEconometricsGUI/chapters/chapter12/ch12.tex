@@ -3186,7 +3186,7 @@ In particular, given the moment conditions
 \quad \text{if and only if } \boldsymbol{\theta}=\boldsymbol{\theta}_0,
 \]
 where the expectation is taken with respect to the population distribution, 
-$\mathbf{w}_{1:N}:=[\mathbf{w}_1 \ \mathbf{w}_2 \ \dots \ \mathbf{w}_N]$ is a random sample from $\mathbf{W}$, 
+$\mathbf{w}_{1:N}:=[\mathbf{w}_1 \ \mathbf{w}_2 \ \dots \ \mathbf{w}_N]$ is a random sample from $\mathbf{W}\subset \mathbb{R}^{d_w}$, 
 $\mathbf{g}:\mathbb{R}^{d_w}\times\boldsymbol{\Theta}\to\mathbb{R}^{d}$ is a vector of known functions, and 
 $\boldsymbol{\theta}=[\theta_{1}\ \theta_{2}\ \dots\ \theta_{p}]^{\top}\in\boldsymbol{\Theta}\subset\mathbb{R}^{p}$ with $d\geq p$, the risk function can be defined as
 \[
@@ -3199,7 +3199,7 @@ where $\mathbf{W}_N$ is a positive semi-definite weighting matrix such that
 \quad \text{as } N\rightarrow \infty.
 \]  
 
-Then, the \textit{quasi-posterior} in \cite{chernozhukov2003mcmc} is equivalent to Equation~\ref{eq:GibbsPost} with $w=1$.
+Then, the \textit{quasi-posterior} in \cite{chernozhukov2003mcmc} is similar to Equation~\ref{eq:GibbsPost} with $w=1$.
 
 Algorithm \ref{Alg:GibbsPosteior} shows the Metropolis-Hastings to perform inference using the general Bayes posterior.
 
@@ -3273,7 +3273,7 @@ for all $\tau$ almost surely, and $U(D_i)\sim U(0,1)$ conditional on $(\mathbf{X
 
 This conditional moment restriction implies the unconditional moment conditions that form the basis for estimation and inference in the IVQR model \cite{chernozhukov2003mcmc,chernozhukov2004effects},
 \[
-\mathbf{g}_N(\boldsymbol{\theta})=\frac{1}{N}\sum_{i=1}^N (\tau-\mathbbm{1}(Y_i\leq \alpha_{\tau}D_i+\mathbf{X}_i\boldsymbol{\beta}_{\tau}))\begin{bmatrix}
+\mathbf{g}_N(\boldsymbol{\theta})=\frac{1}{N}\sum_{i=1}^N (\tau-\mathbbm{1}(Y_i\leq \alpha_{\tau}D_i+\mathbf{X}_i^{\top}\boldsymbol{\beta}_{\tau}))\begin{bmatrix}
 \mathbf{X}_i\\
 \mathbf{Z}_i
 \end{bmatrix}.
@@ -3376,7 +3376,7 @@ Setting $\tau = 0.5$ (the median), the quantile treatment effect is USD 6,719, w
 
 \section{Doubly robust Bayesian inferential framework (DRB)}\label{sec12_11}
 
-\cite{breunig2025double} propose a doubly robust Bayesian (DRB) approach to inference on the average treatment effect (ATE) under unconfoundedness. They adjust the prior for the conditional mean outcome function using an estimator of the propensity score, the conditional probability of treatment assignment \cite{rosenbaum1983central}, and then re-center the posterior distribution of the treatment effect using the propensity score estimator together with a pilot estimator of the outcome regression. The authors show that under unconfoundedness and overlap, the corrected posterior converges in distribution to a normal law centered at a semiparametrically efficient estimator, and that the resulting credible intervals achieve asymptotically exact Frequentist coverage.
+\cite{breunig2025double} propose a doubly robust Bayesian (DRB) approach to perform inference on the average treatment effect (ATE) under unconfoundedness. They adjust the prior for the conditional mean outcome function using an estimator of the propensity score, the conditional probability of treatment assignment \cite{rosenbaum1983central}, and then re-center the posterior distribution of the treatment effect using the propensity score estimator together with a pilot estimator of the outcome regression. The authors show that under unconfoundedness and overlap, the corrected posterior converges in distribution to a normal law centered at a semiparametrically efficient estimator, and that the resulting credible intervals achieve asymptotically exact Frequentist coverage.
 
 Let $Y_i\in\{0,1\}$ be the outcome and $D_i\in\{0,1\}$ the treatment,\footnote{\cite{breunig2025double} extend their framework to continuous, counting and multinomial outcomes.} thus
 \[
@@ -3392,17 +3392,18 @@ and the conditional mean outcome (success probability)
 \[
 m_0(d,\mathbf{x}) := P(Y_i=1\mid D_i=d,\mathbf{X}_i=\mathbf{x}).
 \]
-For an i.i.d. sample $W_i=(Y_i,D_i,\mathbf{X}_i)$, the joint density can be written as
+For an i.i.d. sample $W_i=(Y_i,D_i,\mathbf{X}_i^{\top})^{\top}$, the joint density can be written as
 \[
 p_{f,\pi,m}(y,d,\mathbf{x})
 = f(\mathbf{x})\,[\pi(\mathbf{x})]^d\,[1-\pi(\mathbf{x})]^{1-d}\,[m(d,\mathbf{x})]^y\,[1-m(d,\mathbf{x})]^{1-y}.
 \]
 The parameter of interest is the average treatment effect (ATE),
 \[
-\tau_0 := \mathbb{E}_0\!\left[\,Y_i(1)-Y_i(0)\,\right].
+\tau := \mathbb{E}_0\!\left[\,Y_i(1)-Y_i(0)\,\right],
 \]
+where $\mathbb{E}_0$ is the expectation with respect to the population distribution.
 
-Following \cite{breunig2025double}, impose support via link functions. For the outcome regression and propensity score use logits:
+\cite{breunig2025double} impose support restrictions via link functions. For the outcome regression and propensity score use logits:
 \[
 m_\eta(d,\mathbf{x})=\frac{1}{1+\exp\{-\eta^m(d,\mathbf{x})\}},
 \qquad
@@ -3414,7 +3415,7 @@ so that
 \qquad
 \eta^\pi(\mathbf{x})=\log\!\left(\frac{\pi_\eta(\mathbf{x})}{1-\pi_\eta(\mathbf{x})}\right).
 \]
-For the covariate density, use a log-density parametrization
+For the covariate density, they use a log-density parametrization
 \[
 f_\eta(\mathbf{x})=\exp\{\eta^f(\mathbf{x})\},
 \qquad
@@ -3456,7 +3457,7 @@ The pilot estimate of the Riesz representer, $\hat\gamma_\eta$, is obtained by p
  
 The pilot estimate of the outcome regression, $\hat m_\eta(d,\mathbf{x})=\Pr(Y=1\mid D=d,\mathbf{X}=\mathbf{x})$, is taken as the posterior mean from a GP \emph{classification} model fit with a Laplace approximation.
 
-Concretely, place a Gaussian Process (GP) prior on the latent logit
+Concretely, place a GP prior on the latent logit
 $\eta^m(d,\mathbf{x})$ with a squared exponential kernel, and map to
 success probabilities via the logistic link
 $m(d,\mathbf{x})=\operatorname{logit}^{-1}\{\eta^m(d,\mathbf{x})\}$.
@@ -3535,7 +3536,7 @@ where $X_{1}\sim N(0,1)$, $X_{2}\sim \mathrm{Bernoulli}(0.5)$, and $X_{3}\sim U(
  
 The population ATE from this simulation is approximately $0.138$. The posterior mean and 95\% credible interval of the ATE using the DRB are $0.155$ and $(0.107,\,0.206)$, respectively. 
 
-The following example shows how to perform inference in this setting.
+The following code shows how to implement the DRB inferential framework in this setting.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -3695,8 +3696,7 @@ print(res_list$results)
 	\end{VF}
 \end{tcolorbox} 
 
-
-
+\begin{comment}
 \section{Other approaches}\label{sec12_12}
 There are other causal inference approaches that we do not cover in this chapter but are worth mentioning. In particular, 
 
@@ -3734,16 +3734,18 @@ Read this reference \cite{iacovone2023bayesian} before begin working in this cha
 %We can use BMA as a sensible way to perform robustness analysis regarding model specification (regressors uncertainty) in performing inference of treatment effects.
 
 %\section{Double-Debiased machine learning causal effects}\label{sec12_11a}
+\end{comment}
 
 \section{Summary}
 
-In this chapter we review some of the most common approaches to causal inference. We begin by outlining the identification restrictions underlying each method and then describe how these restrictions are incorporated into a Bayesian framework for inference. A natural point of departure is the use of Directed Acyclic Graphs (DAGs), which provide a graphical representation of the underlying structural or causal model. The central idea is to identify an exogenous source of variation, possibly conditional, such as instruments or institutional arrangements. 
+In this chapter, we review some of the most common approaches to causal inference. We begin by outlining the identification restrictions underlying each method and then describe how these restrictions are incorporated into a Bayesian framework for inference. A natural point of departure is the use of Directed Acyclic Graphs (DAGs), which provide a graphical representation of the underlying structural or causal model. The next step is to identify an exogenous source of variation in the assignment rule, such as instruments or institutional arrangements, whose variability enables the identification of the causal effect of the treatment or relevant regressor on the outcome.
 
-Given such sources of variation, one can use parametric, semiparametric, or nonparametric models to specify the conditional means of the potential outcomes given treatment assignment, thereby constructing counterfactual scenarios and enabling inference on causal estimands, such as the average treatment effect (ATE). Particular attention must be paid to the correct specification of the treatment assignment mechanism (propensity score) and the outcome regression, as both play a crucial role in credible causal inference. 
+Given such sources of variation, one can use parametric, semiparametric, or nonparametric models to specify the conditional means of the potential outcomes given treatment assignment, thereby constructing counterfactual scenarios and enabling inference on causal estimands, such as the average treatment effect. Particular attention must be paid to the correct specification of the treatment assignment mechanism (propensity score) and the outcome regression, as both play a crucial role in credible causal inference. 
 
 This highlights the growing importance of modern machine learning methods for estimating high-dimensional or complex nuisance functions (see Chapter \ref{chap13} and Section \ref{sec12_11}). At the same time, however, it is essential to address and correct for the biases that machine learning methods may introduce in order to obtain valid causal inference.
 
-Finally, the Bayesian framework provides a coherent way to integrate these identification strategies with prior information, to account for model uncertainty, and to deliver full posterior distributions of causal estimands, thereby offering a unified approach to causal inference.
+Finally, the Bayesian framework provides a coherent way to integrate these identification strategies with prior information and to obtain full posterior distributions of causal estimands, based on both the marginal distributions of the potential outcomes and their joint distribution, thereby offering a unified approach to causal inference.
+
 
 %There are other causal inference approaches that we do not cover in this chapter. For instance, the synthetic control method, which estimates a treatment effect by constructing a weighted combination of untreated units that best matches the treated unit's pre-treatment outcomes, and then comparing post-treatment differences. Identification relies on \textit{no interference between units}, \textit{parallel trends between the treated unit and its synthetic control in the absence of treatment}, and \textit{no anticipation of treatment} \cite{abadie2010synthetic}. Several proposals extend this framework to the Bayesian setting \cite{amjad2018robust,kim2020bayesian,pang2022bayesian}.
 
@@ -3779,7 +3781,7 @@ Finally, the Bayesian framework provides a coherent way to integrate these ident
 	
 	\item \textbf{401(k) participation on net financial assets continues II} 
 	
-	Use the function \textit{rivDP} from the \textit{bayesm} package to perform inference on 401(k) participation and its effect on net financial assets using the same specification as in the main text, and plot the LATE.
+	Perform inference in this example assuming that the stochastic errors follow a Dirichlet process, using the function \textit{rivDP} from the \textit{bayesm} package to analyze 401(k) participation and its effect on net financial assets under the same specification as in the main text, and plot the LATE.
 	
 	\item \textbf{Difference-in-Differences simulation continues I}
 	
@@ -3799,7 +3801,7 @@ Finally, the Bayesian framework provides a coherent way to integrate these ident
 	\[
 	\tau_2 = (\mu_{21} - \mu_{11}) - (\mu_{20} - \mu_{10}).
 	\]
-	Inference on $\tau_2$ using this approach in the simulation setting shows that the posterior mean is similar to that from the previous approaches, but the level of uncertainty is higher.
+	Explain why inference on $\tau_2$ using this approach in the simulation setting shows that the posterior mean is similar to that from the previous approaches, but the level of uncertainty is higher.
 	
 	\item Perform a simulation exercise to assess the ability of BETEL to identify the causal effect when an instrument is used to address the omission of relevant regressors. Illustrate the consequences of varying the dependence between the omitted regressor and the observed regressor.
 	
