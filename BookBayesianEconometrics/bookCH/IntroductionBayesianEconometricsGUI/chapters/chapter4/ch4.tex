@@ -297,41 +297,36 @@ This is a Dirichlet-multinomial distribution with parameters $\bm{\alpha}_n$.\\
 
 \textbf{Example: English premier league, Liverpool vs Manchester city}
 
-Let's consider an example using data from the English Premier League. In particular, we want to calculate the probability that, in the next five matches between Liverpool and Manchester City, Liverpool wins two games and Manchester City wins three. This calculation is based on historical data from the last five matches where Liverpool played at home between January 14th, 2018, and April 10th, 2022. In those matches, Liverpool secured two wins, there were two draws, and Manchester City won one match.
-\footnote{https://www.11v11.com/teams/manchester-city/tab/opposingTeams/opposition/Liverpool/.}
+Let's consider an example using data from the English Premier League. In particular, we want to calculate the probability that, in the next five matches between Liverpool and Manchester City, Liverpool wins two games and Manchester City wins three. This calculation is based on historical data from the last five matches where Liverpool played at home between January 14th, 2018, and April 10th, 2022. In those matches, Liverpool secured two wins, there were two draws, and Manchester City won one match.\footnote{https://www.11v11.com/teams/manchester-city/tab/opposingTeams/opposition/Liverpool/.}
 
-We use two strategies to estimate the hyperparameters. First, we estimate the hyperparameters of the Dirichlet distribution using betting odds from bookmakers at 19:05 on October 6th, 2022 (Colombia time). We obtained data from 24 bookmakers (see file \textit{DataOddsLIVvsMAN.csv})\footnote{https://www.oddsportal.com/soccer/england/premier-league/liverpool-manchester-city-WrqgEz5S/}, and we transform these odds into probabilities using a simple standardization approach. Then, we apply maximum likelihood estimation to estimate the hyperparameters.
+We use two strategies to estimate the hyperparameters. First, we estimate the hyperparameters of the Dirichlet distribution using betting odds from bookmakers at 19:05 on October 6th, 2022 (Colombia time). We obtained data from 24 bookmakers (see file \textit{DataOddsLIVvsMAN.csv}),\footnote{https://www.oddsportal.com/soccer/england/premier-league/liverpool-manchester-city-WrqgEz5S/} and we transform these odds into probabilities using a simple standardization approach. Then, we apply maximum likelihood estimation to estimate the hyperparameters.
 
 Second, we use empirical Bayes, where we estimate the hyperparameters by optimizing the marginal likelihood.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 	\textit{R code. Multinomial-Dirichlet model: Liverpool vs Manchester city}
-\begin{VF}
-\begin{lstlisting}[language=R]
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 # Multinomial-Dirichlet example: Liverpool vs Manchester city
 Data <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/DataOddsLIVvsMAN.csv", sep = ",", header = TRUE, quote = "")
-attach(Data)
-library(dplyr)
-Probs <- Data %>%
-	mutate(pns1 = 1/home, pns2 = 1/draw, pns3 = 1/away)%>% 
-	mutate(SumInvOdds = pns1 + pns2 + pns3) %>% 
-	mutate(p1 = pns1/SumInvOdds, p2 = pns2/SumInvOdds, p3 = pns3/SumInvOdds) %>% 
-	select(p1, p2, p3)
-# We get probabilities using simple standardization. There are more technical approaches to do this. See for instance Shin (1993) and Strumbelj (2014). 
-DirMLE <- sirt::dirichlet.mle(Probs)
-# Use maximum likelihood to estimate parameters of the
-# Dirichlet distribution
+attach(Data); library(dplyr)
+Probs <- Data %>% mutate(pns1 = 1/home, pns2 = 1/draw, pns3 = 1/away) %>% mutate(SumInvOdds = pns1 + pns2 + pns3) %>% mutate(p1 = pns1/SumInvOdds, p2 = pns2/SumInvOdds, p3 = pns3/SumInvOdds) %>% select(p1, p2, p3)
+# We get probabilities using simple standardization. There are more technical approaches to do this. See for instance Shin (1993) and Strumbelj (2014).\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Multinomial-Dirichlet model: Liverpool vs Manchester city}
+\begin{VF}
+\begin{lstlisting}[language=R]
+DirMLE <- sirt::dirichlet.mle(Probs) # Use maximum likelihood to estimate parameters of the Dirichlet distribution
 alpha0odds <- DirMLE$alpha
-alpha0odds
-      p1       p2       p3 
-1599.122 1342.703 2483.129 
-
 y <- c(2, 2, 1) 
-# Historical records last five mathces
-# Liverpool wins (2), draws (2) and Manchester
-# city wins (1)
-
+# Historical records last five mathces: Liverpool wins (2), draws (2) and Manchester city wins (1)	
 # Marginal likelihood
 MarLik <- function(a0){
 	n <- sum(y)
@@ -342,14 +337,9 @@ MarLik <- function(a0){
 }
 EmpBay <- optim(alpha0odds, MarLik, method = "BFGS")
 alpha0EB <- EmpBay$par
-alpha0EB
-p1       p2       p3 
-2362.622 2660.153 1279.510 
 # Bayes factor empirical Bayes vs betting odds. 
 # This is greather than 1 by construction
 BF <- exp(-MarLik(alpha0EB))/exp(-MarLik(alpha0odds))
-BF
-2.085819
 # Posterior distribution based on empirical Bayes
 alphan <- alpha0EB + y 
 # Posterior parameters 
@@ -357,35 +347,18 @@ S <- 100000
 # Simulation draws from the Dirichlet distribution 
 thetas <- MCMCpack::rdirichlet(S, alphan)
 colnames(thetas) <- c("Liverpool","Draw","Manchester")
-\end{lstlisting}
-\end{VF}
-\end{tcolorbox}
-
-
-\begin{tcolorbox}[enhanced,width=4.67in,center upper,
-	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Multinomial-Dirichlet model: Liverpool vs Manchester city}
-\begin{VF}
-\begin{lstlisting}[language=R]
 # Predictive distribution based on simulations
 y0 <- c(2, 0, 3) 
 # Liverpool two wins and Manchester city three wins in next five matches
 Pred <- apply(thetas, 1, function(p) {rmultinom(1, size = sum(y0), prob = p)})
-ProY0 <- sum(sapply(1:S,function(s){sum(Pred[,s]==y0)==3}))/S
-ProY0
-0.01157
-# Probability of y0
-
+ProY0 <- sum(sapply(1:S,function(s){sum(Pred[,s]==y0)==3}))/S # Probability of y0
 # Predictive distribution using analytical expression
 PredY0 <- function(y0){
 	n <- sum(y0)
 	Res1 <- sum(sapply(1:length(y), function(l){lgamma(alphan[l]+y0[l]) - lgamma(alphan[l])-lfactorial(y0[l])}))
 	Res <- lfactorial(n) + lgamma(sum(alphan)) - lgamma(sum(alphan)+n) + Res1
 	return(exp(Res))
-}
-PredY0(y0)         
-0.01177531
-\end{lstlisting}
+}\end{lstlisting}
 \end{VF}
 \end{tcolorbox}
 
@@ -461,7 +434,7 @@ The marginal likelihood is
 where we take into account that $\int_{-\infty}^{\infty} \left[\frac{\beta_n(\mu-\mu_n)^2+\delta_n}{2}\right]^{-\frac{\alpha_n+1}{2}}d\mu\left(\frac{\delta_n/2}{\delta_n/2}\right)^{-\frac{\alpha_n+1}{2}}=\int_{-\infty}^{\infty} \left[\frac{\beta_n\alpha_n(\mu-\mu_n)^2}{\delta_n\alpha_n}+1\right]^{-\frac{\alpha_n+1}{2}}d\mu\left(\frac{\delta_n}{2}\right)^{-\frac{\alpha_n+1}{2}}$. The term in the integral is the kernel of a Student's t density, this means that the integral is equal to $\frac{\left(\frac{\delta_n\pi}{\beta_n}\right)^{1/2}\Gamma\left(\frac{\alpha_n}{2}\right)}{\Gamma\left(\frac{\alpha_n+1}{2}\right)}$.  
 
 The predictive density is
-{\footnotesize{
+{\scriptsize{
 \begin{align}
 	\pi(y_0\mid \bm{y})&\propto\int_{-\infty}^{\infty}\int_0^{\infty}\left\{ \left(\frac{1}{\sigma^2}\right)^{1/2}\exp\left\{-\frac{1}{2\sigma^2}(y_0-\mu)^2\right\}\left(\frac{1}{\sigma^2}\right)^{1/2}\exp\left\{-\frac{\beta_n}{2\sigma^2}(\mu-\mu_n)^2\right\}\right.\nonumber\\
 	&\times \left.\left(\frac{1}{\sigma^2}\right)^{\alpha_n/2+1}\exp\left\{-\frac{\delta_n}{2\sigma^2}\right\}\right\}d\sigma^2d\mu\nonumber\\
@@ -721,8 +694,8 @@ Then, the posterior distribution is
 	\pi(\bm{\beta},\sigma^2\mid \bm{y},\bm{X})&\propto (\sigma^2)^{-\frac{N}{2}} \exp \left\{-\frac{1}{2\sigma^2} ({\bm{y}} - {\bm{X}}\bm{\beta})^{\top}({\bm{y}} - {\bm{X}}\bm{\beta}) \right\} \\
 	& \times (\sigma^2)^{-\frac{K}{2}} \exp \left\{-\frac{1}{2\sigma^2} (\bm{\beta} - \bm{\beta}_0)^{\top}{\bm{B}}_0^{-1}(\bm{\beta} - \bm{\beta}_0)\right\} \\
 	& \times \frac{(\delta_0/2)^{\alpha_0/2}}{\Gamma(\alpha_0/2)}\left(\frac{1}{\sigma^2}\right)^{\alpha_0/2+1}\exp \left\{-\frac{\delta_0}{2\sigma^2} \right\} \\
-	& \propto (\sigma^2)^{-\frac{K}{2}} \exp \left\{-\frac{1}{2\sigma^2} [\bm{\beta}^{\top}({\bm{B}}_0^{-1} + {\bm{X}}^{\top}{\bm{X}})\bm{\beta} - 2\bm{\beta}^{\top}({\bm{B}}_0^{-1}\bm{\beta}_0 + {\bm{X}}^{\top}{\bm{X}}\hat{\bm{\beta}})] \right\} \\
-	& \times \left(\frac{1}{\sigma^2}\right)^{(\alpha_0+N)/2+1}\exp \left\{-\frac{\delta_0+ {\bm{y}}^{\top}{\bm{y}} + \bm{\beta}_0^{\top}{\bm{B}}_0^{-1}\bm{\beta}_0}{2\sigma^2} \right\},
+	& \propto \exp \left\{-\frac{1}{2\sigma^2} [\bm{\beta}^{\top}({\bm{B}}_0^{-1} + {\bm{X}}^{\top}{\bm{X}})\bm{\beta} - 2\bm{\beta}^{\top}({\bm{B}}_0^{-1}\bm{\beta}_0 + {\bm{X}}^{\top}{\bm{X}}\hat{\bm{\beta}})] \right\} \\
+	& \times (\sigma^2)^{-\frac{K}{2}} \left(\frac{1}{\sigma^2}\right)^{(\alpha_0+N)/2+1}\exp \left\{-\frac{\delta_0+ {\bm{y}}^{\top}{\bm{y}} + \bm{\beta}_0^{\top}{\bm{B}}_0^{-1}\bm{\beta}_0}{2\sigma^2} \right\},
 \end{align*}
 
 where $\hat{\bm{\beta}}=({\bm{X}}^{\top}{\bm{X}})^{-1}{\bm{X}}^{\top}{\bm{y}}$ is the maximum likelihood estimator.
@@ -902,9 +875,11 @@ Thus,
 \end{align*}
 }}
 where the term in the second integral is the kernel of a multivariate normal density with mean $\bm{\beta}_*$ and covariance matrix $\sigma^2{\bm{M}}^{-1}$. Then,
+{\footnotesize{
 \begin{align*}
 	\pi({\bm{y}}_0\mid {\bm{y}})&\propto\int_{0}^{\infty}\left(\frac{1}{\sigma^2}\right)^{\frac{N_0+\alpha_n}{2}+1}\exp\left\{-\frac{1}{2\sigma^2}(\bm{\beta}_n^{\top}{\bm{B}}_n^{-1}\bm{\beta}_n+{\bm{y}}_0^{\top}{\bm{y}}_0-\bm{\beta}_*^{\top}{\bm{M}}\bm{\beta}_*+\delta_n)\right\}d\sigma^2,\\
 \end{align*}
+}}
 
 which is the kernel of an inverse gamma density. Thus,
 \begin{align*}
@@ -954,32 +929,32 @@ We want to check the results of the Bayes factor comparing the previous specific
 
 In particular, we examine what happens as $c_0$ increases from $10^{0}$ to $10^{20}$. We observe that when $c_0 = 1$, $BF_{12} = 8.68 \times 10^{+16}$, which indicates very strong evidence in favor of the model including the price of electricity. However, as $c_0$ increases, the Bayes factor decreases, which suggests evidence supporting model 2. For instance, when $c_0 = 10^{20}$, $BF_{12} = 3.11 \times 10^{-4}$. This is an example of the issue with using non-informative priors to calculate the Bayes factor: there is very strong evidence supporting the parsimonious model as $c_0 \rightarrow \infty$.
 
-We can obtain the posterior predictive distribution of the monthly electricity demand for a household located in the lowest socioeconomic condition in a municipality situated below 1000 meters above sea level, with 2 rooms, 3 members (with children), a monthly income of USD 500, and an electricity price of USD 0.15/kWh. Figure \ref{fig41} shows the histogram of the predictive posterior distribution. The highest posterior density credible interval at 95\% is between 44.4 kWh and 373.9 kWh, and the posterior mean is 169.4 kWh.    
+We can obtain the posterior predictive distribution of the monthly electricity demand for a household located in the lowest socioeconomic condition in a municipality situated below 1000 meters above sea level, with 2 rooms, 3 members (with children), a monthly income of USD 500, and an electricity price of USD 0.15/kWh. Figure \ref{fig41} shows the histogram of the predictive posterior distribution. The highest posterior density credible interval at 95\% is between 44.4 kWh and 373.9 kWh, and the posterior mean is 169.4 kWh.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 	\textit{R code. Demand of electricity, posterior predictive distribution}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-rm(list = ls())
-set.seed(010101)
+rm(list = ls()); set.seed(010101)
 # Electricity demand
 DataUt <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/Utilities.csv", sep = ",", header = TRUE, quote = "")
 library(dplyr)
-DataUtEst <- DataUt %>% 
-	filter(Electricity != 0)
+DataUtEst <- DataUt %>% filter(Electricity != 0)
 attach(DataUtEst)
 # Dependent variable: Monthly consumption (kWh) in log
 Y <- log(Electricity) 
 # Regressors quantity including intercept
 X <- cbind(LnPriceElect, IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem, Children, Lnincome, 1)
-# LnPriceElect: Price per kWh (USD) in log
-# IndSocio1, IndSocio2, IndSocio3: Indicators socio-economic condition (1) is the lowest and (3) the highest
-# Altitude: Indicator of household location (1 is more than 1000 meters above sea level)
-# Nrooms: Number of rooms in house
-# HouseholdMem: Number of household members
-# Children: Indicator por presence of children in household (1)
-# Lnincome: Monthly income (USD) in log
+# LnPriceElect: Price per kWh (USD) in log. IndSocio1, IndSocio2, IndSocio3: Indicators socio-economic condition (1) is the lowest and (3) the highest. Altitude: Indicator of household location (1 is more than 1000 meters above sea level). Nrooms: Number of rooms in house. HouseholdMem: Number of household members. Children: Indicator por presence of children in household (1). Lnincome: Monthly income (USD) in log\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+    
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Demand of electricity, posterior predictive distribution}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 k <- dim(X)[2]
 N <- dim(X)[1]
 # Hyperparameters
@@ -998,73 +973,6 @@ Hn <- Bn*dn/an
 S <- 10000 # Number of draws from posterior distributions
 sig2 <- MCMCpack::rinvgamma(S,an/2,dn/2)
 summary(coda::mcmc(sig2))
-\end{lstlisting}
-	\end{VF}
-\end{tcolorbox} 
-
-\begin{tcolorbox}[enhanced,width=4.67in,center upper,
-	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Demand of electricity, posterior distribution}
-	\begin{VF}
-		\begin{lstlisting}[language=R]
-Iterations = 1:10000
-Thinning interval = 1 
-Number of chains = 1 
-Sample size per chain = 10000 
-
-1. Empirical mean and standard deviation for each 
-variable, plus standard error of the mean:
-
-Mean             SD       Naive SE  Time-series SE 
-2.361e-01      7.617e-03  7.617e-05 7.617e-05 
-		
-2. Quantiles for each variable:
-
-2.5%    25%    50%    75%  97.5% 
-0.2217 0.2309 0.2360 0.2412 0.2513 
-
-Betas <- LaplacesDemon::rmvt(S, bn, Hn, an)
-summary(coda::mcmc(Betas))
-Iterations = 1:10000
-Thinning interval = 1 
-Number of chains = 1 
-Sample size per chain = 10000 
-
-1. Empirical mean and standard deviation for each 
-variable, plus standard error of the mean:
-
-              Mean      SD    Naive SE  Time-series SE
-LnPriceElect -1.09043 0.19459 0.0019459 0.0019459
-IndSocio1    -0.32783 0.05294 0.0005294 0.0005294
-IndSocio2    -0.05737 0.04557 0.0004557 0.0004557
-Altitude     -0.19780 0.02386 0.0002386 0.0002429
-Nrooms        0.08731 0.01094 0.0001094 0.0001119
-HouseholdMem  0.05987 0.01334 0.0001334 0.0001334
-Children      0.05696 0.03043 0.0003043 0.0003043
-Lnincome      0.07447 0.01223 0.0001223 0.0001223
-              2.52296 0.35077 0.0035077 0.0035077
-
-2. Quantiles for each variable:
-
-                  2.5%      25%      50%      75%    97.5%
-LnPriceElect -1.472069 -1.22432 -1.08961 -0.95703 -0.71429
-IndSocio1    -0.435957 -0.36228 -0.32731 -0.29133 -0.22588
-IndSocio2    -0.147252 -0.08744 -0.05757 -0.02650  0.03254
-Altitude     -0.244759 -0.21372 -0.19783 -0.18164 -0.15094
-Nrooms        0.066432  0.07985  0.08709  0.09480  0.10864
-HouseholdMem  0.033623  0.05089  0.05975  0.06889  0.08596
-Children     -0.002259  0.03637  0.05698  0.07736  0.11681
-Lnincome      0.050536  0.06614  0.07449  0.08283  0.09852
-			        1.835507  2.28703  2.52165  2.76364  3.21199
-		        \end{lstlisting}
-	\end{VF}
-\end{tcolorbox}
-
-\begin{tcolorbox}[enhanced,width=4.67in,center upper,
-	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Demand of electricity, Bayes factor and predictive}
-	\begin{VF}
-		\begin{lstlisting}[language=R]
 # Log marginal function (multiply by -1 due to minimization)
 LogMarLikLM <- function(X, c0){
 	k <- dim(X)[2]
@@ -1091,25 +999,22 @@ Xnew <- cbind(IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem, Children, Ln
 # Observe -1 to recover the right sign
 LogMLnew <- sapply(cs, function(c) {-LogMarLikLM(c0=c,X = Xnew)})
 # Bayes factor
-BF <- exp(LogML - LogMLnew)
-BF
-8.687567e+16 1.006679e+05 3.108415e+03 3.108340e+01 3.108343e+00 9.829443e-02 3.108343e-04
+BF <- exp(LogML - LogMLnew)\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Demand of electricity, Bayes factor and predictive}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 # Predictive distribution
 Xpred <- c(log(0.15), 1, 0, 0, 2, 3, 1, log(500), 1)
 Mean <- Xpred%*%bn
 Hn <- dn*(1+t(Xpred)%*%Bn%*%Xpred)/an
 ExpKwH <- exp(LaplacesDemon::rmvt(S, Mean, Hn, an))
 summary(ExpKwH)
-Min.   :  24.06  
-1st Qu.: 121.70  
-Median : 169.37  
-Mean   : 189.60  
-3rd Qu.: 234.19  
-Max.   :1243.68 
 HDI <- HDInterval::hdi(ExpKwH, credMass = 0.95) # Highest posterior density credible interval
-HDI
-lower  44.40203
-upper 373.86494
 hist(ExpKwH, main = "Histogram: Monthly demand of electricity", xlab = "Monthly kWh", col = "blue", breaks = 50)
 \end{lstlisting}
 	\end{VF}
@@ -1122,7 +1027,7 @@ hist(ExpKwH, main = "Histogram: Monthly demand of electricity", xlab = "Monthly 
 \end{figure}
 
  
-\section{Multivariate linear regression: The conjugate normal-normal/inverse Wishart model}\label{sec44}
+\section{Multivariate linear regression: The normal-normal/inverse Wishart model}\label{sec44}
 
 Let's study the multivariate regression setting where there are $N$-dimensional vectors ${\bm{y}}_m$, for $m = 1, 2, \dots, M$, such that ${\bm{y}}_m = {\bm{X}} \bm{\beta}_m + \bm{\mu}_m$. Here, ${\bm{X}}$ represents the set of common regressors, and $\bm{\mu}_m$ is the $N$-dimensional vector of stochastic errors for each equation. We assume that ${\bm{U}} = [\bm{\mu}_1 \ \bm{\mu}_2 \ \dots \ \bm{\mu}_M] \sim MN_{N,M}({\bm{0}}, {\bm{I}}_N, {\bm{\Sigma}})$, which is a matrix variate normal distribution where $\bm{\Sigma}$ is the covariance matrix of each $i$-th row of ${\bm{U}}$, for $i = 1, 2, \dots, N$, and we assume independence between the rows. Consequently, we have that $vec({\bm{U}}) \sim N_{N \times M}({\bm{0}}, \bm{\Sigma} \otimes {\bm{I}}_N)$.\footnote{$vec$ denotes the vectorization operation, and $\otimes$ denotes the Kronecker product.}
 
@@ -1190,7 +1095,8 @@ Completing the squares on ${\bm{B}}$ and collecting the remaining terms in the b
 }}
 where 
 \begin{align*}
-	{\bm{B}}_n = &({\bm{V}}_{0}^{-1}+{\bm{X}}^{\top}{\bm{X}})^{-1}({\bm{V}}_{0}^{-1}{\bm{B}}_{0}+{\bm{X}}^{\top}{\bm{Y}})=({\bm{V}}_{0}^{-1}+{\bm{X}}^{\top}{\bm{X}})^{-1}({\bm{V}}_{0}^{-1}{\bm{B}}_{0}+{\bm{X}}^{\top}{\bm{X}}\widehat{\bm{B}}),\\
+	{\bm{B}}_n = &({\bm{V}}_{0}^{-1}+{\bm{X}}^{\top}{\bm{X}})^{-1}({\bm{V}}_{0}^{-1}{\bm{B}}_{0}+{\bm{X}}^{\top}{\bm{Y}})\\
+	=&({\bm{V}}_{0}^{-1}+{\bm{X}}^{\top}{\bm{X}})^{-1}({\bm{V}}_{0}^{-1}{\bm{B}}_{0}+{\bm{X}}^{\top}{\bm{X}}\widehat{\bm{B}}),\\
 	{\bm{V}}_n = &({\bm{V}}_{0}^{-1}+{\bm{X}}^{\top}{\bm{X}})^{-1},\\
 	{\bm{\Psi}}_n= &{\bm{\Psi}}_{0}+{\bm{S}}+{\bm{B}}_{0}^{\top}{\bm{V}}_{0}^{-1}{\bm{B}}_{0}+\widehat{\bm{B}}^{\top}{\bm{X}}^{\top}{\bm{X}}\widehat{\bm{B}}-{\bm{B}}_n^{\top}{\bm{V}}_n^{-1}{\bm{B}}_n.
 \end{align*}
@@ -1215,6 +1121,7 @@ The second line uses the inverse Wishart distribution, the third line the Sylver
 Observe that $vec({\bm{B}})$ has mean $vec({\bm{B}}_n)$ and variance $({\bm{V}}_n\otimes{\bm{\Psi}}_n)/(\alpha_n-M-1)$ based on its marginal distribution. On the other hand, the variance based on the conditional distribution is ${\bm{V}}_n\otimes{\bm{\Sigma}}$, where the mean of ${\bm{\Sigma}}$ is ${\bm{\Psi}}_n/(\alpha_n-M-1)$.   
 
 The marginal likelihood is the following,
+{\footnotesize{
 \begin{align*}
 	p({\bm{Y}})&=\int_{\mathcal{B}}\int_{\mathcal{S}}\left\{ (2\pi)^{-NM/2} |{{\bm \Sigma}}|^{-N/2}\exp\left\lbrace -\frac{1}{2}tr\left[{\bm{S}}+({\bm{B}}-\widehat{\bm{B}})^{\top}{\bm{X}}^{\top}{\bm{X}}({\bm{B}}-\widehat{\bm{B}})\right]{{\bm \Sigma}}^{-1}\right\rbrace\right.\\
 	&\times (2\pi)^{-KM/2}\left|{\bm V}_0 \right|^{-M/2} \left|{\bm{\Sigma}} \right|^{-K/2}\exp\left\lbrace -\frac{1}{2}tr\left[({\bm{B}}-{\bm{B}}_{0})^{\top}{\bm{V}}_{0}^{-1}({\bm{B}}-{\bm{B}}_{0}){\bm \Sigma}^{-1}\right]\right\rbrace \\
@@ -1234,6 +1141,7 @@ The marginal likelihood is the following,
 	&\times \pi^{MK/2}\frac{\Gamma_M((\alpha_n+1-M+M-1)/2)}{\Gamma_M((\alpha_n+1-M+K+M-1)/2)}|{\bm{\Psi}}_n|^{K/2}|{\bm{V}}_n|^{M/2}\\
 	&=\frac{|{\bm{V}}_n|^{M/2}}{|{\bm{V}}_0|^{M/2}}\frac{|{\bm{\Psi}}_0|^{\alpha_0/2}}{|{\bm{\Psi}}_n|^{\alpha_n/2}}\frac{\Gamma_M(\alpha_n/2)}{\Gamma_M(\alpha_0/2)}\pi^{-MN/2}.  
 \end{align*}
+}}
 
 The third equality follows from the kernel of an inverse Wishart distribution, the fifth from Sylvester's theorem, and the seventh from the kernel of a matrix $t$-distribution.
 

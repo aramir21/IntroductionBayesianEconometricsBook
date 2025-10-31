@@ -153,48 +153,35 @@ Therefore, changing the initial decision increases the probability of getting th
 
 Let's see a simulation exercise in \textbf{R} to check this answer:
 
-
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-\textit{R code. The Monty Hall problem}
-\begin{VF}
-\begin{lstlisting}[ language=R]
+	\textit{R code. The Monty Hall problem}
+	\begin{VF}
+		\begin{lstlisting}[ language=R]
 set.seed(0101) # Set simulation seed
 S <- 100000 # Simulations
 Game <- function(switch = 0){
-	# switch = 0 is not change  
-	# switch = 1 is to change
+	# switch = 0 is not change / switch = 1 is to change
 	opts <- 1:3 
 	car <- sample(opts, 1) # car location
 	guess1 <- sample(opts, 1) # Initial guess 
-	
 	if(car != guess1) {
-	 host <- opts[-c(car, guess1)]
+		host <- opts[-c(car, guess1)]
 	} else {
-	 host <- sample(opts[-c(car, guess1)], 1)
+		host <- sample(opts[-c(car, guess1)], 1)
 	}	
 	win1 <- guess1 == car # Win no change
 	guess2 <- opts[-c(host, guess1)]	
 	win2 <- guess2 == car # Win change
 	if(switch == 0){
 		win <- win1
-	} else {
-		win <- win2
-	}
+	} else {win <- win2}
 	return(win)
 }
-
-#Win probabilities not changing
-Prob <- mean(replicate(S, Game(switch = 0))) 
-Prob
-0.3334
-
-#Win probabilities changing
-Prob <- mean(replicate(S, Game(switch = 1))) 
-Prob
-0.6654
+Prob <- mean(replicate(S, Game(switch = 0))) # Not changing
+Prob <- mean(replicate(S, Game(switch = 1))) # Changing 
 \end{lstlisting}
-\end{VF}
+	\end{VF}
 \end{tcolorbox}
 
 \section{Bayesian framework: A brief summary of theory}\label{sec12}
@@ -332,7 +319,8 @@ where
 \end{align}
 and
 \begin{align}
-	Var({\theta}_k\mid \mathbf{y})= \sum_{m=1}^{M}\pi(\mathcal{M}_m\mid \mathbf{y}) \widehat{Var} ({\theta}_{km}\mid \mathbf{y},\mathcal{M}_m)+\sum_{m=1}^{M} \pi(\mathcal{M}_m\mid \mathbf{y}) (\hat{{\theta}}_{km}-\mathbb{E}[{\theta}_{km}\mid \mathbf{y}])^2,
+	Var({\theta}_k\mid \mathbf{y}) &= \sum_{m=1}^{M}\pi(\mathcal{M}_m\mid \mathbf{y}) \widehat{Var} ({\theta}_{km}\mid \mathbf{y},\mathcal{M}_m)\nonumber\\
+	&+\sum_{m=1}^{M} \pi(\mathcal{M}_m\mid \mathbf{y}) (\hat{{\theta}}_{km}-\mathbb{E}[{\theta}_{km}\mid \mathbf{y}])^2,
 	\label{eq:128}
 \end{align}
 $\hat{\bm{\theta}}_m$ is the posterior mean and $\widehat{Var}({\theta}_{km}\mid \mathbf{y},\mathcal{M}_m)$ is the posterior variance of the $k$-th element of $\bm{\theta}$ under model $\mathcal{M}_m$.
@@ -390,7 +378,11 @@ In this example, \( p(\mathbf{y} \mid \lambda) \) is Poisson, and \( \pi(\lambda
 	\pi(y_0\mid \mathbf{y})=&\int_{0}^{\infty}\frac{\lambda^{y_0}\exp\left\{-\lambda\right\}}{y_0!}\times \pi(\lambda\mid \mathbf{y})d\lambda,\\
 \end{align*}
 
-where the posterior distribution is $\pi(\lambda\mid \mathbf{y})\propto \lambda^{\sum_{i=1}^N y_i + \alpha_0 - 1}\exp\left\{-\lambda\left(\frac{\beta_0 N+1}{\beta_0}\right)\right\}$ by equation \ref{eq:121}.
+where the posterior distribution is 
+\begin{align*}
+\pi(\lambda\mid \mathbf{y})\propto \lambda^{\sum_{i=1}^N y_i + \alpha_0 - 1}\exp\left\{-\lambda\left(\frac{\beta_0 N+1}{\beta_0}\right)\right\}
+\end{align*}
+by equation \ref{eq:121}.
 
 Observe that the last expression is the kernel of a Gamma distribution with parameters \( \alpha_n = \sum_{i=1}^N y_i + \alpha_0 \) and \( \beta_n = \frac{\beta_0}{\beta_0 N + 1} \). Given that \( \int_0^{\infty} \pi(\lambda \mid \mathbf{y}) d\lambda = 1 \), the constant of proportionality in the last expression is \( \Gamma(\alpha_n) \beta_n^{\alpha_n} \), where \( \Gamma(\cdot) \) is the Gamma function. Thus, the posterior density function \( \pi(\lambda \mid \mathbf{y}) \) is \( G(\alpha_n, \beta_n) \).
 
@@ -464,14 +456,10 @@ set.seed(010101)
 y <- c(0, 3, 2, 1, 0) # Data
 N <- length(y)
 ProbBo <- function(y, a0, b0){
-	N <- length(y)
-	#sample size
-	an <- a0 + sum(y) 
-	# Posterior shape parameter
-	bn <- b0 / ((b0 * N) + 1) 
-	# Posterior scale parameter
-	p <- bn / (bn + 1) 
-	# Probability negative binomial density
+	N <- length(y)	#sample size
+	an <- a0 + sum(y) # Posterior shape parameter
+	bn <- b0 / ((b0 * N) + 1) # Posterior scale parameter
+	p <- bn / (bn + 1) # Probability negative binomial density
 	Pr <- 1 - pnbinom(0, size=an,prob=(1 - p)) 
 	# Probability of visiting the Doctor at least once next year
 	# Observe that in R there is a slightly different parametrization.
@@ -484,60 +472,34 @@ PriMeanV <- a0 * b0 # Prior mean
 PriVarV <- a0 * b0^2 # Prior variance
 Pp <- ProbBo(y, a0 = 0.001, b0 = 1 / 0.001) 
 # This setting is vague prior information.
-Pp
-0.67
-\end{lstlisting}
-\end{VF}
-\end{tcolorbox} 
-
-\begin{tcolorbox}[enhanced,width=4.67in,center upper,
-	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-\textit{R code. Health insurance, predictive distribution using empirical Bayes}
-\begin{VF}
-\begin{lstlisting}[ language=R]
 # Using Empirical Bayes
 LogMgLik <- function(theta, y){
- N <- length(y) 
- #sample size
- a0 <- theta[1] 
- # prior shape hyperparameter
- b0 <- theta[2] 
- # prior scale hyperparameter
- an <- sum(y) + a0 
- # posterior shape parameter
- if(a0 <= 0 || b0 <= 0){ 
-  #Avoiding negative values
-  lnp <- -Inf
-  }else{
-  lnp <- lgamma(an) + sum(y)*log(b0/(N*b0+1)) - a0*log(N*b0+1) - lgamma(a0)
- } 
- # log marginal likelihood
- return(-lnp)
-}			
+	N <- length(y) 
+	#sample size
+	a0 <- theta[1] 
+	# prior shape hyperparameter
+	b0 <- theta[2] 
+	# prior scale hyperparameter
+	an <- sum(y) + a0 
+	# posterior shape parameter
+	if(a0 <= 0 || b0 <= 0){ 
+		#Avoiding negative values
+		lnp <- -Inf
+	}else{
+		lnp <- lgamma(an) + sum(y)*log(b0/(N*b0+1)) - a0*log(N*b0+1) - lgamma(a0)
+	} 
+	# log marginal likelihood
+	return(-lnp)
+}
 theta0 <- c(0.01, 1/0.1) 
 # Initial values
 control <- list(maxit = 1000) 
 # Number of iterations in optimization
 EmpBay <- optim(theta0, LogMgLik, method = "BFGS", control = control, hessian = TRUE, y = y) 
-# Optimization
-EmpBay$convergence
-0
-a0EB <- EmpBay$par[1] 
-# Prior shape using empirical Bayes
-a0EB
-51.81
-b0EB <- EmpBay$par[2] 
-# Prior scale using empirical Bayes
-b0EB
-0.023
-PriMeanEB <- a0EB * b0EB 
-# Prior mean
-PriVarEB <- a0EB * b0EB^2 
-# Prior variance
+a0EB <- EmpBay$par[1]; b0EB <- EmpBay$par[2] 
+PriMeanEB <- a0EB * b0EB # Prior mean
+PriVarEB <- a0EB * b0EB^2 # Prior variance
 PpEB <- ProbBo(y, a0 = a0EB, b0 = b0EB) 
-# This setting is using emprical Bayes.
-PpEB
-0.70 
 \end{lstlisting}
 \end{VF}
 \end{tcolorbox} 
@@ -548,28 +510,22 @@ PpEB
 \begin{VF}
 \begin{lstlisting}[ language=R]		
 # Density figures: 
-# This code helps plotting densities
-lambda <- seq(0.01, 10, 0.01) 
-# Values of lambda
+lambda <- seq(0.01, 10, 0.01) # Values of lambda
 VaguePrior <- dgamma(lambda,shape=a0,scale = b0)
 EBPrior <- dgamma(lambda,shape=a0EB,scale = b0EB)
 PosteriorV <- dgamma(lambda, shape = a0 + sum(y), scale = b0 / ((b0 * N) + 1)) 
 PosteriorEB <- dgamma(lambda, shape = a0EB+sum(y), scale = b0EB / ((b0EB * N) + 1))			
 # Likelihood function
 Likelihood <- function(theta, y){
- LogL <- dpois(y, theta, log = TRUE)
- Lik <- prod(exp(LogL))
+ LogL <- dpois(y, theta, log = TRUE); Lik <- prod(exp(LogL))
  return(Lik)
 }
 Liks <- sapply(lambda, function(par) {Likelihood(par, y = y)})
 Sc <- max(PosteriorEB)/max(Liks) 
-#Scale for displaying in figure
-LiksScale <- Liks * Sc
+LiksScale <- Liks * Sc #Scale for displaying in figure
 data <- data.frame(cbind(lambda, VaguePrior, EBPrior, PosteriorV, PosteriorEB, LiksScale)) #Data frame
-require(ggplot2) # Cool figures
-require(latex2exp) # LaTeX equations in figures
-require(ggpubr) # Multiple figures in one page
-fig1 <- ggplot(data = data, aes(lambda, VaguePrior)) + geom_line() + 	xlab(TeX("$\\lambda$")) + ylab("Density") +	ggtitle("Prior: Vague Gamma") 
+require(ggplot2); require(latex2exp); require(ggpubr)
+fig1 <- ggplot(data = data, aes(lambda, VaguePrior)) + geom_line() + xlab(TeX("$\\lambda$")) + ylab("Density") +	ggtitle("Prior: Vague Gamma") 
 fig2 <- ggplot(data = data, aes(lambda, EBPrior)) + geom_line() + xlab(TeX("$\\lambda$")) + ylab("Density") + ggtitle("Prior: Empirical Bayes Gamma")
 fig3 <- ggplot(data = data, aes(lambda, PosteriorV)) + geom_line() + xlab(TeX("$\\lambda$")) + ylab("Density") + ggtitle("Posterior: Vague Gamma")
 fig4 <- ggplot(data = data, aes(lambda, PosteriorEB)) + geom_line() + xlab(TeX("$\\lambda$")) + ylab("Density") + ggtitle("Posterior: Empirical Bayes Gamma")
@@ -579,10 +535,9 @@ dataNew <- data.frame(cbind(rep(lambda, 3), c(EBPrior, PosteriorEB, LiksScale), 
 colnames(dataNew) <- c("Lambda", "Density", "Factor")
 dataNew$Factor <- factor(dataNew$Factor, levels=c("1", "3", "2"), 
 labels=c("Prior", "Likelihood", "Posterior"))
-ggplot(data = dataNew, aes_string(x = "Lambda", y = "Density", group = "Factor")) + geom_line(aes(color = Factor)) + xlab(TeX("$\\lambda$")) + ylab("Density") + ggtitle("Prior, likelihood and posterior: Empirical Bayes Poisson-Gamma model") + guides(color=guide_legend(title="Information")) + scale_color_manual(values = c("red", "yellow", "blue"))
-\end{lstlisting}
+ggplot(data = dataNew, aes_string(x = "Lambda", y = "Density", group = "Factor")) + geom_line(aes(color = Factor)) + xlab(TeX("$\\lambda$")) + ylab("Density") + ggtitle("Prior, likelihood and posterior: Empirical Bayes Poisson-Gamma model") + guides(color=guide_legend(title="Information")) + scale_color_manual(values = c("red", "yellow", "blue"))\end{lstlisting}
 \end{VF}
-\end{tcolorbox} 
+\end{tcolorbox}
 
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter1/figures/PoisGam.png}
@@ -600,7 +555,6 @@ Figure \ref{fig12} displays the prior and posterior densities based on vague and
 
 Figure \ref{fig13} shows the prior, scaled likelihood, and posterior densities of $\lambda$ based on the hyperparameters from the Empirical Bayes approach. The posterior density is a compromise between prior and sample information.
 
-\clearpage
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 \textit{R code. Health insurance, Predictive density}
@@ -649,15 +603,9 @@ Figure \ref{fig14} displays the predictive probability mass of not having any vi
 \begin{lstlisting}[language=R]
 # Posterior odds: Vague vs Empirical Bayes
 PO12 <- exp(-LogMgLik(c(a0EB, b0EB), y = y))/exp(-LogMgLik(c(a0, b0), y = y))
-PO12
-919
 PostProMEM <- PO12/(1 + PO12) 
-PostProMEM
-0.998
 # Posterior model probability Empirical Bayes
 PostProbMV <- 1 - PostProMEM 
-PostProbMV
-0.002
 # Posterior model probability vague prior
 # Bayesian model average (BMA)
 PostMeanEB <- (a0EB + sum(y)) * (b0EB / (b0EB * N + 1)) 
@@ -665,17 +613,13 @@ PostMeanEB <- (a0EB + sum(y)) * (b0EB / (b0EB * N + 1))
 PostMeanV <- (a0 + sum(y)) * (b0 / (b0 * N + 1)) 
 # Posterior mean vague priors
 BMAmean <- PostProMEM * PostMeanEB + PostProbMV * PostMeanV  
-BMAmean
-1.2
 # BMA posterior mean
 PostVarEB <- (a0EB + sum(y)) * (b0EB/(b0EB * N + 1))^2 
 # Posterior variance Empirical Bayes
 PostVarV <- (a0 + sum(y)) * (b0 / (b0 * N + 1))^2 
 # Posterior variance vague prior 
-BMAVar <- PostProMEM * PostVarEB + PostProbMV*PostVarV + PostProMEM * (PostMeanEB - BMAmean)^2 + PostProbMV * (PostMeanV - BMAmean)^2
-# BMA posterior variance   
-BMAVar
-0.025    
+BMAVar <- PostProMEM * PostVarEB + PostProbMV*PostVarV + PostProMEM * (PostMeanEB - BMAmean)^2 + PostProbMV * (PostMeanV - BMAmean)^2 
+# BMA posterior variance 
 \end{lstlisting}
 \end{VF}
 \end{tcolorbox}
@@ -712,9 +656,9 @@ Figure \ref{fig16} shows how the posterior distribution updates with new sample 
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-\textit{R code. Health insurance, Bayes updating}
-\begin{VF}
-\begin{lstlisting}[ language=R]
+	\textit{R code. Health insurance, Bayes updating}
+	\begin{VF}
+		\begin{lstlisting}[ language=R]
 # Bayesian updating
 BayUp <- function(y, lambda, a0, b0){
 	N <- length(y)
@@ -727,6 +671,16 @@ BayUp <- function(y, lambda, a0, b0){
 	# Posterior density
 	return(list(Post = p, a0New = an, b0New = bn))
 }
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+\textit{R code. Health insurance, Bayes updating}
+\begin{VF}
+\begin{lstlisting}[ language=R]
 PostUp <- NULL
 for(i in 1:N){
 	if(i == 1){
@@ -943,58 +897,30 @@ The 95\% symmetric credible interval is $(0.91, 1.53)$, and the highest posterio
 	\textit{R code. Health insurance, Bayesian reports}
 \begin{VF}
 \begin{lstlisting}[ language=R]
-an <- sum(y) + a0EB 
-# Posterior shape parameter
-bn <- b0EB / (N*b0EB + 1) 
-# Posterior scale parameter
+an <- sum(y) + a0EB # Posterior shape parameter
+bn <- b0EB / (N*b0EB + 1) # Posterior scale parameter
 S <- 1000000 
 # Number of posterior draws
 Draws <- rgamma(1000000, shape = an, scale = bn) 
-# Posterior draws
 ###### Point estimation ########
-OptQua <- an*bn 
-# Mean: Optimal choice quadratic loss function
-OptQua
-1.200952
-OptAbs <- qgamma(0.5, shape = an, scale = bn) 
-# Median: Optimal choice absolute loss function
-OptAbs
-1.194034
+OptQua <- an*bn # Mean: Optimal choice quadratic loss function
+OptAbs <- qgamma(0.5, shape = an, scale = bn) # Median: Optimal choice absolute loss function
 # Setting K0 = 2 and K1 = 1, that is, to underestimate lambda is twice as costly as to overestimate it.
 K0 <- 2; K1 <- 1
-OptGenAbs <- quantile(Draws, K0/(K0 + K1)) 
-# Median: Optimal choice generalized absolute loss function
-OptGenAbs
-66.66667% 
-1.262986 
+OptGenAbs <- quantile(Draws, K0/(K0 + K1)) # Median: Optimal choice generalized absolute loss function
 ###### Hypothesis test ########
 # H0: lambda in [0,1) vs H1: lambda in [1, Inf]
 K0 <- 1; K1 <- 1
-ProbH0 <- pgamma(1, shape = an, scale = bn) 
-ProbH0 # Posterior  probability H0
-0.09569011
-ProbH1 <- 1 -ProbH0
-ProbH1 # Posterior  probability H1
-0.9043099
+ProbH0 <- pgamma(1, shape = an, scale = bn) # Posterior  probability H0
+ProbH1 <- 1 -ProbH0 # Posterior  probability H1
 # We should reject H0 given ProbH1 > K1 / (K0 + K1) 
 ###### Credible intervals ########
 LimInf <- qgamma(0.025, shape = an, scale = bn) # Lower bound
-LimInf
-0.9114851
 LimSup <- qgamma(0.975, shape = an, scale = bn) # Upper bound
-LimSup
-1.529724
 HDI <- HDInterval::hdi(Draws, credMass = 0.95) # Highest posterior density credible interval
-HDI
-    lower     upper 
-0.8971505 1.5125911 
-attr(,"credMass")
-[1] 0.95
 ###### Predictive optimal choices ########
 p <- bn / (bn + 1) # Probability negative binomial density
 OptPred <- p/(1-p)*an # Optimal point prediction given a quadratic loss function in prediction
-OptPred
-1.200952
 \end{lstlisting}
 \end{VF}
 \end{tcolorbox}

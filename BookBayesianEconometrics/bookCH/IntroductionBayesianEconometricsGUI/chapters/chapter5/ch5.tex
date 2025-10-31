@@ -19,15 +19,17 @@ Given that we start at an arbitrary point, $\bm{\theta}^{(0)}$, the algorithm re
 The Gibbs sampler algorithm is one of the most widely used MCMC methods for sampling from non-standard distributions in Bayesian analysis. While it is a special case of the Metropolis-Hastings (MH) algorithm, it originated from a different theoretical background \cite{Geman1984,Gelfand1990}. The key requirement for implementing the Gibbs sampling algorithm is the availability of conditional posterior distributions. The algorithm works by cycling through the conditional posterior distributions corresponding to different blocks of the parameter space under inference.
 
 Two simplify concepts let's focus on a parameter space composed by two blocks, $\bm{\theta} = [\bm{\theta}_1 \ \bm{\theta}_2]^{\top}$, the Gibbs sampling algorithm uses as transition kernel $q(\bm{\theta}_1^{(s)},\bm{\theta}_2^{(s)}\mid \bm{\theta}_1^{(s-1)},\bm{\theta}_2^{(s-1)})=\pi(\bm{\theta}_1^{(s)}\mid \bm{\theta}_2^{(s-1)},\bm{y})\pi(\bm{\theta}_2^{(s)}\mid \bm{\theta}_1^{(s)},\bm{y})$. Thus,
-{\scriptsize
+{\tiny
 \begin{align*}
 	\int_{\bm{\Theta}}q(\bm{\theta}^{(s)}\mid \bm{\theta}^{(s-1)})\pi(\bm{\theta}^{(s-1)}\mid \bm{y})d\bm{\theta}^{(s-1)}
-	&=\int_{\bm{\Theta}_2}\int_{\bm{\Theta}_1}\pi(\bm{\theta}_1^{(s)}\mid \bm{\theta}_2^{(s-1)},\bm{y})\pi(\bm{\theta}_2^{(s)}\mid \bm{\theta}_1^{(s)},\bm{y})\pi(\bm{\theta}^{(s-1)}_1,\bm{\theta}^{(s-1)}_2\mid \bm{y})d\bm{\theta}^{(s-1)}_1d\bm{\theta}^{(s-1)}_2\\
-	&=\pi(\bm{\theta}_2^{(s)}\mid \bm{\theta}_1^{(s)},\bm{y})\int_{\bm{\Theta}_2}\int_{\bm{\Theta}_1}\pi(\bm{\theta}_1^{(s)}\mid \bm{\theta}_2^{(s-1)},\bm{y})\pi(\bm{\theta}^{(s-1)}_1,\bm{\theta}^{(s-1)}_2\mid \bm{y})d\bm{\theta}^{(s-1)}_1d\bm{\theta}^{(s-1)}_2\\
-	&=\pi(\bm{\theta}_2^{(s)}\mid \bm{\theta}_1^{(s)},\bm{y})\int_{\bm{\Theta}_2}\pi(\bm{\theta}_1^{(s)}\mid \bm{\theta}_2^{(s-1)},\bm{y})\pi(\bm{\theta}^{(s-1)}_2\mid \bm{y})d\bm{\theta}^{(s-1)}_2\\
-	&=\pi(\bm{\theta}_2^{(s)}\mid \bm{\theta}_1^{(s)},\bm{y})\int_{\bm{\Theta}_2}\pi(\bm{\theta}_1^{(s)},\bm{\theta}_2^{(s-1)}\mid \bm{y})d\bm{\theta}^{(s-1)}_2\\
-	&=\pi(\bm{\theta}_2^{(s)}\mid \bm{\theta}_1^{(s)},\bm{y})\pi(\bm{\theta}_1^{(s)}\mid \bm{y})\\
-	&=\pi(\bm{\theta}_1^{(s)},\bm{\theta}_2^{(s)}\mid \bm{y}).\\
+	=&\int_{\bm{\Theta}_2}\int_{\bm{\Theta}_1}\pi(\bm{\theta}_1^{(s)}\mid \bm{\theta}_2^{(s-1)},\bm{y})\pi(\bm{\theta}_2^{(s)}\mid \bm{\theta}_1^{(s)},\bm{y})\pi(\bm{\theta}^{(s-1)}_1,\bm{\theta}^{(s-1)}_2\mid \bm{y})\\
+	&d\bm{\theta}^{(s-1)}_1d\bm{\theta}^{(s-1)}_2\\
+	=&\pi(\bm{\theta}_2^{(s)}\mid \bm{\theta}_1^{(s)},\bm{y})\int_{\bm{\Theta}_2}\int_{\bm{\Theta}_1}\pi(\bm{\theta}_1^{(s)}\mid \bm{\theta}_2^{(s-1)},\bm{y})\pi(\bm{\theta}^{(s-1)}_1,\bm{\theta}^{(s-1)}_2\mid \bm{y})\\
+	&d\bm{\theta}^{(s-1)}_1d\bm{\theta}^{(s-1)}_2\\
+	=&\pi(\bm{\theta}_2^{(s)}\mid \bm{\theta}_1^{(s)},\bm{y})\int_{\bm{\Theta}_2}\pi(\bm{\theta}_1^{(s)}\mid \bm{\theta}_2^{(s-1)},\bm{y})\pi(\bm{\theta}^{(s-1)}_2\mid \bm{y})d\bm{\theta}^{(s-1)}_2\\
+	=&\pi(\bm{\theta}_2^{(s)}\mid \bm{\theta}_1^{(s)},\bm{y})\int_{\bm{\Theta}_2}\pi(\bm{\theta}_1^{(s)},\bm{\theta}_2^{(s-1)}\mid \bm{y})d\bm{\theta}^{(s-1)}_2\\
+	=&\pi(\bm{\theta}_2^{(s)}\mid \bm{\theta}_1^{(s)},\bm{y})\pi(\bm{\theta}_1^{(s)}\mid \bm{y})\\
+	=&\pi(\bm{\theta}_1^{(s)},\bm{\theta}_2^{(s)}\mid \bm{y}).\\
 \end{align*}
 }
 Then, $\pi(\bm{\theta}\mid \bm{y})$ is the stationary distribution for the Gibbs transition kernel.
@@ -93,7 +95,8 @@ Thus, the conditional posterior distribution of $H$ is
 \begin{align*}
 	\pi(H\mid \lambda_1,\lambda_2,\bm{y})=& \frac{\exp(-H(\lambda_1-\lambda_2))\left(\frac{\lambda_1}{\lambda_2}\right)^{\sum_{t=1}^H y_t}}{\sum_{H=1}^T \exp(-H(\lambda_1-\lambda_2))\left(\frac{\lambda_1}{\lambda_2}\right)^{\sum_{t=1}^H y_t}}, & H=1,2,\dots,T.
 \end{align*}
-The following code shows how to do a Gibbs sampling algorithm to perform inference of this model using the hyperparameters suggested by \cite[Chap.~7]{greenberg2012introduction}, $\alpha_{l0}=0.5$ and $\beta_{l0}=1$, $l=1,2$.
+
+The code shows how to do a Gibbs sampling algorithm to perform inference of this model using the hyperparameters suggested by \cite[Chap.~7]{greenberg2012introduction}, $\alpha_{l0}=0.5$ and $\beta_{l0}=1$, $l=1,2$.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -103,19 +106,24 @@ The following code shows how to do a Gibbs sampling algorithm to perform inferen
 rm(list = ls()); set.seed(010101)
 dataset<-read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/MiningDataCarlin.csv",header=T)
 attach(dataset); str(dataset)
-a10<-0.5; a20<-0.5
-b10<-1; b20<-1
-y<-Count
-sumy<-sum(Count); N<-length(Count)
+a10<-0.5; a20<-0.5; b10<-1; b20<-1
+y<-Count; sumy<-sum(Count); N<-length(Count)
 theta1<-NULL; theta2<-NULL
 kk<-NULL; k<-60; S<-10000
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Gibbs sampler: The mining disaster changepoint}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 for(i in 1:S){
 	a1<-a10+sum(y[1:k]); b1<-b10+k
-	theta11<-rgamma(1,a1,b1)
-	theta1<-c(theta1,theta11)
+	theta11<-rgamma(1,a1,b1); theta1<-c(theta1,theta11)
 	a2<-a20+sum(y[(1+k):N]); b2<-b20+N-k
-	theta22<-rgamma(1,a2,b2)
-	theta2<-c(theta2,theta22)
+	theta22<-rgamma(1,a2,b2); theta2<-c(theta2,theta22)
 	pp<-NULL
 	for(l in 1:N){
 		p<-exp(l*(theta22-theta11))*(theta11/theta22)^(sum(y[1:l]))
@@ -327,6 +335,15 @@ Gibbs <- function(theta, rho){
 	thetal <- rnorm(1, mean = rho*theta, sd = (1- rho^2)^0.5)
 	return(thetal)
 }
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Gibbs, M-H and HMC: Bi-variate normal distribution}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 # Metropolis-Hastings
 MH <- function(theta, rho, sig2){
 	SIGMA <- matrix(c(1, rho, rho, 1), 2, 2)
@@ -374,7 +391,6 @@ HMC <- function(theta, rho, epsilon, M){
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
-
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -424,6 +440,15 @@ summary(ProbAcceptHMC)
 #Figure
 df <- as.data.frame(cbind(1:S, thetaPostHMC[,1], thetaPostMH[keep[-1],1], thetaPostGibbs[keep[-1],1]))
 colnames(df) <- c("Iter", "HMC", "MH", "Gibbs")
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Gibbs, M-H and HMC: Bi-variate normal distribution}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 library(latex2exp); library(ggpubr)
 g1 <- ggplot(df, aes(x= Iter)) + geom_point(aes(y=HMC), colour="black") + labs(x = "Iteration", y = TeX("$\\theta_{1}$"), title = "HMC algorithm")
 g2 <- ggplot(df, aes(x= Iter)) + geom_point(aes(y=MH), colour="black") + labs(x = "Iteration", y = TeX("$\\theta_{1}$"), title = "M-H algorithm")
@@ -432,7 +457,7 @@ ggarrange(g3, g2, g1, labels = c("A", "B", "C"), ncol = 3, nrow = 1)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
-
+ 
 Figure \ref{fig54} shows the posterior draws of $\theta_1$ using the Gibbs sampler (Panel A, left), the Metropolis-Hastings algorithm (Panel B, middle), and the Hamiltonian Monte Carlo (Panel C, right). The convergence diagnostic plots (no shown) suggests that the three algorithms perform a good job. Although, the acceptance rate in HMC is higher than the M-H due to the HMC producing larger changes in $\bm{\theta}$ than a corresponding number of random-walk M-H iterations \cite{neal2011mcmc}.
 
 \begin{figure}[!h]
@@ -535,7 +560,15 @@ df <- 3
 thetaTs <- rt(S, df = df)
 wTs <- dcauchy(thetaTs)/dt(thetaTs, df = df)
 wTstars <- wTs/sum(wTs)
-thetaCauchyT <- sample(thetaTs, L, replace = TRUE, prob = wTstars)
+thetaCauchyT <- sample(thetaTs, L, replace = TRUE, prob = wTstars)\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Importance sampling: Cauchy distribution}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 h <- hist(thetaCauchyT, breaks=50, col="blue", xlab="x", main="Cauchy draws from importance sampling: Student's t proposal")
 pfit <- seq(min(thetaCauchyT),max(thetaCauchyT),length=50)
 yfit<-dcauchy(pfit)
@@ -544,9 +577,10 @@ lines(pfit, yfit, col="red", lwd=2)
 plot(wNstars, main = "Importance sampling: Cauchy distribution", ylab = "Weights", xlab = "Iterations")
 points(wTstars, col = "blue")
 legend("topright", legend = c("Normal", "Student's t"), col = c("black", "blue"), pch = c(1, 1))
-\end{lstlisting}
+		\end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
+ 
 
 Figure \ref{fig55} shows the weights using the standard normal distribution (black dots) and the Student's t-distribution with 3 degrees of freedom (blue dots) as proposals. We observe that a few draws carry too much weight when using the normal proposal; this occurs because the normal distribution has much lighter tails compared to the Cauchy distribution. In contrast, using the Student's t-distribution with 3 degrees of freedom improves this situation.
 
@@ -716,6 +750,15 @@ for (t in 2:T) {
 	theta_true[t] <- rnorm(1, mean = theta_true[t-1], sd = sigma_w)
 }
 y_obs <- rnorm(T, mean = phi*theta_true, sd = sigma_mu)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Sequential importance sampling: Dynamic linear model}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 # Sequential Importance Sampling (SIS)
 particles <- matrix(0, nrow = S, ncol = T) 
 weights <- matrix(0, nrow = S, ncol = T) 
@@ -744,9 +787,10 @@ plot_filtering_estimates <- function(df) {
 	print(p)
 }
 plot_filtering_estimates(df)
-\end{lstlisting}
+		\end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
+
 
 Figure \ref{fig58} shows the trajectory of the true state vector (black line), the posterior mean (blue line), and the area defined by $\pm2\hat{\sigma}_{\theta}$ (light blue shaded area).
 
@@ -828,6 +872,15 @@ weightsSt[, 1] <- weights[, 1] / sum(weights[, 1])  # Normalize weights
 ind <- sample(1:S, size = S, replace = TRUE, prob = weightsSt[, 1]) # Resample 
 particles[, 1] <- particles[ind, 1] # Resampled particles
 particlesT[, 1] <- particles[, 1] # Resampled particles
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Particle filtering: Dynamic linear model}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 # Sequential updating
 pb <- txtProgressBar(min = 0, max = T, style = 3)
 for (t in 2:T) {
@@ -845,15 +898,6 @@ for (t in 2:T) {
 	setTxtProgressBar(pb, t)
 }
 close(pb)
-\end{lstlisting}
-	\end{VF}
-\end{tcolorbox} 
-
-\begin{tcolorbox}[enhanced,width=4.67in,center upper,
-	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Particle filtering: Dynamic linear model}
-	\begin{VF}
-		\begin{lstlisting}[language=R]
 FilterDist <- colSums(particles * weightsSt)
 SDFilterDist <- (colSums(particles^2 * weightsSt) - FilterDist^2)^0.5
 FilterDistT <- colSums(particlesT * weightsSTT)
@@ -902,13 +946,14 @@ Many times, the goal in Bayesian inference is to obtain a set of independent dra
 where $\sigma^2_h(\bm{\theta})$ is the variance of $h(\bm{\theta})$.
 
 If we have independent draws, we can estimate $\sigma^2_h(\bm{\theta})$ using the posterior draws as follows: 
-\[
+\begin{align*}
 \hat{\sigma}^2_{Sh}(\bm{\theta}) = \frac{1}{S} \sum_{s=1}^S \left[h(\bm{\theta}^{(s)})\right]^2 - \left[\bar{h}(\bm{\theta})_S\right]^2.
-\]
+\end{align*}
 However, if there are dependent draws, we have
-\[
-\hat{\sigma}^{2*}_{Sh}(\bm{\theta}) = \frac{1}{S} \left\{\sum_{s=1}^S \left[h(\bm{\theta}^{(s)})-\bar{h}(\bm{\theta})_S\right]^2 + 2\sum_{l=k+1}^K \big(h(\bm{\theta}^{(l)}) - \bar{h}(\bm{\theta})\big)\big(h(\bm{\theta}^{(l-k)}) - \bar{h}(\bm{\theta})\big)\right\}.
-\]
+\begin{align*}
+\hat{\sigma}^{2*}_{Sh}(\bm{\theta}) &= \frac{1}{S} \left\{\sum_{s=1}^S \left[h(\bm{\theta}^{(s)})-\bar{h}(\bm{\theta})_S\right]^2 \right.\\
+&\left.+ 2\sum_{l=k+1}^K \big(h(\bm{\theta}^{(l)}) - \bar{h}(\bm{\theta})\big)\big(h(\bm{\theta}^{(l-k)}) - \bar{h}(\bm{\theta})\big)\right\}.
+\end{align*}
 
 The \textit{numerical standard error} is given by $\sigma_h(\bm{\theta})/\sqrt{S}$ and serves as a measure of the approximation error in the Monte Carlo integration. Note that this error can be decreased by increasing $S$. For instance, $S = 1000$ implies an error proportional to 3.2\%, while $S = 10000$ reduces the error to approximately 1\%.
  
@@ -1003,28 +1048,21 @@ To evaluate the effectiveness of the test, we run the \textit{marginal-condition
 	\textit{R code. Posterior diagnostics: The mining disaster changepoint}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-rm(list = ls())
-set.seed(010101)
+rm(list = ls()); set.seed(010101)
 dataset<-read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/MiningDataCarlin.csv",header=T)
-attach(dataset)
-str(dataset)
-a10 <- 0.5; a20 <- 0.5
-b10 <- 1; b20 <- 1
-y <- Count
-sumy <- sum(Count); T <- length(Count)
+attach(dataset); str(dataset)
+a10 <- 0.5; a20 <- 0.5; b10 <- 1; b20 <- 1
+y <- Count; sumy <- sum(Count); T <- length(Count)
 theta1 <- NULL; theta2 <- NULL
 kk <- NULL; H <- 60
-MCMC <- 20000; burnin <- 1000; S <- MCMC + burnin; keep <- (burnin+1):S
+MCMC <- 20000; burnin <- 1000; S <- MCMC + burnin
+keep <- (burnin+1):S
 pb <- txtProgressBar(min = 0, max = S, style = 3)
 for(s in 1:S){
-	a1 <- a10 + sum(y[1:H])
-	b1 <- b10+H
-	theta11 <- rgamma(1,a1,b1)
-	theta1 <- c(theta1,theta11)
-	a2 <- a20 + sum(y[(1+H):T])
-	b2 <- b20 + T-H
-	theta22 <- rgamma(1,a2,b2)
-	theta2 <- c(theta2,theta22)
+	a1 <- a10 + sum(y[1:H]); b1 <- b10+H
+	theta11 <- rgamma(1,a1,b1); theta1 <- c(theta1,theta11)
+	a2 <- a20 + sum(y[(1+H):T]); b2 <- b20 + T-H
+	theta22 <- rgamma(1,a2,b2); theta2 <- c(theta2,theta22)
 	pp<-NULL
 	for(l in 1:T){
 		p <- exp(l*(theta22-theta11))*(theta11/theta22)^(sum(y[1:l]))
@@ -1035,6 +1073,15 @@ for(s in 1:S){
 	kk <- c(kk,H)
 	setTxtProgressBar(pb, s)
 }
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Posterior diagnostics: The mining disaster changepoint}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 close(pb)
 library(coda); library(latex2exp)
 theta1Post <- mcmc(theta1[keep]); summary(theta1Post)
@@ -1049,6 +1096,7 @@ effectiveSize(theta2Post)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
+
  
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter5/figures/TracePlot.png}
@@ -1078,6 +1126,15 @@ ytPrior <- function(par){
 }
 pars1 <- cbind(Theta1Prior, Theta2Prior, kPrior); Yt <- apply(pars1, 1, ytPrior)
 parsmcmc1 <- coda::mcmc(pars1); Summ1 <- summary(parsmcmc1)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Posterior diagnostics: The mining disaster changepoint}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 # Successive-conditional simulator
 SucConSim <- function(a10, b10, a20, b20, par){
 	y <- ytPrior(par) 
@@ -1113,9 +1170,10 @@ TestGeweke <- function(j){
 	return(list(Test = Test, Reject = Reject))
 }
 TestGeweke(1); TestGeweke(2); TestGeweke(3)
-\end{lstlisting}
+		\end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
+
   
 \section{Summary}\label{sec55}
 In this chapter, we present the most popular methods for obtaining posterior draws when the posterior distribution does not have a standard closed-form solution. In particular, Markov chain Monte Carlo (MCMC) methods, such as Gibbs sampling and the Metropolis-Hastings algorithm, are the most commonly used approaches in this book. However, Hamiltonian Monte Carlo is gaining particular relevance in high-dimensional problems, while particle filtering (Sequential Monte Carlo) is widely applied in time series models.
