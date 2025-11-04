@@ -19,19 +19,20 @@ Given that we start at an arbitrary point, $\bm{\theta}^{(0)}$, the algorithm re
 The Gibbs sampler algorithm is one of the most widely used MCMC methods for sampling from non-standard distributions in Bayesian analysis. While it is a special case of the Metropolis-Hastings (MH) algorithm, it originated from a different theoretical background \cite{Geman1984,Gelfand1990}. The key requirement for implementing the Gibbs sampling algorithm is the availability of conditional posterior distributions. The algorithm works by cycling through the conditional posterior distributions corresponding to different blocks of the parameter space under inference.
 
 Two simplify concepts let's focus on a parameter space composed by two blocks, $\bm{\theta} = [\bm{\theta}_1 \ \bm{\theta}_2]^{\top}$, the Gibbs sampling algorithm uses as transition kernel $q(\bm{\theta}_1^{(s)},\bm{\theta}_2^{(s)}\mid \bm{\theta}_1^{(s-1)},\bm{\theta}_2^{(s-1)})=\pi(\bm{\theta}_1^{(s)}\mid \bm{\theta}_2^{(s-1)},\bm{y})\pi(\bm{\theta}_2^{(s)}\mid \bm{\theta}_1^{(s)},\bm{y})$. Thus,
-{\tiny
+
 \begin{align*}
 	\int_{\bm{\Theta}}q(\bm{\theta}^{(s)}\mid \bm{\theta}^{(s-1)})\pi(\bm{\theta}^{(s-1)}\mid \bm{y})d\bm{\theta}^{(s-1)}
-	=&\int_{\bm{\Theta}_2}\int_{\bm{\Theta}_1}\pi(\bm{\theta}_1^{(s)}\mid \bm{\theta}_2^{(s-1)},\bm{y})\pi(\bm{\theta}_2^{(s)}\mid \bm{\theta}_1^{(s)},\bm{y})\pi(\bm{\theta}^{(s-1)}_1,\bm{\theta}^{(s-1)}_2\mid \bm{y})\\
-	&d\bm{\theta}^{(s-1)}_1d\bm{\theta}^{(s-1)}_2\\
-	=&\pi(\bm{\theta}_2^{(s)}\mid \bm{\theta}_1^{(s)},\bm{y})\int_{\bm{\Theta}_2}\int_{\bm{\Theta}_1}\pi(\bm{\theta}_1^{(s)}\mid \bm{\theta}_2^{(s-1)},\bm{y})\pi(\bm{\theta}^{(s-1)}_1,\bm{\theta}^{(s-1)}_2\mid \bm{y})\\
-	&d\bm{\theta}^{(s-1)}_1d\bm{\theta}^{(s-1)}_2\\
-	=&\pi(\bm{\theta}_2^{(s)}\mid \bm{\theta}_1^{(s)},\bm{y})\int_{\bm{\Theta}_2}\pi(\bm{\theta}_1^{(s)}\mid \bm{\theta}_2^{(s-1)},\bm{y})\pi(\bm{\theta}^{(s-1)}_2\mid \bm{y})d\bm{\theta}^{(s-1)}_2\\
+	=&\int_{\bm{\Theta}_2}\int_{\bm{\Theta}_1}\pi(\bm{\theta}_1^{(s)}\mid \bm{\theta}_2^{(s-1)},\bm{y})\pi(\bm{\theta}_2^{(s)}\mid \bm{\theta}_1^{(s)},\bm{y})\\
+	&\pi(\bm{\theta}^{(s-1)}_1,\bm{\theta}^{(s-1)}_2\mid \bm{y})d\bm{\theta}^{(s-1)}_1d\bm{\theta}^{(s-1)}_2\\
+	=&\pi(\bm{\theta}_2^{(s)}\mid \bm{\theta}_1^{(s)},\bm{y})\int_{\bm{\Theta}_2}\int_{\bm{\Theta}_1}\pi(\bm{\theta}_1^{(s)}\mid \bm{\theta}_2^{(s-1)},\bm{y})\\
+	&\pi(\bm{\theta}^{(s-1)}_1,\bm{\theta}^{(s-1)}_2\mid \bm{y})d\bm{\theta}^{(s-1)}_1d\bm{\theta}^{(s-1)}_2\\
+	=&\pi(\bm{\theta}_2^{(s)}\mid \bm{\theta}_1^{(s)},\bm{y})\int_{\bm{\Theta}_2}\pi(\bm{\theta}_1^{(s)}\mid \bm{\theta}_2^{(s-1)},\bm{y})\\
+	&\pi(\bm{\theta}^{(s-1)}_2\mid \bm{y})d\bm{\theta}^{(s-1)}_2\\
 	=&\pi(\bm{\theta}_2^{(s)}\mid \bm{\theta}_1^{(s)},\bm{y})\int_{\bm{\Theta}_2}\pi(\bm{\theta}_1^{(s)},\bm{\theta}_2^{(s-1)}\mid \bm{y})d\bm{\theta}^{(s-1)}_2\\
 	=&\pi(\bm{\theta}_2^{(s)}\mid \bm{\theta}_1^{(s)},\bm{y})\pi(\bm{\theta}_1^{(s)}\mid \bm{y})\\
 	=&\pi(\bm{\theta}_1^{(s)},\bm{\theta}_2^{(s)}\mid \bm{y}).\\
 \end{align*}
-}
+
 Then, $\pi(\bm{\theta}\mid \bm{y})$ is the stationary distribution for the Gibbs transition kernel.
 
 A word of caution! Even if we have well-defined conditional posterior distributions $\pi(\bm{\theta}_1^{(s)} \mid  \bm{\theta}_2^{(s-1)}, \bm{y})$ and $\pi(\bm{\theta}_2^{(s)} \mid  \bm{\theta}_1^{(s)}, \bm{y})$, and we can simulate from them, the joint posterior distribution $\pi(\bm{\theta}_1^{(s)}, \bm{\theta}_2^{(s)} \mid  \bm{y})$ may not correspond to any proper distribution. We should be mindful of this situation, especially when dealing with improper prior distributions (see \cite[Chap.~10]{robert2011monte} for details).

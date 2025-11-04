@@ -245,18 +245,18 @@ Using independent priors \( \pi(\boldsymbol{\beta}) \sim \mathcal{N}(\boldsymbol
 
 where \( \boldsymbol{B}_n = (\boldsymbol{X}^{\top} (\boldsymbol{\Sigma}^{-1} \otimes \boldsymbol{I}_N) \boldsymbol{X} + \boldsymbol{B}_0^{-1})^{-1} \), \( \boldsymbol{\beta}_n = \boldsymbol{B}_n (\boldsymbol{B}_0^{-1} \boldsymbol{\beta}_0 + \boldsymbol{X}^{\top} (\boldsymbol{\Sigma}^{-1} \otimes \boldsymbol{I}_N) \boldsymbol{y}) \), \( \alpha_n = \alpha_0 + N \) and \( \boldsymbol{\Psi}_n = (\boldsymbol{\Psi}_0^{-1} + \boldsymbol{U}^{\top} \boldsymbol{U})^{-1} \), where \( \boldsymbol{U} \) is an \( N \times M \) matrix whose columns are \( \boldsymbol{y}_m - \boldsymbol{X}_m \boldsymbol{\beta}_m \).
 
-We can demonstrate, through straightforward yet tedious algebra, that by defining \( \boldsymbol{y}_i = [y_{i1} \ y_{i2} \ \dots \ y_{iM}] \) and
+We can demonstrate, through straightforward yet tedious algebra, that by defining \( \boldsymbol{y}_i = [y_{i1} \ y_{i2} \ \dots \ y_{iM}]^{\top} \) and
 
 \[
 \boldsymbol{X}_i = \begin{bmatrix}
-    x_{1i}^{\top} & \boldsymbol{0} & \dots & \boldsymbol{0} \\
-    \boldsymbol{0} & x_{2i}^{\top} & \dots & \boldsymbol{0} \\
+    \mathbf{x}_{1i}^{\top} & \boldsymbol{0} & \dots & \boldsymbol{0} \\
+    \boldsymbol{0} & \mathbf{x}_{2i}^{\top} & \dots & \boldsymbol{0} \\
     \vdots & \vdots & \ddots & \vdots \\
-    \boldsymbol{0} & \boldsymbol{0} & \dots & x_{Mi}^{\top}
+    \boldsymbol{0} & \boldsymbol{0} & \dots & \mathbf{x}_{Mi}^{\top}
 \end{bmatrix},
 \]
 
-we alternatively have \( \boldsymbol{B}_n = (\boldsymbol{B}_0^{-1} + \sum_{i=1}^N \boldsymbol{X}_i^{\top} \boldsymbol{\Sigma}^{-1} \boldsymbol{X}_i)^{-1} \), \( \boldsymbol{\beta}_n = \boldsymbol{B}_n (\boldsymbol{B}_0^{-1} \boldsymbol{\beta}_0 + \sum_{i=1}^N \boldsymbol{X}_i^{\top} \boldsymbol{\Sigma}^{-1} \boldsymbol{y}_i) \) and \( \boldsymbol{\Psi}_n = (\boldsymbol{\Psi}_0^{-1} + \sum_{i=1}^N (\boldsymbol{y}_i - \boldsymbol{X}_i^{\top} \boldsymbol{\beta}) (\boldsymbol{y}_i - \boldsymbol{X}_i^{\top} \boldsymbol{\beta})^{\top})^{-1} \).
+we alternatively have \( \boldsymbol{B}_n = (\boldsymbol{B}_0^{-1} + \sum_{i=1}^N \boldsymbol{X}_i^{\top} \boldsymbol{\Sigma}^{-1} \boldsymbol{X}_i)^{-1} \), \( \boldsymbol{\beta}_n = \boldsymbol{B}_n (\boldsymbol{B}_0^{-1} \boldsymbol{\beta}_0 + \sum_{i=1}^N \boldsymbol{X}_i^{\top} \boldsymbol{\Sigma}^{-1} \boldsymbol{y}_i) \) and \( \boldsymbol{\Psi}_n = (\boldsymbol{\Psi}_0^{-1} + \sum_{i=1}^N (\boldsymbol{y}_i - \boldsymbol{X}_i\boldsymbol{\beta}) (\boldsymbol{y}_i - \boldsymbol{X}_i\boldsymbol{\beta})^{\top})^{-1} \).
 
 Observe that we have standard conditional posteriors, thus, we can employ a Gibbs sampling algorithm to get the posterior draws.
 
@@ -313,7 +313,7 @@ The following Algorithm demonstrates how to estimate SUR models using our GUI. O
 
 The following code shows how to program this application using this package. We use 10,000 MCMC iterations, \( \boldsymbol{\beta}_0 = \boldsymbol{0}_{27} \), \( \boldsymbol{B}_0 = 100\boldsymbol{I}_{27} \), \( \alpha_0 = 5 \) and \( \boldsymbol{\Psi} = 5\boldsymbol{I}_3 \).
 
-We find that the posterior median estimates of the own-price elasticities of demand for electricity, water, and gas are -1.88, -0.36, and -0.62, respectively, and none of the 95% credible intervals encompass 0. This means that a 1% increase in the prices of electricity, water, and gas results in a 1.88%, 0.36%, and 0.62% decrease in the monthly consumption of these utilities, respectively.^[This is an example where concerns about *biased* and *inconsistent* posterior mean estimates may arise, for instance, due to *reverse causality* between quantity and demand. These concerns are valid; however, we are using micro-level data, which implies no demand-supply simultaneity. Additionally, the utility providers operate in regulated natural monopoly markets, which mitigates endogeneity from searching provider strategies. Finally, we took prices directly from provider records, which avoids potential price measurement errors @ramirez2024welfare.] In general, there is evidence supporting the relevance of all regressors in these equations, with a few exceptions, and unobserved correlation in the demand for these services, which further supports the use of a SUR model in this application.
+We find that the posterior median estimates of the own-price elasticities of demand for electricity, water, and gas are -1.88, -0.36, and -0.62, respectively, and none of the 95% credible intervals encompass 0. This means that a 1% increase in the prices of electricity, water, and gas results in a 1.88%, 0.36%, and 0.62% decrease in the monthly consumption of these utilities, respectively.^[This is an example where concerns about *biased* and *inconsistent* posterior mean estimates may arise, for instance, due to *reverse causality* between quantity and price. These concerns are valid; however, we are using micro-level data, which implies no quantity-price simultaneity. Additionally, the utility providers operate in regulated natural monopoly markets, which mitigates endogeneity from searching provider strategies. Finally, we took prices directly from provider records, which avoids potential price measurement errors [@ramirez2024welfare].] In general, there is evidence supporting the relevance of all regressors in these equations, with a few exceptions, and unobserved correlation in the demand for these services, which further supports the use of a SUR model in this application.
 
 
 ```{r}
@@ -373,7 +373,7 @@ x_{si} = \boldsymbol{x}_{ei}^{\top} \boldsymbol{\gamma}_1 + \boldsymbol{z}_i^{\t
 Assuming  
 
 \[
-(u_{i},v_i)^{\top} \stackrel{i.i.d.}{\thicksim} N(0,\boldsymbol{\Sigma}),
+(\mu_{i},v_i)^{\top} \stackrel{i.i.d.}{\thicksim} N(0,\boldsymbol{\Sigma}),
 \]
 
 where \( \boldsymbol{\Sigma}=[\sigma_{lm}] \), \( l,m=1,2 \), the likelihood function is  
@@ -491,16 +491,39 @@ mcmc <- 5000; burnin <- 1000
 tot <- mcmc + burnin; thin <- 1
 # Gibbs sampling
 Gibbs <- function(x, y){
-	Data <- list(y = y, x = x, w = w, z = Z)
-	Mcmc <- list(R = mcmc, keep = thin, nprint = 0)
-	Prior <- list(md = g0, Ad = G0i, mbg = b0, Abg = B0i, nu = nu, V = Psi0)
-	RestIV <- bayesm::rivGibbs(Data = Data, Mcmc = Mcmc, Prior = Prior)
-	PostBIV <- mean(RestIV[["betadraw"]])
-	ResLM <- MCMCpack::MCMCregress(y ~ x + w - 1, b0 = b0, B0 = B0i, c0 = a0, d0 = d0)
-	PostB <- mean(ResLM[,1]); Res <- c(PostB,PostBIV)
-	return(Res)
+  Data <- list(y = y, x = x, w = w, z = Z)
+  Mcmc <- list(R = mcmc, keep = thin, nprint = 0)
+  Prior <- list(md = g0, Ad = G0i, mbg = b0, Abg = B0i, nu = nu, V = Psi0)
+
+  # Silence everything printed by rivGibbs
+  RestIV <- NULL
+  invisible(
+    capture.output(
+      suppressMessages(
+        suppressWarnings(
+          RestIV <- bayesm::rivGibbs(Data = Data, Mcmc = Mcmc, Prior = Prior)
+        )
+      ),
+      file = NULL, type = "output"
+    )
+  )
+
+  PostBIV <- mean(RestIV[["betadraw"]])
+
+  # (Optional) silence MCMCpack output too
+  ResLM <- NULL
+  invisible(
+    capture.output(
+      ResLM <- MCMCpack::MCMCregress(y ~ x + w - 1, b0 = b0, B0 = B0i, c0 = a0, d0 = d0),
+      file = NULL, type = "output"
+    )
+  )
+
+  PostB <- mean(ResLM[, 1])
+  c(PostB, PostBIV)
 }
-PosteriorMeans <- sapply(1:S, function(s) {Gibbs(x = x[,s], y = y[,s])})
+
+PosteriorMeans <- sapply(1:S, function(s) Gibbs(x = x[, s], y = y[, s]))
 rowMeans(PosteriorMeans)
 Model <- c(replicate(S, "Ordinary"), replicate(S, "Instrumental"))
 postmeans <- c(t(PosteriorMeans))
