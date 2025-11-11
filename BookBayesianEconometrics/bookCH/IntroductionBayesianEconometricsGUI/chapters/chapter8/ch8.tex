@@ -80,8 +80,10 @@ The equality of variances of both approaches is as follows:
 	Var[\bm{\beta}_t\mid \bm{y}_{1:t}]&
 	= \bm{R}_{t}-\bm{R}_{t}\bm{X}_t^{\top}(\bm{X}_t\bm{R}_{t}\bm{X}_t^\top+\bm{\Sigma}_t)^{-1} \bm{X}_t\bm{R}_{t}\\
 	&=\bm{R}_{t}-\bm{R}_{t}\bm{X}_t^{\top}(\bm{\Sigma}_t^{-1}- \bm{\Sigma}_t^{-1}\bm{X}_t(\bm{R}_{t}^{-1}+\bm{X}_t^{\top}\bm{\Sigma}_t^{-1}\bm{X}_t)^{-1}\bm{X}_t^{\top}\bm{\Sigma}_t^{-1})\bm{X}_t\bm{R}_{t}\\
-	&=\bm{R}_{t}-\bm{R}_{t}\bm{X}_t^{\top}\bm{\Sigma}_t^{-1}\bm{X}_t\bm{R}_{t}+ \bm{R}_{t}\bm{X}_t^{\top}\bm{\Sigma}_t^{-1}\bm{X}_t(\bm{R}_{t}^{-1}+\bm{X}_t^{\top}\bm{\Sigma}_t^{-1}\bm{X}_t)^{-1}\bm{X}_t^{\top}\bm{\Sigma}_t^{-1}\bm{X}_t\bm{R}_{t}\\
-	&=\bm{R}_{t}-\bm{R}_{t}\bm{X}_t^{\top}\bm{\Sigma}_t^{-1}\bm{X}_t\bm{R}_{t}+ \bm{R}_{t}\bm{X}_t^{\top}\bm{\Sigma}_t^{-1}\bm{X}_t[\bm{I}_K-(\bm{R}_{t}^{-1}+\bm{X}_t^{\top}\bm{\Sigma}_t^{-1}\bm{X}_t)^{-1}\bm{R}_{t}^{-1}]\bm{R}_{t}\\
+	&=\bm{R}_{t}-\bm{R}_{t}\bm{X}_t^{\top}\bm{\Sigma}_t^{-1}\bm{X}_t\bm{R}_{t}\\
+	&+ \bm{R}_{t}\bm{X}_t^{\top}\bm{\Sigma}_t^{-1}\bm{X}_t(\bm{R}_{t}^{-1}+\bm{X}_t^{\top}\bm{\Sigma}_t^{-1}\bm{X}_t)^{-1}\bm{X}_t^{\top}\bm{\Sigma}_t^{-1}\bm{X}_t\bm{R}_{t}\\
+	&=\bm{R}_{t}-\bm{R}_{t}\bm{X}_t^{\top}\bm{\Sigma}_t^{-1}\bm{X}_t\bm{R}_{t}\\
+	&+ \bm{R}_{t}\bm{X}_t^{\top}\bm{\Sigma}_t^{-1}\bm{X}_t[\bm{I}_K-(\bm{R}_{t}^{-1}+\bm{X}_t^{\top}\bm{\Sigma}_t^{-1}\bm{X}_t)^{-1}\bm{R}_{t}^{-1}]\bm{R}_{t}\\
 	&=\bm{R}_{t}-\bm{R}_{t}\bm{X}_t^{\top}\bm{\Sigma}_t^{-1}\bm{X}_t(\bm{R}_{t}^{-1}+\bm{X}_t^{\top}\bm{\Sigma}_t^{-1}\bm{X}_t)^{-1}\\
 	&=\bm{R}_t[\bm{I}_K-\bm{X}_t^{\top}\bm{\Sigma}_t^{-1}\bm{X}_t(\bm{R}_{t}^{-1}+\bm{X}_t^{\top}\bm{\Sigma}_t^{-1}\bm{X}_t)^{-1}]\\
 	&=\bm{R}_{t}[\bm{I}_K-(\bm{I}_K-\bm{R}_{t}^{-1}(\bm{R}_{t}^{-1}+\bm{X}_t^{\top}\bm{\Sigma}_t^{-1}\bm{X}_t)^{-1})]\\
@@ -160,10 +162,8 @@ Users can observe that we employ a straightforward strategy for setting the hype
 		\begin{lstlisting}[language=R]
 rm(list = ls()); set.seed(010101)
 T <- 200; sig2 <- 0.5^2
-x <- rnorm(T, mean = 1, sd = 1) 
-X <- cbind(1, x); B0 <- c(1, 0.5)
-K <- length(B0)
-e <- rnorm(T, mean = 0, sd = sig2^0.5)
+x <- rnorm(T, mean = 1, sd = 1); X <- cbind(1, x); B0 <- c(1, 0.5)
+K <- length(B0); e <- rnorm(T, mean = 0, sd = sig2^0.5)
 Omega <- diag(c(0.2, 0.1))
 w <- MASS::mvrnorm(T, c(0, 0), Omega)
 Bt <- matrix(NA, T, K); Bt[1,] <- B0
@@ -186,7 +186,15 @@ for(t in S:T){
 	RegLSt <- lm(yt[1:t] ~ x[1:t])
 	Bp[t,] <- RegLSt$coefficients 
 }
-# plot(Bp[S:T,2], type = "l")
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation: Dynamic linear model}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 VarBp <- var(Bp)
 # State space model
 ModelReg <- function(par){
@@ -206,15 +214,6 @@ LimSupB2 <- SmoothB2 + qnorm(0.975)*SDVarSmoothB2
 MCMC <- 2000; burnin <- 1000
 a.y <- (SumRegLS$sigma^2)^(-1); b.y <- 10*a.y; a.theta <- (max(diag(VarBp)))^(-1); b.theta <- 10*a.theta 
 gibbsOut <- dlm::dlmGibbsDIG(yt, mod = dlm::dlmModReg(x), a.y = a.y, b.y = b.y, a.theta = a.theta, b.theta = b.theta, n.sample = MCMC, thin = 5, save.states = TRUE)
-\end{lstlisting}
-	\end{VF}
-\end{tcolorbox} 
- 
-\begin{tcolorbox}[enhanced,width=4.67in,center upper,
-	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Simulation: Dynamic linear model}
-	\begin{VF}
-		\begin{lstlisting}[language=R]
 B2t <- matrix(0, MCMC - burnin, T + 1)
 for(t in 1:(T+1)){
 	B2t[,t] <- gibbsOut[["theta"]][t,2,-c(1:burnin)] 
@@ -237,7 +236,7 @@ lines(SmoothB2, col = "green", lw = 2)
 title("State vector: Slope parameter")
 \end{lstlisting}
 	\end{VF}
-\end{tcolorbox}
+\end{tcolorbox} 
 
 Figure \ref{fig1} shows the comparison between maximum likelihood (ML) and Bayesian inference. The light blue (Bayesian) and dark blue (maximum likelihood) shadows show the credible and confidence intervals at 95\% for the state slope parameter ($\beta_{t2}$). We see that the Bayesian interval encompass the ML interval. This is a reflection of the extra uncertainty of the unknown variances. The black line is the actual trajectory of $\beta_{t2}$, the green and red lines are the \textit{smoothing} recursions using the ML and Bayesian estimates (posterior mean), respectively.\\ 
 
@@ -267,7 +266,7 @@ Figure \ref{fig2} shows the posterior results of the effect of inflation on the 
 	\textit{R code. Dynamic linear model: Effects of inflation on interest rate}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-rm(list = ls()); set.seed(010101)
+rm(list = ls()); set.seed(10101)
 DataIntRate <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/16INTDEF.csv", sep = ",", header = TRUE, quote = "")
 attach(DataIntRate); Xt <- cbind(diff(inf), diff(def))
 K <- dim(Xt)[2] + 1; yt <- diff(i3)
@@ -290,6 +289,15 @@ ModelReg <- function(par){
 MCMC <- 12000; burnin <- 2000; thin <- 10
 a.y <- (SumRegLS$sigma^2)^(-1); b.y <- 10*a.y; a.theta <- (max(diag(VarBp)))^(-1); b.theta <- 10*a.theta 
 gibbsOut <- dlm::dlmGibbsDIG(yt, mod = dlm::dlmModReg(Xt), a.y = a.y, b.y = b.y, a.theta = a.theta, b.theta = b.theta, n.sample = MCMC, thin = 5, save.states = TRUE)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Dynamic linear model: Effects of inflation on interest rate}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 B2t <- matrix(0, MCMC - burnin, T + 1)
 for(t in 1:(T+1)){
 	B2t[,t] <- gibbsOut[["theta"]][t,2,-c(1:burnin)] 
@@ -306,6 +314,7 @@ abline(h=0, col = "blue")
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
+
 
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter8/figures/IntInf.png}
@@ -344,7 +353,7 @@ Let's start with the linear Gaussian model with autorregresive errors,
 \end{align}
 where $\bm{x}_t$ is a $K$-dimensional vector of regressors, $\epsilon_t \stackrel{iid}{\sim} N(0,\sigma^2)$, $\phi(L)=1-\phi_1L-\phi_2L^2-\dots-\phi_pL^p$ is a polynomial in the lag operator ($L$), where $Lz_t=z_{t-1}$, and in general, $L^rz_t=z_{t-r}$.
 
-Thus, we see that stochastic error $\mu_t$ follows an \textit{autoregressive process of order $p$}, that is, $\mu_t\sim AR(p)$. It is standard practice to assume that $\mu_t$ is second-order stationary, this implies that the mean, variance and autocovariance of $\mu_t$ are finite and independent of $t$ and $s$, although $\mathbb{E}[\mu_t\mu_s]$ may depend on $|t-s|$. Then, all roots of $\phi(L)$ lie outside the unit circle, for instance, given an $AR(1)$, then, $1-\phi_1L=0$, implies, $L=1/\phi_1$ such that  $|\phi_1|<0$ for the process being second-order stationary.
+Thus, we see that stochastic error $\mu_t$ follows an \textit{autoregressive process of order $p$}, that is, $\mu_t\sim AR(p)$. It is standard practice to assume that $\mu_t$ is second-order stationary, this implies that the mean, variance and autocovariance of $\mu_t$ are finite and independent of $t$ and $s$, although $\mathbb{E}[\mu_t\mu_s]$ may depend on $|t-s|$. Then, all roots of $\phi(L)$ lie outside the unit circle, for instance, given an $AR(1)$, then, $1-\phi_1L=0$, implies, $L=1/\phi_1$ such that  $|\phi_1|<1$ for the process being second-order stationary.
 
 The likelihood function conditional on the first $p$ observations is
 \begin{align*}
@@ -357,7 +366,7 @@ We can see that multiplying the first expression in Equation \ref{eq1} by $\phi(
 \begin{align}\label{eq3}
 	y_t^*=\bm{x}_t^{*\top}\bm{\beta}+\epsilon_t
 \end{align}
-where $y_t^*=\phi(L)Y_t$ and $\bm{x}_t^{*}=\phi(L)\bm{x}_t$.
+where $y_t^*=\phi(L)y_t$ and $\bm{x}_t^{*}=\phi(L)\bm{x}_t$.
 
 Thus, collecting all observations $t=p+1,p+2,\dots,T$, we have $\bm{y}^*=\bm{X}^*\bm{\beta}+\bm{\epsilon}$, where $\bm{\epsilon}\sim N(\bm{0},\sigma^2\bm{I}_{T-p})$, $\bm{y}^*$ is a $T-p$ dimensional vector, and $\bm{X}^*$ is a $(T-p)\times K$ dimensional matrix.
 
@@ -386,8 +395,7 @@ The following code demonstrates how to implement this application using vague pr
 	\textit{R code. AR(1) model: Effects of inflation on interest rate}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-rm(list = ls())
-set.seed(010101)
+rm(list = ls()); set.seed(10101)
 DataIntRate <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/16INTDEF.csv", sep = ",", header = TRUE, quote = "")
 attach(DataIntRate)
 yt <- diff(i3); ytlag <- dplyr::lag(yt, n = 1)
@@ -424,6 +432,16 @@ PostBeta <- function(sig2, Phi){
 	Beta <- MASS::mvrnorm(1, bn, sig2*Bn)
 	return(Beta)
 }
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. AR(1) model: Effects of inflation on interest rate}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 PostPhi <- function(sig2, Beta){
 	u <- yt - cbind(1,Xt)%*%Beta
 	U <- u[-T]
@@ -435,26 +453,14 @@ PostPhi <- function(sig2, Beta){
 	Phi <- truncnorm::rtruncnorm(1, a = -1, b = 1, mean = phin, sd = Phin^0.5)
 	return(Phi)
 }
-		\end{lstlisting}
-	\end{VF}
-\end{tcolorbox}
-
-
-\begin{tcolorbox}[enhanced,width=4.67in,center upper,
-	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. AR(1) model: Effects of inflation on interest rate}
-	\begin{VF}
-		\begin{lstlisting}[language=R]
 # Hyperparameters
 d0 <- 0.01; a0 <- 0.01
 b0 <- rep(0, K); c0 <- 1; 
 B0 <- c0*diag(K); B0i <- solve(B0)
 phi0 <- 0; Phi0 <- 1; Phi0i <- 1/Phi0
 # MCMC parameters
-mcmc <- 15000
-burnin <- 5000
-tot <- mcmc + burnin
-thin <- 1
+mcmc <- 15000; burnin <- 5000
+tot <- mcmc + burnin; thin <- 1
 PostBetas <- matrix(0, mcmc+burnin, K)
 PostSigma2s <- rep(0, mcmc+burnin)
 PostPhis <- rep(0, mcmc+burnin)
@@ -480,15 +486,20 @@ summary(PosteriorSigma2)
 PosteriorPhi <- coda::mcmc(PostPhis[keep])
 summary(PosteriorPhi)
 dfBinf <- as.data.frame(PosteriorBetas[,2])
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. AR(1) model: Effects of inflation on interest rate}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 # Basic density
 library(ggplot2)
-p <- ggplot(dfBinf, aes(x=var1)) + 
-geom_density(color="darkblue", fill="lightblue") +
-geom_vline(aes(xintercept=mean(var1)), color="blue", linetype="dashed", linewidth=1) +
-geom_vline(aes(xintercept=quantile(var1, 0.025)), color="red", linetype="dashed", linewidth=1) +
-geom_vline(aes(xintercept=quantile(var1, 0.975)), color="red", linetype="dashed", linewidth=1) +
-labs(title="Density effect of inflation on interest rate", x="Effect of inflation", y = "Density")
-\end{lstlisting}
+p <- ggplot(dfBinf, aes(x=var1)) + geom_density(color="darkblue", fill="lightblue") + geom_vline(aes(xintercept=mean(var1)), color="blue", linetype="dashed", linewidth=1) + geom_vline(aes(xintercept=quantile(var1, 0.025)), color="red", linetype="dashed", linewidth=1) + geom_vline(aes(xintercept=quantile(var1, 0.975)), color="red", linetype="dashed", linewidth=1) + labs(title="Density effect of inflation on interest rate", x="Effect of inflation", y = "Density")
+		\end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
 
@@ -501,7 +512,7 @@ Figure \ref{fig3} shows the posterior density plot of the effects of inflation r
 
 Observe that the previous setting encompasses the particular relevant case  $y_t\sim AR(p)$, it is just omitting the covariates such that $y_t=\mu_t$. \cite{chib1994bayes} extend the Bayesian inference of linear regression with $AR(p)$ errors to $ARMA(p,q)$ errors using a \textit{state-space} representation. 
 
-Setting $y_t=\mu_t$ such that $y_t=\sum_{s=1}^{p}\phi_jy_{t-s}+\sum_{s=1}^{q}\theta_s \epsilon_{t-s}+\epsilon_t$, letting $r=\max \left\{p,q+1\right\}$, $\phi_s=0$ for $s>p$ and $\theta_s=0$ for $s>q$, and defining $\bm{x}^{\top}=[1 \ 0 \ \dots \ 0]$, and $\bm{H}=[1 \ \psi_1 \ \dots \ \psi_{r-1}]^{\top}$ $r$-dimensional vectors, and 
+Setting $y_t=\mu_t$ such that $y_t=\sum_{s=1}^{p}\phi_jy_{t-s}+\sum_{s=1}^{q}\theta_s \epsilon_{t-s}+\epsilon_t$, letting $r=\max \left\{p,q+1\right\}$, $\phi_s=0$ for $s>p$ and $\theta_s=0$ for $s>q$, and defining $\bm{x}^{\top}=[1 \ 0 \ \dots \ 0]$, and $\bm{H}=[1 \ \theta_1 \ \dots \ \theta_{r-1}]^{\top}$ $r$-dimensional vectors, and 
 \begin{align*}
 	\bm{G}=\begin{bmatrix}
 		\phi_1 & 1 & 0 & \dots & 0\\
@@ -547,7 +558,7 @@ We use the function \textit{stan\_sarima} from the package \textit{bayesforecast
 	\textit{R code. Simulation and inference: AR(2) model}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-rm(list = ls()); set.seed(010101)
+rm(list = ls()); set.seed(10101)
 T <- 200; mu <- 0.5 
 phi1 <- 0.5; phi2 <- 0.3; sig <- 0.5
 Ey <- mu/(1-phi1-phi2); Sigy <- sig*((1-phi2)/(1-phi2-phi1^2-phi2*phi1^2-phi2^2+phi2^3))^0.5 
@@ -571,17 +582,11 @@ Postphi1 <- sf1[["stanfit"]]@sim[["samples"]][[1]][["ar0[1]"]][keep]
 Postphi2 <- sf1[["stanfit"]]@sim[["samples"]][[1]][["ar0[2]"]][keep]
 Postdraws <- coda::mcmc(cbind(Postmu, Postsig, Postphi1, Postphi2))
 summary(Postdraws)
-Quantiles for each variable:
-            	2.5%    25%    50%    75%  97.5%
-Postmu   0.39914 0.5732 0.6625 0.7518 0.9346
-Postsig  0.47696 0.5071 0.5248 0.5439 0.5829
-Postphi1 0.42384 0.5159 0.5634 0.6089 0.6979
-Postphi2 0.06034 0.1456 0.1920 0.2361 0.3286
 plot(Postdraws)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
-We perform 10000 MCMC iterations plus a burn-in equal 5000 assuming $\sigma^2\sim IG(0.01/2, 0.01/2)$, $\mu\sim N(0, 1)$ and $\phi_k\sim N(0, 1)$, $k=1,2$. The trace plots look well, and all 95\% credible intervals encompass the population values.
+We perform 10,000 MCMC iterations plus a burn-in equal 5,000 assuming $\sigma^2\sim IG(0.01/2, 0.01/2)$, $\mu\sim N(0, 1)$ and $\phi_k\sim N(0, 1)$, $k=1,2$. The trace plots look well, and all 95\% credible intervals encompass the population values.
 
 Algorithm \ref{alg:ARMA} shows how to perform inference in $ARMA(p,q)$ models using our GUI. See also Chapter \ref{chapGUI} for details regarding the dataset structure. 
 
@@ -593,7 +598,7 @@ Algorithm \ref{alg:ARMA} shows how to perform inference in $ARMA(p,q)$ models us
 		\State Upload the dataset selecting first if there is header in the file, and the kind of separator in the \textit{csv} file of the dataset (comma, semicolon, or tab). Then, use the \textit{Browse} button under the \textbf{Choose File} legend
 		\State Select MCMC iterations, burn-in and thinning parameters using the \textit{Range sliders}
 		\State Set the order of the ARMA model, $p$ and $q$ parameters
-		\State Set the frequency: annual (1), quarterly (4), monthly (12), etc
+		\State Set the frequency: annual (1), quarterly (4), monthly (12)
 		\State Set the location and scale hyperparameters of the \textit{intercept}, autoregressive ($AR$), moving average ($MA$) and standard deviation. Take into account that there is just one set of hyperparameters for $AR$ and $MA$ coefficients. This step is not necessary as by default our GUI uses non-informative priors
 		\State Click the \textit{Go!} button
 		\State Analyze results
@@ -609,9 +614,11 @@ Next, we define the function to compute the gradient vector of the log posterior
 
 The posterior distribution is given by\footnote{Take into account that we do not consider the first two observations when present the likelihood, this is no an issue when there is a large sample size.}
 \begin{align*}
-	\pi(\mu,\phi_1,\phi_2,\tau\mid \bm{y})&\propto \prod_{t=3}^T(\exp(\tau))^{-1/2}\exp\left\{-\frac{1}{2\exp(\tau)}(y_t-\mu-\phi_1y_{t-1}-\phi_2y_{t-2})^2\right\}\\
-	&\times\exp\left\{-\frac{1}{2\sigma^2_{\mu}}(\mu-\mu_0)^2\right\}\times\exp\left\{-\frac{1}{2\sigma^2_{\phi_1}}(\phi_1-\phi_{10})^2\right\}\\
-	&\times\exp\left\{-\frac{1}{2\sigma^2_{\phi_2}}(\phi_2-\phi_{20})^2\right\}\times\exp\left\{-(\alpha_0/2+1)\tau\right\}\exp\left\{-\delta_0/(2\exp(\tau))\right\}\exp(\tau).
+	\pi(\mu,\phi_1,\phi_2,\tau\mid \bm{y})&\propto \prod_{t=3}^T\exp\left\{-\frac{1}{2\exp(\tau)}(y_t-\mu-\phi_1y_{t-1}-\phi_2y_{t-2})^2\right\}\\
+	&\times(\exp(\tau))^{-1/2}\exp\left\{-\frac{1}{2\sigma^2_{\mu}}(\mu-\mu_0)^2\right\}\\
+	&\times\exp\left\{-\frac{1}{2\sigma^2_{\phi_1}}(\phi_1-\phi_{10})^2\right\}\\
+	&\times\exp\left\{-\frac{1}{2\sigma^2_{\phi_2}}(\phi_2-\phi_{20})^2\right\}\times\exp\left\{-(\alpha_0/2+1)\tau\right\}\\
+	&\times \exp\left\{-\delta_0/(2\exp(\tau))\right\}\exp(\tau).
 \end{align*} 
 
 The components of the gradient vector of the log posterior distribution are given by
@@ -632,7 +639,7 @@ We can verify that all 95\% credible intervals encompass the population values, 
 	\begin{VF}
 		\begin{lstlisting}[language=R]
 # Simulation AR(2)
-rm(list = ls()); set.seed(010101); T <- 1000; K <- 4 
+rm(list = ls()); set.seed(10101); T <- 1000; K <- 4 
 mu <- 0.5; phi1 <- 0.5; phi2 <- 0.3; sig <- 0.5 
 Ey <- mu/(1-phi1-phi2); Sigy <- sig*((1-phi2)/(1-phi2-phi1^2-phi2*phi1^2-phi2^2+phi2^3))^0.5 
 y <- rnorm(T, mean = Ey, sd = Sigy); e <- rnorm(T, mean = 0, sd = sig)
@@ -658,6 +665,15 @@ LogPost <- function(theta, y){
 theta0 <- c(mean(y), 0, 0, var(y))
 Opt <- optim(theta0, LogPost, y = y, hessian = TRUE)
 theta0 <- Opt$par; VarPost <- solve(Opt$hessian)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation and inference: AR(2) model using Hamiltonian Monte Carlo}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 # Gradient log posterior
 GradientTheta <- function(theta, y){
 	mu <- theta[1]; phi1 <- theta[2]; phi2 <- theta[3]
@@ -677,15 +693,6 @@ GradientTheta <- function(theta, y){
 	Grad <- c(Grad_mu, Grad_phi1, Grad_phi2, Grad_tau)
 	return(Grad)
 }
-\end{lstlisting}
-	\end{VF}
-\end{tcolorbox}
-
-\begin{tcolorbox}[enhanced,width=4.67in,center upper,
-	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Simulation and inference: AR(2) model using Hamiltonian Monte Carlo}
-	\begin{VF}
-		\begin{lstlisting}[language=R]
 # Hamiltonian Monte Carlo function
 HMC <- function(theta, y, epsilon, M){
 	L <- ceiling(1/epsilon)
@@ -702,6 +709,15 @@ HMC <- function(theta, y, epsilon, M){
 			theta <- theta + epsilon*Minv%*%mom
 		}
 	}
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation and inference: AR(2) model using Hamiltonian Monte Carlo}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 	logPost_Mom_star <- -LogPost(theta, y) +  mvtnorm::dmvnorm(t(mom), rep(0, K), M, log = TRUE)  
 	alpha <- min(1, exp(logPost_Mom_star-logPost_Mom_t))
 	u <- runif(1)
@@ -737,8 +753,9 @@ summary(exp(thetaF[,K]))
 ProbAcceptF <- coda::mcmc(ProbAccept[keep])
 summary(ProbAcceptF)
 \end{lstlisting}
-	\end{VF}
+\end{VF}
 \end{tcolorbox} 
+ 
     
 \section{Stochastic volatility models}\label{sec83}
 A notable example of non-linear and non-Gaussian \textit{state-space models} is stochastic volatility models (SVMs), which are widely used to model the volatility of financial returns. SVMs have gained significant attention due to their flexibility, ability to capture complex dynamics such as asymmetries, and ease of generalization to simultaneously model multiple returns, making them advantageous over generalized autoregressive conditional heteroskedasticity (GARCH) models proposed by \cite{bollerslev_1986}. However, estimating SVMs is more challenging than estimating GARCH models. This is because GARCH models set variance in a deterministic manner, whereas SVMs do so stochastically. Consequently, GARCH models are typically estimated using maximum likelihood methods, while SVMs require Bayesian approaches, adding complexity to the estimation process.
@@ -768,7 +785,7 @@ h_t = \mu + \phi(h_{t-1} - \mu) + \sigma w_t.
 \]
 This forms a linear and conditionally Gaussian \textit{state-space model}, where
 \[
-\log\left\{(y_t-\bm{x}_t^{\top}\bm{\beta})^2\right\} = m_{l_t} + h_t + \mu_t^2,
+\log\left\{(y_t-\bm{x}_t^{\top}\bm{\beta})^2\right\} = m_{l_t} + h_t + \mu_t,
 \]
 and
 \[
@@ -799,7 +816,7 @@ Algorithm \ref{alg:SV} shows how to perform inference in stochastic volatility m
 
 \textbf{Example: Simulation exercise of the stochastic volatility model}
 
-The following code shows how to simulate and perform Bayesian inference in the stochastic volatility model using the function \textit{svsample} from the \textit{stochvol} package. We set the stochastic volatility parameters to $\mu = -10$, $\phi = 0.95$, and $\sigma = 0.3$. We assume two regressors, which are distributed as standard normal, with $\bm{\beta} = [0.5 \ 0.3]^{\top}$, and the sample size is 1250, which corresponds to approximately 5 years of daily returns. We use the default hyperparameters: 10000 MCMC iterations, a burn-in of 5000, and a thinning parameter of 5.
+The following code shows how to simulate and perform Bayesian inference in the stochastic volatility model using the function \textit{svsample} from the \textit{stochvol} package. We set the stochastic volatility parameters to $\mu = -10$, $\phi = 0.95$, and $\sigma = 0.3$. We assume two regressors, which are distributed as standard normal, with $\bm{\beta} = [0.5 \ 0.3]^{\top}$, and the sample size is 1,250, which corresponds to approximately 5 years of daily returns. We use the default hyperparameters: 10,000 MCMC iterations, a burn-in of 5,000, and a thinning parameter of 5.
 
 The summary statistics of the posterior draws show that all 95\% credible intervals encompass the population parameters, and the posterior chains appear to have converged. Figure \ref{fig4} displays the posterior results for the volatility ($h_t$). The posterior mean (blue) follows the ``observed" series (black), and the 95\% credible intervals (light blue) typically encompass the ``observed" series.
 
@@ -808,7 +825,7 @@ The summary statistics of the posterior draws show that all 95\% credible interv
 	\textit{R code. Simulation and inference: Stochastic volatility model}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-rm(list = ls()); set.seed(010101)
+rm(list = ls()); set.seed(10101)
 T <- 1250; K <- 2
 X <- matrix(rnorm(T*K), T, K)
 B <- c(0.5, 0.3); mu <- -10; phi <- 0.95; sigma <- 0.3
@@ -862,7 +879,7 @@ In this example, we use the population parameters to perform the filtering recur
 	\textit{R code. Simulation and inference: Stochastic volatility model programming sequential Monte Carlo from scratch}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-rm(list = ls()); set.seed(010101)
+rm(list = ls()); set.seed(10101)
 T <- 1250; mu <- -10; phi <- 0.95; sigma <- 0.3
 h <- numeric(T); y <- numeric(T)
 h[1] <- rnorm(1, mu, sigma / sqrt(1 - phi^2))  
@@ -878,6 +895,15 @@ WeightsST <- matrix(NA, N, T)  # Normalized weights
 WeightsSTT <- matrix(1/N, N, T)  # Normalized weights bar 
 particles <- matrix(NA, N, T)   # Particles
 particlesT <- matrix(NA, N, T)   # Particles bar
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation and inference: Stochastic volatility model programming sequential Monte Carlo from scratch}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 logalphas <- matrix(NA, N, T)   # Incremental importance 
 particles[, 1] <- rnorm(N, mu, sigma / sqrt(1 - phi^2))  # Stationary prior
 log_Weights[, 1] <- dnorm(y[1], 0, sd = exp(0.5*particles[,1]), log = TRUE)  # Likelihood
@@ -903,27 +929,24 @@ for (t in 2:T) {
 	setTxtProgressBar(pb, t)
 }
 close(pb)
-\end{lstlisting}
-	\end{VF}
-\end{tcolorbox}
-
-\begin{tcolorbox}[enhanced,width=4.67in,center upper,
-	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Simulation and inference: Stochastic volatility model programming sequential Monte Carlo from scratch}
-	\begin{VF}
-		\begin{lstlisting}[language=R]
 FilterDist <- colSums(particles * WeightsST)
 SDFilterDist <- (colSums(particles^2 * WeightsST) - FilterDist^2)^0.5
 FilterDistT <- colSums(particlesT * WeightsSTT)
 SDFilterDistT <- (colSums(particlesT^2 * WeightsSTT) - FilterDistT^2)^0.5
 MargLik <- colMeans(Weights)
 plot(MargLik, type = "l")
-library(dplyr)
-library(ggplot2)
-require(latex2exp)
+library(dplyr); library(ggplot2); library(latex2exp)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation and inference: Stochastic volatility model programming sequential Monte Carlo from scratch}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 ggplot2::theme_set(theme_bw())
-Tfig <- 250
-keepFig <- 1:Tfig
+Tfig <- 250; keepFig <- 1:Tfig
 df <- tibble(t = keepFig,
 mean = FilterDist[keepFig],
 lower = FilterDist[keepFig] - 2*SDFilterDist[keepFig],
@@ -947,7 +970,6 @@ plot_filtering_estimates(df)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
-
  
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter8/figures/SVSMC.png}
