@@ -1123,6 +1123,15 @@ K <- K1 + K2 + K3
 b0 <- 0; c0 <- 100; V0 <- 5^(-1); a0 <- M
 #Posterior draws
 MCMC <- 10000; burnin <- 1000; H <- 10; YnewPack <- ts(Ynew)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. VAR model: US fiscal shocks}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 model <- bvartools::gen_var(YnewPack, p = 1, deterministic = "const", iterations = MCMC, burnin = burnin) # Create model
 model <- bvartools::add_priors(model, coef = list(v_i = c0^-1, v_i_det = c0^-1, const = b0), sigma = list(df = a0, scale = V0/a0), coint_var = FALSE) # Add priors
 object <- bvartools::draw_posterior(model) # Posterior draws
@@ -1142,6 +1151,10 @@ objectMin <- bvartools::draw_posterior(modelMin) # Posterior draws
 irMin <- bvartools::irf.bvar(objectMin, impulse = "gs", response = "gs", n.ahead = H, type = "feir", cumulative = FALSE) # Calculate IR
 dfNewMin <- tibble(t = 0:H, mean = as.numeric(irMin[,2]), lower = as.numeric(irMin[,1]), upper = as.numeric(irMin[,3]))
 FigNewMin <- plot_IR(dfNewMin)
+### Forecasting
+bvar_pred <- predict(object, n.ahead = 4, new_d = rep(1, 4))
+bvar_predOR <- predict(objectMin, n.ahead = 4, new_d = rep(1, 4))
+dfFore <- tibble(t = c((T-2):(T+1)), mean = as.numeric(bvar_pred[["fcst"]][["gs"]][,2]), lower = as.numeric(bvar_pred[["fcst"]][["gs"]][,1]), upper = as.numeric(bvar_pred[["fcst"]][["gs"]][,3]), mean1 = as.numeric(bvar_predOR[["fcst"]][["gs"]][,2]), lower1 = as.numeric(bvar_predOR[["fcst"]][["gs"]][,1]), upper1 = as.numeric(bvar_predOR[["fcst"]][["gs"]][,3]), true = as.numeric(Y[c((T-2):(T+1)),2]))
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
@@ -1151,10 +1164,6 @@ FigNewMin <- plot_IR(dfNewMin)
 	\textit{R code. VAR model: US fiscal shocks}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-### Forecasting
-bvar_pred <- predict(object, n.ahead = 4, new_d = rep(1, 4))
-bvar_predOR <- predict(objectMin, n.ahead = 4, new_d = rep(1, 4))
-dfFore <- tibble(t = c((T-2):(T+1)), mean = as.numeric(bvar_pred[["fcst"]][["gs"]][,2]), lower = as.numeric(bvar_pred[["fcst"]][["gs"]][,1]), upper = as.numeric(bvar_pred[["fcst"]][["gs"]][,3]), mean1 = as.numeric(bvar_predOR[["fcst"]][["gs"]][,2]), lower1 = as.numeric(bvar_predOR[["fcst"]][["gs"]][,1]), upper1 = as.numeric(bvar_predOR[["fcst"]][["gs"]][,3]), true = as.numeric(Y[c((T-2):(T+1)),2]))
 plot_FORE <- function(df) {
 	p <- ggplot(data = dfFore, aes(x = t)) + geom_ribbon(aes(ymin = lower1, ymax = upper1), alpha = 1, fill = "blue") + geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1, fill = "lightblue") + geom_line(aes(y = mean), colour = "green", linewidth = 0.5) + geom_line(aes(y = mean1), colour = "red", linewidth = 0.5) + geom_line(aes(y = true), colour = "black", linewidth = 0.5) + ylab("Forecast") + xlab("Time") + xlim(c((T-2),(T+1)))
 	print(p)
@@ -1163,7 +1172,6 @@ FigFore <- plot_FORE(dfFore)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
-
 
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter8/figures/IRsgsgFE.png}
