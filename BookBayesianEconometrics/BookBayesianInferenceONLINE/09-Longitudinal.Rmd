@@ -1,8 +1,8 @@
-# Longitudinal regression {#Chap9}
+# Longitudinal/Panel data models {#Chap9}
 
 We describe how to perform inference in longitudinal/panel models using a Bayesian framework. In this context, multiple cross-sectional units are observed repeatedly over time, a structure referred to as panel data by econometricians and longitudinal data by statisticians. Specifically, we present models for continuous (normal), binary (logit), and count (Poisson) responses. Applications and exercises illustrate the potential of these models.
 
-In longitudinal/panel data sets, we have $y_{it}$ where $i=1,2,\dots,N$ and $t=1,2,\dots,T_i$. If $T_i=T$ for all $i$, the dataset is *balanced*; otherwise, it is *unbalanced*. Longitudinal data typically involves by far more cross-sectional units than time periods, this is called typically a *short panel*. It assumes that cross-sectional units are independent, though serial correlation exists within each unit over time, and unobserved heterogeneity for each unit must be accounted for. We can treat this unobserved heterogeneity as random variables, assuming it is either independent or dependent on control variables. Econometricians refer to these cases as *random effects* and *fixed effects*, respectively. The Bayesian literature takes a different approach, modeling the panel structure hierarchically, where the unobserved heterogeneity may or may not depend on other controls.^[See @rendon2013fixed for a nice comparison of Frequentist and Bayesian treatments of panel data models].
+In longitudinal/panel data sets, we have $y_{it}$ where $i=1,2,\dots,N$ and $t=1,2,\dots,T_i$. If $T_i=T$ for all $i$, the dataset is *balanced*; otherwise, it is *unbalanced*. Panel data typically involves by far more cross-sectional units than time periods, this is called typically a *short panel*. It assumes that cross-sectional units are independent, though serial correlation exists within each unit over time, and unobserved heterogeneity for each unit must be accounted for. We can treat this unobserved heterogeneity as random variables, assuming it is either independent or dependent on control variables. Econometricians refer to these cases as *random effects* and *fixed effects*, respectively. The Bayesian literature takes a different approach, modeling the panel structure hierarchically, where the unobserved heterogeneity may or may not depend on other controls.^[See @rendon2013fixed for a nice comparison of Frequentist and Bayesian treatments of panel data models].
 
 Remember that we can run our GUI typing `shiny::runGitHub("besmarter/BSTApp", launch.browser=T)` in the **R** console or any **R** code editor and execute it. However, users should see Chapter \@ref(Chap5) for details.
 
@@ -159,7 +159,7 @@ Another potential extension is to allow dependence between $\boldsymbol{b}_i$ an
 
 Let's perform a simulation exercise to assess some potential extensions of the longitudinal hierarchical normal model. The point of departure is to assume that
 \[y_{it}=\beta_0+\beta_1x_{it1}+\beta_2x_{it2}+\beta_3x_{it3}+b_i+w_{it1}b_{i1}+\mu_{it},\]
-where $x_{itk}\sim N(0,1)$, $k=1,2,3$, $w_{it1}\sim N(0,1)$, $b_i\sim N(0, 0.7^{1/2})$, $b_{i1}\sim N(0, 0.6^{1/2})$, $\mu_{it}\sim N(0, (0.1/\tau)^{1/2})$, $\tau_{it}\sim G(v/2,v/2)$ and $\boldsymbol{\beta}=[0.5 \ 0.4 \ 0.6 \ -0.6]^{\top}$, $i=1,2,\dots,50$. The sample size is 2000 in an *unbalanced panel structure*. 
+where $x_{itk}\sim N(0,1)$, $k=1,2,3$, $w_{it1}\sim N(0,1)$, $b_i\sim N(0, 0.7^{1/2})$, $b_{i1}\sim N(0, 0.6^{1/2})$, $\mu_{it}\sim N(0, (0.1/\tau_{it})^{1/2})$, $\tau_{it}\sim G(v/2,v/2)$ and $\boldsymbol{\beta}=[0.5 \ 0.4 \ 0.6 \ -0.6]^{\top}$, $i=1,2,\dots,50$. The sample size is 2,000 in an *unbalanced panel structure*. 
 
 Following same stages as in this section and Exercise 1, the posterior conditional distributions assuming that $\mu_{it}\mid \tau_{it}\sim N(0, \sigma^2/\tau_{it})$, $\tau_{it}\sim G(v/2,v/2)$ are given by 
 \begin{equation*}
@@ -183,7 +183,7 @@ where $d_n=d_0+N$ and $\boldsymbol{D}_n=d_0\boldsymbol{D}_0+\sum_{i=1}^N\boldsym
 \end{equation*}
 where $v_{1n}=v+1$ and $v_{2ni}=v+\sigma^{-2}(y_{it}-\boldsymbol{x}_{it}^{\top}\boldsymbol{\beta}-\boldsymbol{w}_{it}^{\top}\boldsymbol{b}_i)^2$.
 
-The following code implements this simulation, and gets draws of the posterior distributions. We set MCMC iterations, burn-in and thinning parameters equal to 5000, 1000 and 1, respectively. In addition, $\boldsymbol{\beta}_0=\boldsymbol{0}_5$, $\boldsymbol{B}_0=\boldsymbol{I}_5$, $\alpha_0=\delta_0=0.001$, $d_0=2$, $\boldsymbol{D}_0=\boldsymbol{I}_2$ and $v=5$.
+The following code implements this simulation, and gets draws of the posterior distributions. We set MCMC iterations, burn-in and thinning parameters equal to 5,000, 1,000 and 1, respectively. In addition, $\boldsymbol{\beta}_0=\boldsymbol{0}_5$, $\boldsymbol{B}_0=\boldsymbol{I}_5$, $\alpha_0=\delta_0=0.001$, $d_0=2$, $\boldsymbol{D}_0=\boldsymbol{I}_2$ and $v=5$.
 
 ```{r}
 rm(list = ls()); set.seed(010101)
@@ -344,7 +344,7 @@ We can get samples of $y_{it}^*$ from a normal distribution with mean equal to $
 
 **Example: Doctor visits in Germany**
 
-We used the dataset *9VisitDoc.csv* provided by @Winkelmann2004^[See *http://qed.econ.queensu.ca/jae/2004-v19.4/winkelmann/* for details]. We analyze the determinants of a binary variable (*DocVis*), which equals 1 if an individual visited a physician in the last three months and 0 otherwise. The dataset contains 32,837 observations of 9,197 individuals in an *unbalanced longitudinal/panel* dataset over the years 1995--1999 from the German Socioeconomic Panel Data.
+We used the dataset *9VisitDoc.csv* provided by @Winkelmann2004.^[See *http://qed.econ.queensu.ca/jae/2004-v19.4/winkelmann/* for details] We analyze the determinants of a binary variable (*DocVis*), which equals 1 if an individual visited a physician in the last three months and 0 otherwise. The dataset contains 32,837 observations of 9,197 individuals in an *unbalanced longitudinal/panel* dataset over the years 1995--1999 from the German Socioeconomic Panel Data.
 
 The specification is given by
 \begin{align*}
@@ -450,7 +450,7 @@ Let's perform a simulation exercise to assess the performance of the hierarchica
 \[
 y_{it}^* = \beta_0 + \beta_1 x_{it1} + \beta_2 x_{it2} + \beta_3 x_{it3} + b_i + w_{it1} b_{i1},
 \]
-where $x_{itk} \sim N(0,1)$ for $k = 1, 2, 3$, $w_{it1} \sim N(0,1)$, $b_i \sim N(0, 0.7^{1/2})$, $b_{i1} \sim N(0, 0.6^{1/2})$, and $\boldsymbol{\beta} = [0.5 \ 0.4 \ 0.6 \ -0.6]^{\top}$, with $i = 1, 2, \dots, 50$. Additionally, $y_{it} \sim P(\lambda_{it})$, where $\lambda_{it} = \exp(y_{it}^*)$. The sample size is 1000 in an *unbalanced panel structure*.
+where $x_{itk} \sim N(0,1)$ for $k = 1, 2, 3$, $w_{it1} \sim N(0,1)$, $b_i \sim N(0, 0.7^{1/2})$, $b_{i1} \sim N(0, 0.6^{1/2})$, and $\boldsymbol{\beta} = [0.5 \ 0.4 \ 0.6 \ -0.6]^{\top}$, with $i = 1, 2, \dots, 50$. Additionally, $y_{it} \sim P(\lambda_{it})$, where $\lambda_{it} = \exp(y_{it}^*)$. The sample size is 1,000 in an *unbalanced panel structure*.
 
 We set the priors as $\boldsymbol{\beta}_0 = \boldsymbol{0}_4$, $\boldsymbol{B}_0 = \boldsymbol{I}_4$, $\alpha_0 = \delta_0 = 0.001$, $d_0 = 2$, and $\boldsymbol{D}_0 = \boldsymbol{I}_2$. The number of MCMC iterations, burn-in, and thinning parameters are 15,000, 5,000, and 10, respectively.
 
