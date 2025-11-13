@@ -604,6 +604,7 @@ We apply this framework to ten tech stocks of the US market between January firs
 We use non-informative hyperparameters, $\boldsymbol{\mu}_0=\boldsymbol{0}$, $\beta_0=1$, $\boldsymbol{\Psi}_0=100\boldsymbol{I}$ and $\alpha_0=p+2$, where $p=10$ is the number of stocks.
 
 ```{r}
+set.seed(12345)
 # Tangency portfolio
 
 # Load required libraries
@@ -636,12 +637,24 @@ returns <- apply(prices, 2, function(x) diff(log(x))) %>%
   as.data.frame()
 
 # Download 10-year Treasury yield from FRED
-t10yr <- getSymbols("DGS10", src = "FRED", from = start_date, to = end_date, auto.assign = FALSE)
-t10yr_daily <- ((1 + t10yr / 100)^(1 / 365)) - 1
+t10yr_xts <- getSymbols("^TNX",
+                        src         = "yahoo",
+                        from        = start_date,
+                        to          = end_date,
+                        auto.assign = FALSE)
+
+# Annual yield in decimal
+t10yr_annual <- Cl(t10yr_xts) / 1000  # e.g. 45 -> 0.045
+
+# Convert to daily rate (using 365 days, consistent with your code)
+t10yr_daily <- (1 + t10yr_annual)^(1 / 365) - 1
+
+# Align risk-free series with stock returns
 t10yr_daily <- t10yr_daily[rownames(returns), ]
 
 # Compute excess returns
-excess_returns <- as.matrix(returns) - kronecker(t(rep(1, p)), as.matrix(t10yr_daily))
+excess_returns <- as.matrix(returns) -
+  kronecker(t(rep(1, p)), as.matrix(t10yr_daily))
 
 # Convert to data frame with dates
 df <- as.data.frame(excess_returns)
@@ -691,7 +704,7 @@ colnames(opt_weights) <- tickers
 opt_weights
 ```
 
-We find that the optimal tangency portfolio is composed by 24.8\%, 10.2\%, 17.3\%, 23\%, 3.5\% and 30.1\% weights of Netflix, Amazon, Intel, Meta, NVIDIA and PayPal, and -1.9\%, -3.4\%, -2.2\% and -1.6\% weights of Apple, Google, Microsoft and Tesla. A negative weight means being short in financial jargon, that is, borrowing a stock to sell it.
+We find that the optimal tangency portfolio is composed by 24.9\%, 10.6\%, 17.6\%, 23.6\%, 2.9\% and 31.1\% weights of Netflix, Amazon, Intel, Meta, NVIDIA and PayPal, and -2.3\%, -3.8\%, -2.8\% and -1.8\% weights of Apple, Google, Microsoft and Tesla. A negative weight means being short in financial jargon, that is, borrowing a stock to sell it.
 
 ## Linear regression: The conjugate normal-normal/inverse gamma model {#sec43}
 

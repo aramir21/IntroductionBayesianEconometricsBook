@@ -105,62 +105,67 @@ predictive_prob_y0 <- function(y0) {
 predictive_prob_y0(y0)
 
 ########################## The multivariate normal-normal/inverse-Wishart model example ########################## 
-# Tangent portfolio
-
-# Load required libraries
-library(quantmod)
-library(xts)
-library(ggplot2)
-library(gridExtra)
-library(purrr)
-library(dplyr)
-
+# Tangency portfolio
+set.seed(12345)
+library(quantmod); library(xts); library(ggplot2)
+library(gridExtra); library(purrr); library(dplyr)
 # Define date range
 start_date <- as.Date("2021-01-01")
 end_date <- as.Date("2022-09-30")
 dates <- seq(start_date, end_date, by = "day")
-
 # Tickers of interest
 tickers <- c("AAPL", "NFLX", "AMZN", "GOOG", "INTC", "META", "MSFT", "TSLA", "NVDA", "PYPL")
 p <- length(tickers)
-
 # Download adjusted closing prices
 getSymbols(tickers, from = start_date, to = end_date, auto.assign = TRUE)
-
 prices <- map(tickers, ~ Ad(get(.x))) %>%
   reduce(merge) %>%
   `colnames<-`(tickers) %>%
   as.data.frame()
-
 # Calculate daily log returns
 returns <- apply(prices, 2, function(x) diff(log(x))) %>%
   as.data.frame()
-
 # Download 10-year Treasury yield from FRED
-t10yr <- getSymbols("DGS10", src = "FRED", from = start_date, to = end_date, auto.assign = FALSE)
-t10yr_daily <- ((1 + t10yr / 100)^(1 / 365)) - 1
+t10yr_xts <- getSymbols("^TNX", src = "yahoo", from = start_date, to = end_date, auto.assign = FALSE)
+# Annual yield in decimal
+t10yr_annual <- Cl(t10yr_xts) / 1000  # e.g. 45 -> 0.045
+# Convert to daily rate (using 365 days, consistent with your code)
+t10yr_daily <- (1 + t10yr_annual)^(1 / 365) - 1
+# Align risk-free series with stock returns
 t10yr_daily <- t10yr_daily[rownames(returns), ]
-
 # Compute excess returns
-excess_returns <- as.matrix(returns) - kronecker(t(rep(1, p)), as.matrix(t10yr_daily))
-
+excess_returns <- as.matrix(returns) -
+  kronecker(t(rep(1, p)), as.matrix(t10yr_daily))
 # Convert to data frame with dates
 df <- as.data.frame(excess_returns)
 df$Date <- as.Date(rownames(df))
 df$Month <- months(df$Date)
 df$Year <- format(df$Date, "%y")
-
 # Aggregate monthly means
 monthly_means <- map(1:p, function(i) {
   aggregate(df[[i]] ~ Month + Year, data = df, FUN = mean)
 })
-
 # Extract values into matrix
 data_excess <- matrix(0, nrow = nrow(monthly_means[[1]]), ncol = p)
 for (i in 1:p) {
   data_excess[, i] <- as.numeric(monthly_means[[i]][, 3])
 }
 colnames(data_excess) <- tickers
+
+# draw graph
+plot1 <- ggplot(df, aes(x = Date, y = AAPL)) +
+  geom_line(color = "blue", linewidth=1.2) + 
+  ggtitle("Apple excess of return") + xlab("Date") + ylab("Excess return") + 
+  theme(plot.title = element_text(hjust = 0.5)) + 
+  scale_x_date(date_labels = "%y-%m", date_breaks = "2 months")
+
+plot2 <- ggplot(df, aes(x = Date, y = NFLX)) +
+  geom_line(color = "blue", linewidth=1.2) + 
+  ggtitle("Netflix excess of return") + xlab("Date") + ylab("Excess return") + 
+  theme(plot.title = element_text(hjust = 0.5)) + 
+  scale_x_date(date_labels = "%y-%m", date_breaks = "2 months")
+
+grid.arrange(plot1, plot2, ncol=2, nrow = 1)
 
 # Hyperparameters
 N <- nrow(data_excess)

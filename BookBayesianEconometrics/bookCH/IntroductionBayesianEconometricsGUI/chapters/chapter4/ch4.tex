@@ -578,50 +578,50 @@ We use non-informative hyperparameters, $\boldsymbol{\mu}_0=\boldsymbol{0}$, $\b
 	\textit{R code. Optimal tangency portfolio: Tech shares}
 \begin{VF}
 \begin{lstlisting}[language=R]
-library(quantmod); library(xts)
-library(ggplot2); library(gridExtra) 
-# grid.arrange
-graphics.off()
-rm(list=ls())
-# Data Range
-sdate <- as.Date("2021-01-01")
-edate <- as.Date("2022-09-30")
-Date <- seq(sdate, edate, by = "day")
-tickers <- c("AAPL", "NFLX", "AMZN", "GOOG", "INTC","META", "MSFT", "TSLA", "NVDA", "PYPL")
+library(quantmod); library(xts); library(ggplot2)
+library(gridExtra); library(purrr); library(dplyr)
+# Define date range
+start_date <- as.Date("2021-01-01")
+end_date <- as.Date("2022-09-30")
+dates <- seq(start_date, end_date, by = "day")
+# Tickers of interest
+tickers <- c("AAPL", "NFLX", "AMZN", "GOOG", "INTC", "META", "MSFT", "TSLA", "NVDA", "PYPL")
 p <- length(tickers)
-# AAPL: Apple, NFLX: Netflix, AMZN: Amazon, 
-# MSFT: Microsoft, GOOG: Google, META: Meta,
-# TSLA: Tesla, NVDA: NVIDIA Corporation
-# INTC: Intel, PYPL: PayPal 
-ss_stock <- getSymbols(tickers, from=sdate, to=edate, auto.assign = T)
-ss_stock <- purrr::map(tickers,function(x) Ad(get(x)))
-ss_stock <- as.data.frame(purrr::reduce(ss_stock, merge))
-colnames(ss_stock) <- tickers
-# This is to get stock prices
-ss_rtn <- as.data.frame(apply(ss_stock, 2, function(x) {diff(log(x), 1)}))
-# Daily returns
-t10yr <- getSymbols(Symbols = "DGS10", src = "FRED", from=sdate, to=edate, auto.assign = F)
-# To get 10-Year US Treasury yield data from the Federal Reserve Electronic Database (FRED)
-t10yrd <- (1 + t10yr/100)^(1/365)-1 
-# Daily returns
-t10yrd <- t10yrd[row.names(ss_rtn)]
-Exc_rtn <- as.matrix(ss_rtn) - kronecker(t(rep(1, p)), as.matrix(t10yrd))
-# Excesses of return
-df <- as.data.frame(Exc_rtn)
+# Download adjusted closing prices
+getSymbols(tickers, from = start_date, to = end_date, auto.assign = TRUE)
+prices <- map(tickers, ~ Ad(get(.x))) %>%
+reduce(merge) %>%
+`colnames<-`(tickers) %>%
+as.data.frame()
+# Calculate daily log returns
+returns <- apply(prices, 2, function(x) diff(log(x))) %>%
+as.data.frame()
+# Download 10-year Treasury yield from FRED
+t10yr_xts <- getSymbols("^TNX", src = "yahoo", from = start_date, to = end_date, auto.assign = FALSE)
+# Annual yield in decimal
+t10yr_annual <- Cl(t10yr_xts) / 1000  # e.g. 45 -> 0.045
+# Convert to daily rate (using 365 days, consistent with your code)
+t10yr_daily <- (1 + t10yr_annual)^(1 / 365) - 1
+# Align risk-free series with stock returns
+t10yr_daily <- t10yr_daily[rownames(returns), ]
+# Compute excess returns
+excess_returns <- as.matrix(returns) -
+kronecker(t(rep(1, p)), as.matrix(t10yr_daily))
+# Convert to data frame with dates
+df <- as.data.frame(excess_returns)
 df$Date <- as.Date(rownames(df))
-#  Get months
 df$Month <- months(df$Date)
-#  Get years
-df$Year <- format(df$Date, format="%y")
-#  Aggregate on months and year and get mean
-Data <- sapply(1:p, function(i) {
-	aggregate(df[, i] ~ Month + Year, df, mean)})
-DataExcRtn <- matrix(0, length(Data[, 1]$Month), p)
-for(i in 1:p){
-	DataExcRtn[, i] <- as.numeric(Data[, i]$`df[, i]`)
+df$Year <- format(df$Date, "%y")
+# Aggregate monthly means
+monthly_means <- map(1:p, function(i) {
+	aggregate(df[[i]] ~ Month + Year, data = df, FUN = mean)
+})
+# Extract values into matrix
+data_excess <- matrix(0, nrow = nrow(monthly_means[[1]]), ncol = p)
+for (i in 1:p) {
+	data_excess[, i] <- as.numeric(monthly_means[[i]][, 3])
 }
-colnames(DataExcRtn) <- tickers
-head(DataExcRtn)
+colnames(data_excess) <- tickers
 \end{lstlisting}
 \end{VF}
 \end{tcolorbox}
@@ -651,13 +651,11 @@ Covari <- solve(Covarn)
 OptShare <- t(Covari%*%mun/as.numeric((t(rep(1, p))%*%Covari%*%mun)))
 colnames(OptShare) <- tickers
 OptShare
-  AAPL  NFLX  AMZN   GOOG INTC  META MSFT    TSLA  NVDA  PYPL
--0.019 0.248 0.102 -0.034 0.173 0.23 -0.022 -0.016 0.035 0.301
 \end{lstlisting}
 \end{VF}
 \end{tcolorbox}
 
-We find that the optimal tangency portfolio is composed by 24.8\%, 10.2\%, 17.3\%, 23\%, 3.5\% and 30.1\% weights of Netflix, Amazon, Intel, Meta, NVIDIA and PayPal, and -1.9\%, -3.4\%, -2.2\% and -1.6\% weights of Apple, Google, Microsoft and Tesla. A negative weight means being short in financial jargon, that is, borrowing a stock to sell it.
+We find that the optimal tangency portfolio is composed by 24.9\%, 10.6\%, 17.6\%, 23.6\%, 2.9\% and 31.1\% weights of Netflix, Amazon, Intel, Meta, NVIDIA and PayPal, and -2.3\%, -3.8\%, -2.8\% and -1.8\% weights of Apple, Google, Microsoft and Tesla. A negative weight means being short in financial jargon, that is, borrowing a stock to sell it.
 \end{enumerate}
 
 \section{Linear regression: The conjugate normal-normal/inverse gamma model}\label{sec43}

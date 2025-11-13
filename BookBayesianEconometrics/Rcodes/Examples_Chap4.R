@@ -105,58 +105,52 @@ predictive_prob_y0(y0)
 
 ########################## The multivariate normal-normal/inverse-Wishart model example ########################## 
 # Tangency portfolio
-
-library(quantmod)
-library(xts)
-library(ggplot2)
-library(gridExtra) # grid.arrange
-
-graphics.off()
-rm(list=ls())
-
-# Data Range
-sdate <- as.Date("2021-01-01")
-edate <- as.Date("2022-09-30")
-Date <- seq(sdate, edate, by = "day")
-
-tickers <- c("AAPL", "NFLX", "AMZN", "GOOG", "INTC",
-             "META", "MSFT", "TSLA", "NVDA", "PYPL")
+set.seed(12345)
+library(quantmod); library(xts); library(ggplot2)
+library(gridExtra); library(purrr); library(dplyr)
+# Define date range
+start_date <- as.Date("2021-01-01")
+end_date <- as.Date("2022-09-30")
+dates <- seq(start_date, end_date, by = "day")
+# Tickers of interest
+tickers <- c("AAPL", "NFLX", "AMZN", "GOOG", "INTC", "META", "MSFT", "TSLA", "NVDA", "PYPL")
 p <- length(tickers)
-
-# AAPL: Apple, NFLX: Netflix, AMZN: Amazon, MSFT: Microsoft
-# GOOG: Google, META: Meta, TSLA: Tesla, NVDA: NVIDIA Corporation
-# INTC: Intel, PYPL: PayPal 
-ss_stock <- getSymbols(tickers, from=sdate, to=edate, auto.assign = T)
-ss_stock <- purrr::map(tickers,function(x) Ad(get(x)))
-ss_stock <- as.data.frame(purrr::reduce(ss_stock, merge))
-colnames(ss_stock) <- tickers
-ss_rtn <- as.data.frame(apply(ss_stock, 2, function(x) {diff(log(x), 1)}))
-# Daily returns
-
-t10yr <- getSymbols(Symbols = "DGS10", src = "FRED", from=sdate, to=edate, auto.assign = F)
-# 10-Year US Treasury yield data from the Federal Reserve Electronic Database (FRED)
-t10yrd <- (1 + t10yr/100)^(1/365)-1 
-# Daily returns
-t10yrd <- t10yrd[row.names(ss_rtn)]
-Exc_rtn <- as.matrix(ss_rtn) - kronecker(t(rep(1, p)), as.matrix(t10yrd))
-# Excesses of return
-df <- as.data.frame(Exc_rtn)
+# Download adjusted closing prices
+getSymbols(tickers, from = start_date, to = end_date, auto.assign = TRUE)
+prices <- map(tickers, ~ Ad(get(.x))) %>%
+  reduce(merge) %>%
+  `colnames<-`(tickers) %>%
+  as.data.frame()
+# Calculate daily log returns
+returns <- apply(prices, 2, function(x) diff(log(x))) %>%
+  as.data.frame()
+# Download 10-year Treasury yield from FRED
+t10yr_xts <- getSymbols("^TNX", src = "yahoo", from = start_date, to = end_date, auto.assign = FALSE)
+# Annual yield in decimal
+t10yr_annual <- Cl(t10yr_xts) / 1000  # e.g. 45 -> 0.045
+# Convert to daily rate (using 365 days, consistent with your code)
+t10yr_daily <- (1 + t10yr_annual)^(1 / 365) - 1
+# Align risk-free series with stock returns
+t10yr_daily <- t10yr_daily[rownames(returns), ]
+# Compute excess returns
+excess_returns <- as.matrix(returns) -
+  kronecker(t(rep(1, p)), as.matrix(t10yr_daily))
+# Convert to data frame with dates
+df <- as.data.frame(excess_returns)
 df$Date <- as.Date(rownames(df))
-#  Get months
 df$Month <- months(df$Date)
-#  Get years
-df$Year <- format(df$Date, format="%y")
-head(df)
-
-#  Aggregate on months and year and get mean
-Data <- sapply(1:p, function(i) {aggregate(df[, i] ~ Month + Year, df, mean)})
-DataExcRtn <- matrix(0, length(Data[, 1]$Month), p)
-for(i in 1:p){
-  DataExcRtn[, i] <- as.numeric(Data[, i]$`df[, i]`)
+df$Year <- format(df$Date, "%y")
+# Aggregate monthly means
+monthly_means <- map(1:p, function(i) {
+  aggregate(df[[i]] ~ Month + Year, data = df, FUN = mean)
+})
+# Extract values into matrix
+data_excess <- matrix(0, nrow = nrow(monthly_means[[1]]), ncol = p)
+for (i in 1:p) {
+  data_excess[, i] <- as.numeric(monthly_means[[i]][, 3])
 }
+colnames(data_excess) <- tickers
 
-colnames(DataExcRtn) <- tickers
-head(DataExcRtn)
 # draw graph
 plot1 <- ggplot(df, aes(x = Date, y = AAPL)) +
   geom_line(color = "blue", linewidth=1.2) + 
@@ -172,27 +166,34 @@ plot2 <- ggplot(df, aes(x = Date, y = NFLX)) +
 
 grid.arrange(plot1, plot2, ncol=2, nrow = 1)
 
-# Hyperparameters #
-N <- dim(DataExcRtn)[1]
-mu0 <- rep(0, p)
-beta0 <- 1
-Psi0 <- 100 * diag(p)
-alpha0 <- p + 2
+# Hyperparameters
+N <- nrow(data_excess)
+mu_0 <- rep(0, p)
+beta_0 <- 1
+psi_0 <- 100 * diag(p)
+alpha_0 <- p + 2
 
-# Posterior parameters #
-alphan <- N + alpha0
-vn <- alphan + 1 - p
-muhat <- colMeans(DataExcRtn)
-mun <- N/(N + beta0) * muhat + beta0/(N + beta0) * mu0
-S <- t(DataExcRtn - rep(1, N)%*%t(muhat))%*%(DataExcRtn - rep(1, N)%*%t(muhat)) 
-Psin <- Psi0 + S + N*beta0/(N + beta0)*(muhat - mu0)%*%t(muhat - mu0)
-betan <- N + beta0
-Sigman <- Psin/((alphan + 1 - p)*betan)
-Covarn <- (Sigman * (1 + betan)) * vn / (vn - 2)
-Covari <- solve(Covarn)
-OptShare <- t(Covari%*%mun/as.numeric((t(rep(1, p))%*%Covari%*%mun)))
-colnames(OptShare) <- tickers
-OptShare
+# Posterior parameters
+alpha_n <- N + alpha_0
+v_n <- alpha_n + 1 - p
+mu_hat <- colMeans(data_excess)
+mu_n <- (N / (N + beta_0)) * mu_hat + (beta_0 / (N + beta_0)) * mu_0
+S <- t(data_excess - matrix(mu_hat, N, p, byrow = TRUE)) %*% 
+  (data_excess - matrix(mu_hat, N, p, byrow = TRUE))
+psi_n <- psi_0 + S + (N * beta_0 / (N + beta_0)) * 
+  tcrossprod(mu_hat - mu_0)
+
+beta_n <- N + beta_0
+sigma_n <- psi_n / ((alpha_n + 1 - p) * beta_n)
+cov_n <- (sigma_n * (1 + beta_n)) * v_n / (v_n - 2)
+cov_inv <- solve(cov_n)
+
+# Optimal portfolio weights (Bayesian mean-variance)
+opt_weights <- t(cov_inv %*% mu_n / as.numeric(t(rep(1, p)) %*% cov_inv %*% mu_n))
+colnames(opt_weights) <- tickers
+
+# Result
+opt_weights
 
 ########################## Linear regression example ##########################
 rm(list = ls())
