@@ -21,7 +21,7 @@ is the marginal likelihood, and $\pi(\boldsymbol{\theta}_j | \mathcal{M}_j)$ is 
 
 Following @Raftery93, the posterior distribution of $\boldsymbol{\theta}$ is 
 \begin{equation*}
-	\pi(\boldsymbol{\theta}|\boldsymbol{y})= \sum_{m=1}^{2^K}\pi(\boldsymbol{\theta}_m|\boldsymbol{y},\mathcal{M}_m) \pi(\mathcal{M}_m|\boldsymbol{y})
+	\pi(\boldsymbol{\theta}|\boldsymbol{y})= \sum_{m=1}^{2^K}\pi(\boldsymbol{\theta}_m|\boldsymbol{y},\mathcal{M}_m) \pi(\mathcal{M}_m|\boldsymbol{y}).
 \end{equation*}
 The posterior distribution of the parameter vector \(\boldsymbol{\theta}\) under model \(\mathcal{M}_m\) is denoted as \(\pi(\boldsymbol{\theta}_m|\boldsymbol{y}, \mathcal{M}_m)\). The posterior mean of \(\boldsymbol{\theta}\) is given by:
 \[
@@ -41,7 +41,7 @@ The posterior variance highlights how BMA accounts for model uncertainty. The fi
 
 The posterior predictive distribution is
 \begin{equation*}
-	\pi(\boldsymbol{y}_0|\boldsymbol{y})= \sum_{m=1}^{2^K}p_m(\boldsymbol{y}_0|\boldsymbol{y},\mathcal{M}_m) \pi(M_m|\boldsymbol{y})
+	\pi(\boldsymbol{y}_0|\boldsymbol{y})= \sum_{m=1}^{2^K}p_m(\boldsymbol{y}_0|\boldsymbol{y},\mathcal{M}_m) \pi(M_m|\boldsymbol{y}),
 \end{equation*}
 
 where $p_m(\boldsymbol{y}_0|\boldsymbol{y},\mathcal{M}_m)=\int_{\boldsymbol{\Theta}_m} p(\boldsymbol{y}_0|\boldsymbol{y},\boldsymbol{\theta}_m,\mathcal{M}_m)\pi(\boldsymbol{\theta}_m |\boldsymbol{y}, \mathcal{M}_m) d\boldsymbol{\theta}_{m}$ is the posterior predictive distribution under model $\mathcal{M}_m$. 
@@ -128,7 +128,7 @@ The marginal likelihood thus asymptotically converges to a linear transformation
 
 ## The Gaussian linear model {#sec102}
 
-The Gaussian linear model specifies $\boldsymbol{y}=\alpha\boldsymbol{i}_N+\boldsymbol{X}_m\boldsymbol{\beta}_m+\boldsymbol{\mu}_m$ such that $\boldsymbol{\mu}_m\sim{N}(\boldsymbol{0},\sigma^2\boldsymbol{I}_n)$, and $\boldsymbol{X}_m$ does not have the column of ones. Following @koop2003bayesian, the conjugate prior for the location parameters is $\boldsymbol{\beta}_m|\sigma^2 \sim {N}(\boldsymbol{\beta}_{m0}, \sigma^2 \boldsymbol{B}_{m0})$, and the priors for $\sigma^2$ and $\alpha$ can be improper, as these parameters are common to all models $\mathcal{M}_m$. Particularly, $\pi(\sigma^2)\propto 1/\sigma^2$ (Jeffreys' prior for the linear Gaussian model, see @prior1991bayesian) and $\pi(\alpha)\propto 1$.
+The Gaussian linear model specifies $\boldsymbol{y}=\alpha\boldsymbol{i}_N+\boldsymbol{X}_m\boldsymbol{\beta}_m+\boldsymbol{\mu}_m$ such that $\boldsymbol{\mu}_m\sim{N}(\boldsymbol{0},\sigma^2\boldsymbol{I}_n)$, $\boldsymbol{i}_N$ is a $N$-dimensional column of ones, $\boldsymbol{X}_m$ is the design matrix without the column of ones, and $N$ is the sample size. Following @koop2003bayesian, the conjugate prior for the location parameters is $\boldsymbol{\beta}_m|\sigma^2 \sim {N}(\boldsymbol{\beta}_{m0}, \sigma^2 \boldsymbol{B}_{m0})$, and the priors for $\sigma^2$ and $\alpha$ can be improper, as these parameters are common to all models $\mathcal{M}_m$. Particularly, $\pi(\sigma^2)\propto 1/\sigma^2$ (Jeffreys' prior for the linear Gaussian model, see @prior1991bayesian) and $\pi(\alpha)\propto 1$.
 
 The selection of the hyperparameters of $\boldsymbol{\beta}_m$ is more critical, as these parameters are not common to all models. A very common prior for the location parameters in the BMA literature is the Zellner's prior [@zellner1986assessing], where $\boldsymbol{\beta}_{m0}=\boldsymbol{0}_m$ and $\boldsymbol{B}_{m0}=(g_m\boldsymbol{X}_m^{\top}\boldsymbol{X}_m)^{-1}$. Observe that this covariance matrix is similar to the covariance matrix of the ordinary least squares estimator of the location parameters. This suggests that there is compatibility between the prior information and the sample information, and the only parameter to elicit is $g_m\geq 0$, which facilitates the elicitation process, as eliciting covariance matrices is a very hard endeavor.
 
@@ -138,9 +138,11 @@ Following same steps as in Section \@ref(sec43), the posterior conditional distr
 	\begin{Bmatrix}
 		1/K^2, & N \leq K^2\\
 		1/N, & N>K^2 
-	\end{Bmatrix}.
+	\end{Bmatrix},
 \end{align*}  
- 
+
+where $K$ is the number of regressors. 
+
 Given the likelihood function, 
 \begin{equation*}
 	p(\boldsymbol{\beta}_m, \sigma^2|\boldsymbol{y}, \boldsymbol{X}_m) = (2\pi\sigma^2)^{-\frac{N}{2}} \exp \left\{-\frac{1}{2\sigma^2} (\boldsymbol{y} - \alpha\boldsymbol{i}_N - \boldsymbol{X}_m\boldsymbol{\beta}_m)^{\top}(\boldsymbol{y} - \alpha\boldsymbol{i}_N - \boldsymbol{X}_m\boldsymbol{\beta}_m) \right\},
@@ -159,7 +161,7 @@ Let's perform a simulation exercise to assess the performance of the BIC approxi
 
 Our GUI uses the commands *bicreg* and *MC3.REG* from the package *BMA* to perform Bayesian model averaging in the linear regression model using the BIC approximation and MC3, respectively. These commands in turn are based on @Raftery1995 and @Raftery1997. The following code shows how to perform the simulation and get the posterior mean and standard deviation using these commands with the default values of hyperparameters and tuning parameters.
 
-```{r}
+```{r, eval =FALSE}
 rm(list = ls()); set.seed(010101)
 N <- 1000
 K1 <- 6; K2 <- 4; K <- K1 + K2
@@ -281,7 +283,7 @@ Although BMA allows incorporating model uncertainty in a regression framework, s
 
 We also show how to estimate the posterior mean and standard deviation based on BMA in this code. We see that the posterior means are very close to the population parameters.  
 
-```{r}
+```{r, eval =FALSE}
 rm(list = ls()); set.seed(010101)
 N <- 1000
 K1 <- 6; K2 <- 4; K <- K1 + K2
@@ -524,7 +526,7 @@ Let's assume that $y_i = 2 + 0.5x_{i1} - x_{i2} + x_{i3} + \mu_i$, where $x_{i1}
 
 The following code shows how to perform IV BMA using the *ivbma* package. We see from the results that the PIP of $x_{i1}$, $x_{i2}$, intercept and $x_{i3}$ are equal to 1, whereas the remaining PIP are close to 0. In addition, the BMA means are also close to the population values. The PIP of the first stage equations, as well as their BMA posterior means, are very close to the populations values. The same happens with the covariance matrix. 
 
-```{r}
+```{r, eval =FALSE}
 rm(list = ls())
 set.seed(010101)
 simIV <- function(delta1,delta2,beta0,betas1,betas2,beta2,Sigma,n,z) {
@@ -646,7 +648,7 @@ where $\mu_t \sim N(0,1)$ for $t = 1, 2, \dots, 500$. This setting implies that 
 
 The following code shows the simulation exercise and the results of the dynamic Bayesian model averaging, setting $\lambda = \delta = 0.99$.
 
-```{r}
+```{r, eval =FALSE}
 			rm(list = ls()); set.seed(010101)
 			T <- 500; K <- 3
 			X <- matrix(rnorm(T*K, mean = 0.5, sd = 0.8), T, K)
@@ -746,7 +748,7 @@ The simulation setting involves $2^{27}$ models, which corresponds to approximat
 
 In Exercise 10, we ask you to use this approach to perform a BMA algorithm in the logit regression, using the simulation setting for logit models from this section.
 
-```{r}
+```{r, eval =FALSE}
 ### Logit ###
 rm(list = ls()); set.seed(010101)
 n<-1000; B<-c(0.5,0.8,-1.2)
@@ -1045,7 +1047,7 @@ We see in this example that these methods give very good approximations to the t
 
 The following code shows how to do all these calculations.
 
-```{r}
+```{r, eval =FALSE}
 rm(list = ls()); set.seed(010101)
 N <- 500; K <- 5; K2 <- 3 
 B <- c(0.7, 0.3, 0.7, -0.2, 0.2) 

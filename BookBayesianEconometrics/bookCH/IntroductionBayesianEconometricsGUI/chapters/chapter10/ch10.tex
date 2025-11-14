@@ -32,7 +32,7 @@ is the marginal likelihood, and $\pi(\bm{\theta}_j | \mathcal{M}_j)$ is the prio
 
 Following \cite{Raftery93}, the posterior distribution of $\bm{\theta}$ is 
 \begin{equation*}
-	\pi(\bm{\theta}|\bm{y})= \sum_{m=1}^{2^K}\pi(\bm{\theta}_m|\bm{y},\mathcal{M}_m) \pi(\mathcal{M}_m|\bm{y})
+	\pi(\bm{\theta}|\bm{y})= \sum_{m=1}^{2^K}\pi(\bm{\theta}_m|\bm{y},\mathcal{M}_m). \pi(\mathcal{M}_m|\bm{y})
 \end{equation*}
 The posterior distribution of the parameter vector \(\bm{\theta}\) under model \(\mathcal{M}_m\) is denoted as \(\pi(\bm{\theta}_m|\bm{y}, \mathcal{M}_m)\). The posterior mean of \(\bm{\theta}\) is given by:
 \[
@@ -52,7 +52,7 @@ The posterior variance highlights how BMA accounts for model uncertainty. The fi
 
 The posterior predictive distribution is
 \begin{equation*}
-	\pi(\bm{y}_0|\bm{y})= \sum_{m=1}^{2^K}p_m(\bm{y}_0|\bm{y},\mathcal{M}_m) \pi(M_m|\bm{y})
+	\pi(\bm{y}_0|\bm{y})= \sum_{m=1}^{2^K}p_m(\bm{y}_0|\bm{y},\mathcal{M}_m), \pi(M_m|\bm{y})
 \end{equation*}
 
 where $p_m(\bm{y}_0|\bm{y},\mathcal{M}_m)=\int_{\bm{\Theta}_m} p(\bm{y}_0|\bm{y},\bm{\theta}_m,\mathcal{M}_m)\pi(\bm{\theta}_m |\bm{y}, \mathcal{M}_m) d\bm{\theta}_{m}$ is the posterior predictive distribution under model $\mathcal{M}_m$. 
@@ -141,7 +141,7 @@ The marginal likelihood thus asymptotically converges to a linear transformation
 
 \section{The Gaussian linear model}\label{sec10_2}
 
-The Gaussian linear model specifies $\bm{y}=\alpha\bm{i}_N+\bm{X}_m\bm{\beta}_m+\bm{\mu}_m$ such that $\bm{\mu}_m\sim{N}(\bm{0},\sigma^2\bm{I}_n)$, and $\bm{X}_m$ does not have the column of ones. Following \cite{koop2003bayesian}, the conjugate prior for the location parameters is $\bm{\beta}_m|\sigma^2 \sim {N}(\bm{\beta}_{m0}, \sigma^2 \bm{B}_{m0})$, and the priors for $\sigma^2$ and $\alpha$ can be improper, as these parameters are common to all models $\mathcal{M}_m$. Particularly, $\pi(\sigma^2)\propto 1/\sigma^2$ (Jeffreys' prior for the linear Gaussian model, see \cite{prior1991bayesian}) and $\pi(\alpha)\propto 1$.
+The Gaussian linear model specifies $\bm{y}=\alpha\bm{i}_N+\bm{X}_m\bm{\beta}_m+\bm{\mu}_m$ such that $\bm{\mu}_m\sim{N}(\bm{0},\sigma^2\bm{I}_n)$, $\bm{i}_N$ is a $N$-dimensional column of ones, $\bm{X}_m$ is the design matrix without the column of ones, and $N$ is the sample size. Following \cite{koop2003bayesian}, the conjugate prior for the location parameters is $\bm{\beta}_m|\sigma^2 \sim {N}(\bm{\beta}_{m0}, \sigma^2 \bm{B}_{m0})$, and the priors for $\sigma^2$ and $\alpha$ can be improper, as these parameters are common to all models $\mathcal{M}_m$. Particularly, $\pi(\sigma^2)\propto 1/\sigma^2$ (Jeffreys' prior for the linear Gaussian model, see \cite{prior1991bayesian}) and $\pi(\alpha)\propto 1$.
 
 The selection of the hyperparameters of $\bm{\beta}_m$ is more critical, as these parameters are not common to all models. A very common prior for the location parameters in the BMA literature is the Zellner's prior \cite{zellner1986assessing}, where $\bm{\beta}_{m0}=\bm{0}_m$ and $\bm{B}_{m0}=(g_m\bm{X}_m^{\top}\bm{X}_m)^{-1}$. Observe that this covariance matrix is similar to the covariance matrix of the ordinary least squares estimator of the location parameters. This suggests that there is compatibility between the prior information and the sample information, and the only parameter to elicit is $g_m\geq 0$, which facilitates the elicitation process, as eliciting covariance matrices is a very hard endeavor.
 
@@ -151,13 +151,15 @@ Following same steps as in Section \ref{sec43}, the posterior conditional distri
 	\begin{Bmatrix}
 		1/K^2, & N \leq K^2\\
 		1/N, & N>K^2 
-	\end{Bmatrix}.
-\end{align*}  
+	\end{Bmatrix},
+\end{align*} 
+where $K$ is the number of regressors.
  
 Given the likelihood function, 
-\begin{equation*}
-	p(\bm{\beta}_m, \sigma^2|\bm{y}, \bm{X}_m) = (2\pi\sigma^2)^{-\frac{N}{2}} \exp \left\{-\frac{1}{2\sigma^2} (\bm{y} - \alpha\bm{i}_N - \bm{X}_m\bm{\beta}_m)^{\top}(\bm{y} - \alpha\bm{i}_N - \bm{X}_m\bm{\beta}_m) \right\},
-\end{equation*}
+\begin{align*}
+	p(\bm{\beta}_m, \sigma^2|\bm{y}, \bm{X}_m) &= (2\pi\sigma^2)^{-\frac{N}{2}}\\
+	&\times \exp \left\{-\frac{1}{2\sigma^2} (\bm{y} - \alpha\bm{i}_N - \bm{X}_m\bm{\beta}_m)^{\top}(\bm{y} - \alpha\bm{i}_N - \bm{X}_m\bm{\beta}_m) \right\},
+\end{align*}
 the marginal likelihood associated with model $\mathcal{M}_m$ is proportional to (Exercise 1) 
 \begin{align*}
 	p(\bm{y}|\mathcal{M}_m)&\propto \left(\frac{g_m}{1+g_m}\right)^{k_m/2} \left[(\bm{y}-\bar{y}\bm{i}_N)^{\top}(\bm{y}-\bar{y}\bm{i}_N)-\frac{1}{1+g_m}(\bm{y}^{\top}\bm{P}_{X_m}\bm{y})\right]^{-(N-1)/2},
@@ -177,16 +179,11 @@ Our GUI uses the commands \textit{bicreg} and \textit{MC3.REG} from the package 
 	\textit{R code. Simulation exercise: Bayesian model averaging, small setting}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-rm(list = ls()); set.seed(010101)
+rm(list = ls()); set.seed(10101)
 N <- 1000
 K1 <- 6; K2 <- 4; K <- K1 + K2
 X1 <- matrix(rnorm(N*K1,1 ,1), N, K1)
 X2 <- matrix(rbinom(N*K2, 1, 0.5), N, K2)
-X <- cbind(X1, X2); e <- rnorm(N, 0, 0.5)
-B <- c(1,0,0,0,0.5,0,0,0,0,-0.7)
-y <- 1 + X%*%B + e
-BMAglm <- BMA::bicreg(X, y, strict = FALSE, OR = 50) 
-summary(BMAglm)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
@@ -196,6 +193,11 @@ summary(BMAglm)
 	\textit{R code. Simulation exercise: Bayesian model averaging, small setting}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
+X <- cbind(X1, X2); e <- rnorm(N, 0, 0.5)
+B <- c(1,0,0,0,0.5,0,0,0,0,-0.7)
+y <- 1 + X%*%B + e
+BMAglm <- BMA::bicreg(X, y, strict = FALSE, OR = 50) 
+summary(BMAglm)
 BMAreg <- BMA::MC3.REG(y, X, num.its=500)
 Models <- unique(BMAreg[["variables"]])
 nModels <- dim(Models)[1]
@@ -235,13 +237,7 @@ for(m in 1:nModels){
 }
 BMAmeans <- colSums(Means*PMP)
 BMAsd <- (colSums(PMP*Vars)  + colSums(PMP*(Means-matrix(rep(BMAmeans, each = nModels), nModels, K))^2))^0.5
-BMAmeans
-[1]  1.001771e+00 -5.322016e-05  6.635422e-06  3.721457e-07  4.976335e-01
-[6] -1.271339e-04  1.000932e-08  2.107441e-05  6.578654e-06 -7.035557e-01 
-BMAsd
-[1] 1.527261e-02 1.353624e-03 5.936816e-04 1.163947e-04 1.566698e-02 1.987360e-03
-[7] 2.778896e-05 1.270579e-03 6.997305e-04 3.093389e-02
-BMAmeans/BMAsd
+BMAmeans; BMAsd; BMAmeans/BMAsd
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
@@ -322,6 +318,15 @@ for(k in 1:K){
 }
 PIP
 nModels <- dim(combs)[1]; Means <- matrix(0, nModels, K)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Bayesian model averaging, small setting from scratch}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 Vars <- matrix(0, nModels, K)
 for(m in 1:nModels){
 	idXs <- which(combs[m,] == 1)
@@ -336,13 +341,13 @@ for(m in 1:nModels){
 }
 BMAmeans <- colSums(Means*PMP)
 BMAsd <- (colSums(PMP*Vars)  + colSums(PMP*(Means-matrix(rep(BMAmeans, each = nModels), nModels, K))^2))^0.5
-\end{lstlisting}
+		\end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
 
-The following part of the code demonstrates how to perform the MC3 algorithm. While this algorithm is not strictly necessary for this small-dimensional problem, it serves as a useful pedagogical exercise. The starting point is to set $S=100$ random models and order their log marginal likelihoods. The logic of the algorithm is to select the worst model among the $S$ models and propose a candidate model to compete against it. We repeat this process for 1000 iterations (as shown in the code). Note that 1000 iterations is fewer than the number of potential models (1024). This is the essence of the MC3 algorithm: performing fewer iterations than the number of models in the space.\footnote{Note that we have split the \textit{while} loop in the code into two pages.}
+The following part of the code demonstrates how to perform the MC3 algorithm. While this algorithm is not strictly necessary for this small-dimensional problem, it serves as a useful pedagogical exercise. The starting point is to set $S=100$ random models and order their log marginal likelihoods. The logic of the algorithm is to select the worst model among the $S$ models and propose a candidate model to compete against it. We repeat this process for 1,000 iterations (as shown in the code). Note that 1,000 iterations is fewer than the number of potential models (1,024). This is the essence of the MC3 algorithm: performing fewer iterations than the number of models in the space.\footnote{Note that we have split the \textit{while} loop in the code into two pages.}
 
-In our algorithm, we analyze all model scenarios using different conditionals and reasonably assume the same prior model probability for all models, with the same cardinality for both the actual and candidate models. The posterior model probability (PMP) can be calculated in several ways. One method is to recover the unique models from the final set of $S$ models, calculate the log marginal likelihood for these models, and then standardize by the best model among them. Another method involves calculating the PMP using the complete set of $S$ final models, accounting for the fact that some models may appear multiple times in the set, which requires summing the PMPs of repeated models. A third method is to calculate the PMP based on the relative frequency with which a model appears in the final set of $S$ models. These three methods can yield different PMPs, particularly when the number of MC3 iterations is small. In our example, using 1000 MC3 iterations, the data-generating process receives the highest PMP across all three methods.
+In our algorithm, we analyze all model scenarios using different conditionals and reasonably assume the same prior model probability for all models, with the same cardinality for both the actual and candidate models. The posterior model probability (PMP) can be calculated in several ways. One method is to recover the unique models from the final set of $S$ models, calculate the log marginal likelihood for these models, and then standardize by the best model among them. Another method involves calculating the PMP using the complete set of $S$ final models, accounting for the fact that some models may appear multiple times in the set, which requires summing the PMPs of repeated models. A third method is to calculate the PMP based on the relative frequency with which a model appears in the final set of $S$ models. These three methods can yield different PMPs, particularly when the number of MC3 iterations is small. In our example, using 1,000 MC3 iterations, the data-generating process receives the highest PMP across all three methods.
 
 A noteworthy aspect of this algorithm is that we can obtain a single model after significantly increasing the number of iterations (for example, try using 10,000 iterations). This can be advantageous if we require only one model. However, this approach neglects model uncertainty, which could be a desirable characteristic in some cases. As a challenge, we suggest programming an algorithm that yields $S$ different models after completing the MC3 iterations (Exercise 3).
 
@@ -383,12 +388,22 @@ while(s <= iter){
 				LessX <- sample(1:K, 1); CandModel <- ActModel
 				CandModel[LessX] <- 0
 			}
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Bayesian model averaging, small setting from scratch}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+
 		}else{
 			if(K == 1){
-				opt <- sample(1:3, 1)
-				if(opt == 1){ # Same
-					CandModel <- ActModel
-				}else{
+			opt <- sample(1:3, 1)
+			if(opt == 1){ # Same
+				CandModel <- ActModel
+			}else{
 					if(opt == 2){ # Add
 						All <- 1:K; NewX <- sample(All[-idK], 1)
 						CandModel <- ActModel; CandModel[NewX] <- 1
@@ -403,15 +418,6 @@ while(s <= iter){
 			}
 		}
 	}
-\end{lstlisting}
-	\end{VF}
-\end{tcolorbox} 
-
-\begin{tcolorbox}[enhanced,width=4.67in,center upper,
-	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Simulation exercise: Bayesian model averaging, small setting from scratch}
-	\begin{VF}
-		\begin{lstlisting}[language=R]
 	LogMLact <- LogMLfunt(matrix(ActModel, 1, K))
 	LogMLcand <- LogMLfunt(matrix(CandModel, 1, K))
 	alpha <- min(1, exp(LogMLcand-LogMLact))
@@ -437,6 +443,15 @@ PMPold <- StMarLik/sum(StMarLik) # PMP all selected models
 PMPot <- NULL
 PMPap <- NULL
 FreqMod <- NULL
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+ 
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Bayesian model averaging, small setting from scratch}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 for(m in 1:nModels){
 	idModm <- NULL
 	for(j in 1:M){
@@ -452,15 +467,6 @@ for(m in 1:nModels){
 	PMPap <- c(PMPap, PMPapm)
 	FreqMod <- c(FreqMod, length(idModm))
 }
-\end{lstlisting}
-	\end{VF}
-\end{tcolorbox} 
- 
-\begin{tcolorbox}[enhanced,width=4.67in,center upper,
-	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Simulation exercise: Bayesian model averaging, small setting from scratch}
-	\begin{VF}
-		\begin{lstlisting}[language=R]
 PIP <- NULL
 for(k in 1:K){
 	PIPk <- sum(PMP[which(ModelsUni[,k] == 1)])
