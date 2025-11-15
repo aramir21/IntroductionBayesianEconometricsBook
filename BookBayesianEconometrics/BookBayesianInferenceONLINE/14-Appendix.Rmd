@@ -1,21 +1,204 @@
 # Appendix {-}
 
-```{r tabGUI, echo=FALSE}
+This Appendix presents the tables summarizing the packages and commands used in our Graphical User Interface (GUI). It also provides the simulated and real datasets employed in all examples throughout the second part of the book.
 
-knitr::kable(
-  head(mtcars[, 1:8], 10), booktabs = TRUE, caption = 'Libraries and commands in our graphical user interface.'
+## Packages and commands in BEsmarter GUI {-}
+```{r, echo=FALSE, message=FALSE, results='asis'}
+library(dplyr)
+library(knitr)
+suppressWarnings(
+  suppressPackageStartupMessages(
+    library(kableExtra)
+  )
 )
+
+tab_gui <- tibble::tribble(
+  ~Section,                     ~Model,                                   ~Library,       ~Command,             ~Reference,
+  # Univariate models
+  "Univariate models",          "Normal",                                 "MCMCpack",     "MCMCregress",        "@Martin2018",
+  "Univariate models",          "Logit",                                  "MCMCpack",     "MCMClogit",          "@Martin2018",
+  "Univariate models",          "Probit",                                 "bayesm",       "rbprobitGibbs",      "@Rossi2017",
+  "Univariate models",          "Multinomial (Mixed) Probit",             "bayesm",       "rmnpGibbs",          "@Rossi2017",
+  "Univariate models",          "Multinomial (Mixed) Logit",              "bayesm",       "rmnlIndepMetrop",    "@Rossi2017",
+  "Univariate models",          "Ordered Probit",                         "bayesm",       "rordprobitGibbs",    "@Rossi2017",
+  "Univariate models",          "Negative Binomial (Poisson)",            "bayesm",       "rnegbinRw",          "@Rossi2017",
+  "Univariate models",          "Tobit",                                  "MCMCpack",     "MCMCtobit",          "@Martin2018",
+  "Univariate models",          "Quantile",                               "MCMCpack",     "MCMCquantreg",       "@Martin2018",
+  "Univariate models",          "Bayesian bootstrap",                     "bayesboot",    "bayesboot",          "@Baath2018",
+
+  # Multivariate models
+  "Multivariate models",        "Multivariate",                           "bayesm",       "rmultireg",          "@Rossi2017",
+  "Multivariate models",        "Seemingly Unrelated Regression",         "bayesm",       "rsurGibbs",          "@Rossi2017",
+  "Multivariate models",        "Instrumental Variable",                  "bayesm",       "rivGibbs",           "@Rossi2017",
+  "Multivariate models",        "Bivariate Probit",                       "bayesm",       "rmvpGibbs",          "@Rossi2017",
+
+  # Time series models
+  "Time series models",         "Normal dynamic linear model",            "dlm",          "dlmGibbsDIGs",       "@dlmPackage2010",
+  "Time series models",         "ARMA",                                   "bayesforecast","stan_sarima",        "@bayesforecast2020",
+  "Time series models",         "Stochastic volatility models",           "stochvol",     "svsample",           "@hosszejni_kastner_2021",
+  "Time series models",         "VAR",                                    "bvartools",    "draw_posterior",     "@bvartools2024",
+
+  # Hierarchical longitudinal models
+  "Hierarchical longitudinal models", "Normal",                           "MCMCpack",     "MCMChregress",       "@Martin2018",
+  "Hierarchical longitudinal models", "Logit",                            "MCMCpack",     "MCMChlogit",         "@Martin2018",
+  "Hierarchical longitudinal models", "Poisson",                          "MCMCpack",     "MCMChpoisson",       "@Martin2018",
+
+  # Bayesian model averaging
+  "Bayesian model averaging",   "Normal (BIC)",                           "BMA",          "bicreg",             "@Raftery2012",
+  "Bayesian model averaging",   "Normal (MC3)",                          "BMA",          "MC3.REG",            "@Raftery2012",
+  "Bayesian model averaging",   "Normal (instrumental variables)",        "ivbma",        "ivbma",              "@Lenkoski2013",
+  "Bayesian model averaging",   "Normal (Dynamic BMA)",                   "dma",          "dma",                "@dma2018",
+  "Bayesian model averaging",   "Logit (BIC)",                            "BMA",          "bic.glm",            "@Raftery2012",
+  "Bayesian model averaging",   "Gamma (BIC)",                            "BMA",          "bic.glm",            "@Raftery2012",
+  "Bayesian model averaging",   "Poisson (BIC)",                          "BMA",          "bic.glm",            "@Raftery2012",
+
+  # Diagnostics
+  "Diagnostics",                "Trace plot",                             "coda",         "traceplot",          "@Plummer2016",
+  "Diagnostics",                "Autocorrelation plot",                   "coda",         "autocorr.plot",      "@Plummer2016",
+  "Diagnostics",                "Geweke test",                            "coda",         "geweke.diag",        "@Plummer2016",
+  "Diagnostics",                "Raftery & Lewis test",                   "coda",         "raftery.diag",       "@Plummer2016",
+  "Diagnostics",                "Heidelberger & Welch test",              "coda",         "heidel.diag",        "@Plummer2016"
+)
+
+k <- tab_gui |>
+  select(Model, Library, Command, Reference) |>
+  kable(
+    booktabs = TRUE,
+    col.names = c("Model", "Library", "Command", "Reference")
+  ) |>
+  kable_styling(full_width = FALSE) |>
+  pack_rows("Univariate models",              1, 10)  |>
+  pack_rows("Multivariate models",           11, 14)  |>
+  pack_rows("Time series models",            15, 18)  |>
+  pack_rows("Hierarchical longitudinal models", 19, 21) |>
+  pack_rows("Bayesian model averaging",      22, 28)  |>
+  pack_rows("Diagnostics",                   29, 33)
+
+k
 
 ```
 
-```{r tabDataSim, echo=FALSE}
-knitr::kable(
-  head(mtcars[, 1:8], 10), booktabs = TRUE, caption = 'Datasets templates in folder DataSim.'
+## Datasets templates in folder DataSim {-}
+
+```{r, echo=FALSE, results='asis'}
+library(dplyr)
+library(knitr)
+library(kableExtra)
+
+tab_sim <- tibble::tribble(
+  ~Section,                     ~Model,                             ~DataFile,                          ~SimFile,
+  # Univariate models
+  "Univariate models",          "Normal",                           "11SimNormalmodel.csv",            "11SimNormal.R",
+  "Univariate models",          "Logit",                            "12SimLogitmodel.csv",             "12SimLogit.R",
+  "Univariate models",          "Probit",                           "13SimProbitmodel.csv",            "13SimProbit.R",
+  "Univariate models",          "Multinomial (Mixed) Probit",       "14SimMultProbmodel.csv",          "14SimMultinomialProbit.R",
+  "Univariate models",          "Multinomial (Mixed) Logit",        "15SimMultLogitmodel.csv",         "15SimMultinomialLogit.R",
+  "Univariate models",          "Ordered Probit",                   "16SimOrderedProbitmodel.csv",     "16SimOrderedProbit.R",
+  "Univariate models",          "Negative Binomial (Poisson)",      "17SimNegBinmodel.csv",            "17SimNegBin.R",
+  "Univariate models",          "Tobit",                            "18SimTobitmodel.csv",             "18SimTobit.R",
+  "Univariate models",          "Quantile",                         "19SimQuantilemodel.csv",          "19SimQuantile.R",
+  "Univariate models",          "Bayesian bootstrap",               "110SimBootstrapmodel.csv",        "110SimBootstrapmodel.R",
+
+  # Multivariate models
+  "Multivariate models",        "Multivariate",                     "21SimMultivariate.csv",           "21SimMultReg.R",
+  "Multivariate models",        "Seemingly Unrelated Regression",   "22SimSUR.csv",                    "22SimSUR.R",
+  "Multivariate models",        "Instrumental Variable",            "23SimIV.csv",                     "23SimIV.R",
+  "Multivariate models",        "Bivariate Probit",                 "24SimMultProbit.csv",             "24SimMultProbit.R",
+
+  # Time series models
+  "Time series models",         "Dynamic Linear Models",            "31SimDynamicLinearModel.csv",     "31SimDynamicLinearModel.R",
+  "Time series models",         "ARMA",                             "32SimARMAmodels.csv",             "32SimARMAmodels.R",
+  "Time series models",         "Stochastic volatility models",     "33SimStochasticVolatility.csv",   "33SimStochasticVolatility.R",
+  "Time series models",         "VAR",                              "34SimVARmodels.csv",              "34SimVARmodels.R",
+
+  # Hierarchical longitudinal models
+  "Hierarchical longitudinal models", "Normal",                     "41SimLogitudinalNormal.csv",      "41SimLogitudinalNormal.R",
+  "Hierarchical longitudinal models", "Logit",                      "42SimLogitudinalLogit.csv",       "42SimLogitudinalLogit.R",
+  "Hierarchical longitudinal models", "Poisson",                    "43SimLogitudinalPoisson.csv",     "43SimLogitudinalPoisson.R",
+
+  # Bayesian model averaging
+  "Bayesian model averaging",   "Normal (BIC)",                     "511SimNormalBMA.csv",             "511SimNormalBMA.R",
+  "Bayesian model averaging",   "Normal (MC3)",                    "512SimNormalBMA.csv",             "512SimNormalBMA.R",
+  "Bayesian model averaging",   "Normal (instrumental variables)",  "513SimNormalBMAivYXW.csv",        "513SimNormalBMAiv.R",
+  "Bayesian model averaging",   "",                                 "513SimNormalBMAivZ.csv",          "",
+  "Bayesian model averaging",   "Normal (Dynamic BMA)",             "514SimDynamicBMA.csv",            "514SimDynamicBMA.R",
+  "Bayesian model averaging",   "",                                 "514SimModels.csv",                "",
+  "Bayesian model averaging",   "Logit (BIC)",                      "52SimLogitBMA.csv",               "52SimLogitBMA.R",
+  "Bayesian model averaging",   "Gamma (BIC)",                      "53SimGammaBMA.csv",               "53SimGammaBMA.R",
+  "Bayesian model averaging",   "Poisson (BIC)",                    "53SimPoissonBMA.csv",             "53SimPoissonBMA.R"
 )
+
+kable(tab_sim %>% select(Model, DataFile, SimFile),
+      booktabs = TRUE,
+      col.names = c("Model", "Data set file", "Data set simulation")
+) |>
+  kable_styling(full_width = FALSE) |>
+  pack_rows("Univariate models",                1, 10) |>
+  pack_rows("Multivariate models",             11, 14) |>
+  pack_rows("Time series models",              15, 18) |>
+  pack_rows("Hierarchical longitudinal models",19, 21) |>
+  pack_rows("Bayesian model averaging",        22, 30)
 ```
 
-```{r tabDataApp, echo=FALSE}
-knitr::kable(
-  head(mtcars[, 1:8], 10), booktabs = TRUE, caption = 'Real datasets in folder DataApp.'
+## Real datasets in folder DataApp {-}
+
+```{r tab:appdata, echo=FALSE, message=FALSE, warning=FALSE}
+library(dplyr)
+library(knitr)
+library(kableExtra)
+
+tab_app <- tibble::tribble(
+  ~Section,                      ~Model,                             ~DataFile,                        ~Dependent,
+
+  # Univariate models
+  "Univariate models",           "Normal",                           "1ValueFootballPlayers.csv",      "log(Value)",
+  "Univariate models",           "Logit",                            "2HealthMed.csv",                 "Hosp",
+  "Univariate models",           "Probit",                           "2HealthMed.csv",                 "Hosp",
+  "Univariate models",           "Multinomial (Mixed) Probit",       "Fishing.csv",                    "mode",
+  "Univariate models",           "Multinomial (Mixed) Logit",        "Fishing.csv",                    "mode",
+  "Univariate models",           "Ordered Probit",                   "2HealthMed.csv",                 "MedVisPrevOr",
+  "Univariate models",           "Negative Binomial (Poisson)",      "2HealthMed.csv",                 "MedVisPrev",
+  "Univariate models",           "Tobit",                            "1ValueFootballPlayers.csv",      "log(ValueCens)",
+  "Univariate models",           "Quantile",                         "1ValueFootballPlayers.csv",      "log(Value)",
+  "Univariate models",           "Bayesian bootstrap",               "1ValueFootballPlayers.csv",      "log(Value)",
+
+  # Multivariate models
+  "Multivariate models",         "Multivariate",                     "4Institutions.csv",              "logpcGDP95, PAER",
+  "Multivariate models",         "Seemingly Unrelated Regression",   "5Institutions.csv",              "logpcGDP95, PAER",
+  "Multivariate models",         "Instrumental Variable",            "6Institutions.csv",              "logpcGDP95, PAER",
+  "Multivariate models",         "Bivariate Probit",                 "7HealthMed.csv",                 "[Hosp, SHI]",
+
+  # Time series models
+  "Time series models",          "Dynamic Linear Models",            "16INTDEF.csv",                   "Δ(i3)",
+  "Time series models",          "ARMA",                             "16INTDEF.csv",                   "Δ(i3)",
+  "Time series models",          "Stochastic volatility models",     "17ExcRate.csv",                  "USDEUR",
+  "Time series models",          "VAR",                              "18USAfiscal.csv",                "[Δ(ttr_t), Δ(gs_t), Δ(gdp_t)]",
+
+  # Hierarchical longitudinal models
+  "Hierarchical longitudinal models", "Normal",                      "8PublicCap.csv",                 "log(gsp)",
+  "Hierarchical longitudinal models", "Logit",                       "9VisitDoc.csv",                  "DocVis",
+  "Hierarchical longitudinal models", "Poisson",                     "9VisitDoc.csv",                  "DocNum",
+
+  # Bayesian model averaging
+  "Bayesian model averaging",    "Normal (BIC)",                     "10ExportDiversificationHHI.csv", "avghhi",
+  "Bayesian model averaging",    "Normal (MC3)",                    "10ExportDiversificationHHI.csv", "avghhi",
+  "Bayesian model averaging",    "Normal (instrumental variables)",  "11ExportDiversificationHHI.csv", "avghhi, avglgdpcap",
+  "Bayesian model averaging",    "",                                 "12ExportDiversificationHHIInstr.csv", "",
+  "Bayesian model averaging",    "Logit (BIC)",                      "13InternetMed.csv",              "internet",
+  "Bayesian model averaging",    "Gamma (BIC)",                      "14ValueFootballPlayers.csv",     "log(market value)",
+  "Bayesian model averaging",    "Poisson (BIC)",                    "15Fertile2.csv",                 "ceb"
 )
+
+# Build table
+kable(
+  tab_app %>% select(Model, DataFile, Dependent),
+  booktabs = TRUE,
+  col.names = c("Model", "Dataset file", "Dependent variable")
+) |>
+  kable_styling(full_width = FALSE) |>
+  pack_rows("Univariate models",                   1, 10) |>
+  pack_rows("Multivariate models",                11, 14) |>
+  pack_rows("Time series models",                 15, 18) |>
+  pack_rows("Hierarchical longitudinal models",   19, 21) |>
+  pack_rows("Bayesian model averaging",           22, 28)
 ```
