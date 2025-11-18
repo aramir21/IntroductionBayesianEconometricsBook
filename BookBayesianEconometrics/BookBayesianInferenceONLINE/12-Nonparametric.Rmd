@@ -91,7 +91,7 @@ A semi-parametric regression imposes a specific structure in part of the model a
 
 Thus, the distribution of the stochastic error is a finite Gaussian mixture. Note that the mean of the stochastic error is not equal to zero; consequently, the intercept in the regression should be removed, as these two parameters are not separately identifiable [@van2011bayesian]. Additionally, this approach allows for multiple modes and asymmetric distributions of the stochastic errors, providing greater flexibility.
 
-We can use a Gibbs sampling algorithm in this semi-parametric specification if we assume conjugate families. The difference from the previous setting is that we have the same slope parameters; thus, $\boldsymbol{\beta} \sim N(\boldsymbol{\beta}_{0},\boldsymbol{B}_{0})$. Additionally, we must specify the prior distribution for the means of the stochastic errors, given by $\mu_h \sim N(\mu_{h0},\sigma^2_{\mu 0})$. Then, the posterior distributions are:
+We can use a Gibbs sampling algorithm in this semi-parametric specification if we assume conjugate families. The difference from the previous setting is that we have the same slope parameters; thus, $\boldsymbol{\beta} \sim N(\boldsymbol{\beta}_{0},\boldsymbol{B}_{0})$. Additionally, we must specify the prior distribution for the means of the stochastic errors, given by $\mu_h \sim N(\mu_{h0},\sigma^2_{h0})$. Then, the posterior distributions are:
 
 $$\boldsymbol{\beta}\sim N(\boldsymbol{\beta}_{n},\boldsymbol{B}_{n}),$$ where $\boldsymbol{B}_{n}=(\boldsymbol{B}_{0}^{-1}+\sum_{h=1}^H\sum_{\left\{i:  \psi_{ih}=1\right\}}\sigma_h^{-2}\boldsymbol{x}_i\boldsymbol{x}_i^{\top})^{-1}$ and $\boldsymbol{\beta}_{n}=\boldsymbol{B}_{n}(\boldsymbol{B}_{0}^{-1}\boldsymbol{\beta}_{0}+\sum_{h=1}^H\sum_{\left\{i:  \psi_{ih}=1\right\}}\sigma_h^{-2}\boldsymbol{x}_i(y_i-\mu_h))$.
 $$\sigma_h^2\sim IG(\alpha_{hn}/2,\delta_{hn}/2),$$
@@ -100,13 +100,13 @@ where $\alpha_{hn}=\alpha_{h0}+N_h$, $\delta_{hn}=\delta_{h0}+\sum_{\left\{i:  \
 
 $$\mu_h\sim N(\mu_{hn},\sigma_{hn}^2),$$
 
-where $\sigma_{hn}^2=\left(\frac{1}{\sigma_{h}^{2}}+\frac{N_h}{\sigma_{h}^2}\right)^{-1}$ and $\mu_{hn}=\sigma_{hn}^2\left(\frac{\mu_{h0}}{\sigma_{\mu0}^2}+\frac{\sum_{\left\{i:\psi_{ih}=1\right\}} (y_i-\boldsymbol{x}_i\boldsymbol{\beta})}{\sigma_h^2}\right)$.
+where $\sigma_{hn}^2=\left(\frac{1}{\sigma_{h0}^{2}}+\frac{N_h}{\sigma_{h}^2}\right)^{-1}$ and $\mu_{hn}=\sigma_{hn}^2\left(\frac{\mu_{h0}}{\sigma_{\mu0}^2}+\frac{\sum_{\left\{i:\psi_{ih}=1\right\}} (y_i-\boldsymbol{x}_i\boldsymbol{\beta})}{\sigma_h^2}\right)$.
 
 $$\boldsymbol{\lambda}\sim \text{Dir}(\boldsymbol{\alpha}_n),$$   
 where $\boldsymbol{\alpha}_n=[\alpha_{1n} \  \alpha_{2n} \ \dots \ \alpha_{Hn}]^{\top}$, and $\alpha_{hn}=\alpha_{h0}+N_h$.
 
 $$\boldsymbol{\psi}_{in}\sim \text{Categorical}(\boldsymbol{\lambda}_n),$$
-where $P(\psi_{ih}=1)=\frac{\lambda_{h}\phi(y_i-\mu_h-\boldsymbol{x}_i^{\top}\boldsymbol{\beta} \mid \mu_h,\sigma_h^2,\boldsymbol{\beta})}{\sum_{j=1}^H\lambda_{j}\phi(y_i-\mu_j-\boldsymbol{x}_i^{\top}\boldsymbol{\beta} \mid \mu_j,\sigma_j^2,\boldsymbol{\beta})}$.
+where $P(\psi_{ih}=1)=\frac{\lambda_{h}\phi(y_i\mid \mu_h+\boldsymbol{x}_i^{\top}\boldsymbol{\beta},\sigma_h^2)}{\sum_{j=1}^H\lambda_{j}\phi(y_i\mid \mu_j+\boldsymbol{x}_i^{\top}\boldsymbol{\beta},\sigma_j^2)}$.
  
 A potential limitation of finite mixture models is the need to specify the number of components in advance. One approach is to estimate the model for different values of $H$ and then compute the marginal likelihood to select the model best supported by the data. However, this procedure can be tedious. A simpler strategy is to set $H$ large enough (e.g., 10 components), assign $\alpha_{h0} = 1/H$, and perform an initial run of the algorithm. If we are not interested in the specific composition of clusters, this approach is sufficient. Otherwise, the posterior distribution of $H$ can be obtained by tracking the number of nonempty clusters in each iteration. In a second run, $H$ can then be fixed at the mode of this posterior distribution. 
 
@@ -125,7 +125,7 @@ rm(list = ls()); set.seed(010101); library(ggplot2)
 # Simulate data from a 2-component mixture model
 n <- 500
 z <- rbinom(n, 1, 0.75)  # Latent class indicator
-y <- ifelse(z == 0, rnorm(n, 0.5, 1), rnorm(n, 2.5, 1))
+y <- ifelse(z == 1, rnorm(n, 0.5, 1), rnorm(n, 2.5, 1))
 data <- data.frame(y)
 # Plot
 ggplot(data, aes(x = y)) +
@@ -187,7 +187,7 @@ rm(list = ls()); set.seed(010101); library(ggplot2)
 # Simulate data from a 2-component mixture model
 n <- 500
 z <- rbinom(n, 1, 0.75)  # Latent class indicator
-y <- ifelse(z == 0, rnorm(n, 0.5, 1), rnorm(n, 1, 1))
+y <- ifelse(z == 1, rnorm(n, 0.5, 1), rnorm(n, 1, 1))
 data <- data.frame(y)
 # Plot
 ggplot(data, aes(x = y)) +
@@ -250,7 +250,7 @@ rm(list = ls()); set.seed(010101); library(ggplot2)
 # Simulate data from a 2-component mixture model
 n <- 500
 z <- rbinom(n, 1, 0.75)  # Latent class indicator
-y <- ifelse(z == 0, rnorm(n, 0.5, 1), rnorm(n, 2.5, 1))
+y <- ifelse(z == 1, rnorm(n, 0.5, 1), rnorm(n, 2.5, 1))
 # Hyperparameters
 mu0 <- 0; sig2mu0 <- 10; H <- 2; a0h <- rep(1/H, H)
 # MCMC parameters
@@ -335,7 +335,7 @@ library(ggplot2)
 n <- 1000
 x <- rnorm(n)
 z <- rbinom(n, 1, 0.5)  # Latent class indicator
-y <- ifelse(z == 0, rnorm(n, 2 + 1.5*x, 1), rnorm(n, -1 + 0.5*x, 0.8))
+y <- ifelse(z == 1, rnorm(n, 2 + 1.5*x, 1), rnorm(n, -1 + 0.5*x, 0.8))
 data <- data.frame(y, x)
 
 # Plot
@@ -375,7 +375,7 @@ library(brms); library(ggplot2)
 n <- 1000
 x <- rnorm(n)
 z <- rbinom(n, 1, 0.5)  # Latent class indicator
-y <- ifelse(z == 0, rnorm(n, 2 + 1.5*x, 1), rnorm(n, -1 + 0.5*x, 0.8))
+y <- ifelse(z == 1, rnorm(n, 2 + 1.5*x, 1), rnorm(n, -1 + 0.5*x, 0.8))
 # Hyperparameters
 d0 <- 0.001; a0 <- 0.001
 b0 <- rep(0, 2); B0 <- diag(2); B0i <- solve(B0)
@@ -454,14 +454,13 @@ Let's perform another simulation exercise in which we conduct a semi-parametric 
 \begin{align*}
 	y_i &= 1 - 0.5x_{i1} + 1.5x_{i2} + \mu_i, \ i=1,2,\dots,500.
 \end{align*}
-The variables $x_{i1}$ and $x_{i2}$ are standard normally distributed. Let's set $H=5$, and use non-informative priors setting $\alpha_{h0}=\delta_{h0}=0.01$, $\boldsymbol{\beta}_0=\boldsymbol{0}_2$, $\boldsymbol{B}_0=\boldsymbol{I}_2$, $\mu_{h0}=0$, $\sigma^2_{\mu 0}=10$ and $\boldsymbol{\alpha}_0=[1/H \ \dots \ 1/H]^{\top}$. Use 6,000 MCMC iterations, burn-in equal to 4,000, and thinning parameter equal to 2. In this exercise, there is no need to address the label-switching issue, as we are not specifically interested in the individual components of the posterior distributions of the clusters. Exercise 1 asks how to get the posterior density of the stochastic errors in semi-parametric specifications. 
+The variables $x_{i1}$ and $x_{i2}$ are standard normally distributed. Let's set $H=5$, and use non-informative priors setting $\alpha_{h0}=\delta_{h0}=0.01$, $\boldsymbol{\beta}_0=\boldsymbol{0}_2$, $\boldsymbol{B}_0=\boldsymbol{I}_2$, $\mu_{h0}=0$, $\sigma^2_{h0}=10$ and $\boldsymbol{\alpha}_0=[1/H \ \dots \ 1/H]^{\top}$. Use 6,000 MCMC iterations, burn-in equal to 4,000, and thinning parameter equal to 2. In this exercise, there is no need to address the label-switching issue, as we are not specifically interested in the individual components of the posterior distributions of the clusters. Exercise 1 asks how to get the posterior density of the stochastic errors in semi-parametric specifications. 
 
 We can see from the posterior estimates that three components disappear after the burn-in iterations. The 95\% credible intervals encompass the population values of the slope parameters. The 95\% credible intervals for the probabilities are (0.70, 0.89) and (0.11, 0.30), and the 95\% credible interval for the weighted average of the intercepts encompasses the population parameter.
 
 ```{r}
 rm(list = ls()); set.seed(010101)
 library(ggplot2)
-# Simulate data from a 2-component mixture model
 n <- 500
 x1 <- rnorm(n); x2 <- rnorm(n)
 X <- cbind(x1,x2); B <- c(-0.5, 1.5)
@@ -585,7 +584,7 @@ summary(coda::mcmc(PosteriorLAMBDA))
 
 A Dirichlet process (DP) is a probability distribution over probability distributions, and a generalization of the Dirichlet distribution. It was introduced by @Ferguson1973, and it is commonly used as a prior for unknown distributions, making it particularly useful in non-parametric settings. Unlike finite Gaussian mixture models, a Dirichlet process does not require pre-specifying the number of components, allowing for greater flexibility in modeling complex data structures. In this sense, DPs can be viewed as the limiting case of finite mixtures when the number of components approaches infinity. 
 
-A Dirichlet process $G\sim DP(\alpha G_0)$ is defined by a precision parameter $\alpha>0$, and a base probability measure $G_0$ on a probability space $\Omega$.^[Measurability ensures that we can compute probabilities and expectations properly. If a set is not measurable, we cannot define its probability meaningfully.] The DP assigns probability $G(B)$ to any (measurable) set $B$ in $\Omega$ such that for any finite (measurable) partition $\left\{B_1, B_2, \dots, B_k\right\}$ of $\Omega$,  
+A Dirichlet process $G\sim DP(\alpha G_0)$ is defined by a precision parameter $\alpha>0$, and a base probability measure $G_0$ on a probability space $\Omega$.^[Measurability ensures that probabilities and expectations are well-defined and internally consistent. If a set is not measurable, we cannot assign a meaningful probability to it because doing so would violate the axioms of probability, typically through contradictions with countable additivity or complementation.] The DP assigns probability $G(B)$ to any (measurable) set $B$ in $\Omega$ such that for any finite (measurable) partition $\left\{B_1, B_2, \dots, B_k\right\}$ of $\Omega$,  
 
 \[
 G(B_1), G(B_2), \dots, G(B_k) \sim \text{Dirichlet}(\alpha G_0(B_1), \alpha G_0(B_2), \dots, \alpha G_0(B_k)).
@@ -597,7 +596,7 @@ A key property of the DP is its discrete nature, which allows it to be expressed
 \[
 G(\cdot)=\sum_{h=1}^{\infty}\lambda_h\delta_{\boldsymbol{\theta}_h}(\cdot),
 \]
-where $\lambda_h$ is the probability mass at $\boldsymbol{\theta}_h$, and $\delta_{\boldsymbol{\theta}_h}(\cdot)$ denotes the Dirac measure that assigns mass one to the atom $\boldsymbol{\theta}_h$.^[An atom is a set that has positive probability but cannot be further decomposed into smaller sets with strictly smaller probability.] Given this property, a particularly useful construction of the DP is the *stick-breaking* representation [@Sethuraman1994], which is given by  
+where $\lambda_h$ is the probability mass at $\boldsymbol{\theta}_h$, and $\delta_{\boldsymbol{\theta}_h}(\cdot)$ denotes the Dirac measure that assigns mass one to the atom $\boldsymbol{\theta}_h$.^[An atom is a set that has positive probability but cannot be further decomposed into smaller sets with strictly positive smaller probability.] Given this property, a particularly useful construction of the DP is the *stick-breaking* representation [@Sethuraman1994], which is given by  
 \begin{align*}
 	G(\cdot)&=\sum_{h=1}^{\infty}\lambda_h\delta_{\boldsymbol{\theta}_h}(\cdot),\\
 	\lambda_h&=V_h\prod_{m<h}(1-V_m), \quad V_h\sim \text{Beta}(1,\alpha),\\
@@ -645,7 +644,8 @@ Specifically, we assume $\boldsymbol{\beta}_i\mid \sigma^2_i\sim N(\boldsymbol{\
 The conditional posterior distribution of $\boldsymbol\theta_i$ is
 \begin{align*}
 	\boldsymbol\theta_i|\left\{\boldsymbol\theta_{i'},\boldsymbol s_{i'}:i'\neq i\right\}, y_i, \alpha & \sim \sum_{i'\neq i}\frac{N_h^{(i)}}{\alpha+N-1}f_N(y_i|\boldsymbol{x}_i^{\top}\boldsymbol{\beta}_h,\sigma_h^2)\\
-	& +\frac{\alpha}{\alpha+N-1}\int_{\mathcal{R}^K}\int_{0}^{\infty}f_N(y_i|\boldsymbol{x}_i^{\top}\boldsymbol{\beta},\sigma^2)f_N\left(\boldsymbol\beta\Big|\boldsymbol\beta_0,\sigma^2\boldsymbol B_0\right)f_{IG}(\sigma^2|\alpha_0,\delta_0)d\sigma^2 d\boldsymbol\beta,
+	& +\frac{\alpha}{\alpha+N-1}\int_{\mathcal{R}^K}\int_{0}^{\infty}f_N(y_i|\boldsymbol{x}_i^{\top}\boldsymbol{\beta},\sigma^2)\\
+	&\times f_N\left(\boldsymbol\beta\Big|\boldsymbol\beta_0,\sigma^2\boldsymbol B_0\right)f_{IG}(\sigma^2|\alpha_0,\delta_0)d\sigma^2 d\boldsymbol\beta,
 \end{align*}
 where $N_h^{(i)}$ is the number of observations such that $s_{i'}=h$, $i'\neq i$.
 
@@ -656,7 +656,7 @@ Observe that the integral in the previous equation has exactly the same form as 
 	p(y_i)&=\int_{\mathcal{R}^K}\int_{0}^{\infty}f_N(y_i|\boldsymbol{x}_i^{\top}\boldsymbol{\beta},\sigma^2)f_N\left(\boldsymbol\beta\Big|\boldsymbol\beta_0,\sigma^2\boldsymbol B_0\right)f_{IG}(\sigma^2|\alpha_0,\delta_0)d\sigma^2 d\boldsymbol\beta\\
 	&=\frac{1}{\pi^{1/2}}\frac{\delta_0^{\alpha_0/2}}{\delta_n^{\alpha_n/2}}\frac{|{\boldsymbol{B}}_n|^{1/2}}{|{\boldsymbol{B}}_0|^{1/2}}\frac{\Gamma(\alpha_n/2)}{\Gamma(\alpha_0/2)}, 
 \end{align*}
-where $\alpha_n=1+\alpha_0$, $\delta_n=\delta_0 + y^{\top}y + \boldsymbol{\beta}_0^{\top}{\boldsymbol{B}}_0^{-1}\boldsymbol{\beta}_0 - \boldsymbol{\beta}_n^{\top}{\boldsymbol{B}}_n^{-1}\boldsymbol{\beta}_n$,  $\boldsymbol{B}_n = (\boldsymbol{B}_0^{-1} + \boldsymbol{x}\boldsymbol{x}^{\top})^{-1}$ and $\boldsymbol{\beta}_n = \boldsymbol{B}_n(\boldsymbol{B}_0^{-1}\boldsymbol{\beta}_0 + \boldsymbol{x}y)$.
+where $\alpha_n=1+\alpha_0$, $\delta_n=\delta_0 + y_i^2 + \boldsymbol{\beta}_0^{\top}{\boldsymbol{B}}_0^{-1}\boldsymbol{\beta}_0 - \boldsymbol{\beta}_n^{\top}{\boldsymbol{B}}_n^{-1}\boldsymbol{\beta}_n$,  $\boldsymbol{B}_n = (\boldsymbol{B}_0^{-1} + \boldsymbol{x}_i\boldsymbol{x}_i^{\top})^{-1}$ and $\boldsymbol{\beta}_n = \boldsymbol{B}_n(\boldsymbol{B}_0^{-1}\boldsymbol{\beta}_0 + \boldsymbol{x}_iy_i)$.
 
 Therefore, we sample $s_i$ as follows,
 \begin{equation*}
@@ -705,10 +705,10 @@ We see from the results that the DPM overestimates the number of clusters. After
 
 ```{r}
 rm(list = ls())
-set.seed(010101)
+set.seed(10101)
 # Simulate data from a 2-component mixture model
 N <- 1000; x <- rnorm(N); z <- rbinom(N, 1, 0.5)
-y <- ifelse(z == 0, rnorm(N, 2 + 1.5*x, 1), rnorm(N, -1 + 0.5*x, 0.8))
+y <- ifelse(z == 1, rnorm(N, 2 + 1.5*x, 1), rnorm(N, -1 + 0.5*x, 0.8))
 X <- cbind(1, x)
 k <- 2
 data <- data.frame(y, x); Reg <- lm(y ~ x)
@@ -843,16 +843,20 @@ for(s in keep){
 	PosteriorBeta1[j,] <- PostBetas[[s]][,1]; j <- j + 1
 }
 print(summary(coda::mcmc(PosteriorBeta1)))
+plot(coda::mcmc(PosteriorBeta1))
 PosteriorBeta2 <- matrix(NA, length(keep), k);j <- 1
 for(s in keep){
 	PosteriorBeta2[j,] <- PostBetas[[s]][,2]; j <- j + 1
 }
 print(summary(coda::mcmc(PosteriorBeta2)))
-PosteriorBeta3 <- matrix(NA, length(keep), k); j <- 1
-for(s in keep){
-	PosteriorBeta3[j,] <- PostBetas[[s]][,3]; j <- j + 1
-}
-print(summary(coda::mcmc(PosteriorBeta3)))
+plot(coda::mcmc(PosteriorBeta2))
+# # If there are 3 clusters
+# PosteriorBeta3 <- matrix(NA, length(keep), k); j <- 1
+# for(s in keep){
+# 	PosteriorBeta3[j,] <- PostBetas[[s]][,3]; j <- j + 1
+# }
+# print(summary(coda::mcmc(PosteriorBeta3)))
+# plot(coda::mcmc(PosteriorBeta3))
 ```
 
 **Example: Consumption of marijuana in Colombia**
@@ -1110,7 +1114,7 @@ The figure shows a particular cubic B-spline, but \( f(x_i) \) in Equation \@ref
 The set of B-splines can be constructed using the Cox–de Boor recursion formula. The starting point is the B-spline of degree 0,
 \begin{align*}
 		b_{h,0}(x_i)=\begin{Bmatrix}
-		1 & x_h \leq x_i < x_{h+1}, & u=(x_i-x_h)/\delta\\
+		1 & x_h \leq x_i < x_{h+1}\\
 		0 & \text{otherwise}
 	\end{Bmatrix},
 \end{align*}
@@ -1164,9 +1168,11 @@ matplot(xA, basis_matrix, type = "l", lty = 1, col = rainbow(ncol(basis_matrix))
 matplot(xA, bs_matrix_matrix, type = "l", lty = 1, col = rainbow(ncol(basis_matrix)), ylab = "B-spline Basis", xlab = "x", main = "bs function")
 ```
 
-The idea in splines is to calculate the linear combination of the $H$ B-splines, as those shown in the figure, that bets fit the dependent variable. Let's perform a simulation exercise to fix ideas.
+The idea in splines is to calculate the linear combination of the $H$ B-splines, as those shown in the figure, that bets fit the dependent variable. 
 
 Splines can also be extended to non-linear models based on data augmentation, such as the probit and tobit models. Again, the basic idea is to incorporate splines into the implicit latent variables. @koop2003bayesian presents these extensions.
+
+Let's perform a simulation exercise to fix ideas.
 
 **Simulation exercise: Splines**
 
@@ -1319,10 +1325,10 @@ In this chapter, we introduce the most common Bayesian methods for inference in 
 \begin{align*}
 	y_i &= 0.5x_{i1} - 1.2x_{i2} + \mu_i, \\
 	p(\mu_i) &= 
-	0.3 \phi(\mu_i \mid -0.5,0.5^2) + 0.7 \phi(\mu_i \mid 1,0.8^2).		
+	0.7 \phi(\mu_i \mid -0.5,0.5^2) + 0.3 \phi(\mu_i \mid 1,0.8^2).		
 \end{align*}
 
-  Assume that $x_{i1}$ and $x_{i2}$ follow a standard normal distribution and that the sample size is 1,000. Perform inference in this model assuming that the number of components is unknown. Start with $H=5$ and use non-informative priors, setting $\alpha_{h0}=\delta_{h0}=0.01$, $\boldsymbol{\beta}_0=\boldsymbol{0}_2$, $\boldsymbol{B}_0=\boldsymbol{I}_2$, $\mu_{h0}=0$, $\sigma^2_{\mu 0}=10$, and $\boldsymbol{\alpha}_0=[1/H \ \dots \ 1/H]^{\top}$. Use 6,000 MCMC iterations, a burn-in period of 4,000, and a thinning parameter of 2. Compare the population parameters with the posterior estimates and plot the population density along with the posterior density estimate of $\boldsymbol{\mu}$ (the mean, and the 95\% credible interval).
+  Assume that $x_{i1}$ and $x_{i2}$ follow a standard normal distribution and that the sample size is 1,000. Perform inference in this model assuming that the number of components is unknown. Start with $H=5$ and use non-informative priors, setting $\alpha_{h0}=\delta_{h0}=0.01$, $\boldsymbol{\beta}_0=\boldsymbol{0}_2$, $\boldsymbol{B}_0=\boldsymbol{I}_2$, $\mu_{h0}=0$, $\sigma^2_{h0}=10$, and $\boldsymbol{\alpha}_0=[1/H \ \dots \ 1/H]^{\top}$. Use 6,000 MCMC iterations, a burn-in period of 4,000, and a thinning parameter of 2. Compare the population parameters with the posterior estimates and plot the population density along with the posterior density estimate of $\boldsymbol{\mu}$ (the mean, and the 95\% credible interval).
 
 2. **Example: Consumption of marijuana in Colombia continues I**
 	

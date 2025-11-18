@@ -6,7 +6,7 @@ library(ggplot2)
 # Simulate data from a 2-component mixture model
 n <- 500
 z <- rbinom(n, 1, 0.75)  # Latent class indicator
-y <- ifelse(z == 0, rnorm(n, 0.5, 1), rnorm(n, 2.5, 1))
+y <- ifelse(z == 1, rnorm(n, 0.5, 1), rnorm(n, 2.5, 1))
 data <- data.frame(y)
 
 # Plot
@@ -89,7 +89,7 @@ library(ggplot2)
 # Simulate data from a 2-component mixture model
 n <- 500
 z <- rbinom(n, 1, 0.75)  # Latent class indicator
-y <- ifelse(z == 0, rnorm(n, 0.5, 1), rnorm(n, 1, 1))
+y <- ifelse(z == 1, rnorm(n, 0.5, 1), rnorm(n, 1, 1))
 data <- data.frame(y)
 
 # Plot
@@ -170,7 +170,7 @@ rm(list = ls()); set.seed(010101); library(ggplot2)
 # Simulate data from a 2-component mixture model
 n <- 500
 z <- rbinom(n, 1, 0.75)  # Latent class indicator
-y <- ifelse(z == 0, rnorm(n, 0.5, 1), rnorm(n, 2.5, 1))
+y <- ifelse(z == 1, rnorm(n, 0.5, 1), rnorm(n, 2.5, 1))
 # Hyperparameters
 mu0 <- 0; sig2mu0 <- 10; H <- 2; a0h <- rep(1/H, H)
 # MCMC parameters
@@ -248,7 +248,7 @@ library(ggplot2)
 n <- 1000
 x <- rnorm(n)
 z <- rbinom(n, 1, 0.5)  # Latent class indicator
-y <- ifelse(z == 0, rnorm(n, 2 + 1.5*x, 1), rnorm(n, -1 + 0.5*x, 0.8))
+y <- ifelse(z == 1, rnorm(n, 2 + 1.5*x, 1), rnorm(n, -1 + 0.5*x, 0.8))
 data <- data.frame(y, x)
 
 # Plot
@@ -286,7 +286,7 @@ set.seed(010101)
 n <- 1000
 x <- rnorm(n)
 z <- rbinom(n, 1, 0.5)  # Latent class indicator
-y <- ifelse(z == 0, rnorm(n, 2 + 1.5*x, 1), rnorm(n, -1 + 0.5*x, 0.8))
+y <- ifelse(z == 1, rnorm(n, 2 + 1.5*x, 1), rnorm(n, -1 + 0.5*x, 0.8))
 data <- data.frame(y, x)
 # Hyperparameters
 d0 <- 0.001
@@ -383,7 +383,6 @@ plot(PosteriorLambda1)
 rm(list = ls())
 set.seed(010101)
 library(ggplot2)
-# Simulate data from a 2-component mixture model
 n <- 500
 x1 <- rnorm(n); x2 <- rnorm(n)
 X <- cbind(x1,x2); B <- c(-0.5, 1.5)
@@ -523,10 +522,10 @@ summary(coda::mcmc(PosteriorLAMBDA))
 
 ########### Dirichlet process mixture: Simulation ###############
 rm(list = ls())
-set.seed(010101)
+set.seed(10101)
 # Simulate data from a 2-component mixture model
 N <- 1000; x <- rnorm(N); z <- rbinom(N, 1, 0.5)
-y <- ifelse(z == 0, rnorm(N, 2 + 1.5*x, 1), rnorm(N, -1 + 0.5*x, 0.8))
+y <- ifelse(z == 1, rnorm(N, 2 + 1.5*x, 1), rnorm(N, -1 + 0.5*x, 0.8))
 X <- cbind(1, x)
 k <- 2
 data <- data.frame(y, x); Reg <- lm(y ~ x)
@@ -692,15 +691,13 @@ for(s in keep){
 }
 print(summary(coda::mcmc(PosteriorBeta2)))
 plot(coda::mcmc(PosteriorBeta2))
-
-PosteriorBeta3 <- matrix(NA, length(keep), k)
-j <- 1
-for(s in keep){
-  PosteriorBeta3[j,] <- PostBetas[[s]][,3]
-  j <- j + 1
-}
-print(summary(coda::mcmc(PosteriorBeta3)))
-plot(coda::mcmc(PosteriorBeta3))
+# # If there are 3 clusters
+# PosteriorBeta3 <- matrix(NA, length(keep), k); j <- 1
+# for(s in keep){
+# 	PosteriorBeta3[j,] <- PostBetas[[s]][,3]; j <- j + 1
+# }
+# print(summary(coda::mcmc(PosteriorBeta3)))
+# plot(coda::mcmc(PosteriorBeta3))
 
 ########### Dirichlet process mixture: Application (Marijuana consumption in Colombia) ###############
 rm(list = ls()); set.seed(010101)

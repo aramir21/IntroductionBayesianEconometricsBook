@@ -91,7 +91,7 @@ A semi-parametric regression imposes a specific structure in part of the model a
 
 Thus, the distribution of the stochastic error is a finite Gaussian mixture. Note that the mean of the stochastic error is not equal to zero; consequently, the intercept in the regression should be removed, as these two parameters are not separately identifiable \cite{van2011bayesian}. Additionally, this approach allows for multiple modes and asymmetric distributions of the stochastic errors, providing greater flexibility.
 
-We can use a Gibbs sampling algorithm in this semi-parametric specification if we assume conjugate families. The difference from the previous setting is that we have the same slope parameters; thus, $\boldsymbol{\beta} \sim N(\boldsymbol{\beta}_{0},\boldsymbol{B}_{0})$. Additionally, we must specify the prior distribution for the means of the stochastic errors, given by $\mu_h \sim N(\mu_{h0},\sigma^2_{\mu 0})$. Then, the posterior distributions are:
+We can use a Gibbs sampling algorithm in this semi-parametric specification if we assume conjugate families. The difference from the previous setting is that we have the same slope parameters; thus, $\boldsymbol{\beta} \sim N(\boldsymbol{\beta}_{0},\boldsymbol{B}_{0})$. Additionally, we must specify the prior distribution for the means of the stochastic errors, given by $\mu_h \sim N(\mu_{h0},\sigma^2_{h 0})$. Then, the posterior distributions are:
 
 $$\boldsymbol{\beta}\sim N(\boldsymbol{\beta}_{n},\boldsymbol{B}_{n}),$$ where $\boldsymbol{B}_{n}=(\boldsymbol{B}_{0}^{-1}+\sum_{h=1}^H\sum_{\left\{i:  \psi_{ih}=1\right\}}\sigma_h^{-2}\boldsymbol{x}_i\boldsymbol{x}_i^{\top})^{-1}$ and $\boldsymbol{\beta}_{n}=\boldsymbol{B}_{n}(\boldsymbol{B}_{0}^{-1}\boldsymbol{\beta}_{0}+\sum_{h=1}^H\sum_{\left\{i:  \psi_{ih}=1\right\}}\sigma_h^{-2}\boldsymbol{x}_i(y_i-\mu_h))$.
 $$\sigma_h^2\sim IG(\alpha_{hn}/2,\delta_{hn}/2),$$
@@ -100,13 +100,13 @@ where $\alpha_{hn}=\alpha_{h0}+N_h$, $\delta_{hn}=\delta_{h0}+\sum_{\left\{i:  \
 
 $$\mu_h\sim N(\mu_{hn},\sigma_{hn}^2),$$
 
-where $\sigma_{hn}^2=\left(\frac{1}{\sigma_{h}^{2}}+\frac{N_h}{\sigma_{h}^2}\right)^{-1}$ and $\mu_{hn}=\sigma_{hn}^2\left(\frac{\mu_{h0}}{\sigma_{\mu0}^2}+\frac{\sum_{\left\{i:\psi_{ih}=1\right\}} (y_i-\boldsymbol{x}_i\boldsymbol{\beta})}{\sigma_h^2}\right)$.
+where $\sigma_{hn}^2=\left(\frac{1}{\sigma_{h 0}^{2}}+\frac{N_h}{\sigma_{h}^2}\right)^{-1}$ and $\mu_{hn}=\sigma_{hn}^2\left(\frac{\mu_{h0}}{\sigma_{h0}^2}+\frac{\sum_{\left\{i:\psi_{ih}=1\right\}} (y_i-\boldsymbol{x}_i\boldsymbol{\beta})}{\sigma_h^2}\right)$.
 
 $$\boldsymbol{\lambda}\sim \text{Dir}(\boldsymbol{\alpha}_n),$$   
 where $\boldsymbol{\alpha}_n=[\alpha_{1n} \  \alpha_{2n} \ \dots \ \alpha_{Hn}]^{\top}$, and $\alpha_{hn}=\alpha_{h0}+N_h$.
 
 $$\boldsymbol{\psi}_{in}\sim \text{Categorical}(\boldsymbol{\lambda}_n),$$
-where $P(\psi_{ih}=1)=\frac{\lambda_{h}\phi(y_i-\mu_h-\boldsymbol{x}_i^{\top}\boldsymbol{\beta} \mid \mu_h,\sigma_h^2,\boldsymbol{\beta})}{\sum_{j=1}^H\lambda_{j}\phi(y_i-\mu_j-\boldsymbol{x}_i^{\top}\boldsymbol{\beta} \mid \mu_j,\sigma_j^2,\boldsymbol{\beta})}$.
+where $P(\psi_{ih}=1)=\frac{\lambda_{h}\phi(y_i\mid \mu_h+\boldsymbol{x}_i^{\top}\boldsymbol{\beta},\sigma_h^2)}{\sum_{j=1}^H\lambda_{j}\phi(y_i\mid \mu_j+\boldsymbol{x}_i^{\top}\boldsymbol{\beta},\sigma_j^2)}$.
  
 A potential limitation of finite mixture models is the need to specify the number of components in advance. One approach is to estimate the model for different values of $H$ and then compute the marginal likelihood to select the model best supported by the data. However, this procedure can be tedious. A simpler strategy is to set $H$ large enough (e.g., 10 components), assign $\alpha_{h0} = 1/H$, and perform an initial run of the algorithm. If we are not interested in the specific composition of clusters, this approach is sufficient. Otherwise, the posterior distribution of $H$ can be obtained by tracking the number of nonempty clusters in each iteration. In a second run, $H$ can then be fixed at the mode of this posterior distribution. 
 
@@ -125,13 +125,21 @@ Initially, we set $\beta_{01} = 0.5$ and $\beta_{02} = 2.5$. We perform 1,000 MC
 	\textit{R code. Simulation exercise: Label switching issue}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-			####### Simulation exercise: Label swithching issue #############
-rm(list = ls()); set.seed(010101); library(ggplot2)
+### Simulation exercise: Label swithching issue ###
+rm(list = ls()); set.seed(10101); library(ggplot2)
 # Simulate data from a 2-component mixture model
-n <- 500
-z <- rbinom(n, 1, 0.75)  # Latent class indicator
-y <- ifelse(z == 0, rnorm(n, 0.5, 1), rnorm(n, 2.5, 1))
+n <- 500; z <- rbinom(n, 1, 0.75)  # Latent class indicator
+y <- ifelse(z == 1, rnorm(n, 0.5, 1), rnorm(n, 2.5, 1))
 data <- data.frame(y)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+ 
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Label switching issue}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 # Plot
 ggplot(data, aes(x = y)) +
 geom_density(fill = "blue", alpha = 0.3) + labs(title = "Density Plot", x = "y", y = "Density") + theme_minimal()
@@ -174,25 +182,26 @@ for(s in 1:tot){
 	setTxtProgressBar(pb, s)
 }
 close(pb)
-keep <- seq(burnin, tot, thin)
-PosteriorMUs <- coda::mcmc(PostMu[keep,])
-summary(PosteriorMUs); plot(PosteriorMUs)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
- 
+
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 	\textit{R code. Simulation exercise: Label switching issue}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
+keep <- seq(burnin, tot, thin)
+PosteriorMUs <- coda::mcmc(PostMu[keep,])
+summary(PosteriorMUs); plot(PosteriorMUs)
 dfMU <- data.frame(mu1 = PostMu[keep,1], mu2 = PostMu[keep,2])
 # Plot
 require(latex2exp)
 ggplot(dfMU) + geom_density(aes(x = mu1, color = "mu1"), linewidth = 1) + geom_density(aes(x = mu2, color = "mu2"), linewidth = 1) + labs(title = "Density Plot", x = TeX("$\\mu$"), y = "Density", color = "Variable") + theme_minimal() + scale_color_manual(values = c("mu1" = "blue", "mu2" = "red"))
-\end{lstlisting}
+	\end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
+
 
 Figure \ref{figMean1} shows the posterior densities of the location parameters. The posterior means are 0.42 and 2.50, with 95\% credible intervals of (0.07, 0.71) and (2.34, 2.65), respectively. The posterior mean of the probability is 0.27, with a 95\% credible interval of (0.19, 0.35). Note that in this simple simulation exercise, we did not observe unintended consequences from using non-informative priors and not standardizing the data. However, real-world applications should take these aspects into account. 
 
@@ -222,7 +231,7 @@ rm(list = ls()); set.seed(010101); library(ggplot2)
 # Simulate data from a 2-component mixture model
 n <- 500
 z <- rbinom(n, 1, 0.75)  # Latent class indicator
-y <- ifelse(z == 0, rnorm(n, 0.5, 1), rnorm(n, 2.5, 1))
+y <- ifelse(z == 1, rnorm(n, 0.5, 1), rnorm(n, 2.5, 1))
 # Hyperparameters
 mu0 <- 0; sig2mu0 <- 10; H <- 2; a0h <- rep(1/H, H)
 # MCMC parameters
@@ -257,6 +266,15 @@ for(s in 1:tot){
 		MU[h] <- Postmu(yh = y[idh])
 	}
 	Lambda <- MCMCpack::rdirichlet(1, a0h + table(Psi))
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Random permutation of latent classes}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 	# Permutations
 	labels <- sample(1:2, 1, prob = c(0.5, 0.5))
 	if(labels == 2){
@@ -271,15 +289,7 @@ for(s in 1:tot){
 	PostLambda[s] <- Lambda[1]
 	setTxtProgressBar(pb, s)
 }
-close(pb)\end{lstlisting}
-	\end{VF}
-\end{tcolorbox}
-
-\begin{tcolorbox}[enhanced,width=4.67in,center upper,
-	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Simulation exercise: Random permutation of latent classes}
-	\begin{VF}
-		\begin{lstlisting}[language=R]
+close(pb)
 keep <- seq(burnin, tot, thin)
 PosteriorMUs <- coda::mcmc(PostMu[keep,])
 summary(PosteriorMUs)
@@ -290,9 +300,7 @@ require(latex2exp)
 ggplot(dfMU) +
 geom_density(aes(x = mu1, color = "mu1"), linewidth = 1) +  # First density plot
 geom_density(aes(x = mu2, color = "mu2"), linewidth = 1) +  # Second density plot
-labs(title = "Density Plot", x = TeX("$\\mu$"), y = "Density", color = "Variable") +
-theme_minimal() +
-scale_color_manual(values = c("mu1" = "blue", "mu2" = "red"))  # Custom colors
+labs(title = "Density Plot", x = TeX("$\\mu$"), y = "Density", color = "Variable") + theme_minimal() + scale_color_manual(values = c("mu1" = "blue", "mu2" = "red"))  # Custom colors
 PosteriorLAMBDA <- coda::mcmc(PostLambda[keep])
 summary(PosteriorLAMBDA)
 plot(PosteriorLAMBDA)
@@ -320,25 +328,19 @@ The following code performs inference in this simulation from scratch using Gibb
 	\textit{R code. Simulation exercise: Gaussian mixture with 2 components using brms package}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-####### Simulation exercise: Gaussian mixture: 2 components #############
-rm(list = ls())
-set.seed(010101)
-library(brms)
-library(ggplot2)
-
+### Simulation exercise: Gaussian mixture: 2 components ###
+rm(list = ls()); set.seed(010101)
+library(brms); library(ggplot2)
 # Simulate data from a 2-component mixture model
 n <- 1000
 x <- rnorm(n)
 z <- rbinom(n, 1, 0.5)  # Latent class indicator
-y <- ifelse(z == 0, rnorm(n, 2 + 1.5*x, 1), rnorm(n, -1 + 0.5*x, 0.8))
+y <- ifelse(z == 1, rnorm(n, 2 + 1.5*x, 1), rnorm(n, -1 + 0.5*x, 0.8))
 data <- data.frame(y, x)
-
 # Plot
 ggplot(data, aes(x = y)) +
 geom_density(fill = "blue", alpha = 0.3) +  # Density plot with fill color
-labs(title = "Density Plot", x = "y", y = "Density") +
-theme_minimal()
-
+labs(title = "Density Plot", x = "y", y = "Density") + theme_minimal()
 # Define priors
 priors <- c(
 set_prior("normal(0, 5)", class = "Intercept", dpar = "mu1"),  # First component intercept
@@ -349,7 +351,6 @@ set_prior("cauchy(0, 2)", class = "sigma1", lb = 0),  # First component sigma
 set_prior("cauchy(0, 2)", class = "sigma2", lb = 0),  # Second component sigma
 set_prior("dirichlet(1, 1)", class = "theta")  # Mixing proportions
 )
-
 # Fit a 2-component Gaussian mixture regression model
 fit <- brm(
 bf(y ~ 1 + x, family = mixture(gaussian, gaussian)),  # Two normal distributions
@@ -360,7 +361,7 @@ chains = 4, iter = 2000, warmup = 1000, cores = 4
 prior_summary(fit) # Summary of priors
 summary(fit) # Summary of posterior draws
 plot(fit) # Plots of posterior draws
-		\end{lstlisting}
+\end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
 
@@ -376,7 +377,7 @@ library(brms); library(ggplot2)
 n <- 1000
 x <- rnorm(n)
 z <- rbinom(n, 1, 0.5)  # Latent class indicator
-y <- ifelse(z == 0, rnorm(n, 2 + 1.5*x, 1), rnorm(n, -1 + 0.5*x, 0.8))
+y <- ifelse(z == 1, rnorm(n, 2 + 1.5*x, 1), rnorm(n, -1 + 0.5*x, 0.8))
 # Hyperparameters
 d0 <- 0.001; a0 <- 0.001
 b0 <- rep(0, 2); B0 <- diag(2); B0i <- solve(B0)
@@ -466,7 +467,7 @@ Let's perform another simulation exercise in which we conduct a semi-parametric 
 \begin{align*}
 	y_i &= 1 - 0.5x_{i1} + 1.5x_{i2} + \mu_i, \ i=1,2,\dots,500.
 \end{align*}
-The variables $x_{i1}$ and $x_{i2}$ are standard normally distributed. Let's set $H=5$, and use non-informative priors setting $\alpha_{h0}=\delta_{h0}=0.01$, $\boldsymbol{\beta}_0=\boldsymbol{0}_2$, $\boldsymbol{B}_0=\boldsymbol{I}_2$, $\mu_{h0}=0$, $\sigma^2_{\mu 0}=10$ and $\boldsymbol{\alpha}_0=[1/H \ \dots \ 1/H]^{\top}$. Use 6,000 MCMC iterations, burn-in equal to 4,000, and thinning parameter equal to 2. In this exercise, there is no need to address the label-switching issue, as we are not specifically interested in the individual components of the posterior distributions of the clusters. Exercise 1 asks how to get the posterior density of the stochastic errors in semi-parametric specifications. 
+The variables $x_{i1}$ and $x_{i2}$ are standard normally distributed. Let's set $H=5$, and use non-informative priors setting $\alpha_{h0}=\delta_{h0}=0.01$, $\boldsymbol{\beta}_0=\boldsymbol{0}_2$, $\boldsymbol{B}_0=\boldsymbol{I}_2$, $\mu_{h0}=0$, $\sigma^2_{h0}=10$ and $\boldsymbol{\alpha}_0=[1/H \ \dots \ 1/H]^{\top}$. Use 6,000 MCMC iterations, burn-in equal to 4,000, and thinning parameter equal to 2. In this exercise, there is no need to address the label-switching issue, as we are not specifically interested in the individual components of the posterior distributions of the clusters. Exercise 1 asks how to get the posterior density of the stochastic errors in semi-parametric specifications. 
 
 We can see from the posterior estimates that three components disappear after the burn-in iterations. The 95\% credible intervals encompass the population values of the slope parameters. The 95\% credible intervals for the probabilities are (0.70, 0.89) and (0.11, 0.30), and the 95\% credible interval for the weighted average of the intercepts encompasses the population parameter.
 
@@ -477,7 +478,6 @@ We can see from the posterior estimates that three components disappear after th
 		\begin{lstlisting}[language=R]
 rm(list = ls()); set.seed(010101)
 library(ggplot2)
-# Simulate data from a 2-component mixture model
 n <- 500
 x1 <- rnorm(n); x2 <- rnorm(n)
 X <- cbind(x1,x2); B <- c(-0.5, 1.5)
@@ -488,8 +488,7 @@ data <- data.frame(Res)
 # Plot
 ggplot(data, aes(x = Res)) +
 geom_density(fill = "blue", alpha = 0.3) +  # Density plot with fill color
-labs(title = "Density Plot", x = "Residuals", y = "Density") +
-theme_minimal()
+labs(title = "Density Plot", x = "Residuals", y = "Density") + theme_minimal()
 # Hyperparameters
 d0 <- 0.001; a0 <- 0.001; b0 <- rep(0, 2)
 B0 <- diag(2); B0i <- solve(B0)
@@ -497,6 +496,15 @@ mu0 <- 0; sig2mu0 <- 10; H <- 5; a0h <- rep(1/H, H)
 # MCMC parameters
 mcmc <- 2000; burnin <- 4000
 tot <- mcmc + burnin; thin <- 2
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Semi-parametric model using Gibbs sampling}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 # Gibbs sampling functions
 PostSig2 <- function(Beta, muh, Xh, yh){
 	Nh <- length(yh); an <- a0 + Nh
@@ -526,15 +534,6 @@ PostBeta <- function(sig2, mu, X, y, Psi){
 	Beta <- MASS::mvrnorm(1, bn, Bn)
 	return(Beta)
 }
-\end{lstlisting}
-	\end{VF}
-\end{tcolorbox}
-
-\begin{tcolorbox}[enhanced,width=4.67in,center upper,
-	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Simulation exercise: Semi-parametric model using Gibbs sampling}
-	\begin{VF}
-		\begin{lstlisting}[language=R]
 Postmu <- function(sig2h, Beta, Xh, yh){
 	Nh <- length(yh)
 	sig2mu <- (1/sig2mu0 + Nh/sig2h)^(-1)
@@ -552,6 +551,15 @@ Id2 <- which(Res > Resq[1] & Res <= Resq[2])
 Id3 <- which(Res > Resq[2] & Res <= Resq[3])
 Id4 <- which(Res > Resq[3] & Res <= Resq[4])
 Id5 <- which(Res > Resq[4])
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Semi-parametric model using Gibbs sampling}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 Nh <- rep(n/H, H); Lambda <- rep(1/H, H)
 MU <- c(mean(Res[Id1]), mean(Res[Id2]), mean(Res[Id3]), mean(Res[Id4]), mean(Res[Id5]))
 Sig2 <- c(var(Res[Id1]), var(Res[Id2]), var(Res[Id3]), var(Res[Id4]), var(Res[Id5]))
@@ -583,15 +591,6 @@ for(s in 1:tot){
 	setTxtProgressBar(pb, s)
 }
 close(pb)
-\end{lstlisting}
-	\end{VF}
-\end{tcolorbox}
-
-\begin{tcolorbox}[enhanced,width=4.67in,center upper,
-	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Simulation exercise: Semi-parametric model using Gibbs sampling}
-	\begin{VF}
-		\begin{lstlisting}[language=R]
 keep <- seq(burnin, tot, thin)
 PosteriorBetas <- coda::mcmc(PostBetas[keep,])
 summary(PosteriorBetas)
@@ -602,6 +601,15 @@ NClus <- 2
 PosteriorSIGMA <- matrix(NA, length(keep), NClus)
 PosteriorMU <- matrix(NA, length(keep), NClus)
 PosteriorLAMBDA <- matrix(NA, length(keep), NClus)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Semi-parametric model using Gibbs sampling}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 l <- 1
 for (s in keep){
 	PosteriorSIGMA[l,] <- PostSigma2[[s]][1:NClus]
@@ -609,7 +617,6 @@ for (s in keep){
 	PosteriorLAMBDA[l,] <- PostLambda[[s]][1:NClus]
 	l <- l + 1
 }
-
 summary(coda::mcmc(PosteriorSIGMA))
 summary(coda::mcmc(PosteriorMU))
 summary(coda::mcmc(PosteriorLAMBDA))
@@ -618,23 +625,22 @@ summary(coda::mcmc(PosteriorLAMBDA))
 \end{tcolorbox}
 
 
+
 \subsection{Direchlet processes}\label{sec11_12}
 
 A Dirichlet process (DP) is a probability distribution over probability distributions, and a generalization of the Dirichlet distribution. It was introduced by \cite{Ferguson1973}, and it is commonly used as a prior for unknown distributions, making it particularly useful in non-parametric settings. Unlike finite Gaussian mixture models, a Dirichlet process does not require pre-specifying the number of components, allowing for greater flexibility in modeling complex data structures. In this sense, DPs can be viewed as the limiting case of finite mixtures when the number of components approaches infinity. 
 
-A Dirichlet process $G\sim DP(\alpha G_0)$ is defined by a precision parameter $\alpha>0$, and a base probability measure $G_0$ on a probability space $\Omega$.\footnote{Measurability ensures that we can compute probabilities and expectations properly. If a set is not measurable, we cannot define its probability meaningfully.} The DP assigns probability $G(B)$ to any (measurable) set $B$ in $\Omega$ such that for any finite (measurable) partition $\left\{B_1, B_2, \dots, B_k\right\}$ of $\Omega$,  
-
+A Dirichlet process $G\sim DP(\alpha G_0)$ is defined by a precision parameter $\alpha>0$, and a base probability measure $G_0$ on a probability space $\Omega$.\footnote{Measurability ensures that probabilities and expectations are well-defined and internally consistent. If a set is not measurable, we cannot assign a meaningful probability to it because doing so would violate the axioms of probability, typically through contradictions with countable additivity or complementation.} The DP assigns probability $G(B)$ to any (measurable) set $B$ in $\Omega$ such that for any finite (measurable) partition $\left\{B_1, B_2, \dots, B_k\right\}$ of $\Omega$,  
 \[
 G(B_1), G(B_2), \dots, G(B_k) \sim \text{Dirichlet}(\alpha G_0(B_1), \alpha G_0(B_2), \dots, \alpha G_0(B_k)).
 \]
-
 In particular, $\mathbb{E}\left[G(B)\right]=G_0(B)$ and $\mathbb{V}ar\left[G(B)\right]=G_0(B)\left[1-G_0(B)\right]/(1+\alpha)$ \cite[p.~8]{Muller2015}. Observe that as $\alpha  \rightarrow \infty$, $G$ concentrates at $G_0$, which is why $\alpha$ is called the precision parameter.
 
 A key property of the DP is its discrete nature, which allows it to be expressed as  
 \[
 G(\cdot)=\sum_{h=1}^{\infty}\lambda_h\delta_{\boldsymbol{\theta}_h}(\cdot),
 \]
-where $\lambda_h$ is the probability mass at $\boldsymbol{\theta}_h$, and $\delta_{\boldsymbol{\theta}_h}(\cdot)$ denotes the Dirac measure that assigns mass one to the atom $\boldsymbol{\theta}_h$.\footnote{An atom is a set that has positive probability but cannot be further decomposed into smaller sets with strictly smaller probability.} Given this property, a particularly useful construction of the DP is the \textit{stick-breaking} representation \cite{Sethuraman1994}, which is given by  
+where $\lambda_h$ is the probability mass at $\boldsymbol{\theta}_h$, and $\delta_{\boldsymbol{\theta}_h}(\cdot)$ denotes the Dirac measure that assigns mass one to the atom $\boldsymbol{\theta}_h$.\footnote{An atom is a set that has positive probability but cannot be further decomposed into smaller sets with strictly smaller positive probability.} Given this property, a particularly useful construction of the DP is the \textit{stick-breaking} representation \cite{Sethuraman1994}, which is given by  
 \begin{align*}
 	G(\cdot)&=\sum_{h=1}^{\infty}\lambda_h\delta_{\boldsymbol{\theta}_h}(\cdot),\\
 	\lambda_h&=V_h\prod_{m<h}(1-V_m), \quad V_h\sim \text{Beta}(1,\alpha),\\
@@ -666,7 +672,7 @@ This mixture model can be expressed in a hierarchical structure:
 	G \mid \alpha,G_0 & \sim DP(\alpha G_0).
 \end{align*}
 
-Note that the hierarchical representation induces specific unit parameters, leading to a probabilistic clustering model \cite{Antoniak1974}, similar to a finite Gaussian mixture. However, the DPM is not consistent in estimating the number of clusters, it tends to overestimate the number of clusters (see simulation exercise below); although there is posterior asymptotic concentration in the other model components \cite{Miller2014}.
+Note that the hierarchical representation induces specific unit parameters, leading to a probabilistic clustering model \cite{Antoniak1974}, similar to a finite Gaussian mixture. However, the DPM is not consistent in estimating the number of clusters, it tends to overestimate the number of clusters; although there is posterior asymptotic concentration in the other model components \cite{Miller2014}.
 
 The hierarchical representation implies that there are latent assignment variables \( s_i = h \), such that when \( \boldsymbol{\theta}_i \) is equal to the \( h \)-th unique \( \boldsymbol{\theta}_h^* \) — that is, \( \boldsymbol{\theta}_i = \boldsymbol{\theta}_h^* \)— then \( s_i = h \). Then,
 \begin{align*}
@@ -682,7 +688,8 @@ Specifically, we assume $\boldsymbol{\beta}_i\mid \sigma^2_i\sim N(\boldsymbol{\
 The conditional posterior distribution of $\boldsymbol\theta_i$ is
 \begin{align*}
 	\boldsymbol\theta_i|\left\{\boldsymbol\theta_{i'},\boldsymbol s_{i'}:i'\neq i\right\}, y_i, \alpha & \sim \sum_{i'\neq i}\frac{N_h^{(i)}}{\alpha+N-1}f_N(y_i|\boldsymbol{x}_i^{\top}\boldsymbol{\beta}_h,\sigma_h^2)\\
-	& +\frac{\alpha}{\alpha+N-1}\int_{\mathcal{R}^K}\int_{0}^{\infty}f_N(y_i|\boldsymbol{x}_i^{\top}\boldsymbol{\beta},\sigma^2)f_N\left(\boldsymbol\beta\Big|\boldsymbol\beta_0,\sigma^2\boldsymbol B_0\right)f_{IG}(\sigma^2|\alpha_0,\delta_0)d\sigma^2 d\boldsymbol\beta,
+	& +\frac{\alpha}{\alpha+N-1}\int_{\mathcal{R}^K}\int_{0}^{\infty}f_N(y_i|\boldsymbol{x}_i^{\top}\boldsymbol{\beta},\sigma^2)\\
+	&\times f_N\left(\boldsymbol\beta\Big|\boldsymbol\beta_0,\sigma^2\boldsymbol B_0\right)f_{IG}(\sigma^2|\alpha_0,\delta_0)d\sigma^2 d\boldsymbol\beta,
 \end{align*}
 where $N_h^{(i)}$ is the number of observations such that $s_{i'}=h$, $i'\neq i$.
 
@@ -693,7 +700,7 @@ Observe that the integral in the previous equation has exactly the same form as 
 	p(y_i)&=\int_{\mathcal{R}^K}\int_{0}^{\infty}f_N(y_i|\boldsymbol{x}_i^{\top}\boldsymbol{\beta},\sigma^2)f_N\left(\boldsymbol\beta\Big|\boldsymbol\beta_0,\sigma^2\boldsymbol B_0\right)f_{IG}(\sigma^2|\alpha_0,\delta_0)d\sigma^2 d\boldsymbol\beta\\
 	&=\frac{1}{\pi^{1/2}}\frac{\delta_0^{\alpha_0/2}}{\delta_n^{\alpha_n/2}}\frac{|{\boldsymbol{B}}_n|^{1/2}}{|{\boldsymbol{B}}_0|^{1/2}}\frac{\Gamma(\alpha_n/2)}{\Gamma(\alpha_0/2)}, 
 \end{align*}
-where $\alpha_n=1+\alpha_0$, $\delta_n=\delta_0 + y^{\top}y + \boldsymbol{\beta}_0^{\top}{\boldsymbol{B}}_0^{-1}\boldsymbol{\beta}_0 - \boldsymbol{\beta}_n^{\top}{\boldsymbol{B}}_n^{-1}\boldsymbol{\beta}_n$,  $\boldsymbol{B}_n = (\boldsymbol{B}_0^{-1} + \boldsymbol{x}\boldsymbol{x}^{\top})^{-1}$ and $\boldsymbol{\beta}_n = \boldsymbol{B}_n(\boldsymbol{B}_0^{-1}\boldsymbol{\beta}_0 + \boldsymbol{x}y)$.
+where $\alpha_n=1+\alpha_0$, $\delta_n=\delta_0 + y_i^2 + \boldsymbol{\beta}_0^{\top}{\boldsymbol{B}}_0^{-1}\boldsymbol{\beta}_0 - \boldsymbol{\beta}_n^{\top}{\boldsymbol{B}}_n^{-1}\boldsymbol{\beta}_n$,  $\boldsymbol{B}_n = (\boldsymbol{B}_0^{-1} + \boldsymbol{x}_i\boldsymbol{x}_i^{\top})^{-1}$ and $\boldsymbol{\beta}_n = \boldsymbol{B}_n(\boldsymbol{B}_0^{-1}\boldsymbol{\beta}_0 + \boldsymbol{x}_iy_i)$.
 
 Therefore, we sample $s_i$ as follows,
 \begin{equation*}
@@ -738,22 +745,28 @@ We use non-informative priors again, setting $\alpha_{0}=\delta_{0}=0.01$, $\bol
 
 The following code demonstrates how to perform inference using the stated Gibbs sampler for the DPM in the \textbf{R} package.
 
-We see from the results that the DPM overestimates the number of clusters. After the burn-in period, there are typically three clusters. Additionally, the posterior plots illustrate the label-switching problem. Eventually, the posterior chains of clusters reach different posterior modes, causing a high variability of the posterior draws. In Exercise 5, we ask to fix this issue using \textit{random permutation of latent classes}.
+We see from the results that the posterior plots illustrate the label-switching problem. Eventually, the posterior chains of clusters reach different posterior modes, causing a high variability of the posterior draws. In Exercise 5, we ask to fix this issue using \textit{random permutation of latent classes}.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 	\textit{R code. Simulation exercise: Dirichlet process mixture using Gibbs sampling}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-rm(list = ls())
-set.seed(010101)
+rm(list = ls()); set.seed(010101)
 # Simulate data from a 2-component mixture model
 N <- 1000; x <- rnorm(N); z <- rbinom(N, 1, 0.5)
-y <- ifelse(z == 0, rnorm(N, 2 + 1.5*x, 1), rnorm(N, -1 + 0.5*x, 0.8))
-X <- cbind(1, x)
-k <- 2
-data <- data.frame(y, x); Reg <- lm(y ~ x)
-SumReg <- summary(Reg)
+y <- ifelse(z == 1, rnorm(N, 2 + 1.5*x, 1), rnorm(N, -1 + 0.5*x, 0.8))
+X <- cbind(1, x); k <- 2
+data <- data.frame(y, x); Reg <- lm(y ~ x); SumReg <- summary(Reg)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Dirichlet process mixture using Gibbs sampling}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 # Hyperparameters
 a0 <- 0.001; d0 <- 0.001
 b0 <- rep(0, k); B0 <- diag(k)
@@ -799,6 +812,7 @@ PostBeta <- function(sig2h, Xh, yh){
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
+
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -847,9 +861,6 @@ PostS <- function(BETA, SIGMA, Alpha, s, i){
 PostBetas <- list(); PostSigma <- list()
 Posts <- matrix(0, tot, N); PostAlphas <- rep(0, tot)
 S <- sample(1:3, N, replace = T, prob = c(0.5, 0.3, 0.2))
-BETA <- cbind(Reg$coefficients, Reg$coefficients, Reg$coefficients)
-SIGMA <- rep(SumReg$sigma, 3)
-Alpha <- rgamma(1, a, b)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
@@ -859,6 +870,8 @@ Alpha <- rgamma(1, a, b)
 	\textit{R code. Simulation exercise: Dirichlet process mixture using Gibbs sampling}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
+BETA <- cbind(Reg$coefficients, Reg$coefficients, Reg$coefficients)
+SIGMA <- rep(SumReg$sigma, 3); Alpha <- rgamma(1, a, b)
 pb <- txtProgressBar(min = 0, max = tot, style = 3)
 for(s in 1:tot){
 	for(i in 1:N){
@@ -902,19 +915,33 @@ for(s in keep){
 	PosteriorBeta1[j,] <- PostBetas[[s]][,1]; j <- j + 1
 }
 print(summary(coda::mcmc(PosteriorBeta1)))
+plot(coda::mcmc(PosteriorBeta1))
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation exercise: Dirichlet process mixture using Gibbs sampling}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 PosteriorBeta2 <- matrix(NA, length(keep), k);j <- 1
 for(s in keep){
 	PosteriorBeta2[j,] <- PostBetas[[s]][,2]; j <- j + 1
 }
 print(summary(coda::mcmc(PosteriorBeta2)))
-PosteriorBeta3 <- matrix(NA, length(keep), k); j <- 1
-for(s in keep){
-	PosteriorBeta3[j,] <- PostBetas[[s]][,3]; j <- j + 1
-}
-print(summary(coda::mcmc(PosteriorBeta3)))
-\end{lstlisting}
+plot(coda::mcmc(PosteriorBeta2))
+# # If there are 3 clusters
+# PosteriorBeta3 <- matrix(NA, length(keep), k); j <- 1
+# for(s in keep){
+	# 	PosteriorBeta3[j,] <- PostBetas[[s]][,3]; j <- j + 1
+	# }
+# print(summary(coda::mcmc(PosteriorBeta3)))
+# plot(coda::mcmc(PosteriorBeta3))
+	\end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
+
 
 \textbf{Example: Consumption of marijuana in Colombia}
 
@@ -973,14 +1000,6 @@ PostBeta <- function(sig2h, Xh, yh){
 		Xh <- matrix(Xh, k, 1)
 		Bn <- solve(Xh%*%t(Xh) + B0i)
 		bn <- Bn%*%(B0i%*%b0 + Xh%*%yh)
-	}else{
-		Xh <- matrix(Xh, Nh, k)
-		Bn <- solve(t(Xh)%*%Xh + B0i)
-		bn <- Bn%*%(B0i%*%b0 + t(Xh)%*%yh)
-	}
-	Beta <- MASS::mvrnorm(1, bn, sig2h*Bn)
-	return(Beta)
-}
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
@@ -990,6 +1009,14 @@ PostBeta <- function(sig2h, Xh, yh){
 	\textit{R code. Demand of marijuana in Colombia: Dirichlet process mixture}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
+	}else{
+		Xh <- matrix(Xh, Nh, k)
+		Bn <- solve(t(Xh)%*%Xh + B0i)
+		bn <- Bn%*%(B0i%*%b0 + t(Xh)%*%yh)
+	}
+	Beta <- MASS::mvrnorm(1, bn, sig2h*Bn)
+	return(Beta)
+}
 PostAlpha <- function(s, alpha){
 	H <- length(unique(s))
 	psi <- rbeta(1, alpha + 1, N)
@@ -1028,13 +1055,6 @@ PostS <- function(BETA, SIGMA, Alpha, s, i){
 	}
 	return(list(si = si, BETA = BETA, SIGMA = SIGMA))
 }
-PostBetas <- list(); PostSigma <- list()
-Posts <- matrix(0, tot, N); PostAlphas <- rep(0, tot)
-S <- sample(1:3, N, replace = T, prob = c(0.5, 0.3, 0.2))
-BETA <- cbind(Reg$coefficients, Reg$coefficients, Reg$coefficients)
-SIGMA <- rep(SumReg$sigma, 3)
-Alpha <- rgamma(1, a, b)
-pb <- txtProgressBar(min = 0, max = tot, style = 3)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
@@ -1044,6 +1064,13 @@ pb <- txtProgressBar(min = 0, max = tot, style = 3)
 	\textit{R code. Demand of marijuana in Colombia: Dirichlet process mixture}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
+PostBetas <- list(); PostSigma <- list()
+Posts <- matrix(0, tot, N); PostAlphas <- rep(0, tot)
+S <- sample(1:3, N, replace = T, prob = c(0.5, 0.3, 0.2))
+BETA <- cbind(Reg$coefficients, Reg$coefficients, Reg$coefficients)
+SIGMA <- rep(SumReg$sigma, 3)
+Alpha <- rgamma(1, a, b)
+pb <- txtProgressBar(min = 0, max = tot, style = 3)
 for(s in 1:tot){
 	for(i in 1:N){
 		Rests <- PostS(BETA = BETA, SIGMA = SIGMA, Alpha = Alpha, s = S, i = i)
@@ -1081,6 +1108,15 @@ keep <- seq((burnin+1), tot, thin)
 PosteriorS<- Posts[keep,]
 Clusters <- sapply(1:length(keep), function(i){length(table(PosteriorS[i,]))})
 table(Clusters)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Demand of marijuana in Colombia: Dirichlet process mixture}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 NClus <- 3
 sapply(1:length(keep), function(i){print(table(PosteriorS[i,]))})
 PosteriorSIGMA <- matrix(NA, length(keep), NClus)
@@ -1091,15 +1127,6 @@ for (s in keep){
 }
 summary(coda::mcmc(PosteriorSIGMA))
 plot(coda::mcmc(PosteriorSIGMA))
-\end{lstlisting}
-	\end{VF}
-\end{tcolorbox}
-
-\begin{tcolorbox}[enhanced,width=4.67in,center upper,
-	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Demand of marijuana in Colombia: Dirichlet process mixture}
-	\begin{VF}
-		\begin{lstlisting}[language=R]
 l <- 1
 for (s in keep){
 	PosteriorSIGMA[l,] <- PostSigma[[s]][1:NClus]
@@ -1137,6 +1164,15 @@ colnames(PosteriorBeta3) <- c("Ct", names(Data[,-1]))
 HDI <- HDInterval::hdi(PosteriorBeta3, credMass = 0.95)
 print(summary(coda::mcmc(PosteriorBeta3)))
 plot(coda::mcmc(PosteriorBeta3))
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Demand of marijuana in Colombia: Dirichlet process mixture}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 DataElast <- data.frame(Marijuana = PosteriorBeta1[,2], Cocaine = PosteriorBeta1[,3],
 Crack = PosteriorBeta1[,4]) 
 dens1 <- ggplot(DataElast, aes(x = Marijuana)) + geom_density(fill = "blue", alpha = 0.3) + labs(x = "Marijuana", y = "Density") + theme_minimal()
@@ -1145,9 +1181,10 @@ dens3 <- ggplot(DataElast, aes(x = Crack)) + geom_density(fill = "blue", alpha =
 labs(x = "Crack", y = "Density") + theme_minimal()
 library(ggpubr)
 ggarrange(dens1, dens2, dens3, labels = c("A", "B", "C"), ncol = 3, nrow = 1, legend = "bottom", common.legend = TRUE)
-\end{lstlisting}
+		\end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
+
 
 In this application, there are three clusters after the burn-in period, with individuals in the sample relatively evenly allocated between them. The posterior density plots of the elasticities associated with the three clusters appear very similar, which implies that the posterior draws associated with each cluster are targeting the same posterior distribution. Consequently, Figure \ref{figElastDrugs} presents the posterior density estimates of the demand price elasticities of marijuana in Colombia for the first cluster.
 
@@ -1264,7 +1301,7 @@ Figure \ref{figCubicBspline} shows a particular cubic B-spline, but \( f(x_i) \)
 The set of B-splines can be constructed using the Cox–de Boor recursion formula. The starting point is the B-spline of degree 0,
 \begin{align*}
 		b_{h,0}(x_i)=\begin{Bmatrix}
-		1 & x_h \leq x_i < x_{h+1}, & u=(x_i-x_h)/\delta\\
+		1 & x_h \leq x_i < x_{h+1}\\
 		0 & \text{otherwise}
 	\end{Bmatrix},
 \end{align*}
@@ -1301,7 +1338,6 @@ cubic_bspline <- function(x, knots, degree = 3) {
 			return(left + right)
 		}
 	}
-	
 	for (i in 1:num_basis) {
 		basis_matrix[, i] <- sapply(x, function(xi) b_spline_basis(xi, degree, i, extended_knots))
 	}
@@ -1329,9 +1365,11 @@ matplot(xA, bs_matrix_matrix, type = "l", lty = 1, col = rainbow(ncol(basis_matr
 	\caption[List of figure caption goes here]{Sequence of cubic B-splines comparison.}\label{figBsplines}
 \end{figure}
 
-The idea in splines is to calculate the linear combination of the $H$ B-splines, as those shown in Figure \ref{figBsplines}, that bets fit the dependent variable. Let's perform a simulation exercise to fix ideas.
+The idea in splines is to calculate the linear combination of the $H$ B-splines, as those shown in Figure \ref{figBsplines}, that bets fit the dependent variable.
 
-Splines can also be extended to non-linear models based on data augmentation, such as the probit and tobit models. Again, the basic idea is to incorporate splines into the implicit latent variables. \cite[Chap.~10]{koop2003bayesian} presents these extensions.\\
+Splines can also be extended to non-linear models based on data augmentation, such as the probit and tobit models. Again, the basic idea is to incorporate splines into the implicit latent variables. \cite[Chap.~10]{koop2003bayesian} presents these extensions.
+
+Let's perform a simulation exercise to fix ideas.\\
 
 \textbf{Simulation exercise: Splines}
 
@@ -1375,11 +1413,20 @@ data_Spline2 <- data.frame(x = xobs, y = Spline2, Type = "Spline 2")
 data_Spline3 <- data.frame(x = xobs, y = Spline3, Type = "Spline 3")
 data_Spline4 <- data.frame(x = xobs, y = Spline4, Type = "Spline 4")
 data <- rbind(data_true_signal, data_obs, data_Spline1, data_Spline2, data_Spline3, data_Spline4)
-ggplot(data, aes(x = x, y = y)) + geom_line(data = subset(data, Type == "True Signal"), aes(color = "True Signal"), linewidth = 1) + geom_point(data = subset(data, Type == "Observed Data"), aes(color = "Observed Data"), shape = 16) + geom_line(data = subset(data, Type == "Spline 1"), aes(color = "Splines"), linewidth = 1, linetype = "solid") + geom_line(data = subset(data, Type == "Spline 2"), aes(color = "Splines"), linewidth = 1, linetype = "solid") + geom_line(data = subset(data, Type == "Spline 3"), aes(color = "Splines"), linewidth = 1, linetype = "solid") + geom_line(data = subset(data, Type == "Spline 4"), aes(color = "Splines"), linewidth = 1, linetype = "solid") + scale_color_manual(values = c("True Signal" = "black", "Observed Data" = "red", "Splines" = "blue")) + labs(y = "y", color = "Legend") + theme_minimal() +
-theme(legend.position = "top")
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Realizations of splines}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+ggplot(data, aes(x = x, y = y)) + geom_line(data = subset(data, Type == "True Signal"), aes(color = "True Signal"), linewidth = 1) + geom_point(data = subset(data, Type == "Observed Data"), aes(color = "Observed Data"), shape = 16) + geom_line(data = subset(data, Type == "Spline 1"), aes(color = "Splines"), linewidth = 1, linetype = "solid") + geom_line(data = subset(data, Type == "Spline 2"), aes(color = "Splines"), linewidth = 1, linetype = "solid") + geom_line(data = subset(data, Type == "Spline 3"), aes(color = "Splines"), linewidth = 1, linetype = "solid") + geom_line(data = subset(data, Type == "Spline 4"), aes(color = "Splines"), linewidth = 1, linetype = "solid") + scale_color_manual(values = c("True Signal" = "black", "Observed Data" = "red", "Splines" = "blue")) + labs(y = "y", color = "Legend") + theme_minimal() + theme(legend.position = "top")
+		\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
 
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter11/figures/RealizationsSplines.png}
@@ -1422,14 +1469,22 @@ x = rep(xobs, 4),
 y = c(Fits[[1]], Fits[[2]], Fits[[3]], Fits[[4]]),
 Type = rep(c("Fit 1", "Fit 2", "Fit 3", "Fit 4"), each = length(xobs))
 )
-data <- rbind(data_true_signal, data_obs, data_preds)
-
-# Create ggplot
-ggplot(data, aes(x = x, y = y, color = Type)) + geom_line(data = subset(data, Type == "True Signal"), linewidth = 1) + geom_point(data = subset(data, Type == "Observed Data"), shape = 16, size = 2) + geom_line(data = subset(data, grepl("Fit", Type)), linewidth = 1, linetype = "solid") + scale_color_manual(values = c("True Signal" = "black", "Observed Data" = "red", "Fit 1" = "blue", "Fit 2" = "green", "Fit 3" = "orange", "Fit 4" = "purple")) + labs(y = "y", color = "Legend") +
-theme_minimal() + theme(legend.position = "top")
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Demand of marijuana in Colombia: Splines in age}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+data <- rbind(data_true_signal, data_obs, data_preds)
+# Create ggplot
+ggplot(data, aes(x = x, y = y, color = Type)) + geom_line(data = subset(data, Type == "True Signal"), linewidth = 1) + geom_point(data = subset(data, Type == "Observed Data"), shape = 16, size = 2) + geom_line(data = subset(data, grepl("Fit", Type)), linewidth = 1, linetype = "solid") + scale_color_manual(values = c("True Signal" = "black", "Observed Data" = "red", "Fit 1" = "blue", "Fit 2" = "green", "Fit 3" = "orange", "Fit 4" = "purple")) + labs(y = "y", color = "Legend") + theme_minimal() + theme(legend.position = "top")
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
 
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter11/figures/SplineFit.png}
@@ -1471,6 +1526,15 @@ k <- dim(X)[2]; N <- dim(X)[1]
 # Hyperparameters
 d0 <- 0.001; a0 <- 0.001
 b0 <- rep(0, k); c0 <- 1000; B0 <- c0*diag(k); B0i <- solve(B0)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Fit using splines: Different knots}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 # MCMC parameters
 mcmc <- 5000; burnin <- 5000
 tot <- mcmc + burnin; thin <- 1
@@ -1495,6 +1559,7 @@ ggplot() + geom_line(data = plot_data, aes(x, fit), color = "blue", linewidth = 
 	\end{VF}
 \end{tcolorbox}
 
+
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter11/figures/AgeMarijuana.png}
 	\caption[List of figure caption goes here]{Spline: Marijuana monthly consumption vs age.}\label{figAgeMarijuana}
@@ -1517,9 +1582,9 @@ In this chapter, we introduce the most common Bayesian methods for inference in 
 	\begin{align*}
 		y_i &= 0.5x_{i1} - 1.2x_{i2} + \mu_i, \\
 		p(\mu_i) &= 
-		0.3 \phi(\mu_i \mid -0.5,0.5^2) + 0.7 \phi(\mu_i \mid 1,0.8^2).		
+		0.7 \phi(\mu_i \mid -0.5,0.5^2) + 0.3 \phi(\mu_i \mid 1,0.8^2).		
 	\end{align*}
-	Assume that $x_{i1}$ and $x_{i2}$ follow a standard normal distribution and that the sample size is 1,000. Perform inference in this model assuming that the number of components is unknown. Start with $H=5$ and use non-informative priors, setting $\alpha_{h0}=\delta_{h0}=0.01$, $\boldsymbol{\beta}_0=\boldsymbol{0}_2$, $\boldsymbol{B}_0=\boldsymbol{I}_2$, $\mu_{h0}=0$, $\sigma^2_{\mu 0}=10$, and $\boldsymbol{\alpha}_0=[1/H \ \dots \ 1/H]^{\top}$. Use 6,000 MCMC iterations, a burn-in period of 4,000, and a thinning parameter of 2. Compare the population parameters with the posterior estimates and plot the population density along with the posterior density estimate of $\boldsymbol{\mu}$ (the mean, and the 95\% credible interval).
+	Assume that $x_{i1}$ and $x_{i2}$ follow a standard normal distribution and that the sample size is 1,000. Perform inference in this model assuming that the number of components is unknown. Start with $H=5$ and use non-informative priors, setting $\alpha_{h0}=\delta_{h0}=0.01$, $\boldsymbol{\beta}_0=\boldsymbol{0}_2$, $\boldsymbol{B}_0=\boldsymbol{I}_2$, $\mu_{h0}=0$, $\sigma^2_{h0}=10$, and $\boldsymbol{\alpha}_0=[1/H \ \dots \ 1/H]^{\top}$. Use 6,000 MCMC iterations, a burn-in period of 4,000, and a thinning parameter of 2. Compare the population parameters with the posterior estimates and plot the population density along with the posterior density estimate of $\boldsymbol{\mu}$ (the mean, and the 95\% credible interval).
 	
 	\item \textbf{Example: Consumption of marijuana in Colombia continues I}
 	
