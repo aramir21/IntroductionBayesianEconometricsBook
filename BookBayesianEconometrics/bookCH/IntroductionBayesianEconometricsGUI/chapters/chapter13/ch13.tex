@@ -108,9 +108,9 @@ In this century, the amount of available data continues to grow. This means we h
 
 In the standard linear regression setting,
 \begin{align*}
-	\mathbf{y} &= \mathbf{1}_N \beta_0 + \mathbf{W}\boldsymbol{\beta} + \boldsymbol{\mu},
+	\mathbf{y} &= \mathbf{i}_N \beta_0 + \mathbf{W}\boldsymbol{\beta} + \boldsymbol{\mu},
 \end{align*}
-where \(\mathbf{1}_N\) is an \(N\)-dimensional vector of ones, \(\mathbf{W}\) is the \(N \times K\) design matrix of inputs, and \(\boldsymbol{\mu} \sim \mathcal{N}(\mathbf{0}, \sigma^2 \mathbf{I}_N)\), there has been extensive development of techniques aimed at regularization within the Frequentist inferential framework. These include methods such as Ridge regression \cite{hoerl1970ridge}; discrete subset selection techniques like best subset selection \cite{furnival1974regressions}, forward selection, and backward stepwise selection \cite{hastie2009elements}; as well as continuous subset selection approaches such as the LASSO \cite{tibshirani1996regression}, the elastic net \cite{zou2005regularization}, and OSCAR \cite{bondell2008simultaneous}.
+where \(\mathbf{i}_N\) is an \(N\)-dimensional vector of ones, \(\mathbf{W}\) is the \(N \times K\) design matrix of inputs, and \(\boldsymbol{\mu} \sim \mathcal{N}(\mathbf{0}, \sigma^2 \mathbf{I}_N)\), there has been extensive development of techniques aimed at regularization within the Frequentist inferential framework. These include methods such as Ridge regression \cite{hoerl1970ridge}; discrete subset selection techniques like best subset selection \cite{furnival1974regressions}, forward selection, and backward stepwise selection \cite{hastie2009elements}; as well as continuous subset selection approaches such as the LASSO \cite{tibshirani1996regression}, the elastic net \cite{zou2005regularization}, and OSCAR \cite{bondell2008simultaneous}.
 
 It is important to note, however, that Ridge regression does not perform variable selection; rather, it shrinks coefficient estimates toward zero without setting them exactly to zero.
 
@@ -139,7 +139,7 @@ Note that regularization introduces bias into the parameter estimates because it
 \subsection{Bayesian LASSO}\label{sec13_21}
 Given the popularity of the LASSO as a variable selection technique, we present its Bayesian formulation in this subsection \cite{Park2008}. The Gibbs sampler for the Bayesian LASSO exploits the representation of the Laplace distribution as a scale mixture of normals. This leads to the following hierarchical representation of the model:
 \begin{align*}
-	\mathbf{y} \mid \beta_0, \boldsymbol{\beta}, \sigma^2, \mathbf{W} &\sim {N}(\mathbf{1}_N \beta_0 + \mathbf{W} \boldsymbol{\beta}, \sigma^2 \mathbf{I}_N), \\
+	\mathbf{y} \mid \beta_0, \boldsymbol{\beta}, \sigma^2, \mathbf{W} &\sim {N}(\mathbf{i}_N \beta_0 + \mathbf{W} \boldsymbol{\beta}, \sigma^2 \mathbf{I}_N), \\
 	\boldsymbol{\beta} \mid \sigma^2, \tau_1^2, \dots, \tau_K^2 &\sim {N}(\mathbf{0}_K, \sigma^2 \mathbf{D}_{\tau}), \\
 	\tau_1^2, \dots, \tau_K^2 &\sim \prod_{k=1}^K \frac{\lambda^2}{2} \exp\left\{ -\frac{\lambda^2}{2} \tau_k^2 \right\}, \\
 	\sigma^2 &\sim \frac{1}{\sigma^2},\\
@@ -222,7 +222,7 @@ abline(0, 1, col = "red", lty = 2)
 \subsection{Stochastic search variable selection}\label{sec13_22}
 Another well-known Bayesian strategy for variable selection in the presence of a large set of regressors (inputs) is \textit{stochastic search variable selection} (SSVS) \cite{george1993variable,George1997}. SSVS is a particular case of the broader class of \textit{spike-and-slab} priors, in which the prior distribution for the location parameters is specified as a hierarchical mixture that captures the uncertainty inherent in variable selection problems \cite{Ishwaran2005}. The hierarchical structure of the model is given by
 \begin{align*}
-	\mathbf{y} \mid \beta_0, \boldsymbol{\beta}, \sigma^2, \mathbf{W} &\sim {N}(\mathbf{1}_N \beta_0  + \mathbf{W} \boldsymbol{\beta}, \sigma^2 \mathbf{I}_N), \\
+	\mathbf{y} \mid \beta_0, \boldsymbol{\beta}, \sigma^2, \mathbf{W} &\sim {N}(\mathbf{i}_N \beta_0  + \mathbf{W} \boldsymbol{\beta}, \sigma^2 \mathbf{I}_N), \\
 	\boldsymbol{\beta} \mid \sigma^2, \boldsymbol{\gamma} &\sim {N}(\mathbf{0}_K, \sigma^2 \mathbf{D}_{\gamma} \mathbf{R} \mathbf{D}_{\gamma}), \\
 	\sigma^2 &\sim \text{Inverse-Gamma}\left(\frac{v}{2}, \frac{v\lambda_{\gamma}}{2}\right), \\
 	\gamma_k &\sim \text{Bernoulli}(p_k),
@@ -275,8 +275,7 @@ The results show that the posterior inclusion probabilities for regressors 2 thr
 		\begin{lstlisting}[language=R]
 rm(list = ls()); set.seed(10101)
 library(BoomSpikeSlab)
-library(dplyr)
-library(tibble)
+library(dplyr); library(tibble)
 # Parameters
 n <- 500  # sample size
 k <- 100  # number of predictors
@@ -285,6 +284,15 @@ s <- 10   # number of non-zero coefficients
 X <- matrix(rnorm(n * k), nrow = n, ncol = k)
 # True beta: first s coefficients are non-zero, rest are zero
 beta_true <- c(runif(s, -3, 3), rep(0, k - s))
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Stochastic search variable selection}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 # Generate response with some noise
 sigma <- 1
 y <- X %*% beta_true + rnorm(n, sd = sigma)
@@ -318,13 +326,12 @@ SummarySS <- summary(coda::mcmc(SSBoomNew$beta))
 # Extract posterior means of beta
 beta_post_mean <- SummarySS$statistics[, 1]
 # Compare true vs estimated
-plot(beta_true, beta_post_mean, pch = 19, col = "steelblue",
-xlab = "True beta", ylab = "Posterior mean of beta",
-main = "SSVS Shrinkage")
+plot(beta_true, beta_post_mean, pch = 19, col = "steelblue", xlab = "True beta", ylab = "Posterior mean of beta", main = "SSVS Shrinkage")
 abline(0, 1, col = "red", lty = 2)
-\end{lstlisting}
+		\end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
+
 
 The examples and exercises presented thus far have considered scenarios in which the number of inputs is smaller than the number of observations ($K < N$). In Exercise 4, we challenge the Bayesian LASSO and SSVS in a setting where the number of inputs exceeds the sample size ($K > N$). As you will observe in that experiment, both the Bayesian LASSO and SSVS perform well. However, the Bayesian LASSO requires more time to produce results compared to SSVS in this exercise. \cite{rockova2018spike} propose a connection between the LASSO and spike-and-slab priors for variable selection in linear models, offering oracle properties and optimal posterior concentration even in high-dimensional settings where $K > N$.
 
@@ -502,21 +509,6 @@ y.test <- y[(Ntrain+1):N]
 # Hyperparameters
 alpha <- 0.95; beta <- 2; k <- 2
 v <- 3; q <- 0.9; J <- 200
-# MCMC parameters
-MCMCiter <- 1000; burnin <- 100; thinning <- 1
-# Estimate BART
-BARTfit <- wbart(x.train = X.train, y.train = y.train, x.test = X.test, base = alpha,
-power = beta, k = k, sigdf = v, sigquant = q, ntree = J,
-ndpost = MCMCiter, nskip = burnin, keepevery = thinning)
-
-# Trace plot sigma
-keep <- seq(burnin + 1, MCMCiter + burnin, thinning)
-df_sigma <- data.frame(iteration = 1:length(keep), sigma = BARTfit$sigma[keep])
-ggplot(df_sigma, aes(x = iteration, y = sigma)) + geom_line(color = "steelblue") + labs(title = "Trace Plot of Sigma", x = "Iteration", y = expression(sigma)) + theme_minimal()
-
-# Prediction plot training
-train_preds <- data.frame( y_true = y.train, mean = apply(BARTfit$yhat.train, 2, mean),
-lower = apply(BARTfit$yhat.train, 2, quantile, 0.025), upper = apply(BARTfit$yhat.train, 2, quantile, 0.975)) %>% arrange(y_true) %>% mutate(index = row_number())
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
@@ -527,17 +519,36 @@ lower = apply(BARTfit$yhat.train, 2, quantile, 0.025), upper = apply(BARTfit$yha
 	\textit{R code. Bayesian additive regression trees}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-ggplot(train_preds, aes(x = index)) + geom_ribbon(aes(ymin = lower, ymax = upper, fill = "95% Interval"), alpha = 0.4, show.legend = TRUE) + geom_line(aes(y = mean, color = "Predicted Mean")) + geom_line(aes(y = y_true, color = "True y")) + scale_color_manual(name = "Line", values = c("Predicted Mean" = "blue", "True y" = "black")) + scale_fill_manual(name = "Interval", values = c("95% Interval" = "lightblue")) + labs(title = "Training Data: Ordered Predictions with 95% Intervals",
-x = "Ordered Index", y = "y") + theme_minimal()
+# MCMC parameters
+MCMCiter <- 1000; burnin <- 100; thinning <- 1
+# Estimate BART
+BARTfit <- wbart(x.train = X.train, y.train = y.train, x.test = X.test, base = alpha,
+power = beta, k = k, sigdf = v, sigquant = q, ntree = J,
+ndpost = MCMCiter, nskip = burnin, keepevery = thinning)
+# Trace plot sigma
+keep <- seq(burnin + 1, MCMCiter + burnin, thinning)
+df_sigma <- data.frame(iteration = 1:length(keep), sigma = BARTfit$sigma[keep])
+ggplot(df_sigma, aes(x = iteration, y = sigma)) + geom_line(color = "steelblue") + labs(title = "Trace Plot of Sigma", x = "Iteration", y = expression(sigma)) + theme_minimal()
+# Prediction plot training
+train_preds <- data.frame( y_true = y.train, mean = apply(BARTfit$yhat.train, 2, mean), lower = apply(BARTfit$yhat.train, 2, quantile, 0.025), upper = apply(BARTfit$yhat.train, 2, quantile, 0.975)) %>% arrange(y_true) %>% mutate(index = row_number())
+ggplot(train_preds, aes(x = index)) + geom_ribbon(aes(ymin = lower, ymax = upper, fill = "95% Interval"), alpha = 0.4, show.legend = TRUE) + geom_line(aes(y = mean, color = "Predicted Mean")) + geom_line(aes(y = y_true, color = "True y")) + scale_color_manual(name = "Line", values = c("Predicted Mean" = "blue", "True y" = "black")) + scale_fill_manual(name = "Interval", values = c("95% Interval" = "lightblue")) + labs(title = "Training Data: Ordered Predictions with 95% Intervals", x = "Ordered Index", y = "y") + theme_minimal()
 # Prediction plot test
 test_preds <- data.frame( y_true = y.test, mean = apply(BARTfit$yhat.test, 2, mean), lower = apply(BARTfit$yhat.test, 2, quantile, 0.025), upper = apply(BARTfit$yhat.test, 2, quantile, 0.975)) %>% arrange(y_true) %>% mutate(index = row_number())
-
 ggplot(test_preds, aes(x = index)) + geom_ribbon(aes(ymin = lower, ymax = upper, fill = "95% Interval"), alpha = 0.4, show.legend = TRUE) + geom_line(aes(y = mean, color = "Predicted Mean")) + geom_line(aes(y = y_true, color = "True y")) + scale_color_manual(name = "Line", values = c("Predicted Mean" = "blue", "True y" = "black")) + scale_fill_manual(name = "Interval", values = c("95% Interval" = "lightblue")) + labs(title = "Test Data: Ordered Predictions with 95% Intervals",
 x = "Ordered Index", y = "y") + theme_minimal()
 # Relevant regressors
 Js <- c(10, 20, 50, 100, 200)
 VarImportance <- matrix(0, length(Js), K)
 l <- 1
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Bayesian additive regression trees}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 for (j in Js){
 	BARTfit <- wbart(x.train = X.train, y.train = y.train, x.test = X.test, base = alpha,
 	power = beta, k = k, sigdf = v, sigquant = q, ntree = j,
@@ -545,18 +556,17 @@ for (j in Js){
 	VarImportance[l, ] <- BARTfit[["varcount.mean"]]/j
 	l <- l + 1
 }
-
 rownames(VarImportance) <- c("10", "20", "50", "100", "200")
 colnames(VarImportance) <- as.character(1:10)
 importance_df <- as.data.frame(VarImportance) %>% mutate(trees = rownames(.)) %>%
 pivot_longer(cols = -trees, names_to = "variable", values_to = "percent_used")
 importance_df$variable <- as.numeric(importance_df$variable)
 importance_df$trees <- factor(importance_df$trees, levels = c("10", "20", "50", "100", "200"))
-
 ggplot(importance_df, aes(x = variable, y = percent_used, color = trees, linetype = trees)) + geom_line() + geom_point() + scale_color_manual(values = c("10" = "red", "20" = "green", "50" = "blue", "100" = "cyan", "200" = "magenta")) + scale_x_continuous(breaks = 1:10) + labs(x = "variable", y = "percent used", color = "#trees", linetype = "#trees") + theme_minimal()
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
+
 
 Figure~\ref{figTraceplotsig} displays the trace plot of \(\sigma\), which appears to have reached a stationary distribution. However, the posterior draws are slightly lower than the true value (1).
 
@@ -600,7 +610,7 @@ A Gaussian Process (GP) is an infinite collection of random variables, any finit
 where \( m(\mathbf{x}) = \mathbb{E}[f(\mathbf{x})] \) and \( k(\mathbf{x}, \mathbf{x}') = \mathbb{E}[(f(\mathbf{x}) - m(\mathbf{x}))(f(\mathbf{x}') - m(\mathbf{x}'))] \).  
 It is common to assume \( m(\mathbf{x}) = 0 \) to simplify calculations, although this is not required.
 
-Perhaps the most commonly used covariance function in Gaussian Processes (GPs) is the \textit{squared exponential} kernel (or \textit{radial basis function}) \cite{jacobi2024posterior}, defined as
+Perhaps the most commonly used covariance function in Gaussian Processes is the \textit{squared exponential} kernel (or \textit{radial basis function}) \cite{jacobi2024posterior}, defined as
 \begin{align*}
 	k(\mathbf{x}, \mathbf{x}') & = \sigma^2_f \exp\left(-\frac{1}{2l^2} \|\mathbf{x} - \mathbf{x}'\|^2\right),
 \end{align*}
@@ -615,39 +625,39 @@ A GP can be interpreted as a prior distribution over a space of functions. The s
 	\textit{R code. Simulation of five realizations: Gaussian process}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-rm(list = ls())
-set.seed(10101)
-
+rm(list = ls()); set.seed(10101)
 library(ggplot2); library(dplyr)
 library(tidyr); library(MASS)
-
 # Simulation setup
 n <- 100
 x <- seq(0, 1, length.out = n)
-sigma_f <- 1
-l <- 0.2
-sigma_n <- 1e-8
-
+sigma_f <- 1; l <- 0.2; sigma_n <- 1e-8
 # Squared Exponential Kernel function
 SE_kernel <- function(x1, x2, sigma_f, l) {
 	outer(x1, x2, function(a, b) sigma_f^2 * exp(-0.5 * (a - b)^2 / l^2))
 }
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation of five realizations: Gaussian process}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 K <- SE_kernel(x, x, sigma_f, l) + diag(sigma_n, n)
 samples <- mvrnorm(n = 5, mu = rep(0, n), Sigma = K)
-
 # Transpose and rename columns to f1, f2, ..., f5
 samples_t <- t(samples)
 colnames(samples_t) <- paste0("f", 1:5)
-
 # Convert to tidy data frame
 df <- data.frame(x = x, samples_t) |>
 pivot_longer(cols = -x, names_to = "draw", values_to = "value")
-
 # Plot
 ggplot(df, aes(x = x, y = value, color = draw)) + geom_line(linewidth = 1) +
 labs( title = "Simulated Gaussian Process Draws", x = "x", y = "f(x)", color = "Function" ) + theme_minimal(base_size = 14) + theme(legend.position = "top")
-\end{lstlisting}
+		\end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
 
@@ -679,7 +689,7 @@ f_i = \sin(2\pi x_i).
 \]
 The inference is based on the properties of the conditional Gaussian distribution (see below). Figure~\ref{GPsimPoints} shows that the posterior mean (solid blue line) interpolates the observed points (red dots). Moreover, the level of uncertainty (light blue shaded area) increases in regions that are farther from the observed inputs, where the posterior mean tends to deviate more from the true underlying function (dashed green line).
 
-In situations where the input locations can be selected—such as in experimental designs, \textit{active learning strategies} can be employed to choose the points that minimize predictive uncertainty. This is typically achieved by optimizing an \textit{acquisition function} that quantifies the expected informativeness of candidate locations \cite{settles2012active}. 
+In situations where the input locations can be selected, such as in experimental designs, \textit{active learning strategies} can be employed to choose the points that minimize predictive uncertainty. This is typically achieved by optimizing an \textit{acquisition function} that quantifies the expected informativeness of candidate locations \cite{settles2012active}. 
 
 Consequently, GPs play a central role in \textit{Bayesian optimization}, a stochastic method for finding the maximum of expensive or unknown objective functions. In this approach, a prior is placed over the objective function, which is then updated using observed data to form a posterior distribution over possible functions. This posterior guides the selection of new input points by balancing exploration and exploitation through the acquisition function \cite{brochu2010tutorial}.
 
@@ -690,6 +700,15 @@ Consequently, GPs play a central role in \textit{Bayesian optimization}, a stoch
 		\begin{lstlisting}[language=R]
 rm(list = ls()); set.seed(10101)
 library(ggplot2); library(MASS)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation: $f_i=\sin(2\pi x_i)$ and Gaussian process}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 # Define the squared exponential kernel
 SE_kernel <- function(x1, x2, sigma_f, l) {
 	outer(x1, x2, function(a, b) sigma_f^2 * exp(-0.5 * (a - b)^2 / l^2))
@@ -730,6 +749,7 @@ ggplot(df, aes(x = x)) + geom_ribbon(aes(ymin = lower, ymax = upper), fill = "li
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
+
 
 \begin{figure}[!h]
 	\centering
@@ -802,43 +822,41 @@ We use the \textit{DiceKriging} package in \textbf{R} to estimate and make predi
 	\begin{VF}
 		\begin{lstlisting}[language=R]
 # Load required packages
-library(DiceKriging)
-library(rgl)
-
+library(DiceKriging); library(rgl)
 # Simulate training data
-set.seed(10101)
-n_train <- 100
-x1 <- runif(n_train)
-x2 <- runif(n_train)
-X_train <- data.frame(x1 = x1, x2 = x2)
+set.seed(10101); n_train <- 100
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
 
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation: $f_i=\sin(2\pi x_{i1}) + \cos(2\pi x_{i2}) + \sin(x_{i1} x_{i2})$ and Gaussian process}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+x1 <- runif(n_train); x2 <- runif(n_train)
+X_train <- data.frame(x1 = x1, x2 = x2)
 # True function without noise
 f_train <- sin(2 * pi * X_train$x1) + cos(2 * pi * X_train$x2) + sin(X_train$x1 * X_train$x2)
-
 # Fit Gaussian Process
 fit_km <- km(design = X_train, response = f_train, covtype = "gauss", nugget = 1e-10)
-
 # Prediction grid
 grid_points <- 30
 x1_seq <- seq(0, 1, length.out = grid_points)
 x2_seq <- seq(0, 1, length.out = grid_points)
 grid <- expand.grid(x1 = x1_seq, x2 = x2_seq)
-
 # Predict GP surface
 pred <- predict(fit_km, newdata = grid, type = "UK")
 z_pred <- matrix(pred$mean, nrow = grid_points, ncol = grid_points)
-
 # Plot
-persp3d(x = x1_seq, y = x2_seq, z = z_pred,
-col = "lightblue", alpha = 0.7,
-xlab = "x1", ylab = "x2", zlab = "GP Mean")
+persp3d(x = x1_seq, y = x2_seq, z = z_pred, col = "lightblue", alpha = 0.7, xlab = "x1", ylab = "x2", zlab = "GP Mean")
 points3d(x = X_train$x1, y = X_train$x2, z = f_train, col = "red", size = 8)
-
 fit_km@covariance@range.val # length-scale
 fit_km@covariance@sd2 # Signal variance
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
+
 
 \begin{figure}[!h]
 	\centering
@@ -914,9 +932,9 @@ The intuition behind the pseudo-marginal method is straightforward: introduce a 
 \]
 This implies that
 \[
-\hat{p}(\mathbf{y} \mid \boldsymbol{\theta}) = \frac{1}{S} \sum_{s=1}^S p(\mathbf{y} \mid \boldsymbol{\theta}, \mathbf{z}^{(s)}),
+\hat{p}(\mathbf{y} \mid \boldsymbol{\theta}) = \frac{1}{S} \sum_{s=1}^S p(\mathbf{y} \mid \boldsymbol{\theta}, \mathbf{z}^{(s)})
 \]
-where \( \mathbf{z}^{(s)} \sim p(\mathbf{z}) \), is an unbiased estimator of the marginal likelihood.
+is an unbiased estimator of the marginal likelihood, \( \mathbf{z}^{(s)} \sim p(\mathbf{z}) \).
 
 As a result, the pseudo-marginal method enables exact simulation-based inference for \( p(\mathbf{y} \mid \boldsymbol{\theta}) \) in settings where the likelihood cannot be evaluated analytically \cite{andrieu2009pseudoefficient}, for instance, in non-linear random effects models (see also approximate methods such as \textit{approximate Bayesian computation} and \textit{Bayesian synthetic likelihood} in Chapter \ref{chap15}). \cite{andrieu2009pseudoefficient} show that replacing the likelihood with an unbiased and positive estimator within the Metropolis–Hastings (MH) algorithm yields samples from the correct posterior distribution.
 
@@ -1081,7 +1099,7 @@ Also note that
 \end{align*}
 This implies that, when implementing CMC, the prior variance must be scaled by the number of batches \( B \). In other words, each subposterior should use a prior with variance \( 10 \cdot B \) in this example, so that the product of the \( B \) subposteriors reconstructs the correct full posterior.
 
-We set \( K = 10 \), \( \boldsymbol{\beta} = 0.5 \cdot \mathbf{1}_K \), and \( N = 10^5 \). The covariates \( \mathbf{x}_i \sim {N}(\mathbf{0}, \boldsymbol{\Sigma}) \), where the covariance matrix \( \boldsymbol{\Sigma}^{(i,j)} = U[-\rho, \rho]^{|i-j|} \) with \( \rho = 0.4 \), and \( \mathbf{1}_K \) denotes a \( K \)-dimensional vector of ones.
+We set \( K = 10 \), \( \boldsymbol{\beta} = 0.5 \cdot \mathbf{i}_K \), and \( N = 10^5 \). The covariates \( \mathbf{x}_i \sim {N}(\mathbf{0}, \boldsymbol{\Sigma}) \), where the covariance matrix \( \boldsymbol{\Sigma}^{(i,j)} = U[-\rho, \rho]^{|i-j|} \) with \( \rho = 0.4 \), and \( \mathbf{i}_K \) denotes a \( K \)-dimensional vector of ones.
 
 We run 2{,}000 MCMC iterations initialized at zero, and 500 as burn-in. We scale the regressors beforehand, as this is generally recommended to improve numerical stability and convergence. The following code simulates the model, and sets the hyperparameters of the algorithms.
 
@@ -1094,8 +1112,7 @@ rm(list = ls()); set.seed(10101)
 library(mvtnorm); library(MCMCpack)
 library(ggplot2); library(dplyr)
 library(parallel); library(GGally)
-
-#--- Generate correlated covariates
+#### Generate correlated covariates
 genCovMat <- function(K, rho = 0.4) {
 	Sigma0 <- matrix(1, K, K)
 	for (i in 2:K) {
@@ -1107,8 +1124,7 @@ genCovMat <- function(K, rho = 0.4) {
 	diag(Sigma0) <- 1
 	return(Sigma0)
 }
-
-#--- Simulate logistic regression data
+#### Simulate logistic regression data
 simulate_logit_data <- function(K, N, beta_true) {
 	Sigma0 <- genCovMat(K)
 	X <- rmvnorm(N, mean = rep(0, K), sigma = Sigma0)
@@ -1117,32 +1133,25 @@ simulate_logit_data <- function(K, N, beta_true) {
 	y <- rbinom(N, 1, p)
 	list(y = y, X = X)
 }
-
-#--- Parameters
-K <- 10
-N <- 100000
-beta_true <- rep(0.5, K)
-B <- 5
-batch_prop <- 0.01
-Prior_prec <- 0.1
-n_iter <- 2000
-burnin <- 500
+#### Parameters
+K <- 10; N <- 100000
+beta_true <- rep(0.5, K); B <- 5
+batch_prop <- 0.01; Prior_prec <- 0.1
+n_iter <- 2000; burnin <- 500
 stepsize <- 1e-4
 k_target1 <- 4  # beta5
 k_target2 <- 5  # beta5
 ks <- k_target1:k_target2
-#--- Simulate data
+### Simulate data
 sim_data <- simulate_logit_data(K, N, beta_true)
 y <- sim_data$y
 X <- scale(sim_data$X)
-
-#--- Run MCMCpack logit
+### Run MCMCpack logit
 df <- as.data.frame(X)
 colnames(df) <- paste0("X", 1:K)
 df$y <- y
 formula <- as.formula(paste("y ~", paste(colnames(df)[1:K], collapse = " + "), "-1"))
-posterior_mh <- MCMClogit(formula, data = df, b0 = 0, B0 = Prior_prec,
-burnin = burnin, mcmc = n_iter)
+posterior_mh <- MCMClogit(formula, data = df, b0 = 0, B0 = Prior_prec, burnin = burnin, mcmc = n_iter)
 full_posterior <- as.matrix(posterior_mh)[, 1:K]
 \end{lstlisting}
 	\end{VF}
@@ -1155,9 +1164,9 @@ The following code implements Algorithm~\ref{Alg:CMC}, running five parallel MCM
 	\textit{R code. Consensus Monte Carlo (CMC): Logit regression}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-#--- Split data
+### Split data
 batch_ids <- split(1:N, sort(rep(1:B, length.out = N)))
-#--- Function to run MCMC on a subset
+### Function to run MCMC on a subset
 mcmc_batch <- function(batch_index, X, y, n_iter, burnin) {
 	ids <- batch_ids[[batch_index]]
 	X_b <- X[ids, ]
@@ -1165,36 +1174,22 @@ mcmc_batch <- function(batch_index, X, y, n_iter, burnin) {
 	mcmc_out <- MCMClogit(y_b ~ X_b - 1, burnin = burnin, mcmc = n_iter, verbose = 0, b0 = 0, B0 = Prior_prec * (1/B))
 	return(mcmc_out)
 }
-#--- Run in parallel
+### Run in parallel
 cl <- makeCluster(B)
 clusterExport(cl, c("X", "y", "batch_ids", "n_iter", "burnin", "mcmc_batch", "Prior_prec", "B"))
 clusterEvalQ(cl, library(MCMCpack))
 chains <- parLapply(cl, 1:B, function(b) mcmc_batch(b, X, y, n_iter, burnin))
 stopCluster(cl)
-# Stack MCMC results
+### Stack MCMC results
 posteriors <- lapply(chains, function(x) x[, 1:K])  # remove intercept if added
-# CMC posteriors
+### CMC posteriors
 equal_cmc <- Reduce("+", posteriors) / B
 invvar_cmc <- {
 	vars <- lapply(posteriors, function(x) apply(x, 2, var))
 	weights <- lapply(vars, function(v) 1 / v)
 	weights_sum <- Reduce("+", weights)
-	
 	weighted_post <- Reduce("+", Map(function(x, w) sweep(x, 2, w, "*"), posteriors, weights))
 	sweep(weighted_post, 2, weights_sum, "/")
-}
-invmat_cmc <- {
-	covs <- lapply(posteriors, cov)                      # Get posterior covariances
-	invs <- lapply(covs, solve)                          # Invert each covariance
-	weight_sum <- Reduce("+", invs)                      # Total weight matrix
-	
-	consensus <- matrix(NA, nrow = n_iter, ncol = K)
-	for (i in 1:n_iter) {
-		draws <- lapply(posteriors, function(p) matrix(p[i, ], ncol = 1))  # Ensure column matrix
-		weighted_sum <- Reduce("+", Map(function(w, d) w %*% d, invs, draws))  # Weighted matrix product
-		consensus[i, ] <- as.vector(solve(weight_sum, weighted_sum))  # Solve system and convert to vector
-	}
-	consensus
 }
 \end{lstlisting}
 	\end{VF}
@@ -1205,6 +1200,18 @@ invmat_cmc <- {
 	\textit{R code. Consensus Monte Carlo (CMC): Logit regression}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
+invmat_cmc <- {
+	covs <- lapply(posteriors, cov) 
+	invs <- lapply(covs, solve)    
+	weight_sum <- Reduce("+", invs) 
+	consensus <- matrix(NA, nrow = n_iter, ncol = K)
+	for (i in 1:n_iter) {
+		draws <- lapply(posteriors, function(p) matrix(p[i, ], ncol = 1)) 
+		weighted_sum <- Reduce("+", Map(function(w, d) w %*% d, invs, draws)) 
+		consensus[i, ] <- as.vector(solve(weight_sum, weighted_sum))  
+	}
+	consensus
+}
 # Combine all for plotting
 build_df <- function(mat, method) {
 	df <- as.data.frame(mat)
@@ -1212,22 +1219,13 @@ build_df <- function(mat, method) {
 	df$method <- method
 	return(df)
 }
-
 df_full <- build_df(full_posterior[,ks], "overall")
 df_equal <- build_df(equal_cmc[,ks], "equal")
 df_scalar <- build_df(invvar_cmc[,ks], "scalar")
 df_matrix <- build_df(invmat_cmc[,ks], "matrix")
-
 df_plot <- rbind(df_full, df_matrix, df_scalar, df_equal)
-
 # Plot
-ggpairs(
-df_plot,
-aes(color = method, fill = method, alpha = 0.4),
-upper = list(continuous = GGally::wrap("density", alpha = 0.4)),
-lower = list(continuous = GGally::wrap("density", alpha = 0.4)),
-diag = list(continuous = GGally::wrap("densityDiag", alpha = 0.4))
-)
+ggpairs( df_plot, aes(color = method, fill = method, alpha = 0.4), upper = list(continuous = GGally::wrap("density", alpha = 0.4)), lower = list(continuous = GGally::wrap("density", alpha = 0.4)), diag = list(continuous = GGally::wrap("densityDiag", alpha = 0.4)))
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
@@ -1271,27 +1269,22 @@ SGLD_step <- function(beta, y, X, stepsize, batch_size, prior_var = 10) {
 	beta_new <- beta - 0.5 * stepsize * grad + noise
 	return(beta_new)
 }
-#--- SGLD algorithm
+### SGLD algorithm
 run_SGLD <- function(y, X, stepsize, batch_prop, n_iter, burnin, beta_init = NULL) {
 	N <- nrow(X)
 	K <- ncol(X)
 	batch_size <- round(batch_prop * N)
-	
 	beta_mat <- matrix(0, n_iter + burnin, K)
 	beta_mat[1, ] <- if (is.null(beta_init)) rep(0, K) else beta_init
-	
 	for (s in 2:(n_iter + burnin)) {
 		beta_mat[s, ] <- SGLD_step(beta_mat[s - 1, ], y, X, stepsize, batch_size)
 	}
 	beta_mat[(burnin + 1):(n_iter + burnin), ]
 }
-#--- Run SGLD
+### Run SGLD
 posterior_sgld <- run_SGLD(y = y, X = X, stepsize, batch_prop, n_iter, burnin)
-#--- Compare densities for beta5
-df_plot <- data.frame(
-value = c(posterior_sgld[, k_target2], posterior_mh[, k_target2]),
-method = rep(c("SGLD", "MCMC"), each = n_iter)
-)
+### Compare densities for beta5
+df_plot <- data.frame( value = c(posterior_sgld[, k_target2], posterior_mh[, k_target2]), method = rep(c("SGLD", "MCMC"), each = n_iter))
 ggplot(df_plot, aes(x = value, fill = method, color = method)) + geom_density(alpha = 0.4) + geom_vline(xintercept = beta_true[k_target2], linetype = "dashed", color = "black") + labs(title = expression(paste("Posterior density of ", beta[5])), x = expression(beta[5]), y = "Density") + theme_minimal()
 \end{lstlisting}
 	\end{VF}
