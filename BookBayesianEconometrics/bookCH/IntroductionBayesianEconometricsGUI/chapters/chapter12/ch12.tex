@@ -253,9 +253,17 @@ ppd0 <- replicate(1000, simulate_t(y0))
 # Plot
 hist(ppd1, col = rgb(1, 0, 0, 0.4), freq = FALSE, main = "Posterior Predictive",
 xlab = "Y", xlim = c(5, 25))
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]\label{code0_chap12}
+	\textit{R code. Simple example: Average treatment effects}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 hist(ppd0, col = rgb(0, 0, 1, 0.4), freq = FALSE, add = TRUE)
-legend("topright", legend = c("Treatment", "Control"),
-fill = c(rgb(1, 0, 0, 0.4), rgb(0, 0, 1, 0.4)))
+legend("topright", legend = c("Treatment", "Control"), fill = c(rgb(1, 0, 0, 0.4), rgb(0, 0, 1, 0.4)))
 # Posterior distribution of ATE
 posterior_mu <- function(y) {
 	N <- length(y); ybar <- mean(y)
@@ -267,16 +275,7 @@ posterior_mu <- function(y) {
 	df <- alpha_n
 	loc <- ybar; scale <- sqrt(var_mu)
 	rt(1, df = df) * scale + loc
-}
-\end{lstlisting}
-	\end{VF}
-\end{tcolorbox} 
-
-\begin{tcolorbox}[enhanced,width=4.67in,center upper,
-	fontupper=\large\bfseries,drop shadow southwest,sharp corners]\label{code0_chap12}
-	\textit{R code. Simple example: Average treatment effects}
-	\begin{VF}
-		\begin{lstlisting}[language=R]		
+}		
 # Posterior draws for parameters
 n_draws <- 10000
 mu1_draws <- replicate(n_draws, posterior_mu(y1))
@@ -289,14 +288,12 @@ ate_mean <- mean(ate_draws)
 ci <- quantile(ate_draws, c(0.025, 0.975))
 cat("Posterior mean of ATE:", ate_mean, "\n")
 cat("95% Credible Interval:", ci, "\n")
-
 # Plot posterior distribution of ATE
 hist(ate_draws, breaks = 50, freq = FALSE,
 main = "Posterior Distribution of ATE",
 xlab = "ATE (Y(1) - Y(0))", col = "lightblue", border = "white")
 abline(v = ate_mean, col = "red", lwd = 2)
 abline(v = ci, col = "darkgreen", lty = 2, lwd = 2)
-
 legend("topright", legend = c("Posterior Mean", "95% Credible Interval"), col = c("red", "darkgreen"), lwd = 2, lty = c(1, 2), bty = "n", cex = 0.8)  # Smaller legend using cex
 \end{lstlisting}
 	\end{VF}
@@ -379,7 +376,7 @@ Figure~\ref{DAG2} illustrates the causal structure underlying the CIA. We follow
 	\label{SWIG2}
 \end{figure}
  
-The simple regression framework of the previous section can be extended to a multiple linear regression model by including the \textit{pre-treatment variables}; therefore, the CEF is linear in the treatment and pre-treatment variables:
+The simple regression framework of the previous section can be extended to a multiple linear regression model by including the \textit{pre-treatment variables}; therefore, if the CEF is linear in the treatment and pre-treatment variables:
 \begin{align*}
 	Y_i = \beta_0 + \tau D_i + \mathbf{X}_i^{\top}\boldsymbol{\beta} + \mu_i.
 \end{align*}
@@ -519,7 +516,7 @@ The collider bias illustrated in DAG \ref{fig:coll}, based on \cite{chernozhukov
 		\draw[->] (U) -- (Y);
 		
 	\end{tikzpicture}
-	\caption{DAG illustrating the birth-weight paradox: $S$ (smoking), $B$ (birth weight), $Y$ (infant mortality), $U$ (other unobserved health factors).}
+	\caption{DAG illustrating the birth-weight paradox: $S$ (smoking), $B$ (birth weight), $Y$ (infant mortality), and $U$ (other unobserved health factors).}
 	\label{fig:coll}
 \end{figure}	
 
@@ -534,9 +531,17 @@ rm(list = ls()); set.seed(10101)
 library(MCMCpack); library(dplyr); library(ggplot2)
 # Parameters
 n <- 1000; true_effect <- 2; replications <- 100
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}  
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]\label{code2a_chap12}
+	\textit{R code. Collider bias: Birth weight ``paradox"}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 # Store results
 results <- data.frame(rep = 1:replications, correct = numeric(replications), biased = numeric(replications))
-
 for (r in 1:replications) {
 	# Simulate data under DAG: S -> B -> Y, S -> Y, U -> B, U -> Y
 	U <- rnorm(n, 0, 1); S <- rbinom(n, prob = 0.7, size = 1)
@@ -549,7 +554,7 @@ for (r in 1:replications) {
 	# Posterior means for S
 	results$correct[r] <- mean(as.matrix(model_correct)[, "S"])
 	results$biased[r] <- mean(as.matrix(model_biased)[, "S"])
-}
+}		
 # Compute bias
 results <- results %>% mutate(
 bias_correct = correct - true_effect,
@@ -568,7 +573,6 @@ print(avg_bias)
 df_long <- results %>%
 select(rep, correct, biased) %>%
 tidyr::pivot_longer(cols = c(correct, biased), names_to = "model", values_to = "estimate")
-
 ggplot(df_long, aes(x = estimate, fill = model)) + geom_density(alpha = 0.5) + geom_vline(xintercept = true_effect, color = "black", linetype = "dashed", linewidth = 1) + labs(title = "Posterior Means Across 100 Simulations", x = expression(paste("Posterior Mean of ", beta[S])), y = "Density") + theme_minimal(base_size = 14)
 \end{lstlisting}
 	\end{VF}
@@ -697,35 +701,28 @@ Therefore, under relevance, exogeneity, monotonicity, and SUTVA, IV methods allo
 	&= \mathbb{E}[Y_i(1)-Y_i(0)\mid D_i(1)=1, D_i(0)=0].
 \end{align*}
 
-We define $Y_i(z_i,D_i(z))$ to be the outcome for unit $i$ if exposed to treatment $D_i(z)$ after being assigned to treatment $z$. Therefore, the \textit{Intention-to-Treat} (ITT) causal effect of $Z_i$ on $Y_i$ is:
-{\scriptsize{
+We define $Y_i(z_i,D_i(z))$ to be the outcome for unit $i$ if exposed to treatment $D_i(z)$ after being assigned to treatment $z$. Therefore, the \textit{Intention-to-Treat} (ITT) causal effect of $Z_i$ on $Y_i$ is $\mathbb{E}[Y_i(1,D_i(1))-Y_i(0,D_i(0))]$, and can be expressed as:
 \begin{align*}
-	\mathbb{E}[Y_i(1,D_i(1))-Y_i(0,D_i(0))]&=\underbrace{\mathbb{E}[Y_i(1,D_i(1))-Y_i(0,D_i(0))\mid D_i(1)=1,D_i(0)=1]\times P(D_i(1)=1,D_i(0)=1)}_{always-takers}\\
-	&+\underbrace{\mathbb{E}[Y_i(1,D_i(1))-Y_i(0,D_i(0))\mid D_i(1)=0,D_i(0)=0]\times P(D_i(1)=0,D_i(0)=0)}_{never-takers}\\
-	&+\underbrace{\mathbb{E}[Y_i(1,D_i(1))-Y_i(0,D_i(0))\mid D_i(1)=1,D_i(0)=0]\times P(D_i(1)=1,D_i(0)=0)}_{compliers}\\
-	&+\underbrace{\mathbb{E}[Y_i(1,D_i(1))-Y_i(0,D_i(0))\mid D_i(1)=0,D_i(0)=1]\times P(D_i(1)=0,D_i(0)=1)}_{defiers},\\
+	\underbrace{\mathbb{E}[Y_i(1,D_i(1))-Y_i(0,D_i(0))\mid D_i(1)=1,D_i(0)=1]\times P(D_i(1)=1,D_i(0)=1)}_{always-takers}\\
+	+\underbrace{\mathbb{E}[Y_i(1,D_i(1))-Y_i(0,D_i(0))\mid D_i(1)=0,D_i(0)=0]\times P(D_i(1)=0,D_i(0)=0)}_{never-takers}\\
+	+\underbrace{\mathbb{E}[Y_i(1,D_i(1))-Y_i(0,D_i(0))\mid D_i(1)=1,D_i(0)=0]\times P(D_i(1)=1,D_i(0)=0)}_{compliers}\\
+	+\underbrace{\mathbb{E}[Y_i(1,D_i(1))-Y_i(0,D_i(0))\mid D_i(1)=0,D_i(0)=1]\times P(D_i(1)=0,D_i(0)=1)}_{defiers},\\
 \end{align*}
-}}
+
 that is, ITT is a mixture over the four potential groups.
 
-We know that the ITT effect of $Z_i$ on $Y_i$ is zero for always-takers and never-takers due to the exclusion restriction, i.e., $Z_i$ affects $Y_i$ only through $D_i$, and $D_i$ does not vary with $Z_i$ for always-takers and never-takers. Moreover, the monotonicity assumption rules out the existence of defiers. Hence, only compliers contribute to the effect of $Z_i$ on $Y_i$:
-
-{\scriptsize
-	\begin{align*}
-		\mathbb{E}[Y_i(1,D_i(1)) - Y_i(0,D_i(0))] 
-		&= \mathbb{E}[Y_i(1,D_i(1)) - Y_i(0,D_i(0)) \mid D_i(1)=1, D_i(0)=0] \cdot P(D_i(1)=1, D_i(0)=0).
-	\end{align*}
-}
+We know that the ITT effect of $Z_i$ on $Y_i$ is zero for always-takers and never-takers due to the exclusion restriction, i.e., $Z_i$ affects $Y_i$ only through $D_i$, and $D_i$ does not vary with $Z_i$ for always-takers and never-takers. Moreover, the monotonicity assumption rules out the existence of defiers. Hence, only compliers contribute to the effect of $Z_i$ on $Y_i$, then $\mathbb{E}[Y_i(1,D_i(1))-Y_i(0,D_i(0))]$ is
+\begin{align*}
+	 \mathbb{E}[Y_i(1,D_i(1)) - Y_i(0,D_i(0)) \mid D_i(1)=1, D_i(0)=0] \cdot P(D_i(1)=1, D_i(0)=0).
+\end{align*}
 
 For compliers, $D_i = Z_i$, so we can simplify $Y_i(1,D_i(1)) = Y_i(1,1) = Y_i(1)$ and $Y_i(0,D_i(0)) = Y_i(0,0) = Y_i(0)$. Thus,
-
 \begin{align*}
 	\mathbb{E}[Y_i(1) - Y_i(0)] 
 	&= \mathbb{E}[Y_i(1) - Y_i(0) \mid D_i(1) = 1, D_i(0) = 0] \cdot P(D_i(1) = 1, D_i(0) = 0),
 \end{align*}
 
 which implies that
-
 \begin{align*}
 	\tau_{LATE} = \mathbb{E}[Y_i(1) - Y_i(0) \mid D_i(1) = 1, D_i(0) = 0] 
 	&= \frac{\mathbb{E}[Y_i(1) - Y_i(0)]}{P(D_i(1) = 1, D_i(0) = 0)}.
@@ -794,12 +791,12 @@ E[Y \mid Z=1] = \tfrac{4 \cdot 20 + 7 \cdot 100}{120} = 6.50,
 
 From these we also recover the compliance shares:
 \[
-\eta_a = P(D=1 \mid Z=0) = \tfrac{3}{8}=0.375, \quad
-\eta_c = \Delta_D = \tfrac{11}{24}=0.458,
+\eta_a = P(D=1 \mid Z=0) = \tfrac{3}{8}=0.37, \quad
+\eta_c = \Delta_D = \tfrac{11}{24}=0.46,
 \]
 thus,
 \[
-\eta_n = 1 - \eta_a - \eta_c = \tfrac{1}{6}=0.166.
+\eta_n = 1 - \eta_a - \eta_c = \tfrac{1}{6}=0.17.
 \]
 
 Then, we can \textit{point-identified} the LATE under exclusion restriction,
@@ -1015,12 +1012,20 @@ Ncn001 <- 11514
 cn001 <- cbind(rep(0, Ncn001), rep(0, Ncn001), rep(1, Ncn001)) 
 Ncn000 <- 74
 cn000 <- cbind(rep(0, Ncn000), rep(0, Ncn000), rep(0, Ncn000)) 
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Effects of vitamin A supplements on children's survival}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 mydata <- rbind(c111, c110, n101, n100, cn001, cn000)
 mydata <- data.frame(Z = mydata[,1], D = mydata[,2], Y = mydata[,3])
 N <- dim(mydata)[1]
 attach(mydata)
-
 # Sampling function C (type)
 SampleType <- function(z, d, y, wc, nc0, nn0){
 	if(z == 1 & d == 0){
@@ -1041,22 +1046,11 @@ SampleType <- function(z, d, y, wc, nc0, nn0){
 z = 0; d = 0; y = 0; wc = 0.8; nc0 = 0.9; nn0 = 0.05
 SampleType(z = z, d = d, y = y, wc = wc, nc0 = nc0, nn0 = nn0)
 Clat <- sapply(1:N, function(i){SampleType(z = Z[i], d = D[i], y = Y[i], wc = wc, nc0 = nc0, nn0 = nn0)})
-\end{lstlisting}
-	\end{VF}
-\end{tcolorbox} 
-
-
-\begin{tcolorbox}[enhanced,width=4.67in,center upper,
-	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Effects of vitamin A supplements on children's survival}
-	\begin{VF}
-		\begin{lstlisting}[language=R]
 # Gibbs sampler
 a0 <- 1; b0 <- 1 # Hyperparameters beta priors
 burnin <- 500; S <- 2000; tot <- S + burnin 
 PosteriorDraws <- matrix(NA, tot, 5)
 pb <- txtProgressBar(min = 0, max = tot, style = 3)
-
 for(s in 1:tot){
 	dataLat <- cbind(mydata, Clat)
 	Nc011 <- sum(dataLat$Z == 0 & dataLat$Clat == 1 & dataLat$Y == 1)
@@ -1065,6 +1059,15 @@ for(s in 1:tot){
 	Nn000 <- sum(dataLat$Z == 0 & dataLat$Clat == 0 & dataLat$Y == 0)
 	Nc <- sum(Clat == 1)
 	Nn <- sum(Clat == 0)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Effects of vitamin A supplements on children's survival}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 	wc <- rbeta(1, 1 + Nc, 1 + Nn)
 	nc1 <- rbeta(1, 1 + Nc111, 1 + Nc110)
 	nn1 <- rbeta(1, 1 + Nn101, 1 + Nn100)
@@ -1079,20 +1082,16 @@ keep <- seq((burnin+1), tot)
 LATE <- PosteriorDraws[keep, 2] - PosteriorDraws[keep, 3]
 LATEmean <- mean(LATE)
 LATEci <- quantile(LATE, c(0.025, 0.975))
-
 # Plot posterior distribution of CATE
-hist(LATE, breaks = 40, freq = FALSE,
-main = "Posterior Distribution of CACE",
+hist(LATE, breaks = 40, freq = FALSE, main = "Posterior Distribution of CACE",
 xlab = "CACE", col = "lightblue", border = "white")
 abline(v = LATEmean, col = "red", lwd = 2)
 abline(v = LATEci, col = "darkgreen", lty = 2, lwd = 2)
-
-legend("topright", legend = c("Posterior Mean", "95% Credible Interval"),
-col = c("red", "darkgreen"), lwd = 2, lty = c(1, 2),
-bty = "n", cex = 0.8)  # Smaller legend using cex
-\end{lstlisting}
+legend("topright", legend = c("Posterior Mean", "95% Credible Interval"), col = c("red", "darkgreen"), lwd = 2, lty = c(1, 2), bty = "n", cex = 0.8)
+		\end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
+
 
 \begin{figure}[h!]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter12/figures/CACE.png}
@@ -1118,7 +1117,15 @@ In addition, it is worth mentioning that in partially identified models, the asy
 		\begin{lstlisting}[language=R]
 PosteriorDrawsER <- matrix(NA, tot, 4)
 pb <- txtProgressBar(min = 0, max = tot, style = 3)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
 
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Effects of vitamin A supplements on children's survival: Imposing exclusion restrictions}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 for(s in 1:tot){
 	dataLat <- cbind(mydata, Clat)
 	Nc011 <- sum(dataLat$Z == 0 & dataLat$Clat == 1 & dataLat$Y == 1)
@@ -1168,6 +1175,15 @@ Exercise~6 asks how to recover the ITT from the LATE and the effect of eligibili
 rm(list = ls()); set.seed(10101)
 library(coda); library(ggplot2)
 mydata <- read.csv("https://raw.githubusercontent.com/BEsmarter-consultancy/BSTApp/refs/heads/master/DataApp/401k.csv", sep = ",", header = TRUE, quote = "")
+	\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]\label{code3n_chap12}
+	\textit{R code. Treatment effect: 401(k) participation on net financial assets}
+	\begin{VF}
+		\begin{lstlisting}[language=R]		
 # Attach variables
 attach(mydata)
 y <- net_tfa/1000  # Outcome: net financial assets
@@ -1211,9 +1227,10 @@ PostSigma <- function(Beta, Gamma){
 	Sigma <- solve(Sigmai[,,1]) 
 	return(Sigma)
 }
-	\end{lstlisting}
+\end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
+
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]\label{code3_chap12}
@@ -1419,7 +1436,7 @@ As a rule of thumb, absolute standardized differences greater than 0.25 indicate
 In this setting, the \textit{conditional parallel trends} assumption becomes
 \begin{equation*}
 	\mathbb{E}[Y_{i2}(0) - Y_{i1}(0) \mid D_i = 1, \mathbf{X}_i] 
-	= \mathbb{E}[Y_{i2}(0) - Y_{i1}(0) \mid D_i = 0, \mathbf{X}_i], \ \text{almost surely}
+	= \mathbb{E}[Y_{i2}(0) - Y_{i1}(0) \mid D_i = 0, \mathbf{X}_i], \ \text{almost surely,}
 \end{equation*}
 and the \textit{no anticipation} assumption becomes
 \begin{equation*}
@@ -1537,7 +1554,7 @@ Note that under these assumptions, we can express $ATT(g,t)$ in terms of observa
 \begin{align*}
 	ATT(g,t) 
 	= \mathbb{E}\big[ Y_{it} - Y_{i, g-1} \mid G_i = g \big]
-	- \mathbb{E}\big[ Y_{it} - Y_{i, g-1} \mid G_i = g', \ g' > t \big].
+	- \mathbb{E}\big[ Y_{it} - Y_{i, g-1} \mid G_i = g'\big], \ g' > t.
 \end{align*}
 This formulation makes explicit the choice of the comparison group, either not-yet-treated or never-treated units in this setting. Moreover, cohorts are indexed by the first treatment date $g$, and effects are evaluated at calendar time $t$. Hence the object of interest is cohort–time specific, $ATT(g,t)$, and staggered designs generally imply a multiplicity of ATT parameters, where each estimand can be seen as a multi-period version of a DiD causal effect (Equation~\ref{eq:DiD}).
 
@@ -1568,29 +1585,27 @@ An advantage of having multiple pre-treatment periods in the design is that it a
 
 Thus, we can test whether the differences in the expected changes of the outcome variable before treatment between different groups are statistically indistinguishable from zero. If this is the case, common practice would suggest that there is evidence in favor of parallel trends. However, we should remember that the parallel trends assumption is essentially untestable because it imposes restrictions on post-treatment periods, not on pre-treatment periods. Consequently, the same recommendations as those at the end of the previous section apply: perform sensitivity analyses regarding potential violations of the parallel trends assumption.
 
-Assuming that parallel trends hold conditional on covariates, we obtain identification under the following assumptions:
+Assuming that parallel trends hold conditional on covariates, we obtain identification under the following assumptions \cite{baker2025did_guide}:
 
 \textit{1. Staggered parallel trends with not-yet-treated comparison (conditional on $\mathbf X_i$):}
-\[
+\begin{align*}
 \mathbb{E}\!\left[Y_{it}(\infty)-Y_{i,t-1}(\infty)\mid G_i=g,\ \mathbf X_i\right]
-=
-\mathbb{E}\!\left[Y_{it}(\infty)-Y_{i,t-1}(\infty)\mid G_i>t,\ \mathbf X_i\right],
-\quad \forall\, g,\ t<g.
-\]
+& =
+\mathbb{E}\!\left[Y_{it}(\infty)-Y_{i,t-1}(\infty)\mid G_i=g',\ \mathbf X_i\right],
+\\
+& t\geq g, g'>t.
+\end{align*}
 
 \textit{2. Staggered overlap (positivity) for not-yet-treated comparisons:}
 \[
-\epsilon \le P(G_i=g \mid \mathbf X_i)
-\quad \text{and} \quad
-\epsilon \le P(G_i>t \mid \mathbf X_i),
-\quad \forall\, g,\ t<g,\ \text{for some } \epsilon>0.
+P(G_i=g \mid \mathbf X_i) < 1 - \epsilon\, \ \epsilon >0, \ \text{almost surely, and,} \ P(G_i=g)>0.
 \]
 
 Condition 1 means that conditional on covariates, pre-treatment changes in untreated potential outcomes for cohort $g$ match those of units not yet treated at time $t$, and condition 2 means that there is positive probability of belonging to cohort $g$ and of being not yet treated at $t$.
 
 Given these assumptions and no anticipation, the $ATT(g,t)$ can be expressed as
 \begin{align*}
-	ATT(g,t) &=\mathbb{E}[Y_{it} - Y_{ig-1} \mid G_i = g]-\mathbb{E}_{\mathbf{X}}\left\{\mathbb{E}[Y_{it} - Y_{ig-1} \mid\mathbf{X}_i,  G_i = g'>t]\mid G_i=g\right\}.
+	ATT(g,t) &=\mathbb{E}[Y_{it} - Y_{ig-1} \mid G_i = g]-\mathbb{E}_{\mathbf{X}}\left\{\mathbb{E}[Y_{it} - Y_{ig-1} \mid\mathbf{X}_i,  G_i = g']\mid G_i=g\right\}.
 \end{align*}
 
 Again, inference on $ATT(g,t)$ can be conducted using regression adjustment, inverse-probability weighting, or doubly robust estimators. Although TWFE specifications are often used to estimate $ATT(g,t)$, \cite{baker2025did_guide} recommend avoiding them in staggered DiD settings because they generally do not identify $ATT(g,t)$. Instead, they recover a complicated, non-convex weighted average of cohort–time effects, with potentially negative weights.\\
@@ -2012,21 +2027,23 @@ K_0 = \{c, n\}, \quad K_1 = \{c, a\}.
 Under a Bayesian framework, posterior simulation simplifies because we sample each unit’s latent type $C_i \in \{c, n, a\}$. This contrasts with the Frequentist literature, where types are not modeled explicitly. Thus, the Bayesian approach requires setting assumptions about the types (see \cite{chib2016bayesian} for details); for instance, types may be distributed smoothly around the cutoff with unknown distributions. In addition, given monotonicity, there are models for four potential outcomes. This differs from the Frequentist literature, which considers only two potential outcomes, given the binary treatment, and a model for the treatment.
 
 Note that if we observe $Z_i < 0$ and $D_i = 0$, only compliers and never-takers are possible. Then,
-\[
+\begin{align*}
 P(C_i = c \mid Y_i, D_i = 0, \boldsymbol{\theta})
-= \frac{\eta_{c} \, t_v\!\big(Y_i \mid \mathbf{W}_{ic}^{\top} \boldsymbol{\beta}_{0c}, \sigma^2_{0c} \big)}
+&= \frac{\eta_{c} \, t_v\!\big(Y_i \mid \mathbf{W}_{ic}^{\top} \boldsymbol{\beta}_{0c}, \sigma^2_{0c} \big)}
 {\eta_{c} \, t_v\!\big(Y_i \mid \mathbf{W}_{ic}^{\top} \boldsymbol{\beta}_{0c}, \sigma^2_{0c} \big) +
-	\eta_{n} \, t_v\!\big(Y_i \mid \mathbf{W}_{in}^{\top} \boldsymbol{\beta}_{0n}, \sigma^2_{0n} \big)}, i \in K_{00}
-\]
+	\eta_{n} \, t_v\!\big(Y_i \mid \mathbf{W}_{in}^{\top} \boldsymbol{\beta}_{0n}, \sigma^2_{0n} \big)},\\
+& i \in K_{00}
+\end{align*}
 where $\boldsymbol{\theta}$ denotes the set of model parameters, and $\eta_{c}$ and $\eta_{n}$ are the current mixture weights for a complier and a never-taker, respectively.
 
 Conversely, if $Z_i \geq 0$ and $D_i = 1$, only compliers and always-takers are possible:
-\[
+\begin{align*}
 P(C_i = c \mid Y_i, D_i = 1, \boldsymbol{\theta})
-= \frac{\eta_{c} \, t_v\!\big(Y_i \mid \mathbf{W}_{ic}^{\top} \boldsymbol{\beta}_{1c}, \sigma^2_{1c} \big)}
+&= \frac{\eta_{c} \, t_v\!\big(Y_i \mid \mathbf{W}_{ic}^{\top} \boldsymbol{\beta}_{1c}, \sigma^2_{1c} \big)}
 {\eta_{c} \, t_v\!\big(Y_i \mid \mathbf{W}_{ic}^{\top} \boldsymbol{\beta}_{1c}, \sigma^2_{1c} \big) +
-	\eta_{a} \, t_v\!\big(Y_i \mid \mathbf{W}_{ia}^{\top} \boldsymbol{\beta}_{1a}, \sigma^2_{1a} \big)}, i \in K_{11}
-\]
+	\eta_{a} \, t_v\!\big(Y_i \mid \mathbf{W}_{ia}^{\top} \boldsymbol{\beta}_{1a}, \sigma^2_{1a} \big)},\\
+& i \in K_{11}
+\end{align*}
 where $\eta_{a}$ is the mixture weight for an always-taker.
 
 Following \cite{chib2016bayesian}, we assume a Dirichlet prior for the mixing probabilities ($\eta_c, \eta_n,\eta_a$) with hyperparameters $\alpha_{0k}$, $k \in \{c, n, a\}$. The posterior distribution is then Dirichlet with parameters $\alpha_{0k} + \sum_{i=1}^N \mathbbm{1}(C_i = k)$.
@@ -2063,19 +2080,27 @@ The following code performs a simulation assuming that $Z_i$ follows a discrete 
 rm(list = ls()); set.seed(10101); library(ggplot2)
 # Simulation setup
 N <- 3000
-Zi <- sample(seq(-24, 24, 1), N, replace = TRUE) # Running var
+Zi <- sample(seq(-24, 24, 1), N, replace = TRUE) # Running
 Z <- Zi - mean(Zi)
-T <- as.integer(Z >= 0)                          # Policy (0/1)
+T <- as.integer(Z >= 0)  # Policy (0/1)
 X <- sample(seq(85, 95, 1), N, replace = TRUE)   # Regressor
-Wc <- cbind(1, Z, X)                             # Compliers
-W  <- cbind(1, X)                                # No compliers
+Wc <- cbind(1, Z, X)   # Compliers
+W  <- cbind(1, X)    # No compliers
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}  
 
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation: Fuzzy regression discontinuity design}
+	\begin{VF}
+		\begin{lstlisting}[language=R]	
 B0c <- c(4.5, -0.2, 0.03); B1c <- c(5.5, 0.4,  0.03)
 B0n <- c(6.8,  -0.02); B1a <- c(5.5,  -0.04)
 s2c <- 0.1; s2n <- 0.15; s2a <- 0.2
 Etac <- 0.7; Etan <- 0.15; Etaa <- 0.15
 v <- 5
-# Potential outcomes (Student-t noise scaled to match variances)
+# Potential outcomes 
 mu0c <- sqrt(s2c) * rt(N, v);  Y0c <- as.numeric(Wc %*% B0c + mu0c)
 mu1c <- sqrt(s2c) * rt(N, v);  Y1c <- as.numeric(Wc %*% B1c + mu1c)
 mu0n <- sqrt(s2n) * rt(N, v);  Y0n <- as.numeric(W  %*% B0n + mu0n)
@@ -2097,19 +2122,9 @@ type[idc]  <- "c"
 D <- integer(N)
 D[type == "n"] <- 0; D[type == "a"] <- 1
 D[type == "c"] <- T[type == "c"]
-
 # 2x2 table of D vs T
 tab_DT <- table(T = factor(T, levels = 0:1), D = factor(D, levels = 0:1))
 print(tab_DT)
-		\end{lstlisting}
-	\end{VF}
-\end{tcolorbox}  
-
-\begin{tcolorbox}[enhanced,width=4.67in,center upper,
-	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Simulation: Fuzzy regression discontinuity design}
-	\begin{VF}
-		\begin{lstlisting}[language=R]	
 Y <- ifelse(type == "n", Y0n, ifelse(type == "a", Y1a, ifelse(D == 0, Y0c, Y1c)))
 ## Gibbs sampler ##
 I00 <- which(T == 0 & D == 0); I11 <- which(T == 1 & D == 1)
@@ -2122,6 +2137,15 @@ a0 <- 0.01; d0 <- 0.01 # Inv-Gamma
 dens_t_locscale <- function(y, mu, sig2, v) {
 	z <- (y - mu) / sqrt(sig2); dt(z, df = v) / sqrt(sig2)
 }
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}  
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation: Fuzzy regression discontinuity design}
+	\begin{VF}
+		\begin{lstlisting}[language=R]	
 Pc0 <- function(b0c, sigma20c, etac, b0n, sigma20n, etan, i){
 	p0c <- etac * dens_t_locscale(Y[i], mu = sum(Wc[i,]*b0c), sig2 = sigma20c, v = v)
 	p0n <- etan * dens_t_locscale(Y[i], mu = sum(W[i, ]*b0n), sig2 = sigma20n, v = v)
@@ -2157,6 +2181,13 @@ PostSig2 <- function(Beta, lambda, y, H){
 	sig2 <- invgamma::rinvgamma(1, shape = an/2, rate = dn/2)
 	return(sig2)
 }
+# MCMC parameter
+burnin <- 1000; S <- 5000; tot <- S + burnin 
+ETAs <- matrix(NA, tot, 3)
+BETAS0C <- matrix(NA, tot, 3); BETAS1C <- matrix(NA, tot, 3)
+BETASA <- matrix(NA, tot, 2); BETASN <- matrix(NA, tot, 2)
+SIGMAS <- matrix(NA, tot, 4)
+b0c <- rep(0, 3); b1c <- rep(0, 3); b1a <- rep(0, 2); b0n <- rep(0, 2)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}  
@@ -2165,14 +2196,7 @@ PostSig2 <- function(Beta, lambda, y, H){
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 	\textit{R code. Simulation: Fuzzy regression discontinuity design}
 	\begin{VF}
-		\begin{lstlisting}[language=R]	
-# MCMC parameter
-burnin <- 1000; S <- 5000; tot <- S + burnin 
-ETAs <- matrix(NA, tot, 3)
-BETAS0C <- matrix(NA, tot, 3); BETAS1C <- matrix(NA, tot, 3)
-BETASA <- matrix(NA, tot, 2); BETASN <- matrix(NA, tot, 2)
-SIGMAS <- matrix(NA, tot, 4)
-b0c <- rep(0, 3); b1c <- rep(0, 3); b1a <- rep(0, 2); b0n <- rep(0, 2)
+		\begin{lstlisting}[language=R]
 sigma21c <- 0.1; sigma20c <- 0.1; sigma20n <- 0.1; sigma21a <- 0.1
 EtacNew <- 0.5; EtanNew <- 0.25; EtaaNew <- 0.25
 pb <- txtProgressBar(min = 0, max = tot, style = 3)
@@ -2204,17 +2228,17 @@ for(s in 1:tot){
 	b0c <- PostBeta(sig2 = sigma20c, lambda = Lambda[idx_c0], y = Y[idx_c0], H = Wc[idx_c0,])
 	b1c <- PostBeta(sig2 = sigma21c, lambda = Lambda[idx_c1], y = Y[idx_c1], H = Wc[idx_c1,])
 	BETASA[s, ] <- b1a; BETASN[s, ] <- b0n
-	BETAS0C[s, ] <- b0c; BETAS1C[s, ] <- b1c 
+	BETAS0C[s, ] <- b0c; BETAS1C[s, ] <- b1c 	
+	sigma21a <- PostSig2(Beta = b1a, lambda = Lambda[idx_a], y = Y[idx_a], H = W[idx_a,])
 \end{lstlisting}
 	\end{VF}
-\end{tcolorbox}  
+\end{tcolorbox} 
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 	\textit{R code. Simulation: Fuzzy regression discontinuity design}
 	\begin{VF}
-		\begin{lstlisting}[language=R]	
-	sigma21a <- PostSig2(Beta = b1a, lambda = Lambda[idx_a], y = Y[idx_a], H = W[idx_a,])
+		\begin{lstlisting}[language=R]
 	sigma20n <- PostSig2(Beta = b0n, lambda = Lambda[idx_n], y = Y[idx_n], H = W[idx_n,])
 	sigma20c <- PostSig2(Beta = b0c, lambda = Lambda[idx_c0], y = Y[idx_c0], H = Wc[idx_c0,])
 	sigma21c <- PostSig2(Beta = b1c, lambda = Lambda[idx_c1], y = Y[idx_c1], H = Wc[idx_c1,])
@@ -2231,13 +2255,13 @@ LATEmean <- mean(late_draws)
 LATEci   <- quantile(late_draws, c(0.025, 0.975))
 # Plot posterior density
 df <- data.frame(LATE = late_draws)
-
 ggplot(df, aes(x = LATE)) + geom_density(fill = "skyblue", alpha = 0.5, color = "blue") + geom_vline(xintercept = LATEmean, color = "red", linetype = "dashed", linewidth = 1) + geom_vline(xintercept = LATEci, color = "black", linetype = "dotted", linewidth = 1) + labs(title = "Posterior distribution of LATE",
 subtitle = paste0("Mean = ", round(LATEmean,3), " | 95% CI = [", round(LATEci[1],3), ", ", round(LATEci[2],3), "]"), x = "LATE", y = "Density") +
 theme_bw(base_size = 14)
-		\end{lstlisting}
+\end{lstlisting}
 	\end{VF}
 \end{tcolorbox}  
+ 
 
 \begin{figure}[h!]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter12/figures/FigFRD.png}
@@ -2455,7 +2479,7 @@ We simulate the model
 \[
 Y_i = 12 + X_{i1} + X_{i2} + \mu_i,
 \]
-where $X_{i1}\sim N(0,4)$, $X_{i2}\sim \text{Bin}(1,0.5)$, and $\mu_i\sim N(0,1.2)$ for $i=1,2,\dots,1000$.  
+where $X_{i1}\sim N(0,4)$, $X_{i2}\sim \text{Bin}(1,0.5)$, and $\mu_i\sim N(0,1.2)$ for $i=1,2,\dots,1,000$.  
 In addition, 
 \[
 D_i^* = 1 + Z_{i1} - X_{i2} + \nu_i,
@@ -2464,7 +2488,7 @@ where $Z_{i1}\sim N(0,4)$.
 
 The covariance between $\mu_i$ and $\nu_i$ is set to $0.6$.
 
-The hyperparameters are $\boldsymbol{\delta}_0=[0 \ 0 \ 0 \ 0 \ 0 \ 0]^{\top}$, $\mathbf{D}_0=1000\mathbf{I}_6$, $\alpha_0=\delta_0=0.001$, $s_0=0$, and $S_0=1000$. We perform 1,500 iterations with a burn-in of 500. The following code illustrates the Gibbs sampler. Finally, we compare the results with an implementation that does not account for the sample selection issue.
+The hyperparameters are $\boldsymbol{\delta}_0=[0 \ 0 \ 0 \ 0 \ 0 \ 0]^{\top}$, $\mathbf{D}_0=1,000\mathbf{I}_6$, $\alpha_0=\delta_0=0.001$, $s_0=0$, and $S_0=1,000$. We perform 1,500 iterations with a burn-in of 500. The following code illustrates the Gibbs sampler. Finally, we compare the results with an implementation that does not account for the sample selection issue.
 
 Figure \ref{fig12_SEL} shows the posterior distributions of the second parameter in the outcome equation, whose population value is 1 (black dashed line). The posterior distribution of the model that accounts for selection encompasses the population value, whereas the model that ignores selection does not.
 
@@ -2492,6 +2516,15 @@ y[c==0] <- NA
 b0 <- rep(0, 6); B0 <- 1000*diag(6); B0i <- solve(B0)
 a0 <- 0.001; d0 <- 0.001
 s0 <- 0; S0 <- 1000; S0i <- 1/S0
+\end{lstlisting}
+\end{VF}
+\end{tcolorbox}  
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation: Sample selection model}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 # Location
 idc1 <- which(c==1)
 nc1 <- length(idc1)
@@ -2525,15 +2558,6 @@ PostOmega11 <- function(theta, sig12, clat){
 	omega11 <- LaplacesDemon::rinvgamma(1, an/2, dn/2)
 	return(omega11)
 }
-\end{lstlisting}
-\end{VF}
-\end{tcolorbox}  
-
-\begin{tcolorbox}[enhanced,width=4.67in,center upper,
-	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Simulation: Sample selection model}
-	\begin{VF}
-		\begin{lstlisting}[language=R]	
 PostSig12 <- function(omega11, theta, clat){
 	Sn <- (omega11^(-1)*sum((clat[idc1] - Z[idc1,]%*%theta[4:6])^2) + S0i)^(-1)
 	sn <- Sn*(omega11^(-1)*sum((clat[idc1] - Z[idc1,]%*%theta[4:6])*(y[idc1] - X[idc1,]%*%theta[1:3])) + s0*S0i)
@@ -2544,7 +2568,15 @@ PostClat <- function(theta, sig12, omega11, i){
 	if(i %in% idc1){
 		mu <- Z[i,]%*%theta[4:6] + (sig12/(omega11+sig12^2))*(y[i] - X[i,]%*%theta[1:3])
 		sig2 <- omega11/(omega11+sig12^2)
-		clat <- EnvStats::rnormTrunc(1, mean = mu, sd = sig2^0.5, min = 0, max = Inf)
+		clat <- EnvStats::rnormTrunc(1, mean = mu, sd = sig2^0.5, min = 0, max = Inf)\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}  
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation: Sample selection model}
+	\begin{VF}
+		\begin{lstlisting}[language=R]	
 	}else{
 		mu <- Z[i,]%*%theta[4:6]
 		clat <- EnvStats::rnormTrunc(1, mean = mu, sd = 1, min = -Inf, max = 0)
@@ -2560,8 +2592,8 @@ PostSigmaDraws <- matrix(NA, S, 2)
 Thetap <- rep(0, 6); Sigmap <- diag(2) 
 Sig12p <- 0; Omega11p <- 1
 for(i in 1:N){
-	if(c[i] == 0){
-		LatPost <- EnvStats::rnormTrunc(1, mean = 0, sd = 1, min = -Inf, max = 0)
+if(c[i] == 0){
+LatPost <- EnvStats::rnormTrunc(1, mean = 0, sd = 1, min = -Inf, max = 0)
 	}else{
 		LatPost <- EnvStats::rnormTrunc(1, mean = 0, sd = 1, min = 0, max = Inf)
 	}
@@ -2571,15 +2603,6 @@ cn <- detectCores()
 ClusterHope <- makeCluster(cn, type = "SOCK")
 registerDoParallel(ClusterHope)
 clusterExport(ClusterHope, list("Z", "X", "c", "y", "N", "idc1", "nc1", "PostClat","Thetap", "Sig12p", "Omega11p"))
-\end{lstlisting}
-	\end{VF}
-\end{tcolorbox}  
-
-\begin{tcolorbox}[enhanced,width=4.67in,center upper,
-	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Simulation: Sample selection model}
-	\begin{VF}
-		\begin{lstlisting}[language=R]	
 pb <- txtProgressBar(min = 0, max = S, style = 3)
 for(rep in 1:S){
 	LatPost <- t(parSapply(ClusterHope, 1:N, function(i){PostClat(theta = Thetap, sig12 = Sig12p, omega11 = Omega11p, i)}))
@@ -2592,6 +2615,15 @@ for(rep in 1:S){
 	clusterExport(ClusterHope, list("Thetap", "Sig12p", "Omega11p"))
 	setTxtProgressBar(pb, rep)
 }
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation: Sample selection model}
+	\begin{VF}
+		\begin{lstlisting}[language=R]	
 stopCluster(ClusterHope)
 close(pb)
 thetaHat <- coda::mcmc(PostThetasDraws[keep,])
@@ -2601,8 +2633,9 @@ summary(PostDrawsSigma)
 RegNOsel <- MCMCpack::MCMCregress(y ~ X - 1)
 summary(RegNOsel)
 \end{lstlisting}
-	\end{VF}
+\end{VF}
 \end{tcolorbox}
+
 
 \begin{figure}[h!]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter12/figures/FigSEL.png}
@@ -2680,7 +2713,7 @@ p_i^{*}(\boldsymbol{\theta})
 \quad\text{where}\quad
 \sum_{i=1}^N p_i^{*}(\boldsymbol{\theta})\,\mathbf{g}(\mathbf{W}_i,\boldsymbol{\theta})=\mathbf{0}_d.
 \]
-Equivalently, $\boldsymbol{\lambda}(\boldsymbol{\theta})$ can be characterized as
+$\boldsymbol{\lambda}(\boldsymbol{\theta})$ can be characterized as
 \begin{align}\label{eqLambda}
 \boldsymbol{\lambda}(\boldsymbol{\theta})
 =\arg\min_{\boldsymbol{\lambda}\in\mathbb{R}^{d}}
@@ -2828,6 +2861,15 @@ gamma <- 0.5; beta <- c(1, 1.2)
 # Mixture
 mum1 <- 1/2; mum2 <- -1/2
 mu1 <- rnorm(N, mum1, 0.5); mu2 <- rnorm(N, mum2, 1.2)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Simulation: Classical measurement error in regressor}
+	\begin{VF}
+		\begin{lstlisting}[language=R]	
 mu <- sapply(1:N, function(i){sample(c(mu1[i], mu2[i]), 1, prob = c(0.5, 0.5))})
 e <- rnorm(N)
 z <- rnorm(N) # Instrument
@@ -2858,7 +2900,7 @@ n0 <- 1000 # burn-in
 m <- 10000 # iterations beyond burn-in
 # MCMC ESTIMATION BY THE CSS (2018) method
 psim <- betel::bayesetel(gfunc = gfunc, y = y[-(1:nt)], dat = dat[-(1:nt),], psi0 = psi0, lam0 = lam0, psi0_ = psi0_, Psi0_ = Psi0_, nu = nu, nuprop = nuprop,
- controlpsi = list(maxiterpsi = 50, mingrpsi = 1.0e-8), #  list of parameters in maximizing likelihood over psi
+controlpsi = list(maxiterpsi = 50, mingrpsi = 1.0e-8), #  list of parameters in maximizing likelihood over psi
 controllam = list(maxiterlam = 50, # list of parameters in minimizing dual over lambda
 mingrlam = 1.0e-7),
 n0 = n0, m = m)
@@ -2869,6 +2911,7 @@ MCMCivr <- bayesm::rivGibbs(Data, Mcmc = Mcmc)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
+
 
 \begin{figure}[h!]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter12/figures/FigME.png}
@@ -3041,12 +3084,14 @@ Thus, the expected equilibrium price and quantity are
 We can see that given $\beta_2 < 0 < \alpha_2$, we have:
 \[
 \frac{d p^*(r)}{dr} = \frac{\beta_2}{(\alpha_2 - \beta_2)(1+r)} < 0, \quad
-\frac{d p_b^*(r)}{dr} = \frac{\alpha_2}{(\alpha_2 - \beta_2)(1+r)} > 0, \quad
+\frac{d p_b^*(r)}{dr} = \frac{\alpha_2}{(\alpha_2 - \beta_2)(1+r)} > 0,
+\]
+\[
 \frac{d q^*(r)}{dr} = \alpha_2 \cdot \frac{d p^*(r)}{dr} < 0.
 \]
 Thus, the price received by sellers decreases with the tax, the price paid by buyers increases, and the equilibrium quantity falls.
   
-Thus, the average causal effect on the logarithm of traded quantity as
+Thus, the average causal effect on the logarithm of traded quantity is
 \[
 \tau = \mathbb{E}[q_i(r) - q_i(0)]= \frac{\alpha_2 \, \beta_2}{\alpha_2 - \beta_2}\,\log(1+r).
 \]
@@ -3322,15 +3367,6 @@ k <- length(par0); b0 <- rep(0, k); B0 <- 1000*diag(k)
 S <- 10000; burnin <- 10000; thin <- 1; tot <- S + burnin
 BETA <- matrix(NA, tot, k); accept <- logical(tot)
 SIGMA <- diag(BayesExo[["statistics"]][,2]); tune <- 2.4 / sqrt(k)
-BETA[1,] <- par0
-LL <- LossFunct(par = BETA[1,], tau = tau, y = y, z = z, x = x, w = w)
-pb <- txtProgressBar(min=0, max=tot, style=3)
-for(s in 2:tot){
-	cand <- BETA[s-1,] + MASS::mvrnorm(1, rep(0, k), tune*SIGMA)
-	LLc  <- LossFunct(par = cand, tau = tau, y = y, z = z, x = x, w = w)
-	priorRat <- mvtnorm::dmvnorm(cand, b0, B0, log=TRUE) -
-	mvtnorm::dmvnorm(BETA[s-1,], b0, B0, log=TRUE)
-	loga <- (LLc - LL) + priorRat
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
@@ -3340,6 +3376,15 @@ for(s in 2:tot){
 	\textit{R code. Quantile treatment effects: 401(k) participation on net financial assets}
 	\begin{VF}
 		\begin{lstlisting}[language=R]	
+BETA[1,] <- par0
+LL <- LossFunct(par = BETA[1,], tau = tau, y = y, z = z, x = x, w = w)
+pb <- txtProgressBar(min=0, max=tot, style=3)
+for(s in 2:tot){
+	cand <- BETA[s-1,] + MASS::mvrnorm(1, rep(0, k), tune*SIGMA)
+	LLc  <- LossFunct(par = cand, tau = tau, y = y, z = z, x = x, w = w)
+	priorRat <- mvtnorm::dmvnorm(cand, b0, B0, log=TRUE) -
+	mvtnorm::dmvnorm(BETA[s-1,], b0, B0, log=TRUE)
+	loga <- (LLc - LL) + priorRat
 	if (is.finite(loga) && log(runif(1)) <= loga) {
 		BETA[s,] <- cand; LL <- LLc; accept[s] <- TRUE
 	} else {
@@ -3362,7 +3407,7 @@ colnames(post) <- c("Int", "p401", "age", "inc", "fsize", "educ", "marr", "twoea
 post_mean <- colMeans(post)
 post_ci   <- apply(post, 2, quantile, c(0.025, 0.975))
 round(post_mean, 3); round(post_ci, 3)
-		\end{lstlisting}
+\end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
 
@@ -3474,8 +3519,10 @@ take
 \sigma_n \;=\; \frac{\log n}{\sqrt{n}\,\Gamma_n},
 \qquad
 \Gamma_n \;:=\; \frac{1}{n}\sum_{i=1}^n
-\big|\widehat{\gamma}_\eta(d_i,\mathbf{x}_i)\big|.
+\big|\widehat{\gamma}_\eta(d_i,\mathbf{x}_i)\big|,
 \]
+where $n$ is the effective sample size (after trimming).
+
 Since $W^m$ and $\lambda$ are Gaussian, this is equivalent to a GP with
 an augmented kernel,
 \[
@@ -3514,9 +3561,9 @@ $\mathbf{K} + \sigma_n^2\,\widehat{\boldsymbol{\gamma}}\,
  
 Algorithm~\ref{Alg:DRBayes} produces posterior draws of the ATE. The $(1-\alpha)\%$ credible interval is given by the empirical quantiles at levels $\alpha/2$ and $1-\alpha/2$. 
 
-It is worth noting that \cite{breunig2025double} do not perform sample splitting, whereas \cite{chernozhukov2018double} recommend it in the context of \textit{Double/Debiased Machine Learning for treatment and structural parameters}. While sample splitting (or cross-fitting) helps reduce overfitting, its role in \cite{chernozhukov2018double} is more fundamental: it ensures that the nuisance functions are estimated on data independent of the observations used for inference, which is critical for their theoretical guarantees of $\sqrt{n}$-consistency and valid asymptotic inference. Nevertheless, \cite{breunig2025double} report that they did not find evidence of overfitting in their setting and verified that their results are robust to the use of sample splitting.
+It is worth noting that \cite{breunig2025double} do not perform sample splitting, whereas \cite{chernozhukov2018double} recommend it in the context of \textit{Double/Debiased Machine Learning for treatment and structural parameters}. While sample splitting (or cross-fitting) helps reduce overfitting, its role in \cite{chernozhukov2018double} is more fundamental: it ensures that the nuisance functions are estimated on data independent of the observations used for inference, which is critical for their theoretical guarantees of $\sqrt{N}$-consistency and valid asymptotic inference. Nevertheless, \cite{breunig2025double} report that they did not find evidence of overfitting in their setting and verified that their results are robust to the use of sample splitting.
 
-Finally, observe that the doubly robust approach does not propagate the uncertainty arising from the estimation of the propensity score, which is treated as a plug-in. This omission is justified because the efficient influence function (EIF) is \textit{Neyman orthogonal}: estimation error in the propensity score enters only at second order and is therefore asymptotically negligible for uncertainty quantification. \cite{LiuYu2024QuasiBayesianCF} propose a quasi-Bayesian framework in which a \textit{control function}, explicitly modeling the source of endogeneity, is estimated in a first stage using Frequentist methods and then used in a second stage where inference is conducted using Bayesian methods. The posterior mean converges asymptotically to the true parameter, and a bootstrap procedure is employed to account for uncertainty propagation from the first stage, thereby achieving valid asymptotic coverage.\\
+Finally, observe that the doubly robust approach does not propagate the uncertainty arising from the estimation of the propensity score, which is treated as a plug-in. This omission is justified because the EIF is \textit{Neyman orthogonal}: estimation error in the propensity score enters only at second order and is therefore asymptotically negligible for uncertainty quantification. \cite{LiuYu2024QuasiBayesianCF} propose a quasi-Bayesian framework in which a \textit{control function}, explicitly modeling the source of endogeneity, is estimated in a first stage using Frequentist methods and then used in a second stage where inference is conducted using Bayesian methods. The posterior mean converges asymptotically to the true parameter, and a bootstrap procedure is employed to account for uncertainty propagation from the first stage, thereby achieving valid asymptotic coverage.\\
 
 \textbf{Example: Doubly robust Bayesian inference}
 
@@ -3545,6 +3592,15 @@ X1 <- rnorm(n)                 # continuous
 X2 <- rbinom(n, 1, 0.5)        # binary
 X3 <- runif(n, -1, 1)          # continuous
 Z <- cbind(X1, X2, X3)
+\end{lstlisting}
+\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Doubly robust Bayesian inference: Simulation exercise}
+	\begin{VF}
+		\begin{lstlisting}[language=R]	
 # True propensity and outcome
 logit <- function(t) 1/(1+exp(-t))
 true_pi  <- function(X){ logit(-0.3 + 0.8*X[,1] -0.5*X[,2] + 0.7*X[,3]) }
@@ -3586,8 +3642,9 @@ init_lscale = 0.3) {
 	return(gp)
 }
 \end{lstlisting}
-\end{VF}
+	\end{VF}
 \end{tcolorbox} 
+ 
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -3631,11 +3688,6 @@ run_trim <- function(t_trim = 0.10, N_post = 5000, h_r = 1/2, cor_size = 1) {
 	M_nc_1 <- posterior_draws_prob(gp_nc, X_t1, ndraws = N_post)
 	# observed arm probabilities
 	M_nc_obs <- ifelse(matrix(Dk, nrow = N_post, ncol = n_eff, byrow = TRUE) == 1, M_nc_1, M_nc_0)
-	# GP WITH prior correction #
-	gp_c <- make_gp(X_train = X_train_c, y_bin = Yk, use_correction = TRUE, gamma_scaled = gamma_scaled)
-	M_c_0 <- posterior_draws_prob(gp_c, X_t0c, ndraws = N_post)
-	M_c_1 <- posterior_draws_prob(gp_c, X_t1c, ndraws = N_post)
-	M_c_obs <- ifelse(matrix(Dk, nrow = N_post, ncol = n_eff, byrow = TRUE) == 1, M_c_1, M_c_0)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
@@ -3644,7 +3696,12 @@ run_trim <- function(t_trim = 0.10, N_post = 5000, h_r = 1/2, cor_size = 1) {
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 	\textit{R code. Doubly robust Bayesian inference: Simulation exercise}
 	\begin{VF}
-		\begin{lstlisting}[language=R]	
+		\begin{lstlisting}[language=R]
+	# GP WITH prior correction #
+	gp_c <- make_gp(X_train = X_train_c, y_bin = Yk, use_correction = TRUE, gamma_scaled = gamma_scaled)
+	M_c_0 <- posterior_draws_prob(gp_c, X_t0c, ndraws = N_post)
+	M_c_1 <- posterior_draws_prob(gp_c, X_t1c, ndraws = N_post)
+	M_c_obs <- ifelse(matrix(Dk, nrow = N_post, ncol = n_eff, byrow = TRUE) == 1, M_c_1, M_c_0)	
 	# Bayesian bootstrap weights #
 	W <- matrix(rexp(N_post * n_eff, rate = 1), nrow = N_post)
 	W <- W / rowSums(W)
@@ -3666,29 +3723,30 @@ run_trim <- function(t_trim = 0.10, N_post = 5000, h_r = 1/2, cor_size = 1) {
 	# The third component is \gamma_k x (y-m(d,x)), m(d,x) is with prior correction
 	# The fourth component is m(1,x)-m(0,x) also with correction in the prior
 	Ate_drb_draws <- rowSums((M_c_1 - M_c_0) * W) + ATE_dr_pre - rowSums(DR_rec_1) / n_eff - rowSums(M_c_1 - M_c_0) / n_eff
-	
 	qfun <- function(x) {
 		qs <- quantile(x, c(0.025, 0.975))
-		c(mean   = mean(x), 	median = median(x), lo = qs[1],	hi = qs[2],	len = diff(qs)
-		)
+		c(mean   = mean(x), 	median = median(x), lo = qs[1],	hi = qs[2],	len = diff(qs))
 	}	
-	vals <- list(
-	Bayes      = qfun(Ate_nc_draws),
-	`PA Bayes` = qfun(Ate_c_draws),
-	`DR Bayes` = qfun(Ate_drb_draws)
-	)
+	vals <- list(Bayes = qfun(Ate_nc_draws), `PA Bayes` = qfun(Ate_c_draws), `DR Bayes` = qfun(Ate_drb_draws))
 	out_df <- as.data.frame(do.call(rbind, vals), check.names = FALSE)
 	list(t_trim = t_trim, results = out_df)
 }
-N_post <- 5000
-h_r    <- 1/2
-cor_size <- 1
-trim <- 0.05
-res_list <- run_trim(t_trim = trim, N_post = N_post, h_r = h_r, cor_size = cor_size)
-print(res_list$results)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Doubly robust Bayesian inference: Simulation exercise}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+N_post <- 5000; h_r <- 1/2
+cor_size <- 1; trim <- 0.05
+res_list <- run_trim(t_trim = trim, N_post = N_post, h_r = h_r, cor_size = cor_size)
+print(res_list$results)	\end{lstlisting}
+\end{VF}
+\end{tcolorbox} 
+
 
 \begin{comment}
 \section{Other approaches}\label{sec12_12}

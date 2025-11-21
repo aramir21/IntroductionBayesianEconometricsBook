@@ -307,7 +307,7 @@ This figure displays the SWIG.
 ```{r, echo=FALSE, cache=FALSE, out.width="300px", fig.cap="*Single-World Intervention Graph (SWIG) for $do(D=d)$*: The treatment $D$ is split into the fixed intervention $D=d$ and its natural value. The outcome is replaced by $Y(d)$. $X$ still influences $Y(d)$, so adjustment for $X$ is needed for identification.", fig.align="center", message=FALSE}
 knitr::include_graphics('figures/FigChap13_4.png', dpi = NA)
 ```
-The simple regression framework of the previous section can be extended to a multiple linear regression model by including the *pre-treatment variables*; therefore, the CEF is linear in the treatment and pre-treatment variables:
+The simple regression framework of the previous section can be extended to a multiple linear regression model by including the *pre-treatment variables*; therefore, if the CEF is linear in the treatment and pre-treatment variables:
 \[
 Y_i = \beta_0 + \tau D_i + \mathbf{X}_i^{\top}\boldsymbol{\beta} + \mu_i.
 \]
@@ -400,7 +400,7 @@ knitr::include_graphics('figures/FigChap13_5.png', dpi = NA)
 
 The collider bias illustrated in the following DAG, based on @chernozhukov2024applied, reflects the well-known Birth-weight “paradox”. This phenomenon arises when conditioning on an intermediate variable (birth weight, $B$) induces a spurious association between the binary indicator of smoking ($S$) and infant mortality ($Y$). In this setting, $U$ represents unobserved factors that affect both birth weight and infant mortality. Conditioning on $B$ creates collider bias because it opens a back-door path through the unobserved factors $U$ (dashed).
 
-```{r, echo=FALSE, cache=FALSE, out.width="250px", fig.cap="DAG illustrating the birth-weight paradox: $S$ (smoking), $B$ (birth weight), $Y$ (infant mortality), $U$ (other unobserved health factors).", fig.align="center", message=FALSE}
+```{r, echo=FALSE, cache=FALSE, out.width="250px", fig.cap="DAG illustrating the birth-weight paradox: $S$ (smoking), $B$ (birth weight), $Y$ (infant mortality), and $U$ (other unobserved health factors).", fig.align="center", message=FALSE}
 knitr::include_graphics('figures/FigChap13_6.png', dpi = NA)
 ```
 The following code illustrates the bias by performing 100 replications, and the figure shows the distribution of posterior means across these replications. In this setting, the total effect of smoking on infant mortality is 2, consisting of a direct effect of 1 and an indirect effect through birth weight, also equal to 1.
@@ -541,28 +541,26 @@ Therefore, under relevance, exogeneity, monotonicity, and SUTVA, IV methods allo
 \tau_{LATE} = \mathbb{E}[Y_i(1)-Y_i(0)\mid D_i(1)=1, D_i(0)=0].
 \]
 
-We define $Y_i(z_i,D_i(z))$ to be the outcome for unit $i$ if exposed to treatment $D_i(z)$ after being assigned to treatment $z$. Therefore, the *Intention-to-Treat* (ITT) causal effect of $Z_i$ on $Y_i$ is:
-<div style="font-size:80%">
+We define $Y_i(z_i,D_i(z))$ to be the outcome for unit $i$ if exposed to treatment $D_i(z)$ after being assigned to treatment $z$. Therefore, the *Intention-to-Treat* (ITT) causal effect of $Z_i$ on $Y_i$ is $\mathbb{E}[Y_i(1,D_i(1))-Y_i(0,D_i(0))]$, and can be expressed as:
+<div style="font-size:100%">
 \[
 \begin{aligned}
-\mathbb{E}[Y_i(1,D_i(1))-Y_i(0,D_i(0))] &= 
 \underbrace{\mathbb{E}[Y_i(1,D_i(1))-Y_i(0,D_i(0))\mid D_i(1)=1,D_i(0)=1]\times P(D_i(1)=1,D_i(0)=1)}_{\text{always-takers}} \\
-&+\underbrace{\mathbb{E}[Y_i(1,D_i(1))-Y_i(0,D_i(0))\mid D_i(1)=0,D_i(0)=0]\times P(D_i(1)=0,D_i(0)=0)}_{\text{never-takers}} \\
-&+\underbrace{\mathbb{E}[Y_i(1,D_i(1))-Y_i(0,D_i(0))\mid D_i(1)=1,D_i(0)=0]\times P(D_i(1)=1,D_i(0)=0)}_{\text{compliers}} \\
-&+\underbrace{\mathbb{E}[Y_i(1,D_i(1))-Y_i(0,D_i(0))\mid D_i(1)=0,D_i(0)=1]\times P(D_i(1)=0,D_i(0)=1)}_{\text{defiers}}.
++\underbrace{\mathbb{E}[Y_i(1,D_i(1))-Y_i(0,D_i(0))\mid D_i(1)=0,D_i(0)=0]\times P(D_i(1)=0,D_i(0)=0)}_{\text{never-takers}} \\
++\underbrace{\mathbb{E}[Y_i(1,D_i(1))-Y_i(0,D_i(0))\mid D_i(1)=1,D_i(0)=0]\times P(D_i(1)=1,D_i(0)=0)}_{\text{compliers}} \\
++\underbrace{\mathbb{E}[Y_i(1,D_i(1))-Y_i(0,D_i(0))\mid D_i(1)=0,D_i(0)=1]\times P(D_i(1)=0,D_i(0)=1)}_{\text{defiers}}.
 \end{aligned}
 \]
 </div>
 
 That is, ITT is a mixture over the four potential groups.
 
-We know that the ITT effect of $Z_i$ on $Y_i$ is zero for always-takers and never-takers due to the exclusion restriction, i.e., $Z_i$ affects $Y_i$ only through $D_i$, and $D_i$ does not vary with $Z_i$ for always-takers and never-takers. Moreover, the monotonicity assumption rules out the existence of defiers. Hence, only compliers contribute to the effect of $Z_i$ on $Y_i$.
+We know that the ITT effect of $Z_i$ on $Y_i$ is zero for always-takers and never-takers due to the exclusion restriction, i.e., $Z_i$ affects $Y_i$ only through $D_i$, and $D_i$ does not vary with $Z_i$ for always-takers and never-takers. Moreover, the monotonicity assumption rules out the existence of defiers. Hence, only compliers contribute to the effect of $Z_i$ on $Y_i$, then $\mathbb{E}[Y_i(1,D_i(1))-Y_i(0,D_i(0))]$ is
 
-<div style="font-size:80%">
+<div style="font-size:100%">
 \[
 \begin{aligned}
-\mathbb{E}[Y_i(1,D_i(1)) - Y_i(0,D_i(0))]
-&= \mathbb{E}[Y_i(1,D_i(1)) - Y_i(0,D_i(0)) \mid D_i(1)=1, D_i(0)=0]\cdot P(D_i(1)=1, D_i(0)=0)
+\mathbb{E}[Y_i(1,D_i(1)) - Y_i(0,D_i(0)) \mid D_i(1)=1, D_i(0)=0]\cdot P(D_i(1)=1, D_i(0)=0)
 \end{aligned}
 \]
 </div>
@@ -623,11 +621,11 @@ Let's calculate the LATE assuming exclusion restrictions, and without assuming e
 
 We first estimate the *first stage* and *reduced form*:
 \[
-\mathbb{E}[D\mid Z=0]=\tfrac{30}{80}=0.375,\qquad 
-\mathbb{E}[D\mid Z=1]=\tfrac{100}{120}\approx0.833,
+\mathbb{E}[D\mid Z=0]=\tfrac{30}{80}=0.37,\qquad 
+\mathbb{E}[D\mid Z=1]=\tfrac{100}{120}\approx0.83,
 \]
 \[
-\Delta_D=\mathbb{E}[D\mid Z=1]-\mathbb{E}[D\mid Z=0]\approx0.458.
+\Delta_D=\mathbb{E}[D\mid Z=1]-\mathbb{E}[D\mid Z=0]\approx0.46.
 \]
 
 \[
@@ -640,9 +638,9 @@ We first estimate the *first stage* and *reduced form*:
 
 Compliance shares:
 \[
-\eta_a=P(D=1\mid Z=0)=\tfrac{3}{8}=0.375,\quad
-\eta_c=\Delta_D=\tfrac{11}{24}\approx0.458,\quad
-\eta_n=1-\eta_a-\eta_c=\tfrac{1}{6}\approx0.167.
+\eta_a=P(D=1\mid Z=0)=\tfrac{3}{8}=0.37,\quad
+\eta_c=\Delta_D=\tfrac{11}{24}\approx0.46,\quad
+\eta_n=1-\eta_a-\eta_c=\tfrac{1}{6}\approx0.17.
 \]
 
 Then, we can *point-identified* the LATE under exclusion restriction,
@@ -753,14 +751,12 @@ Consequently, the ML estimate is $\hat{\eta}_{n1} = \tfrac{2{,}385}{2{,}385 + 34
 
 Note that $\eta_{c0} = P(Y_i = 1 \mid C_i = c, Z_i = 0)$ and $\eta_{n0} = P(Y_i = 1 \mid C_i = n, Z_i = 0)$ cannot be *point-identified*. However, we can obtain *set identification* because  
 
-<div style="font-size:75%">
-\[
-\eta_0:=P(Y_i = 1 \mid Z_i = 0) 
-= P(Y_i = 1 \mid Z_i = 0, C_i = c) \times P(C_i = c) 
-+ P(Y_i = 1 \mid Z_i = 0, C_i = n) \times P(C_i = n) 
-= \frac{P(Y_i = 1, Z_i = 0)}{P(Z_i = 0)},
-\]
-</div>
+\begin{align*}
+	\eta_0:=P(Y_i = 1 \mid Z_i = 0) 
+	&= P(Y_i = 1 \mid Z_i = 0, C_i = c) \times P(C_i = c) \\
+	&\quad + P(Y_i = 1 \mid Z_i = 0, C_i = n) \times P(C_i = n) \\
+	&= \frac{P(Y_i = 1, Z_i = 0)}{P(Z_i = 0)},
+\end{align*}
 
 where the ML estimate is $\hat{\eta}_0= \tfrac{11{,}514}{11{,}514 + 74}= 0.9936.$
 
@@ -785,13 +781,12 @@ Given that probabilities must lie in the unit interval, such that $0 \leq 4.968 
 Consequently, the ML estimates are $\hat{\eta}_{c0} \in [0.992, 1]$ and $\hat{\eta}_{n0} \in [0.968, 1]$.  
 
 These results imply that the *complier average causal effect* (CACE) is  
-<div style="font-size:80%">
-\[
-\tau_{CACE} = \mathbb{E}[Y_i(1)-Y_i(0)\mid D_i(1)=1,D_i(0)=0] 
-= P[Y_i = 1 \mid C_i = c, Z_i = 1] - P[Y_i = 1 \mid C_i = c, Z_i = 0] 
-= \eta_{c1} - \eta_{c0}.
-\]
-</div>
+\begin{align*}
+	\tau_{CACE} &= \mathbb{E}[Y_i(1)-Y_i(0)\mid D_i(1)=1,D_i(0)=0] \\
+	&= P[Y_i = 1 \mid C_i = c, Z_i = 1] - P[Y_i = 1 \mid C_i = c, Z_i = 0] \\
+	&= \eta_{c1} - \eta_{c0},
+\end{align*}
+where the first line is the formal definition, the second equality uses random assignment to express the estimand in terms of observed probabilities, and the third relies on the model parameterization.
 
 The CACE is only set-identified, yielding the interval  
 
@@ -990,7 +985,7 @@ In addition, it is worth mentioning that in partially identified models, the asy
 
 In the example of the effect of *eligibility* on 401(k) on net financial assets, we calculate the ITT effect. Now, following @chernozhukov2004effects, we use eligibility as an instrument for *participation* and perform inference on the (local) average treatment effect. We adopt the framework described in Section \@ref(sec73) for this example. The following code illustrates the procedure, and the figure displays the posterior distribution of the (local) average treatment effect of participation. The 95% credible interval is (USD 5,102, USD 12,010), and the posterior mean is USD 8,520, which is higher than the intention-to-treat effect associated with eligibility (USD 5,903). 
 
-Exercise~6 asks how to recover the ITT from the LATE and the effect of eligibility on participation. See @Conley2012 for practical methods to conduct sensitivity analysis of posterior results when relaxing the exclusion restriction in IV settings. In addition, @conley2008semi present a Bayesian inferential framework using a semi-parametric approach in which stochastic errors are modeled using a Dirichlet process (see Exercise 7), and @ramirez2024welfare extend this approach to systems of equations.
+Exercise 6 asks how to recover the ITT from the LATE and the effect of eligibility on participation. See @Conley2012 for practical methods to conduct sensitivity analysis of posterior results when relaxing the exclusion restriction in IV settings. In addition, @conley2008semi present a Bayesian inferential framework using a semi-parametric approach in which stochastic errors are modeled using a Dirichlet process (see Exercise 7), and @ramirez2024welfare extend this approach to systems of equations.
 
 ```{r, eval = FALSE}
 rm(list = ls()); set.seed(10101)
@@ -1195,7 +1190,7 @@ In this setting, the *conditional parallel trends* assumption becomes
 
 \begin{equation}
 \mathbb{E}[Y_{i2}(0) - Y_{i1}(0) \mid D_i = 1, \mathbf{X}_i] 
-= \mathbb{E}[Y_{i2}(0) - Y_{i1}(0) \mid D_i = 0, \mathbf{X}_i], \ \text{almost surely}
+= \mathbb{E}[Y_{i2}(0) - Y_{i1}(0) \mid D_i = 0, \mathbf{X}_i], \ \text{almost surely,}
 \end{equation}
 
 and the *no anticipation* assumption becomes
@@ -1343,7 +1338,7 @@ Note that under these assumptions, we can express $ATT(g,t)$ in terms of observa
 \[
 ATT(g,t) 
 = \mathbb{E}\big[ Y_{it} - Y_{i, g-1} \mid G_i = g \big]
-- \mathbb{E}\big[ Y_{it} - Y_{i, g-1} \mid G_i = g', \ g' > t \big].
+- \mathbb{E}\big[ Y_{it} - Y_{i, g-1} \mid G_i = g'\big], \ g' > t.
 \]
 
 This formulation makes explicit the choice of the comparison group, either not-yet-treated or never-treated units in this setting. Moreover, cohorts are indexed by the first treatment date $g$, and effects are evaluated at calendar time $t$. Hence the object of interest is cohort–time specific, $ATT(g,t)$, and staggered designs generally imply a multiplicity of ATT parameters, where each estimand can be seen as a multi-period version of a DiD causal effect (Equation \@ref(eq:DiD)).
@@ -1360,24 +1355,21 @@ An advantage of having multiple pre-treatment periods in the design is that it a
 
 Thus, we can test whether the differences in the expected changes of the outcome variable before treatment between different groups are statistically indistinguishable from zero. If this is the case, common practice would suggest that there is evidence in favor of parallel trends. However, we should remember that the parallel trends assumption is essentially untestable because it imposes restrictions on post-treatment periods, not on pre-treatment periods. Consequently, the same recommendations as those at the end of the previous section apply: perform sensitivity analyses regarding potential violations of the parallel trends assumption.
 
-Assuming that parallel trends hold conditional on covariates, we obtain identification under the following assumptions:
+Assuming that parallel trends hold conditional on covariates, we obtain identification under the following assumptions [@baker2025did_guide]:
 
 *1. Staggered parallel trends with not-yet-treated comparison (conditional on $\mathbf X_i$):*
 
 \[
 \mathbb{E}\!\left[Y_{it}(\infty)-Y_{i,t-1}(\infty)\mid G_i=g,\ \mathbf X_i\right]
 =
-\mathbb{E}\!\left[Y_{it}(\infty)-Y_{i,t-1}(\infty)\mid G_i>t,\ \mathbf X_i\right],
-\quad \forall\, g,\ t<g.
+\mathbb{E}\!\left[Y_{it}(\infty)-Y_{i,t-1}(\infty)\mid G_i=g',\ \mathbf X_i\right],
+\quad t\geq g, g'>t.
 \]
 
 *2. Staggered overlap (positivity) for not-yet-treated comparisons:*
 
 \[
-\epsilon \le P(G_i=g \mid \mathbf X_i)
-\quad \text{and} \quad
-\epsilon \le P(G_i>t \mid \mathbf X_i),
-\quad \forall\, g,\ t<g,\ \text{for some } \epsilon>0.
+P(G_i=g \mid \mathbf X_i) < 1 - \epsilon\, \ \epsilon >0, \ \text{almost surely, and,} \ P(G_i=g)>0.
 \]
 
 Condition 1 means that, conditional on covariates, pre-treatment changes in untreated potential outcomes for cohort $g$ match those of units not yet treated at time $t$, and condition 2 means that there is positive probability of belonging to cohort $g$ and of being not yet treated at $t$.
@@ -1387,7 +1379,7 @@ Given these assumptions and no anticipation, the $ATT(g,t)$ can be expressed as
 \begin{align*}
 ATT(g,t) 
 &= \mathbb{E}[Y_{it} - Y_{i,g-1} \mid G_i = g] \\
-&\quad - \mathbb{E}_{\mathbf{X}}\!\left\{\mathbb{E}[Y_{it} - Y_{i,g-1} \mid \mathbf{X}_i, G_i = g'>t]\mid G_i=g\right\}.
+&\quad - \mathbb{E}_{\mathbf{X}}\!\left\{\mathbb{E}[Y_{it} - Y_{i,g-1} \mid \mathbf{X}_i, G_i = g']\mid G_i=g\right\}.
 \end{align*}
 
 Again, inference on $ATT(g,t)$ can be conducted using regression adjustment, inverse-probability weighting, or doubly robust estimators. Although TWFE specifications are often used to estimate $ATT(g,t)$, @baker2025did_guide recommend avoiding them in staggered DiD settings because they generally do not identify $ATT(g,t)$. Instead, they recover a complicated, non-convex weighted average of cohort–time effects, with potentially negative weights.
@@ -2118,7 +2110,7 @@ We simulate the model
 \[
 Y_i = 12 + X_{i1} + X_{i2} + \mu_i,
 \]
-where $X_{i1}\sim N(0,4)$, $X_{i2}\sim \text{Bin}(1,0.5)$, and $\mu_i\sim N(0,1.2)$ for $i=1,2,\dots,1000$.  
+where $X_{i1}\sim N(0,4)$, $X_{i2}\sim \text{Bin}(1,0.5)$, and $\mu_i\sim N(0,1.2)$ for $i=1,2,\dots,1,000$.  
 In addition, 
 \[
 D_i^* = 1 + Z_{i1} - X_{i2} + \nu_i,
@@ -2127,7 +2119,7 @@ where $Z_{i1}\sim N(0,4)$.
 
 The covariance between $\mu_i$ and $\nu_i$ is set to $0.6$.
 
-The hyperparameters are $\boldsymbol{\delta}_0=[0 \ 0 \ 0 \ 0 \ 0 \ 0]^{\top}$, $\mathbf{D}_0=1000\mathbf{I}_6$, $\alpha_0=\delta_0=0.001$, $s_0=0$, and $S_0=1000$. We perform 1,500 iterations with a burn-in of 500. The following code illustrates the Gibbs sampler. Finally, we compare the results with an implementation that does not account for the sample selection issue.
+The hyperparameters are $\boldsymbol{\delta}_0=[0 \ 0 \ 0 \ 0 \ 0 \ 0]^{\top}$, $\mathbf{D}_0=1,000\mathbf{I}_6$, $\alpha_0=\delta_0=0.001$, $s_0=0$, and $S_0=1,000$. We perform 1,500 iterations with a burn-in of 500. The following code illustrates the Gibbs sampler. Finally, we compare the results with an implementation that does not account for the sample selection issue.
 
 The figure shows the posterior distributions of the second parameter in the outcome equation, whose population value is 1 (black dashed line). The posterior distribution of the model that accounts for selection encompasses the population value, whereas the model that ignores selection does not.
 
@@ -2354,7 +2346,7 @@ p_i^{*}(\boldsymbol{\theta})
 \sum_{i=1}^N p_i^{*}(\boldsymbol{\theta})\,\mathbf{g}(\mathbf{W}_i,\boldsymbol{\theta})=\mathbf{0}_d.
 \]
 
-Equivalently, $\boldsymbol{\lambda}(\boldsymbol{\theta})$ can be characterized as
+$\boldsymbol{\lambda}(\boldsymbol{\theta})$ can be characterized as
 
 \[
 \boldsymbol{\lambda}(\boldsymbol{\theta})
@@ -2482,7 +2474,7 @@ We perform Bayesian exponentially tilted empirical likelihood (BETEL) using the 
 
 The figure displays the posterior distributions. We see that ignoring measurement error produces a biased posterior distribution. In particular, the absolute value of the causal effect is smaller than the population value; this is called *attenuation bias*. By contrast, methods that account for measurement error and use valid instruments yield well-centered posterior distributions.
 
-```{r`, eval = FALSE}
+```{r, eval = FALSE}
 rm(list = ls()); set.seed(10101)
 library(betel); library(ucminf)
 # Simulate data
@@ -2614,7 +2606,7 @@ We ask in Exercise 10 to perform a simulation exercise to assess the ability of 
 
 **Example: Simultaneous causality**
 
-This example is based on @imbens2014ivperspective, where Professor Imbens illustrates the problem of analyzing the causal effect on traded quantity of a tax of $100 \times r\%$ in a market. He defines the average causal effect on the logarithm of traded quantity as
+This example is based on @imbens2014ivperspective, where Professor Imbens illustrates the problem of analyzing the causal effect on traded quantity of a tax of $100 \times r\%$ in a market. He defines the average causal effect on the logarithm of traded quantity is
 
 \[
 \tau = \mathbb{E}[q_i(r) - q_i(0)],
@@ -3213,8 +3205,9 @@ where $K$ is the base kernel. Following @breunig2025double, take
 \sigma_n \;=\; \frac{\log n}{\sqrt{n}\,\Gamma_n},
 \qquad
 \Gamma_n \;:=\; \frac{1}{n}\sum_{i=1}^n
-\big|\widehat{\gamma}_\eta(d_i,\mathbf{x}_i)\big|.
+\big|\widehat{\gamma}_\eta(d_i,\mathbf{x}_i)\big|,
 \]
+where $n$ is the effective sample size (after trimming).
 
 Since $W^m$ and $\lambda$ are Gaussian, this is equivalent to a GP with an augmented kernel,
 
@@ -3261,8 +3254,8 @@ End for
 This algorithm produces posterior draws of the ATE.  
 The $(1-\alpha)\%$ credible interval is given by the empirical quantiles at levels $\alpha/2$ and $1-\alpha/2$.  
 
-It is worth noting that @breunig2025double do not perform sample splitting, whereas @chernozhukov2018double recommend it in the context of *Double/Debiased Machine Learning for treatment and structural parameters*. While sample splitting (or cross-fitting) helps reduce overfitting, its role in @chernozhukov2018double is more fundamental: it ensures that the nuisance functions are estimated on data independent of the observations used for inference, which is critical for their theoretical guarantees of $\sqrt{n}$-consistency and valid asymptotic inference. Nevertheless, @breunig2025double report that they did not find evidence of overfitting in their setting and verified that their results are robust to the use of sample splitting.  
-Finally, observe that the doubly robust approach does not propagate the uncertainty due to the estimation of the propensity score, which is treated as a plug-in. This omission is justified because the efficient influence function (EIF) is *Neyman orthogonal*: estimation error in the propensity score enters only at second order and is therefore asymptotically negligible for uncertainty quantification.  
+It is worth noting that @breunig2025double do not perform sample splitting, whereas @chernozhukov2018double recommend it in the context of *Double/Debiased Machine Learning for treatment and structural parameters*. While sample splitting (or cross-fitting) helps reduce overfitting, its role in @chernozhukov2018double is more fundamental: it ensures that the nuisance functions are estimated on data independent of the observations used for inference, which is critical for their theoretical guarantees of $\sqrt{N}$-consistency and valid asymptotic inference. Nevertheless, @breunig2025double report that they did not find evidence of overfitting in their setting and verified that their results are robust to the use of sample splitting.  
+Finally, observe that the doubly robust approach does not propagate the uncertainty due to the estimation of the propensity score, which is treated as a plug-in. This omission is justified because the EIF is *Neyman orthogonal*: estimation error in the propensity score enters only at second order and is therefore asymptotically negligible for uncertainty quantification.  
 
 **Example: Doubly robust Bayesian inference**
 
