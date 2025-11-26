@@ -23,7 +23,7 @@
 <meta name="author" content="Andrés Ramírez-Hassan" />
 
 
-<meta name="date" content="2025-11-20" />
+<meta name="date" content="2025-11-26" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -447,8 +447,8 @@ f_\eta(\mathbf{x})=\exp\{\eta^f(\mathbf{x})\}, \qquad
 \mathbb{E}_0\!\big[\tilde{\tau}_\eta(W)\big]=0
 \quad\text{if either } m_\eta \text{ or } \pi_\eta \text{ is correctly specified.}
 \]</span></p>
-<p>To conduct Bayesian inference, <span class="citation">Breunig, Liu, and Yu (<a href="#ref-breunig2025double">2025</a>)</span> place independent priors on the outcome regression and the covariate distribution (equivalently, on <span class="math inline">\(\eta^m\)</span> and <span class="math inline">\(\eta^f\)</span>). For the covariates they use a Dirichlet Process (DP) prior on <span class="math inline">\(F\)</span> (hence on <span class="math inline">\(f\)</span>; see Section @ref(sec11_12)), which, under standard conditions, induces posterior draws that approximate the Bayesian bootstrap for sample supported functionals <span class="citation">(<a href="#ref-Lo1987BayesianBootstrap">Lo 1987</a>)</span> (see Section <a href="sec610.html#sec610">6.10</a>).</p>
-<p>For the outcome regression they place a Gaussian Process (GP) prior on <span class="math inline">\(\eta^m\)</span> (see Section @ref(sec12_4)), with a correction term that incorporates a preliminary estimator of the Riesz representer. The propensity score is estimated in a separate first step and is used in the correction/recentering; thus, a prior for <span class="math inline">\(\eta^\pi\)</span> is not required for their procedure.</p>
+<p>To conduct Bayesian inference, <span class="citation">Breunig, Liu, and Yu (<a href="#ref-breunig2025double">2025</a>)</span> place independent priors on the outcome regression and the covariate distribution (equivalently, on <span class="math inline">\(\eta^m\)</span> and <span class="math inline">\(\eta^f\)</span>). For the covariates they use a Dirichlet Process (DP) prior on <span class="math inline">\(F\)</span> (hence on <span class="math inline">\(f\)</span>; see Chapter <a href="Chap11.html#Chap11">11</a>), which, under standard conditions, induces posterior draws that approximate the Bayesian bootstrap for sample supported functionals <span class="citation">(<a href="#ref-Lo1987BayesianBootstrap">Lo 1987</a>)</span> (see Chapter <a href="Chap6.html#Chap6">6</a>).</p>
+<p>For the outcome regression they place a Gaussian Process (GP) prior on <span class="math inline">\(\eta^m\)</span> (see Chapter <a href="Chap12.html#Chap12">12</a>), with a correction term that incorporates a preliminary estimator of the Riesz representer. The propensity score is estimated in a separate first step and is used in the correction/recentering; thus, a prior for <span class="math inline">\(\eta^\pi\)</span> is not required for their procedure.</p>
 <p>The following algorithm outlines the doubly robust Bayesian procedure of <span class="citation">Breunig, Liu, and Yu (<a href="#ref-breunig2025double">2025</a>)</span>. The pilot estimate of the Riesz representer, <span class="math inline">\(\hat\gamma_\eta\)</span>, is obtained by plug–in, using a propensity score <span class="math inline">\(\hat\pi(\mathbf{x})\)</span> estimated via logistic Lasso.</p>
 <p>The pilot estimate of the outcome regression, <span class="math inline">\(\hat m_\eta(d,\mathbf{x})=\Pr(Y=1\mid D=d,\mathbf{X}=\mathbf{x})\)</span>, is taken as the posterior mean from a GP <em>classification</em> model fit with a Laplace approximation.</p>
 <p>Concretely, place a GP prior on the latent logit
@@ -487,30 +487,109 @@ K_c\big((d,\mathbf{x}),(d&#39;,\mathbf{x}&#39;)\big)
 <p>which, for the vector of latent logits evaluated at the training inputs, corresponds to the covariance matrix
 <span class="math inline">\(\mathbf{K} + \sigma_n^2\,\widehat{\boldsymbol{\gamma}}\,
 \widehat{\boldsymbol{\gamma}}^{\top}\)</span>.</p>
-<figcaption><b>Algorithm: Double Robust Bayesian</b></figcaption>
-<figure id="alg:DRBayes">
-<pre>
-Have initial estimates of γ<sub>η</sub> based on logistic Lasso
-Trim the propensity score using standard values (e.g., 10%) or the optimal trimming rule of Crump et al. (2009)
-Estimate the Riesz representer using the estimate of the propensity score
-Calculate the prior correction term 
-      σₙ = log(n) / (√n Γₙ),   Γₙ = (1/n) Σ |γ̂η(dᵢ, xᵢ)|,   n = effective sample size (after trimming)
-Calculate the prior adjustment σₙ × γ<sub>η</sub>
-Calculate m̂(d,x) = 1 / (1 + exp{-ηᵐ(d,x)}) as the posterior mean of a Gaussian Process (GP) based on d and x (unadjusted mean)
-Set an initial GP prior for the adjusted mean 
-      mᶜη(d,x) = 1 / (1 + exp{-ηᵐ}),   ηᵐ ~ GP(0, Kc)
-      Kc((d,x),(d',x')) = K((d,x),(d',x')) + σₙ² γ<sub>η</sub>(d,x)γ<sub>η</sub>(d',x')
-For s = 1,...,S do
-     a. Generate the s-th draw of the adjusted GP posterior mᶜˢη(d,x)
-     b. Draw Bayesian bootstrap weights Mˢₙᵢ = eˢᵢ / Σ eˢⱼ, with eˢᵢ ~ Exp(1), i=1,...,n
-     c. Calculate the corrected posterior draw for the ATE 
-           τ̃ˢη = τˢη - b̂ˢη
-           where τˢη = Σ Mˢₙᵢ ( mᶜˢη(1,xᵢ) - mᶜˢη(0,xᵢ) )
-                 b̂ˢη = (1/n) Σ τ[ mˢη(wᵢ) - m̂(wᵢ) ]
-                 τ[m] = m(1,x) - m(0,x) + γ̂(d,x)(y - m(d,x))
-End for
-</pre>
-</figure>
+<div class="algorithm">
+<div style="background-color: #f8f9fa; padding: 15px; border-left: 5px solid #343a40;
+            box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1); border-radius: 5px;">
+<p><strong>Algorithm: Double Robust Bayesian (DR–Bayes)</strong></p>
+<ol style="list-style-type: decimal">
+<li><p><strong>Estimate the nuisance components:</strong></p>
+<ul>
+<li><p>Obtain initial estimates of the Riesz representer <span class="math inline">\(\widehat{\gamma}_{\eta}\)</span><br />
+using a logistic Lasso.</p></li>
+<li><p>Trim the propensity score using either:</p>
+<ul>
+<li>a standard trimming rule (e.g., keep units with scores in [0.1, 0.9]), or<br />
+</li>
+<li>the optimal Crump et al. (2009) trimming rule.</li>
+</ul></li>
+<li><p>Estimate the Riesz representer <span class="math inline">\(\widehat{\gamma}_{\eta}(d_i, x_i)\)</span><br />
+using the trimmed sample.</p></li>
+</ul></li>
+<li><p><strong>Compute the prior correction term:</strong></p>
+<p>Let:
+<span class="math display">\[
+   \Gamma_n = \frac{1}{n}\sum_{i=1}^{n}
+   \left|\,\widehat{\gamma}_{\eta}(d_i, x_i)\,\right|,
+   \qquad
+   \sigma_n = \frac{\log n}{\sqrt{n}\,\Gamma_n},
+\]</span>
+where <span class="math inline">\(n\)</span> is the effective sample size after trimming.</p>
+<p>Compute the prior adjustment:
+<span class="math display">\[
+  \sigma_n \,\widehat{\gamma}_{\eta}.
+\]</span></p></li>
+<li><p><strong>Define the GP prior and unadjusted mean model:</strong></p>
+<ul>
+<li><p>Compute the unadjusted posterior mean
+<span class="math display">\[
+  \widehat{m}(d,x)
+    = \frac{1}{1 + \exp\{-\widehat{\eta}^{m}(d,x)\}},
+\]</span>
+where <span class="math inline">\(\widehat{\eta}^{m}(d,x)\)</span> is the GP posterior mean.</p></li>
+<li><p>Set the <strong>adjusted Gaussian Process prior</strong>:
+<span class="math display">\[
+  m_{\eta}^{c}(d,x)
+    = \frac{1}{1 + \exp\{-\eta^{m}(d,x)\}},
+    \qquad \eta^{m} \sim GP(0, K_{c}),
+\]</span>
+with covariance kernel
+<span class="math display">\[
+  K_{c}\big((d,x),(d&#39;,x&#39;)\big)
+  = K\big((d,x),(d&#39;,x&#39;)\big)
+    + \sigma_{n}^{2}\,
+      \widehat{\gamma}_{\eta}(d,x)\,
+      \widehat{\gamma}_{\eta}(d&#39;,x&#39;).
+\]</span></p></li>
+</ul></li>
+<li><p><strong>Posterior sampling:</strong><br />
+For <span class="math inline">\(s = 1,\dots,S\)</span>:</p>
+<p><strong>(a) Draw the adjusted GP posterior:</strong><br />
+<span class="math display">\[
+  m_{\eta}^{c,(s)}(d,x)
+  \quad \text{from the adjusted GP prior}.
+\]</span></p>
+<p><strong>(b) Bayesian bootstrap weights:</strong><br />
+Draw
+<span class="math display">\[
+  M_{n,i}^{(s)} = \frac{e_{i}^{(s)}}{\sum_{j=1}^{n} e_{j}^{(s)}},
+  \qquad e_{i}^{(s)} \sim \mathrm{Exp}(1),
+\]</span>
+for <span class="math inline">\(i = 1,\dots,n\)</span>.</p>
+<p><strong>(c) Compute the DR-corrected posterior ATE:</strong></p>
+<ul>
+<li><p><strong>Uncorrected ATE draw:</strong>
+<span class="math display">\[
+\tau_{\eta}^{(s)}
+  = \sum_{i=1}^{n}
+    M_{n,i}^{(s)}
+    \left[
+      m_{\eta}^{c,(s)}(1, x_i)
+      \;-\;
+      m_{\eta}^{c,(s)}(0, x_i)
+    \right].
+\]</span></p></li>
+<li><p><strong>Bias-correction term:</strong>
+<span class="math display">\[
+  \widehat{b}_{\eta}^{(s)}
+    = \frac{1}{n} \sum_{i=1}^{n}
+      \tau\!\left[\, m_{\eta}^{(s)}(w_i) - \widehat{m}(w_i) \,\right],
+\]</span>
+where
+<span class="math display">\[
+  \tau[m] = m(1,x) - m(0,x)
+      + \widehat{\gamma}_{\eta}(d,x)\,
+        \left(y - m(d,x)\right).
+\]</span></p></li>
+<li><p><strong>Corrected ATE draw:</strong>
+<span class="math display">\[
+  \widetilde{\tau}_{\eta}^{(s)}
+    = \tau_{\eta}^{(s)} - \widehat{b}_{\eta}^{(s)}.
+\]</span></p></li>
+</ul></li>
+<li><p>End for.</p></li>
+</ol>
+</div>
+</div>
 <p>This algorithm produces posterior draws of the ATE.<br />
 The <span class="math inline">\((1-\alpha)\%\)</span> credible interval is given by the empirical quantiles at levels <span class="math inline">\(\alpha/2\)</span> and <span class="math inline">\(1-\alpha/2\)</span>.</p>
 <p>It is worth noting that <span class="citation">Breunig, Liu, and Yu (<a href="#ref-breunig2025double">2025</a>)</span> do not perform sample splitting, whereas <span class="citation">Chernozhukov et al. (<a href="#ref-chernozhukov2018double">2018</a>)</span> recommend it in the context of <em>Double/Debiased Machine Learning for treatment and structural parameters</em>. While sample splitting (or cross-fitting) helps reduce overfitting, its role in <span class="citation">Chernozhukov et al. (<a href="#ref-chernozhukov2018double">2018</a>)</span> is more fundamental: it ensures that the nuisance functions are estimated on data independent of the observations used for inference, which is critical for their theoretical guarantees of <span class="math inline">\(\sqrt{N}\)</span>-consistency and valid asymptotic inference. Nevertheless, <span class="citation">Breunig, Liu, and Yu (<a href="#ref-breunig2025double">2025</a>)</span> report that they did not find evidence of overfitting in their setting and verified that their results are robust to the use of sample splitting.<br />
@@ -525,137 +604,290 @@ Finally, observe that the doubly robust approach does not propagate the uncertai
 where <span class="math inline">\(X_{1}\sim N(0,1)\)</span>, <span class="math inline">\(X_{2}\sim \mathrm{Bernoulli}(0.5)\)</span>, and <span class="math inline">\(X_{3}\sim U(-1,1)\)</span>, and the sample size is 2,000.</p>
 <p>The population ATE from this simulation is approximately <span class="math inline">\(0.138\)</span>. The posterior mean and 95% credible interval of the ATE using the DRB are <span class="math inline">\(0.155\)</span> and <span class="math inline">\((0.107,\,0.206)\)</span>, respectively.</p>
 <p>The following code shows how to implement the DRB inferential framework in this setting.</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="sec13_10.html#cb11-1" tabindex="-1"></a><span class="do">######### Doubly Robust Bayesian: Simulation #########</span></span>
-<span id="cb11-2"><a href="sec13_10.html#cb11-2" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">123</span>); <span class="fu">library</span>(glmnet)</span>
-<span id="cb11-3"><a href="sec13_10.html#cb11-3" tabindex="-1"></a><span class="do">## simulate covariates</span></span>
-<span id="cb11-4"><a href="sec13_10.html#cb11-4" tabindex="-1"></a>n  <span class="ot">&lt;-</span> <span class="dv">2000</span></span>
-<span id="cb11-5"><a href="sec13_10.html#cb11-5" tabindex="-1"></a>X1 <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n)                 <span class="co"># continuous</span></span>
-<span id="cb11-6"><a href="sec13_10.html#cb11-6" tabindex="-1"></a>X2 <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n, <span class="dv">1</span>, <span class="fl">0.5</span>)        <span class="co"># binary</span></span>
-<span id="cb11-7"><a href="sec13_10.html#cb11-7" tabindex="-1"></a>X3 <span class="ot">&lt;-</span> <span class="fu">runif</span>(n, <span class="sc">-</span><span class="dv">1</span>, <span class="dv">1</span>)          <span class="co"># continuous</span></span>
-<span id="cb11-8"><a href="sec13_10.html#cb11-8" tabindex="-1"></a>Z <span class="ot">&lt;-</span> <span class="fu">cbind</span>(X1, X2, X3)</span>
-<span id="cb11-9"><a href="sec13_10.html#cb11-9" tabindex="-1"></a><span class="co"># True propensity and outcome</span></span>
-<span id="cb11-10"><a href="sec13_10.html#cb11-10" tabindex="-1"></a>logit <span class="ot">&lt;-</span> <span class="cf">function</span>(t) <span class="dv">1</span><span class="sc">/</span>(<span class="dv">1</span><span class="sc">+</span><span class="fu">exp</span>(<span class="sc">-</span>t))</span>
-<span id="cb11-11"><a href="sec13_10.html#cb11-11" tabindex="-1"></a>true_pi  <span class="ot">&lt;-</span> <span class="cf">function</span>(X){ <span class="fu">logit</span>(<span class="sc">-</span><span class="fl">0.3</span> <span class="sc">+</span> <span class="fl">0.8</span><span class="sc">*</span>X[,<span class="dv">1</span>] <span class="sc">-</span><span class="fl">0.5</span><span class="sc">*</span>X[,<span class="dv">2</span>] <span class="sc">+</span> <span class="fl">0.7</span><span class="sc">*</span>X[,<span class="dv">3</span>]) }</span>
-<span id="cb11-12"><a href="sec13_10.html#cb11-12" tabindex="-1"></a>true_eta <span class="ot">&lt;-</span> <span class="cf">function</span>(d,X){ <span class="sc">-</span><span class="fl">0.2</span> <span class="sc">+</span> <span class="fl">0.6</span><span class="sc">*</span>d <span class="sc">+</span> <span class="fl">0.5</span><span class="sc">*</span>X[,<span class="dv">1</span>] <span class="sc">-</span><span class="fl">0.4</span><span class="sc">*</span>X[,<span class="dv">2</span>] <span class="sc">+</span> <span class="fl">0.3</span><span class="sc">*</span>X[,<span class="dv">3</span>] }</span>
-<span id="cb11-13"><a href="sec13_10.html#cb11-13" tabindex="-1"></a>true_p   <span class="ot">&lt;-</span> <span class="cf">function</span>(d,X){ <span class="fu">logit</span>(<span class="fu">true_eta</span>(d,X)) }</span>
-<span id="cb11-14"><a href="sec13_10.html#cb11-14" tabindex="-1"></a>ATE  <span class="ot">&lt;-</span> <span class="fu">mean</span>(<span class="fu">true_p</span>(<span class="dv">1</span>,Z) <span class="sc">-</span> <span class="fu">true_p</span>(<span class="dv">0</span>,Z)) <span class="co"># Population ATE</span></span>
-<span id="cb11-15"><a href="sec13_10.html#cb11-15" tabindex="-1"></a><span class="co"># Data</span></span>
-<span id="cb11-16"><a href="sec13_10.html#cb11-16" tabindex="-1"></a>pi <span class="ot">&lt;-</span> <span class="fu">true_pi</span>(Z); D  <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n,<span class="dv">1</span>,pi)</span>
-<span id="cb11-17"><a href="sec13_10.html#cb11-17" tabindex="-1"></a>P  <span class="ot">&lt;-</span> <span class="fu">true_p</span>(D,Z); Y  <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n,<span class="dv">1</span>,P)</span>
-<span id="cb11-18"><a href="sec13_10.html#cb11-18" tabindex="-1"></a>dat <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(Y, D, X1, <span class="at">X2 =</span> <span class="fu">factor</span>(X2), X3)</span>
-<span id="cb11-19"><a href="sec13_10.html#cb11-19" tabindex="-1"></a><span class="do">######### Doubly Robust Bayesian: Implementation #########</span></span>
-<span id="cb11-20"><a href="sec13_10.html#cb11-20" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">dim</span>(Z)[<span class="dv">2</span>]; covars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;X1&quot;</span>,<span class="st">&quot;X2&quot;</span>,<span class="st">&quot;X3&quot;</span>)</span>
-<span id="cb11-21"><a href="sec13_10.html#cb11-21" tabindex="-1"></a>Z.df <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(Z) <span class="co"># covariates as a dataframe</span></span>
-<span id="cb11-22"><a href="sec13_10.html#cb11-22" tabindex="-1"></a><span class="co"># Propensity score model: lasso</span></span>
-<span id="cb11-23"><a href="sec13_10.html#cb11-23" tabindex="-1"></a>cvfit <span class="ot">&lt;-</span> <span class="fu">cv.glmnet</span>(Z, D, <span class="at">family =</span> <span class="st">&quot;binomial&quot;</span>, <span class="at">alpha=</span><span class="dv">1</span>, <span class="at">nfolds =</span> <span class="dv">10</span>) <span class="co"># lasso,min</span></span>
-<span id="cb11-24"><a href="sec13_10.html#cb11-24" tabindex="-1"></a>ps.coef <span class="ot">&lt;-</span> <span class="fu">coef</span>(cvfit, <span class="at">s =</span> <span class="st">&quot;lambda.min&quot;</span>)[<span class="dv">0</span><span class="sc">:</span>p<span class="sc">+</span><span class="dv">1</span>]</span>
-<span id="cb11-25"><a href="sec13_10.html#cb11-25" tabindex="-1"></a>ps_hat <span class="ot">&lt;-</span> <span class="fu">predict</span>(cvfit, <span class="at">newx =</span> Z, <span class="at">s =</span> <span class="st">&quot;lambda.min&quot;</span>,<span class="at">type =</span> <span class="st">&quot;response&quot;</span>)</span>
-<span id="cb11-26"><a href="sec13_10.html#cb11-26" tabindex="-1"></a>ps_hat <span class="ot">&lt;-</span> <span class="fu">pmin</span>(<span class="fu">pmax</span>(ps_hat, <span class="fl">1e-6</span>), <span class="dv">1</span> <span class="sc">-</span> <span class="fl">1e-6</span>)</span>
-<span id="cb11-27"><a href="sec13_10.html#cb11-27" tabindex="-1"></a><span class="co"># Riesz representer</span></span>
-<span id="cb11-28"><a href="sec13_10.html#cb11-28" tabindex="-1"></a>riesz_fun <span class="ot">&lt;-</span> <span class="cf">function</span>(d, ps) d<span class="sc">/</span>ps <span class="sc">-</span> (<span class="dv">1</span> <span class="sc">-</span> d)<span class="sc">/</span>(<span class="dv">1</span> <span class="sc">-</span> ps)</span>
-<span id="cb11-29"><a href="sec13_10.html#cb11-29" tabindex="-1"></a><span class="co"># GP model</span></span>
-<span id="cb11-30"><a href="sec13_10.html#cb11-30" tabindex="-1"></a>make_gp <span class="ot">&lt;-</span> <span class="cf">function</span>(X_train, y_bin, <span class="at">use_correction =</span> <span class="cn">FALSE</span>, <span class="at">gamma_scaled =</span> <span class="cn">NULL</span>,</span>
-<span id="cb11-31"><a href="sec13_10.html#cb11-31" tabindex="-1"></a><span class="at">approx_method =</span> gplite<span class="sc">::</span><span class="fu">approx_laplace</span>(),</span>
-<span id="cb11-32"><a href="sec13_10.html#cb11-32" tabindex="-1"></a><span class="at">init_lscale =</span> <span class="fl">0.3</span>) {</span>
-<span id="cb11-33"><a href="sec13_10.html#cb11-33" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(y_bin) <span class="sc">==</span> <span class="fu">nrow</span>(X_train))</span>
-<span id="cb11-34"><a href="sec13_10.html#cb11-34" tabindex="-1"></a>    <span class="co"># Initializing the covariance function</span></span>
-<span id="cb11-35"><a href="sec13_10.html#cb11-35" tabindex="-1"></a>    cf_se <span class="ot">&lt;-</span> gplite<span class="sc">::</span><span class="fu">cf_sexp</span>(<span class="at">vars =</span> <span class="fu">colnames</span>(X_train), <span class="at">lscale =</span> init_lscale, <span class="at">magn =</span> <span class="dv">1</span>, <span class="at">normalize =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb11-36"><a href="sec13_10.html#cb11-36" tabindex="-1"></a>    cfs <span class="ot">&lt;-</span> <span class="fu">list</span>(cf_se)</span>
-<span id="cb11-37"><a href="sec13_10.html#cb11-37" tabindex="-1"></a>    <span class="cf">if</span> (use_correction) {</span>
-<span id="cb11-38"><a href="sec13_10.html#cb11-38" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.null</span>(gamma_scaled))</span>
-<span id="cb11-39"><a href="sec13_10.html#cb11-39" tabindex="-1"></a>        <span class="co"># Add linear kernel on the last column (gamma_scaled)</span></span>
-<span id="cb11-40"><a href="sec13_10.html#cb11-40" tabindex="-1"></a>        cf_lin <span class="ot">&lt;-</span> gplite<span class="sc">::</span><span class="fu">cf_lin</span>(<span class="at">vars =</span> <span class="st">&quot;gamma&quot;</span>, <span class="at">magn =</span> <span class="dv">1</span>, <span class="at">normalize =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb11-41"><a href="sec13_10.html#cb11-41" tabindex="-1"></a>        cfs <span class="ot">&lt;-</span> <span class="fu">list</span>(cf_se, cf_lin)</span>
-<span id="cb11-42"><a href="sec13_10.html#cb11-42" tabindex="-1"></a>    }</span>
-<span id="cb11-43"><a href="sec13_10.html#cb11-43" tabindex="-1"></a>    <span class="co"># Initializes a GP model</span></span>
-<span id="cb11-44"><a href="sec13_10.html#cb11-44" tabindex="-1"></a>    gp <span class="ot">&lt;-</span> gplite<span class="sc">::</span><span class="fu">gp_init</span>(<span class="at">cfs =</span> cfs, <span class="at">lik =</span> gplite<span class="sc">::</span><span class="fu">lik_bernoulli</span>(), <span class="at">approx =</span> approx_method)</span>
-<span id="cb11-45"><a href="sec13_10.html#cb11-45" tabindex="-1"></a>    <span class="co"># Optimizing hyperparameters</span></span>
-<span id="cb11-46"><a href="sec13_10.html#cb11-46" tabindex="-1"></a>    gp <span class="ot">&lt;-</span> gplite<span class="sc">::</span><span class="fu">gp_optim</span>(gp, <span class="at">x =</span> X_train, <span class="at">y =</span> y_bin, <span class="at">maxiter =</span> <span class="dv">1000</span>, <span class="at">restarts =</span> <span class="dv">3</span>, <span class="at">tol =</span> <span class="fl">1e-05</span>)</span>
-<span id="cb11-47"><a href="sec13_10.html#cb11-47" tabindex="-1"></a>    <span class="fu">return</span>(gp)</span>
-<span id="cb11-48"><a href="sec13_10.html#cb11-48" tabindex="-1"></a>}</span>
-<span id="cb11-49"><a href="sec13_10.html#cb11-49" tabindex="-1"></a>posterior_draws_prob <span class="ot">&lt;-</span> <span class="cf">function</span>(gp, X_test, <span class="at">ndraws =</span> <span class="dv">5000</span>) {</span>
-<span id="cb11-50"><a href="sec13_10.html#cb11-50" tabindex="-1"></a>    out <span class="ot">&lt;-</span> gplite<span class="sc">::</span><span class="fu">gp_draw</span>(gp, <span class="at">xnew =</span> X_test, <span class="at">draws =</span> ndraws, <span class="at">transform =</span> <span class="cn">TRUE</span>, <span class="at">target =</span> <span class="cn">FALSE</span>, <span class="at">jitter =</span> <span class="fl">1e-6</span>)</span>
-<span id="cb11-51"><a href="sec13_10.html#cb11-51" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">t</span>(out))</span>
-<span id="cb11-52"><a href="sec13_10.html#cb11-52" tabindex="-1"></a>}</span>
-<span id="cb11-53"><a href="sec13_10.html#cb11-53" tabindex="-1"></a><span class="co"># Main function</span></span>
-<span id="cb11-54"><a href="sec13_10.html#cb11-54" tabindex="-1"></a>run_trim <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">t_trim =</span> <span class="fl">0.10</span>, <span class="at">N_post =</span> <span class="dv">5000</span>, <span class="at">h_r =</span> <span class="dv">1</span><span class="sc">/</span><span class="dv">2</span>, <span class="at">cor_size =</span> <span class="dv">1</span>) {</span>
-<span id="cb11-55"><a href="sec13_10.html#cb11-55" tabindex="-1"></a>    <span class="co"># Trim by estimated PS</span></span>
-<span id="cb11-56"><a href="sec13_10.html#cb11-56" tabindex="-1"></a>    keep <span class="ot">&lt;-</span> <span class="fu">which</span>(ps_hat <span class="sc">&gt;=</span> t_trim <span class="sc">&amp;</span> ps_hat <span class="sc">&lt;=</span> (<span class="dv">1</span> <span class="sc">-</span> t_trim))</span>
-<span id="cb11-57"><a href="sec13_10.html#cb11-57" tabindex="-1"></a>    n_eff <span class="ot">&lt;-</span> <span class="fu">length</span>(keep)</span>
-<span id="cb11-58"><a href="sec13_10.html#cb11-58" tabindex="-1"></a>    <span class="cf">if</span> (n_eff <span class="sc">&lt;</span> <span class="dv">50</span>) <span class="fu">stop</span>(<span class="st">&quot;Too few observations after trimming.&quot;</span>)</span>
-<span id="cb11-59"><a href="sec13_10.html#cb11-59" tabindex="-1"></a>    Yk  <span class="ot">&lt;-</span> Y[keep]</span>
-<span id="cb11-60"><a href="sec13_10.html#cb11-60" tabindex="-1"></a>    Dk  <span class="ot">&lt;-</span> D[keep]</span>
-<span id="cb11-61"><a href="sec13_10.html#cb11-61" tabindex="-1"></a>    Zk  <span class="ot">&lt;-</span> Z[keep, , drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
-<span id="cb11-62"><a href="sec13_10.html#cb11-62" tabindex="-1"></a>    psk <span class="ot">&lt;-</span> ps_hat[keep]</span>
-<span id="cb11-63"><a href="sec13_10.html#cb11-63" tabindex="-1"></a>    <span class="co"># Riesz representer and sigma_n choice</span></span>
-<span id="cb11-64"><a href="sec13_10.html#cb11-64" tabindex="-1"></a>    gamma_k <span class="ot">&lt;-</span> <span class="fu">riesz_fun</span>(Dk, psk)</span>
-<span id="cb11-65"><a href="sec13_10.html#cb11-65" tabindex="-1"></a>    sigma_n <span class="ot">&lt;-</span> cor_size <span class="sc">*</span> (<span class="fu">log</span>(n_eff) <span class="sc">/</span> ( (n_eff)<span class="sc">^</span>(h_r) <span class="sc">*</span> <span class="fu">mean</span>(<span class="fu">abs</span>(gamma_k)) ))</span>
-<span id="cb11-66"><a href="sec13_10.html#cb11-66" tabindex="-1"></a>    gamma_scaled <span class="ot">&lt;-</span> sigma_n <span class="sc">*</span> gamma_k</span>
-<span id="cb11-67"><a href="sec13_10.html#cb11-67" tabindex="-1"></a>    <span class="co"># Training inputs for GP: [Z, D] and, if corrected, an extra column &#39;gamma&#39;</span></span>
-<span id="cb11-68"><a href="sec13_10.html#cb11-68" tabindex="-1"></a>    X_train_nc <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(Zk)</span>
-<span id="cb11-69"><a href="sec13_10.html#cb11-69" tabindex="-1"></a>    X_train_nc<span class="sc">$</span>D <span class="ot">&lt;-</span> Dk</span>
-<span id="cb11-70"><a href="sec13_10.html#cb11-70" tabindex="-1"></a>    <span class="fu">colnames</span>(X_train_nc) <span class="ot">&lt;-</span> <span class="fu">c</span>(covars, <span class="st">&quot;D&quot;</span>)</span>
-<span id="cb11-71"><a href="sec13_10.html#cb11-71" tabindex="-1"></a>    X_train_c <span class="ot">&lt;-</span> X_train_nc</span>
-<span id="cb11-72"><a href="sec13_10.html#cb11-72" tabindex="-1"></a>    X_train_c<span class="sc">$</span>gamma <span class="ot">&lt;-</span> gamma_scaled</span>
-<span id="cb11-73"><a href="sec13_10.html#cb11-73" tabindex="-1"></a>    <span class="co"># Test inputs: for each i, (Z_i, d=0) and (Z_i, d=1)</span></span>
-<span id="cb11-74"><a href="sec13_10.html#cb11-74" tabindex="-1"></a>    X_t0 <span class="ot">&lt;-</span> X_train_nc; X_t0<span class="sc">$</span>D <span class="ot">&lt;-</span> <span class="dv">0</span></span>
-<span id="cb11-75"><a href="sec13_10.html#cb11-75" tabindex="-1"></a>    X_t1 <span class="ot">&lt;-</span> X_train_nc; X_t1<span class="sc">$</span>D <span class="ot">&lt;-</span> <span class="dv">1</span></span>
-<span id="cb11-76"><a href="sec13_10.html#cb11-76" tabindex="-1"></a>    X_t0c <span class="ot">&lt;-</span> X_t0; X_t1c <span class="ot">&lt;-</span> X_t1</span>
-<span id="cb11-77"><a href="sec13_10.html#cb11-77" tabindex="-1"></a>    X_t0c<span class="sc">$</span>gamma <span class="ot">&lt;-</span> sigma_n <span class="sc">*</span> <span class="fu">riesz_fun</span>(<span class="dv">0</span>, psk)   </span>
-<span id="cb11-78"><a href="sec13_10.html#cb11-78" tabindex="-1"></a>    X_t1c<span class="sc">$</span>gamma <span class="ot">&lt;-</span> sigma_n <span class="sc">*</span> <span class="fu">riesz_fun</span>(<span class="dv">1</span>, psk) </span>
-<span id="cb11-79"><a href="sec13_10.html#cb11-79" tabindex="-1"></a>    <span class="co"># GP WITHOUT prior correction #</span></span>
-<span id="cb11-80"><a href="sec13_10.html#cb11-80" tabindex="-1"></a>    gp_nc <span class="ot">&lt;-</span> <span class="fu">make_gp</span>(<span class="at">X_train =</span> X_train_nc, <span class="at">y_bin =</span> Yk, <span class="at">use_correction =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb11-81"><a href="sec13_10.html#cb11-81" tabindex="-1"></a>    <span class="co"># joint draws for [m(Z,0); m(Z,1)]</span></span>
-<span id="cb11-82"><a href="sec13_10.html#cb11-82" tabindex="-1"></a>    M_nc_0 <span class="ot">&lt;-</span> <span class="fu">posterior_draws_prob</span>(gp_nc, X_t0, <span class="at">ndraws =</span> N_post)  <span class="co"># N_post x n_eff</span></span>
-<span id="cb11-83"><a href="sec13_10.html#cb11-83" tabindex="-1"></a>    M_nc_1 <span class="ot">&lt;-</span> <span class="fu">posterior_draws_prob</span>(gp_nc, X_t1, <span class="at">ndraws =</span> N_post)</span>
-<span id="cb11-84"><a href="sec13_10.html#cb11-84" tabindex="-1"></a>    <span class="co"># observed arm probabilities</span></span>
-<span id="cb11-85"><a href="sec13_10.html#cb11-85" tabindex="-1"></a>    M_nc_obs <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(<span class="fu">matrix</span>(Dk, <span class="at">nrow =</span> N_post, <span class="at">ncol =</span> n_eff, <span class="at">byrow =</span> <span class="cn">TRUE</span>) <span class="sc">==</span> <span class="dv">1</span>, M_nc_1, M_nc_0)</span>
-<span id="cb11-86"><a href="sec13_10.html#cb11-86" tabindex="-1"></a>    <span class="co"># GP WITH prior correction #</span></span>
-<span id="cb11-87"><a href="sec13_10.html#cb11-87" tabindex="-1"></a>    gp_c <span class="ot">&lt;-</span> <span class="fu">make_gp</span>(<span class="at">X_train =</span> X_train_c, <span class="at">y_bin =</span> Yk, <span class="at">use_correction =</span> <span class="cn">TRUE</span>, <span class="at">gamma_scaled =</span> gamma_scaled)</span>
-<span id="cb11-88"><a href="sec13_10.html#cb11-88" tabindex="-1"></a>    M_c_0 <span class="ot">&lt;-</span> <span class="fu">posterior_draws_prob</span>(gp_c, X_t0c, <span class="at">ndraws =</span> N_post)</span>
-<span id="cb11-89"><a href="sec13_10.html#cb11-89" tabindex="-1"></a>    M_c_1 <span class="ot">&lt;-</span> <span class="fu">posterior_draws_prob</span>(gp_c, X_t1c, <span class="at">ndraws =</span> N_post)</span>
-<span id="cb11-90"><a href="sec13_10.html#cb11-90" tabindex="-1"></a>    M_c_obs <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(<span class="fu">matrix</span>(Dk, <span class="at">nrow =</span> N_post, <span class="at">ncol =</span> n_eff, <span class="at">byrow =</span> <span class="cn">TRUE</span>) <span class="sc">==</span> <span class="dv">1</span>, M_c_1, M_c_0)</span>
-<span id="cb11-91"><a href="sec13_10.html#cb11-91" tabindex="-1"></a>    <span class="co"># Bayesian bootstrap weights #</span></span>
-<span id="cb11-92"><a href="sec13_10.html#cb11-92" tabindex="-1"></a>    W <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rexp</span>(N_post <span class="sc">*</span> n_eff, <span class="at">rate =</span> <span class="dv">1</span>), <span class="at">nrow =</span> N_post)</span>
-<span id="cb11-93"><a href="sec13_10.html#cb11-93" tabindex="-1"></a>    W <span class="ot">&lt;-</span> W <span class="sc">/</span> <span class="fu">rowSums</span>(W)</span>
-<span id="cb11-94"><a href="sec13_10.html#cb11-94" tabindex="-1"></a>    <span class="co"># ATEs</span></span>
-<span id="cb11-95"><a href="sec13_10.html#cb11-95" tabindex="-1"></a>    <span class="co"># (1) Unadjusted Bayes</span></span>
-<span id="cb11-96"><a href="sec13_10.html#cb11-96" tabindex="-1"></a>    Ate_nc_draws <span class="ot">&lt;-</span> <span class="fu">rowSums</span>((M_nc_1 <span class="sc">-</span> M_nc_0) <span class="sc">*</span> W)</span>
-<span id="cb11-97"><a href="sec13_10.html#cb11-97" tabindex="-1"></a>    <span class="co"># (2) Prior-adjusted Bayes</span></span>
-<span id="cb11-98"><a href="sec13_10.html#cb11-98" tabindex="-1"></a>    Ate_c_draws  <span class="ot">&lt;-</span> <span class="fu">rowSums</span>((M_c_1 <span class="sc">-</span> M_c_0) <span class="sc">*</span> W)</span>
-<span id="cb11-99"><a href="sec13_10.html#cb11-99" tabindex="-1"></a>    <span class="co"># (3) DR Bayes (posterior recentering)</span></span>
-<span id="cb11-100"><a href="sec13_10.html#cb11-100" tabindex="-1"></a>    <span class="co"># Pre-centering using UNcorrected GP posterior means</span></span>
-<span id="cb11-101"><a href="sec13_10.html#cb11-101" tabindex="-1"></a>    mu_nc_diff <span class="ot">&lt;-</span> <span class="fu">colMeans</span>(M_nc_1 <span class="sc">-</span> M_nc_0)                </span>
-<span id="cb11-102"><a href="sec13_10.html#cb11-102" tabindex="-1"></a>    mu_nc_obs  <span class="ot">&lt;-</span> <span class="fu">colMeans</span>(M_nc_obs)                       </span>
-<span id="cb11-103"><a href="sec13_10.html#cb11-103" tabindex="-1"></a>    ATE_dr_pre <span class="ot">&lt;-</span> <span class="fu">mean</span>(mu_nc_diff <span class="sc">+</span> gamma_k <span class="sc">*</span> (Yk <span class="sc">-</span> mu_nc_obs))</span>
-<span id="cb11-104"><a href="sec13_10.html#cb11-104" tabindex="-1"></a>    <span class="co"># Recenter draws using corrected GP draws</span></span>
-<span id="cb11-105"><a href="sec13_10.html#cb11-105" tabindex="-1"></a>    DR_rec_1 <span class="ot">&lt;-</span> (<span class="fu">matrix</span>(gamma_k, <span class="at">nrow =</span> N_post, <span class="at">ncol =</span> n_eff, <span class="at">byrow =</span> <span class="cn">TRUE</span>)) <span class="sc">*</span> (<span class="fu">matrix</span>(Yk, <span class="at">nrow =</span> N_post, <span class="at">ncol =</span> n_eff, <span class="at">byrow =</span> <span class="cn">TRUE</span>) <span class="sc">-</span> M_c_obs)</span>
-<span id="cb11-106"><a href="sec13_10.html#cb11-106" tabindex="-1"></a>    <span class="co"># The first component is \tau_{\eta}^s in Algorithm 1</span></span>
-<span id="cb11-107"><a href="sec13_10.html#cb11-107" tabindex="-1"></a>    <span class="co"># The second component is \hat{m} a scalar. This has positive sign because</span></span>
-<span id="cb11-108"><a href="sec13_10.html#cb11-108" tabindex="-1"></a>    <span class="co"># minus x minus, the bias is with minus, and then, this component enters with minus in the bias term</span></span>
-<span id="cb11-109"><a href="sec13_10.html#cb11-109" tabindex="-1"></a>    <span class="co"># The third component is \gamma_k x (y-m(d,x)), m(d,x) is with prior correction</span></span>
-<span id="cb11-110"><a href="sec13_10.html#cb11-110" tabindex="-1"></a>    <span class="co"># The fourth component is m(1,x)-m(0,x) also with correction in the prior</span></span>
-<span id="cb11-111"><a href="sec13_10.html#cb11-111" tabindex="-1"></a>    Ate_drb_draws <span class="ot">&lt;-</span> <span class="fu">rowSums</span>((M_c_1 <span class="sc">-</span> M_c_0) <span class="sc">*</span> W) <span class="sc">+</span> ATE_dr_pre <span class="sc">-</span> <span class="fu">rowSums</span>(DR_rec_1) <span class="sc">/</span> n_eff <span class="sc">-</span> <span class="fu">rowSums</span>(M_c_1 <span class="sc">-</span> M_c_0) <span class="sc">/</span> n_eff</span>
-<span id="cb11-112"><a href="sec13_10.html#cb11-112" tabindex="-1"></a>    </span>
-<span id="cb11-113"><a href="sec13_10.html#cb11-113" tabindex="-1"></a>    qfun <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
-<span id="cb11-114"><a href="sec13_10.html#cb11-114" tabindex="-1"></a>        qs <span class="ot">&lt;-</span> <span class="fu">quantile</span>(x, <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>))</span>
-<span id="cb11-115"><a href="sec13_10.html#cb11-115" tabindex="-1"></a>        <span class="fu">c</span>(<span class="at">mean   =</span> <span class="fu">mean</span>(x),     <span class="at">median =</span> <span class="fu">median</span>(x), <span class="at">lo =</span> qs[<span class="dv">1</span>], <span class="at">hi =</span> qs[<span class="dv">2</span>], <span class="at">len =</span> <span class="fu">diff</span>(qs)</span>
-<span id="cb11-116"><a href="sec13_10.html#cb11-116" tabindex="-1"></a>        )</span>
-<span id="cb11-117"><a href="sec13_10.html#cb11-117" tabindex="-1"></a>    }   </span>
-<span id="cb11-118"><a href="sec13_10.html#cb11-118" tabindex="-1"></a>    vals <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb11-119"><a href="sec13_10.html#cb11-119" tabindex="-1"></a>    <span class="at">Bayes      =</span> <span class="fu">qfun</span>(Ate_nc_draws),</span>
-<span id="cb11-120"><a href="sec13_10.html#cb11-120" tabindex="-1"></a>    <span class="st">`</span><span class="at">PA Bayes</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">qfun</span>(Ate_c_draws),</span>
-<span id="cb11-121"><a href="sec13_10.html#cb11-121" tabindex="-1"></a>    <span class="st">`</span><span class="at">DR Bayes</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">qfun</span>(Ate_drb_draws)</span>
-<span id="cb11-122"><a href="sec13_10.html#cb11-122" tabindex="-1"></a>    )</span>
-<span id="cb11-123"><a href="sec13_10.html#cb11-123" tabindex="-1"></a>    out_df <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">do.call</span>(rbind, vals), <span class="at">check.names =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb11-124"><a href="sec13_10.html#cb11-124" tabindex="-1"></a>    <span class="fu">list</span>(<span class="at">t_trim =</span> t_trim, <span class="at">results =</span> out_df)</span>
-<span id="cb11-125"><a href="sec13_10.html#cb11-125" tabindex="-1"></a>}</span>
-<span id="cb11-126"><a href="sec13_10.html#cb11-126" tabindex="-1"></a>N_post <span class="ot">&lt;-</span> <span class="dv">5000</span></span>
-<span id="cb11-127"><a href="sec13_10.html#cb11-127" tabindex="-1"></a>h_r    <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">/</span><span class="dv">2</span></span>
-<span id="cb11-128"><a href="sec13_10.html#cb11-128" tabindex="-1"></a>cor_size <span class="ot">&lt;-</span> <span class="dv">1</span></span>
-<span id="cb11-129"><a href="sec13_10.html#cb11-129" tabindex="-1"></a>trim <span class="ot">&lt;-</span> <span class="fl">0.05</span></span>
-<span id="cb11-130"><a href="sec13_10.html#cb11-130" tabindex="-1"></a>res_list <span class="ot">&lt;-</span> <span class="fu">run_trim</span>(<span class="at">t_trim =</span> trim, <span class="at">N_post =</span> N_post, <span class="at">h_r =</span> h_r, <span class="at">cor_size =</span> cor_size)</span>
-<span id="cb11-131"><a href="sec13_10.html#cb11-131" tabindex="-1"></a><span class="fu">print</span>(res_list<span class="sc">$</span>results)</span></code></pre></div>
+<div class="sourceCode" id="cb124"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb124-1"><a href="sec13_10.html#cb124-1" tabindex="-1"></a><span class="do">######### Doubly Robust Bayesian: Simulation #########</span></span>
+<span id="cb124-2"><a href="sec13_10.html#cb124-2" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">123</span>); <span class="fu">library</span>(glmnet)</span></code></pre></div>
+<pre><code>## Loading required package: Matrix</code></pre>
+<pre><code>## 
+## Attaching package: &#39;Matrix&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:SparseM&#39;:
+## 
+##     det</code></pre>
+<pre><code>## The following objects are masked from &#39;package:tidyr&#39;:
+## 
+##     expand, pack, unpack</code></pre>
+<pre><code>## Loaded glmnet 4.1-8</code></pre>
+<div class="sourceCode" id="cb130"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb130-1"><a href="sec13_10.html#cb130-1" tabindex="-1"></a><span class="do">## simulate covariates</span></span>
+<span id="cb130-2"><a href="sec13_10.html#cb130-2" tabindex="-1"></a>n  <span class="ot">&lt;-</span> <span class="dv">2000</span></span>
+<span id="cb130-3"><a href="sec13_10.html#cb130-3" tabindex="-1"></a>X1 <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n)                 <span class="co"># continuous</span></span>
+<span id="cb130-4"><a href="sec13_10.html#cb130-4" tabindex="-1"></a>X2 <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n, <span class="dv">1</span>, <span class="fl">0.5</span>)        <span class="co"># binary</span></span>
+<span id="cb130-5"><a href="sec13_10.html#cb130-5" tabindex="-1"></a>X3 <span class="ot">&lt;-</span> <span class="fu">runif</span>(n, <span class="sc">-</span><span class="dv">1</span>, <span class="dv">1</span>)          <span class="co"># continuous</span></span>
+<span id="cb130-6"><a href="sec13_10.html#cb130-6" tabindex="-1"></a>Z <span class="ot">&lt;-</span> <span class="fu">cbind</span>(X1, X2, X3)</span>
+<span id="cb130-7"><a href="sec13_10.html#cb130-7" tabindex="-1"></a><span class="co"># True propensity and outcome</span></span>
+<span id="cb130-8"><a href="sec13_10.html#cb130-8" tabindex="-1"></a>logit <span class="ot">&lt;-</span> <span class="cf">function</span>(t) <span class="dv">1</span><span class="sc">/</span>(<span class="dv">1</span><span class="sc">+</span><span class="fu">exp</span>(<span class="sc">-</span>t))</span>
+<span id="cb130-9"><a href="sec13_10.html#cb130-9" tabindex="-1"></a>true_pi  <span class="ot">&lt;-</span> <span class="cf">function</span>(X){ <span class="fu">logit</span>(<span class="sc">-</span><span class="fl">0.3</span> <span class="sc">+</span> <span class="fl">0.8</span><span class="sc">*</span>X[,<span class="dv">1</span>] <span class="sc">-</span><span class="fl">0.5</span><span class="sc">*</span>X[,<span class="dv">2</span>] <span class="sc">+</span> <span class="fl">0.7</span><span class="sc">*</span>X[,<span class="dv">3</span>]) }</span>
+<span id="cb130-10"><a href="sec13_10.html#cb130-10" tabindex="-1"></a>true_eta <span class="ot">&lt;-</span> <span class="cf">function</span>(d,X){ <span class="sc">-</span><span class="fl">0.2</span> <span class="sc">+</span> <span class="fl">0.6</span><span class="sc">*</span>d <span class="sc">+</span> <span class="fl">0.5</span><span class="sc">*</span>X[,<span class="dv">1</span>] <span class="sc">-</span><span class="fl">0.4</span><span class="sc">*</span>X[,<span class="dv">2</span>] <span class="sc">+</span> <span class="fl">0.3</span><span class="sc">*</span>X[,<span class="dv">3</span>] }</span>
+<span id="cb130-11"><a href="sec13_10.html#cb130-11" tabindex="-1"></a>true_p   <span class="ot">&lt;-</span> <span class="cf">function</span>(d,X){ <span class="fu">logit</span>(<span class="fu">true_eta</span>(d,X)) }</span>
+<span id="cb130-12"><a href="sec13_10.html#cb130-12" tabindex="-1"></a>ATE  <span class="ot">&lt;-</span> <span class="fu">mean</span>(<span class="fu">true_p</span>(<span class="dv">1</span>,Z) <span class="sc">-</span> <span class="fu">true_p</span>(<span class="dv">0</span>,Z)) <span class="co"># Population ATE</span></span>
+<span id="cb130-13"><a href="sec13_10.html#cb130-13" tabindex="-1"></a><span class="co"># Data</span></span>
+<span id="cb130-14"><a href="sec13_10.html#cb130-14" tabindex="-1"></a>pi <span class="ot">&lt;-</span> <span class="fu">true_pi</span>(Z); D  <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n,<span class="dv">1</span>,pi)</span>
+<span id="cb130-15"><a href="sec13_10.html#cb130-15" tabindex="-1"></a>P  <span class="ot">&lt;-</span> <span class="fu">true_p</span>(D,Z); Y  <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n,<span class="dv">1</span>,P)</span>
+<span id="cb130-16"><a href="sec13_10.html#cb130-16" tabindex="-1"></a>dat <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(Y, D, X1, <span class="at">X2 =</span> <span class="fu">factor</span>(X2), X3)</span>
+<span id="cb130-17"><a href="sec13_10.html#cb130-17" tabindex="-1"></a><span class="do">######### Doubly Robust Bayesian: Implementation #########</span></span>
+<span id="cb130-18"><a href="sec13_10.html#cb130-18" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">dim</span>(Z)[<span class="dv">2</span>]; covars <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;X1&quot;</span>,<span class="st">&quot;X2&quot;</span>,<span class="st">&quot;X3&quot;</span>)</span>
+<span id="cb130-19"><a href="sec13_10.html#cb130-19" tabindex="-1"></a>Z.df <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(Z) <span class="co"># covariates as a dataframe</span></span>
+<span id="cb130-20"><a href="sec13_10.html#cb130-20" tabindex="-1"></a><span class="co"># Propensity score model: lasso</span></span>
+<span id="cb130-21"><a href="sec13_10.html#cb130-21" tabindex="-1"></a>cvfit <span class="ot">&lt;-</span> <span class="fu">cv.glmnet</span>(Z, D, <span class="at">family =</span> <span class="st">&quot;binomial&quot;</span>, <span class="at">alpha=</span><span class="dv">1</span>, <span class="at">nfolds =</span> <span class="dv">10</span>) <span class="co"># lasso,min</span></span>
+<span id="cb130-22"><a href="sec13_10.html#cb130-22" tabindex="-1"></a>ps.coef <span class="ot">&lt;-</span> <span class="fu">coef</span>(cvfit, <span class="at">s =</span> <span class="st">&quot;lambda.min&quot;</span>)[<span class="dv">0</span><span class="sc">:</span>p<span class="sc">+</span><span class="dv">1</span>]</span>
+<span id="cb130-23"><a href="sec13_10.html#cb130-23" tabindex="-1"></a>ps_hat <span class="ot">&lt;-</span> <span class="fu">predict</span>(cvfit, <span class="at">newx =</span> Z, <span class="at">s =</span> <span class="st">&quot;lambda.min&quot;</span>,<span class="at">type =</span> <span class="st">&quot;response&quot;</span>)</span>
+<span id="cb130-24"><a href="sec13_10.html#cb130-24" tabindex="-1"></a>ps_hat <span class="ot">&lt;-</span> <span class="fu">pmin</span>(<span class="fu">pmax</span>(ps_hat, <span class="fl">1e-6</span>), <span class="dv">1</span> <span class="sc">-</span> <span class="fl">1e-6</span>)</span>
+<span id="cb130-25"><a href="sec13_10.html#cb130-25" tabindex="-1"></a><span class="co"># Riesz representer</span></span>
+<span id="cb130-26"><a href="sec13_10.html#cb130-26" tabindex="-1"></a>riesz_fun <span class="ot">&lt;-</span> <span class="cf">function</span>(d, ps) d<span class="sc">/</span>ps <span class="sc">-</span> (<span class="dv">1</span> <span class="sc">-</span> d)<span class="sc">/</span>(<span class="dv">1</span> <span class="sc">-</span> ps)</span>
+<span id="cb130-27"><a href="sec13_10.html#cb130-27" tabindex="-1"></a><span class="co"># GP model</span></span>
+<span id="cb130-28"><a href="sec13_10.html#cb130-28" tabindex="-1"></a>make_gp <span class="ot">&lt;-</span> <span class="cf">function</span>(X_train, y_bin, <span class="at">use_correction =</span> <span class="cn">FALSE</span>, <span class="at">gamma_scaled =</span> <span class="cn">NULL</span>,</span>
+<span id="cb130-29"><a href="sec13_10.html#cb130-29" tabindex="-1"></a><span class="at">approx_method =</span> gplite<span class="sc">::</span><span class="fu">approx_laplace</span>(),</span>
+<span id="cb130-30"><a href="sec13_10.html#cb130-30" tabindex="-1"></a><span class="at">init_lscale =</span> <span class="fl">0.3</span>) {</span>
+<span id="cb130-31"><a href="sec13_10.html#cb130-31" tabindex="-1"></a>    <span class="fu">stopifnot</span>(<span class="fu">length</span>(y_bin) <span class="sc">==</span> <span class="fu">nrow</span>(X_train))</span>
+<span id="cb130-32"><a href="sec13_10.html#cb130-32" tabindex="-1"></a>    <span class="co"># Initializing the covariance function</span></span>
+<span id="cb130-33"><a href="sec13_10.html#cb130-33" tabindex="-1"></a>    cf_se <span class="ot">&lt;-</span> gplite<span class="sc">::</span><span class="fu">cf_sexp</span>(<span class="at">vars =</span> <span class="fu">colnames</span>(X_train), <span class="at">lscale =</span> init_lscale, <span class="at">magn =</span> <span class="dv">1</span>, <span class="at">normalize =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb130-34"><a href="sec13_10.html#cb130-34" tabindex="-1"></a>    cfs <span class="ot">&lt;-</span> <span class="fu">list</span>(cf_se)</span>
+<span id="cb130-35"><a href="sec13_10.html#cb130-35" tabindex="-1"></a>    <span class="cf">if</span> (use_correction) {</span>
+<span id="cb130-36"><a href="sec13_10.html#cb130-36" tabindex="-1"></a>        <span class="fu">stopifnot</span>(<span class="sc">!</span><span class="fu">is.null</span>(gamma_scaled))</span>
+<span id="cb130-37"><a href="sec13_10.html#cb130-37" tabindex="-1"></a>        <span class="co"># Add linear kernel on the last column (gamma_scaled)</span></span>
+<span id="cb130-38"><a href="sec13_10.html#cb130-38" tabindex="-1"></a>        cf_lin <span class="ot">&lt;-</span> gplite<span class="sc">::</span><span class="fu">cf_lin</span>(<span class="at">vars =</span> <span class="st">&quot;gamma&quot;</span>, <span class="at">magn =</span> <span class="dv">1</span>, <span class="at">normalize =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb130-39"><a href="sec13_10.html#cb130-39" tabindex="-1"></a>        cfs <span class="ot">&lt;-</span> <span class="fu">list</span>(cf_se, cf_lin)</span>
+<span id="cb130-40"><a href="sec13_10.html#cb130-40" tabindex="-1"></a>    }</span>
+<span id="cb130-41"><a href="sec13_10.html#cb130-41" tabindex="-1"></a>    <span class="co"># Initializes a GP model</span></span>
+<span id="cb130-42"><a href="sec13_10.html#cb130-42" tabindex="-1"></a>    gp <span class="ot">&lt;-</span> gplite<span class="sc">::</span><span class="fu">gp_init</span>(<span class="at">cfs =</span> cfs, <span class="at">lik =</span> gplite<span class="sc">::</span><span class="fu">lik_bernoulli</span>(), <span class="at">approx =</span> approx_method)</span>
+<span id="cb130-43"><a href="sec13_10.html#cb130-43" tabindex="-1"></a>    <span class="co"># Optimizing hyperparameters</span></span>
+<span id="cb130-44"><a href="sec13_10.html#cb130-44" tabindex="-1"></a>    gp <span class="ot">&lt;-</span> gplite<span class="sc">::</span><span class="fu">gp_optim</span>(gp, <span class="at">x =</span> X_train, <span class="at">y =</span> y_bin, <span class="at">maxiter =</span> <span class="dv">1000</span>, <span class="at">restarts =</span> <span class="dv">3</span>, <span class="at">tol =</span> <span class="fl">1e-05</span>)</span>
+<span id="cb130-45"><a href="sec13_10.html#cb130-45" tabindex="-1"></a>    <span class="fu">return</span>(gp)</span>
+<span id="cb130-46"><a href="sec13_10.html#cb130-46" tabindex="-1"></a>}</span>
+<span id="cb130-47"><a href="sec13_10.html#cb130-47" tabindex="-1"></a>posterior_draws_prob <span class="ot">&lt;-</span> <span class="cf">function</span>(gp, X_test, <span class="at">ndraws =</span> <span class="dv">5000</span>) {</span>
+<span id="cb130-48"><a href="sec13_10.html#cb130-48" tabindex="-1"></a>    out <span class="ot">&lt;-</span> gplite<span class="sc">::</span><span class="fu">gp_draw</span>(gp, <span class="at">xnew =</span> X_test, <span class="at">draws =</span> ndraws, <span class="at">transform =</span> <span class="cn">TRUE</span>, <span class="at">target =</span> <span class="cn">FALSE</span>, <span class="at">jitter =</span> <span class="fl">1e-6</span>)</span>
+<span id="cb130-49"><a href="sec13_10.html#cb130-49" tabindex="-1"></a>    <span class="fu">return</span>(<span class="fu">t</span>(out))</span>
+<span id="cb130-50"><a href="sec13_10.html#cb130-50" tabindex="-1"></a>}</span>
+<span id="cb130-51"><a href="sec13_10.html#cb130-51" tabindex="-1"></a><span class="co"># Main function</span></span>
+<span id="cb130-52"><a href="sec13_10.html#cb130-52" tabindex="-1"></a>run_trim <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">t_trim =</span> <span class="fl">0.10</span>, <span class="at">N_post =</span> <span class="dv">5000</span>, <span class="at">h_r =</span> <span class="dv">1</span><span class="sc">/</span><span class="dv">2</span>, <span class="at">cor_size =</span> <span class="dv">1</span>) {</span>
+<span id="cb130-53"><a href="sec13_10.html#cb130-53" tabindex="-1"></a>    <span class="co"># Trim by estimated PS</span></span>
+<span id="cb130-54"><a href="sec13_10.html#cb130-54" tabindex="-1"></a>    keep <span class="ot">&lt;-</span> <span class="fu">which</span>(ps_hat <span class="sc">&gt;=</span> t_trim <span class="sc">&amp;</span> ps_hat <span class="sc">&lt;=</span> (<span class="dv">1</span> <span class="sc">-</span> t_trim))</span>
+<span id="cb130-55"><a href="sec13_10.html#cb130-55" tabindex="-1"></a>    n_eff <span class="ot">&lt;-</span> <span class="fu">length</span>(keep)</span>
+<span id="cb130-56"><a href="sec13_10.html#cb130-56" tabindex="-1"></a>    <span class="cf">if</span> (n_eff <span class="sc">&lt;</span> <span class="dv">50</span>) <span class="fu">stop</span>(<span class="st">&quot;Too few observations after trimming.&quot;</span>)</span>
+<span id="cb130-57"><a href="sec13_10.html#cb130-57" tabindex="-1"></a>    Yk  <span class="ot">&lt;-</span> Y[keep]</span>
+<span id="cb130-58"><a href="sec13_10.html#cb130-58" tabindex="-1"></a>    Dk  <span class="ot">&lt;-</span> D[keep]</span>
+<span id="cb130-59"><a href="sec13_10.html#cb130-59" tabindex="-1"></a>    Zk  <span class="ot">&lt;-</span> Z[keep, , drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
+<span id="cb130-60"><a href="sec13_10.html#cb130-60" tabindex="-1"></a>    psk <span class="ot">&lt;-</span> ps_hat[keep]</span>
+<span id="cb130-61"><a href="sec13_10.html#cb130-61" tabindex="-1"></a>    <span class="co"># Riesz representer and sigma_n choice</span></span>
+<span id="cb130-62"><a href="sec13_10.html#cb130-62" tabindex="-1"></a>    gamma_k <span class="ot">&lt;-</span> <span class="fu">riesz_fun</span>(Dk, psk)</span>
+<span id="cb130-63"><a href="sec13_10.html#cb130-63" tabindex="-1"></a>    sigma_n <span class="ot">&lt;-</span> cor_size <span class="sc">*</span> (<span class="fu">log</span>(n_eff) <span class="sc">/</span> ( (n_eff)<span class="sc">^</span>(h_r) <span class="sc">*</span> <span class="fu">mean</span>(<span class="fu">abs</span>(gamma_k)) ))</span>
+<span id="cb130-64"><a href="sec13_10.html#cb130-64" tabindex="-1"></a>    gamma_scaled <span class="ot">&lt;-</span> sigma_n <span class="sc">*</span> gamma_k</span>
+<span id="cb130-65"><a href="sec13_10.html#cb130-65" tabindex="-1"></a>    <span class="co"># Training inputs for GP: [Z, D] and, if corrected, an extra column &#39;gamma&#39;</span></span>
+<span id="cb130-66"><a href="sec13_10.html#cb130-66" tabindex="-1"></a>    X_train_nc <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(Zk)</span>
+<span id="cb130-67"><a href="sec13_10.html#cb130-67" tabindex="-1"></a>    X_train_nc<span class="sc">$</span>D <span class="ot">&lt;-</span> Dk</span>
+<span id="cb130-68"><a href="sec13_10.html#cb130-68" tabindex="-1"></a>    <span class="fu">colnames</span>(X_train_nc) <span class="ot">&lt;-</span> <span class="fu">c</span>(covars, <span class="st">&quot;D&quot;</span>)</span>
+<span id="cb130-69"><a href="sec13_10.html#cb130-69" tabindex="-1"></a>    X_train_c <span class="ot">&lt;-</span> X_train_nc</span>
+<span id="cb130-70"><a href="sec13_10.html#cb130-70" tabindex="-1"></a>    X_train_c<span class="sc">$</span>gamma <span class="ot">&lt;-</span> gamma_scaled</span>
+<span id="cb130-71"><a href="sec13_10.html#cb130-71" tabindex="-1"></a>    <span class="co"># Test inputs: for each i, (Z_i, d=0) and (Z_i, d=1)</span></span>
+<span id="cb130-72"><a href="sec13_10.html#cb130-72" tabindex="-1"></a>    X_t0 <span class="ot">&lt;-</span> X_train_nc; X_t0<span class="sc">$</span>D <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb130-73"><a href="sec13_10.html#cb130-73" tabindex="-1"></a>    X_t1 <span class="ot">&lt;-</span> X_train_nc; X_t1<span class="sc">$</span>D <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb130-74"><a href="sec13_10.html#cb130-74" tabindex="-1"></a>    X_t0c <span class="ot">&lt;-</span> X_t0; X_t1c <span class="ot">&lt;-</span> X_t1</span>
+<span id="cb130-75"><a href="sec13_10.html#cb130-75" tabindex="-1"></a>    X_t0c<span class="sc">$</span>gamma <span class="ot">&lt;-</span> sigma_n <span class="sc">*</span> <span class="fu">riesz_fun</span>(<span class="dv">0</span>, psk)   </span>
+<span id="cb130-76"><a href="sec13_10.html#cb130-76" tabindex="-1"></a>    X_t1c<span class="sc">$</span>gamma <span class="ot">&lt;-</span> sigma_n <span class="sc">*</span> <span class="fu">riesz_fun</span>(<span class="dv">1</span>, psk) </span>
+<span id="cb130-77"><a href="sec13_10.html#cb130-77" tabindex="-1"></a>    <span class="co"># GP WITHOUT prior correction #</span></span>
+<span id="cb130-78"><a href="sec13_10.html#cb130-78" tabindex="-1"></a>    gp_nc <span class="ot">&lt;-</span> <span class="fu">make_gp</span>(<span class="at">X_train =</span> X_train_nc, <span class="at">y_bin =</span> Yk, <span class="at">use_correction =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb130-79"><a href="sec13_10.html#cb130-79" tabindex="-1"></a>    <span class="co"># joint draws for [m(Z,0); m(Z,1)]</span></span>
+<span id="cb130-80"><a href="sec13_10.html#cb130-80" tabindex="-1"></a>    M_nc_0 <span class="ot">&lt;-</span> <span class="fu">posterior_draws_prob</span>(gp_nc, X_t0, <span class="at">ndraws =</span> N_post)  <span class="co"># N_post x n_eff</span></span>
+<span id="cb130-81"><a href="sec13_10.html#cb130-81" tabindex="-1"></a>    M_nc_1 <span class="ot">&lt;-</span> <span class="fu">posterior_draws_prob</span>(gp_nc, X_t1, <span class="at">ndraws =</span> N_post)</span>
+<span id="cb130-82"><a href="sec13_10.html#cb130-82" tabindex="-1"></a>    <span class="co"># observed arm probabilities</span></span>
+<span id="cb130-83"><a href="sec13_10.html#cb130-83" tabindex="-1"></a>    M_nc_obs <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(<span class="fu">matrix</span>(Dk, <span class="at">nrow =</span> N_post, <span class="at">ncol =</span> n_eff, <span class="at">byrow =</span> <span class="cn">TRUE</span>) <span class="sc">==</span> <span class="dv">1</span>, M_nc_1, M_nc_0)</span>
+<span id="cb130-84"><a href="sec13_10.html#cb130-84" tabindex="-1"></a>    <span class="co"># GP WITH prior correction #</span></span>
+<span id="cb130-85"><a href="sec13_10.html#cb130-85" tabindex="-1"></a>    gp_c <span class="ot">&lt;-</span> <span class="fu">make_gp</span>(<span class="at">X_train =</span> X_train_c, <span class="at">y_bin =</span> Yk, <span class="at">use_correction =</span> <span class="cn">TRUE</span>, <span class="at">gamma_scaled =</span> gamma_scaled)</span>
+<span id="cb130-86"><a href="sec13_10.html#cb130-86" tabindex="-1"></a>    M_c_0 <span class="ot">&lt;-</span> <span class="fu">posterior_draws_prob</span>(gp_c, X_t0c, <span class="at">ndraws =</span> N_post)</span>
+<span id="cb130-87"><a href="sec13_10.html#cb130-87" tabindex="-1"></a>    M_c_1 <span class="ot">&lt;-</span> <span class="fu">posterior_draws_prob</span>(gp_c, X_t1c, <span class="at">ndraws =</span> N_post)</span>
+<span id="cb130-88"><a href="sec13_10.html#cb130-88" tabindex="-1"></a>    M_c_obs <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(<span class="fu">matrix</span>(Dk, <span class="at">nrow =</span> N_post, <span class="at">ncol =</span> n_eff, <span class="at">byrow =</span> <span class="cn">TRUE</span>) <span class="sc">==</span> <span class="dv">1</span>, M_c_1, M_c_0)</span>
+<span id="cb130-89"><a href="sec13_10.html#cb130-89" tabindex="-1"></a>    <span class="co"># Bayesian bootstrap weights #</span></span>
+<span id="cb130-90"><a href="sec13_10.html#cb130-90" tabindex="-1"></a>    W <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rexp</span>(N_post <span class="sc">*</span> n_eff, <span class="at">rate =</span> <span class="dv">1</span>), <span class="at">nrow =</span> N_post)</span>
+<span id="cb130-91"><a href="sec13_10.html#cb130-91" tabindex="-1"></a>    W <span class="ot">&lt;-</span> W <span class="sc">/</span> <span class="fu">rowSums</span>(W)</span>
+<span id="cb130-92"><a href="sec13_10.html#cb130-92" tabindex="-1"></a>    <span class="co"># ATEs</span></span>
+<span id="cb130-93"><a href="sec13_10.html#cb130-93" tabindex="-1"></a>    <span class="co"># (1) Unadjusted Bayes</span></span>
+<span id="cb130-94"><a href="sec13_10.html#cb130-94" tabindex="-1"></a>    Ate_nc_draws <span class="ot">&lt;-</span> <span class="fu">rowSums</span>((M_nc_1 <span class="sc">-</span> M_nc_0) <span class="sc">*</span> W)</span>
+<span id="cb130-95"><a href="sec13_10.html#cb130-95" tabindex="-1"></a>    <span class="co"># (2) Prior-adjusted Bayes</span></span>
+<span id="cb130-96"><a href="sec13_10.html#cb130-96" tabindex="-1"></a>    Ate_c_draws  <span class="ot">&lt;-</span> <span class="fu">rowSums</span>((M_c_1 <span class="sc">-</span> M_c_0) <span class="sc">*</span> W)</span>
+<span id="cb130-97"><a href="sec13_10.html#cb130-97" tabindex="-1"></a>    <span class="co"># (3) DR Bayes (posterior recentering)</span></span>
+<span id="cb130-98"><a href="sec13_10.html#cb130-98" tabindex="-1"></a>    <span class="co"># Pre-centering using UNcorrected GP posterior means</span></span>
+<span id="cb130-99"><a href="sec13_10.html#cb130-99" tabindex="-1"></a>    mu_nc_diff <span class="ot">&lt;-</span> <span class="fu">colMeans</span>(M_nc_1 <span class="sc">-</span> M_nc_0)                </span>
+<span id="cb130-100"><a href="sec13_10.html#cb130-100" tabindex="-1"></a>    mu_nc_obs  <span class="ot">&lt;-</span> <span class="fu">colMeans</span>(M_nc_obs)                       </span>
+<span id="cb130-101"><a href="sec13_10.html#cb130-101" tabindex="-1"></a>    ATE_dr_pre <span class="ot">&lt;-</span> <span class="fu">mean</span>(mu_nc_diff <span class="sc">+</span> gamma_k <span class="sc">*</span> (Yk <span class="sc">-</span> mu_nc_obs))</span>
+<span id="cb130-102"><a href="sec13_10.html#cb130-102" tabindex="-1"></a>    <span class="co"># Recenter draws using corrected GP draws</span></span>
+<span id="cb130-103"><a href="sec13_10.html#cb130-103" tabindex="-1"></a>    DR_rec_1 <span class="ot">&lt;-</span> (<span class="fu">matrix</span>(gamma_k, <span class="at">nrow =</span> N_post, <span class="at">ncol =</span> n_eff, <span class="at">byrow =</span> <span class="cn">TRUE</span>)) <span class="sc">*</span> (<span class="fu">matrix</span>(Yk, <span class="at">nrow =</span> N_post, <span class="at">ncol =</span> n_eff, <span class="at">byrow =</span> <span class="cn">TRUE</span>) <span class="sc">-</span> M_c_obs)</span>
+<span id="cb130-104"><a href="sec13_10.html#cb130-104" tabindex="-1"></a>    <span class="co"># The first component is \tau_{\eta}^s in Algorithm 1</span></span>
+<span id="cb130-105"><a href="sec13_10.html#cb130-105" tabindex="-1"></a>    <span class="co"># The second component is \hat{m} a scalar. This has positive sign because</span></span>
+<span id="cb130-106"><a href="sec13_10.html#cb130-106" tabindex="-1"></a>    <span class="co"># minus x minus, the bias is with minus, and then, this component enters with minus in the bias term</span></span>
+<span id="cb130-107"><a href="sec13_10.html#cb130-107" tabindex="-1"></a>    <span class="co"># The third component is \gamma_k x (y-m(d,x)), m(d,x) is with prior correction</span></span>
+<span id="cb130-108"><a href="sec13_10.html#cb130-108" tabindex="-1"></a>    <span class="co"># The fourth component is m(1,x)-m(0,x) also with correction in the prior</span></span>
+<span id="cb130-109"><a href="sec13_10.html#cb130-109" tabindex="-1"></a>    Ate_drb_draws <span class="ot">&lt;-</span> <span class="fu">rowSums</span>((M_c_1 <span class="sc">-</span> M_c_0) <span class="sc">*</span> W) <span class="sc">+</span> ATE_dr_pre <span class="sc">-</span> <span class="fu">rowSums</span>(DR_rec_1) <span class="sc">/</span> n_eff <span class="sc">-</span> <span class="fu">rowSums</span>(M_c_1 <span class="sc">-</span> M_c_0) <span class="sc">/</span> n_eff</span>
+<span id="cb130-110"><a href="sec13_10.html#cb130-110" tabindex="-1"></a>    </span>
+<span id="cb130-111"><a href="sec13_10.html#cb130-111" tabindex="-1"></a>    qfun <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
+<span id="cb130-112"><a href="sec13_10.html#cb130-112" tabindex="-1"></a>        qs <span class="ot">&lt;-</span> <span class="fu">quantile</span>(x, <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>))</span>
+<span id="cb130-113"><a href="sec13_10.html#cb130-113" tabindex="-1"></a>        <span class="fu">c</span>(<span class="at">mean   =</span> <span class="fu">mean</span>(x),     <span class="at">median =</span> <span class="fu">median</span>(x), <span class="at">lo =</span> qs[<span class="dv">1</span>], <span class="at">hi =</span> qs[<span class="dv">2</span>], <span class="at">len =</span> <span class="fu">diff</span>(qs)</span>
+<span id="cb130-114"><a href="sec13_10.html#cb130-114" tabindex="-1"></a>        )</span>
+<span id="cb130-115"><a href="sec13_10.html#cb130-115" tabindex="-1"></a>    }   </span>
+<span id="cb130-116"><a href="sec13_10.html#cb130-116" tabindex="-1"></a>    vals <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb130-117"><a href="sec13_10.html#cb130-117" tabindex="-1"></a>    <span class="at">Bayes      =</span> <span class="fu">qfun</span>(Ate_nc_draws),</span>
+<span id="cb130-118"><a href="sec13_10.html#cb130-118" tabindex="-1"></a>    <span class="st">`</span><span class="at">PA Bayes</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">qfun</span>(Ate_c_draws),</span>
+<span id="cb130-119"><a href="sec13_10.html#cb130-119" tabindex="-1"></a>    <span class="st">`</span><span class="at">DR Bayes</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">qfun</span>(Ate_drb_draws)</span>
+<span id="cb130-120"><a href="sec13_10.html#cb130-120" tabindex="-1"></a>    )</span>
+<span id="cb130-121"><a href="sec13_10.html#cb130-121" tabindex="-1"></a>    out_df <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(<span class="fu">do.call</span>(rbind, vals), <span class="at">check.names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb130-122"><a href="sec13_10.html#cb130-122" tabindex="-1"></a>    <span class="fu">list</span>(<span class="at">t_trim =</span> t_trim, <span class="at">results =</span> out_df)</span>
+<span id="cb130-123"><a href="sec13_10.html#cb130-123" tabindex="-1"></a>}</span>
+<span id="cb130-124"><a href="sec13_10.html#cb130-124" tabindex="-1"></a>N_post <span class="ot">&lt;-</span> <span class="dv">5000</span></span>
+<span id="cb130-125"><a href="sec13_10.html#cb130-125" tabindex="-1"></a>h_r    <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">/</span><span class="dv">2</span></span>
+<span id="cb130-126"><a href="sec13_10.html#cb130-126" tabindex="-1"></a>cor_size <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb130-127"><a href="sec13_10.html#cb130-127" tabindex="-1"></a>trim <span class="ot">&lt;-</span> <span class="fl">0.05</span></span>
+<span id="cb130-128"><a href="sec13_10.html#cb130-128" tabindex="-1"></a>res_list <span class="ot">&lt;-</span> <span class="fu">run_trim</span>(<span class="at">t_trim =</span> trim, <span class="at">N_post =</span> N_post, <span class="at">h_r =</span> h_r, <span class="at">cor_size =</span> cor_size)</span></code></pre></div>
+<pre><code>## Optimizing parameters
+## p1: log cf_sexp.lscale
+## p2: log cf_sexp.magn
+## 
+##       p1       p2     Energy Iteration
+##    -1.20     0.00    1331.25         0 
+##    -1.08     0.00    1326.34         1 
+##    -1.20     0.12    1336.52         2 
+##    -1.08    -0.12    1323.03         3 
+##    -1.02    -0.24    1319.06         4 
+##    -0.90    -0.24    1314.93         5 
+##    -0.75    -0.36    1310.14         6 
+##    -0.69    -0.60    1310.74         7 
+##    -0.79    -0.45    1311.64         8 
+##    -0.42    -0.72    1305.59         9 
+##    -0.12    -0.96    1302.47        10 
+##    -0.18    -0.72    1299.32        11 
+##     0.08    -0.78    1293.88        12 
+##     0.71    -1.38    1296.69        13 
+##     0.34    -1.13    1294.48        14 
+##     0.54    -0.95    1287.71        15 
+##     0.87    -0.94    1285.00        16 
+##     0.60    -0.59    1283.35        17 
+##     0.73    -0.33    1281.34        18 
+##     1.52    -0.49    1281.06        19 
+##     2.24    -0.34    1293.78        20 
+##     1.38     0.13    1276.72        21 
+##     1.64     0.66    1276.74        22 
+##     2.17    -0.03    1283.12        23 
+##     1.09    -0.25    1278.29        24 
+##     0.95     0.36    1282.17        25 
+##     1.38    -0.27    1277.73        26 
+##     1.67     0.11    1276.27        27 
+##     1.96     0.29    1276.46        28 
+##     1.67     0.51    1276.00        29 
+##     1.82     0.90    1276.56        30 
+##     1.96     0.49    1275.62        31 
+##     2.25     0.67    1275.96        32 
+##     1.97     0.89    1275.75        33 
+##     1.89     0.69    1275.57        34 
+##     2.18     0.67    1275.67        35 
+##     2.05     0.63    1275.48        36 
+##     1.98     0.84    1275.57        37 
+##     1.98     0.75    1275.45        38 
+##     2.14     0.69    1275.52        39 
+##     2.08     0.69    1275.42        40 
+##     2.00     0.81    1275.47        41 
+##     2.02     0.76    1275.41        42 
+##     2.12     0.70    1275.45        43 
+##     2.08     0.72    1275.40        44 
+##     2.02     0.79    1275.42        45 
+##     2.06     0.72    1275.39        46 
+##     2.13     0.67    1275.55        47 
+##     2.04     0.74    1275.38        48 
+##     2.03     0.74    1275.39        49 
+##     2.04     0.73    1275.38        50 
+## Assessing convergence...
+##     2.14     0.74    1275.44        51 
+##     1.94     0.74    1275.51        52 
+##     2.04     0.84    1275.44        53 
+##     2.04     0.64    1275.45        54 
+## Optimization converged.Optimizing parameters
+## p1: log cf_sexp.lscale
+## p2: log cf_sexp.magn
+## p3: log cf_lin.magn
+## 
+##       p1       p2       p3     Energy Iteration
+##    -1.20     0.00     0.00    1333.25         0 
+##    -1.08     0.00     0.00    1328.52         1 
+##    -1.20     0.12     0.00    1338.75         2 
+##    -1.20     0.00     0.12    1333.35         3 
+##    -1.12    -0.12     0.08    1326.56         4 
+##    -1.08    -0.24     0.12    1323.08         5 
+##    -1.04    -0.16    -0.04    1322.64         6 
+##    -0.96    -0.24    -0.12    1318.61         7 
+##    -0.88    -0.32     0.00    1315.57         8 
+##    -0.72    -0.48     0.00    1311.35         9 
+##    -0.76    -0.64     0.00    1314.65        10 
+##    -0.84    -0.48     0.00    1314.87        11 
+##    -0.55    -0.67    -0.20    1309.06        12 
+##    -0.28    -0.88    -0.36    1306.41        13 
+##    -0.21    -1.10    -0.12    1310.45        14 
+##    -0.40    -0.88    -0.12    1309.81        15 
+##    -0.17    -0.86    -0.32    1303.07        16 
+##     0.12    -0.96    -0.48    1297.97        17 
+##     0.35    -1.34    -0.64    1302.21        18 
+##     0.08    -1.12    -0.48    1302.74        19 
+##     0.53    -1.24    -0.87    1296.10        20 
+##     0.99    -1.42    -1.24    1300.38        21 
+##     0.94    -1.48    -0.97    1302.32        22 
+##     0.64    -1.33    -0.82    1297.36        23 
+##     0.51    -1.02    -0.80    1291.41        24 
+##     0.59    -0.86    -0.88    1287.85        25 
+##     1.05    -1.32    -1.23    1297.45        26 
+##     0.82    -1.23    -1.04    1293.51        27 
+##     0.65    -0.89    -1.05    1287.54        28 
+##     0.66    -0.67    -1.16    1285.20        29 
+##     0.85    -0.60    -1.19    1282.91        30 
+##     1.01    -0.28    -1.35    1280.68        31 
+##     0.69     0.03    -1.22    1285.91        32 
+##     0.72    -0.29    -1.18    1283.72        33 
+##     1.00     0.04    -1.58    1281.63        34 
+##     0.90    -0.19    -1.40    1281.87        35 
+##     1.16     0.32    -1.57    1281.51        36 
+##     1.03     0.07    -1.47    1281.41        37 
+##     1.31     0.17    -1.76    1279.11        38 
+##     1.61     0.40    -2.05    1277.81        39 
+##     1.43     0.10    -1.67    1278.15        40 
+##     1.32     0.08    -1.65    1278.74        41 
+##     1.66     0.08    -1.91    1277.76        42 
+##     1.98     0.08    -2.12    1279.34        43 
+##     2.13     0.66    -2.40    1276.77        44 
+##     2.69     1.12    -2.92    1276.98        45 
+##     2.16     0.66    -2.56    1276.80        46 
+##     1.98     0.52    -2.34    1276.88        47 
+##     2.36     0.53    -2.53    1278.44        48 
+##     1.79     0.43    -2.17    1277.11        49 
+##     2.39     1.09    -2.85    1276.64        50 
+##     2.76     1.60    -3.32    1276.91        51 
+##     2.66     1.17    -3.04    1276.79        52 
+##     2.44     0.99    -2.82    1276.68        53 
+##     2.48     1.17    -2.81    1276.63        54 
+##     2.64     1.42    -2.93    1276.76        55 
+##     2.75     1.51    -3.25    1276.77        56 
+##     2.28     0.87    -2.61    1276.65        57 
+##     2.33     1.10    -2.69    1276.74        58 
+##     2.41     1.02    -2.79    1276.63        59 
+##     2.58     1.31    -3.02    1276.69        60 
+##     2.36     0.98    -2.71    1276.62        61 
+##     2.44     1.02    -2.69    1276.65        62 
+##     2.40     1.07    -2.81    1276.62        63 
+## Assessing convergence...
+##     2.46     0.98    -2.71    1276.71        64 
+##     2.26     0.98    -2.71    1276.69        65 
+##     2.36     1.08    -2.71    1276.67        66 
+##     2.36     0.88    -2.71    1276.71        67 
+##     2.36     0.98    -2.61    1276.62        68 
+##     2.36     0.98    -2.81    1276.62        69 
+## Optimization converged.</code></pre>
+<div class="sourceCode" id="cb132"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb132-1"><a href="sec13_10.html#cb132-1" tabindex="-1"></a><span class="fu">print</span>(res_list<span class="sc">$</span>results)</span></code></pre></div>
+<pre><code>##               mean    median   lo.2.5%  hi.97.5%  len.97.5%
+## Bayes    0.1548135 0.1546036 0.1085595 0.2004420 0.09188244
+## PA Bayes 0.1559352 0.1563938 0.1100476 0.2024992 0.09245162
+## DR Bayes 0.1559266 0.1564349 0.1092627 0.2029569 0.09369422</code></pre>
 </div>
 <h3>References<a href="references.html#references" class="anchor-section" aria-label="Anchor link to header"></a></h3>
 <div id="refs" class="references csl-bib-body hanging-indent" entry-spacing="0">

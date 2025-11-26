@@ -23,7 +23,7 @@
 <meta name="author" content="Andrés Ramírez-Hassan" />
 
 
-<meta name="date" content="2025-11-20" />
+<meta name="date" content="2025-11-26" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -397,12 +397,12 @@ div.csl-indent {
 \]</span></p>
 <p>Note that we do not observe <span class="math inline">\(Y_{i2}(0) \mid D_i = 1\)</span>; that is, the outcome in the second period for treated units if they had not received the treatment. Thus, the identification conditions in DiD are designed to express this counterfactual outcome as a function of the data.</p>
 <p>There are two key identification assumptions:</p>
-<p><em>Parallel trends:</em></p>
+<p><em>1. Parallel trends:</em></p>
 <p><span class="math display">\[
 \mathbb{E}[Y_{i2}(0) - Y_{i1}(0) \mid D_i = 1] = \mathbb{E}[Y_{i2}(0) - Y_{i1}(0) \mid D_i = 0],
 \]</span></p>
 <p>which states that, in the absence of treatment, the average change in outcomes for the treated and control groups would have evolved similarly over time.</p>
-<p><em>No anticipation effects:</em></p>
+<p><em>2. No anticipation effects:</em></p>
 <p><span class="math display">\[
 \mathbb{E}[Y_{i1}(0)\mid D_i=1] = \mathbb{E}[Y_{i1}(1)\mid D_i=1],
 \]</span></p>
@@ -591,7 +591,7 @@ ATT(g,t)
 \]</span></p>
 <p><em>2. Staggered overlap (positivity) for not-yet-treated comparisons:</em></p>
 <p><span class="math display">\[
-P(G_i=g \mid \mathbf X_i) &lt; 1 - \epsilon\, \ \epsilon &gt;0, \ \text{almost surely, and,} \ P(G_i=g)&gt;0.
+P(G_i=g \mid \mathbf X_i) &lt; 1 - \epsilon, \ \epsilon &gt;0, \ \text{almost surely, and,} \ P(G_i=g)&gt;0.
 \]</span></p>
 <p>Condition 1 means that, conditional on covariates, pre-treatment changes in untreated potential outcomes for cohort <span class="math inline">\(g\)</span> match those of units not yet treated at time <span class="math inline">\(t\)</span>, and condition 2 means that there is positive probability of belonging to cohort <span class="math inline">\(g\)</span> and of being not yet treated at <span class="math inline">\(t\)</span>.</p>
 <p>Given these assumptions and no anticipation, the <span class="math inline">\(ATT(g,t)\)</span> can be expressed as</p>
@@ -608,39 +608,43 @@ Y_{i2} - Y_{i1}
 = \underbrace{\phi_2 - \phi_1}_{\text{Common change}}
 + \tau_2 D_i + \epsilon_i,
 \end{equation}\]</span></p>
-<p>The following code implements this example. From the posterior results, we can verify that the 95% credible interval contains the true ATT. We ask in Exercise~8 to repeat exactly the same simulation, and estimate the ATT using the specification with the interaction between treatment and the post-treatment period.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="sec13_5.html#cb6-1" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">10101</span>)</span>
-<span id="cb6-2"><a href="sec13_5.html#cb6-2" tabindex="-1"></a><span class="fu">library</span>(ggplot2); <span class="fu">library</span>(dplyr); <span class="fu">library</span>(fastDummies)</span>
-<span id="cb6-3"><a href="sec13_5.html#cb6-3" tabindex="-1"></a><span class="co"># Parameters</span></span>
-<span id="cb6-4"><a href="sec13_5.html#cb6-4" tabindex="-1"></a>N_per_group <span class="ot">&lt;-</span> <span class="dv">200</span>          <span class="co"># units per group</span></span>
-<span id="cb6-5"><a href="sec13_5.html#cb6-5" tabindex="-1"></a>T_periods    <span class="ot">&lt;-</span> <span class="dv">2</span>           <span class="co"># keep 2x2 for clarity</span></span>
-<span id="cb6-6"><a href="sec13_5.html#cb6-6" tabindex="-1"></a>tau_true     <span class="ot">&lt;-</span> <span class="dv">1</span>           <span class="co"># ATT</span></span>
-<span id="cb6-7"><a href="sec13_5.html#cb6-7" tabindex="-1"></a>sigma_eps    <span class="ot">&lt;-</span> <span class="fl">0.5</span>         <span class="co"># noise SD</span></span>
-<span id="cb6-8"><a href="sec13_5.html#cb6-8" tabindex="-1"></a><span class="co"># Panel index</span></span>
-<span id="cb6-9"><a href="sec13_5.html#cb6-9" tabindex="-1"></a>id  <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span>(<span class="dv">2</span><span class="sc">*</span>N_per_group), <span class="at">each =</span> T_periods)</span>
-<span id="cb6-10"><a href="sec13_5.html#cb6-10" tabindex="-1"></a>t   <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span>T_periods, <span class="at">times =</span> <span class="dv">2</span><span class="sc">*</span>N_per_group)</span>
-<span id="cb6-11"><a href="sec13_5.html#cb6-11" tabindex="-1"></a><span class="co"># Group: treated (D=1) vs control (D=0)</span></span>
-<span id="cb6-12"><a href="sec13_5.html#cb6-12" tabindex="-1"></a>D   <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="fu">rep</span>(<span class="dv">0</span>, N_per_group), <span class="fu">rep</span>(<span class="dv">1</span>, N_per_group)), <span class="at">each =</span> T_periods)</span>
-<span id="cb6-13"><a href="sec13_5.html#cb6-13" tabindex="-1"></a><span class="co"># Post indicator (t=2 is post)</span></span>
-<span id="cb6-14"><a href="sec13_5.html#cb6-14" tabindex="-1"></a>post <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(t <span class="sc">==</span> <span class="dv">2</span>)</span>
-<span id="cb6-15"><a href="sec13_5.html#cb6-15" tabindex="-1"></a><span class="co"># Unit fixed effects (random heterogeneity)</span></span>
-<span id="cb6-16"><a href="sec13_5.html#cb6-16" tabindex="-1"></a>alpha_i <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(<span class="dv">2</span><span class="sc">*</span>N_per_group, <span class="dv">0</span>, <span class="fl">0.8</span>)</span>
-<span id="cb6-17"><a href="sec13_5.html#cb6-17" tabindex="-1"></a>alpha   <span class="ot">&lt;-</span> alpha_i[id]</span>
-<span id="cb6-18"><a href="sec13_5.html#cb6-18" tabindex="-1"></a><span class="co"># Time effects (common shocks)</span></span>
-<span id="cb6-19"><a href="sec13_5.html#cb6-19" tabindex="-1"></a>phi_t <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="sc">-</span><span class="fl">1.8</span>)  <span class="co"># common decline from t=1 to t=2</span></span>
-<span id="cb6-20"><a href="sec13_5.html#cb6-20" tabindex="-1"></a>phi   <span class="ot">&lt;-</span> phi_t[t]</span>
-<span id="cb6-21"><a href="sec13_5.html#cb6-21" tabindex="-1"></a>treat_effect <span class="ot">&lt;-</span> tau_true <span class="sc">*</span> (D <span class="sc">*</span> post)</span>
-<span id="cb6-22"><a href="sec13_5.html#cb6-22" tabindex="-1"></a><span class="co"># Outcome:</span></span>
-<span id="cb6-23"><a href="sec13_5.html#cb6-23" tabindex="-1"></a>eps <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(<span class="fu">length</span>(id), <span class="dv">0</span>, sigma_eps)</span>
-<span id="cb6-24"><a href="sec13_5.html#cb6-24" tabindex="-1"></a>Y   <span class="ot">&lt;-</span> alpha <span class="sc">+</span> phi <span class="sc">+</span> treat_effect <span class="sc">+</span> eps</span>
-<span id="cb6-25"><a href="sec13_5.html#cb6-25" tabindex="-1"></a>did <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(id, t, D, post, Y)</span>
-<span id="cb6-26"><a href="sec13_5.html#cb6-26" tabindex="-1"></a><span class="co"># Bayesian inference: Model in differences</span></span>
-<span id="cb6-27"><a href="sec13_5.html#cb6-27" tabindex="-1"></a>dY <span class="ot">&lt;-</span> did<span class="sc">$</span>Y[did<span class="sc">$</span>t<span class="sc">==</span><span class="dv">2</span>] <span class="sc">-</span> did<span class="sc">$</span>Y[did<span class="sc">$</span>t<span class="sc">==</span><span class="dv">1</span>]</span>
-<span id="cb6-28"><a href="sec13_5.html#cb6-28" tabindex="-1"></a>D  <span class="ot">&lt;-</span> did<span class="sc">$</span>D[did<span class="sc">$</span>t<span class="sc">==</span><span class="dv">1</span>]</span>
-<span id="cb6-29"><a href="sec13_5.html#cb6-29" tabindex="-1"></a>post_fit <span class="ot">&lt;-</span> MCMCpack<span class="sc">::</span><span class="fu">MCMCregress</span>(dY <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> D, <span class="at">burnin =</span> <span class="dv">100</span>, <span class="at">mcmc =</span> <span class="dv">1000</span>)</span>
-<span id="cb6-30"><a href="sec13_5.html#cb6-30" tabindex="-1"></a>tau_draws <span class="ot">&lt;-</span> post_fit[, <span class="st">&quot;D&quot;</span>]</span>
-<span id="cb6-31"><a href="sec13_5.html#cb6-31" tabindex="-1"></a><span class="fu">quantile</span>(tau_draws, <span class="fu">c</span>(.<span class="dv">025</span>,.<span class="dv">5</span>,.<span class="dv">975</span>))</span>
-<span id="cb6-32"><a href="sec13_5.html#cb6-32" tabindex="-1"></a><span class="fu">quantile</span>(post_fit[,<span class="dv">1</span>], <span class="fu">c</span>(.<span class="dv">025</span>,.<span class="dv">5</span>,.<span class="dv">975</span>))</span></code></pre></div>
+<p>The following code implements this example. From the posterior results, we can verify that the 95% credible interval contains the true ATT. We ask in Exercise 8 to repeat exactly the same simulation, and estimate the ATT using the specification with the interaction between treatment and the post-treatment period.</p>
+<div class="sourceCode" id="cb56"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb56-1"><a href="sec13_5.html#cb56-1" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">10101</span>)</span>
+<span id="cb56-2"><a href="sec13_5.html#cb56-2" tabindex="-1"></a><span class="fu">library</span>(ggplot2); <span class="fu">library</span>(dplyr); <span class="fu">library</span>(fastDummies)</span>
+<span id="cb56-3"><a href="sec13_5.html#cb56-3" tabindex="-1"></a><span class="co"># Parameters</span></span>
+<span id="cb56-4"><a href="sec13_5.html#cb56-4" tabindex="-1"></a>N_per_group <span class="ot">&lt;-</span> <span class="dv">200</span>          <span class="co"># units per group</span></span>
+<span id="cb56-5"><a href="sec13_5.html#cb56-5" tabindex="-1"></a>T_periods    <span class="ot">&lt;-</span> <span class="dv">2</span>           <span class="co"># keep 2x2 for clarity</span></span>
+<span id="cb56-6"><a href="sec13_5.html#cb56-6" tabindex="-1"></a>tau_true     <span class="ot">&lt;-</span> <span class="dv">1</span>           <span class="co"># ATT</span></span>
+<span id="cb56-7"><a href="sec13_5.html#cb56-7" tabindex="-1"></a>sigma_eps    <span class="ot">&lt;-</span> <span class="fl">0.5</span>         <span class="co"># noise SD</span></span>
+<span id="cb56-8"><a href="sec13_5.html#cb56-8" tabindex="-1"></a><span class="co"># Panel index</span></span>
+<span id="cb56-9"><a href="sec13_5.html#cb56-9" tabindex="-1"></a>id  <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span>(<span class="dv">2</span><span class="sc">*</span>N_per_group), <span class="at">each =</span> T_periods)</span>
+<span id="cb56-10"><a href="sec13_5.html#cb56-10" tabindex="-1"></a>t   <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span>T_periods, <span class="at">times =</span> <span class="dv">2</span><span class="sc">*</span>N_per_group)</span>
+<span id="cb56-11"><a href="sec13_5.html#cb56-11" tabindex="-1"></a><span class="co"># Group: treated (D=1) vs control (D=0)</span></span>
+<span id="cb56-12"><a href="sec13_5.html#cb56-12" tabindex="-1"></a>D   <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="fu">rep</span>(<span class="dv">0</span>, N_per_group), <span class="fu">rep</span>(<span class="dv">1</span>, N_per_group)), <span class="at">each =</span> T_periods)</span>
+<span id="cb56-13"><a href="sec13_5.html#cb56-13" tabindex="-1"></a><span class="co"># Post indicator (t=2 is post)</span></span>
+<span id="cb56-14"><a href="sec13_5.html#cb56-14" tabindex="-1"></a>post <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(t <span class="sc">==</span> <span class="dv">2</span>)</span>
+<span id="cb56-15"><a href="sec13_5.html#cb56-15" tabindex="-1"></a><span class="co"># Unit fixed effects (random heterogeneity)</span></span>
+<span id="cb56-16"><a href="sec13_5.html#cb56-16" tabindex="-1"></a>alpha_i <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(<span class="dv">2</span><span class="sc">*</span>N_per_group, <span class="dv">0</span>, <span class="fl">0.8</span>)</span>
+<span id="cb56-17"><a href="sec13_5.html#cb56-17" tabindex="-1"></a>alpha   <span class="ot">&lt;-</span> alpha_i[id]</span>
+<span id="cb56-18"><a href="sec13_5.html#cb56-18" tabindex="-1"></a><span class="co"># Time effects (common shocks)</span></span>
+<span id="cb56-19"><a href="sec13_5.html#cb56-19" tabindex="-1"></a>phi_t <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="sc">-</span><span class="fl">1.8</span>)  <span class="co"># common decline from t=1 to t=2</span></span>
+<span id="cb56-20"><a href="sec13_5.html#cb56-20" tabindex="-1"></a>phi   <span class="ot">&lt;-</span> phi_t[t]</span>
+<span id="cb56-21"><a href="sec13_5.html#cb56-21" tabindex="-1"></a>treat_effect <span class="ot">&lt;-</span> tau_true <span class="sc">*</span> (D <span class="sc">*</span> post)</span>
+<span id="cb56-22"><a href="sec13_5.html#cb56-22" tabindex="-1"></a><span class="co"># Outcome:</span></span>
+<span id="cb56-23"><a href="sec13_5.html#cb56-23" tabindex="-1"></a>eps <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(<span class="fu">length</span>(id), <span class="dv">0</span>, sigma_eps)</span>
+<span id="cb56-24"><a href="sec13_5.html#cb56-24" tabindex="-1"></a>Y   <span class="ot">&lt;-</span> alpha <span class="sc">+</span> phi <span class="sc">+</span> treat_effect <span class="sc">+</span> eps</span>
+<span id="cb56-25"><a href="sec13_5.html#cb56-25" tabindex="-1"></a>did <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(id, t, D, post, Y)</span>
+<span id="cb56-26"><a href="sec13_5.html#cb56-26" tabindex="-1"></a><span class="co"># Bayesian inference: Model in differences</span></span>
+<span id="cb56-27"><a href="sec13_5.html#cb56-27" tabindex="-1"></a>dY <span class="ot">&lt;-</span> did<span class="sc">$</span>Y[did<span class="sc">$</span>t<span class="sc">==</span><span class="dv">2</span>] <span class="sc">-</span> did<span class="sc">$</span>Y[did<span class="sc">$</span>t<span class="sc">==</span><span class="dv">1</span>]</span>
+<span id="cb56-28"><a href="sec13_5.html#cb56-28" tabindex="-1"></a>D  <span class="ot">&lt;-</span> did<span class="sc">$</span>D[did<span class="sc">$</span>t<span class="sc">==</span><span class="dv">1</span>]</span>
+<span id="cb56-29"><a href="sec13_5.html#cb56-29" tabindex="-1"></a>post_fit <span class="ot">&lt;-</span> MCMCpack<span class="sc">::</span><span class="fu">MCMCregress</span>(dY <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> D, <span class="at">burnin =</span> <span class="dv">100</span>, <span class="at">mcmc =</span> <span class="dv">1000</span>)</span>
+<span id="cb56-30"><a href="sec13_5.html#cb56-30" tabindex="-1"></a>tau_draws <span class="ot">&lt;-</span> post_fit[, <span class="st">&quot;D&quot;</span>]</span>
+<span id="cb56-31"><a href="sec13_5.html#cb56-31" tabindex="-1"></a><span class="fu">quantile</span>(tau_draws, <span class="fu">c</span>(.<span class="dv">025</span>,.<span class="dv">5</span>,.<span class="dv">975</span>))</span></code></pre></div>
+<pre><code>##      2.5%       50%     97.5% 
+## 0.8443254 0.9773162 1.1073517</code></pre>
+<div class="sourceCode" id="cb58"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb58-1"><a href="sec13_5.html#cb58-1" tabindex="-1"></a><span class="fu">quantile</span>(post_fit[,<span class="dv">1</span>], <span class="fu">c</span>(.<span class="dv">025</span>,.<span class="dv">5</span>,.<span class="dv">975</span>))</span></code></pre></div>
+<pre><code>##      2.5%       50%     97.5% 
+## -1.899952 -1.806320 -1.709052</code></pre>
 </div>
 </div>
 <h3>References<a href="references.html#references" class="anchor-section" aria-label="Anchor link to header"></a></h3>

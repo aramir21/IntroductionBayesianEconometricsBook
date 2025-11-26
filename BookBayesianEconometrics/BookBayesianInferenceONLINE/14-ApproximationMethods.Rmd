@@ -12,7 +12,7 @@ Taking into account the fundamental equation for performing parameter inference 
 \begin{align*}
 	\pi(\boldsymbol{\theta} \mid \mathbf{y}) & \propto p(\mathbf{y} \mid \boldsymbol{\theta}) \times \pi(\boldsymbol{\theta}),
 \end{align*}  
-we see in Section \@ref(sec51) that MCMC algorithms, such as the Gibbs sampler (Section \@ref(sec511) and Metropolis-Hastings (Section \@ref(sec512)), require evaluation of the likelihood function \( p(\boldsymbol{y} \mid \boldsymbol{\theta}) \) in the posterior conditional distribution or the acceptance probability, respectively. This is also the case for importance sampling when calculating the importance weights (Section \@ref(sec52)).  
+we see in Section \@ref(sec51) that MCMC algorithms, such as the Gibbs sampler (Section \@ref(sec511)) and Metropolis-Hastings (Section \@ref(sec512)), require evaluation of the likelihood function \( p(\boldsymbol{y} \mid \boldsymbol{\theta}) \) in the posterior conditional distribution or the acceptance probability, respectively. This is also the case for importance sampling when calculating the importance weights (Section \@ref(sec52)).  
 
 Thus, what happens when the likelihood function does not have an analytical expression? This situation arises in many models involving unobserved heterogeneity (i.e., unobserved taste preferences), models defined by quantile functions (e.g., the g-and-k distribution), or dynamic equilibrium models (e.g., repeated game models).
 
@@ -39,7 +39,7 @@ The simplest algorithm is the accept/reject approximate Bayesian computation (AB
 
 1. For \( s = 1, \dots, S \):
     - Draw \( \boldsymbol{\theta}^{(s)} \) from the prior \( \pi(\boldsymbol{\theta}) \)
-    - Simulate \( \boldsymbol{z}^{(s)} = (z_1^{(s)}, z_2^{(s)}, \dots, z_n^{(s)})^\top \) from the model \( p(\cdot \mid \boldsymbol{\theta}^{(s)}) \)
+    - Simulate \( \boldsymbol{z}^{(s)} = (z_1^{(s)}, z_2^{(s)}, \dots, z_N^{(s)})^\top \) from the model \( p(\cdot \mid \boldsymbol{\theta}^{(s)}) \)
     - Calculate the distance  
       \[
       d_{(s)} = d\left\{ \boldsymbol{\eta}(\boldsymbol{y}), \boldsymbol{\eta}(\boldsymbol{z}^{(s)}) \right\}
@@ -57,7 +57,7 @@ The simplest algorithm is the accept/reject approximate Bayesian computation (AB
 </div>
 :::
 
-Note that the posterior distribution is conditional on the summary statistics \( \boldsymbol{\eta}(\boldsymbol{y}) \) and the tolerance parameter \( \epsilon \). This implies that we obtain an approximation to the target distribution \( \pi(\boldsymbol{\theta} \mid \boldsymbol{y}) \), that is, \( \pi(\boldsymbol{\theta} \mid \boldsymbol{\eta}(\boldsymbol{y})) \), because \( \boldsymbol{\eta}(\boldsymbol{y}) \) is not a sufficient statistic in most cases, and \( \epsilon > 0 \); these conditions introduce bias [@blum2010approximate]. However, ABC performs well compared to full-likelihood approaches in low-dimensional parameter spaces [@beaumont2002approximate].
+Note that the posterior distribution is conditional on the summary statistics \( \boldsymbol{\eta}(\boldsymbol{y}) \) and the tolerance parameter \( \epsilon \). This implies that we obtain an approximation to the target distribution \( \pi(\boldsymbol{\theta} \mid \boldsymbol{y}) \), that is, \( \pi_{\epsilon}(\boldsymbol{\theta} \mid \boldsymbol{\eta}(\boldsymbol{y})) \), because \( \boldsymbol{\eta}(\boldsymbol{y}) \) is not a sufficient statistic in most cases, and \( \epsilon > 0 \); these conditions introduce bias [@blum2010approximate]. However, ABC performs well compared to full-likelihood approaches in low-dimensional parameter spaces [@beaumont2002approximate].
 
 Furthermore, @frazier2018asymptotic show in Theorems 1 and 2 that Bayesian consistency and asymptotic normality hold, provided that \( \epsilon \to 0 \) fast enough as \( N \to +\infty \). In particular, the requirement is that the proportion of accepted draws converges to 0 at a rate faster than \( N^{-K / 2} \). Additionally, Theorem 2 in @frazier2018asymptotic shows that \( 100(1 - \alpha)\% \) Bayesian credible regions using ABC have frequentist coverage of \( 100(1 - \alpha)\% \).
 
@@ -91,7 +91,7 @@ The g-and-k distribution is defined by its quantile function [@drovandi2011likel
 Q(p \mid \theta) = F^{-1}(p \mid \theta),
 \]
 
-where \( F = P(U \leq u) \), and \( Q \) represents the \( p \)-quantile [@rayner2002numerical]. The quantile function of the g-and-k distribution is given by
+where \( F = P(U \leq u) \), and \( Q(p \mid \theta) \) represents the \( p \)-quantile [@rayner2002numerical]. The quantile function of the g-and-k distribution is given by
 
 \[
 Q^{gk}\left\{z(p) \mid a, b, c, g, k\right\} = a + b\left[1 + c \frac{1 - \exp\left\{-gz(p)\right\}}{1 + \exp\left\{-gz(p)\right\}}\right] \left\{1 + z(p)^2\right\}^k z(p),
@@ -99,7 +99,7 @@ Q^{gk}\left\{z(p) \mid a, b, c, g, k\right\} = a + b\left[1 + c \frac{1 - \exp\l
 
 where \( z(p) \) is the standard normal quantile function, and \( c = 0.8 \) is a commonly suggested value.
 
-In the g-and-k distribution, \( a \) is the location parameter, and \( b \) is the scale parameter, controlling the dispersion. The parameters \( g \) and \( k \) determine the levels of skewness and kurtosis, respectively, while \( c \) modifies the impact of skewness, and is typically set to 0.8.
+In the g-and-k distribution, \( a \) is the location parameter, and \( b \) is the scale parameter, controlling the dispersion. The parameters \( g \) and \( k \) determine the levels of skewness and kurtosis, respectively, while \( c \) modifies the impact of skewness.
 
 @drovandi2011likelihood propose a moving average of order one using a g-and-k distribution to model exchange rate log returns. In particular,
 
@@ -119,11 +119,11 @@ We model exchange rate log daily returns from USD/EUR one year before and after 
 
 We use the *EasyABC* package in **R** to implement the ABC accept/reject (ABC-AR) algorithm using 150,000 prior draws with an acceptance rate of 0.67%. We also apply the ABC Markov chain Monte Carlo (ABC-MCMC) method [@marjoram2003markov] and the sequential Monte Carlo ABC (ABC-SMC) method [@lenormand2013adaptive] to compare the results across different ABC algorithms.^[Note that this setting does not satisfy the asymptotic requirements for Bayesian consistency. However, it serves as a pedagogical exercise.] We generate 100,000 samples and retain 1% in ABC-MCMC, and 30,000 samples, keeping 3.4%, with a stopping criterion of 5% in ABC-SMC. These settings imply that the three algorithms require approximately the same computational time. As ABC is a simulation-based method, the computational burden is mostly driven by the speed of simulating the process; thus, the *EasyABC* package has parallel computing algorithms to speed up the processes. Users can refer to the cited references for algorithmic details, and the *EasyABC* package for parallel computing implementation.
 
-In **Exercise 1**, we ask to program the ABC accept/reject algorithm from scratch and compare the results with those obtained using the ABC-AR implementation in the *EasyABC* package.
+In Exercise 1, we ask to program the ABC accept/reject algorithm from scratch and compare the results with those obtained using the ABC-AR implementation in the *EasyABC* package.
 
 The following code presents the results, and the figure compares the posterior distributions of \( \theta_1 \), \( g \), and \( k \) using the three methods. In this figure, we observe that ABC-MCMC (red) and ABC-SMC (green) exhibit similar performance, and both approaches provide more information than ABC-AR (blue). There is marginal positive evidence that the moving average coefficient is positive, and the three algorithms yield similar means, although ABC-AR exhibits lower precision. Since the posterior distribution of \( g \) is centered around zero, the distribution appears to be symmetric around its median. Meanwhile, a positive \( k \) indicates that the distribution has heavier tails than a normal distribution, implying a higher likelihood of extreme values (outliers) in the exchange rate USD/EURO.
 
-```{r}
+```{r, eval=FALSE}
 ######### ABC Exchange rate og returns: USD/EURO
 rm(list = ls()); set.seed(010101)
 library(EasyABC)
@@ -208,7 +208,7 @@ ggarrange(dentheta, deng, denk, labels = c("A", "B", "C"), ncol = 3, nrow = 1,
 ```
 
 ### Bayesian synthetic likelihood {#sec14_12}
-Note that in ABC, in most cases, we target the posterior distribution $\pi(\boldsymbol{\theta} \mid \boldsymbol{\eta}(\boldsymbol{y}))$ rather than $\pi(\boldsymbol{\theta} \mid \boldsymbol{y})$, as $\boldsymbol{\eta}(\boldsymbol{y})$ is not a sufficient statistic, $\boldsymbol{y} \in \mathbb{R}^N$, $\boldsymbol{\theta} \in \mathbb{R}^K$, $\boldsymbol{\eta}(\boldsymbol{y}) \in \mathbb{R}^L$, with $L \geq K$. This can be beneficial since discarding information may improve the behavior of the likelihood or make the inference more robust to model misspecification [@price2018bayesian].
+Note that in ABC, in most cases, we target the posterior distribution \( \pi_{\epsilon}(\boldsymbol{\theta} \mid \boldsymbol{\eta}(\boldsymbol{y})) \) rather than $\pi(\boldsymbol{\theta} \mid \boldsymbol{y})$, as $\boldsymbol{\eta}(\boldsymbol{y})$ is not a sufficient statistic, $\boldsymbol{y} \in \mathbb{R}^N$, $\boldsymbol{\theta} \in \mathbb{R}^K$, $\boldsymbol{\eta}(\boldsymbol{y}) \in \mathbb{R}^L$, with $L \geq K$. This can be beneficial since discarding information may improve the behavior of the likelihood or make the inference more robust to model misspecification [@price2018bayesian].
 
 Given the intractability of $p(\boldsymbol{y} \mid \boldsymbol{\theta})$, it is highly likely that $p(\boldsymbol{\eta}(\boldsymbol{y}) \mid \boldsymbol{\theta})$ is also intractable. @wood2010statistical addressed this issue by introducing an auxiliary model for the summary statistics, assuming
 
@@ -281,21 +281,21 @@ For $s = 1, \dots, S$:
     
   2. For $m = 1, \dots, M$:
     
-     - Simulate $\boldsymbol{z}^{(m)} = (z_1^{(m)}, z_2^{(m)}, \dots, z_n^{(m)})^{\top}$ from the model $p(\cdot \mid \boldsymbol{\theta}^c)$
+     - Simulate $\boldsymbol{z}^{(m)} = (z_1^{(m)}, z_2^{(m)}, \dots, z_N^{(m)})^{\top}$ from the model $p(\cdot \mid \boldsymbol{\theta}^c)$
      
      - Calculate $\boldsymbol{\eta}(\boldsymbol{z}^{(m)})$
       
       End for
       
-  3. Calculate $\boldsymbol{\mu}_{\boldsymbol{\theta}^c}$ and $\boldsymbol{\Sigma}_{\boldsymbol{\theta}^c}$
+  3. Calculate $\hat{\boldsymbol{\mu}}_{\boldsymbol{\theta}^c}$ and $\hat{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}^c}$
     
   4. Compute  
       $$
-      p_a^c(\boldsymbol{\eta}(\boldsymbol{y}) \mid \boldsymbol{\theta}^c) = {N}(\boldsymbol{\eta}(\boldsymbol{y}) \mid \boldsymbol{\mu}_{\boldsymbol{\theta}^c}, \boldsymbol{\Sigma}_{\boldsymbol{\theta}^c})
+      p_a^c(\boldsymbol{\eta}(\boldsymbol{y})\mid \boldsymbol{\theta}^c) = N(\hat{\boldsymbol{\mu}}_{\boldsymbol{\theta}^c}, \hat{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}^c})
       $$
       and  
       $$
-      p_a^{s-1}(\boldsymbol{\eta}(\boldsymbol{y}) \mid \boldsymbol{\theta}^{s-1}) = {N}(\boldsymbol{\eta}(\boldsymbol{y}) \mid \boldsymbol{\mu}_{\boldsymbol{\theta}^{s-1}}, \boldsymbol{\Sigma}_{\boldsymbol{\theta}^{s-1}})
+      p_a^{s-1}(\boldsymbol{\eta}(\boldsymbol{y})\mid \boldsymbol{\theta}^{s-1}) = N(\hat{\boldsymbol{\mu}}_{\boldsymbol{\theta}^{s-1}}, \hat{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}^{s-1}})
       $$
       
   5. Compute the acceptance probability:
@@ -312,13 +312,9 @@ For $s = 1, \dots, S$:
       
   6. Draw $u \sim {U}(0,1)$
       - If $u < \alpha$, then:
-        - Set $\boldsymbol{\theta}^s = \boldsymbol{\theta}^c$  
-          $\boldsymbol{\mu}_{\boldsymbol{\theta}^s} = \boldsymbol{\mu}_{\boldsymbol{\theta}^c}$  
-          $\boldsymbol{\Sigma}_{\boldsymbol{\theta}^s} = \boldsymbol{\Sigma}_{\boldsymbol{\theta}^c}$
+        - Set $\boldsymbol{\theta}^{s}=\boldsymbol{\theta}^{c}$, $\hat{\boldsymbol{\mu}}_{\boldsymbol{\theta}^{s}}=\hat{\boldsymbol{\mu}}_{\boldsymbol{\theta}^c}$ and $\hat{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}^s}=\hat{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}^c}$
       - Else:
-        - Set $\boldsymbol{\theta}^s = \boldsymbol{\theta}^{s-1}$  
-          $\boldsymbol{\mu}_{\boldsymbol{\theta}^s} = \boldsymbol{\mu}_{\boldsymbol{\theta}^{s-1}}$  
-          $\boldsymbol{\Sigma}_{\boldsymbol{\theta}^s} = \boldsymbol{\Sigma}_{\boldsymbol{\theta}^{s-1}}$
+        - Set $\boldsymbol{\theta}^{s}=\boldsymbol{\theta}^{s-1}$, $\hat{\boldsymbol{\mu}}_{\boldsymbol{\theta}^{s}}=\hat{\boldsymbol{\mu}}_{\boldsymbol{\theta}^{s-1}}$ and $\hat{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}^s}=\hat{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}^{s-1}}$
 
 End for
 
@@ -335,7 +331,7 @@ In practice, BSL may be more convenient than ABC when the summary statistics are
 
 We simulate a dataset following the specification of the g-and-k distribution for the financial returns example, setting $\theta_1 = 0.8$, $a = 1$, $b = 0.5$, $g = -1$, and $k = 1$, with a sample size of 500. We use the same priors and summary statistics as in that example.
 
-We use the *BSL* package in **R** to perform posterior inference using BSL. Additionally, we implement our own BSL sampler to compare the results with the vanilla algorithm from the package. We run the BSL algorithms with $M = 200$, $S = 11{,}000$, a burn-in of 1,000, and a thinning parameter of 10, using a random walk proposal distribution. This setting results in similar computational times between the two implementations (scratch and package) and is also comparable to the ABC implementation in Exercise 1.
+We use the *BSL* package in **R** to perform posterior inference using BSL. Additionally, we implement our own BSL sampler to compare the results with the vanilla algorithm from the package. We run the BSL algorithms with $M = 200$, $S = 11{,}000$, a burn-in of $1,000$, and a thinning parameter of 10, using a random walk proposal distribution. This setting results in similar computational times between the two implementations (scratch and package) and is also comparable to the ABC implementation in Exercise 1.
 
 Take into account that BSL is a simulation-based method; therefore, the computational burden is mostly driven by the speed of simulating the process. The *BSL* package has parallel computing algorithms to speed up the processes, and users should refer to the *BSL* package for details.
 
@@ -343,7 +339,7 @@ The following code demonstrates this procedure. The summary statistics appear to
 
 Both ABC and BSL produce posterior distributions centered at the true parameter values, although the posterior distribution of $\theta_1$ deviates from this pattern.
 
-```{r}
+```{r, eval=FALSE}
 ######## BSL: g-and-k simulation ############
 rm(list = ls()); set.seed(010101); library(BSL)
 # Simulate g-and-k data
@@ -472,6 +468,7 @@ library(ggpubr)
 ggarrange(dentheta, deng, denk, labels = c("A", "B", "C"), ncol = 3, nrow = 1,
           legend = "bottom", common.legend = TRUE)
 ```
+
 ## Optimization approaches {#sec14_2}
 
 Traditional MCMC and importance sampling (IS) algorithms require pointwise evaluation of the likelihood function, which entails a massive number of operations when applied to very large datasets. Unfortunately, these algorithms are not designed to be *scalable*, at least in their standard form (see Chapter \@ref(Chap12) for alternatives). Moreover, when the parameter space is large, they also lack *scalability* with respect to the number of parameters. Therefore, approximation methods should be considered even when the likelihood function has an analytical expression.
@@ -494,7 +491,7 @@ Note that latent Gaussian models encompass a wide range of relevant empirical mo
 
 Latent Gaussian models assign a Gaussian prior to $\alpha$, $\boldsymbol{\beta}$, $f^{(j)}$, and $\epsilon_i$. Let $\boldsymbol{z}$ denote the vector of all latent Gaussian variables $\{\alpha, \boldsymbol{\beta}, f^{(j)}, \eta_i\}$, where the dimension is potentially $P = 1 + K + J + N$ (although this is not always the case), and let $\boldsymbol{\theta}$ be the $m$-dimensional vector of hyperparameters. Then, the density $\pi(\boldsymbol{z} \mid \boldsymbol{\theta}_1)$ is Gaussian with mean zero and precision matrix (i.e., the inverse of the covariance matrix) $\boldsymbol{Q}(\boldsymbol{\theta}_1)$.
 
-The distribution of $\boldsymbol{y}$ is $p(\boldsymbol{y} \mid \boldsymbol{z}, \boldsymbol{\theta}_2)$ such that $y_i$ are conditionally independent given $z_i, \boldsymbol{\theta}_2$, and $\boldsymbol{\theta} = [\boldsymbol{\theta}_1^{\top} \ \boldsymbol{\theta}_2^{\top}]^{\top}$ for $i = 1,2,\dots,N$. Thus, the posterior distribution is
+The distribution of $\boldsymbol{y}$ is $p(\boldsymbol{y} \mid \boldsymbol{z}, \boldsymbol{\theta}_2)$ such that $y_i$ are conditionally independent given $z_i$ and $\boldsymbol{\theta}_2$, $\boldsymbol{\theta} = [\boldsymbol{\theta}_1^{\top} \ \boldsymbol{\theta}_2^{\top}]^{\top}$ for $i = 1,2,\dots,N$. Thus, the posterior distribution is
 
 \begin{align}
 \pi(\boldsymbol{z}, \boldsymbol{\theta} \mid \boldsymbol{y}) &\propto \pi(\boldsymbol{\theta}) \times \pi(\boldsymbol{z} \mid \boldsymbol{\theta}_1) \times \prod_{i=1}^{N} p(y_i \mid \boldsymbol{z}, \boldsymbol{\theta}_2) 	(\#eq:1ch14) \\
@@ -538,7 +535,9 @@ The marginal posterior $\pi(z_i \mid \boldsymbol{\theta}, \boldsymbol{y})$ is mo
 	&=\frac{\pi(\boldsymbol{z}\mid\boldsymbol{\theta},\boldsymbol{y})}{\pi(\boldsymbol{z}_{-i}\mid z_i,\boldsymbol{\theta},\boldsymbol{y})}\\
 	&\propto \frac{p(\boldsymbol{y}\mid \boldsymbol{z},\boldsymbol{\theta})\pi(\boldsymbol{z}\mid\boldsymbol{\theta})\pi(\boldsymbol{\theta})}{\pi(\boldsymbol{z}_{-i}\mid z_i,\boldsymbol{\theta},\boldsymbol{y})}, 
 \end{align*}
-where the second-to-last equality follows from the identity $\pi(\boldsymbol{z}_{-i} \mid z_i, \boldsymbol{\theta}, \boldsymbol{y}) = \frac{p(\boldsymbol{z}, \boldsymbol{\theta}, \boldsymbol{y})}{p(z_i, \boldsymbol{\theta}, \boldsymbol{y})}$, $-i$ denotes all elements of $\boldsymbol{z}$ except the $i$-th, and approximating the denominator in the last expression using a simplified Laplace approximation, which corrects the Gaussian approximation for location and skewness via a Taylor series expansion about the mode of the Laplace approximation \cite{rue2009approximate}. This follows the spirit of the approximations developed by \cite{Tierney1986, tierney1989fully} for posterior moments and marginal densities, and is similar to those used in Chapter \@ref(Chap10) when performing Bayesian model averaging (BMA) using the BIC information criterion. The discussion about the asymptotic error of the approximation $\pi_{a}(z_i \mid \boldsymbol{\theta}, \boldsymbol{y})$ follows the same arguments as those for $\pi_a(\boldsymbol{\theta} \mid \boldsymbol{y})$.
+where the second-to-last equality follows from the identity $\pi(\boldsymbol{z}_{-i} \mid z_i, \boldsymbol{\theta}, \boldsymbol{y}) = \frac{p(\boldsymbol{z}, \boldsymbol{\theta}, \boldsymbol{y})}{p(z_i, \boldsymbol{\theta}, \boldsymbol{y})}$, and $-i$ denotes all elements of $\boldsymbol{z}$ except the $i$-th.
+
+We can approximate the denominator in the last expression using a simplified Laplace approximation, which corrects the Gaussian approximation for location and skewness via a Taylor series expansion about the mode of the Laplace approximation \cite{rue2009approximate}. This follows the spirit of the approximations developed by \cite{Tierney1986, tierney1989fully} for posterior moments and marginal densities, and is similar to those used in Chapter \@ref(Chap10) when performing Bayesian model averaging (BMA) using the BIC information criterion. The discussion about the asymptotic error of the approximation $\pi_{a}(z_i \mid \boldsymbol{\theta}, \boldsymbol{y})$ follows the same arguments as those for $\pi_a(\boldsymbol{\theta} \mid \boldsymbol{y})$.
 
 We can obtain the marginal posterior distributions integrating with respect to $\boldsymbol{\theta}$,
 \begin{align*}
@@ -599,7 +598,7 @@ We present results using the three available approximation strategies in INLA: S
 In this example, the results are practically identical across methods (see the Figures), and all 95% credible intervals contain the true population parameters.  
 Despite the large sample size, INLA performs inference in a matter of seconds.
 
-```{r}
+```{r, eval=FALSE}
 # Install Rtools according to your R version
 # Check Rtolls is properly installed
 # Install INLA
@@ -699,7 +698,7 @@ where \( \boldsymbol{\epsilon} = (\boldsymbol{I}_N - \rho \boldsymbol{W})^{-1} \
 
 The degree of spatial dependence in the SAR and SDM models is determined by the parameter \( \rho \). Note that the SDM model is similar to the SAR model, except that it also includes spatial lags of the regressors as additional covariates.
 
-@ord75 and @anselin82 show that a necessary condition for weak stationarity in spatial autoregressive processes with a row-standardized contiguity matrix is that the spatial autocorrelation coefficient must lie between \( 1/\omega_{\min} \) and 1, where \( \omega_{\min} \) is the smallest (most negative) eigenvalue of the contiguity matrix.^[This is a necessary condition to ensure weak stationarity but is not sufficient due to edge and corner effects @haining90.]
+@ord75 and @anselin82 show that a necessary condition for weak stationarity in spatial autoregressive processes with a row-standardized contiguity matrix is that the spatial autocorrelation coefficient must lie between \( 1/\omega_{\min} \) and 1, where \( \omega_{\min} \) is the smallest (most negative) eigenvalue of the contiguity matrix.^[This is a necessary condition to ensure weak stationarity but is not sufficient due to edge and corner effects [@haining90].]
 
 Note that these three models, conditional on the spatial parameter, are standard linear regressions, which can be easily estimated using *INLA*. @bivand2015spatial use the *INLABMA* package to estimate these models conditional on different values of the spatial parameters, and then perform Bayesian Model Averaging (BMA) using the resulting estimates. In particular, it is necessary to define a grid over the spatial parameters, perform Bayesian inference using INLA for each value in the grid, and then aggregate the posterior results using BMA.
 
@@ -721,7 +720,7 @@ The second part of the code constructs the contiguity matrix using the queen cri
 
 Finally, we perform Bayesian inference over a predefined grid of values for the spatial coefficient and apply Bayesian Model Averaging (BMA) using the *INLABMA* package. The third Figure shows the BMA posterior distribution of the spatial coefficient in the SEM, which indicates the presence of spatial dependence. The fourth Figure displays the posterior density of the own-price elasticity of electricity demand.
 
-```{r}
+```{r, eval=FALSE}
 rm(list = ls()); set.seed(010101)
 library(sf); library(tmap); library(classInt)
 library(RColorBrewer); library(spdep); library(parallel)
@@ -887,9 +886,9 @@ A limitation of the CAVI algorithm is that it requires evaluation at each data p
 
 Given the global-local exchangeable structure, the joint distribution can be expressed as $p(\boldsymbol{\phi}, \boldsymbol{z}, \boldsymbol{y}) = \pi(\boldsymbol{\phi} \mid \boldsymbol{\alpha}) \prod_{i=1}^{N} p(\boldsymbol{z}_i, \boldsymbol{y}_i \mid \boldsymbol{\phi})$, where $\boldsymbol{\alpha} = [\boldsymbol{\alpha}_1^{\top} \ \alpha_2]^{\top}$ represents the hyperparameters of the prior distribution of the global parameters $\boldsymbol{\phi}$.
 
-Assuming that the joint distribution $p(\boldsymbol{z}_i, \boldsymbol{y}_i \mid \boldsymbol{\phi})$ is in the canonical form of the exponential family, and that each prior distribution is conjugate, the complete conditional distribution of the global parameters is also in the exponential family. The posterior parameters are given by $\boldsymbol{\alpha}_n = [\boldsymbol{\alpha}_1^{\top} + \sum_{i=1}^N t(\boldsymbol{z}_i, \boldsymbol{y}_i)^{\top} \ \alpha_2 + N]^{\top}$, where $t(\boldsymbol{z}_i, \boldsymbol{y}_i)$ is a sufficient statistic of $\boldsymbol{z}_i$ and $\boldsymbol{y}_i$ (see Section \@ref(sec42)).
+Assuming that the joint distribution $p(\boldsymbol{z}_i, \boldsymbol{y}_i \mid \boldsymbol{\phi})$ is in the canonical form of the exponential family, and that each prior distribution is conjugate, the complete conditional distribution of the global parameters is also in the exponential family. The posterior parameters are given by $\boldsymbol{\alpha}_n = [\boldsymbol{\alpha}_1^{\top} + \sum_{i=1}^N t(\boldsymbol{z}_i, \boldsymbol{y}_i)^{\top}, \ \alpha_2 + N]^{\top}$, where $t(\boldsymbol{z}_i, \boldsymbol{y}_i)$ is a sufficient statistic of $\boldsymbol{z}_i$ and $\boldsymbol{y}_i$ (see Section \@ref(sec42)).
 
-Additionally, the structure of the model implies that $\boldsymbol{z}_i$ is independent of $\boldsymbol{z}_{-i}$ and $\boldsymbol{y}_{-i}$ given $\boldsymbol{y}_i$ and $\boldsymbol{\phi}$. Thus, if $p(\boldsymbol{z}_i \mid \boldsymbol{y}_i, \boldsymbol{\phi})$ is in the canonical form of the exponential family, then the local variational update is given by $\boldsymbol{\psi}_i = \mathbb{E}_{\boldsymbol{\xi}}[\boldsymbol{\eta}(\boldsymbol{\phi}, \boldsymbol{y}_i)]$, where the parameter set $\boldsymbol{\eta}(\boldsymbol{\phi}, \boldsymbol{y}_i)$ is a function of the conditional set, $\boldsymbol{\xi}$, and $\boldsymbol{\psi}_i$ are the variational parameters of the variational approximations $q(\boldsymbol{\phi} \mid \boldsymbol{\xi})$ and $q(\boldsymbol{z}_i \mid \boldsymbol{\psi}_i)$ for the posterior distributions of $\boldsymbol{\phi}$ and $\boldsymbol{z}_i$, respectively. The global variational update is given by $\boldsymbol{\xi} = [\boldsymbol{\alpha}_1^{\top} + \sum_{i=1}^N \mathbb{E}_{\boldsymbol{\psi}_i} t(\boldsymbol{z}_i, \boldsymbol{y}_i)^{\top} \ \alpha_2 + N]^{\top}$.
+Additionally, the structure of the model implies that $\boldsymbol{z}_i$ is independent of $\boldsymbol{z}_{-i}$ and $\boldsymbol{y}_{-i}$ given $\boldsymbol{y}_i$ and $\boldsymbol{\phi}$. Thus, if $p(\boldsymbol{z}_i \mid \boldsymbol{y}_i, \boldsymbol{\phi})$ is in the canonical form of the exponential family, then the local variational update is given by $\boldsymbol{\psi}_i = \mathbb{E}_{\boldsymbol{\xi}}[\boldsymbol{\eta}(\boldsymbol{\phi}, \boldsymbol{y}_i)]$, where the parameter set $\boldsymbol{\eta}(\boldsymbol{\phi}, \boldsymbol{y}_i)$ is a function of the conditional set, $\boldsymbol{\xi}$, and $\boldsymbol{\psi}_i$ are the variational parameters of the variational approximations $q(\boldsymbol{\phi} \mid \boldsymbol{\xi})$ and $q(\boldsymbol{z}_i \mid \boldsymbol{\psi}_i)$ for the posterior distributions of $\boldsymbol{\phi}$ and $\boldsymbol{z}_i$, respectively. The global variational update is given by $\boldsymbol{\xi} = [\boldsymbol{\alpha}_1^{\top} + \sum_{i=1}^N \mathbb{E}_{\boldsymbol{\psi}_i} t(\boldsymbol{z}_i, \boldsymbol{y}_i)^{\top}, \ \alpha_2 + N]^{\top}$.
 
 SVI focuses on the global parameters, updating them using the ELBO natural gradients with respect to $\boldsymbol{\xi}$, where natural gradients are the usual gradients premultiplied by the inverse covariance matrix of the sufficient statistic. These gradients are easily calculated in exponential families. In particular, the updates are given by
 \begin{align*}
@@ -1027,7 +1026,7 @@ First, we perform VB inference using the *LaplacesDemon* package, and then imple
 
 In general, all calculations seem to perform well: the 95% credible intervals contain the population parameters, and the posterior means are very close to them.
 
-```{r}
+```{r, eval=FALSE}
 set.seed(010101)
 library(LaplacesDemon)
 N <- 500; K <- 2
@@ -1141,9 +1140,9 @@ In this chapter, we present approximate methods designed for situations where th
 
 2. **Simulation: g-and-k distribution continues**
 
-   Perform the simulation example of the Bayesian synthetic likelihood presented in the book, using the same population parameters and setting \( M = 500 \), \( S = 6{,}000 \), with burn-in and thinning parameters set to 1,000 and 5, respectively. Use the *BSL* package in **R** to perform inference using the vanilla, unbiased, semi-parametric, and misspecified (mean and variance) versions of BSL. Compare the posterior distributions of the methods with the true population parameters.
+   Perform the simulation example of the Bayesian synthetic likelihood presented in the book, using the same population parameters and setting \( M = 500 \), \( S = 6{,}000 \), with burn-in and thinning parameters set to $1,000$ and 5, respectively. Use the *BSL* package in **R** to perform inference using the vanilla, unbiased, semi-parametric, and misspecified (mean and variance) versions of BSL. Compare the posterior distributions of the methods with the true population parameters.
 
-3. Simulate a multinomial logit model (see \@ref(sec65)) with 3 alternatives, 2 alternative-specific regressors, and 1 individual-specific regressor. The population parameters for the alternative-specific regressors are \(-0.3\) and \(1.2\), while the population values for the individual-specific regressor are \(0.3\), \(0\), and \(0.5\). All regressors are assumed to follow a standard normal distribution, and the sample size is 1,000.
+3. Simulate a multinomial logit model (see Section \@ref(sec65)) with 3 alternatives, 2 alternative-specific regressors, and 1 individual-specific regressor. The population parameters for the alternative-specific regressors are \(-0.3\) and \(1.2\), while the population values for the individual-specific regressor are \(0.3\), \(0\), and \(0.5\). All regressors are assumed to follow a standard normal distribution, and the sample size is $1,000$.
 
    Perform inference using the *INLA* package, and note that the Poisson trick should be used for multinomial models in this exercise (see @serafini2019multinomial for details).
 

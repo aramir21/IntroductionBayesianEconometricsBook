@@ -202,7 +202,7 @@ Finally, note that we can also obtain the posterior distribution of the ATE usin
 
 Let's assume that $\mu_1 = 15$, $\mu_0 = 10$, $\sigma_1^2 = 4$, $\sigma_0^2 = 2$, and $N_1=N_0=100$, and compute the posterior distribution of the ATE. The following code illustrates this procedure, while the following figures display the predictive densities of the potential outcomes and the posterior distribution of the ATE. The posterior mean is 4.60, and the 95% credible interval is (4.10, 5.12). Note that the population value is $\mu_1-\mu_0=5$.
 
-```{r, eval = FALSE}
+```{r}
 set.seed(10101)
 # Parameters
 mu1 <- 15; mu0 <- 10
@@ -346,7 +346,7 @@ Accordingly, we control for the following covariates: age (*age*), income (*inc*
 
 We can use the framework in Section \@ref(sec61) to estimate the average treatment effect of 401(k) eligibility on net financial assets. The following code shows how to obtain the posterior distribution of this effect. The figure displays the posterior distribution of the treatment effect: the 95% credible interval is (USD 3,473, USD 8,371), and the posterior mean is USD 5,903.
 
-```{r, eval = FALSE}
+```{r}
 # 401k: Treatment effects
 rm(list = ls())
 set.seed(10101)
@@ -405,7 +405,7 @@ knitr::include_graphics('figures/FigChap13_6.png', dpi = NA)
 ```
 The following code illustrates the bias by performing 100 replications, and the figure shows the distribution of posterior means across these replications. In this setting, the total effect of smoking on infant mortality is 2, consisting of a direct effect of 1 and an indirect effect through birth weight, also equal to 1.
 
-```{r, eval = FALSE}
+```{r}
 rm(list = ls()); set.seed(10101)
 library(MCMCpack); library(dplyr); library(ggplot2)
 # Parameters
@@ -865,7 +865,7 @@ where $N_{n1}$ and $N_{n0}$ denote the numbers of never-takers who survived and 
 
 The second part of the code shows the implementation, and the second figure displays the posterior distribution of the CACE (which equals the LATE under the exclusion restriction). The posterior mean is 0.0030, and the 95% credible interval is (0.0008, 0.0054). Therefore, imposing the exclusion restriction leaves the posterior mean approximately unchanged but increases the precision and informativeness of the posterior distribution. Without the restriction, the posterior was relatively flat within the 95% credible interval, whereas under the exclusion restriction, the posterior distribution is approximately normal, resulting in a narrower 95% credible interval.  
 
-```{r, eval = FALSE}
+```{r}
 rm(list = ls()); set.seed(10101)
 library(dplyr)
 # Simulate data
@@ -987,7 +987,7 @@ In the example of the effect of *eligibility* on 401(k) on net financial assets,
 
 Exercise 6 asks how to recover the ITT from the LATE and the effect of eligibility on participation. See @Conley2012 for practical methods to conduct sensitivity analysis of posterior results when relaxing the exclusion restriction in IV settings. In addition, @conley2008semi present a Bayesian inferential framework using a semi-parametric approach in which stochastic errors are modeled using a Dirichlet process (see Exercise 7), and @ramirez2024welfare extend this approach to systems of equations.
 
-```{r, eval = FALSE}
+```{r}
 rm(list = ls()); set.seed(10101)
 library(coda); library(ggplot2)
 mydata <- read.csv("https://raw.githubusercontent.com/BEsmarter-consultancy/BSTApp/refs/heads/master/DataApp/401k.csv", sep = ",", header = TRUE, quote = "")
@@ -1084,7 +1084,7 @@ Note that we do not observe $Y_{i2}(0) \mid D_i = 1$; that is, the outcome in th
 
 There are two key identification assumptions:
 
-*Parallel trends:*
+*1. Parallel trends:*
 
 \[
 \mathbb{E}[Y_{i2}(0) - Y_{i1}(0) \mid D_i = 1] = \mathbb{E}[Y_{i2}(0) - Y_{i1}(0) \mid D_i = 0],
@@ -1092,7 +1092,7 @@ There are two key identification assumptions:
 
 which states that, in the absence of treatment, the average change in outcomes for the treated and control groups would have evolved similarly over time.
 
-*No anticipation effects:*
+*2. No anticipation effects:*
 
 \[
 \mathbb{E}[Y_{i1}(0)\mid D_i=1] = \mathbb{E}[Y_{i1}(1)\mid D_i=1],
@@ -1369,7 +1369,7 @@ Assuming that parallel trends hold conditional on covariates, we obtain identifi
 *2. Staggered overlap (positivity) for not-yet-treated comparisons:*
 
 \[
-P(G_i=g \mid \mathbf X_i) < 1 - \epsilon\, \ \epsilon >0, \ \text{almost surely, and,} \ P(G_i=g)>0.
+P(G_i=g \mid \mathbf X_i) < 1 - \epsilon, \ \epsilon >0, \ \text{almost surely, and,} \ P(G_i=g)>0.
 \]
 
 Condition 1 means that, conditional on covariates, pre-treatment changes in untreated potential outcomes for cohort $g$ match those of units not yet treated at time $t$, and condition 2 means that there is positive probability of belonging to cohort $g$ and of being not yet treated at $t$.
@@ -1394,9 +1394,9 @@ Y_{i2} - Y_{i1}
 + \tau_2 D_i + \epsilon_i,
 \end{equation}
 
-The following code implements this example. From the posterior results, we can verify that the 95\% credible interval contains the true ATT. We ask in Exercise~8 to repeat exactly the same simulation, and estimate the ATT using the specification with the interaction between treatment and the post-treatment period.
+The following code implements this example. From the posterior results, we can verify that the 95\% credible interval contains the true ATT. We ask in Exercise 8 to repeat exactly the same simulation, and estimate the ATT using the specification with the interaction between treatment and the post-treatment period.
 
-```{r, eval = FALSE}
+```{r}
 rm(list = ls()); set.seed(10101)
 library(ggplot2); library(dplyr); library(fastDummies)
 # Parameters
@@ -1593,7 +1593,7 @@ See @imbens2008regression and @cattaneo2019practical for discussions of graphica
 
 @chib2016bayesian propose a Bayesian inferential framework that explicitly models unit type (complier, always-taker, and never-taker), which enables implementation of a Gibbs sampler. Their empirical application is motivated by the April 1947 reform in the United Kingdom that raised the minimum school-leaving age from 14 to 15.
 
-In the example below, we construct a simulation calibrated to their application to illustrate Bayesian inference in a fuzzy RD. In particular, we specify priors, derive the full conditional distributions, and implement a Gibbs sampler to estimate the treatment effect at the cutoff.
+In the example below, we construct a simulation calibrated to their application to illustrate Bayesian inference in a fuzzy RD. In particular, we specify priors, show the full conditional distributions, and implement a Gibbs sampler to estimate the treatment effect at the cutoff.
 
 There are three types of individuals: compliers ($c$), never-takers ($n$), and always-takers ($a$). These imply four potential outcomes $Y_{ic}(0)$, $Y_{ic}(1)$, $Y_{in}(0)$, and $Y_{ia}(1)$. @chib2016bayesian assume
 
@@ -1702,7 +1702,7 @@ Here, $N_{dk}$ denotes the number of elements (cardinality) of $I_{dk}$.
 The following code performs a simulation assuming that $Z_i$ follows a discrete uniform distribution from $-24$ to $24$, where the policy indicator equals one if $Z_i \geq 0$. Next, $X_i$ follows a discrete uniform distribution between $85$ and $95$. We set $\boldsymbol{\beta}_{0c} = [4.50 \ -0.20 \ 0.03]^{\top}$ and $\boldsymbol{\beta}_{1c} = [5.50 \ 0.40 \ 0.03]^{\top}$, so that the treatment effect is $1$. In addition, $\boldsymbol{\beta}_{0n} = [6.80 \ -0.02]^{\top}$ and $\boldsymbol{\beta}_{1a} = [5.50 \ -0.04]^{\top}$, with $\sigma_{0c}^2 = \sigma_{1c}^2 = 0.10$, $\sigma_{0n}^2 = 0.15$, and $\sigma_{1a}^2 = 0.20$. The type probabilities are $\eta_{c} = 0.70$, $\eta_{n} = 0.15$, and $\eta_{a} = 0.15$. We set the sample size to $3{,}000$ and $v = 5$. In addition, we set non-informative priors, a burn-in of 1,000, and 5,000 MCMC iterations. The following code illustrates the implementation, and the figure presents the posterior distribution of the LATE. The 95% credible interval encompasses the population value, and the posterior mean lies close to this value.
 
 
-```{r, eval = FALSE}
+```{r}
 rm(list = ls()); set.seed(10101); library(ggplot2)
 # Simulation setup
 N <- 3000
@@ -1857,7 +1857,7 @@ A difference in this example is that, unlike most of the Frequentist literature,
 
 ## Sample selection {#sec13_7}
 
-We depict a situation of collider bias that induces selection bias in Section \@ref(sec13_3). Specifically, conditioning on a particular subset of the population ($D_i=1$), where $D_i$ is influenced by both the treatment and confounders, opens a back-door path and creates a spurious association between their causes. Placing this situation within the well-known sample selection framework [@heckman1979sample], the observed outcome can be represented as
+We depict a situation of collider bias that induces selection bias in a previous section. Specifically, conditioning on a particular subset of the population ($D_i=1$), where $D_i$ is influenced by both the treatment and confounders, opens a back-door path and creates a spurious association between their causes. Placing this situation within the well-known sample selection framework [@heckman1979sample], the observed outcome can be represented as
 
 \[
 Y_i = \begin{cases}
@@ -1870,7 +1870,7 @@ that is, we only observe $Y_i = Y_i(1)$ for $i=1,2,\dots,N$, while $Y_i(0)$ rema
 
 In this setting, inference can be performed based on the likelihood of the observed outcomes together with the *selection (missingness) mechanism* $(Y_i(1),D_i)$, integrating out the unobserved $Y_i(0)$ from the joint distribution of $\{Y_i(1),Y_i(0),D_i\}$. However, one must consider whether the missingness mechanism is *ignorable* or not. According to @little2019statistical, the missingness mechanism is ignorable in Bayesian inference if the following two conditions hold:  
 
-i) the likelihood can be factorized as  
+1. the likelihood can be factorized as  
 
 \[
 p(y_i, d_i\mid \boldsymbol{\theta},\boldsymbol{\gamma}) 
@@ -1879,7 +1879,7 @@ p(y_i, d_i\mid \boldsymbol{\theta},\boldsymbol{\gamma})
 
 and  
 
-ii) the parameters $\boldsymbol{\theta}$ and $\boldsymbol{\gamma}$ are *a priori* independent,  
+2. the parameters $\boldsymbol{\theta}$ and $\boldsymbol{\gamma}$ are *a priori* independent,  
 
 \[
 \pi(\boldsymbol{\theta},\boldsymbol{\gamma}) 
@@ -2123,7 +2123,7 @@ The hyperparameters are $\boldsymbol{\delta}_0=[0 \ 0 \ 0 \ 0 \ 0 \ 0]^{\top}$, 
 
 The figure shows the posterior distributions of the second parameter in the outcome equation, whose population value is 1 (black dashed line). The posterior distribution of the model that accounts for selection encompasses the population value, whereas the model that ignores selection does not.
 
-```{r, eval = FALSE}
+```{r}
 rm(list = ls()); set.seed(10101)
 library(doParallel); library(snow)
 N <- 1000
@@ -2314,7 +2314,7 @@ If there is endogeneity, $\mathbb{E}[\mu_i\mid \mathbf{X}_i]\neq 0$, but there e
 
 with $d\ge p$.
 
-Moment conditions can be used in a Bayesian framework via *Bayesian Empirical Likelihood* (BEL) [@lazar2003bel] and *Bayesian Exponentially Tilted Empirical Likelihood* (BETEL) [@schennach2005betel]. We focus on BETEL because, while BEL inherits the attractive properties of empirical likelihood under correct specification, it can lose them under model misspecification. In contrast, Exponentially Tilted Empirical Likelihood (ETEL) remains well behaved under misspecification and retains root-$n$ consistency and asymptotic normality [@schennach2007etel].
+Moment conditions can be used in a Bayesian framework via *Bayesian Empirical Likelihood* (BEL) [@lazar2003bel] and *Bayesian Exponentially Tilted Empirical Likelihood* (BETEL) [@schennach2005betel]. We focus on BETEL because, while BEL inherits the attractive properties of empirical likelihood under correct specification, it can lose them under model misspecification. In contrast, Exponentially Tilted Empirical Likelihood (ETEL) remains well behaved under misspecification and retains root-$N$ consistency and asymptotic normality [@schennach2007etel].
 
 Thus, the posterior distribution is
 
@@ -2368,24 +2368,66 @@ whose gradient condition is precisely the moment constraint above. Therefore, th
 
 Posterior inference of the BETEL can be performed using a Metropolis-Hastings algorithm where the proposal distribution is $q(\boldsymbol{\theta}\mid \mathbf{W}_{1:N})$. See the following algorithm [@chib2018moment].
 
-```{=html}
-<figcaption><b>Algorithm: Bayesian Exponentially Tilted Empirical Likelihood (BETEL) – Metropolis-Hastings</b></figcaption>
-<figure id="alg:BETEL">
-<pre>
-Set θ<sup>(0)</sup> in the support of π(θ|W<sub>1:N</sub>) 
-For s=1,2,...,S do
-  Propose θ<sup>c</sup> from q(θ|W<sub>1:N</sub>)
-  Solve for p<sub>i</sub><sup>*</sup>(θ<sup>c</sup>), i=1,...,N using the equation that characterized λ
-  Calculate α(θ<sup>(s-1)</sup>,θ<sup>c</sup>|W<sub>1:N</sub>) =
-      min(1, [π(θ<sup>c</sup>|W<sub>1:N</sub>)/π(θ<sup>(s-1)</sup>|W<sub>1:N</sub>)] × 
-                [q(θ<sup>(s-1)</sup>|W<sub>1:N</sub>)/q(θ<sup>c</sup>|W<sub>1:N</sub>)])
-  Draw U ~ U(0,1)
-  θ<sup>(s)</sup> = θ<sup>c</sup> if U ≤ α(θ<sup>(s-1)</sup>,θ<sup>c</sup>|W<sub>1:N</sub>)
-  θ<sup>(s)</sup> = θ<sup>(s-1)</sup> otherwise
-End for
-</pre>
-</figure>
-```
+::: {.algorithm}
+<div style="background-color: #f8f9fa; padding: 15px; border-left: 5px solid #343a40; box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1); border-radius: 5px;">
+
+**Algorithm: Bayesian Exponentially Tilted Empirical Likelihood (BETEL) – Metropolis–Hastings**
+
+Let \( W_{1:N} = \{W_1,\dots,W_N\} \) denote the sample.
+
+1. **Initialization:**  
+   Choose an initial value  
+   \[
+     \theta^{(0)} \in \text{supp}\!\left\{ \pi(\theta \mid W_{1:N}) \right\}.
+   \]
+
+2. **Metropolis–Hastings iterations:** For \( s = 1,2,\ldots,S \):
+
+   - **Proposal step:**  
+     Draw a candidate value  
+     \[
+       \theta^{c} \sim q(\theta \mid W_{1:N}).
+     \]
+
+   - **Compute empirical likelihood weights:**  
+     Solve for \( p_{i}^{*}(\theta^{c}) \), \( i = 1,\ldots,N \),  
+     using the BETEL tilting equation that defines the Lagrange multiplier \( \lambda \).
+
+   - **Acceptance probability:**  
+     \[
+     \alpha\big(\theta^{(s-1)}, \theta^{c} \mid W_{1:N}\big)
+     =
+     \min\!\left\{
+       1,\;
+       \frac{
+         \pi\!\left(\theta^{c} \mid W_{1:N}\right)
+       }{
+         \pi\!\left(\theta^{(s-1)} \mid W_{1:N}\right)
+       }
+       \times
+       \frac{
+         q\!\left(\theta^{(s-1)} \mid W_{1:N}\right)
+       }{
+         q\!\left(\theta^{c} \mid W_{1:N}\right)
+       }
+     \right\}.
+     \]
+
+   - **Accept–reject step:**  
+     Draw \( U \sim \text{Uniform}(0,1) \) and set  
+     \[
+     \theta^{(s)} =
+     \begin{cases}
+        \theta^{c}, & \text{if } U \leq 
+        \alpha\big(\theta^{(s-1)}, \theta^{c} \mid W_{1:N}\big), \\[6pt]
+        \theta^{(s-1)}, & \text{otherwise}.
+     \end{cases}
+     \]
+
+3. End for.
+
+</div>
+:::
 
 **Example: Classical measurement error in regressor**
 
@@ -2474,7 +2516,7 @@ We perform Bayesian exponentially tilted empirical likelihood (BETEL) using the 
 
 The figure displays the posterior distributions. We see that ignoring measurement error produces a biased posterior distribution. In particular, the absolute value of the causal effect is smaller than the population value; this is called *attenuation bias*. By contrast, methods that account for measurement error and use valid instruments yield well-centered posterior distributions.
 
-```{r, eval = FALSE}
+```{r}
 rm(list = ls()); set.seed(10101)
 library(betel); library(ucminf)
 # Simulate data
@@ -2598,7 +2640,7 @@ In this situation, we can use an instrument that is relevant ($\mathbb{E}[Z_i X_
 
 The figure illustrates the case of an omitted relevant regressor that is correlated with $X_i$, and how an instrument can be used to identify the causal effect. The instrument resolves the endogeneity problem by exploiting variation in $X_i$ that is driven by $Z_i$, which is orthogonal to the problematic error term. In other words, it replaces "bad" correlation with "clean" variation.
 
-```{r, echo=FALSE, cache=FALSE, out.width="400px", fig.cap="DAG with omitted relevant regressor $W$ (dashed, unobserved) that is correlated with $X$ and affects $Y$, inducing endogeneity of $X$ in a regression of $Y$ on $X$. A valid instrument $Z$ affects $X$ (relevance) but has no direct path to $Y$ and is independent of $W$ and $u$ (exclusion/independence), enabling identification of the causal effect $X \rightarrow Y$.", fig.align="center", message=FALSE}
+```{r, echo=FALSE, cache=FALSE, out.width="400px", fig.cap="DAG with omitted relevant regressor $W$ (dashed, unobserved) that is correlated with $X$ and affects $Y$, inducing endogeneity of $X$ in a regression of $Y$ on $X$. A valid instrument $Z$ affects $X$ (relevance) but has no direct path to $Y$ and is independent of $W$ and $u$ (exclusion/independence), enabling identification of the causal effect $X$ on $Y$.", fig.align="center", message=FALSE}
 knitr::include_graphics('figures/FigChap13_14.png', dpi = NA)
 ```
 
@@ -2903,7 +2945,7 @@ $\mathbf{g}:\mathbb{R}^{d_w}\times\boldsymbol{\Theta}\to\mathbb{R}^{d}$ is a vec
 $\boldsymbol{\theta}=[\theta_{1}\ \theta_{2}\ \dots\ \theta_{p}]^{\top}\in\boldsymbol{\Theta}\subset\mathbb{R}^{p}$ with $d\geq p$, the risk function can be defined as
 \[
 R_N(\boldsymbol{\theta},\mathbf{w})=\tfrac{1}{2}\left(\underbrace{\frac{1}{N}\sum_{i=1}^N \mathbf{g}_i(\mathbf{w}_i,\boldsymbol{\theta})}_{\mathbf{g}_N(\boldsymbol{\theta})}\right)^{\top}\mathbf{W}_N\left(\underbrace{\frac{1}{N}\sum_{i=1}^N\mathbf{g}_i(\mathbf{w}_i,\boldsymbol{\theta})}_{\mathbf{g}_N(\boldsymbol{\theta})}\right)
-\] (\#eq:RiskLTE)
+\]
 
 where $\mathbf{W}_N$ is a positive semi-definite weighting matrix such that
 \[
@@ -2916,22 +2958,62 @@ Then, the *quasi-posterior* in @chernozhukov2003mcmc is similar to \@ref(eq:Gibb
 
 The following algorithm shows the Metropolis–Hastings to perform inference using the general Bayes posterior.
 
-```{=html}
-<figcaption><b>Algorithm: General Bayes posterior — Metropolis-Hastings</b></figcaption>
-<figure id="alg:GibbsPosterior">
-<pre>
-Set θ(0) in the support of π̂(θ|y)
-For s=1,2,...,S do
-  Draw θᶜ from q(θᶜ | θ(s-1))
-  Calculate α(θ(s-1), θᶜ) = min( ( q(θ(s-1)|θᶜ) exp{-Nw R<sub>N</sub>(θᶜ,y)} π(θᶜ) ) /
-                               ( q(θᶜ|θ(s-1)) exp{-Nw R<sub>N</sub>(θ(s-1),y)} π(θ(s-1)) ), 1 )
-  Draw U from U(0,1)
-  θ(s) = θᶜ if U ≤ α(θ(s-1), θᶜ)
-  θ(s) = θ(s-1) otherwise
-End for
-</pre>
-</figure>
-```
+::: {.algorithm}
+<div style="background-color: #f8f9fa; padding: 15px; border-left: 5px solid #343a40; 
+            box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1); border-radius: 5px;">
+
+**Algorithm: General Bayes Posterior — Metropolis–Hastings**
+
+Let \( R_{N}(\theta, y) \) denote the empirical risk and \( w > 0 \) the learning rate.
+
+1. **Initialization:**  
+   Choose an initial value  
+   \[
+      \theta^{(0)} \in \text{supp}\!\left\{ \widehat{\pi}(\theta \mid y) \right\}.
+   \]
+
+2. **Metropolis–Hastings iterations:**  
+   For \( s = 1,2,\ldots,S \):
+
+   - **Proposal:**  
+     Draw a candidate  
+     \[
+       \theta^{c} \sim q\!\left(\theta \mid \theta^{(s-1)}\right).
+     \]
+
+   - **Acceptance probability:**  
+     \[
+     \alpha\!\left(\theta^{(s-1)}, \theta^{c}\right)
+       =
+     \min\!\left\{
+       1,\,
+       \frac{
+         q\!\left(\theta^{(s-1)} \mid \theta^{c}\right)\;
+         \exp\!\left[-N w\, R_{N}(\theta^{c}, y)\right]\;
+         \pi\!\left(\theta^{c}\right)
+       }{
+         q\!\left(\theta^{c} \mid \theta^{(s-1)}\right)\;
+         \exp\!\left[-N w\, R_{N}(\theta^{(s-1)}, y)\right]\;
+         \pi\!\left(\theta^{(s-1)}\right)
+       }
+     \right\}.
+     \]
+
+   - **Accept–reject step:**  
+     Draw \(U \sim \mathrm{Uniform}(0,1)\), and set
+     \[
+     \theta^{(s)} =
+     \begin{cases}
+        \theta^{c}, & \text{if } U \le 
+        \alpha\!\left(\theta^{(s-1)}, \theta^{c}\right), \\[6pt]
+        \theta^{(s-1)}, & \text{otherwise}.
+     \end{cases}
+     \]
+
+3. End for.
+
+</div>
+:::
 
 Under suitable regularity conditions, @chernozhukov2003mcmc show that the LTE posterior mean is first-order equivalent to the efficient GMM estimator and that posterior quantiles yield confidence sets with asymptotically correct Frequentist coverage. Relatedly, @Muller2013SandwichBayes demonstrates that, under model misspecification, replacing the original likelihood with a curvature-adjusted ("sandwich") log-likelihood can improve Frequentist risk, that is, lower the average loss over repeated samples when making inference on the parameters. Moreover, @ChenChristensenTamer2018 develop confidence sets based on quasi-posteriors that achieve exact asymptotic Frequentist coverage for identified sets of parameters in complex nonlinear structural models, regardless of whether the parameters are point identified. Finally, @andrews2022weakgmm study decision rules for weak GMM and provide support for quasi-Bayesian procedures built from the GMM quadratic form, in line with the spirit of the LTE in settings with weak identification.  
 
@@ -3010,9 +3092,9 @@ where
 \mathbf{W}_N=\frac{1}{\tau(1-\tau)}\left(\frac{1}{N}\sum_{i=1}^N \mathbf{Z}_i\mathbf{Z}_i^{\top}\right)^{-1}.
 \]
 
-The following code implements the previous algorithm to perform inference on the quantile treatment effect of participation in the 401(k) retirement program on net financial assets, using eligibility as an instrument (see the 401(k) treatment effects example in Section~\@ref(sec13_4) for details of the data).
+The following code implements the previous algorithm to perform inference on the quantile treatment effect of participation in the 401(k) retirement program on net financial assets, using eligibility as an instrument (see the 401(k) treatment effects example for details of the data).
 
-```{r, eval = FALSE}
+```{r}
 rm(list = ls()); set.seed(10101)
 # Load data
 df <- read.csv("https://raw.githubusercontent.com/BEsmarter-consultancy/BSTApp/refs/heads/master/DataApp/401k.csv",
@@ -3172,9 +3254,9 @@ An influence function measures the first-order effect of an infinitesimal contam
 \quad\text{if either } m_\eta \text{ or } \pi_\eta \text{ is correctly specified.}
 \]
 
-To conduct Bayesian inference, @breunig2025double place independent priors on the outcome regression and the covariate distribution (equivalently, on $\eta^m$ and $\eta^f$). For the covariates they use a Dirichlet Process (DP) prior on $F$ (hence on $f$; see Section \@ref(sec11_12)), which, under standard conditions, induces posterior draws that approximate the Bayesian bootstrap for sample supported functionals [@Lo1987BayesianBootstrap] (see Section \@ref(sec610)).
+To conduct Bayesian inference, @breunig2025double place independent priors on the outcome regression and the covariate distribution (equivalently, on $\eta^m$ and $\eta^f$). For the covariates they use a Dirichlet Process (DP) prior on $F$ (hence on $f$; see Chapter \@ref(Chap11)), which, under standard conditions, induces posterior draws that approximate the Bayesian bootstrap for sample supported functionals [@Lo1987BayesianBootstrap] (see Chapter \@ref(Chap6)).
 
-For the outcome regression they place a Gaussian Process (GP) prior on $\eta^m$ (see Section \@ref(sec12_4)), with a correction term that incorporates a preliminary estimator of the Riesz representer. The propensity score is estimated in a separate first step and is used in the correction/recentering; thus, a prior for $\eta^\pi$ is not required for their procedure.
+For the outcome regression they place a Gaussian Process (GP) prior on $\eta^m$ (see Chapter \@ref(Chap12)), with a correction term that incorporates a preliminary estimator of the Riesz representer. The propensity score is estimated in a separate first step and is used in the correction/recentering; thus, a prior for $\eta^\pi$ is not required for their procedure.
 
 The following algorithm outlines the doubly robust Bayesian procedure of @breunig2025double. The pilot estimate of the Riesz representer, $\hat\gamma_\eta$, is obtained by plug–in, using a propensity score $\hat\pi(\mathbf{x})$ estimated via logistic Lasso.
 
@@ -3224,32 +3306,118 @@ which, for the vector of latent logits evaluated at the training inputs, corresp
 $\mathbf{K} + \sigma_n^2\,\widehat{\boldsymbol{\gamma}}\,
 \widehat{\boldsymbol{\gamma}}^{\top}$.
 
-```{=html}
-<figcaption><b>Algorithm: Double Robust Bayesian</b></figcaption>
-<figure id="alg:DRBayes">
-<pre>
-Have initial estimates of γ<sub>η</sub> based on logistic Lasso
-Trim the propensity score using standard values (e.g., 10%) or the optimal trimming rule of Crump et al. (2009)
-Estimate the Riesz representer using the estimate of the propensity score
-Calculate the prior correction term 
-      σₙ = log(n) / (√n Γₙ),   Γₙ = (1/n) Σ |γ̂η(dᵢ, xᵢ)|,   n = effective sample size (after trimming)
-Calculate the prior adjustment σₙ × γ<sub>η</sub>
-Calculate m̂(d,x) = 1 / (1 + exp{-ηᵐ(d,x)}) as the posterior mean of a Gaussian Process (GP) based on d and x (unadjusted mean)
-Set an initial GP prior for the adjusted mean 
-      mᶜη(d,x) = 1 / (1 + exp{-ηᵐ}),   ηᵐ ~ GP(0, Kc)
-      Kc((d,x),(d',x')) = K((d,x),(d',x')) + σₙ² γ<sub>η</sub>(d,x)γ<sub>η</sub>(d',x')
-For s = 1,...,S do
-     a. Generate the s-th draw of the adjusted GP posterior mᶜˢη(d,x)
-     b. Draw Bayesian bootstrap weights Mˢₙᵢ = eˢᵢ / Σ eˢⱼ, with eˢᵢ ~ Exp(1), i=1,...,n
-     c. Calculate the corrected posterior draw for the ATE 
-           τ̃ˢη = τˢη - b̂ˢη
-           where τˢη = Σ Mˢₙᵢ ( mᶜˢη(1,xᵢ) - mᶜˢη(0,xᵢ) )
-                 b̂ˢη = (1/n) Σ τ[ mˢη(wᵢ) - m̂(wᵢ) ]
-                 τ[m] = m(1,x) - m(0,x) + γ̂(d,x)(y - m(d,x))
-End for
-</pre>
-</figure>
-```
+::: {.algorithm}
+<div style="background-color: #f8f9fa; padding: 15px; border-left: 5px solid #343a40;
+            box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1); border-radius: 5px;">
+
+**Algorithm: Double Robust Bayesian (DR–Bayes)**
+
+1. **Estimate the nuisance components:**
+
+   - Obtain initial estimates of the Riesz representer \( \widehat{\gamma}_{\eta} \)  
+     using a logistic Lasso.
+
+   - Trim the propensity score using either:
+     - a standard trimming rule (e.g., keep units with scores in [0.1, 0.9]), or  
+     - the optimal Crump et al. (2009) trimming rule.
+
+   - Estimate the Riesz representer \( \widehat{\gamma}_{\eta}(d_i, x_i) \)  
+     using the trimmed sample.
+
+2. **Compute the prior correction term:**
+
+   Let:
+   \[
+      \Gamma_n = \frac{1}{n}\sum_{i=1}^{n}
+      \left|\,\widehat{\gamma}_{\eta}(d_i, x_i)\,\right|,
+      \qquad
+      \sigma_n = \frac{\log n}{\sqrt{n}\,\Gamma_n},
+   \]
+   where \(n\) is the effective sample size after trimming.
+
+   Compute the prior adjustment:
+   \[
+     \sigma_n \,\widehat{\gamma}_{\eta}.
+   \]
+
+3. **Define the GP prior and unadjusted mean model:**
+
+   - Compute the unadjusted posterior mean
+     \[
+       \widehat{m}(d,x)
+         = \frac{1}{1 + \exp\{-\widehat{\eta}^{m}(d,x)\}},
+     \]
+     where \( \widehat{\eta}^{m}(d,x) \) is the GP posterior mean.
+
+   - Set the **adjusted Gaussian Process prior**:
+     \[
+       m_{\eta}^{c}(d,x)
+         = \frac{1}{1 + \exp\{-\eta^{m}(d,x)\}}, 
+         \qquad \eta^{m} \sim GP(0, K_{c}),
+     \]
+     with covariance kernel
+     \[
+       K_{c}\big((d,x),(d',x')\big)
+       = K\big((d,x),(d',x')\big)
+         + \sigma_{n}^{2}\,
+           \widehat{\gamma}_{\eta}(d,x)\,
+           \widehat{\gamma}_{\eta}(d',x').
+     \]
+
+4. **Posterior sampling:**  
+   For \( s = 1,\dots,S \):
+
+   **(a) Draw the adjusted GP posterior:**  
+   \[
+     m_{\eta}^{c,(s)}(d,x)
+     \quad \text{from the adjusted GP prior}.
+   \]
+
+   **(b) Bayesian bootstrap weights:**  
+   Draw
+   \[
+     M_{n,i}^{(s)} = \frac{e_{i}^{(s)}}{\sum_{j=1}^{n} e_{j}^{(s)}},
+     \qquad e_{i}^{(s)} \sim \mathrm{Exp}(1),
+   \]
+   for \( i = 1,\dots,n \).
+
+   **(c) Compute the DR-corrected posterior ATE:**
+
+   - **Uncorrected ATE draw:**
+     \[
+     \tau_{\eta}^{(s)}
+       = \sum_{i=1}^{n}
+         M_{n,i}^{(s)}
+         \left[
+           m_{\eta}^{c,(s)}(1, x_i)
+           \;-\;
+           m_{\eta}^{c,(s)}(0, x_i)
+         \right].
+     \]
+
+   - **Bias-correction term:**
+     \[
+       \widehat{b}_{\eta}^{(s)}
+         = \frac{1}{n} \sum_{i=1}^{n}
+           \tau\!\left[\, m_{\eta}^{(s)}(w_i) - \widehat{m}(w_i) \,\right],
+     \]
+     where
+     \[
+       \tau[m] = m(1,x) - m(0,x)
+           + \widehat{\gamma}_{\eta}(d,x)\,
+             \left(y - m(d,x)\right).
+     \]
+
+   - **Corrected ATE draw:**
+     \[
+       \widetilde{\tau}_{\eta}^{(s)}
+         = \tau_{\eta}^{(s)} - \widehat{b}_{\eta}^{(s)}.
+     \]
+
+5. End for.
+
+</div>
+:::
 
 This algorithm produces posterior draws of the ATE.  
 The $(1-\alpha)\%$ credible interval is given by the empirical quantiles at levels $\alpha/2$ and $1-\alpha/2$.  
@@ -3271,7 +3439,7 @@ The population ATE from this simulation is approximately $0.138$. The posterior 
 
 The following code shows how to implement the DRB inferential framework in this setting.
 
-```{r, eval = FALSE}
+```{r}
 ######### Doubly Robust Bayesian: Simulation #########
 rm(list = ls()); set.seed(123); library(glmnet)
 ## simulate covariates
@@ -3412,7 +3580,7 @@ A natural point of departure is the use of Directed Acyclic Graphs (DAGs), which
 
 Given such sources of variation, one can use parametric, semiparametric, or nonparametric models to specify the conditional means of the potential outcomes given treatment assignment, thereby constructing counterfactual scenarios and enabling inference on causal estimands, such as the average treatment effect. Particular attention must be paid to the correct specification of the treatment assignment mechanism (propensity score) and the outcome regression, as both play a crucial role in credible causal inference.  
 
-This highlights the growing importance of modern machine learning methods for estimating high-dimensional or complex nuisance functions (see Chapter \@ref(Chap12) and Section \@ref(sec13_10)). At the same time, however, it is essential to address and correct for the biases that machine learning methods may introduce in order to obtain valid causal inference.  
+This highlights the growing importance of modern machine learning methods for estimating high-dimensional or complex nuisance functions (see Chapter \@ref(Chap12) and the last section). At the same time, however, it is essential to address and correct for the biases that machine learning methods may introduce in order to obtain valid causal inference.  
 
 Finally, the Bayesian framework provides a coherent way to integrate these identification strategies with prior information and to obtain full posterior distributions of causal estimands, based on both the marginal distributions of the potential outcomes and their joint distribution, thereby offering a unified approach to causal inference.
 

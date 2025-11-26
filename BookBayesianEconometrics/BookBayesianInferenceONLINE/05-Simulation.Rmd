@@ -51,20 +51,45 @@ A word of caution! Even if we have well-defined conditional posterior distributi
 
 Algorithm <a href="#algGibbs">1</a> demonstrates the implementation of a Gibbs sampler with $d$ blocks. The number of iterations ($S$) is chosen to ensure convergence to the stationary distribution. In Section \@ref(sec54), we review several convergence diagnostics to assess whether the posterior draws have reached convergence.
 
-```{=html}
-<figcaption><b>Algorithm: Gibbs sampling</b></figcaption>
-<figure id="alg:Gibbs">
-<pre>
-Set θ<sub>2</sub><sup>(0)</sup>, θ<sub>3</sub><sup>(0)</sup>, ..., θ<sub>d</sub><sup>(0)</sup>, 
-For s=1,2,...,S do
-  Draw θ<sub>1</sub><sup>(s)</sup> from π(θ<sub>1</sub><sup>(s)</sup>|θ<sub>2</sub><sup>(s-1)</sup>,...,θ<sub>d</sub><sup>(s-1)</sup>,<b>y</b>) 
-  Draw θ<sub>2</sub><sup>(s)</sup> from π(θ<sub>2</sub><sup>(s)</sup>|θ<sub>1</sub><sup>(s)</sup>,...,θ<sub>d</sub><sup>(s-1)</sup>,<b>y</b>)
-  ...
-  Draw θ<sub>d</sub><sup>(s)</sup> from π(θ<sub>d</sub><sup>(s)</sup>|θ<sub>1</sub><sup>(s)</sup>,...,θ<sub>d-1</sub><sup>(s)</sup>,<b>y</b>)
-End for
-</pre>
-</figure>
-```
+::: {.algorithm}
+<div style="background-color: #f8f9fa; padding: 15px; border-left: 5px solid #343a40; box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1); border-radius: 5px;">
+
+**Algorithm: Gibbs Sampling**
+
+1. Initialize  
+   \[
+     \theta_2^{(0)},\; \theta_3^{(0)},\; \dots,\; \theta_d^{(0)} .
+   \]
+
+2. For \( s = 1, 2, \ldots, S \):
+
+   - Draw  
+     \[
+       \theta_1^{(s)} \sim \pi\!\left(\theta_1 \mid 
+         \theta_2^{(s-1)}, \dots, \theta_d^{(s-1)}, \mathbf{y} \right)
+     \]
+
+   - Draw  
+     \[
+       \theta_2^{(s)} \sim \pi\!\left(\theta_2 \mid
+         \theta_1^{(s)}, \theta_3^{(s-1)}, \dots, \theta_d^{(s-1)}, \mathbf{y} \right)
+     \]
+
+   - Continue cycling through all coordinates:
+
+     \[
+     \theta_j^{(s)} 
+       \sim \pi\!\left(\theta_j \mid
+          \theta_1^{(s)}, \dots, \theta_{j-1}^{(s)}, 
+          \theta_{j+1}^{(s-1)}, \dots, \theta_d^{(s-1)}, \mathbf{y}
+       \right),
+     \qquad j = 3, \dots, d.
+     \]
+
+3. End for.
+
+</div>
+:::
 
 **Example: Mining disaster change point**
 
@@ -236,21 +261,53 @@ where $q(\boldsymbol{\theta}^{c} \mid  \boldsymbol{\theta}^{(s-1)})$ and $\pi(\b
 
 Algorithm <a href="#algMH">2</a> shows how to implement a Metropolis-Hastings algorithm. The number of iterations ($S$) is chosen to ensure convergence to the stationary distribution.
 
-```{=html}
-<figcaption><b>Algorithm: Metropolis-Hastings</b></figcaption>
-<figure id="alg:MH">
-<pre>
-Set θ<sup>(0)</sup> in the support of π(θ|<b>y</b>) 
-For s=1,2,...,S do
-  Draw θ<sup>c</sup> from q(θ<sup>c</sup>|θ<sup>(s-1)</sup>)
-  Calculate α(θ<sup>(s-1)</sup>,θ<sup>c</sup>)=min((q(θ<sup>(s-1)</sup>|θ<sup>c</sup>)π(θ<sup>c</sup>|<b>y</b>))/(q(θ<sup>c</sup>|θ<sup>(s-1)</sup>)π(θ<sup>(s-1)</sup>|<b>y</b>)),1)
-  Draw U from U(0,1)
-  θ<sup>(s)</sup>= θ<sup>c</sup> if U < α(θ<sup>(s-1)</sup>,θ<sup>c</sup>)
-  θ<sup>(s)</sup>= θ<sup>(s-1)</sup> otherwise
-End for
-</pre>
-</figure>
-```
+::: {.algorithm}
+<div style="background-color: #f8f9fa; padding: 15px; border-left: 5px solid #343a40; box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1); border-radius: 5px;">
+
+**Algorithm: Metropolis–Hastings**
+
+1. Initialize  
+   \[
+     \theta^{(0)} \in \text{supp}\!\left\{ \pi(\theta \mid \mathbf{y}) \right\}.
+   \]
+
+2. For \( s = 1, 2, \ldots, S \):
+
+   - Propose  
+     \[
+       \theta^{c} \sim q\!\left( \theta \mid \theta^{(s-1)} \right).
+     \]
+
+   - Compute the acceptance probability  
+     \[
+     \alpha\!\left(\theta^{(s-1)}, \theta^{c}\right)
+       = \min\!\left\{
+         1,\,
+         \frac{
+           q\!\left(\theta^{(s-1)} \mid \theta^{c}\right)\,
+           \pi\!\left(\theta^{c} \mid \mathbf{y}\right)
+         }{
+           q\!\left(\theta^{c} \mid \theta^{(s-1)}\right)\,
+           \pi\!\left(\theta^{(s-1)} \mid \mathbf{y}\right)
+         }
+       \right\}.
+     \]
+
+   - Draw \( U \sim \text{Uniform}(0,1) \).
+
+   - Accept or reject the proposal:  
+     \[
+     \theta^{(s)} =
+     \begin{cases}
+        \theta^{c}, & \text{if } U < \alpha\!\left(\theta^{(s-1)}, \theta^{c}\right), \\[6pt]
+        \theta^{(s-1)}, & \text{otherwise}.
+     \end{cases}
+     \]
+
+3. End for.
+
+</div>
+:::
 
 Some remarks: First, we do not need to know the marginal likelihood to implement the M-H algorithm, as it cancels out when calculating the acceptance probability. Specifically, given that $\pi(\boldsymbol{\theta} \mid \boldsymbol{y}) \propto \pi(\boldsymbol{\theta}) \times p(\boldsymbol{y} \mid \boldsymbol{\theta})$, we can use the right-hand side expression to compute the acceptance probability. Second, the Gibbs sampling algorithm is a particular case of the M-H algorithm where the acceptance probability is equal to 1 (@Gelman1992 and @robert2011monte, see Exercise 2). Third, we can combine the M-H and Gibbs sampling algorithms when dealing with relatively complex posterior distributions. Specifically, the Gibbs sampling algorithm can be used for blocks with conditional posterior distributions in standard closed forms, while the M-H algorithm is applied to sample from conditional posterior distributions that do not have standard forms. This approach is known as the M-H within Gibbs sampling algorithm. Fourth, we can note that the transition kernel in the M-H algorithm is a mixture of a continuous density ($q(\boldsymbol{\theta}^c \mid  \boldsymbol{\theta}^{(s-1)})$) and a probability mass function ($\alpha(\boldsymbol{\theta}^{(s-1)}, \boldsymbol{\theta}^c)$) [@chib1995understanding].
 
@@ -368,35 +425,87 @@ HMC uses a *momentum variable* ($\delta_k$) for each $\theta_k$, so that the tra
 Algorithm <a href="#algHMC">3</a> outlines the HMC implementation. The gradient vector $\frac{d \log(\pi(\boldsymbol{\theta} \mid \boldsymbol{y}))}{d \boldsymbol{\theta}}$ must be computed analytically, as using finite differences can be computationally expensive. However, it is advisable to verify the analytical calculations by evaluating the gradient at the maximum posterior estimate, where the function should return values close to 0, or by comparing results with finite differences at a few points.
 
 
-```{=html}
-<figcaption><b>Algorithm: Hamiltonian Monte Carlo</b></figcaption>
-<figure id="alg:HMC">
-  <pre>
-Set θ<sup>(0)</sup> in the support of π(θ|<b>y</b>), and set step size ε, number of leapfrog steps L, and total iterations S
-Draw δ<sup>(0)</sup> from N(0, M)
-For s=1,2,...,S do
-  For l=1,2,...,L do
-    if l=1 then
-      δ<sup>c</sup> ← δ<sup>(s-1)</sup> + 0.5 ε dlog(π(θ|<b>y</b>))/dθ
-      θ<sup>c</sup> ← θ<sup>(s-1)</sup> + ε M<sup>-1</sup> δ<sup>c</sup> 
-    else
-      if l=2,...,L-1 then
-        δ<sup>c</sup> ← δ<sup>c</sup> + ε dlog(π(θ|<b>y</b>))/dθ
-        θ<sup>c</sup> ← θ<sup>c</sup> + ε M<sup>-1</sup> δ<sup>c</sup>
-      else
-        δ<sup>c</sup> ← δ<sup>c</sup> + 0.5 ε dlog(π(θ|<b>y</b>))/dθ
-        θ<sup>c</sup> ← θ<sup>c</sup> + ε M<sup>-1</sup> δ<sup>c</sup>
-      End if
-    End if
-  End for
-  Calculate α([θ, δ]<sup>(s-1)</sup>,[θ, δ]<sup>c</sup>)=min((p(δ<sup>c</sup>)π(θ<sup>c</sup>|<b>y</b>))/(p(δ<sup>(s-1)</sup>)π(θ<sup>(s-1)</sup>|<b>y</b>)),1)
-  Draw U from U(0,1)
-  θ<sup>(s)</sup>= θ<sup>c</sup> if U < α([θ, δ]<sup>(s-1)</sup>,[θ, δ]<sup>c</sup>)
-  θ<sup>(s)</sup>= θ<sup>(s-1)</sup> otherwise
-End for
-  </pre>
-</figure>
-```
+::: {.algorithm}
+<div style="background-color: #f8f9fa; padding: 15px; border-left: 5px solid #343a40; box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1); border-radius: 5px;">
+
+**Algorithm: Hamiltonian Monte Carlo (HMC)**
+
+1. Initialize  
+   \[
+     \theta^{(0)} \in \text{supp}\{\pi(\theta \mid \mathbf{y})\},
+   \]
+   choose:
+   - step size \( \varepsilon \),
+   - number of leapfrog steps \( L \),
+   - total iterations \( S \),
+   and draw  
+   \[
+     \delta^{(0)} \sim N\!\left(0, M\right)
+   \]
+   where \( M \) is the mass matrix.
+
+2. For \( s = 1, 2, \ldots, S \):
+
+   - Set  
+     \[
+       \theta^{c} \leftarrow \theta^{(s-1)}, 
+       \qquad \delta^{c} \leftarrow \delta^{(s-1)}.
+     \]
+
+   - **Leapfrog integration:** For \( l = 1, \ldots, L \):
+
+     - If \( l = 1 \):
+       \[
+         \delta^{c} \leftarrow \delta^{c} + \tfrac{1}{2}\varepsilon \nabla_{\theta}\log \pi(\theta^{c}\mid \mathbf{y}),
+       \]
+       \[
+         \theta^{c} \leftarrow \theta^{c} + \varepsilon M^{-1} \delta^{c}.
+       \]
+
+     - Else if \( l = 2, \ldots, L-1 \):
+       \[
+         \delta^{c} \leftarrow \delta^{c} + \varepsilon \nabla_{\theta}\log \pi(\theta^{c}\mid \mathbf{y}),
+       \]
+       \[
+         \theta^{c} \leftarrow \theta^{c} + \varepsilon M^{-1} \delta^{c}.
+       \]
+
+     - Else  (\( l = L \)):
+       \[
+         \delta^{c} \leftarrow \delta^{c} + \tfrac{1}{2}\varepsilon \nabla_{\theta}\log \pi(\theta^{c}\mid \mathbf{y}),
+       \]
+       \[
+         \theta^{c} \leftarrow \theta^{c} + \varepsilon M^{-1} \delta^{c}.
+       \]
+
+   - **Acceptance probability:**
+     \[
+     \alpha\big([\theta,\delta]^{(s-1)},[\theta,\delta]^{c}\big)
+       = \min\!\left\{
+         1,\,
+         \frac{
+            p(\delta^{c})\,\pi(\theta^{c}\mid \mathbf{y})
+         }{
+            p(\delta^{(s-1)})\,\pi(\theta^{(s-1)}\mid \mathbf{y})
+         }
+       \right\}.
+     \]
+
+   - Draw \( U \sim \text{Uniform}(0,1) \).
+
+   - Accept or reject:
+     \[
+     \theta^{(s)} =
+     \begin{cases}
+        \theta^{c}, & \text{if } U < \alpha\big([\theta,\delta]^{(s-1)},[\theta,\delta]^{c}\big), \\[6pt]
+        \theta^{(s-1)}, & \text{otherwise}.
+     \end{cases}
+     \]
+
+3. End for.
+
+</div>
+:::
 
 Note that HMC does not require the marginal likelihood, as neither the gradient vector 
 $\frac{d \log(\pi(\boldsymbol{\theta} \mid \boldsymbol{y}))}{d \boldsymbol{\theta}}$ nor the acceptance rate depend on it. That is, we can use only $\pi(\boldsymbol{\theta}) \times p(\boldsymbol{y} \mid \boldsymbol{\theta})$ to implement HMC. In addition, we do not retain $\boldsymbol{\delta}$ after it is updated at the beginning of each iteration, as it is not required subsequently. To begin, the step size ($\epsilon$) can be drawn randomly from a uniform distribution between 0 and $2\epsilon_0$, and the number of leapfrog steps ($L$) is set as the largest integer near $1/\epsilon$, ensuring $\epsilon \times L \approx 1$. We need to set $\boldsymbol{M}$ to be the inverse of the posterior covariance matrix evaluated at the maximum a posteriori estimate under this setting.
@@ -871,25 +980,66 @@ which means that the *incremental importance weight* is given by $p(\boldsymbol{
 
 Algorithm <a href="#algSIS">4</a> shows how to perform SIS [@cappe2007overview]. We set $w_t^{(s)}:=w_t(\boldsymbol{\theta}_{0:t}^{(s)})$ to simplify notation.
 
-```{=html}
-<figcaption><b>Algorithm: Sequential importance sampling</b></figcaption>
-<figure id="alg:SIS">
-  <pre>
-For s=1,2,...,S do
-  Sample θ<sub>0</sub><sup>(s)</sup> from q(θ<sub>0</sub>|<b>y<sub>0</sub></b>)
-  Calculate the importance weights w<sub>0</sub><sup>(s)</sup> ∝(p(<b>y<sub>0</sub></b>|θ<sub>0</sub><sup>(s)</sup>)π(θ<sub>0</sub><sup>(s)</sup>))/q(θ<sub>0</sub><sup>(s)</sup>|<b>y<sub>0</sub></b>)
-End for
-for t=1,2,...,T do
-  for s=1,2,...,S do
-    Draw particles θ<sub>t</sub><sup>(s)</sup> from q<sub>t</sub>(θ<sub>t</sub>|θ<sub>t-1</sub>,<b>y<sub>0</sub></b>)
-    Compute the weights 
-    w<sub>t</sub><sup>(s)</sup> ∝ w<sub>t-1</sub><sup>*(s)</sup> (p(<b>y<sub>t</sub></b>|θ<sub>t</sub><sup>(s)</sup>)π(θ<sub>t</sub><sup>(s)</sup>|θ<sub>t-1</sub><sup>(s)</sup>))/q(θ<sub>t</sub><sup>(s)</sup>|θ<sub>t-1</sub><sup>(s)</sup>,<b>y<sub>t</sub></b>) 
-  End for
-  Standardize the weights w<sub>t</sub><sup>*(s)</sup> = w<sub>t</sub><sup>(s)</sup>/(∑<sub>h</sub>w<sub>t</sub><sup>(h)</sup>), s=1,2,...,S
-End for
-  </pre>
-</figure>
-```
+::: {.algorithm}
+<div style="background-color: #f8f9fa; padding: 15px; border-left: 5px solid #343a40; box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1); border-radius: 5px;">
+
+**Algorithm: Sequential Importance Sampling (SIS)**
+
+1. **Initialization:** For \( s = 1, \dots, S \):
+
+   - Sample the initial particles  
+     \[
+       \theta_{0}^{(s)} \sim q\!\left(\theta_{0} \mid \mathbf{y}_{0}\right).
+     \]
+
+   - Compute the initial importance weights  
+     \[
+       w_{0}^{(s)} \propto 
+       \frac{
+         p\!\left(\mathbf{y}_{0} \mid \theta_{0}^{(s)}\right)\,
+         \pi\!\left(\theta_{0}^{(s)}\right)
+       }{
+         q\!\left(\theta_{0}^{(s)} \mid \mathbf{y}_{0}\right)
+       }.
+     \]
+
+2. **Sequential update:** For \( t = 1, \dots, T \):
+
+   - For each particle \( s = 1, \dots, S \):
+
+     - Propagate the particles  
+       \[
+         \theta_{t}^{(s)} \sim q_{t}\!\left(
+           \theta_{t} \mid \theta_{t-1}^{(s)},\, \mathbf{y}_{t}
+         \right).
+       \]
+
+     - Compute the incremental weights  
+       \[
+       w_{t}^{(s)} \propto w_{t-1}^{*(s)}
+       \frac{
+         p\!\left(\mathbf{y}_{t} \mid \theta_{t}^{(s)}\right)
+         \,\pi\!\left(\theta_{t}^{(s)} \mid \theta_{t-1}^{(s)}\right)
+       }{
+         q\!\left(
+           \theta_{t}^{(s)} \mid \theta_{t-1}^{(s)},\, \mathbf{y}_{t}
+         \right)
+       } .
+       \]
+
+   - **Normalize the weights:**
+     \[
+       w_{t}^{*(s)} = 
+       \frac{
+         w_{t}^{(s)}
+       }{
+         \sum_{h=1}^{S} w_{t}^{(h)}
+       },
+       \qquad s = 1, \dots, S.
+     \]
+
+</div>
+:::
 
 **Example: Dynamic linear model**
 
@@ -1003,29 +1153,98 @@ Given that, in practice, we are often interested in lower-dimensional marginal d
 
 Algorithm <a href="#algPF">5</a> shows how to perform the *particle filter*. We set $w_t^{(s)} := w_t(\boldsymbol{\theta}_{0:t}^{(s)})$ to simplify notation [@doucet2009tutorial].
 
-```{=html}
-<figcaption><b>Algorithm: Particle filter</b></figcaption>
-<figure id="alg:PF">
-  <pre>
-For s=1,2,...,S do
-  Sample θ<sub>0</sub><sup>(s)</sup> from q(θ<sub>0</sub>|<b>y<sub>0</sub></b>)
-  Calculate the importance weights w<sub>0</sub><sup>(s)</sup> ∝(p(<b>y<sub>0</sub></b>|θ<sub>0</sub><sup>(s)</sup>)π(θ<sub>0</sub><sup>(s)</sup>))/q(θ<sub>0</sub><sup>(s)</sup>|<b>y<sub>0</sub></b>)
-End for
-Standardize the weights w<sub>0</sub><sup>*(s)</sup> = w<sub>0</sub><sup>(s)</sup>/(∑<sub>h</sub>w<sub>0</sub><sup>(h)</sup>), s=1,2,...,S
-Select S particle from {θ<sub>0</sub><sup>(s)</sup>,w<sub>0</sub><sup>*(s)</sup>} to obtain {θ<sub>0</sub><sup>r(s)</sup>,1/S}
-for t=1,2,...,T do
-  for s=1,2,...,S do
-    Draw particles θ<sub>t</sub><sup>(s)</sup> from q<sub>t</sub>(θ<sub>t</sub>|θ<sub>t-1</sub>,<b>y<sub>0</sub></b>)
-    Set θ<sub>1:t</sub><sup>(s)</sup> ← (θ<sub>1:t-1</sub><sup>r(s)</sup>, θ<sub>t</sub><sup>(s)</sup>) 
-    Compute the weights 
-    α<sub>t</sub><sup>(s)</sup> = (p(<b>y<sub>t</sub></b>|θ<sub>t</sub><sup>(s)</sup>)π(θ<sub>t</sub><sup>(s)</sup>|θ<sub>t-1</sub><sup>(s)</sup>))/q(θ<sub>t</sub><sup>(s)</sup>|θ<sub>t-1</sub><sup>(s)</sup>,<b>y<sub>t</sub></b>) 
-  End for
-  Standardize the weights w<sub>t</sub><sup>*(s)</sup> = w<sub>t</sub><sup>(s)</sup>/(∑<sub>h</sub>w<sub>t</sub><sup>(h)</sup>), s=1,2,...,S
-  Select S particle from {θ<sub>1:t</sub><sup>(s)</sup>,w<sub>t</sub><sup>*(s)</sup>} to obtain {θ<sub>1:t</sub><sup>r(s)</sup>,1/S} 
-End for
-  </pre>
-</figure>
-```
+::: {.algorithm}
+<div style="background-color: #f8f9fa; padding: 15px; border-left: 5px solid #343a40; box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1); border-radius: 5px;">
+
+**Algorithm: Particle Filter (Bootstrap Filter)**
+
+1. **Initialization:** For \( s = 1, \dots, S \):
+
+   - Sample the initial particles  
+     \[
+       \theta_{0}^{(s)} \sim q\!\left(\theta_{0} \mid \mathbf{y}_{0}\right).
+     \]
+
+   - Compute the initial importance weights  
+     \[
+       w_{0}^{(s)} \propto
+       \frac{
+         p\!\left(\mathbf{y}_{0} \mid \theta_{0}^{(s)}\right)\,
+         \pi\!\left(\theta_{0}^{(s)}\right)
+       }{
+         q\!\left(\theta_{0}^{(s)} \mid \mathbf{y}_{0}\right)
+       }.
+     \]
+
+2. **Normalize the initial weights:**
+   \[
+     w_{0}^{*(s)} = 
+     \frac{w_{0}^{(s)}}{\sum_{h=1}^{S} w_{0}^{(h)}},
+     \qquad s = 1,\dots,S.
+   \]
+
+3. **Resample initial particles:**  
+   Draw \( S \) particles from  
+   \[
+     \left\{\theta_{0}^{(s)},\, w_{0}^{*(s)}\right\}
+   \]
+   to obtain equally-weighted particles  
+   \[
+     \left\{\theta_{0}^{r(s)},\, \tfrac{1}{S}\right\}.
+   \]
+
+4. **For each time \( t = 1, \dots, T \):**
+
+   - **Propagation:** For \( s = 1, \dots, S \):
+
+     - Draw  
+       \[
+         \theta_{t}^{(s)} \sim 
+         q_{t}\!\left( \theta_{t} \mid \theta_{t-1}^{r(s)},\, \mathbf{y}_{t} \right).
+       \]
+
+     - Concatenate particle history  
+       \[
+         \theta_{1:t}^{(s)} \leftarrow 
+         \left(\theta_{1:t-1}^{r(s)},\, \theta_{t}^{(s)}\right).
+       \]
+
+     - Compute the incremental weights  
+       \[
+       \alpha_{t}^{(s)} = 
+       \frac{
+         p\!\left(\mathbf{y}_{t} \mid \theta_{t}^{(s)}\right)\,
+         \pi\!\left(\theta_{t}^{(s)} \mid \theta_{t-1}^{r(s)}\right)
+       }{
+         q\!\left(
+           \theta_{t}^{(s)} \mid \theta_{t-1}^{r(s)},\, \mathbf{y}_{t}
+         \right)
+       }.
+       \]
+
+   - **Normalize the weights:**
+     \[
+       w_{t}^{*(s)} =
+       \frac{
+         \alpha_{t}^{(s)}
+       }{
+         \sum_{h=1}^{S} \alpha_{t}^{(h)}
+       },
+       \qquad s = 1,\dots,S.
+     \]
+
+   - **Resample particles:**  
+     Draw \( S \) particles from  
+     \[
+       \left\{\theta_{1:t}^{(s)},\, w_{t}^{*(s)}\right\}
+     \]
+     to obtain  
+     \[
+       \left\{\theta_{1:t}^{r(s)},\, \tfrac{1}{S}\right\}.
+     \]
+
+</div>
+:::
 
 **Example: Dynamic linear model continues**
 

@@ -32,7 +32,7 @@ The simplest algorithm is the accept/reject approximate Bayesian computation (AB
 	\begin{algorithmic}[1]
 		\For{\texttt{$s=1,\dots,S$}}
 		\State Draw ${\boldsymbol {\theta} }^{s}$ from $\pi({ \boldsymbol{\theta} }),$
-		\State Simulate ${\boldsymbol z}^{s}=(z_{1}^{s},z_{2}^{s},...,z_{n}^{s})^{\top}$ from the model, $p(\cdot|{\boldsymbol{\theta} }^{s})$
+		\State Simulate ${\boldsymbol z}^{s}=(z_{1}^{s},z_{2}^{s},...,z_{N}^{s})^{\top}$ from the model, $p(\cdot|{\boldsymbol{\theta} }^{s})$
 		\State Calculate
 		$d_{(s)}=d\{{\boldsymbol\eta }({\boldsymbol y}),{\boldsymbol \eta }({\boldsymbol z}^{s})\}$
 		\EndFor
@@ -41,7 +41,7 @@ The simplest algorithm is the accept/reject approximate Bayesian computation (AB
 	\end{algorithmic}
 \end{algorithm}
 
-Note that the posterior distribution is conditional on the summary statistics \( \boldsymbol{\eta}(\boldsymbol{y}) \) and the tolerance parameter \( \epsilon \). This implies that we obtain an approximation to the target distribution \( \pi(\boldsymbol{\theta} \mid \boldsymbol{y}) \), that is \( \pi(\boldsymbol{\theta} \mid \boldsymbol{\eta}(\boldsymbol{y})) \), because \( \boldsymbol{\eta}(\boldsymbol{y}) \) is not a sufficient statistic in most cases, and \( \epsilon > 0 \), these conditions introduce bias \cite{blum2010approximate}. However, ABC performs well compared to full-likelihood approaches in low-dimensional parameter spaces \cite{beaumont2002approximate}.
+Note that the posterior distribution is conditional on the summary statistics \( \boldsymbol{\eta}(\boldsymbol{y}) \) and the tolerance parameter \( \epsilon \). This implies that we obtain an approximation to the target distribution \( \pi(\boldsymbol{\theta} \mid \boldsymbol{y}) \), that is \( \pi_{\epsilon}(\boldsymbol{\theta} \mid \boldsymbol{\eta}(\boldsymbol{y})) \), because \( \boldsymbol{\eta}(\boldsymbol{y}) \) is not a sufficient statistic in most cases, and \( \epsilon > 0 \), these conditions introduce bias \cite{blum2010approximate}. However, ABC performs well compared to full-likelihood approaches in low-dimensional parameter spaces \cite{beaumont2002approximate}.
 
 Furthermore, \cite{frazier2018asymptotic} show in Theorems 1 and 2 that Bayesian consistency and asymptotic normality hold, provided that \( \epsilon \to 0 \) fast enough as \( N \to +\infty \). In particular, the requirement is that the proportion of accepted draws converges to 0 at a rate faster than \( N^{-K / 2} \). Additionally, Theorem 2 in \cite{frazier2018asymptotic} shows that \( 100(1 -\alpha)\% \) Bayesian credible regions using ABC have frequentist coverage of \( 100(1 -\alpha)\% \). 
 
@@ -67,7 +67,7 @@ The g-and-k distribution is defined by its quantile function \cite{drovandi2011l
 Q(p\mid{\theta}) = F^{-1}(p\mid{\theta}),
 \]
 
-where \( F = P(U \leq u) \), and \( Q \) represents the \( p \)-quantile \cite{rayner2002numerical}. The quantile function of the g-and-k distribution is given by
+where \( F = P(U \leq u) \), and \( Q (p\mid{\theta}) \) represents the \( p \)-quantile \cite{rayner2002numerical}. The quantile function of the g-and-k distribution is given by
 
 \[
 Q^{gk}\left\{z(p)\mid a, b, c, g, k\right\} = a + b\left[1 + c \frac{1 - \exp\left\{-gz(p)\right\}}{1 + \exp\left\{-gz(p)\right\}}\right] \left\{1 + z(p)^2\right\}^k z(p),
@@ -75,7 +75,7 @@ Q^{gk}\left\{z(p)\mid a, b, c, g, k\right\} = a + b\left[1 + c \frac{1 - \exp\le
 
 where \( z(p) \) is the standard normal quantile function, and \( c = 0.8 \) is a commonly suggested value.
 
-In the g-and-k distribution, \( a \) is the location parameter, and \( b \) is the scale parameter, controlling the dispersion. The parameters \( g \) and \( k \) determine the levels of skewness and kurtosis, respectively, while \( c \) modifies the impact of skewness, and is typically set to 0.8.
+In the g-and-k distribution, \( a \) is the location parameter, and \( b \) is the scale parameter, controlling the dispersion. The parameters \( g \) and \( k \) determine the levels of skewness and kurtosis, respectively, while \( c \) modifies the impact of skewness.
 
 \cite{drovandi2011likelihood} propose a moving average of order one using a g-and-k distribution to model exchange rate log returns. In particular,  
 \[
@@ -139,15 +139,6 @@ ABC_AR <- ABC_rejection(model=RGKnewSum, prior=toy_prior, summary_stat_target = 
 progress_bar = TRUE)
 tock <- Sys.time()
 tock - tick
-PostABCAR <- coda::mcmc(ABC_AR$param)
-summary(PostABCAR)
-tick <- Sys.time()
-ABC_MCMC <- ABC_mcmc(method="Marjoram", model=RGKnewSum, prior=toy_prior, summary_stat_target=sum_stat_obs, n_rec = 100000, progress_bar = TRUE)
-tock <- Sys.time()
-tock - tick
-PostABCMCMC <- coda::mcmc(ABC_MCMC[["param"]][order(ABC_MCMC[["dist"]])[1:1000],])
-summary(PostABCMCMC)
-tick <- Sys.time()
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
@@ -157,6 +148,15 @@ tick <- Sys.time()
 	\textit{R code. Exchange rate log returns: Approximate Bayesian computation}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
+PostABCAR <- coda::mcmc(ABC_AR$param)
+summary(PostABCAR)
+tick <- Sys.time()
+ABC_MCMC <- ABC_mcmc(method="Marjoram", model=RGKnewSum, prior=toy_prior, summary_stat_target=sum_stat_obs, n_rec = 100000, progress_bar = TRUE)
+tock <- Sys.time()
+tock - tick
+PostABCMCMC <- coda::mcmc(ABC_MCMC[["param"]][order(ABC_MCMC[["dist"]])[1:1000],])
+summary(PostABCMCMC)
+tick <- Sys.time()
 ABC_SMC<-ABC_sequential(method="Lenormand", model=RGKnewSum, prior=toy_prior, summary_stat_target=sum_stat_obs, nb_simul = 30000, alpha = 0.034, p_acc_min = 0.05,
 progress_bar = TRUE)
 summary(PostABCSMC)
@@ -166,27 +166,33 @@ PostABCSMC <- coda::mcmc(ABC_SMC[["param"]])
 # Figures 
 library(ggplot2); library(latex2exp)
 Sp <- 1000
-
 df1 <- data.frame(Value = c(PostABCAR[1:Sp,1], PostABCMCMC[1:Sp,1], PostABCSMC[1:Sp,1]),
 Distribution = factor(c(rep("AR", Sp), rep("MCMC", Sp), rep("SMC", Sp))))
 dentheta <- ggplot(df1, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) + labs(title = TeX("Posterior density plot: $theta$"), x = TeX("$theta$"), y = "Posterior density") + scale_color_manual(values = c("blue", "red", "green")) +  theme_minimal() + theme(legend.title = element_blank())
-
 df2 <- data.frame(Value = c(PostABCAR[1:Sp,4], PostABCMCMC[1:Sp,4], PostABCSMC[1:Sp,4]),
 Distribution = factor(c(rep("AR", Sp), rep("MCMC", Sp), rep("SMC", Sp))))
 deng <- ggplot(df2, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) + labs(title = "Posterior density plot: g", x = "g", y = "Posterior density") +
 scale_color_manual(values = c("blue", "red", "green")) +  theme_minimal() + theme(legend.title = element_blank())
-
 df3 <- data.frame(Value = c(PostABCAR[1:Sp,5], PostABCMCMC[1:Sp,5], PostABCSMC[1:Sp,5]),
 Distribution = factor(c(rep("AR", Sp), rep("MCMC", Sp), rep("SMC", Sp))))
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Exchange rate log returns: Approximate Bayesian computation}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 denk <- ggplot(df3, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) + labs(title = "Posterior density plot: k", x = "k", y = "Posterior density") +
 scale_color_manual(values = c("blue", "red", "green")) +  theme_minimal() + theme(legend.title = element_blank())
-
 library(ggpubr)
 ggarrange(dentheta, deng, denk, labels = c("A", "B", "C"), ncol = 3, nrow = 1,
 legend = "bottom", common.legend = TRUE)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
+
 
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter15/figures/ABCexcrate.png}
@@ -195,7 +201,7 @@ legend = "bottom", common.legend = TRUE)
 
 \subsection{Bayesian synthetic likelihood}\label{sec15_13}
 
-Note that in ABC, in most cases, we target the posterior distribution $\pi(\boldsymbol{\theta} \mid \boldsymbol{\eta}(\boldsymbol{y}))$ rather than $\pi(\boldsymbol{\theta} \mid \boldsymbol{y})$, as $\boldsymbol{\eta}(\boldsymbol{y})$ is not a sufficient statistic, $\boldsymbol{y}\in \mathbb{R}^N$, $\boldsymbol{\theta}\in \mathbb{R}^K, \ \boldsymbol{\eta}(\boldsymbol{y})\in \mathbb{R}^L, \ L\geq K$. This can be beneficial since discarding information may improve the behavior of the likelihood or make the inference more robust to model misspecification \cite{price2018bayesian}. Given the intractability of $p(\boldsymbol{y} \mid \boldsymbol{\theta})$, it is highly likely that $p(\boldsymbol{\eta}(\boldsymbol{y}) \mid \boldsymbol{\theta})$ is also intractable. \cite{wood2010statistical} addressed this issue by introducing an auxiliary model for the summary statistics, assuming $p_a(\boldsymbol{\eta}(\boldsymbol{y})\mid \boldsymbol{\theta}) = N(\boldsymbol{\mu}_{\boldsymbol{\theta}}, \boldsymbol{\Sigma}_{\boldsymbol{\theta}})$.
+Note that in ABC, in most cases, we target the posterior distribution $\pi_{\epsilon}(\boldsymbol{\theta} \mid \boldsymbol{\eta}(\boldsymbol{y})))$ rather than $\pi(\boldsymbol{\theta} \mid \boldsymbol{y})$, as $\boldsymbol{\eta}(\boldsymbol{y})$ is not a sufficient statistic, $\boldsymbol{y}\in \mathbb{R}^N$, $\boldsymbol{\theta}\in \mathbb{R}^K, \ \boldsymbol{\eta}(\boldsymbol{y})\in \mathbb{R}^L, \ L\geq K$. This can be beneficial since discarding information may improve the behavior of the likelihood or make the inference more robust to model misspecification \cite{price2018bayesian}. Given the intractability of $p(\boldsymbol{y} \mid \boldsymbol{\theta})$, it is highly likely that $p(\boldsymbol{\eta}(\boldsymbol{y}) \mid \boldsymbol{\theta})$ is also intractable. \cite{wood2010statistical} addressed this issue by introducing an auxiliary model for the summary statistics, assuming $p_a(\boldsymbol{\eta}(\boldsymbol{y})\mid \boldsymbol{\theta}) = N(\boldsymbol{\mu}_{\boldsymbol{\theta}}, \boldsymbol{\Sigma}_{\boldsymbol{\theta}})$.
 
 Bayesian synthetic likelihood (BSL) arises when this auxiliary likelihood is combined with a prior distribution on the parameter \cite{drovandi2015bayesian,price2018bayesian},
 \begin{align*} 
@@ -212,7 +218,7 @@ Then, we have
 \begin{align*} 
 	\pi_{a,M}(\boldsymbol{\theta} \mid \boldsymbol{\eta}(\boldsymbol{y})) &\propto p_{a,M}(\boldsymbol{\eta}(\boldsymbol{y})\mid \boldsymbol{\theta}) \pi(\boldsymbol{\theta}), 
 \end{align*}
-where $p_{a,M}(\boldsymbol{\eta}(\boldsymbol{y}))$ uses the estimates, which in turn depends on the number of draws $M$ to calculate $\widehat{\boldsymbol{\mu}}_{\boldsymbol{\theta}}$ and $\widehat{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}}$. Note that although we can have unbiased estimators of these object, in general, $N(\boldsymbol{\eta}(\boldsymbol{y})\mid \widehat{\boldsymbol{\mu}}_{\boldsymbol{\theta}},\widehat{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}})$ is not an unbiased estimator of $N(\boldsymbol{\eta}(\boldsymbol{y})\mid {\boldsymbol{\mu}}_{\boldsymbol{\theta}},{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}})$. \cite{an2022bsl} show an unbiased estimator for BSL. 
+where $p_{a,M}(\boldsymbol{\eta}(\boldsymbol{y}))$ uses the estimates, which in turn depends on the number of draws $M$ to calculate $\widehat{\boldsymbol{\mu}}_{\boldsymbol{\theta}}$ and $\widehat{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}}$. Note that although we can have unbiased estimators for the mean and covariance, in general, $N(\boldsymbol{\eta}(\boldsymbol{y})\mid \widehat{\boldsymbol{\mu}}_{\boldsymbol{\theta}},\widehat{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}})$ is not an unbiased estimator of $N(\boldsymbol{\eta}(\boldsymbol{y})\mid {\boldsymbol{\mu}}_{\boldsymbol{\theta}},{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}})$. \cite{an2022bsl} show an unbiased estimator for BSL. 
 
 \cite{nott2023bayesian} show that \( \pi_{a,M}(\boldsymbol{\theta}) \) converges asymptotically to a Gaussian distribution and that the \( 100(1-\alpha)\% \) Bayesian credible regions using BSL have frequentist coverage of \( 100(1-\alpha)\% \). In addition, the posterior mean from BSL is also asymptotically Gaussian. These results require convenient estimation of the covariance matrix and that \( M \to \infty \) as \( N \to \infty \), $M=C\lfloor N^{\gamma} \rfloor, \ C>0, \ \gamma > 0$ and $\lfloor x \rfloor$ denoting the integer floor of $x$. Thus, the choice of \( M \) does not drastically affect the desirable asymptotic properties of BSL \cite{nott2023bayesian}. In addition, \cite{price2018bayesian} find in their examples that posterior inference depends only weakly on \( M \). Thus, \( M \) can be chosen to balance computational efficiency such that the standard deviation of the log synthetic likelihood is between 1 and 3 \cite{an2019accelerating}. 
 
@@ -228,18 +234,18 @@ We can perform BSL using the Algorithm \ref{BSL0}. We can use a random walk Metr
 		\For{\texttt{$s=1,\dots,S$}}
 			\State Draw $\boldsymbol{\theta}^c\sim q(\boldsymbol{\theta}\mid \boldsymbol{\theta}^{s-1})$
 			\For{\texttt{$m=1,\dots,M$}}
-				\State Simulate ${\boldsymbol z}^{m}=(z_{1}^{m},z_{2}^{m},...,z_{n}^{m})^{\top}$ from the model, $p(\cdot\mid{\boldsymbol{\theta} }^c)$
+				\State Simulate ${\boldsymbol z}^{m}=(z_{1}^{m},z_{2}^{m},...,z_{N}^{m})^{\top}$ from the model, $p(\cdot\mid{\boldsymbol{\theta} }^c)$
 				\State Calculate $\boldsymbol{\eta}(\boldsymbol{z}^{(m)})$
 			\EndFor 			 
-			\State Calculate $\boldsymbol{\mu}_{\boldsymbol{\theta}^c}$ and $\boldsymbol{\Sigma}_{\boldsymbol{\theta}^c}$
-			\State Compute $p_a^c(\boldsymbol{\eta}(\boldsymbol{y})\mid \boldsymbol{\theta}^c) = N(\boldsymbol{\mu}_{\boldsymbol{\theta}^c}, \boldsymbol{\Sigma}_{\boldsymbol{\theta}^c})$ and $p_a^{s-1}(\boldsymbol{\eta}(\boldsymbol{y})\mid \boldsymbol{\theta}^{s-1}) = N(\boldsymbol{\mu}_{\boldsymbol{\theta}^{s-1}}, \boldsymbol{\Sigma}_{\boldsymbol{\theta}^{s-1}})$
+			\State Calculate $\hat{\boldsymbol{\mu}}_{\boldsymbol{\theta}^c}$ and $\hat{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}^c}$
+			\State Compute $p_a^c(\boldsymbol{\eta}(\boldsymbol{y})\mid \boldsymbol{\theta}^c) = N(\hat{\boldsymbol{\mu}}_{\boldsymbol{\theta}^c}, \hat{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}^c})$ and $p_a^{s-1}(\boldsymbol{\eta}(\boldsymbol{y})\mid \boldsymbol{\theta}^{s-1}) = N(\hat{\boldsymbol{\mu}}_{\boldsymbol{\theta}^{s-1}}, \hat{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}^{s-1}})$
 			\State Compute the acceptance probability
 			$$\alpha(\boldsymbol{\theta}^{s-1},\boldsymbol{\theta}^c)=\min\left\{1,\frac{p_a^c(\boldsymbol{\eta}(\boldsymbol{y})\mid \boldsymbol{\theta}^c)\pi(\boldsymbol{\theta}^c)q(\boldsymbol{\theta}^{s-1}\mid \boldsymbol{\theta}^{c})}{p_a^{s-1}(\boldsymbol{\eta}(\boldsymbol{y})\mid \boldsymbol{\theta}^{s-1})\pi(\boldsymbol{\theta}^{s-1})q(\boldsymbol{\theta}^{c}\mid \boldsymbol{\theta}^{s-1})}\right\}$$
 			\State Draw $u$ from $U(0,1)$
 			\If{$u<\alpha$}
-				\State Set $\boldsymbol{\theta}^{s}=\boldsymbol{\theta}^{c}$, $\boldsymbol{\mu}_{\boldsymbol{\theta}^{s}}=\boldsymbol{\mu}_{\boldsymbol{\theta}^c}$ and $\boldsymbol{\Sigma}_{\boldsymbol{\theta}^s}=\boldsymbol{\Sigma}_{\boldsymbol{\theta}^c}$
+				\State Set $\boldsymbol{\theta}^{s}=\boldsymbol{\theta}^{c}$, $\hat{\boldsymbol{\mu}}_{\boldsymbol{\theta}^{s}}=\hat{\boldsymbol{\mu}}_{\boldsymbol{\theta}^c}$ and $\hat{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}^s}=\hat{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}^c}$
 			\Else
-				\State Set $\boldsymbol{\theta}^{s}=\boldsymbol{\theta}^{s-1}$, $\boldsymbol{\mu}_{\boldsymbol{\theta}^{s}}=\boldsymbol{\mu}_{\boldsymbol{\theta}^{s-1}}$ and $\boldsymbol{\Sigma}_{\boldsymbol{\theta}^s}=\boldsymbol{\Sigma}_{\boldsymbol{\theta}^{s-1}}$
+				\State Set $\boldsymbol{\theta}^{s}=\boldsymbol{\theta}^{s-1}$, $\hat{\boldsymbol{\mu}}_{\boldsymbol{\theta}^{s}}=\hat{\boldsymbol{\mu}}_{\boldsymbol{\theta}^{s-1}}$ and $\hat{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}^s}=\hat{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}^{s-1}}$
 			\EndIf  
 		\EndFor
 	\end{algorithmic}
@@ -269,8 +275,17 @@ rm(list = ls()); set.seed(010101); library(BSL)
 # Simulate g-and-k data
 RGKnew <- function(par) {
 	z <- NULL
-	theta <- par[1]; a <- par[2]; b <- par[3]; g <- par[4]; k <- par[5]
-	e <- rnorm(n + 1)
+	theta <- par[1]; a <- par[2]; b <- par[3]; g <- par[4]
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. g-and-k simulation: Bayesian synthetic likelihood}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+	k <- par[5]; e <- rnorm(n + 1)
 	for(t in 2:(n + 1)){
 		zt <- e[t] + theta * e[t-1]
 		z <- c(z, zt)
@@ -317,6 +332,7 @@ par(mfrow = c(4, 3))
 	\end{VF}
 \end{tcolorbox}
 
+
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 	\textit{R code. g-and-k simulation: Bayesian synthetic likelihood}
@@ -359,6 +375,15 @@ for (s in 2:S){
 		}
 		if(dnormc == -Inf){
 			parPost[s,] <- parPost[s-1,]; accept[s] <- 0
+		\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. g-and-k simulation: Bayesian synthetic likelihood}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 		}else{
 			alpha <- min(1, exp(dnormc - dnormsl)); U <- runif(1)
 			if(U <= alpha){
@@ -371,15 +396,6 @@ for (s in 2:S){
 	}
 	setTxtProgressBar(pb, s)
 }
-\end{lstlisting}
-	\end{VF}
-\end{tcolorbox}
-
-\begin{tcolorbox}[enhanced,width=4.67in,center upper,
-	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. g-and-k simulation: Bayesian synthetic likelihood}
-	\begin{VF}
-		\begin{lstlisting}[language=R]
 close(pb); tock1 <- Sys.time(); tock1 - tick1
 mean(accept)
 PostChainOwn <- coda::mcmc(parPost[keep,])
@@ -398,20 +414,27 @@ sd(Resultsgk@loglike[keep])
 library(ggplot2); library(latex2exp)
 Sp <- length(keep)
 df1 <- data.frame(Value = c(PostChain[,1], PostChainOwn[,1]), Distribution = factor(c(rep("BSL", Sp), rep("BSLscratch", Sp))))
-dentheta <- ggplot(df1, aes(x = Value, color = Distribution)) + geom_density(linewidth = 1) + labs(title = TeX("Posterior density plot: $theta$"), x = TeX("$theta$"), y = "Posterior density") + geom_vline(xintercept = theta1, linetype = "dashed", color = "red", linewidth = 1) + scale_color_manual(values = c("blue", "red")) +  theme_minimal() +
-theme(legend.title = element_blank())
+dentheta <- ggplot(df1, aes(x = Value, color = Distribution)) + geom_density(linewidth = 1) + labs(title = TeX("Posterior density plot: $theta$"), x = TeX("$theta$"), y = "Posterior density") + geom_vline(xintercept = theta1, linetype = "dashed", color = "red", linewidth = 1) + scale_color_manual(values = c("blue", "red")) +  theme_minimal() + theme(legend.title = element_blank())
 df2 <- data.frame(Value = c(PostChain[,4], PostChainOwn[,4]), Distribution = factor(c(rep("BSL", Sp), rep("BSLscratch", Sp))))
-deng <- ggplot(df2, aes(x = Value, color = Distribution)) + geom_density(linewidth = 1) + labs(title = "Posterior density plot: g", x = "g", y = "Posterior density") +
-geom_vline(xintercept = g, linetype = "dashed", color = "red", linewidth = 1) +
-scale_color_manual(values = c("blue", "red")) + theme_minimal() + theme(legend.title = element_blank())
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. g-and-k simulation: Bayesian synthetic likelihood}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+deng <- ggplot(df2, aes(x = Value, color = Distribution)) + geom_density(linewidth = 1) + labs(title = "Posterior density plot: g", x = "g", y = "Posterior density") + geom_vline(xintercept = g, linetype = "dashed", color = "red", linewidth = 1) + scale_color_manual(values = c("blue", "red")) + theme_minimal() + theme(legend.title = element_blank())
 df3 <- data.frame(Value = c(PostChain[,5], PostChainOwn[,5]), Distribution = factor(c(rep("BSL", Sp), rep("BSLscratch", Sp))))
-denk <- ggplot(df3, aes(x = Value, color = Distribution)) +   geom_density(linewidth = 1) + labs(title = "Posterior density plot: k", x = "k", y = "Posterior density") + geom_vline(xintercept = k, linetype = "dashed", color = "red", linewidth = 1) + scale_color_manual(values = c("blue", "red")) +  theme_minimal() + theme(legend.title = element_blank())
+denk <- ggplot(df3, aes(x = Value, color = Distribution)) + geom_density(linewidth = 1) + labs(title = "Posterior density plot: k", x = "k", y = "Posterior density") + geom_vline(xintercept = k, linetype = "dashed", color = "red", linewidth = 1) + scale_color_manual(values = c("blue", "red")) +  theme_minimal() + theme(legend.title = element_blank())
 library(ggpubr)
 ggarrange(dentheta, deng, denk, labels = c("A", "B", "C"), ncol = 3, nrow = 1,
 legend = "bottom", common.legend = TRUE)
 \end{lstlisting}
-	\end{VF}
+\end{VF}
 \end{tcolorbox}
+
 
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter15/figures/DensitiesSum.png}
@@ -441,9 +464,9 @@ where $\alpha$ is the general intercept, $f^{(j)}$ are unknown functions of the 
 
 Note that latent Gaussian models encompass a wide range of relevant empirical models depending on the specific elements and structure involved in $f^{(j)}$, such as generalized linear models with unobserved heterogeneity, spatial and/or temporal dependence, and semi-parametric models.
 
-Latent Gaussian models assign a Gaussian prior to $\alpha$, $\boldsymbol{\beta}$, $f^{(j)}$, and $(\epsilon_{i}$. Let $\boldsymbol{z}$ denote the vector of all latent Gaussian variables $\left\{\alpha, \boldsymbol{\beta}, f^{(j)},\eta_{i}\right\}$, where the dimension is potentially \( P = 1 + K + J + N \) (although this is not always the case), and let $\boldsymbol{\theta}$ be the $m$-dimensional vector of hyperparameters. Then, the density $\pi(\boldsymbol{z} \mid \boldsymbol{\theta}_1)$ is Gaussian with mean zero and precision matrix (i.e., the inverse of the covariance matrix) $\boldsymbol{Q}(\boldsymbol{\theta}_1)$.
+Latent Gaussian models assign a Gaussian prior to $\alpha$, $\boldsymbol{\beta}$, $f^{(j)}$, and $\epsilon_{i}$. Let $\boldsymbol{z}$ denote the vector of all latent Gaussian variables $\left\{\alpha, \boldsymbol{\beta}, f^{(j)},\eta_{i}\right\}$, where the dimension is potentially \( P = 1 + K + J + N \) (although this is not always the case), and let $\boldsymbol{\theta}$ be the $m$-dimensional vector of hyperparameters. Then, the density $\pi(\boldsymbol{z} \mid \boldsymbol{\theta}_1)$ is Gaussian with mean zero and precision matrix (i.e., the inverse of the covariance matrix) $\boldsymbol{Q}(\boldsymbol{\theta}_1)$.
 
-The distribution of $\boldsymbol{y}$ is $p(\boldsymbol{y}\mid \boldsymbol{z},\boldsymbol{\theta}_2)$ such that $y_i$ are conditional independent given $z_i,\boldsymbol{\theta}_2$, $\boldsymbol{\theta}=[\boldsymbol{\theta}_1^{\top} \ \boldsymbol{\theta}_2^{\top}]^{\top}$, $i=1,2,\dots,N$. Thus, the posterior distribution is
+The distribution of $\boldsymbol{y}$ is $p(\boldsymbol{y}\mid \boldsymbol{z},\boldsymbol{\theta}_2)$ such that $y_i$ are conditional independent given $z_i$ and $\boldsymbol{\theta}_2$, $\boldsymbol{\theta}=[\boldsymbol{\theta}_1^{\top} \ \boldsymbol{\theta}_2^{\top}]^{\top}$, $i=1,2,\dots,N$. Thus, the posterior distribution is
 \begin{align}\label{eq:INLA1}
 	\pi(\boldsymbol{z},\boldsymbol{\theta}\mid \boldsymbol{y})&\propto \pi(\boldsymbol{\theta})\times \pi(\boldsymbol{z}\mid \boldsymbol{\theta}_1)\times \prod_{i=1}^{N}p(y_i\mid \boldsymbol{z},\boldsymbol{\theta}_2)\\
 	&\propto \pi(\boldsymbol{\theta})|\boldsymbol{Q}(\boldsymbol{\theta}_1)|^{1/2}\exp\left\{-\frac{1}{2}\boldsymbol{z}^{\top}\boldsymbol{Q}(\boldsymbol{\theta}_1)\boldsymbol{z}+\sum_{i=1}^N\log p(y_i\mid z_i,\boldsymbol{\theta}_2)\right\}.\nonumber
@@ -477,7 +500,9 @@ The marginal posterior $\pi(z_i \mid \boldsymbol{\theta}, \boldsymbol{y})$ is mo
 	&=\frac{\pi(\boldsymbol{z}\mid\boldsymbol{\theta},\boldsymbol{y})}{\pi(\boldsymbol{z}_{-i}\mid z_i,\boldsymbol{\theta},\boldsymbol{y})}\\
 	&\propto \frac{p(\boldsymbol{y}\mid \boldsymbol{z},\boldsymbol{\theta})\pi(\boldsymbol{z}\mid\boldsymbol{\theta})\pi(\boldsymbol{\theta})}{\pi(\boldsymbol{z}_{-i}\mid z_i,\boldsymbol{\theta},\boldsymbol{y})}, 
 \end{align*}
-where the second-to-last equality follows from the identity $\pi(\boldsymbol{z}_{-i} \mid z_i, \boldsymbol{\theta}, \boldsymbol{y}) = \frac{p(\boldsymbol{z}, \boldsymbol{\theta}, \boldsymbol{y})}{p(z_i, \boldsymbol{\theta}, \boldsymbol{y})}$, $-i$ denotes all elements of $\boldsymbol{z}$ except the $i$-th, and approximating the denominator in the last expression using a simplified Laplace approximation, which corrects the Gaussian approximation for location and skewness via a Taylor series expansion about the mode of the Laplace approximation \cite{rue2009approximate}. This follows the spirit of the approximations developed by \cite{Tierney1986, tierney1989fully} for posterior moments and marginal densities, and is similar to those used in Chapter~\ref{chap10} when performing Bayesian model averaging (BMA) using the BIC information criterion. The discussion about the asymptotic error of the approximation $\pi_{a}(z_i \mid \boldsymbol{\theta}, \boldsymbol{y})$ follows the same arguments as those for $\pi_a(\boldsymbol{\theta} \mid \boldsymbol{y})$.
+where the second-to-last equality follows from the identity $\pi(\boldsymbol{z}_{-i} \mid z_i, \boldsymbol{\theta}, \boldsymbol{y}) = \frac{p(\boldsymbol{z}, \boldsymbol{\theta}, \boldsymbol{y})}{p(z_i, \boldsymbol{\theta}, \boldsymbol{y})}$, and $-i$ denotes all elements of $\boldsymbol{z}$ except the $i$-th. 
+
+We can approximate the denominator in the last expression using a simplified Laplace approximation, which corrects the Gaussian approximation for location and skewness via a Taylor series expansion about the mode of the Laplace approximation \cite{rue2009approximate}. This follows the spirit of the approximations developed by \cite{Tierney1986, tierney1989fully} for posterior moments and marginal densities, and is similar to those used in Chapter~\ref{chap10} when performing Bayesian model averaging (BMA) using the BIC information criterion. The discussion about the asymptotic error of the approximation $\pi_{a}(z_i \mid \boldsymbol{\theta}, \boldsymbol{y})$ follows the same arguments as those for $\pi_a(\boldsymbol{\theta} \mid \boldsymbol{y})$.
 
 We can obtain the marginal posterior distributions integrating with respect to $\boldsymbol{\theta}$,
 \begin{align*}
@@ -543,6 +568,15 @@ We present the results obtained using the three approximation strategies availab
 # Install INLA
 # install.packages("INLA",repos=c(getOption("repos"),INLA="https://inla.r-inla-download.org/R/stable"), dep=TRUE)
 rm(list = ls()); set.seed(010101); library(INLA)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Integrated Nested Laplace Approximations: Poisson model with unobserved heterogeneity}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 n <- 10000; x <- rnorm(n, sd = 1); u <- rnorm(n, sd = 0.5)
 intercept <- 1; beta <- 1; id <- 1:n
 y <- rpois(n, lambda = exp(intercept + beta * x + u))
@@ -590,6 +624,7 @@ inla.qmarginal(c(0.025, 0.5, 0.975), marg.var.sla) # 95% credible interval
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
+
 
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter15/figures/FigINLA1.png}
@@ -664,6 +699,15 @@ rm(list = ls()); set.seed(010101)
 library(sf); library(tmap); library(classInt)
 library(RColorBrewer); library(spdep); library(parallel)
 library(INLABMA); library(sf); library(INLA)
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Spatial econometric analysis: Spatial error model using INLA}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 zip_url <- "https://github.com/BEsmarter-consultancy/BSTApp/archive/refs/heads/master.zip"
 temp_zip <- tempfile(fileext = ".zip")
 download.file(zip_url, temp_zip, mode = "wb")
@@ -706,6 +750,7 @@ rrho1 <- seq(0.5, 0.95, len = 10)
 	\end{VF}
 \end{tcolorbox}
 
+
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 	\textit{R code. Spatial econometric analysis: Spatial error model using INLA}
@@ -738,7 +783,7 @@ bmasem[["summary.fixed"]]
 \end{figure}
 
 \begin{figure}[!h]
-	\includegraphics[width=340pt]{Chapters/chapter15/figures/AntMapCont.png}
+	\includegraphics[width=300pt]{Chapters/chapter15/figures/AntMapCont.png}
 	\caption[List of figure caption goes here]{Contiguity map: Queen criterion, municipalities (Antioquia, Colombia).}\label{FigINLAmap2}
 \end{figure} 
 
@@ -846,9 +891,9 @@ A limitation of the CAVI algorithm is that it requires evaluation at each data p
 
 Given the global-local exchangeable structure, the joint distribution can be expressed as $p(\boldsymbol{\phi}, \boldsymbol{z}, \boldsymbol{y}) = \pi(\boldsymbol{\phi} \mid \boldsymbol{\alpha}) \prod_{i=1}^{N} p(\boldsymbol{z}_i, \boldsymbol{y}_i \mid \boldsymbol{\phi})$, where $\boldsymbol{\alpha} = [\boldsymbol{\alpha}_1^{\top} \ \alpha_2]^{\top}$ represents the hyperparameters of the prior distribution of the global parameters $\boldsymbol{\phi}$.
 
-Assuming that the joint distribution $p(\boldsymbol{z}_i, \boldsymbol{y}_i \mid \boldsymbol{\phi})$ is in the canonical form of the exponential family, and that each prior distribution is conjugate, the complete conditional distribution of the global parameters is also in the exponential family. The posterior parameters are given by $\boldsymbol{\alpha}_n = [\boldsymbol{\alpha}_1^{\top} + \sum_{i=1}^N t(\boldsymbol{z}_i, \boldsymbol{y}_i)^{\top} \ \alpha_2 + N]^{\top}$, where $t(\boldsymbol{z}_i, \boldsymbol{y}_i)$ is a sufficient statistic of $\boldsymbol{z}_i$ and $\boldsymbol{y}_i$ (see Section \ref{sec42}).
+Assuming that the joint distribution $p(\boldsymbol{z}_i, \boldsymbol{y}_i \mid \boldsymbol{\phi})$ is in the canonical form of the exponential family, and that each prior distribution is conjugate, the complete conditional distribution of the global parameters is also in the exponential family. The posterior parameters are given by $\boldsymbol{\alpha}_n = [\boldsymbol{\alpha}_1^{\top} + \sum_{i=1}^N t(\boldsymbol{z}_i, \boldsymbol{y}_i)^{\top}, \ \alpha_2 + N]^{\top}$, where $t(\boldsymbol{z}_i, \boldsymbol{y}_i)$ is a sufficient statistic of $\boldsymbol{z}_i$ and $\boldsymbol{y}_i$ (see Section \ref{sec42}).
 
-Additionally, the structure of the model implies that $\boldsymbol{z}_i$ is independent of $\boldsymbol{z}_{-i}$ and $\boldsymbol{y}_{-i}$ given $\boldsymbol{y}_i$ and $\boldsymbol{\phi}$. Thus, if $p(\boldsymbol{z}_i \mid \boldsymbol{y}_i, \boldsymbol{\phi})$ is in the canonical form of the exponential family, then the local variational update is given by $\boldsymbol{\psi}_i = \mathbb{E}_{\boldsymbol{\xi}}[\boldsymbol{\eta}(\boldsymbol{\phi}, \boldsymbol{y}_i)]$, where the parameter set $\boldsymbol{\eta}(\boldsymbol{\phi}, \boldsymbol{y}_i)$ is a function of the conditional set, $\boldsymbol{\xi}$, and $\boldsymbol{\psi}_i$ are the variational parameters of the variational approximations $q(\boldsymbol{\phi} \mid \boldsymbol{\xi})$ and $q(\boldsymbol{z}_i \mid \boldsymbol{\psi}_i)$ for the posterior distributions of $\boldsymbol{\phi}$ and $\boldsymbol{z}_i$, respectively. The global variational update is given by $\boldsymbol{\xi} = [\boldsymbol{\alpha}_1^{\top} + \sum_{i=1}^N \mathbb{E}_{\boldsymbol{\psi}_i} t(\boldsymbol{z}_i, \boldsymbol{y}_i)^{\top} \ \alpha_2 + N]^{\top}$.
+Additionally, the structure of the model implies that $\boldsymbol{z}_i$ is independent of $\boldsymbol{z}_{-i}$ and $\boldsymbol{y}_{-i}$ given $\boldsymbol{y}_i$ and $\boldsymbol{\phi}$. Thus, if $p(\boldsymbol{z}_i \mid \boldsymbol{y}_i, \boldsymbol{\phi})$ is in the canonical form of the exponential family, then the local variational update is given by $\boldsymbol{\psi}_i = \mathbb{E}_{\boldsymbol{\xi}}[\boldsymbol{\eta}(\boldsymbol{\phi}, \boldsymbol{y}_i)]$, where the parameter set $\boldsymbol{\eta}(\boldsymbol{\phi}, \boldsymbol{y}_i)$ is a function of the conditional set, $\boldsymbol{\xi}$, and $\boldsymbol{\psi}_i$ are the variational parameters of the variational approximations $q(\boldsymbol{\phi} \mid \boldsymbol{\xi})$ and $q(\boldsymbol{z}_i \mid \boldsymbol{\psi}_i)$ for the posterior distributions of $\boldsymbol{\phi}$ and $\boldsymbol{z}_i$, respectively. The global variational update is given by $\boldsymbol{\xi} = [\boldsymbol{\alpha}_1^{\top} + \sum_{i=1}^N \mathbb{E}_{\boldsymbol{\psi}_i} t(\boldsymbol{z}_i, \boldsymbol{y}_i)^{\top}, \ \alpha_2 + N]^{\top}$.
 
 SVI focuses on the global parameters, updating them using the ELBO natural gradients with respect to $\boldsymbol{\xi}$, where natural gradients are the usual gradients premultiplied by the inverse covariance matrix of the sufficient statistic. These gradients are easily calculated in exponential families. In particular, the updates are given by
 \begin{align*}
@@ -991,7 +1036,7 @@ sig2 <- 1; B <- rep(1, K + 1)
 X <- cbind(1, matrix(rnorm(N*K), N, K))
 e <- rnorm(N, 0, sig2^0.5)
 y <- X%*%B + e
-######################### Data List Preparation #########################
+###### Data List Preparation ######
 mon.names <- "mu[1]"
 parm.names <- as.parm.names(list(beta=rep(0,K + 1), sigma2=0))
 pos.beta <- grep("beta", parm.names)
@@ -1003,10 +1048,18 @@ PGF <- function(Data) {
 }
 MyData <- list(K=K, PGF=PGF, X=X, mon.names=mon.names,
 parm.names=parm.names, pos.beta=pos.beta, pos.sigma2=pos.sigma2, y=y)
-########################## Model Specification ##########################
+###### Model Specification ######
 b0 <- 0; B0 <- 1000; a0 <- 0.01; d0 <- 0.01
-Model <- function(parm, Data)
-{
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Variational Bayes: Linear regression model}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+Model <- function(parm, Data){
 	### Parameters
 	beta <- parm[Data$pos.beta]
 	sigma2 <- interval(parm[Data$pos.sigma2], 1e-100, Inf)
@@ -1032,16 +1085,7 @@ caterpillar.plot(Fit, Parms="beta")
 plot(Fit, MyData, PDF=FALSE)
 Pred <- predict(Fit, Model, MyData, CPUs=1)
 summary(Pred, Discrep="Chi-Square")
-\end{lstlisting}
-	\end{VF}
-\end{tcolorbox}
-
-\begin{tcolorbox}[enhanced,width=4.67in,center upper,
-	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Variational Bayes: Linear regression model}
-	\begin{VF}
-		\begin{lstlisting}[language=R]
-####### MCMC #######
+###### MCMC ######
 # Posterior parameters
 b0 <- rep(b0, K+1); B0 <- B0*diag(K+1)
 bhat <- solve(t(X)%*%X)%*%t(X)%*%y
@@ -1054,7 +1098,16 @@ sig2 <- MCMCpack::rinvgamma(S,an/2,dn/2)
 summary(coda::mcmc(sig2))
 Betas <- t(sapply(1:S, function(s){MASS::mvrnorm(1, bn, sig2[s]*Bn)}))
 summary(coda::mcmc(Betas))
-####### VB from scratch #######
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Variational Bayes: Linear regression model}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+###### VB from scratch ######
 dnVB <- ((a0+N+K)/(a0+N))*dn; anVB <- a0 + N + K
 BnVB <- Bn; bnVB <- bn
 sig2VB <- MCMCpack::rinvgamma(S,anVB/2,dnVB/2) 
