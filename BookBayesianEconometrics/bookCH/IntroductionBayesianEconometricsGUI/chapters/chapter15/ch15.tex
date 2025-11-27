@@ -157,12 +157,11 @@ tock - tick
 PostABCMCMC <- coda::mcmc(ABC_MCMC[["param"]][order(ABC_MCMC[["dist"]])[1:1000],])
 summary(PostABCMCMC)
 tick <- Sys.time()
-ABC_SMC<-ABC_sequential(method="Lenormand", model=RGKnewSum, prior=toy_prior, summary_stat_target=sum_stat_obs, nb_simul = 30000, alpha = 0.034, p_acc_min = 0.05,
-progress_bar = TRUE)
+ABC_SMC <- ABC_sequential(method="Lenormand", model=RGKnewSum, prior=toy_prior, summary_stat_target=sum_stat_obs, nb_simul = 30000, alpha = 0.034, p_acc_min = 0.05, progress_bar = TRUE)
+PostABCSMC <- coda::mcmc(ABC_SMC[["param"]])
 summary(PostABCSMC)
 tock <- Sys.time()
 tock - tick
-PostABCSMC <- coda::mcmc(ABC_SMC[["param"]])
 # Figures 
 library(ggplot2); library(latex2exp)
 Sp <- 1000
@@ -584,8 +583,7 @@ my.data <- data.frame(y, x, id)
 formula <- y ~ 1 + x + f(id, model="iid")
 inla.sla <- inla(formula, data = my.data, family = "poisson", control.compute=list(return.marginals.predictor=TRUE))
 inla.ga <- inla(formula, data = my.data, family = "poisson", control.inla = list(strategy = "gaussian", int.strategy = "eb"), control.compute=list(return.marginals.predictor=TRUE))
-inla.la <- inla(formula, data = my.data, family = "poisson", control.inla = list(strategy = "laplace", int.strategy = "grid", dz=0.1, diff.logdens=20),
-control.compute=list(return.marginals.predictor=TRUE))
+inla.la <- inla(formula, data = my.data, family = "poisson", control.inla = list(strategy = "laplace", int.strategy = "grid", dz=0.1, diff.logdens=20), control.compute=list(return.marginals.predictor=TRUE))
 summary(inla.sla)
 marg_sla <- inla.sla$marginals.fixed$x
 marg_ga  <- inla.ga$marginals.fixed$x
@@ -757,12 +755,7 @@ rrho1 <- seq(0.5, 0.95, len = 10)
 	\begin{VF}
 		\begin{lstlisting}[language=R]
 semmodels <- mclapply(rrho1, function(rho) {
-	sem.inla(fform, d = as.data.frame(antioquia), W = bmsp, rho = rho,
-	family = "gaussian", impacts = FALSE,
-	control.family = list(hyper = zero.variance),
-	control.predictor = list(compute = TRUE),
-	control.compute = list(dic = TRUE, cpo = TRUE),
-	control.inla = list(print.joint.hyper = TRUE))
+	sem.inla(fform, d = as.data.frame(antioquia), W = bmsp, rho = rho, family = "gaussian", impacts = FALSE, control.family = list(hyper = zero.variance), control.predictor = list(compute = TRUE), control.compute = list(dic = TRUE, cpo = TRUE), control.inla = list(print.joint.hyper = TRUE))
 })
 bmasem <- INLABMA(semmodels, rrho1, 0, impacts = FALSE)
 #Display results
