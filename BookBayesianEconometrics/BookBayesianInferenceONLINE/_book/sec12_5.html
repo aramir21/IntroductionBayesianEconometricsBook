@@ -23,7 +23,7 @@
 <meta name="author" content="Andrés Ramírez-Hassan" />
 
 
-<meta name="date" content="2025-11-18" />
+<meta name="date" content="2025-11-30" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -52,6 +52,8 @@
 <link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
 <link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
 <script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+<script src="libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="libs/lightable-0.0.1/lightable.css" rel="stylesheet" />
 
 
 <style type="text/css">
@@ -163,7 +165,8 @@ div.csl-indent {
 <li><a href="./">Introduction to Bayesian Econometrics: A GUIded toolkit using R</a></li>
 
 <li class="divider"></li>
-<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Introduction</a>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Introduction</a></li>
+<li class="chapter" data-level="" data-path="preface.html"><a href="preface.html"><i class="fa fa-check"></i>Preface</a>
 <ul>
 <li class="chapter" data-level="" data-path="to-instructors-and-students.html"><a href="to-instructors-and-students.html"><i class="fa fa-check"></i>To instructors and students</a></li>
 <li class="chapter" data-level="" data-path="acknowledgments.html"><a href="acknowledgments.html"><i class="fa fa-check"></i>Acknowledgments</a></li>
@@ -388,7 +391,7 @@ div.csl-indent {
 <h2><span class="header-section-number">12.5</span> Tall data problems<a href="sec12_5.html#sec12_5" class="anchor-section" aria-label="Anchor link to header"></a></h2>
 <p>In this section, we explore several methods developed to perform Bayesian inference when the sample size is large, particularly when there is a large number of observational units, commonly referred to as <em>tall datasets</em>.</p>
 <p>Bayesian inference in such settings is computationally demanding because each iteration of an MCMC algorithm requires evaluating the likelihood function over all <span class="math inline">\(N\)</span> observations. For large <span class="math inline">\(N\)</span>, this renders standard MCMC methods prohibitively expensive. Recent efforts have focused on developing scalable Monte Carlo algorithms that significantly reduce the computational cost compared to standard approaches. One alternative is to use <em>Variational Bayes</em> (see Chapter <a href="Chap14.html#Chap14">14</a>); however, it can be challenging to implement and may exhibit limitations in uncertainty quantification, particularly for the joint posterior distribution. Another alternative is the <em>Integrated Nested Laplace Approximation</em> (INLA, see Chapter <a href="Chap14.html#Chap14">14</a>); however, its computational cost grows exponentially with the dimension of the parameter space.</p>
-<p>In scenarios where observations are assumed to be independent, two main frameworks have been proposed to scale MCMC algorithms: <em>divide-and-conquer approaches</em> and <em>subsampling-based algorithms</em>. Divide-and-conquer methods partition the dataset into disjoint subsets, run MCMC independently on each batch to obtain subposteriors, and then combine them to approximate the full posterior distribution. Subsampling-based algorithms, on the other hand, aim to reduce the number of data points used to evaluate the likelihood at each iteration, often relying on <em>pseudo-marginal</em> MCMC methods <span class="citation">(<a href="#ref-andrieu2009pseudoefficient">Andrieu and Roberts 2009</a>)</span>. The key idea of pseudo-marginal MCMC is to augment the model with latent variables such that the sample average of the likelihood, computed over draws from these latent variables, provides an unbiased estimator of the marginal likelihood. This approach is particularly valuable when the marginal likelihood is not available in closed form. Moreover, the same principles can be adapted to reduce the computational burden of evaluating the log-likelihood. For an excellent review of divide-and-conquer and subsampling-based approaches, see <span class="citation">(<a href="#ref-bardenet2017markov">Bardenet, Doucet, and Holmes 2017</a>)</span>.</p>
+<p>In scenarios where observations are assumed to be independent, two main frameworks have been proposed to scale MCMC algorithms: <em>divide-and-conquer approaches</em> and <em>subsampling-based algorithms</em>. Divide-and-conquer methods partition the dataset into disjoint subsets, run MCMC independently on each batch to obtain subposteriors, and then combine them to approximate the full posterior distribution. Subsampling-based algorithms, on the other hand, aim to reduce the number of data points used to evaluate the likelihood at each iteration, often relying on <em>pseudo-marginal</em> MCMC methods <span class="citation">(<a href="#ref-andrieu2009pseudoefficient">Christophe Andrieu and Roberts 2009</a>)</span>. The key idea of pseudo-marginal MCMC is to augment the model with latent variables such that the sample average of the likelihood, computed over draws from these latent variables, provides an unbiased estimator of the marginal likelihood. This approach is particularly valuable when the marginal likelihood is not available in closed form. Moreover, the same principles can be adapted to reduce the computational burden of evaluating the log-likelihood. For an excellent review of divide-and-conquer and subsampling-based approaches, see <span class="citation">(<a href="#ref-bardenet2017markov">Bardenet, Doucet, and Holmes 2017</a>)</span>.</p>
 <div id="sec12_51" class="section level3 hasAnchor" number="12.5.1">
 <h3><span class="header-section-number">12.5.1</span> Divide-and-conquer methods<a href="sec12_5.html#sec12_51" class="anchor-section" aria-label="Anchor link to header"></a></h3>
 <p>In <em>divide-and-conquer</em> methods, the main idea is to partition the dataset and distribute the subsets across multiple computing machines/cores. An independent MCMC algorithm is then executed on each subset to obtain a corresponding <em>subposterior</em> distribution. The central challenge lies in accurately and efficiently combining these subposteriors into a single approximation of the full posterior distribution.</p>
@@ -444,7 +447,7 @@ This implies that
 \hat{p}(\mathbf{y} \mid \boldsymbol{\theta}) = \frac{1}{S} \sum_{s=1}^S p(\mathbf{y} \mid \boldsymbol{\theta}, \mathbf{z}^{(s)})
 \]</span>
 is an unbiased estimator of the marginal likelihood, <span class="math inline">\(\mathbf{z}^{(s)} \sim p(\mathbf{z})\)</span>.</p>
-<p>As a result, the pseudo-marginal method enables exact simulation-based inference for <span class="math inline">\(p(\mathbf{y} \mid \boldsymbol{\theta})\)</span> in settings where the likelihood cannot be evaluated analytically <span class="citation">(<a href="#ref-andrieu2009pseudoefficient">Andrieu and Roberts 2009</a>)</span>, for instance, in non-linear random effects models (see also approximate methods such as <em>approximate Bayesian computation</em> and <em>Bayesian synthetic likelihood</em> in Chapter <a href="Chap14.html#Chap14">14</a>). <span class="citation">Andrieu and Roberts (<a href="#ref-andrieu2009pseudoefficient">2009</a>)</span> show that replacing the likelihood with an unbiased and positive estimator within the Metropolis–Hastings (MH) algorithm yields samples from the correct posterior distribution.</p>
+<p>As a result, the pseudo-marginal method enables exact simulation-based inference for <span class="math inline">\(p(\mathbf{y} \mid \boldsymbol{\theta})\)</span> in settings where the likelihood cannot be evaluated analytically <span class="citation">(<a href="#ref-andrieu2009pseudoefficient">Christophe Andrieu and Roberts 2009</a>)</span>, for instance, in non-linear random effects models (see also approximate methods such as <em>approximate Bayesian computation</em> and <em>Bayesian synthetic likelihood</em> in Chapter <a href="Chap14.html#Chap14">14</a>). <span class="citation">Christophe Andrieu and Roberts (<a href="#ref-andrieu2009pseudoefficient">2009</a>)</span> show that replacing the likelihood with an unbiased and positive estimator within the Metropolis–Hastings (MH) algorithm yields samples from the correct posterior distribution.</p>
 <p>The pseudo-marginal likelihood approach can also be applied in settings where the sample size is so large that evaluating the full likelihood at each iteration of an MCMC algorithm becomes computationally prohibitive. In such cases, the likelihood can be approximated using a small subset of observations, <span class="math inline">\(n \ll N\)</span>. The choice of the subset size <span class="math inline">\(n\)</span> is particularly important, as it directly affects the variance of the likelihood estimator, which in turn is critical to ensuring an efficient Metropolis–Hastings (MH) algorithm.</p>
 <p>In particular, a likelihood estimator with high variance may result in an accepted draw that overestimates the likelihood. As a consequence, subsequent proposals are unlikely to be accepted, causing the algorithm to become stuck and leading to a very low acceptance rate. Therefore, the choice of <span class="math inline">\(n\)</span> determines the computational efficiency of the algorithm: a small <span class="math inline">\(n\)</span> increases the estimator’s variance, which reduces the acceptance rate, whereas a large <span class="math inline">\(n\)</span> increases the number of likelihood evaluations per iteration.</p>
 <p><span class="citation">Quiroz et al. (<a href="#ref-quiroz2018subsampling">2018</a>)</span> recommend targeting a likelihood estimator variance between 1 and 3.3 to optimize computational efficiency, as supported by the findings of <span class="citation">Pitt et al. (<a href="#ref-pitt2012some">2012</a>)</span>.</p>
@@ -476,16 +479,16 @@ This estimator <span class="math inline">\(\hat{\ell}_{\mathrm{DE}}(\mathbf{y} \
 &amp; = \exp\left\{ -U(\boldsymbol{\theta}) \right\},
 \end{align*}\]</span>
 where <span class="math inline">\(\boldsymbol{\theta} \in \mathbb{R}^K\)</span>, <span class="math inline">\(U_i(\boldsymbol{\theta}) = -\frac{1}{N} \log \pi(\boldsymbol{\theta}) - \log p(y_i \mid \boldsymbol{\theta})\)</span>, and <span class="math inline">\(U(\boldsymbol{\theta}) = \sum_{i=1}^N U_i(\boldsymbol{\theta})\)</span> is assumed to be continuous and differentiable almost everywhere.</p>
-<p>The advantage of this formulation is that, under mild regularity conditions <span class="citation">(<a href="#ref-roberts1996exponential">Roberts and Tweedie 1996</a>)</span>, the Langevin diffusion process
+<p>The advantage of this formulation is that, under mild regularity conditions <span class="citation">(<a href="#ref-roberts1996exponential">Gareth O. Roberts and Tweedie 1996</a>)</span>, the Langevin diffusion process
 <span class="math display">\[
 d\boldsymbol{\theta}(s) = -\frac{1}{2} \nabla U(\boldsymbol{\theta}(s))\,ds + d\mathbf{B}_s,
 \]</span>
-has <span class="math inline">\(\pi(\boldsymbol{\theta} \mid \mathbf{y})\)</span> as its stationary distribution. Here, <span class="math inline">\(\nabla U(\boldsymbol{\theta}(s))\)</span> is the drift term, and <span class="math inline">\(\mathbf{B}_s\)</span> is a <span class="math inline">\(K\)</span>-dimensional Brownian motion.<a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a></p>
+has <span class="math inline">\(\pi(\boldsymbol{\theta} \mid \mathbf{y})\)</span> as its stationary distribution. Here, <span class="math inline">\(\nabla U(\boldsymbol{\theta}(s))\)</span> is the drift term, and <span class="math inline">\(\mathbf{B}_s\)</span> is a <span class="math inline">\(K\)</span>-dimensional Brownian motion.<a href="#fn71" class="footnote-ref" id="fnref71"><sup>71</sup></a></p>
 <p>Using an Euler-Maruyama discretization of the Langevin diffusion gives a proposal draw from the posterior:
 <span class="math display">\[
 \boldsymbol{\theta}^{(c)} = \boldsymbol{\theta}^{(s)} - \frac{\epsilon}{2} \nabla U(\boldsymbol{\theta}^{(s)}) + \boldsymbol{\psi},
 \]</span>
-where <span class="math inline">\(\boldsymbol{\psi} \sim \mathcal{N}(\mathbf{0}, \epsilon \mathbf{I}_K)\)</span> and <span class="math inline">\(\epsilon &gt; 0\)</span> is a suitably chosen step size (learning rate). This proposal is used within a Metropolis–Hastings algorithm (see Section <a href="sec51.html#sec512">4.1.2</a>) to correct for the discretization error introduced by the Euler approximation. This method is known as the <em>Metropolis-adjusted Langevin algorithm</em> (MALA) <span class="citation">(<a href="#ref-roberts1996exponential">Roberts and Tweedie 1996</a>)</span>.</p>
+where <span class="math inline">\(\boldsymbol{\psi} \sim \mathcal{N}(\mathbf{0}, \epsilon \mathbf{I}_K)\)</span> and <span class="math inline">\(\epsilon &gt; 0\)</span> is a suitably chosen step size (learning rate). This proposal is used within a Metropolis–Hastings algorithm (see Section <a href="sec51.html#sec512">4.1.2</a>) to correct for the discretization error introduced by the Euler approximation. This method is known as the <em>Metropolis-adjusted Langevin algorithm</em> (MALA) <span class="citation">(<a href="#ref-roberts1996exponential">Gareth O. Roberts and Tweedie 1996</a>)</span>.</p>
 <p>A simpler variant, known as the <em>unadjusted Langevin algorithm</em> (ULA), omits the acceptance step. As a result, ULA produces a biased approximation of the posterior distribution. However, a major computational bottleneck in both MALA and ULA is the requirement to evaluate the full gradient <span class="math inline">\(\nabla U(\boldsymbol{\theta}) = \sum_{i=1}^N \nabla U_i(\boldsymbol{\theta})\)</span> at every iteration, which becomes computationally prohibitive when <span class="math inline">\(N\)</span> is large.</p>
 <p>To overcome this limitation, <span class="citation">Welling and Teh (<a href="#ref-welling2011bayesian">2011</a>)</span> proposed the <em>Stochastic Gradient Langevin Dynamics</em> (SGLD), which replaces the full gradient with an unbiased estimate computed using a mini-batch of data. Given a random sample of size <span class="math inline">\(n \ll N\)</span>, the stochastic gradient estimate at iteration <span class="math inline">\(s\)</span> is:
 <span class="math display" id="eq:grad">\[\begin{equation}
@@ -579,99 +582,80 @@ P(y_i = 1 \mid \boldsymbol{\beta}, \mathbf{x}_i) = \frac{\exp\left\{\mathbf{x}_i
 <p>We run 2,000 MCMC iterations initialized at zero, and discard the first 500 as burn-in. We scale the regressors beforehand, as this is generally recommended to improve numerical stability and convergence. The following code simulates the model and sets the hyperparameters of the algorithms.</p>
 <p>The following code implements SMC Algorithm, running five parallel MCMC chains and combining the resulting subposteriors using three different weighting schemes: equal weights, weights based on marginal variances, and weights based on the full covariance matrices.</p>
 <p>By running the code, you can verify that the computational time of the CMC algorithm is lower than that of the Metropolis–Hastings algorithm. The first figure shows the posterior distributions of <span class="math inline">\(\beta_4\)</span> and <span class="math inline">\(\beta_5\)</span>. We observe that all three weighting schemes perform reasonably well, yielding posterior modes similar to those obtained from the full-data MCMC algorithm. However, the consensus Monte Carlo (CMC) methods produce more dispersed draws, particularly when using equal weights. In contrast, the weighting schemes based on marginal variances and the full covariance matrices yield comparable and more concentrated posterior distributions.</p>
-<p>To implement the SGLD algorithm, we set <span class="math inline">\(n = 0.01 \cdot N\)</span>, and the step size to <span class="math inline">\(1 \times 10^{-4}\)</span>. The following code illustrates how to implement the SGLD algorithm.<a href="#fn4" class="footnote-ref" id="fnref4"><sup>4</sup></a></p>
+<p>To implement the SGLD algorithm, we set <span class="math inline">\(n = 0.01 \cdot N\)</span>, and the step size to <span class="math inline">\(1 \times 10^{-4}\)</span>. The following code illustrates how to implement the SGLD algorithm.<a href="#fn72" class="footnote-ref" id="fnref72"><sup>72</sup></a></p>
 <p>In Exercise 8, you are asked to implement the control variate version of SGLD. Begin by running 1,500 SGD iterations to locate the posterior mode. This mode should then be used as the initial value for a subsequent run of 1,000 SGLD iterations.</p>
 <p>By running the code, you can verify that the computational time of the SGLD algorithm is lower than that of the Metropolis–Hastings algorithm. The second figure shows the posterior distributions of the fifth location parameter obtained from SGLD and Metropolis–Hastings. We observe that both modes are centered around the true population value; however, the SGLD distribution exhibits greater dispersion compared to the Metropolis–Hastings distribution.</p>
-<div class="sourceCode" id="cb51"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb51-1"><a href="sec12_5.html#cb51-1" tabindex="-1"></a><span class="do">####### CMC and SDLD #######</span></span>
-<span id="cb51-2"><a href="sec12_5.html#cb51-2" tabindex="-1"></a><span class="do">#### Simulation</span></span>
-<span id="cb51-3"><a href="sec12_5.html#cb51-3" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">10101</span>)</span>
-<span id="cb51-4"><a href="sec12_5.html#cb51-4" tabindex="-1"></a><span class="fu">library</span>(mvtnorm); <span class="fu">library</span>(MCMCpack)</span></code></pre></div>
-<pre><code>## Warning: package &#39;MCMCpack&#39; was built under R version 4.5.2</code></pre>
-<pre><code>## Loading required package: coda</code></pre>
-<pre><code>## 
-## Attaching package: &#39;coda&#39;</code></pre>
-<pre><code>## The following object is masked from &#39;package:Boom&#39;:
-## 
-##     thin</code></pre>
-<pre><code>## ##
-## ## Markov Chain Monte Carlo Package (MCMCpack)</code></pre>
-<pre><code>## ## Copyright (C) 2003-2025 Andrew D. Martin, Kevin M. Quinn, and Jong Hee Park</code></pre>
-<pre><code>## ##
-## ## Support provided by the U.S. National Science Foundation</code></pre>
-<pre><code>## ## (Grants SES-0350646 and SES-0350613)
-## ##</code></pre>
-<pre><code>## 
-## Attaching package: &#39;MCMCpack&#39;</code></pre>
-<pre><code>## The following objects are masked from &#39;package:Boom&#39;:
-## 
-##     ddirichlet, dinvgamma, rdirichlet, rinvgamma</code></pre>
-<div class="sourceCode" id="cb62"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb62-1"><a href="sec12_5.html#cb62-1" tabindex="-1"></a><span class="fu">library</span>(ggplot2); <span class="fu">library</span>(dplyr)</span>
-<span id="cb62-2"><a href="sec12_5.html#cb62-2" tabindex="-1"></a><span class="fu">library</span>(parallel); <span class="fu">library</span>(GGally)</span></code></pre></div>
+<div class="sourceCode" id="cb752"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb752-1"><a href="sec12_5.html#cb752-1" tabindex="-1"></a><span class="do">####### CMC and SDLD #######</span></span>
+<span id="cb752-2"><a href="sec12_5.html#cb752-2" tabindex="-1"></a><span class="do">#### Simulation</span></span>
+<span id="cb752-3"><a href="sec12_5.html#cb752-3" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">10101</span>)</span>
+<span id="cb752-4"><a href="sec12_5.html#cb752-4" tabindex="-1"></a><span class="fu">library</span>(mvtnorm); <span class="fu">library</span>(MCMCpack)</span>
+<span id="cb752-5"><a href="sec12_5.html#cb752-5" tabindex="-1"></a><span class="fu">library</span>(ggplot2); <span class="fu">library</span>(dplyr)</span>
+<span id="cb752-6"><a href="sec12_5.html#cb752-6" tabindex="-1"></a><span class="fu">library</span>(parallel); <span class="fu">library</span>(GGally)</span></code></pre></div>
 <pre><code>## Warning: package &#39;GGally&#39; was built under R version 4.5.1</code></pre>
 <pre><code>## Registered S3 method overwritten by &#39;GGally&#39;:
 ##   method from   
 ##   +.gg   ggplot2</code></pre>
-<div class="sourceCode" id="cb65"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb65-1"><a href="sec12_5.html#cb65-1" tabindex="-1"></a><span class="do">### Generate correlated covariates</span></span>
-<span id="cb65-2"><a href="sec12_5.html#cb65-2" tabindex="-1"></a>genCovMat <span class="ot">&lt;-</span> <span class="cf">function</span>(K, <span class="at">rho =</span> <span class="fl">0.4</span>) {</span>
-<span id="cb65-3"><a href="sec12_5.html#cb65-3" tabindex="-1"></a>    Sigma0 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">1</span>, K, K)</span>
-<span id="cb65-4"><a href="sec12_5.html#cb65-4" tabindex="-1"></a>    <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">2</span><span class="sc">:</span>K) {</span>
-<span id="cb65-5"><a href="sec12_5.html#cb65-5" tabindex="-1"></a>        <span class="cf">for</span> (j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>(i <span class="sc">-</span> <span class="dv">1</span>)) {</span>
-<span id="cb65-6"><a href="sec12_5.html#cb65-6" tabindex="-1"></a>            Sigma0[i, j] <span class="ot">&lt;-</span> <span class="fu">runif</span>(<span class="dv">1</span>, <span class="sc">-</span>rho, rho)<span class="sc">^</span>(i <span class="sc">-</span> j)</span>
-<span id="cb65-7"><a href="sec12_5.html#cb65-7" tabindex="-1"></a>        }</span>
-<span id="cb65-8"><a href="sec12_5.html#cb65-8" tabindex="-1"></a>    }</span>
-<span id="cb65-9"><a href="sec12_5.html#cb65-9" tabindex="-1"></a>    Sigma0 <span class="ot">&lt;-</span> Sigma0 <span class="sc">*</span> <span class="fu">t</span>(Sigma0)</span>
-<span id="cb65-10"><a href="sec12_5.html#cb65-10" tabindex="-1"></a>    <span class="fu">diag</span>(Sigma0) <span class="ot">&lt;-</span> <span class="dv">1</span></span>
-<span id="cb65-11"><a href="sec12_5.html#cb65-11" tabindex="-1"></a>    <span class="fu">return</span>(Sigma0)</span>
-<span id="cb65-12"><a href="sec12_5.html#cb65-12" tabindex="-1"></a>}</span>
-<span id="cb65-13"><a href="sec12_5.html#cb65-13" tabindex="-1"></a><span class="do">### Simulate logistic regression data</span></span>
-<span id="cb65-14"><a href="sec12_5.html#cb65-14" tabindex="-1"></a>simulate_logit_data <span class="ot">&lt;-</span> <span class="cf">function</span>(K, N, beta_true) {</span>
-<span id="cb65-15"><a href="sec12_5.html#cb65-15" tabindex="-1"></a>    Sigma0 <span class="ot">&lt;-</span> <span class="fu">genCovMat</span>(K)</span>
-<span id="cb65-16"><a href="sec12_5.html#cb65-16" tabindex="-1"></a>    X <span class="ot">&lt;-</span> <span class="fu">rmvnorm</span>(N, <span class="at">mean =</span> <span class="fu">rep</span>(<span class="dv">0</span>, K), <span class="at">sigma =</span> Sigma0)</span>
-<span id="cb65-17"><a href="sec12_5.html#cb65-17" tabindex="-1"></a>    linpred <span class="ot">&lt;-</span> X <span class="sc">%*%</span> beta_true</span>
-<span id="cb65-18"><a href="sec12_5.html#cb65-18" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">+</span> <span class="fu">exp</span>(<span class="sc">-</span>linpred))</span>
-<span id="cb65-19"><a href="sec12_5.html#cb65-19" tabindex="-1"></a>    y <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(N, <span class="dv">1</span>, p)</span>
-<span id="cb65-20"><a href="sec12_5.html#cb65-20" tabindex="-1"></a>    <span class="fu">list</span>(<span class="at">y =</span> y, <span class="at">X =</span> X)</span>
-<span id="cb65-21"><a href="sec12_5.html#cb65-21" tabindex="-1"></a>}</span>
-<span id="cb65-22"><a href="sec12_5.html#cb65-22" tabindex="-1"></a><span class="do">### Parameters</span></span>
-<span id="cb65-23"><a href="sec12_5.html#cb65-23" tabindex="-1"></a>K <span class="ot">&lt;-</span> <span class="dv">10</span></span>
-<span id="cb65-24"><a href="sec12_5.html#cb65-24" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="dv">100000</span></span>
-<span id="cb65-25"><a href="sec12_5.html#cb65-25" tabindex="-1"></a>beta_true <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="fl">0.5</span>, K)</span>
-<span id="cb65-26"><a href="sec12_5.html#cb65-26" tabindex="-1"></a>B <span class="ot">&lt;-</span> <span class="dv">5</span></span>
-<span id="cb65-27"><a href="sec12_5.html#cb65-27" tabindex="-1"></a>batch_prop <span class="ot">&lt;-</span> <span class="fl">0.01</span></span>
-<span id="cb65-28"><a href="sec12_5.html#cb65-28" tabindex="-1"></a>Prior_prec <span class="ot">&lt;-</span> <span class="fl">0.1</span></span>
-<span id="cb65-29"><a href="sec12_5.html#cb65-29" tabindex="-1"></a>n_iter <span class="ot">&lt;-</span> <span class="dv">2000</span></span>
-<span id="cb65-30"><a href="sec12_5.html#cb65-30" tabindex="-1"></a>burnin <span class="ot">&lt;-</span> <span class="dv">500</span></span>
-<span id="cb65-31"><a href="sec12_5.html#cb65-31" tabindex="-1"></a>stepsize <span class="ot">&lt;-</span> <span class="fl">1e-4</span></span>
-<span id="cb65-32"><a href="sec12_5.html#cb65-32" tabindex="-1"></a>k_target1 <span class="ot">&lt;-</span> <span class="dv">4</span>  <span class="co"># beta5</span></span>
-<span id="cb65-33"><a href="sec12_5.html#cb65-33" tabindex="-1"></a>k_target2 <span class="ot">&lt;-</span> <span class="dv">5</span>  <span class="co"># beta5</span></span>
-<span id="cb65-34"><a href="sec12_5.html#cb65-34" tabindex="-1"></a>ks <span class="ot">&lt;-</span> k_target1<span class="sc">:</span>k_target2</span>
-<span id="cb65-35"><a href="sec12_5.html#cb65-35" tabindex="-1"></a><span class="co">#--- Simulate data</span></span>
-<span id="cb65-36"><a href="sec12_5.html#cb65-36" tabindex="-1"></a>sim_data <span class="ot">&lt;-</span> <span class="fu">simulate_logit_data</span>(K, N, beta_true)</span>
-<span id="cb65-37"><a href="sec12_5.html#cb65-37" tabindex="-1"></a>y <span class="ot">&lt;-</span> sim_data<span class="sc">$</span>y</span>
-<span id="cb65-38"><a href="sec12_5.html#cb65-38" tabindex="-1"></a>X <span class="ot">&lt;-</span> <span class="fu">scale</span>(sim_data<span class="sc">$</span>X)</span>
-<span id="cb65-39"><a href="sec12_5.html#cb65-39" tabindex="-1"></a><span class="do">### Run MCMCpack logit</span></span>
-<span id="cb65-40"><a href="sec12_5.html#cb65-40" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(X)</span>
-<span id="cb65-41"><a href="sec12_5.html#cb65-41" tabindex="-1"></a><span class="fu">colnames</span>(df) <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;X&quot;</span>, <span class="dv">1</span><span class="sc">:</span>K)</span>
-<span id="cb65-42"><a href="sec12_5.html#cb65-42" tabindex="-1"></a>df<span class="sc">$</span>y <span class="ot">&lt;-</span> y</span>
-<span id="cb65-43"><a href="sec12_5.html#cb65-43" tabindex="-1"></a>formula <span class="ot">&lt;-</span> <span class="fu">as.formula</span>(<span class="fu">paste</span>(<span class="st">&quot;y ~&quot;</span>, <span class="fu">paste</span>(<span class="fu">colnames</span>(df)[<span class="dv">1</span><span class="sc">:</span>K], <span class="at">collapse =</span> <span class="st">&quot; + &quot;</span>), <span class="st">&quot;-1&quot;</span>))</span>
-<span id="cb65-44"><a href="sec12_5.html#cb65-44" tabindex="-1"></a>posterior_mh <span class="ot">&lt;-</span> <span class="fu">MCMClogit</span>(formula, <span class="at">data =</span> df, <span class="at">b0 =</span> <span class="dv">0</span>, <span class="at">B0 =</span> Prior_prec,</span>
-<span id="cb65-45"><a href="sec12_5.html#cb65-45" tabindex="-1"></a><span class="at">burnin =</span> burnin, <span class="at">mcmc =</span> n_iter)</span>
-<span id="cb65-46"><a href="sec12_5.html#cb65-46" tabindex="-1"></a>full_posterior <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(posterior_mh)[, <span class="dv">1</span><span class="sc">:</span>K]</span>
-<span id="cb65-47"><a href="sec12_5.html#cb65-47" tabindex="-1"></a><span class="do">#### CMC</span></span>
-<span id="cb65-48"><a href="sec12_5.html#cb65-48" tabindex="-1"></a><span class="do">### Split data</span></span>
-<span id="cb65-49"><a href="sec12_5.html#cb65-49" tabindex="-1"></a>batch_ids <span class="ot">&lt;-</span> <span class="fu">split</span>(<span class="dv">1</span><span class="sc">:</span>N, <span class="fu">sort</span>(<span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span>B, <span class="at">length.out =</span> N)))</span>
-<span id="cb65-50"><a href="sec12_5.html#cb65-50" tabindex="-1"></a><span class="do">### Function to run MCMC on a subset</span></span>
-<span id="cb65-51"><a href="sec12_5.html#cb65-51" tabindex="-1"></a>mcmc_batch <span class="ot">&lt;-</span> <span class="cf">function</span>(batch_index, X, y, n_iter, burnin) {</span>
-<span id="cb65-52"><a href="sec12_5.html#cb65-52" tabindex="-1"></a>    ids <span class="ot">&lt;-</span> batch_ids[[batch_index]]</span>
-<span id="cb65-53"><a href="sec12_5.html#cb65-53" tabindex="-1"></a>    X_b <span class="ot">&lt;-</span> X[ids, ]</span>
-<span id="cb65-54"><a href="sec12_5.html#cb65-54" tabindex="-1"></a>    y_b <span class="ot">&lt;-</span> y[ids]</span>
-<span id="cb65-55"><a href="sec12_5.html#cb65-55" tabindex="-1"></a>    mcmc_out <span class="ot">&lt;-</span> <span class="fu">MCMClogit</span>(y_b <span class="sc">~</span> X_b <span class="sc">-</span> <span class="dv">1</span>, <span class="at">burnin =</span> burnin, <span class="at">mcmc =</span> n_iter, <span class="at">verbose =</span> <span class="dv">0</span>, <span class="at">b0 =</span> <span class="dv">0</span>, <span class="at">B0 =</span> Prior_prec <span class="sc">*</span> (<span class="dv">1</span><span class="sc">/</span>B))</span>
-<span id="cb65-56"><a href="sec12_5.html#cb65-56" tabindex="-1"></a>    <span class="fu">return</span>(mcmc_out)</span>
-<span id="cb65-57"><a href="sec12_5.html#cb65-57" tabindex="-1"></a>}</span>
-<span id="cb65-58"><a href="sec12_5.html#cb65-58" tabindex="-1"></a><span class="do">### Run in parallel</span></span>
-<span id="cb65-59"><a href="sec12_5.html#cb65-59" tabindex="-1"></a>cl <span class="ot">&lt;-</span> <span class="fu">makeCluster</span>(B)</span>
-<span id="cb65-60"><a href="sec12_5.html#cb65-60" tabindex="-1"></a><span class="fu">clusterExport</span>(cl, <span class="fu">c</span>(<span class="st">&quot;X&quot;</span>, <span class="st">&quot;y&quot;</span>, <span class="st">&quot;batch_ids&quot;</span>, <span class="st">&quot;n_iter&quot;</span>, <span class="st">&quot;burnin&quot;</span>, <span class="st">&quot;mcmc_batch&quot;</span>, <span class="st">&quot;Prior_prec&quot;</span>, <span class="st">&quot;B&quot;</span>))</span>
-<span id="cb65-61"><a href="sec12_5.html#cb65-61" tabindex="-1"></a><span class="fu">clusterEvalQ</span>(cl, <span class="fu">library</span>(MCMCpack))</span></code></pre></div>
+<div class="sourceCode" id="cb755"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb755-1"><a href="sec12_5.html#cb755-1" tabindex="-1"></a><span class="do">### Generate correlated covariates</span></span>
+<span id="cb755-2"><a href="sec12_5.html#cb755-2" tabindex="-1"></a>genCovMat <span class="ot">&lt;-</span> <span class="cf">function</span>(K, <span class="at">rho =</span> <span class="fl">0.4</span>) {</span>
+<span id="cb755-3"><a href="sec12_5.html#cb755-3" tabindex="-1"></a>    Sigma0 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">1</span>, K, K)</span>
+<span id="cb755-4"><a href="sec12_5.html#cb755-4" tabindex="-1"></a>    <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">2</span><span class="sc">:</span>K) {</span>
+<span id="cb755-5"><a href="sec12_5.html#cb755-5" tabindex="-1"></a>        <span class="cf">for</span> (j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>(i <span class="sc">-</span> <span class="dv">1</span>)) {</span>
+<span id="cb755-6"><a href="sec12_5.html#cb755-6" tabindex="-1"></a>            Sigma0[i, j] <span class="ot">&lt;-</span> <span class="fu">runif</span>(<span class="dv">1</span>, <span class="sc">-</span>rho, rho)<span class="sc">^</span>(i <span class="sc">-</span> j)</span>
+<span id="cb755-7"><a href="sec12_5.html#cb755-7" tabindex="-1"></a>        }</span>
+<span id="cb755-8"><a href="sec12_5.html#cb755-8" tabindex="-1"></a>    }</span>
+<span id="cb755-9"><a href="sec12_5.html#cb755-9" tabindex="-1"></a>    Sigma0 <span class="ot">&lt;-</span> Sigma0 <span class="sc">*</span> <span class="fu">t</span>(Sigma0)</span>
+<span id="cb755-10"><a href="sec12_5.html#cb755-10" tabindex="-1"></a>    <span class="fu">diag</span>(Sigma0) <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb755-11"><a href="sec12_5.html#cb755-11" tabindex="-1"></a>    <span class="fu">return</span>(Sigma0)</span>
+<span id="cb755-12"><a href="sec12_5.html#cb755-12" tabindex="-1"></a>}</span>
+<span id="cb755-13"><a href="sec12_5.html#cb755-13" tabindex="-1"></a><span class="do">### Simulate logistic regression data</span></span>
+<span id="cb755-14"><a href="sec12_5.html#cb755-14" tabindex="-1"></a>simulate_logit_data <span class="ot">&lt;-</span> <span class="cf">function</span>(K, N, beta_true) {</span>
+<span id="cb755-15"><a href="sec12_5.html#cb755-15" tabindex="-1"></a>    Sigma0 <span class="ot">&lt;-</span> <span class="fu">genCovMat</span>(K)</span>
+<span id="cb755-16"><a href="sec12_5.html#cb755-16" tabindex="-1"></a>    X <span class="ot">&lt;-</span> <span class="fu">rmvnorm</span>(N, <span class="at">mean =</span> <span class="fu">rep</span>(<span class="dv">0</span>, K), <span class="at">sigma =</span> Sigma0)</span>
+<span id="cb755-17"><a href="sec12_5.html#cb755-17" tabindex="-1"></a>    linpred <span class="ot">&lt;-</span> X <span class="sc">%*%</span> beta_true</span>
+<span id="cb755-18"><a href="sec12_5.html#cb755-18" tabindex="-1"></a>    p <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">+</span> <span class="fu">exp</span>(<span class="sc">-</span>linpred))</span>
+<span id="cb755-19"><a href="sec12_5.html#cb755-19" tabindex="-1"></a>    y <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(N, <span class="dv">1</span>, p)</span>
+<span id="cb755-20"><a href="sec12_5.html#cb755-20" tabindex="-1"></a>    <span class="fu">list</span>(<span class="at">y =</span> y, <span class="at">X =</span> X)</span>
+<span id="cb755-21"><a href="sec12_5.html#cb755-21" tabindex="-1"></a>}</span>
+<span id="cb755-22"><a href="sec12_5.html#cb755-22" tabindex="-1"></a><span class="do">### Parameters</span></span>
+<span id="cb755-23"><a href="sec12_5.html#cb755-23" tabindex="-1"></a>K <span class="ot">&lt;-</span> <span class="dv">10</span></span>
+<span id="cb755-24"><a href="sec12_5.html#cb755-24" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="dv">100000</span></span>
+<span id="cb755-25"><a href="sec12_5.html#cb755-25" tabindex="-1"></a>beta_true <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="fl">0.5</span>, K)</span>
+<span id="cb755-26"><a href="sec12_5.html#cb755-26" tabindex="-1"></a>B <span class="ot">&lt;-</span> <span class="dv">5</span></span>
+<span id="cb755-27"><a href="sec12_5.html#cb755-27" tabindex="-1"></a>batch_prop <span class="ot">&lt;-</span> <span class="fl">0.01</span></span>
+<span id="cb755-28"><a href="sec12_5.html#cb755-28" tabindex="-1"></a>Prior_prec <span class="ot">&lt;-</span> <span class="fl">0.1</span></span>
+<span id="cb755-29"><a href="sec12_5.html#cb755-29" tabindex="-1"></a>n_iter <span class="ot">&lt;-</span> <span class="dv">2000</span></span>
+<span id="cb755-30"><a href="sec12_5.html#cb755-30" tabindex="-1"></a>burnin <span class="ot">&lt;-</span> <span class="dv">500</span></span>
+<span id="cb755-31"><a href="sec12_5.html#cb755-31" tabindex="-1"></a>stepsize <span class="ot">&lt;-</span> <span class="fl">1e-4</span></span>
+<span id="cb755-32"><a href="sec12_5.html#cb755-32" tabindex="-1"></a>k_target1 <span class="ot">&lt;-</span> <span class="dv">4</span>  <span class="co"># beta5</span></span>
+<span id="cb755-33"><a href="sec12_5.html#cb755-33" tabindex="-1"></a>k_target2 <span class="ot">&lt;-</span> <span class="dv">5</span>  <span class="co"># beta5</span></span>
+<span id="cb755-34"><a href="sec12_5.html#cb755-34" tabindex="-1"></a>ks <span class="ot">&lt;-</span> k_target1<span class="sc">:</span>k_target2</span>
+<span id="cb755-35"><a href="sec12_5.html#cb755-35" tabindex="-1"></a><span class="co">#--- Simulate data</span></span>
+<span id="cb755-36"><a href="sec12_5.html#cb755-36" tabindex="-1"></a>sim_data <span class="ot">&lt;-</span> <span class="fu">simulate_logit_data</span>(K, N, beta_true)</span>
+<span id="cb755-37"><a href="sec12_5.html#cb755-37" tabindex="-1"></a>y <span class="ot">&lt;-</span> sim_data<span class="sc">$</span>y</span>
+<span id="cb755-38"><a href="sec12_5.html#cb755-38" tabindex="-1"></a>X <span class="ot">&lt;-</span> <span class="fu">scale</span>(sim_data<span class="sc">$</span>X)</span>
+<span id="cb755-39"><a href="sec12_5.html#cb755-39" tabindex="-1"></a><span class="do">### Run MCMCpack logit</span></span>
+<span id="cb755-40"><a href="sec12_5.html#cb755-40" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(X)</span>
+<span id="cb755-41"><a href="sec12_5.html#cb755-41" tabindex="-1"></a><span class="fu">colnames</span>(df) <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;X&quot;</span>, <span class="dv">1</span><span class="sc">:</span>K)</span>
+<span id="cb755-42"><a href="sec12_5.html#cb755-42" tabindex="-1"></a>df<span class="sc">$</span>y <span class="ot">&lt;-</span> y</span>
+<span id="cb755-43"><a href="sec12_5.html#cb755-43" tabindex="-1"></a>formula <span class="ot">&lt;-</span> <span class="fu">as.formula</span>(<span class="fu">paste</span>(<span class="st">&quot;y ~&quot;</span>, <span class="fu">paste</span>(<span class="fu">colnames</span>(df)[<span class="dv">1</span><span class="sc">:</span>K], <span class="at">collapse =</span> <span class="st">&quot; + &quot;</span>), <span class="st">&quot;-1&quot;</span>))</span>
+<span id="cb755-44"><a href="sec12_5.html#cb755-44" tabindex="-1"></a>posterior_mh <span class="ot">&lt;-</span> <span class="fu">MCMClogit</span>(formula, <span class="at">data =</span> df, <span class="at">b0 =</span> <span class="dv">0</span>, <span class="at">B0 =</span> Prior_prec,</span>
+<span id="cb755-45"><a href="sec12_5.html#cb755-45" tabindex="-1"></a><span class="at">burnin =</span> burnin, <span class="at">mcmc =</span> n_iter)</span>
+<span id="cb755-46"><a href="sec12_5.html#cb755-46" tabindex="-1"></a>full_posterior <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(posterior_mh)[, <span class="dv">1</span><span class="sc">:</span>K]</span>
+<span id="cb755-47"><a href="sec12_5.html#cb755-47" tabindex="-1"></a><span class="do">#### CMC</span></span>
+<span id="cb755-48"><a href="sec12_5.html#cb755-48" tabindex="-1"></a><span class="do">### Split data</span></span>
+<span id="cb755-49"><a href="sec12_5.html#cb755-49" tabindex="-1"></a>batch_ids <span class="ot">&lt;-</span> <span class="fu">split</span>(<span class="dv">1</span><span class="sc">:</span>N, <span class="fu">sort</span>(<span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span>B, <span class="at">length.out =</span> N)))</span>
+<span id="cb755-50"><a href="sec12_5.html#cb755-50" tabindex="-1"></a><span class="do">### Function to run MCMC on a subset</span></span>
+<span id="cb755-51"><a href="sec12_5.html#cb755-51" tabindex="-1"></a>mcmc_batch <span class="ot">&lt;-</span> <span class="cf">function</span>(batch_index, X, y, n_iter, burnin) {</span>
+<span id="cb755-52"><a href="sec12_5.html#cb755-52" tabindex="-1"></a>    ids <span class="ot">&lt;-</span> batch_ids[[batch_index]]</span>
+<span id="cb755-53"><a href="sec12_5.html#cb755-53" tabindex="-1"></a>    X_b <span class="ot">&lt;-</span> X[ids, ]</span>
+<span id="cb755-54"><a href="sec12_5.html#cb755-54" tabindex="-1"></a>    y_b <span class="ot">&lt;-</span> y[ids]</span>
+<span id="cb755-55"><a href="sec12_5.html#cb755-55" tabindex="-1"></a>    mcmc_out <span class="ot">&lt;-</span> <span class="fu">MCMClogit</span>(y_b <span class="sc">~</span> X_b <span class="sc">-</span> <span class="dv">1</span>, <span class="at">burnin =</span> burnin, <span class="at">mcmc =</span> n_iter, <span class="at">verbose =</span> <span class="dv">0</span>, <span class="at">b0 =</span> <span class="dv">0</span>, <span class="at">B0 =</span> Prior_prec <span class="sc">*</span> (<span class="dv">1</span><span class="sc">/</span>B))</span>
+<span id="cb755-56"><a href="sec12_5.html#cb755-56" tabindex="-1"></a>    <span class="fu">return</span>(mcmc_out)</span>
+<span id="cb755-57"><a href="sec12_5.html#cb755-57" tabindex="-1"></a>}</span>
+<span id="cb755-58"><a href="sec12_5.html#cb755-58" tabindex="-1"></a><span class="do">### Run in parallel</span></span>
+<span id="cb755-59"><a href="sec12_5.html#cb755-59" tabindex="-1"></a>cl <span class="ot">&lt;-</span> <span class="fu">makeCluster</span>(B)</span>
+<span id="cb755-60"><a href="sec12_5.html#cb755-60" tabindex="-1"></a><span class="fu">clusterExport</span>(cl, <span class="fu">c</span>(<span class="st">&quot;X&quot;</span>, <span class="st">&quot;y&quot;</span>, <span class="st">&quot;batch_ids&quot;</span>, <span class="st">&quot;n_iter&quot;</span>, <span class="st">&quot;burnin&quot;</span>, <span class="st">&quot;mcmc_batch&quot;</span>, <span class="st">&quot;Prior_prec&quot;</span>, <span class="st">&quot;B&quot;</span>))</span>
+<span id="cb755-61"><a href="sec12_5.html#cb755-61" tabindex="-1"></a><span class="fu">clusterEvalQ</span>(cl, <span class="fu">library</span>(MCMCpack))</span></code></pre></div>
 <pre><code>## [[1]]
 ##  [1] &quot;MCMCpack&quot;  &quot;MASS&quot;      &quot;coda&quot;      &quot;stats&quot;     &quot;graphics&quot;  &quot;grDevices&quot;
 ##  [7] &quot;utils&quot;     &quot;datasets&quot;  &quot;methods&quot;   &quot;base&quot;     
@@ -691,87 +675,87 @@ P(y_i = 1 \mid \boldsymbol{\beta}, \mathbf{x}_i) = \frac{\exp\left\{\mathbf{x}_i
 ## [[5]]
 ##  [1] &quot;MCMCpack&quot;  &quot;MASS&quot;      &quot;coda&quot;      &quot;stats&quot;     &quot;graphics&quot;  &quot;grDevices&quot;
 ##  [7] &quot;utils&quot;     &quot;datasets&quot;  &quot;methods&quot;   &quot;base&quot;</code></pre>
-<div class="sourceCode" id="cb67"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb67-1"><a href="sec12_5.html#cb67-1" tabindex="-1"></a>chains <span class="ot">&lt;-</span> <span class="fu">parLapply</span>(cl, <span class="dv">1</span><span class="sc">:</span>B, <span class="cf">function</span>(b) <span class="fu">mcmc_batch</span>(b, X, y, n_iter, burnin))</span>
-<span id="cb67-2"><a href="sec12_5.html#cb67-2" tabindex="-1"></a><span class="fu">stopCluster</span>(cl)</span>
-<span id="cb67-3"><a href="sec12_5.html#cb67-3" tabindex="-1"></a><span class="co"># Stack MCMC results</span></span>
-<span id="cb67-4"><a href="sec12_5.html#cb67-4" tabindex="-1"></a>posteriors <span class="ot">&lt;-</span> <span class="fu">lapply</span>(chains, <span class="cf">function</span>(x) x[, <span class="dv">1</span><span class="sc">:</span>K])</span>
-<span id="cb67-5"><a href="sec12_5.html#cb67-5" tabindex="-1"></a><span class="co"># CMC posteriors</span></span>
-<span id="cb67-6"><a href="sec12_5.html#cb67-6" tabindex="-1"></a>equal_cmc <span class="ot">&lt;-</span> <span class="fu">Reduce</span>(<span class="st">&quot;+&quot;</span>, posteriors) <span class="sc">/</span> B</span>
-<span id="cb67-7"><a href="sec12_5.html#cb67-7" tabindex="-1"></a>invvar_cmc <span class="ot">&lt;-</span> {</span>
-<span id="cb67-8"><a href="sec12_5.html#cb67-8" tabindex="-1"></a>    vars <span class="ot">&lt;-</span> <span class="fu">lapply</span>(posteriors, <span class="cf">function</span>(x) <span class="fu">apply</span>(x, <span class="dv">2</span>, var))</span>
-<span id="cb67-9"><a href="sec12_5.html#cb67-9" tabindex="-1"></a>    weights <span class="ot">&lt;-</span> <span class="fu">lapply</span>(vars, <span class="cf">function</span>(v) <span class="dv">1</span> <span class="sc">/</span> v)</span>
-<span id="cb67-10"><a href="sec12_5.html#cb67-10" tabindex="-1"></a>    weights_sum <span class="ot">&lt;-</span> <span class="fu">Reduce</span>(<span class="st">&quot;+&quot;</span>, weights)</span>
-<span id="cb67-11"><a href="sec12_5.html#cb67-11" tabindex="-1"></a>    weighted_post <span class="ot">&lt;-</span> <span class="fu">Reduce</span>(<span class="st">&quot;+&quot;</span>, <span class="fu">Map</span>(<span class="cf">function</span>(x, w) <span class="fu">sweep</span>(x, <span class="dv">2</span>, w, <span class="st">&quot;*&quot;</span>), posteriors, weights))</span>
-<span id="cb67-12"><a href="sec12_5.html#cb67-12" tabindex="-1"></a>    <span class="fu">sweep</span>(weighted_post, <span class="dv">2</span>, weights_sum, <span class="st">&quot;/&quot;</span>)</span>
-<span id="cb67-13"><a href="sec12_5.html#cb67-13" tabindex="-1"></a>}</span>
-<span id="cb67-14"><a href="sec12_5.html#cb67-14" tabindex="-1"></a>invmat_cmc <span class="ot">&lt;-</span> {</span>
-<span id="cb67-15"><a href="sec12_5.html#cb67-15" tabindex="-1"></a>    covs <span class="ot">&lt;-</span> <span class="fu">lapply</span>(posteriors, cov)      </span>
-<span id="cb67-16"><a href="sec12_5.html#cb67-16" tabindex="-1"></a>    invs <span class="ot">&lt;-</span> <span class="fu">lapply</span>(covs, solve)           </span>
-<span id="cb67-17"><a href="sec12_5.html#cb67-17" tabindex="-1"></a>    weight_sum <span class="ot">&lt;-</span> <span class="fu">Reduce</span>(<span class="st">&quot;+&quot;</span>, invs)                     </span>
-<span id="cb67-18"><a href="sec12_5.html#cb67-18" tabindex="-1"></a>    consensus <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="cn">NA</span>, <span class="at">nrow =</span> n_iter, <span class="at">ncol =</span> K)</span>
-<span id="cb67-19"><a href="sec12_5.html#cb67-19" tabindex="-1"></a>    <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>n_iter) {</span>
-<span id="cb67-20"><a href="sec12_5.html#cb67-20" tabindex="-1"></a>        draws <span class="ot">&lt;-</span> <span class="fu">lapply</span>(posteriors, <span class="cf">function</span>(p) <span class="fu">matrix</span>(p[i, ], <span class="at">ncol =</span> <span class="dv">1</span>))</span>
-<span id="cb67-21"><a href="sec12_5.html#cb67-21" tabindex="-1"></a>        weighted_sum <span class="ot">&lt;-</span> <span class="fu">Reduce</span>(<span class="st">&quot;+&quot;</span>, <span class="fu">Map</span>(<span class="cf">function</span>(w, d) w <span class="sc">%*%</span> d, invs, draws))</span>
-<span id="cb67-22"><a href="sec12_5.html#cb67-22" tabindex="-1"></a>        consensus[i, ] <span class="ot">&lt;-</span> <span class="fu">as.vector</span>(<span class="fu">solve</span>(weight_sum, weighted_sum))  </span>
-<span id="cb67-23"><a href="sec12_5.html#cb67-23" tabindex="-1"></a>    }</span>
-<span id="cb67-24"><a href="sec12_5.html#cb67-24" tabindex="-1"></a>    consensus</span>
-<span id="cb67-25"><a href="sec12_5.html#cb67-25" tabindex="-1"></a>}</span>
-<span id="cb67-26"><a href="sec12_5.html#cb67-26" tabindex="-1"></a><span class="co"># Combine all for plotting</span></span>
-<span id="cb67-27"><a href="sec12_5.html#cb67-27" tabindex="-1"></a>build_df <span class="ot">&lt;-</span> <span class="cf">function</span>(mat, method) {</span>
-<span id="cb67-28"><a href="sec12_5.html#cb67-28" tabindex="-1"></a>    df <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(mat)</span>
-<span id="cb67-29"><a href="sec12_5.html#cb67-29" tabindex="-1"></a>    <span class="fu">colnames</span>(df) <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;x&quot;</span>, ks)</span>
-<span id="cb67-30"><a href="sec12_5.html#cb67-30" tabindex="-1"></a>    df<span class="sc">$</span>method <span class="ot">&lt;-</span> method</span>
-<span id="cb67-31"><a href="sec12_5.html#cb67-31" tabindex="-1"></a>    <span class="fu">return</span>(df)</span>
-<span id="cb67-32"><a href="sec12_5.html#cb67-32" tabindex="-1"></a>}</span>
-<span id="cb67-33"><a href="sec12_5.html#cb67-33" tabindex="-1"></a>df_full <span class="ot">&lt;-</span> <span class="fu">build_df</span>(full_posterior[,ks], <span class="st">&quot;overall&quot;</span>)</span>
-<span id="cb67-34"><a href="sec12_5.html#cb67-34" tabindex="-1"></a>df_equal <span class="ot">&lt;-</span> <span class="fu">build_df</span>(equal_cmc[,ks], <span class="st">&quot;equal&quot;</span>)</span>
-<span id="cb67-35"><a href="sec12_5.html#cb67-35" tabindex="-1"></a>df_scalar <span class="ot">&lt;-</span> <span class="fu">build_df</span>(invvar_cmc[,ks], <span class="st">&quot;scalar&quot;</span>)</span>
-<span id="cb67-36"><a href="sec12_5.html#cb67-36" tabindex="-1"></a>df_matrix <span class="ot">&lt;-</span> <span class="fu">build_df</span>(invmat_cmc[,ks], <span class="st">&quot;matrix&quot;</span>)</span>
-<span id="cb67-37"><a href="sec12_5.html#cb67-37" tabindex="-1"></a>df_plot <span class="ot">&lt;-</span> <span class="fu">rbind</span>(df_full, df_matrix, df_scalar, df_equal)</span>
-<span id="cb67-38"><a href="sec12_5.html#cb67-38" tabindex="-1"></a><span class="co"># Plot</span></span>
-<span id="cb67-39"><a href="sec12_5.html#cb67-39" tabindex="-1"></a><span class="fu">ggpairs</span>(df_plot, <span class="fu">aes</span>(<span class="at">color =</span> method, <span class="at">fill =</span> method, <span class="at">alpha =</span> <span class="fl">0.4</span>), <span class="at">upper =</span> <span class="fu">list</span>(<span class="at">continuous =</span> GGally<span class="sc">::</span><span class="fu">wrap</span>(<span class="st">&quot;density&quot;</span>, <span class="at">alpha =</span> <span class="fl">0.4</span>)), <span class="at">lower =</span> <span class="fu">list</span>(<span class="at">continuous =</span> GGally<span class="sc">::</span><span class="fu">wrap</span>(<span class="st">&quot;density&quot;</span>, <span class="at">alpha =</span> <span class="fl">0.4</span>)), <span class="at">diag =</span> <span class="fu">list</span>(<span class="at">continuous =</span> GGally<span class="sc">::</span><span class="fu">wrap</span>(<span class="st">&quot;densityDiag&quot;</span>, <span class="at">alpha =</span> <span class="fl">0.4</span>)))</span></code></pre></div>
+<div class="sourceCode" id="cb757"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb757-1"><a href="sec12_5.html#cb757-1" tabindex="-1"></a>chains <span class="ot">&lt;-</span> <span class="fu">parLapply</span>(cl, <span class="dv">1</span><span class="sc">:</span>B, <span class="cf">function</span>(b) <span class="fu">mcmc_batch</span>(b, X, y, n_iter, burnin))</span>
+<span id="cb757-2"><a href="sec12_5.html#cb757-2" tabindex="-1"></a><span class="fu">stopCluster</span>(cl)</span>
+<span id="cb757-3"><a href="sec12_5.html#cb757-3" tabindex="-1"></a><span class="co"># Stack MCMC results</span></span>
+<span id="cb757-4"><a href="sec12_5.html#cb757-4" tabindex="-1"></a>posteriors <span class="ot">&lt;-</span> <span class="fu">lapply</span>(chains, <span class="cf">function</span>(x) x[, <span class="dv">1</span><span class="sc">:</span>K])</span>
+<span id="cb757-5"><a href="sec12_5.html#cb757-5" tabindex="-1"></a><span class="co"># CMC posteriors</span></span>
+<span id="cb757-6"><a href="sec12_5.html#cb757-6" tabindex="-1"></a>equal_cmc <span class="ot">&lt;-</span> <span class="fu">Reduce</span>(<span class="st">&quot;+&quot;</span>, posteriors) <span class="sc">/</span> B</span>
+<span id="cb757-7"><a href="sec12_5.html#cb757-7" tabindex="-1"></a>invvar_cmc <span class="ot">&lt;-</span> {</span>
+<span id="cb757-8"><a href="sec12_5.html#cb757-8" tabindex="-1"></a>    vars <span class="ot">&lt;-</span> <span class="fu">lapply</span>(posteriors, <span class="cf">function</span>(x) <span class="fu">apply</span>(x, <span class="dv">2</span>, var))</span>
+<span id="cb757-9"><a href="sec12_5.html#cb757-9" tabindex="-1"></a>    weights <span class="ot">&lt;-</span> <span class="fu">lapply</span>(vars, <span class="cf">function</span>(v) <span class="dv">1</span> <span class="sc">/</span> v)</span>
+<span id="cb757-10"><a href="sec12_5.html#cb757-10" tabindex="-1"></a>    weights_sum <span class="ot">&lt;-</span> <span class="fu">Reduce</span>(<span class="st">&quot;+&quot;</span>, weights)</span>
+<span id="cb757-11"><a href="sec12_5.html#cb757-11" tabindex="-1"></a>    weighted_post <span class="ot">&lt;-</span> <span class="fu">Reduce</span>(<span class="st">&quot;+&quot;</span>, <span class="fu">Map</span>(<span class="cf">function</span>(x, w) <span class="fu">sweep</span>(x, <span class="dv">2</span>, w, <span class="st">&quot;*&quot;</span>), posteriors, weights))</span>
+<span id="cb757-12"><a href="sec12_5.html#cb757-12" tabindex="-1"></a>    <span class="fu">sweep</span>(weighted_post, <span class="dv">2</span>, weights_sum, <span class="st">&quot;/&quot;</span>)</span>
+<span id="cb757-13"><a href="sec12_5.html#cb757-13" tabindex="-1"></a>}</span>
+<span id="cb757-14"><a href="sec12_5.html#cb757-14" tabindex="-1"></a>invmat_cmc <span class="ot">&lt;-</span> {</span>
+<span id="cb757-15"><a href="sec12_5.html#cb757-15" tabindex="-1"></a>    covs <span class="ot">&lt;-</span> <span class="fu">lapply</span>(posteriors, cov)      </span>
+<span id="cb757-16"><a href="sec12_5.html#cb757-16" tabindex="-1"></a>    invs <span class="ot">&lt;-</span> <span class="fu">lapply</span>(covs, solve)           </span>
+<span id="cb757-17"><a href="sec12_5.html#cb757-17" tabindex="-1"></a>    weight_sum <span class="ot">&lt;-</span> <span class="fu">Reduce</span>(<span class="st">&quot;+&quot;</span>, invs)                     </span>
+<span id="cb757-18"><a href="sec12_5.html#cb757-18" tabindex="-1"></a>    consensus <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="cn">NA</span>, <span class="at">nrow =</span> n_iter, <span class="at">ncol =</span> K)</span>
+<span id="cb757-19"><a href="sec12_5.html#cb757-19" tabindex="-1"></a>    <span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>n_iter) {</span>
+<span id="cb757-20"><a href="sec12_5.html#cb757-20" tabindex="-1"></a>        draws <span class="ot">&lt;-</span> <span class="fu">lapply</span>(posteriors, <span class="cf">function</span>(p) <span class="fu">matrix</span>(p[i, ], <span class="at">ncol =</span> <span class="dv">1</span>))</span>
+<span id="cb757-21"><a href="sec12_5.html#cb757-21" tabindex="-1"></a>        weighted_sum <span class="ot">&lt;-</span> <span class="fu">Reduce</span>(<span class="st">&quot;+&quot;</span>, <span class="fu">Map</span>(<span class="cf">function</span>(w, d) w <span class="sc">%*%</span> d, invs, draws))</span>
+<span id="cb757-22"><a href="sec12_5.html#cb757-22" tabindex="-1"></a>        consensus[i, ] <span class="ot">&lt;-</span> <span class="fu">as.vector</span>(<span class="fu">solve</span>(weight_sum, weighted_sum))  </span>
+<span id="cb757-23"><a href="sec12_5.html#cb757-23" tabindex="-1"></a>    }</span>
+<span id="cb757-24"><a href="sec12_5.html#cb757-24" tabindex="-1"></a>    consensus</span>
+<span id="cb757-25"><a href="sec12_5.html#cb757-25" tabindex="-1"></a>}</span>
+<span id="cb757-26"><a href="sec12_5.html#cb757-26" tabindex="-1"></a><span class="co"># Combine all for plotting</span></span>
+<span id="cb757-27"><a href="sec12_5.html#cb757-27" tabindex="-1"></a>build_df <span class="ot">&lt;-</span> <span class="cf">function</span>(mat, method) {</span>
+<span id="cb757-28"><a href="sec12_5.html#cb757-28" tabindex="-1"></a>    df <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(mat)</span>
+<span id="cb757-29"><a href="sec12_5.html#cb757-29" tabindex="-1"></a>    <span class="fu">colnames</span>(df) <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;x&quot;</span>, ks)</span>
+<span id="cb757-30"><a href="sec12_5.html#cb757-30" tabindex="-1"></a>    df<span class="sc">$</span>method <span class="ot">&lt;-</span> method</span>
+<span id="cb757-31"><a href="sec12_5.html#cb757-31" tabindex="-1"></a>    <span class="fu">return</span>(df)</span>
+<span id="cb757-32"><a href="sec12_5.html#cb757-32" tabindex="-1"></a>}</span>
+<span id="cb757-33"><a href="sec12_5.html#cb757-33" tabindex="-1"></a>df_full <span class="ot">&lt;-</span> <span class="fu">build_df</span>(full_posterior[,ks], <span class="st">&quot;overall&quot;</span>)</span>
+<span id="cb757-34"><a href="sec12_5.html#cb757-34" tabindex="-1"></a>df_equal <span class="ot">&lt;-</span> <span class="fu">build_df</span>(equal_cmc[,ks], <span class="st">&quot;equal&quot;</span>)</span>
+<span id="cb757-35"><a href="sec12_5.html#cb757-35" tabindex="-1"></a>df_scalar <span class="ot">&lt;-</span> <span class="fu">build_df</span>(invvar_cmc[,ks], <span class="st">&quot;scalar&quot;</span>)</span>
+<span id="cb757-36"><a href="sec12_5.html#cb757-36" tabindex="-1"></a>df_matrix <span class="ot">&lt;-</span> <span class="fu">build_df</span>(invmat_cmc[,ks], <span class="st">&quot;matrix&quot;</span>)</span>
+<span id="cb757-37"><a href="sec12_5.html#cb757-37" tabindex="-1"></a>df_plot <span class="ot">&lt;-</span> <span class="fu">rbind</span>(df_full, df_matrix, df_scalar, df_equal)</span>
+<span id="cb757-38"><a href="sec12_5.html#cb757-38" tabindex="-1"></a><span class="co"># Plot</span></span>
+<span id="cb757-39"><a href="sec12_5.html#cb757-39" tabindex="-1"></a><span class="fu">ggpairs</span>(df_plot, <span class="fu">aes</span>(<span class="at">color =</span> method, <span class="at">fill =</span> method, <span class="at">alpha =</span> <span class="fl">0.4</span>), <span class="at">upper =</span> <span class="fu">list</span>(<span class="at">continuous =</span> GGally<span class="sc">::</span><span class="fu">wrap</span>(<span class="st">&quot;density&quot;</span>, <span class="at">alpha =</span> <span class="fl">0.4</span>)), <span class="at">lower =</span> <span class="fu">list</span>(<span class="at">continuous =</span> GGally<span class="sc">::</span><span class="fu">wrap</span>(<span class="st">&quot;density&quot;</span>, <span class="at">alpha =</span> <span class="fl">0.4</span>)), <span class="at">diag =</span> <span class="fu">list</span>(<span class="at">continuous =</span> GGally<span class="sc">::</span><span class="fu">wrap</span>(<span class="st">&quot;densityDiag&quot;</span>, <span class="at">alpha =</span> <span class="fl">0.4</span>)))</span></code></pre></div>
 <pre><code>## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</code></pre>
 <pre><code>## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.</code></pre>
-<p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-7-1.svg" width="672" /></p>
-<div class="sourceCode" id="cb70"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb70-1"><a href="sec12_5.html#cb70-1" tabindex="-1"></a><span class="do">#### SGLD</span></span>
-<span id="cb70-2"><a href="sec12_5.html#cb70-2" tabindex="-1"></a>SGLD_step <span class="ot">&lt;-</span> <span class="cf">function</span>(beta, y, X, stepsize, batch_size, <span class="at">prior_var =</span> <span class="dv">10</span>) {</span>
-<span id="cb70-3"><a href="sec12_5.html#cb70-3" tabindex="-1"></a>    N <span class="ot">&lt;-</span> <span class="fu">nrow</span>(X);   K <span class="ot">&lt;-</span> <span class="fu">length</span>(beta)</span>
-<span id="cb70-4"><a href="sec12_5.html#cb70-4" tabindex="-1"></a>    ids <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span>N, <span class="at">size =</span> batch_size, <span class="at">replace =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb70-5"><a href="sec12_5.html#cb70-5" tabindex="-1"></a>    grad <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">0</span>, K)</span>
-<span id="cb70-6"><a href="sec12_5.html#cb70-6" tabindex="-1"></a>    <span class="cf">for</span> (i <span class="cf">in</span> ids) {</span>
-<span id="cb70-7"><a href="sec12_5.html#cb70-7" tabindex="-1"></a>        xi <span class="ot">&lt;-</span> X[i, ]</span>
-<span id="cb70-8"><a href="sec12_5.html#cb70-8" tabindex="-1"></a>        eta <span class="ot">&lt;-</span> <span class="fu">sum</span>(xi <span class="sc">*</span> beta)</span>
-<span id="cb70-9"><a href="sec12_5.html#cb70-9" tabindex="-1"></a>        pi <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">+</span> <span class="fu">exp</span>(<span class="sc">-</span>eta))</span>
-<span id="cb70-10"><a href="sec12_5.html#cb70-10" tabindex="-1"></a>        grad_i <span class="ot">&lt;-</span> <span class="sc">-</span>(y[i] <span class="sc">-</span> pi) <span class="sc">*</span> xi</span>
-<span id="cb70-11"><a href="sec12_5.html#cb70-11" tabindex="-1"></a>        grad <span class="ot">&lt;-</span> grad <span class="sc">+</span> grad_i</span>
-<span id="cb70-12"><a href="sec12_5.html#cb70-12" tabindex="-1"></a>    }</span>
-<span id="cb70-13"><a href="sec12_5.html#cb70-13" tabindex="-1"></a>    grad <span class="ot">&lt;-</span> grad <span class="sc">/</span> batch_size <span class="sc">*</span> N</span>
-<span id="cb70-14"><a href="sec12_5.html#cb70-14" tabindex="-1"></a>    grad <span class="ot">&lt;-</span> grad <span class="sc">+</span> beta <span class="sc">/</span> prior_var</span>
-<span id="cb70-15"><a href="sec12_5.html#cb70-15" tabindex="-1"></a>    noise <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(K, <span class="dv">0</span>, <span class="fu">sqrt</span>(stepsize))</span>
-<span id="cb70-16"><a href="sec12_5.html#cb70-16" tabindex="-1"></a>    beta_new <span class="ot">&lt;-</span> beta <span class="sc">-</span> <span class="fl">0.5</span> <span class="sc">*</span> stepsize <span class="sc">*</span> grad <span class="sc">+</span> noise</span>
-<span id="cb70-17"><a href="sec12_5.html#cb70-17" tabindex="-1"></a>    <span class="fu">return</span>(beta_new)</span>
-<span id="cb70-18"><a href="sec12_5.html#cb70-18" tabindex="-1"></a>}</span>
-<span id="cb70-19"><a href="sec12_5.html#cb70-19" tabindex="-1"></a><span class="do">### SGLD algorithm</span></span>
-<span id="cb70-20"><a href="sec12_5.html#cb70-20" tabindex="-1"></a>run_SGLD <span class="ot">&lt;-</span> <span class="cf">function</span>(y, X, stepsize, batch_prop, n_iter, burnin, <span class="at">beta_init =</span> <span class="cn">NULL</span>) {</span>
-<span id="cb70-21"><a href="sec12_5.html#cb70-21" tabindex="-1"></a>    N <span class="ot">&lt;-</span> <span class="fu">nrow</span>(X)</span>
-<span id="cb70-22"><a href="sec12_5.html#cb70-22" tabindex="-1"></a>    K <span class="ot">&lt;-</span> <span class="fu">ncol</span>(X)</span>
-<span id="cb70-23"><a href="sec12_5.html#cb70-23" tabindex="-1"></a>    batch_size <span class="ot">&lt;-</span> <span class="fu">round</span>(batch_prop <span class="sc">*</span> N)</span>
-<span id="cb70-24"><a href="sec12_5.html#cb70-24" tabindex="-1"></a>    beta_mat <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span>, n_iter <span class="sc">+</span> burnin, K)</span>
-<span id="cb70-25"><a href="sec12_5.html#cb70-25" tabindex="-1"></a>    beta_mat[<span class="dv">1</span>, ] <span class="ot">&lt;-</span> <span class="cf">if</span> (<span class="fu">is.null</span>(beta_init)) <span class="fu">rep</span>(<span class="dv">0</span>, K) <span class="cf">else</span> beta_init</span>
-<span id="cb70-26"><a href="sec12_5.html#cb70-26" tabindex="-1"></a>    <span class="cf">for</span> (s <span class="cf">in</span> <span class="dv">2</span><span class="sc">:</span>(n_iter <span class="sc">+</span> burnin)) {</span>
-<span id="cb70-27"><a href="sec12_5.html#cb70-27" tabindex="-1"></a>        beta_mat[s, ] <span class="ot">&lt;-</span> <span class="fu">SGLD_step</span>(beta_mat[s <span class="sc">-</span> <span class="dv">1</span>, ], y, X, stepsize, batch_size)</span>
-<span id="cb70-28"><a href="sec12_5.html#cb70-28" tabindex="-1"></a>    }</span>
-<span id="cb70-29"><a href="sec12_5.html#cb70-29" tabindex="-1"></a>    beta_mat[(burnin <span class="sc">+</span> <span class="dv">1</span>)<span class="sc">:</span>(n_iter <span class="sc">+</span> burnin), ]</span>
-<span id="cb70-30"><a href="sec12_5.html#cb70-30" tabindex="-1"></a>}</span>
-<span id="cb70-31"><a href="sec12_5.html#cb70-31" tabindex="-1"></a><span class="do">### Run SGLD</span></span>
-<span id="cb70-32"><a href="sec12_5.html#cb70-32" tabindex="-1"></a>posterior_sgld <span class="ot">&lt;-</span> <span class="fu">run_SGLD</span>(<span class="at">y =</span> y, <span class="at">X =</span> X, stepsize, batch_prop, n_iter, burnin)</span>
-<span id="cb70-33"><a href="sec12_5.html#cb70-33" tabindex="-1"></a><span class="do">### Compare densities for beta5</span></span>
-<span id="cb70-34"><a href="sec12_5.html#cb70-34" tabindex="-1"></a>df_plot <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb70-35"><a href="sec12_5.html#cb70-35" tabindex="-1"></a><span class="at">value =</span> <span class="fu">c</span>(posterior_sgld[, k_target2], posterior_mh[, k_target2]),</span>
-<span id="cb70-36"><a href="sec12_5.html#cb70-36" tabindex="-1"></a><span class="at">method =</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="st">&quot;SGLD&quot;</span>, <span class="st">&quot;MCMC&quot;</span>), <span class="at">each =</span> n_iter)</span>
-<span id="cb70-37"><a href="sec12_5.html#cb70-37" tabindex="-1"></a>)</span>
-<span id="cb70-38"><a href="sec12_5.html#cb70-38" tabindex="-1"></a><span class="fu">ggplot</span>(df_plot, <span class="fu">aes</span>(<span class="at">x =</span> value, <span class="at">fill =</span> method, <span class="at">color =</span> method)) <span class="sc">+</span> <span class="fu">geom_density</span>(<span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span> <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> beta_true[k_target2], <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span>, <span class="at">color =</span> <span class="st">&quot;black&quot;</span>) <span class="sc">+</span> <span class="fu">labs</span>(<span class="at">title =</span> <span class="fu">expression</span>(<span class="fu">paste</span>(<span class="st">&quot;Posterior density of &quot;</span>, beta[<span class="dv">5</span>])), <span class="at">x =</span> <span class="fu">expression</span>(beta[<span class="dv">5</span>]), <span class="at">y =</span> <span class="st">&quot;Density&quot;</span>) <span class="sc">+</span> <span class="fu">theme_minimal</span>()</span></code></pre></div>
-<p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-7-2.svg" width="672" /></p>
+<p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-76-1.svg" width="672" /></p>
+<div class="sourceCode" id="cb760"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb760-1"><a href="sec12_5.html#cb760-1" tabindex="-1"></a><span class="do">#### SGLD</span></span>
+<span id="cb760-2"><a href="sec12_5.html#cb760-2" tabindex="-1"></a>SGLD_step <span class="ot">&lt;-</span> <span class="cf">function</span>(beta, y, X, stepsize, batch_size, <span class="at">prior_var =</span> <span class="dv">10</span>) {</span>
+<span id="cb760-3"><a href="sec12_5.html#cb760-3" tabindex="-1"></a>    N <span class="ot">&lt;-</span> <span class="fu">nrow</span>(X);   K <span class="ot">&lt;-</span> <span class="fu">length</span>(beta)</span>
+<span id="cb760-4"><a href="sec12_5.html#cb760-4" tabindex="-1"></a>    ids <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span>N, <span class="at">size =</span> batch_size, <span class="at">replace =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb760-5"><a href="sec12_5.html#cb760-5" tabindex="-1"></a>    grad <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">0</span>, K)</span>
+<span id="cb760-6"><a href="sec12_5.html#cb760-6" tabindex="-1"></a>    <span class="cf">for</span> (i <span class="cf">in</span> ids) {</span>
+<span id="cb760-7"><a href="sec12_5.html#cb760-7" tabindex="-1"></a>        xi <span class="ot">&lt;-</span> X[i, ]</span>
+<span id="cb760-8"><a href="sec12_5.html#cb760-8" tabindex="-1"></a>        eta <span class="ot">&lt;-</span> <span class="fu">sum</span>(xi <span class="sc">*</span> beta)</span>
+<span id="cb760-9"><a href="sec12_5.html#cb760-9" tabindex="-1"></a>        pi <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">+</span> <span class="fu">exp</span>(<span class="sc">-</span>eta))</span>
+<span id="cb760-10"><a href="sec12_5.html#cb760-10" tabindex="-1"></a>        grad_i <span class="ot">&lt;-</span> <span class="sc">-</span>(y[i] <span class="sc">-</span> pi) <span class="sc">*</span> xi</span>
+<span id="cb760-11"><a href="sec12_5.html#cb760-11" tabindex="-1"></a>        grad <span class="ot">&lt;-</span> grad <span class="sc">+</span> grad_i</span>
+<span id="cb760-12"><a href="sec12_5.html#cb760-12" tabindex="-1"></a>    }</span>
+<span id="cb760-13"><a href="sec12_5.html#cb760-13" tabindex="-1"></a>    grad <span class="ot">&lt;-</span> grad <span class="sc">/</span> batch_size <span class="sc">*</span> N</span>
+<span id="cb760-14"><a href="sec12_5.html#cb760-14" tabindex="-1"></a>    grad <span class="ot">&lt;-</span> grad <span class="sc">+</span> beta <span class="sc">/</span> prior_var</span>
+<span id="cb760-15"><a href="sec12_5.html#cb760-15" tabindex="-1"></a>    noise <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(K, <span class="dv">0</span>, <span class="fu">sqrt</span>(stepsize))</span>
+<span id="cb760-16"><a href="sec12_5.html#cb760-16" tabindex="-1"></a>    beta_new <span class="ot">&lt;-</span> beta <span class="sc">-</span> <span class="fl">0.5</span> <span class="sc">*</span> stepsize <span class="sc">*</span> grad <span class="sc">+</span> noise</span>
+<span id="cb760-17"><a href="sec12_5.html#cb760-17" tabindex="-1"></a>    <span class="fu">return</span>(beta_new)</span>
+<span id="cb760-18"><a href="sec12_5.html#cb760-18" tabindex="-1"></a>}</span>
+<span id="cb760-19"><a href="sec12_5.html#cb760-19" tabindex="-1"></a><span class="do">### SGLD algorithm</span></span>
+<span id="cb760-20"><a href="sec12_5.html#cb760-20" tabindex="-1"></a>run_SGLD <span class="ot">&lt;-</span> <span class="cf">function</span>(y, X, stepsize, batch_prop, n_iter, burnin, <span class="at">beta_init =</span> <span class="cn">NULL</span>) {</span>
+<span id="cb760-21"><a href="sec12_5.html#cb760-21" tabindex="-1"></a>    N <span class="ot">&lt;-</span> <span class="fu">nrow</span>(X)</span>
+<span id="cb760-22"><a href="sec12_5.html#cb760-22" tabindex="-1"></a>    K <span class="ot">&lt;-</span> <span class="fu">ncol</span>(X)</span>
+<span id="cb760-23"><a href="sec12_5.html#cb760-23" tabindex="-1"></a>    batch_size <span class="ot">&lt;-</span> <span class="fu">round</span>(batch_prop <span class="sc">*</span> N)</span>
+<span id="cb760-24"><a href="sec12_5.html#cb760-24" tabindex="-1"></a>    beta_mat <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span>, n_iter <span class="sc">+</span> burnin, K)</span>
+<span id="cb760-25"><a href="sec12_5.html#cb760-25" tabindex="-1"></a>    beta_mat[<span class="dv">1</span>, ] <span class="ot">&lt;-</span> <span class="cf">if</span> (<span class="fu">is.null</span>(beta_init)) <span class="fu">rep</span>(<span class="dv">0</span>, K) <span class="cf">else</span> beta_init</span>
+<span id="cb760-26"><a href="sec12_5.html#cb760-26" tabindex="-1"></a>    <span class="cf">for</span> (s <span class="cf">in</span> <span class="dv">2</span><span class="sc">:</span>(n_iter <span class="sc">+</span> burnin)) {</span>
+<span id="cb760-27"><a href="sec12_5.html#cb760-27" tabindex="-1"></a>        beta_mat[s, ] <span class="ot">&lt;-</span> <span class="fu">SGLD_step</span>(beta_mat[s <span class="sc">-</span> <span class="dv">1</span>, ], y, X, stepsize, batch_size)</span>
+<span id="cb760-28"><a href="sec12_5.html#cb760-28" tabindex="-1"></a>    }</span>
+<span id="cb760-29"><a href="sec12_5.html#cb760-29" tabindex="-1"></a>    beta_mat[(burnin <span class="sc">+</span> <span class="dv">1</span>)<span class="sc">:</span>(n_iter <span class="sc">+</span> burnin), ]</span>
+<span id="cb760-30"><a href="sec12_5.html#cb760-30" tabindex="-1"></a>}</span>
+<span id="cb760-31"><a href="sec12_5.html#cb760-31" tabindex="-1"></a><span class="do">### Run SGLD</span></span>
+<span id="cb760-32"><a href="sec12_5.html#cb760-32" tabindex="-1"></a>posterior_sgld <span class="ot">&lt;-</span> <span class="fu">run_SGLD</span>(<span class="at">y =</span> y, <span class="at">X =</span> X, stepsize, batch_prop, n_iter, burnin)</span>
+<span id="cb760-33"><a href="sec12_5.html#cb760-33" tabindex="-1"></a><span class="do">### Compare densities for beta5</span></span>
+<span id="cb760-34"><a href="sec12_5.html#cb760-34" tabindex="-1"></a>df_plot <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb760-35"><a href="sec12_5.html#cb760-35" tabindex="-1"></a><span class="at">value =</span> <span class="fu">c</span>(posterior_sgld[, k_target2], posterior_mh[, k_target2]),</span>
+<span id="cb760-36"><a href="sec12_5.html#cb760-36" tabindex="-1"></a><span class="at">method =</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="st">&quot;SGLD&quot;</span>, <span class="st">&quot;MCMC&quot;</span>), <span class="at">each =</span> n_iter)</span>
+<span id="cb760-37"><a href="sec12_5.html#cb760-37" tabindex="-1"></a>)</span>
+<span id="cb760-38"><a href="sec12_5.html#cb760-38" tabindex="-1"></a><span class="fu">ggplot</span>(df_plot, <span class="fu">aes</span>(<span class="at">x =</span> value, <span class="at">fill =</span> method, <span class="at">color =</span> method)) <span class="sc">+</span> <span class="fu">geom_density</span>(<span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span> <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> beta_true[k_target2], <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span>, <span class="at">color =</span> <span class="st">&quot;black&quot;</span>) <span class="sc">+</span> <span class="fu">labs</span>(<span class="at">title =</span> <span class="fu">expression</span>(<span class="fu">paste</span>(<span class="st">&quot;Posterior density of &quot;</span>, beta[<span class="dv">5</span>])), <span class="at">x =</span> <span class="fu">expression</span>(beta[<span class="dv">5</span>]), <span class="at">y =</span> <span class="st">&quot;Density&quot;</span>) <span class="sc">+</span> <span class="fu">theme_minimal</span>()</span></code></pre></div>
+<p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-76-2.svg" width="672" /></p>
 </div>
 </div>
 <h3>References<a href="references.html#references" class="anchor-section" aria-label="Anchor link to header"></a></h3>
@@ -854,9 +838,9 @@ Wu, Changye, and Christian P Robert. 2017. <span>“Average of Recentered Parall
 </div>
 <div class="footnotes">
 <hr />
-<ol start="3">
-<li id="fn3"><p>A Brownian motion is a continuous-time stochastic process that starts at zero, has independent increments with <span class="math inline">\(B(s) - B(t) \sim \mathcal{N}(0, s - t)\)</span>, and is continuous almost surely but nowhere differentiable.<a href="sec12_5.html#fnref3" class="footnote-back">↩︎</a></p></li>
-<li id="fn4"><p>There is an <strong>R</strong> package called <em>sgmcmc</em>, developed by <span class="citation">Baker et al. (<a href="#ref-baker2019sgmcmc">2019</a>)</span>, which provides implementations of various stochastic gradient MCMC methods, including SGLD and SGHMC. However, this package depends on version 1 of the <em>tensorflow</em> package, while the current version is 2, and <em>sgmcmc</em> has not been updated on CRAN. We attempted to install the package from its GitHub repository using the <code>devtools::install\_github("STOR-i/sgmcmc"</code> command, but encountered compatibility issues due to conflicting TensorFlow versions.<a href="sec12_5.html#fnref4" class="footnote-back">↩︎</a></p></li>
+<ol start="71">
+<li id="fn71"><p>A Brownian motion is a continuous-time stochastic process that starts at zero, has independent increments with <span class="math inline">\(B(s) - B(t) \sim \mathcal{N}(0, s - t)\)</span>, and is continuous almost surely but nowhere differentiable.<a href="sec12_5.html#fnref71" class="footnote-back">↩︎</a></p></li>
+<li id="fn72"><p>There is an <strong>R</strong> package called <em>sgmcmc</em>, developed by <span class="citation">J. Baker et al. (<a href="#ref-baker2019sgmcmc">2019</a>)</span>, which provides implementations of various stochastic gradient MCMC methods, including SGLD and SGHMC. However, this package depends on version 1 of the <em>tensorflow</em> package, while the current version is 2, and <em>sgmcmc</em> has not been updated on CRAN. We attempted to install the package from its GitHub repository using the <code>devtools::install\_github("STOR-i/sgmcmc"</code> command, but encountered compatibility issues due to conflicting TensorFlow versions.<a href="sec12_5.html#fnref72" class="footnote-back">↩︎</a></p></li>
 </ol>
 </div>
             </section>

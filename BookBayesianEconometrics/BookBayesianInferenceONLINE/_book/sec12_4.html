@@ -23,7 +23,7 @@
 <meta name="author" content="Andrés Ramírez-Hassan" />
 
 
-<meta name="date" content="2025-11-18" />
+<meta name="date" content="2025-11-30" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -52,6 +52,8 @@
 <link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
 <link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
 <script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+<script src="libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="libs/lightable-0.0.1/lightable.css" rel="stylesheet" />
 
 
 <style type="text/css">
@@ -163,7 +165,8 @@ div.csl-indent {
 <li><a href="./">Introduction to Bayesian Econometrics: A GUIded toolkit using R</a></li>
 
 <li class="divider"></li>
-<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Introduction</a>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Introduction</a></li>
+<li class="chapter" data-level="" data-path="preface.html"><a href="preface.html"><i class="fa fa-check"></i>Preface</a>
 <ul>
 <li class="chapter" data-level="" data-path="to-instructors-and-students.html"><a href="to-instructors-and-students.html"><i class="fa fa-check"></i>To instructors and students</a></li>
 <li class="chapter" data-level="" data-path="acknowledgments.html"><a href="acknowledgments.html"><i class="fa fa-check"></i>Acknowledgments</a></li>
@@ -399,38 +402,33 @@ k(\mathbf{x}, \mathbf{x}&#39;) = \sigma_f^2 \exp\left(-\frac{1}{2l^2} \|\mathbf{
 <p>where <span class="math inline">\(\sigma_f^2\)</span> is the signal variance, which controls the vertical variation (amplitude) of the function, <span class="math inline">\(l\)</span> is the length-scale parameter, which determines how quickly the function varies with features distance, and <span class="math inline">\(\|\mathbf{x} - \mathbf{x}&#39;\|^2\)</span> is the squared Euclidean distance between the feature vectors <span class="math inline">\(\mathbf{x}\)</span> and <span class="math inline">\(\mathbf{x}&#39;\)</span>.</p>
 <p>The squared exponential kernel implies that the function is infinitely differentiable, leading to very smooth function draws. While this smoothness may be desirable in some applications, it can be too restrictive in others. Alternative kernels like the Matérn class allow for more flexibility by controlling the degree of differentiability <span class="citation">(<a href="#ref-rasmussen2006gaussian">Rasmussen and Williams 2006</a>)</span>.</p>
 <p>A GP can be interpreted as a prior distribution over a space of functions. The starting point in working with GPs is the specification of this prior before any data are observed. The following code illustrates five sample paths drawn from a GP with a squared exponential kernel, assuming a signal variance <span class="math inline">\(\sigma_f^2 = 1\)</span> and a length-scale <span class="math inline">\(l = 0.2\)</span>, evaluated over a grid of input values <span class="math inline">\(x \in [0,1]\)</span>. A small <em>jitter term</em> is added to the covariance matrix to ensure numerical stability during simulation. The following figure displays the five realizations drawn from the Gaussian Process.</p>
-<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb40-1"><a href="sec12_4.html#cb40-1" tabindex="-1"></a><span class="do">####### Gaussian Process #######</span></span>
-<span id="cb40-2"><a href="sec12_4.html#cb40-2" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>())</span>
-<span id="cb40-3"><a href="sec12_4.html#cb40-3" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">10101</span>)</span>
-<span id="cb40-4"><a href="sec12_4.html#cb40-4" tabindex="-1"></a><span class="fu">library</span>(ggplot2); <span class="fu">library</span>(dplyr)</span>
-<span id="cb40-5"><a href="sec12_4.html#cb40-5" tabindex="-1"></a><span class="fu">library</span>(tidyr); <span class="fu">library</span>(MASS)</span></code></pre></div>
-<pre><code>## 
-## Attaching package: &#39;MASS&#39;</code></pre>
-<pre><code>## The following object is masked from &#39;package:dplyr&#39;:
-## 
-##     select</code></pre>
-<div class="sourceCode" id="cb43"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb43-1"><a href="sec12_4.html#cb43-1" tabindex="-1"></a><span class="co"># Simulation setup</span></span>
-<span id="cb43-2"><a href="sec12_4.html#cb43-2" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">100</span></span>
-<span id="cb43-3"><a href="sec12_4.html#cb43-3" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">length.out =</span> n)</span>
-<span id="cb43-4"><a href="sec12_4.html#cb43-4" tabindex="-1"></a>sigma_f <span class="ot">&lt;-</span> <span class="dv">1</span></span>
-<span id="cb43-5"><a href="sec12_4.html#cb43-5" tabindex="-1"></a>l <span class="ot">&lt;-</span> <span class="fl">0.2</span></span>
-<span id="cb43-6"><a href="sec12_4.html#cb43-6" tabindex="-1"></a>sigma_n <span class="ot">&lt;-</span> <span class="fl">1e-8</span></span>
-<span id="cb43-7"><a href="sec12_4.html#cb43-7" tabindex="-1"></a><span class="co"># Squared Exponential Kernel function</span></span>
-<span id="cb43-8"><a href="sec12_4.html#cb43-8" tabindex="-1"></a>SE_kernel <span class="ot">&lt;-</span> <span class="cf">function</span>(x1, x2, sigma_f, l) {</span>
-<span id="cb43-9"><a href="sec12_4.html#cb43-9" tabindex="-1"></a>    <span class="fu">outer</span>(x1, x2, <span class="cf">function</span>(a, b) sigma_f<span class="sc">^</span><span class="dv">2</span> <span class="sc">*</span> <span class="fu">exp</span>(<span class="sc">-</span><span class="fl">0.5</span> <span class="sc">*</span> (a <span class="sc">-</span> b)<span class="sc">^</span><span class="dv">2</span> <span class="sc">/</span> l<span class="sc">^</span><span class="dv">2</span>))</span>
-<span id="cb43-10"><a href="sec12_4.html#cb43-10" tabindex="-1"></a>}</span>
-<span id="cb43-11"><a href="sec12_4.html#cb43-11" tabindex="-1"></a>K <span class="ot">&lt;-</span> <span class="fu">SE_kernel</span>(x, x, sigma_f, l) <span class="sc">+</span> <span class="fu">diag</span>(sigma_n, n)</span>
-<span id="cb43-12"><a href="sec12_4.html#cb43-12" tabindex="-1"></a>samples <span class="ot">&lt;-</span> <span class="fu">mvrnorm</span>(<span class="at">n =</span> <span class="dv">5</span>, <span class="at">mu =</span> <span class="fu">rep</span>(<span class="dv">0</span>, n), <span class="at">Sigma =</span> K)</span>
-<span id="cb43-13"><a href="sec12_4.html#cb43-13" tabindex="-1"></a><span class="co"># Transpose and rename columns to f1, f2, ..., f5</span></span>
-<span id="cb43-14"><a href="sec12_4.html#cb43-14" tabindex="-1"></a>samples_t <span class="ot">&lt;-</span> <span class="fu">t</span>(samples)</span>
-<span id="cb43-15"><a href="sec12_4.html#cb43-15" tabindex="-1"></a><span class="fu">colnames</span>(samples_t) <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;f&quot;</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>)</span>
-<span id="cb43-16"><a href="sec12_4.html#cb43-16" tabindex="-1"></a><span class="co"># Convert to tidy data frame</span></span>
-<span id="cb43-17"><a href="sec12_4.html#cb43-17" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> x, samples_t) <span class="sc">|&gt;</span></span>
-<span id="cb43-18"><a href="sec12_4.html#cb43-18" tabindex="-1"></a><span class="fu">pivot_longer</span>(<span class="at">cols =</span> <span class="sc">-</span>x, <span class="at">names_to =</span> <span class="st">&quot;draw&quot;</span>, <span class="at">values_to =</span> <span class="st">&quot;value&quot;</span>)</span>
-<span id="cb43-19"><a href="sec12_4.html#cb43-19" tabindex="-1"></a><span class="co"># Plot</span></span>
-<span id="cb43-20"><a href="sec12_4.html#cb43-20" tabindex="-1"></a><span class="fu">ggplot</span>(df, <span class="fu">aes</span>(<span class="at">x =</span> x, <span class="at">y =</span> value, <span class="at">color =</span> draw)) <span class="sc">+</span> <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
-<span id="cb43-21"><a href="sec12_4.html#cb43-21" tabindex="-1"></a><span class="fu">labs</span>( <span class="at">title =</span> <span class="st">&quot;Simulated Gaussian Process Draws&quot;</span>, <span class="at">x =</span> <span class="st">&quot;x&quot;</span>, <span class="at">y =</span> <span class="st">&quot;f(x)&quot;</span>, <span class="at">color =</span> <span class="st">&quot;Function&quot;</span> ) <span class="sc">+</span> <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">14</span>) <span class="sc">+</span> <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">&quot;top&quot;</span>)</span></code></pre></div>
-<p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-4-1.svg" width="672" /></p>
+<div class="sourceCode" id="cb744"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb744-1"><a href="sec12_4.html#cb744-1" tabindex="-1"></a><span class="do">####### Gaussian Process #######</span></span>
+<span id="cb744-2"><a href="sec12_4.html#cb744-2" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>())</span>
+<span id="cb744-3"><a href="sec12_4.html#cb744-3" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">10101</span>)</span>
+<span id="cb744-4"><a href="sec12_4.html#cb744-4" tabindex="-1"></a><span class="fu">library</span>(ggplot2); <span class="fu">library</span>(dplyr)</span>
+<span id="cb744-5"><a href="sec12_4.html#cb744-5" tabindex="-1"></a><span class="fu">library</span>(tidyr); <span class="fu">library</span>(MASS)</span>
+<span id="cb744-6"><a href="sec12_4.html#cb744-6" tabindex="-1"></a><span class="co"># Simulation setup</span></span>
+<span id="cb744-7"><a href="sec12_4.html#cb744-7" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">100</span></span>
+<span id="cb744-8"><a href="sec12_4.html#cb744-8" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">length.out =</span> n)</span>
+<span id="cb744-9"><a href="sec12_4.html#cb744-9" tabindex="-1"></a>sigma_f <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb744-10"><a href="sec12_4.html#cb744-10" tabindex="-1"></a>l <span class="ot">&lt;-</span> <span class="fl">0.2</span></span>
+<span id="cb744-11"><a href="sec12_4.html#cb744-11" tabindex="-1"></a>sigma_n <span class="ot">&lt;-</span> <span class="fl">1e-8</span></span>
+<span id="cb744-12"><a href="sec12_4.html#cb744-12" tabindex="-1"></a><span class="co"># Squared Exponential Kernel function</span></span>
+<span id="cb744-13"><a href="sec12_4.html#cb744-13" tabindex="-1"></a>SE_kernel <span class="ot">&lt;-</span> <span class="cf">function</span>(x1, x2, sigma_f, l) {</span>
+<span id="cb744-14"><a href="sec12_4.html#cb744-14" tabindex="-1"></a>    <span class="fu">outer</span>(x1, x2, <span class="cf">function</span>(a, b) sigma_f<span class="sc">^</span><span class="dv">2</span> <span class="sc">*</span> <span class="fu">exp</span>(<span class="sc">-</span><span class="fl">0.5</span> <span class="sc">*</span> (a <span class="sc">-</span> b)<span class="sc">^</span><span class="dv">2</span> <span class="sc">/</span> l<span class="sc">^</span><span class="dv">2</span>))</span>
+<span id="cb744-15"><a href="sec12_4.html#cb744-15" tabindex="-1"></a>}</span>
+<span id="cb744-16"><a href="sec12_4.html#cb744-16" tabindex="-1"></a>K <span class="ot">&lt;-</span> <span class="fu">SE_kernel</span>(x, x, sigma_f, l) <span class="sc">+</span> <span class="fu">diag</span>(sigma_n, n)</span>
+<span id="cb744-17"><a href="sec12_4.html#cb744-17" tabindex="-1"></a>samples <span class="ot">&lt;-</span> <span class="fu">mvrnorm</span>(<span class="at">n =</span> <span class="dv">5</span>, <span class="at">mu =</span> <span class="fu">rep</span>(<span class="dv">0</span>, n), <span class="at">Sigma =</span> K)</span>
+<span id="cb744-18"><a href="sec12_4.html#cb744-18" tabindex="-1"></a><span class="co"># Transpose and rename columns to f1, f2, ..., f5</span></span>
+<span id="cb744-19"><a href="sec12_4.html#cb744-19" tabindex="-1"></a>samples_t <span class="ot">&lt;-</span> <span class="fu">t</span>(samples)</span>
+<span id="cb744-20"><a href="sec12_4.html#cb744-20" tabindex="-1"></a><span class="fu">colnames</span>(samples_t) <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;f&quot;</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>)</span>
+<span id="cb744-21"><a href="sec12_4.html#cb744-21" tabindex="-1"></a><span class="co"># Convert to tidy data frame</span></span>
+<span id="cb744-22"><a href="sec12_4.html#cb744-22" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> x, samples_t) <span class="sc">|&gt;</span></span>
+<span id="cb744-23"><a href="sec12_4.html#cb744-23" tabindex="-1"></a><span class="fu">pivot_longer</span>(<span class="at">cols =</span> <span class="sc">-</span>x, <span class="at">names_to =</span> <span class="st">&quot;draw&quot;</span>, <span class="at">values_to =</span> <span class="st">&quot;value&quot;</span>)</span>
+<span id="cb744-24"><a href="sec12_4.html#cb744-24" tabindex="-1"></a><span class="co"># Plot</span></span>
+<span id="cb744-25"><a href="sec12_4.html#cb744-25" tabindex="-1"></a><span class="fu">ggplot</span>(df, <span class="fu">aes</span>(<span class="at">x =</span> x, <span class="at">y =</span> value, <span class="at">color =</span> draw)) <span class="sc">+</span> <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb744-26"><a href="sec12_4.html#cb744-26" tabindex="-1"></a><span class="fu">labs</span>( <span class="at">title =</span> <span class="st">&quot;Simulated Gaussian Process Draws&quot;</span>, <span class="at">x =</span> <span class="st">&quot;x&quot;</span>, <span class="at">y =</span> <span class="st">&quot;f(x)&quot;</span>, <span class="at">color =</span> <span class="st">&quot;Function&quot;</span> ) <span class="sc">+</span> <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">14</span>) <span class="sc">+</span> <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">&quot;top&quot;</span>)</span></code></pre></div>
+<p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-73-1.svg" width="672" /></p>
 <p>Thus, for any finite set of feature points <span class="math inline">\(\mathbf{x}_1, \mathbf{x}_2, \dots, \mathbf{x}_N\)</span>, the corresponding function values follow a multivariate Gaussian distribution:</p>
 <p><span class="math display">\[
 \mathbf{f} =
@@ -451,47 +449,47 @@ f_i = \sin(2\pi x_i).
 <p>The inference is based on the properties of the conditional Gaussian distribution (see below). The figure shows that the posterior mean (solid blue line) interpolates the observed points (red dots). Moreover, the level of uncertainty (light blue shaded area) increases in regions that are farther from the observed inputs, where the posterior mean tends to deviate more from the true underlying function (dashed green line).</p>
 <p>In situations where the input locations can be selected, such as in experimental designs, <em>active learning strategies</em> can be employed to choose the points that minimize predictive uncertainty. This is typically achieved by optimizing an <em>acquisition function</em> that quantifies the expected informativeness of candidate locations <span class="citation">(<a href="#ref-settles2012active">Settles 2012</a>)</span>.</p>
 <p>Consequently, GPs play a central role in <em>Bayesian optimization</em>, a stochastic method for finding the maximum of expensive or unknown objective functions. In this approach, a prior is placed over the objective function, which is then updated using observed data to form a posterior distribution over possible functions. This posterior guides the selection of new input points by balancing exploration and exploitation through the acquisition function <span class="citation">(<a href="#ref-brochu2010tutorial">Brochu, Cora, and Freitas 2010</a>)</span>.</p>
-<div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb44-1"><a href="sec12_4.html#cb44-1" tabindex="-1"></a><span class="do">####### Gaussian Process #######</span></span>
-<span id="cb44-2"><a href="sec12_4.html#cb44-2" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">10101</span>)</span>
-<span id="cb44-3"><a href="sec12_4.html#cb44-3" tabindex="-1"></a><span class="fu">library</span>(ggplot2); <span class="fu">library</span>(MASS)</span>
-<span id="cb44-4"><a href="sec12_4.html#cb44-4" tabindex="-1"></a><span class="co"># Define the squared exponential kernel</span></span>
-<span id="cb44-5"><a href="sec12_4.html#cb44-5" tabindex="-1"></a>SE_kernel <span class="ot">&lt;-</span> <span class="cf">function</span>(x1, x2, sigma_f, l) {</span>
-<span id="cb44-6"><a href="sec12_4.html#cb44-6" tabindex="-1"></a>    <span class="fu">outer</span>(x1, x2, <span class="cf">function</span>(a, b) sigma_f<span class="sc">^</span><span class="dv">2</span> <span class="sc">*</span> <span class="fu">exp</span>(<span class="sc">-</span><span class="fl">0.5</span> <span class="sc">*</span> (a <span class="sc">-</span> b)<span class="sc">^</span><span class="dv">2</span> <span class="sc">/</span> l<span class="sc">^</span><span class="dv">2</span>))</span>
-<span id="cb44-7"><a href="sec12_4.html#cb44-7" tabindex="-1"></a>}</span>
-<span id="cb44-8"><a href="sec12_4.html#cb44-8" tabindex="-1"></a><span class="co"># Define the input space and observed points</span></span>
-<span id="cb44-9"><a href="sec12_4.html#cb44-9" tabindex="-1"></a>x_star <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">length.out =</span> <span class="dv">200</span>)</span>
-<span id="cb44-10"><a href="sec12_4.html#cb44-10" tabindex="-1"></a>x0 <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">0.1</span>, <span class="fl">0.2</span>, <span class="fl">0.5</span>, <span class="fl">0.9</span>)</span>
-<span id="cb44-11"><a href="sec12_4.html#cb44-11" tabindex="-1"></a>y0 <span class="ot">&lt;-</span> <span class="fu">sin</span>(<span class="dv">2</span> <span class="sc">*</span> pi <span class="sc">*</span> x0)</span>
-<span id="cb44-12"><a href="sec12_4.html#cb44-12" tabindex="-1"></a><span class="co"># Hyperparameters</span></span>
-<span id="cb44-13"><a href="sec12_4.html#cb44-13" tabindex="-1"></a>sigma_f <span class="ot">&lt;-</span> <span class="dv">1</span></span>
-<span id="cb44-14"><a href="sec12_4.html#cb44-14" tabindex="-1"></a>l <span class="ot">&lt;-</span> <span class="fl">0.2</span></span>
-<span id="cb44-15"><a href="sec12_4.html#cb44-15" tabindex="-1"></a>sigma_n <span class="ot">&lt;-</span> <span class="fl">1e-8</span>  <span class="co"># Jitter term for stability</span></span>
-<span id="cb44-16"><a href="sec12_4.html#cb44-16" tabindex="-1"></a><span class="co"># Compute covariance matrices</span></span>
-<span id="cb44-17"><a href="sec12_4.html#cb44-17" tabindex="-1"></a>K_x0x0 <span class="ot">&lt;-</span> <span class="fu">SE_kernel</span>(x0, x0, sigma_f, l) <span class="sc">+</span> <span class="fu">diag</span>(sigma_n, <span class="fu">length</span>(x0))</span>
-<span id="cb44-18"><a href="sec12_4.html#cb44-18" tabindex="-1"></a>K_xstarx0 <span class="ot">&lt;-</span> <span class="fu">SE_kernel</span>(x_star, x0, sigma_f, l)</span>
-<span id="cb44-19"><a href="sec12_4.html#cb44-19" tabindex="-1"></a>K_xstarxstar <span class="ot">&lt;-</span> <span class="fu">SE_kernel</span>(x_star, x_star, sigma_f, l) <span class="sc">+</span> <span class="fu">diag</span>(sigma_n, <span class="fu">length</span>(x_star))</span>
-<span id="cb44-20"><a href="sec12_4.html#cb44-20" tabindex="-1"></a><span class="co"># Compute posterior mean and covariance</span></span>
-<span id="cb44-21"><a href="sec12_4.html#cb44-21" tabindex="-1"></a>K_inv <span class="ot">&lt;-</span> <span class="fu">solve</span>(K_x0x0)</span>
-<span id="cb44-22"><a href="sec12_4.html#cb44-22" tabindex="-1"></a>posterior_mean <span class="ot">&lt;-</span> K_xstarx0 <span class="sc">%*%</span> K_inv <span class="sc">%*%</span> y0</span>
-<span id="cb44-23"><a href="sec12_4.html#cb44-23" tabindex="-1"></a>posterior_cov <span class="ot">&lt;-</span> K_xstarxstar <span class="sc">-</span> K_xstarx0 <span class="sc">%*%</span> K_inv <span class="sc">%*%</span> <span class="fu">t</span>(K_xstarx0)</span>
-<span id="cb44-24"><a href="sec12_4.html#cb44-24" tabindex="-1"></a><span class="co"># Sample from the posterior</span></span>
-<span id="cb44-25"><a href="sec12_4.html#cb44-25" tabindex="-1"></a>sample_draw <span class="ot">&lt;-</span> <span class="fu">sin</span>(<span class="dv">2</span> <span class="sc">*</span> pi <span class="sc">*</span> x_star) </span>
-<span id="cb44-26"><a href="sec12_4.html#cb44-26" tabindex="-1"></a><span class="co"># Compute 95% intervals</span></span>
-<span id="cb44-27"><a href="sec12_4.html#cb44-27" tabindex="-1"></a>posterior_sd <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">diag</span>(posterior_cov))</span>
-<span id="cb44-28"><a href="sec12_4.html#cb44-28" tabindex="-1"></a>lower <span class="ot">&lt;-</span> posterior_mean <span class="sc">-</span> <span class="fl">1.96</span> <span class="sc">*</span> posterior_sd</span>
-<span id="cb44-29"><a href="sec12_4.html#cb44-29" tabindex="-1"></a>upper <span class="ot">&lt;-</span> posterior_mean <span class="sc">+</span> <span class="fl">1.96</span> <span class="sc">*</span> posterior_sd</span>
-<span id="cb44-30"><a href="sec12_4.html#cb44-30" tabindex="-1"></a><span class="co"># Data frame for plotting</span></span>
-<span id="cb44-31"><a href="sec12_4.html#cb44-31" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
-<span id="cb44-32"><a href="sec12_4.html#cb44-32" tabindex="-1"></a><span class="at">x =</span> x_star,</span>
-<span id="cb44-33"><a href="sec12_4.html#cb44-33" tabindex="-1"></a><span class="at">mean =</span> posterior_mean,</span>
-<span id="cb44-34"><a href="sec12_4.html#cb44-34" tabindex="-1"></a><span class="at">lower =</span> lower,</span>
-<span id="cb44-35"><a href="sec12_4.html#cb44-35" tabindex="-1"></a><span class="at">upper =</span> upper,</span>
-<span id="cb44-36"><a href="sec12_4.html#cb44-36" tabindex="-1"></a><span class="at">sample =</span> sample_draw</span>
-<span id="cb44-37"><a href="sec12_4.html#cb44-37" tabindex="-1"></a>)</span>
-<span id="cb44-38"><a href="sec12_4.html#cb44-38" tabindex="-1"></a>obs <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> x0, <span class="at">y =</span> y0)</span>
-<span id="cb44-39"><a href="sec12_4.html#cb44-39" tabindex="-1"></a><span class="co"># Plot</span></span>
-<span id="cb44-40"><a href="sec12_4.html#cb44-40" tabindex="-1"></a><span class="fu">ggplot</span>(df, <span class="fu">aes</span>(<span class="at">x =</span> x)) <span class="sc">+</span> <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> lower, <span class="at">ymax =</span> upper), <span class="at">fill =</span> <span class="st">&quot;lightblue&quot;</span>, <span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span> <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> mean), <span class="at">color =</span> <span class="st">&quot;blue&quot;</span>, <span class="at">linewidth =</span> <span class="fl">1.2</span>) <span class="sc">+</span> <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> sample), <span class="at">color =</span> <span class="st">&quot;darkgreen&quot;</span>, <span class="at">linewidth =</span> <span class="dv">1</span>, <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span>) <span class="sc">+</span> <span class="fu">geom_point</span>(<span class="at">data =</span> obs, <span class="fu">aes</span>(<span class="at">x =</span> x, <span class="at">y =</span> y), <span class="at">color =</span> <span class="st">&quot;red&quot;</span>, <span class="at">size =</span> <span class="dv">3</span>) <span class="sc">+</span> <span class="fu">labs</span>( <span class="at">title =</span> <span class="st">&quot;Gaussian Process with Conditioning Points&quot;</span>, <span class="at">x =</span> <span class="st">&quot;x&quot;</span>, <span class="at">y =</span> <span class="st">&quot;f(x)&quot;</span>, <span class="at">caption =</span> <span class="st">&quot;Blue: Posterior mean | Light blue: 95% interval | Dashed green: Population | Red: Observed points&quot;</span> ) <span class="sc">+</span> <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">14</span>)</span></code></pre></div>
-<p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-5-1.svg" width="672" /></p>
+<div class="sourceCode" id="cb745"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb745-1"><a href="sec12_4.html#cb745-1" tabindex="-1"></a><span class="do">####### Gaussian Process #######</span></span>
+<span id="cb745-2"><a href="sec12_4.html#cb745-2" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">10101</span>)</span>
+<span id="cb745-3"><a href="sec12_4.html#cb745-3" tabindex="-1"></a><span class="fu">library</span>(ggplot2); <span class="fu">library</span>(MASS)</span>
+<span id="cb745-4"><a href="sec12_4.html#cb745-4" tabindex="-1"></a><span class="co"># Define the squared exponential kernel</span></span>
+<span id="cb745-5"><a href="sec12_4.html#cb745-5" tabindex="-1"></a>SE_kernel <span class="ot">&lt;-</span> <span class="cf">function</span>(x1, x2, sigma_f, l) {</span>
+<span id="cb745-6"><a href="sec12_4.html#cb745-6" tabindex="-1"></a>    <span class="fu">outer</span>(x1, x2, <span class="cf">function</span>(a, b) sigma_f<span class="sc">^</span><span class="dv">2</span> <span class="sc">*</span> <span class="fu">exp</span>(<span class="sc">-</span><span class="fl">0.5</span> <span class="sc">*</span> (a <span class="sc">-</span> b)<span class="sc">^</span><span class="dv">2</span> <span class="sc">/</span> l<span class="sc">^</span><span class="dv">2</span>))</span>
+<span id="cb745-7"><a href="sec12_4.html#cb745-7" tabindex="-1"></a>}</span>
+<span id="cb745-8"><a href="sec12_4.html#cb745-8" tabindex="-1"></a><span class="co"># Define the input space and observed points</span></span>
+<span id="cb745-9"><a href="sec12_4.html#cb745-9" tabindex="-1"></a>x_star <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">length.out =</span> <span class="dv">200</span>)</span>
+<span id="cb745-10"><a href="sec12_4.html#cb745-10" tabindex="-1"></a>x0 <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">0.1</span>, <span class="fl">0.2</span>, <span class="fl">0.5</span>, <span class="fl">0.9</span>)</span>
+<span id="cb745-11"><a href="sec12_4.html#cb745-11" tabindex="-1"></a>y0 <span class="ot">&lt;-</span> <span class="fu">sin</span>(<span class="dv">2</span> <span class="sc">*</span> pi <span class="sc">*</span> x0)</span>
+<span id="cb745-12"><a href="sec12_4.html#cb745-12" tabindex="-1"></a><span class="co"># Hyperparameters</span></span>
+<span id="cb745-13"><a href="sec12_4.html#cb745-13" tabindex="-1"></a>sigma_f <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb745-14"><a href="sec12_4.html#cb745-14" tabindex="-1"></a>l <span class="ot">&lt;-</span> <span class="fl">0.2</span></span>
+<span id="cb745-15"><a href="sec12_4.html#cb745-15" tabindex="-1"></a>sigma_n <span class="ot">&lt;-</span> <span class="fl">1e-8</span>  <span class="co"># Jitter term for stability</span></span>
+<span id="cb745-16"><a href="sec12_4.html#cb745-16" tabindex="-1"></a><span class="co"># Compute covariance matrices</span></span>
+<span id="cb745-17"><a href="sec12_4.html#cb745-17" tabindex="-1"></a>K_x0x0 <span class="ot">&lt;-</span> <span class="fu">SE_kernel</span>(x0, x0, sigma_f, l) <span class="sc">+</span> <span class="fu">diag</span>(sigma_n, <span class="fu">length</span>(x0))</span>
+<span id="cb745-18"><a href="sec12_4.html#cb745-18" tabindex="-1"></a>K_xstarx0 <span class="ot">&lt;-</span> <span class="fu">SE_kernel</span>(x_star, x0, sigma_f, l)</span>
+<span id="cb745-19"><a href="sec12_4.html#cb745-19" tabindex="-1"></a>K_xstarxstar <span class="ot">&lt;-</span> <span class="fu">SE_kernel</span>(x_star, x_star, sigma_f, l) <span class="sc">+</span> <span class="fu">diag</span>(sigma_n, <span class="fu">length</span>(x_star))</span>
+<span id="cb745-20"><a href="sec12_4.html#cb745-20" tabindex="-1"></a><span class="co"># Compute posterior mean and covariance</span></span>
+<span id="cb745-21"><a href="sec12_4.html#cb745-21" tabindex="-1"></a>K_inv <span class="ot">&lt;-</span> <span class="fu">solve</span>(K_x0x0)</span>
+<span id="cb745-22"><a href="sec12_4.html#cb745-22" tabindex="-1"></a>posterior_mean <span class="ot">&lt;-</span> K_xstarx0 <span class="sc">%*%</span> K_inv <span class="sc">%*%</span> y0</span>
+<span id="cb745-23"><a href="sec12_4.html#cb745-23" tabindex="-1"></a>posterior_cov <span class="ot">&lt;-</span> K_xstarxstar <span class="sc">-</span> K_xstarx0 <span class="sc">%*%</span> K_inv <span class="sc">%*%</span> <span class="fu">t</span>(K_xstarx0)</span>
+<span id="cb745-24"><a href="sec12_4.html#cb745-24" tabindex="-1"></a><span class="co"># Sample from the posterior</span></span>
+<span id="cb745-25"><a href="sec12_4.html#cb745-25" tabindex="-1"></a>sample_draw <span class="ot">&lt;-</span> <span class="fu">sin</span>(<span class="dv">2</span> <span class="sc">*</span> pi <span class="sc">*</span> x_star) </span>
+<span id="cb745-26"><a href="sec12_4.html#cb745-26" tabindex="-1"></a><span class="co"># Compute 95% intervals</span></span>
+<span id="cb745-27"><a href="sec12_4.html#cb745-27" tabindex="-1"></a>posterior_sd <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">diag</span>(posterior_cov))</span>
+<span id="cb745-28"><a href="sec12_4.html#cb745-28" tabindex="-1"></a>lower <span class="ot">&lt;-</span> posterior_mean <span class="sc">-</span> <span class="fl">1.96</span> <span class="sc">*</span> posterior_sd</span>
+<span id="cb745-29"><a href="sec12_4.html#cb745-29" tabindex="-1"></a>upper <span class="ot">&lt;-</span> posterior_mean <span class="sc">+</span> <span class="fl">1.96</span> <span class="sc">*</span> posterior_sd</span>
+<span id="cb745-30"><a href="sec12_4.html#cb745-30" tabindex="-1"></a><span class="co"># Data frame for plotting</span></span>
+<span id="cb745-31"><a href="sec12_4.html#cb745-31" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb745-32"><a href="sec12_4.html#cb745-32" tabindex="-1"></a><span class="at">x =</span> x_star,</span>
+<span id="cb745-33"><a href="sec12_4.html#cb745-33" tabindex="-1"></a><span class="at">mean =</span> posterior_mean,</span>
+<span id="cb745-34"><a href="sec12_4.html#cb745-34" tabindex="-1"></a><span class="at">lower =</span> lower,</span>
+<span id="cb745-35"><a href="sec12_4.html#cb745-35" tabindex="-1"></a><span class="at">upper =</span> upper,</span>
+<span id="cb745-36"><a href="sec12_4.html#cb745-36" tabindex="-1"></a><span class="at">sample =</span> sample_draw</span>
+<span id="cb745-37"><a href="sec12_4.html#cb745-37" tabindex="-1"></a>)</span>
+<span id="cb745-38"><a href="sec12_4.html#cb745-38" tabindex="-1"></a>obs <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> x0, <span class="at">y =</span> y0)</span>
+<span id="cb745-39"><a href="sec12_4.html#cb745-39" tabindex="-1"></a><span class="co"># Plot</span></span>
+<span id="cb745-40"><a href="sec12_4.html#cb745-40" tabindex="-1"></a><span class="fu">ggplot</span>(df, <span class="fu">aes</span>(<span class="at">x =</span> x)) <span class="sc">+</span> <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> lower, <span class="at">ymax =</span> upper), <span class="at">fill =</span> <span class="st">&quot;lightblue&quot;</span>, <span class="at">alpha =</span> <span class="fl">0.4</span>) <span class="sc">+</span> <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> mean), <span class="at">color =</span> <span class="st">&quot;blue&quot;</span>, <span class="at">linewidth =</span> <span class="fl">1.2</span>) <span class="sc">+</span> <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> sample), <span class="at">color =</span> <span class="st">&quot;darkgreen&quot;</span>, <span class="at">linewidth =</span> <span class="dv">1</span>, <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span>) <span class="sc">+</span> <span class="fu">geom_point</span>(<span class="at">data =</span> obs, <span class="fu">aes</span>(<span class="at">x =</span> x, <span class="at">y =</span> y), <span class="at">color =</span> <span class="st">&quot;red&quot;</span>, <span class="at">size =</span> <span class="dv">3</span>) <span class="sc">+</span> <span class="fu">labs</span>( <span class="at">title =</span> <span class="st">&quot;Gaussian Process with Conditioning Points&quot;</span>, <span class="at">x =</span> <span class="st">&quot;x&quot;</span>, <span class="at">y =</span> <span class="st">&quot;f(x)&quot;</span>, <span class="at">caption =</span> <span class="st">&quot;Blue: Posterior mean | Light blue: 95% interval | Dashed green: Population | Red: Observed points&quot;</span> ) <span class="sc">+</span> <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">14</span>)</span></code></pre></div>
+<p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-74-1.svg" width="672" /></p>
 <p>In practice, we have an observed dataset <span class="math inline">\(\{(y_i, \mathbf{x}_i)\}_{i=1}^N\)</span> such that</p>
 <p><span class="math display">\[
 y_i = f(\mathbf{x}_i) + \mu_i,
@@ -547,17 +545,17 @@ f_i = \sin(2\pi x_{i1}) + \cos(2\pi x_{i2}) + \sin(x_{i1} x_{i2}),
 <p>where <span class="math inline">\(x_{i1}\)</span> and <span class="math inline">\(x_{i2}\)</span> are independently drawn from a uniform distribution on the interval <span class="math inline">\([0, 1]\)</span>, for <span class="math inline">\(i = 1, 2, \dots, 100\)</span>.</p>
 <p>We use the <em>DiceKriging</em> package in <strong>R</strong> to estimate and make predictions using a Gaussian Process. This package applies maximum likelihood estimation to infer the length-scale parameters (<span class="math inline">\(l_k\)</span>) and the signal variance (<span class="math inline">\(\sigma_f^2\)</span>). Note that there are two separate length-scale parameters, one for each input variable.</p>
 <p>The following code illustrates how to carry out this example, and the following figure displays a 3D plot with the observed points and the posterior mean surface. The package also provides pointwise credible intervals for the predictions.</p>
-<div class="sourceCode" id="cb45"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb45-1"><a href="sec12_4.html#cb45-1" tabindex="-1"></a><span class="do">####### Gaussian Process #######</span></span>
-<span id="cb45-2"><a href="sec12_4.html#cb45-2" tabindex="-1"></a><span class="co"># Load required packages</span></span>
-<span id="cb45-3"><a href="sec12_4.html#cb45-3" tabindex="-1"></a><span class="fu">library</span>(DiceKriging); <span class="fu">library</span>(rgl)</span>
-<span id="cb45-4"><a href="sec12_4.html#cb45-4" tabindex="-1"></a><span class="co"># Simulate training data</span></span>
-<span id="cb45-5"><a href="sec12_4.html#cb45-5" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">10101</span>); n_train <span class="ot">&lt;-</span> <span class="dv">100</span></span>
-<span id="cb45-6"><a href="sec12_4.html#cb45-6" tabindex="-1"></a>x1 <span class="ot">&lt;-</span> <span class="fu">runif</span>(n_train); x2 <span class="ot">&lt;-</span> <span class="fu">runif</span>(n_train)</span>
-<span id="cb45-7"><a href="sec12_4.html#cb45-7" tabindex="-1"></a>X_train <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x1 =</span> x1, <span class="at">x2 =</span> x2)</span>
-<span id="cb45-8"><a href="sec12_4.html#cb45-8" tabindex="-1"></a><span class="co"># True function without noise</span></span>
-<span id="cb45-9"><a href="sec12_4.html#cb45-9" tabindex="-1"></a>f_train <span class="ot">&lt;-</span> <span class="fu">sin</span>(<span class="dv">2</span> <span class="sc">*</span> pi <span class="sc">*</span> X_train<span class="sc">$</span>x1) <span class="sc">+</span> <span class="fu">cos</span>(<span class="dv">2</span> <span class="sc">*</span> pi <span class="sc">*</span> X_train<span class="sc">$</span>x2) <span class="sc">+</span> <span class="fu">sin</span>(X_train<span class="sc">$</span>x1 <span class="sc">*</span> X_train<span class="sc">$</span>x2)</span>
-<span id="cb45-10"><a href="sec12_4.html#cb45-10" tabindex="-1"></a><span class="co"># Fit Gaussian Process</span></span>
-<span id="cb45-11"><a href="sec12_4.html#cb45-11" tabindex="-1"></a>fit_km <span class="ot">&lt;-</span> <span class="fu">km</span>(<span class="at">design =</span> X_train, <span class="at">response =</span> f_train, <span class="at">covtype =</span> <span class="st">&quot;gauss&quot;</span>, <span class="at">nugget =</span> <span class="fl">1e-10</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb746"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb746-1"><a href="sec12_4.html#cb746-1" tabindex="-1"></a><span class="do">####### Gaussian Process #######</span></span>
+<span id="cb746-2"><a href="sec12_4.html#cb746-2" tabindex="-1"></a><span class="co"># Load required packages</span></span>
+<span id="cb746-3"><a href="sec12_4.html#cb746-3" tabindex="-1"></a><span class="fu">library</span>(DiceKriging); <span class="fu">library</span>(rgl)</span>
+<span id="cb746-4"><a href="sec12_4.html#cb746-4" tabindex="-1"></a><span class="co"># Simulate training data</span></span>
+<span id="cb746-5"><a href="sec12_4.html#cb746-5" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">10101</span>); n_train <span class="ot">&lt;-</span> <span class="dv">100</span></span>
+<span id="cb746-6"><a href="sec12_4.html#cb746-6" tabindex="-1"></a>x1 <span class="ot">&lt;-</span> <span class="fu">runif</span>(n_train); x2 <span class="ot">&lt;-</span> <span class="fu">runif</span>(n_train)</span>
+<span id="cb746-7"><a href="sec12_4.html#cb746-7" tabindex="-1"></a>X_train <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x1 =</span> x1, <span class="at">x2 =</span> x2)</span>
+<span id="cb746-8"><a href="sec12_4.html#cb746-8" tabindex="-1"></a><span class="co"># True function without noise</span></span>
+<span id="cb746-9"><a href="sec12_4.html#cb746-9" tabindex="-1"></a>f_train <span class="ot">&lt;-</span> <span class="fu">sin</span>(<span class="dv">2</span> <span class="sc">*</span> pi <span class="sc">*</span> X_train<span class="sc">$</span>x1) <span class="sc">+</span> <span class="fu">cos</span>(<span class="dv">2</span> <span class="sc">*</span> pi <span class="sc">*</span> X_train<span class="sc">$</span>x2) <span class="sc">+</span> <span class="fu">sin</span>(X_train<span class="sc">$</span>x1 <span class="sc">*</span> X_train<span class="sc">$</span>x2)</span>
+<span id="cb746-10"><a href="sec12_4.html#cb746-10" tabindex="-1"></a><span class="co"># Fit Gaussian Process</span></span>
+<span id="cb746-11"><a href="sec12_4.html#cb746-11" tabindex="-1"></a>fit_km <span class="ot">&lt;-</span> <span class="fu">km</span>(<span class="at">design =</span> X_train, <span class="at">response =</span> f_train, <span class="at">covtype =</span> <span class="st">&quot;gauss&quot;</span>, <span class="at">nugget =</span> <span class="fl">1e-10</span>)</span></code></pre></div>
 <pre><code>## 
 ## optimisation start
 ## ------------------
@@ -615,22 +613,22 @@ f_i = \sin(2\pi x_{i1}) + \cos(2\pi x_{i2}) + \sin(x_{i1} x_{i2}),
 ## F = -605.575
 ## final  value -605.574558 
 ## converged</code></pre>
-<div class="sourceCode" id="cb47"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb47-1"><a href="sec12_4.html#cb47-1" tabindex="-1"></a><span class="co"># Prediction grid</span></span>
-<span id="cb47-2"><a href="sec12_4.html#cb47-2" tabindex="-1"></a>grid_points <span class="ot">&lt;-</span> <span class="dv">30</span></span>
-<span id="cb47-3"><a href="sec12_4.html#cb47-3" tabindex="-1"></a>x1_seq <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">length.out =</span> grid_points)</span>
-<span id="cb47-4"><a href="sec12_4.html#cb47-4" tabindex="-1"></a>x2_seq <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">length.out =</span> grid_points)</span>
-<span id="cb47-5"><a href="sec12_4.html#cb47-5" tabindex="-1"></a>grid <span class="ot">&lt;-</span> <span class="fu">expand.grid</span>(<span class="at">x1 =</span> x1_seq, <span class="at">x2 =</span> x2_seq)</span>
-<span id="cb47-6"><a href="sec12_4.html#cb47-6" tabindex="-1"></a><span class="co"># Predict GP surface</span></span>
-<span id="cb47-7"><a href="sec12_4.html#cb47-7" tabindex="-1"></a>pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(fit_km, <span class="at">newdata =</span> grid, <span class="at">type =</span> <span class="st">&quot;UK&quot;</span>)</span>
-<span id="cb47-8"><a href="sec12_4.html#cb47-8" tabindex="-1"></a>z_pred <span class="ot">&lt;-</span> <span class="fu">matrix</span>(pred<span class="sc">$</span>mean, <span class="at">nrow =</span> grid_points, <span class="at">ncol =</span> grid_points)</span>
-<span id="cb47-9"><a href="sec12_4.html#cb47-9" tabindex="-1"></a><span class="co"># Plot</span></span>
-<span id="cb47-10"><a href="sec12_4.html#cb47-10" tabindex="-1"></a><span class="fu">persp3d</span>(<span class="at">x =</span> x1_seq, <span class="at">y =</span> x2_seq, <span class="at">z =</span> z_pred,</span>
-<span id="cb47-11"><a href="sec12_4.html#cb47-11" tabindex="-1"></a><span class="at">col =</span> <span class="st">&quot;lightblue&quot;</span>, <span class="at">alpha =</span> <span class="fl">0.7</span>,</span>
-<span id="cb47-12"><a href="sec12_4.html#cb47-12" tabindex="-1"></a><span class="at">xlab =</span> <span class="st">&quot;x1&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;x2&quot;</span>, <span class="at">zlab =</span> <span class="st">&quot;GP Mean&quot;</span>)</span>
-<span id="cb47-13"><a href="sec12_4.html#cb47-13" tabindex="-1"></a><span class="fu">points3d</span>(<span class="at">x =</span> X_train<span class="sc">$</span>x1, <span class="at">y =</span> X_train<span class="sc">$</span>x2, <span class="at">z =</span> f_train, <span class="at">col =</span> <span class="st">&quot;red&quot;</span>, <span class="at">size =</span> <span class="dv">8</span>)</span>
-<span id="cb47-14"><a href="sec12_4.html#cb47-14" tabindex="-1"></a>fit_km<span class="sc">@</span>covariance<span class="sc">@</span>range.val <span class="co"># length-scale</span></span></code></pre></div>
+<div class="sourceCode" id="cb748"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb748-1"><a href="sec12_4.html#cb748-1" tabindex="-1"></a><span class="co"># Prediction grid</span></span>
+<span id="cb748-2"><a href="sec12_4.html#cb748-2" tabindex="-1"></a>grid_points <span class="ot">&lt;-</span> <span class="dv">30</span></span>
+<span id="cb748-3"><a href="sec12_4.html#cb748-3" tabindex="-1"></a>x1_seq <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">length.out =</span> grid_points)</span>
+<span id="cb748-4"><a href="sec12_4.html#cb748-4" tabindex="-1"></a>x2_seq <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">length.out =</span> grid_points)</span>
+<span id="cb748-5"><a href="sec12_4.html#cb748-5" tabindex="-1"></a>grid <span class="ot">&lt;-</span> <span class="fu">expand.grid</span>(<span class="at">x1 =</span> x1_seq, <span class="at">x2 =</span> x2_seq)</span>
+<span id="cb748-6"><a href="sec12_4.html#cb748-6" tabindex="-1"></a><span class="co"># Predict GP surface</span></span>
+<span id="cb748-7"><a href="sec12_4.html#cb748-7" tabindex="-1"></a>pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(fit_km, <span class="at">newdata =</span> grid, <span class="at">type =</span> <span class="st">&quot;UK&quot;</span>)</span>
+<span id="cb748-8"><a href="sec12_4.html#cb748-8" tabindex="-1"></a>z_pred <span class="ot">&lt;-</span> <span class="fu">matrix</span>(pred<span class="sc">$</span>mean, <span class="at">nrow =</span> grid_points, <span class="at">ncol =</span> grid_points)</span>
+<span id="cb748-9"><a href="sec12_4.html#cb748-9" tabindex="-1"></a><span class="co"># Plot</span></span>
+<span id="cb748-10"><a href="sec12_4.html#cb748-10" tabindex="-1"></a><span class="fu">persp3d</span>(<span class="at">x =</span> x1_seq, <span class="at">y =</span> x2_seq, <span class="at">z =</span> z_pred,</span>
+<span id="cb748-11"><a href="sec12_4.html#cb748-11" tabindex="-1"></a><span class="at">col =</span> <span class="st">&quot;lightblue&quot;</span>, <span class="at">alpha =</span> <span class="fl">0.7</span>,</span>
+<span id="cb748-12"><a href="sec12_4.html#cb748-12" tabindex="-1"></a><span class="at">xlab =</span> <span class="st">&quot;x1&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;x2&quot;</span>, <span class="at">zlab =</span> <span class="st">&quot;GP Mean&quot;</span>)</span>
+<span id="cb748-13"><a href="sec12_4.html#cb748-13" tabindex="-1"></a><span class="fu">points3d</span>(<span class="at">x =</span> X_train<span class="sc">$</span>x1, <span class="at">y =</span> X_train<span class="sc">$</span>x2, <span class="at">z =</span> f_train, <span class="at">col =</span> <span class="st">&quot;red&quot;</span>, <span class="at">size =</span> <span class="dv">8</span>)</span>
+<span id="cb748-14"><a href="sec12_4.html#cb748-14" tabindex="-1"></a>fit_km<span class="sc">@</span>covariance<span class="sc">@</span>range.val <span class="co"># length-scale</span></span></code></pre></div>
 <pre><code>## [1] 0.5196972 0.5150810</code></pre>
-<div class="sourceCode" id="cb49"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb49-1"><a href="sec12_4.html#cb49-1" tabindex="-1"></a>fit_km<span class="sc">@</span>covariance<span class="sc">@</span>sd2 <span class="co"># Signal variance</span></span></code></pre></div>
+<div class="sourceCode" id="cb750"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb750-1"><a href="sec12_4.html#cb750-1" tabindex="-1"></a>fit_km<span class="sc">@</span>covariance<span class="sc">@</span>sd2 <span class="co"># Signal variance</span></span></code></pre></div>
 <pre><code>## [1] 11.58394</code></pre>
 <p><img src="figures/GP.png" width="600px" height="350px" style="display: block; margin: auto;" /></p>
 <p>A limitation of the <em>DiceKriging</em> package is that it is designed for deterministic simulations and, consequently, does not estimate the noise variance. Therefore, in Exercise 7, we ask to simulate the process</p>

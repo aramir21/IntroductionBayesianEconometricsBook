@@ -23,7 +23,7 @@
 <meta name="author" content="Andrés Ramírez-Hassan" />
 
 
-<meta name="date" content="2025-11-18" />
+<meta name="date" content="2025-11-30" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -52,6 +52,8 @@
 <link href="libs/anchor-sections-1.1.0/anchor-sections.css" rel="stylesheet" />
 <link href="libs/anchor-sections-1.1.0/anchor-sections-hash.css" rel="stylesheet" />
 <script src="libs/anchor-sections-1.1.0/anchor-sections.js"></script>
+<script src="libs/kePrint-0.0.1/kePrint.js"></script>
+<link href="libs/lightable-0.0.1/lightable.css" rel="stylesheet" />
 
 
 <style type="text/css">
@@ -163,7 +165,8 @@ div.csl-indent {
 <li><a href="./">Introduction to Bayesian Econometrics: A GUIded toolkit using R</a></li>
 
 <li class="divider"></li>
-<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Introduction</a>
+<li class="chapter" data-level="" data-path="index.html"><a href="index.html"><i class="fa fa-check"></i>Introduction</a></li>
+<li class="chapter" data-level="" data-path="preface.html"><a href="preface.html"><i class="fa fa-check"></i>Preface</a>
 <ul>
 <li class="chapter" data-level="" data-path="to-instructors-and-students.html"><a href="to-instructors-and-students.html"><i class="fa fa-check"></i>To instructors and students</a></li>
 <li class="chapter" data-level="" data-path="acknowledgments.html"><a href="acknowledgments.html"><i class="fa fa-check"></i>Acknowledgments</a></li>
@@ -391,7 +394,7 @@ div.csl-indent {
 <p><span class="math display">\[
 \mathbf{y} = \mathbf{i}_N \beta_0 + \mathbf{W}\boldsymbol{\beta} + \boldsymbol{\mu},
 \]</span></p>
-<p>where <span class="math inline">\(\mathbf{i}_N\)</span> is an <span class="math inline">\(N\)</span>-dimensional vector of ones, <span class="math inline">\(\mathbf{W}\)</span> is the <span class="math inline">\(N \times K\)</span> design matrix of inputs, and <span class="math inline">\(\boldsymbol{\mu} \sim \mathcal{N}(\mathbf{0}, \sigma^2 \mathbf{I}_N)\)</span>, there has been extensive development of techniques aimed at regularization within the Frequentist inferential framework. These include methods such as Ridge regression <span class="citation">(<a href="#ref-hoerl1970ridge">Hoerl and Kennard 1970</a>)</span>; discrete subset selection techniques like best subset selection <span class="citation">(<a href="#ref-furnival1974regressions">Furnival and Wilson 1974</a>)</span>, forward selection, and backward stepwise selection <span class="citation">(<a href="#ref-hastie2009elements">Hastie, Tibshirani, and Friedman 2009</a>)</span>; as well as continuous subset selection approaches such as the LASSO <span class="citation">(<a href="#ref-tibshirani1996regression">Tibshirani 1996</a>)</span>, the elastic net <span class="citation">(<a href="#ref-zou2005regularization">Zou and Hastie 2005</a>)</span>, and OSCAR <span class="citation">(<a href="#ref-bondell2008simultaneous">Bondell and Reich 2008</a>)</span>.</p>
+<p>where <span class="math inline">\(\mathbf{i}_N\)</span> is an <span class="math inline">\(N\)</span>-dimensional vector of ones, <span class="math inline">\(\mathbf{W}\)</span> is the <span class="math inline">\(N \times K\)</span> design matrix of inputs, and <span class="math inline">\(\boldsymbol{\mu} \sim \mathcal{N}(\mathbf{0}, \sigma^2 \mathbf{I}_N)\)</span>, there has been extensive development of techniques aimed at regularization within the Frequentist inferential framework. These include methods such as Ridge regression <span class="citation">(<a href="#ref-hoerl1970ridge">Hoerl and Kennard 1970</a>)</span>; discrete subset selection techniques like best subset selection <span class="citation">(<a href="#ref-furnival1974regressions">Furnival and Wilson 1974a</a>)</span>, forward selection, and backward stepwise selection <span class="citation">(<a href="#ref-hastie2009elements">Hastie, Tibshirani, and Friedman 2009</a>)</span>; as well as continuous subset selection approaches such as the LASSO <span class="citation">(<a href="#ref-tibshirani1996regression">Tibshirani 1996</a>)</span>, the elastic net <span class="citation">(<a href="#ref-zou2005regularization">Zou and Hastie 2005</a>)</span>, and OSCAR <span class="citation">(<a href="#ref-bondell2008simultaneous">Bondell and Reich 2008</a>)</span>.</p>
 <p>It is important to note, however, that Ridge regression does not perform variable selection; rather, it shrinks coefficient estimates toward zero without setting them exactly to zero.</p>
 <p>Ridge regression and the LASSO can be viewed as special cases of a more general class of estimators known as <em>Bridge regression</em> <span class="citation">(<a href="#ref-fu1998penalized">Fu 1998</a>)</span>, which also admits a Bayesian interpretation. Consider the following penalized least squares criterion in the linear regression setting:</p>
 <p><span class="math display">\[
@@ -459,155 +462,160 @@ where <span class="math inline">\(\beta_k \sim \mathcal{U}(-3, 3)\)</span>, <spa
 <p>We use the <em>bayesreg</em> package in <strong>R</strong> to perform the Bayesian LASSO, using 5,000 MCMC draws and 1,000 burn-in iterations. The following code illustrates the simulation exercise and compares the posterior means with the true population values.</p>
 <p>The summary of the fit and the plot comparing the population parameters with the posterior means show that the Bayesian LASSO is able to identify the variables that are relevant in the data generating process.</p>
 <p>In Exercise 1, we propose programming the Gibbs sampler from scratch, assuming a hierarchical structure for the global shrinkage parameter, and comparing the results with those obtained using the <em>monomvn</em> package.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="sec12_2.html#cb1-1" tabindex="-1"></a><span class="do">####### Bayesian LASSSO #######</span></span>
-<span id="cb1-2"><a href="sec12_2.html#cb1-2" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">10101</span>)</span>
-<span id="cb1-3"><a href="sec12_2.html#cb1-3" tabindex="-1"></a><span class="fu">library</span>(bayesreg)</span></code></pre></div>
+<div class="sourceCode" id="cb698"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb698-1"><a href="sec12_2.html#cb698-1" tabindex="-1"></a><span class="do">####### Bayesian LASSSO #######</span></span>
+<span id="cb698-2"><a href="sec12_2.html#cb698-2" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">10101</span>)</span>
+<span id="cb698-3"><a href="sec12_2.html#cb698-3" tabindex="-1"></a><span class="fu">library</span>(bayesreg)</span></code></pre></div>
 <pre><code>## Loading required package: pgdraw</code></pre>
 <pre><code>## Loading required package: doParallel</code></pre>
 <pre><code>## Loading required package: foreach</code></pre>
+<pre><code>## 
+## Attaching package: &#39;foreach&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:purrr&#39;:
+## 
+##     accumulate, when</code></pre>
 <pre><code>## Loading required package: iterators</code></pre>
 <pre><code>## Loading required package: parallel</code></pre>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="sec12_2.html#cb7-1" tabindex="-1"></a><span class="co"># Parameters</span></span>
-<span id="cb7-2"><a href="sec12_2.html#cb7-2" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">500</span>  <span class="co"># sample size</span></span>
-<span id="cb7-3"><a href="sec12_2.html#cb7-3" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="dv">100</span>  <span class="co"># number of predictors</span></span>
-<span id="cb7-4"><a href="sec12_2.html#cb7-4" tabindex="-1"></a>s <span class="ot">&lt;-</span> <span class="dv">10</span>   <span class="co"># number of non-zero coefficients</span></span>
-<span id="cb7-5"><a href="sec12_2.html#cb7-5" tabindex="-1"></a><span class="co"># Generate design matrix</span></span>
-<span id="cb7-6"><a href="sec12_2.html#cb7-6" tabindex="-1"></a>X <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rnorm</span>(n <span class="sc">*</span> p), <span class="at">nrow =</span> n, <span class="at">ncol =</span> p)</span>
-<span id="cb7-7"><a href="sec12_2.html#cb7-7" tabindex="-1"></a><span class="co"># True beta: first s coefficients are non-zero, rest are zero</span></span>
-<span id="cb7-8"><a href="sec12_2.html#cb7-8" tabindex="-1"></a>beta_true <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fu">runif</span>(s, <span class="sc">-</span><span class="dv">3</span>, <span class="dv">3</span>), <span class="fu">rep</span>(<span class="dv">0</span>, p <span class="sc">-</span> s))</span>
-<span id="cb7-9"><a href="sec12_2.html#cb7-9" tabindex="-1"></a><span class="co"># Generate response with some noise</span></span>
-<span id="cb7-10"><a href="sec12_2.html#cb7-10" tabindex="-1"></a>sigma <span class="ot">&lt;-</span> <span class="dv">1</span></span>
-<span id="cb7-11"><a href="sec12_2.html#cb7-11" tabindex="-1"></a>y <span class="ot">&lt;-</span> X <span class="sc">%*%</span> beta_true <span class="sc">+</span> <span class="fu">rnorm</span>(n, <span class="at">sd =</span> sigma)</span>
-<span id="cb7-12"><a href="sec12_2.html#cb7-12" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(X,y)</span>
-<span id="cb7-13"><a href="sec12_2.html#cb7-13" tabindex="-1"></a><span class="do">### Using bayesreg </span><span class="al">###</span></span>
-<span id="cb7-14"><a href="sec12_2.html#cb7-14" tabindex="-1"></a><span class="co"># Fit the model</span></span>
-<span id="cb7-15"><a href="sec12_2.html#cb7-15" tabindex="-1"></a>fit <span class="ot">&lt;-</span> bayesreg<span class="sc">::</span><span class="fu">bayesreg</span>(y <span class="sc">~</span> X, <span class="at">data =</span> df, <span class="at">model =</span> <span class="st">&quot;gaussian&quot;</span>, <span class="at">prior =</span> <span class="st">&quot;lasso&quot;</span>, </span>
-<span id="cb7-16"><a href="sec12_2.html#cb7-16" tabindex="-1"></a><span class="at">n.samples =</span> <span class="dv">5000</span>, <span class="at">burnin =</span> <span class="dv">1000</span>)</span>
-<span id="cb7-17"><a href="sec12_2.html#cb7-17" tabindex="-1"></a><span class="co"># Check summary</span></span>
-<span id="cb7-18"><a href="sec12_2.html#cb7-18" tabindex="-1"></a><span class="fu">summary</span>(fit)</span></code></pre></div>
+<div class="sourceCode" id="cb706"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb706-1"><a href="sec12_2.html#cb706-1" tabindex="-1"></a><span class="co"># Parameters</span></span>
+<span id="cb706-2"><a href="sec12_2.html#cb706-2" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">500</span>  <span class="co"># sample size</span></span>
+<span id="cb706-3"><a href="sec12_2.html#cb706-3" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="dv">100</span>  <span class="co"># number of predictors</span></span>
+<span id="cb706-4"><a href="sec12_2.html#cb706-4" tabindex="-1"></a>s <span class="ot">&lt;-</span> <span class="dv">10</span>   <span class="co"># number of non-zero coefficients</span></span>
+<span id="cb706-5"><a href="sec12_2.html#cb706-5" tabindex="-1"></a><span class="co"># Generate design matrix</span></span>
+<span id="cb706-6"><a href="sec12_2.html#cb706-6" tabindex="-1"></a>X <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rnorm</span>(n <span class="sc">*</span> p), <span class="at">nrow =</span> n, <span class="at">ncol =</span> p)</span>
+<span id="cb706-7"><a href="sec12_2.html#cb706-7" tabindex="-1"></a><span class="co"># True beta: first s coefficients are non-zero, rest are zero</span></span>
+<span id="cb706-8"><a href="sec12_2.html#cb706-8" tabindex="-1"></a>beta_true <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fu">runif</span>(s, <span class="sc">-</span><span class="dv">3</span>, <span class="dv">3</span>), <span class="fu">rep</span>(<span class="dv">0</span>, p <span class="sc">-</span> s))</span>
+<span id="cb706-9"><a href="sec12_2.html#cb706-9" tabindex="-1"></a><span class="co"># Generate response with some noise</span></span>
+<span id="cb706-10"><a href="sec12_2.html#cb706-10" tabindex="-1"></a>sigma <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb706-11"><a href="sec12_2.html#cb706-11" tabindex="-1"></a>y <span class="ot">&lt;-</span> X <span class="sc">%*%</span> beta_true <span class="sc">+</span> <span class="fu">rnorm</span>(n, <span class="at">sd =</span> sigma)</span>
+<span id="cb706-12"><a href="sec12_2.html#cb706-12" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(X,y)</span>
+<span id="cb706-13"><a href="sec12_2.html#cb706-13" tabindex="-1"></a><span class="do">### Using bayesreg </span><span class="al">###</span></span>
+<span id="cb706-14"><a href="sec12_2.html#cb706-14" tabindex="-1"></a><span class="co"># Fit the model</span></span>
+<span id="cb706-15"><a href="sec12_2.html#cb706-15" tabindex="-1"></a>fit <span class="ot">&lt;-</span> bayesreg<span class="sc">::</span><span class="fu">bayesreg</span>(y <span class="sc">~</span> X, <span class="at">data =</span> df, <span class="at">model =</span> <span class="st">&quot;gaussian&quot;</span>, <span class="at">prior =</span> <span class="st">&quot;lasso&quot;</span>, </span>
+<span id="cb706-16"><a href="sec12_2.html#cb706-16" tabindex="-1"></a><span class="at">n.samples =</span> <span class="dv">5000</span>, <span class="at">burnin =</span> <span class="dv">1000</span>)</span>
+<span id="cb706-17"><a href="sec12_2.html#cb706-17" tabindex="-1"></a><span class="co"># Check summary</span></span>
+<span id="cb706-18"><a href="sec12_2.html#cb706-18" tabindex="-1"></a><span class="fu">summary</span>(fit)</span></code></pre></div>
 <pre><code>## ==========================================================================================
 ## |                   Bayesian Penalised Regression Estimation ver. 1.3                    |
 ## |                     (c) Enes Makalic, Daniel F Schmidt. 2016-2024                      |
 ## ==========================================================================================
 ## Bayesian Gaussian lasso regression                              Number of obs   =      500
 ##                                                                 Number of vars  =      100
-## MCMC Samples   =   5000                                         std(Error)      =   1.0288
+## MCMC Samples   =   5000                                         std(Error)      =   1.0284
 ## MCMC Burnin    =   1000                                         R-squared       =   0.9759
-## MCMC Thinning  =      5                                         WAIC            =   766.95
+## MCMC Thinning  =      5                                         WAIC            =   766.71
 ## 
 ## -------------+-----------------------------------------------------------------------------
 ##    Parameter |  mean(Coef)  std(Coef)    [95% Cred. Interval]      tStat    Rank        ESS
 ## -------------+-----------------------------------------------------------------------------
-##           X1 |    -0.06846    0.04787     -0.16553    0.02235     -1.430      19 *     5000
-##           X2 |    -2.20889    0.05214     -2.31015   -2.10684    -42.367       3 **    5000
-##           X3 |    -2.63620    0.05064     -2.73225   -2.53394    -52.061       1 **    4902
-##           X4 |    -0.73971    0.04945     -0.83421   -0.64341    -14.959       9 **    4874
-##           X5 |     1.81048    0.05031      1.70944    1.90729     35.990       6 **    4909
-##           X6 |    -2.11694    0.05024     -2.21527   -2.01832    -42.135       3 **    4875
-##           X7 |    -2.09674    0.05091     -2.19591   -1.99645    -41.188       5 **    4883
-##           X8 |     0.88083    0.04749      0.78826    0.97690     18.546       8 **    5000
-##           X9 |     1.26806    0.05265      1.16364    1.36835     24.083       7 **    4782
-##          X10 |    -2.55504    0.05074     -2.65378   -2.45360    -50.357       2 **    5000
-##          X11 |    -0.02984    0.04505     -0.12174    0.05499     -0.662      51       5000
-##          X12 |    -0.02383    0.04923     -0.12258    0.07081     -0.484      64       5000
-##          X13 |    -0.06461    0.05090     -0.16903    0.03217     -1.269      22 *     4935
-##          X14 |    -0.02827    0.04544     -0.11954    0.05899     -0.622      51       4720
-##          X15 |    -0.04619    0.04855     -0.14425    0.04514     -0.951      35       5000
-##          X16 |    -0.08119    0.04886     -0.17889    0.00997     -1.662      14 *     5000
-##          X17 |    -0.02091    0.04785     -0.12014    0.07259     -0.437      64       4930
-##          X18 |    -0.01181    0.04622     -0.10366    0.07920     -0.255      64       5000
-##          X19 |     0.06294    0.04849     -0.02904    0.16060      1.298      23 *     5000
-##          X20 |     0.01938    0.04746     -0.07228    0.11705      0.408      59       5000
-##          X21 |     0.03023    0.04717     -0.06063    0.12744      0.641      51       5000
-##          X22 |    -0.02100    0.04783     -0.11441    0.07403     -0.439      64       5000
-##          X23 |     0.03310    0.04831     -0.05959    0.13041      0.685      46       5000
-##          X24 |    -0.00293    0.04287     -0.08775    0.08277     -0.068      83       4604
-##          X25 |    -0.00359    0.04305     -0.09036    0.08023     -0.083      94       5000
-##          X26 |    -0.01312    0.04641     -0.10476    0.07753     -0.283      64       5000
-##          X27 |    -0.05874    0.04766     -0.15534    0.03207     -1.232      23 *     5000
-##          X28 |     0.02100    0.04708     -0.06942    0.11605      0.446      59       5000
-##          X29 |     0.08368    0.05153     -0.01476    0.18622      1.624      17 *     5000
-##          X30 |     0.04349    0.04802     -0.04534    0.14131      0.906      37       4878
-##          X31 |     0.02810    0.04488     -0.05767    0.11858      0.626      51       5000
-##          X32 |    -0.08010    0.04764     -0.17565    0.00993     -1.681      15 *     4601
-##          X33 |    -0.02008    0.04646     -0.11440    0.07407     -0.432      64       4923
-##          X34 |    -0.01960    0.04745     -0.11445    0.07097     -0.413      64       5000
-##          X35 |    -0.01971    0.04646     -0.11370    0.07044     -0.424      64       5000
-##          X36 |     0.00137    0.04606     -0.09109    0.09042      0.030      94       5000
-##          X37 |    -0.04898    0.04633     -0.14278    0.04081     -1.057      30       4860
-##          X38 |    -0.00762    0.04814     -0.10455    0.08705     -0.158      83       5000
-##          X39 |     0.01465    0.04858     -0.08168    0.11057      0.302      64       4921
-##          X40 |    -0.02052    0.04789     -0.11806    0.07202     -0.429      64       5000
-##          X41 |    -0.00984    0.04475     -0.10075    0.07534     -0.220      83       5000
-##          X42 |     0.03611    0.04572     -0.05046    0.12763      0.790      41       4993
-##          X43 |    -0.05567    0.04624     -0.14978    0.03144     -1.204      26 *     5000
-##          X44 |    -0.01799    0.04614     -0.11113    0.07238     -0.390      83       5000
-##          X45 |     0.07281    0.04817     -0.01763    0.16846      1.512      18 *     4974
-##          X46 |    -0.03812    0.04603     -0.13067    0.04984     -0.828      41       4772
-##          X47 |    -0.05021    0.05050     -0.15135    0.04692     -0.994      33       5000
-##          X48 |     0.02324    0.04788     -0.07006    0.12100      0.485      64       4890
-##          X49 |    -0.01159    0.04908     -0.11191    0.08513     -0.236      83       4487
-##          X50 |    -0.02054    0.04440     -0.10933    0.06671     -0.463      64       5000
-##          X51 |    -0.05342    0.04534     -0.14696    0.02961     -1.178      27 *     4864
-##          X52 |    -0.00232    0.04802     -0.09979    0.09112     -0.048      94       5000
-##          X53 |    -0.04888    0.04983     -0.14710    0.04458     -0.981      34       4843
-##          X54 |    -0.04495    0.04985     -0.14137    0.05127     -0.902      37       5000
-##          X55 |     0.04064    0.04794     -0.05000    0.13733      0.848      35       5000
-##          X56 |     0.03062    0.04573     -0.05816    0.12243      0.669      46       5000
-##          X57 |     0.01757    0.04627     -0.07281    0.11120      0.380      59       5000
-##          X58 |     0.00791    0.04478     -0.08072    0.09645      0.177      94       5000
-##          X59 |    -0.05204    0.04614     -0.14660    0.03497     -1.128      30       5000
-##          X60 |    -0.00137    0.04525     -0.09169    0.08659     -0.030      94       5000
-##          X61 |     0.15134    0.04751      0.06003    0.24554      3.185      10 **    4766
-##          X62 |     0.03062    0.04718     -0.06161    0.12551      0.649      51       4748
-##          X63 |    -0.08321    0.05087     -0.18511    0.01556     -1.636      16 *     4923
-##          X64 |    -0.00506    0.04859     -0.10080    0.09523     -0.104      83       4871
-##          X65 |    -0.03445    0.04583     -0.12700    0.05569     -0.752      45       4834
-##          X66 |    -0.02377    0.04641     -0.11660    0.06637     -0.512      59       4948
-##          X67 |     0.01857    0.04584     -0.06913    0.11214      0.405      82       4966
-##          X68 |    -0.03071    0.04850     -0.12906    0.06060     -0.633      51       4812
-##          X69 |    -0.05059    0.04590     -0.14304    0.03433     -1.102      27       5000
-##          X70 |    -0.06572    0.04679     -0.15715    0.02238     -1.404      21 *     5000
-##          X71 |    -0.04130    0.04662     -0.13542    0.04777     -0.886      37       4923
-##          X72 |    -0.00592    0.04640     -0.10103    0.08507     -0.128      94       5000
-##          X73 |    -0.03940    0.04850     -0.13918    0.05487     -0.812      44       5000
-##          X74 |     0.02703    0.04527     -0.05906    0.11829      0.597      59       4863
-##          X75 |     0.06576    0.04664     -0.02126    0.15939      1.410      20 *     5000
-##          X76 |    -0.01297    0.04721     -0.10485    0.08043     -0.275      83       4962
-##          X77 |     0.04205    0.04812     -0.05121    0.13592      0.874      37       5000
-##          X78 |    -0.02925    0.04861     -0.12989    0.06276     -0.602      51       5000
-##          X79 |    -0.01863    0.04579     -0.11045    0.07033     -0.407      83       5000
-##          X80 |    -0.05865    0.04764     -0.15234    0.03341     -1.231      25 *     5000
-##          X81 |     0.03343    0.04691     -0.05330    0.13119      0.713      46       5000
-##          X82 |    -0.02566    0.04479     -0.11608    0.05957     -0.573      64       4007
-##          X83 |    -0.04784    0.04870     -0.14747    0.04214     -0.982      32       4422
-##          X84 |    -0.09470    0.05132     -0.19578    0.00349     -1.845      12 *     5000
-##          X85 |    -0.04008    0.04675     -0.13326    0.05164     -0.857      41       5000
-##          X86 |    -0.05453    0.04663     -0.14806    0.03520     -1.169      27 *     4998
-##          X87 |    -0.00647    0.04631     -0.09761    0.08573     -0.140      83       4853
-##          X88 |     0.02031    0.04739     -0.07393    0.11454      0.429      64       5000
-##          X89 |    -0.08392    0.04824     -0.17978    0.00652     -1.740      13 *     4796
-##          X90 |     0.01793    0.04702     -0.07622    0.11131      0.381      64       5000
-##          X91 |    -0.00289    0.04563     -0.09412    0.08779     -0.063     100       5000
-##          X92 |     0.02671    0.04723     -0.06359    0.12439      0.566      51       5000
-##          X93 |    -0.09987    0.05326     -0.20431    0.00284     -1.875      11 *     4768
-##          X94 |    -0.02222    0.04350     -0.11087    0.06412     -0.511      64       4820
-##          X95 |     0.00413    0.04754     -0.09094    0.09844      0.087      83       5000
-##          X96 |     0.01958    0.04755     -0.07093    0.11457      0.412      64       5000
-##          X97 |    -0.03615    0.04896     -0.13597    0.05546     -0.738      46       5000
-##          X98 |     0.02667    0.04584     -0.06241    0.11810      0.582      64       5000
-##          X99 |    -0.03480    0.04707     -0.12850    0.05742     -0.739      46       4833
-##         X100 |    -0.01154    0.04404     -0.10090    0.07055     -0.262      83       5000
-##  (Intercept) |     0.06165    0.05040     -0.03503    0.16116          .       .          .
+##           X1 |    -0.06844    0.04766     -0.15959    0.02175     -1.436      19 *     5000
+##           X2 |    -2.20902    0.05113     -2.30902   -2.10620    -43.200       3 **    5000
+##           X3 |    -2.63626    0.05173     -2.73480   -2.53314    -50.963       1 **    5000
+##           X4 |    -0.73957    0.04892     -0.83262   -0.64014    -15.119       9 **    5000
+##           X5 |     1.81039    0.05028      1.70918    1.90559     36.005       6 **    5000
+##           X6 |    -2.11683    0.05003     -2.21260   -2.01692    -42.312       3 **    5000
+##           X7 |    -2.09666    0.05171     -2.19847   -1.99440    -40.546       5 **    4521
+##           X8 |     0.88095    0.04828      0.78502    0.97211     18.248       8 **    4883
+##           X9 |     1.26813    0.05236      1.16647    1.36995     24.218       7 **    4807
+##          X10 |    -2.55503    0.05113     -2.65156   -2.45091    -49.967       2 **    4850
+##          X11 |    -0.03009    0.04512     -0.12290    0.05585     -0.667      56       4874
+##          X12 |    -0.02403    0.04917     -0.11931    0.07308     -0.489      63       5000
+##          X13 |    -0.06494    0.04922     -0.16574    0.02483     -1.319      22 *     4922
+##          X14 |    -0.02815    0.04517     -0.11869    0.05836     -0.623      56       4833
+##          X15 |    -0.04614    0.04905     -0.14484    0.04775     -0.941      36       5000
+##          X16 |    -0.08147    0.04875     -0.17906    0.01060     -1.671      14 *     4653
+##          X17 |    -0.02087    0.04724     -0.11483    0.07023     -0.442      63       4936
+##          X18 |    -0.01167    0.04729     -0.10832    0.07944     -0.247      77       5000
+##          X19 |     0.06309    0.04877     -0.02831    0.16102      1.294      22 *     4929
+##          X20 |     0.01944    0.04755     -0.07217    0.11667      0.409      63       5000
+##          X21 |     0.02998    0.04683     -0.05981    0.12457      0.640      52       4706
+##          X22 |    -0.02101    0.04745     -0.11587    0.07157     -0.443      56       5000
+##          X23 |     0.03316    0.04776     -0.05635    0.13212      0.694      47       4952
+##          X24 |    -0.00297    0.04255     -0.08990    0.08009     -0.070      99       4860
+##          X25 |    -0.00364    0.04291     -0.08907    0.08127     -0.085      77       5000
+##          X26 |    -0.01292    0.04620     -0.10572    0.07784     -0.280      77       4889
+##          X27 |    -0.05888    0.04706     -0.15631    0.02838     -1.251      24 *     5000
+##          X28 |     0.02074    0.04662     -0.06903    0.11448      0.445      77       4910
+##          X29 |     0.08343    0.05125     -0.01261    0.18523      1.628      15 *     5000
+##          X30 |     0.04347    0.04832     -0.04850    0.14218      0.900      35       5000
+##          X31 |     0.02797    0.04553     -0.05871    0.11941      0.614      52       5000
+##          X32 |    -0.08017    0.04820     -0.17343    0.01236     -1.663      15 *     5000
+##          X33 |    -0.02015    0.04628     -0.11413    0.07051     -0.435      63       4615
+##          X34 |    -0.01937    0.04739     -0.11360    0.07285     -0.409      63       5000
+##          X35 |    -0.01983    0.04543     -0.11087    0.06930     -0.437      63       5000
+##          X36 |     0.00136    0.04613     -0.09282    0.09398      0.030      94       5000
+##          X37 |    -0.04906    0.04582     -0.14045    0.03930     -1.071      31       5000
+##          X38 |    -0.00757    0.04812     -0.10258    0.08964     -0.157      77       5000
+##          X39 |     0.01473    0.04822     -0.08227    0.11086      0.306      77       5000
+##          X40 |    -0.02048    0.04782     -0.11556    0.07364     -0.428      77       5000
+##          X41 |    -0.00985    0.04505     -0.10042    0.07671     -0.219      77       4937
+##          X42 |     0.03601    0.04691     -0.05171    0.13104      0.768      45       5000
+##          X43 |    -0.05504    0.04634     -0.14572    0.03275     -1.188      25 *     4620
+##          X44 |    -0.01813    0.04580     -0.11123    0.06938     -0.396      77       5000
+##          X45 |     0.07286    0.04695     -0.01380    0.16626      1.552      18 *     4896
+##          X46 |    -0.03810    0.04697     -0.13078    0.05123     -0.811      43       5000
+##          X47 |    -0.05030    0.04995     -0.14953    0.04323     -1.007      31       5000
+##          X48 |     0.02317    0.04799     -0.07073    0.11967      0.483      63       4927
+##          X49 |    -0.01156    0.04749     -0.10916    0.08249     -0.243      77       4957
+##          X50 |    -0.02061    0.04354     -0.10988    0.06283     -0.473      63       4939
+##          X51 |    -0.05312    0.04594     -0.14623    0.03516     -1.156      27       5000
+##          X52 |    -0.00229    0.04805     -0.09706    0.09194     -0.048      77       5000
+##          X53 |    -0.04892    0.04856     -0.14770    0.04460     -1.007      33       4915
+##          X54 |    -0.04527    0.05034     -0.14746    0.04927     -0.899      36       5000
+##          X55 |     0.04083    0.04774     -0.05046    0.13552      0.855      38       5000
+##          X56 |     0.03043    0.04469     -0.05447    0.12099      0.681      47       4960
+##          X57 |     0.01771    0.04709     -0.07502    0.11188      0.376      63       5000
+##          X58 |     0.00793    0.04466     -0.07915    0.09819      0.178      94       4917
+##          X59 |    -0.05206    0.04698     -0.14629    0.03533     -1.108      27 *     4799
+##          X60 |    -0.00134    0.04613     -0.09244    0.09164     -0.029      77       5000
+##          X61 |     0.15103    0.04810      0.05886    0.24343      3.140      10 **    5000
+##          X62 |     0.03065    0.04735     -0.06019    0.12737      0.647      56       5000
+##          X63 |    -0.08314    0.05036     -0.18355    0.01269     -1.651      15 *     5000
+##          X64 |    -0.00507    0.04780     -0.10075    0.09101     -0.106      99       5000
+##          X65 |    -0.03424    0.04633     -0.12965    0.05588     -0.739      43       4572
+##          X66 |    -0.02355    0.04543     -0.11411    0.06672     -0.518      63       5000
+##          X67 |     0.01834    0.04591     -0.06851    0.10984      0.400      77       4761
+##          X68 |    -0.03052    0.04872     -0.12664    0.06346     -0.626      56       4804
+##          X69 |    -0.05088    0.04585     -0.14373    0.03498     -1.110      30       5000
+##          X70 |    -0.06581    0.04738     -0.16132    0.02268     -1.389      20 *     5000
+##          X71 |    -0.04111    0.04639     -0.13444    0.04730     -0.886      38       5000
+##          X72 |    -0.00586    0.04707     -0.09843    0.08764     -0.125      94       4834
+##          X73 |    -0.03931    0.04880     -0.13759    0.05230     -0.806      38       4927
+##          X74 |     0.02699    0.04675     -0.06570    0.12046      0.577      56       4854
+##          X75 |     0.06582    0.04733     -0.02329    0.15987      1.391      20 *     5000
+##          X76 |    -0.01311    0.04749     -0.10753    0.07993     -0.276      77       5000
+##          X77 |     0.04198    0.04755     -0.04894    0.13696      0.883      38       5000
+##          X78 |    -0.02919    0.04772     -0.12514    0.06082     -0.612      52       5000
+##          X79 |    -0.01887    0.04595     -0.11145    0.07088     -0.411      63       4977
+##          X80 |    -0.05852    0.04804     -0.15513    0.03137     -1.218      25 *     4573
+##          X81 |     0.03337    0.04780     -0.05966    0.13092      0.698      47       5000
+##          X82 |    -0.02568    0.04373     -0.11271    0.05888     -0.587      52       5000
+##          X83 |    -0.04773    0.04728     -0.14203    0.04280     -1.010      33       4836
+##          X84 |    -0.09403    0.05210     -0.19682    0.00623     -1.805      12 *     5000
+##          X85 |    -0.04002    0.04658     -0.13237    0.04913     -0.859      38       5000
+##          X86 |    -0.05402    0.04811     -0.14978    0.03695     -1.123      27       5000
+##          X87 |    -0.00654    0.04590     -0.09800    0.08379     -0.142      77       5000
+##          X88 |     0.02026    0.04810     -0.07107    0.12050      0.421      63       4786
+##          X89 |    -0.08403    0.04809     -0.17901    0.00743     -1.747      13 *     5000
+##          X90 |     0.01805    0.04668     -0.07186    0.11478      0.387      63       4908
+##          X91 |    -0.00281    0.04587     -0.09545    0.08864     -0.061      94       4912
+##          X92 |     0.02670    0.04645     -0.06240    0.11842      0.575      47       5000
+##          X93 |    -0.09959    0.05383     -0.20692    0.00457     -1.850      11 *     5000
+##          X94 |    -0.02220    0.04321     -0.10892    0.06214     -0.514      77       5000
+##          X95 |     0.00427    0.04780     -0.08911    0.09984      0.089      77       5000
+##          X96 |     0.01944    0.04613     -0.06947    0.11301      0.421      63       5000
+##          X97 |    -0.03594    0.04724     -0.12937    0.05387     -0.761      47       4802
+##          X98 |     0.02650    0.04544     -0.06018    0.11789      0.583      56       5000
+##          X99 |    -0.03474    0.04809     -0.13184    0.05845     -0.722      45       5000
+##         X100 |    -0.01175    0.04455     -0.10263    0.07515     -0.264      94       4885
+##  (Intercept) |     0.06127    0.05096     -0.03814    0.16019          .       .          .
 ## -------------+-----------------------------------------------------------------------------</code></pre>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="sec12_2.html#cb9-1" tabindex="-1"></a><span class="co"># Extract posterior means of beta</span></span>
-<span id="cb9-2"><a href="sec12_2.html#cb9-2" tabindex="-1"></a>beta_post_mean <span class="ot">&lt;-</span> <span class="fu">rowMeans</span>(fit<span class="sc">$</span>beta)</span>
-<span id="cb9-3"><a href="sec12_2.html#cb9-3" tabindex="-1"></a><span class="co"># Compare true vs estimated</span></span>
-<span id="cb9-4"><a href="sec12_2.html#cb9-4" tabindex="-1"></a><span class="fu">plot</span>(beta_true, beta_post_mean, <span class="at">pch =</span> <span class="dv">19</span>, <span class="at">col =</span> <span class="st">&quot;steelblue&quot;</span>,</span>
-<span id="cb9-5"><a href="sec12_2.html#cb9-5" tabindex="-1"></a><span class="at">xlab =</span> <span class="st">&quot;True beta&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;Posterior mean of beta&quot;</span>,</span>
-<span id="cb9-6"><a href="sec12_2.html#cb9-6" tabindex="-1"></a><span class="at">main =</span> <span class="st">&quot;Bayesian LASSO Shrinkage&quot;</span>)</span>
-<span id="cb9-7"><a href="sec12_2.html#cb9-7" tabindex="-1"></a><span class="fu">abline</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">col =</span> <span class="st">&quot;red&quot;</span>, <span class="at">lty =</span> <span class="dv">2</span>)</span></code></pre></div>
-<p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-1-1.svg" width="672" /></p>
+<div class="sourceCode" id="cb708"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb708-1"><a href="sec12_2.html#cb708-1" tabindex="-1"></a><span class="co"># Extract posterior means of beta</span></span>
+<span id="cb708-2"><a href="sec12_2.html#cb708-2" tabindex="-1"></a>beta_post_mean <span class="ot">&lt;-</span> <span class="fu">rowMeans</span>(fit<span class="sc">$</span>beta)</span>
+<span id="cb708-3"><a href="sec12_2.html#cb708-3" tabindex="-1"></a><span class="co"># Compare true vs estimated</span></span>
+<span id="cb708-4"><a href="sec12_2.html#cb708-4" tabindex="-1"></a><span class="fu">plot</span>(beta_true, beta_post_mean, <span class="at">pch =</span> <span class="dv">19</span>, <span class="at">col =</span> <span class="st">&quot;steelblue&quot;</span>,</span>
+<span id="cb708-5"><a href="sec12_2.html#cb708-5" tabindex="-1"></a><span class="at">xlab =</span> <span class="st">&quot;True beta&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;Posterior mean of beta&quot;</span>,</span>
+<span id="cb708-6"><a href="sec12_2.html#cb708-6" tabindex="-1"></a><span class="at">main =</span> <span class="st">&quot;Bayesian LASSO Shrinkage&quot;</span>)</span>
+<span id="cb708-7"><a href="sec12_2.html#cb708-7" tabindex="-1"></a><span class="fu">abline</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">col =</span> <span class="st">&quot;red&quot;</span>, <span class="at">lty =</span> <span class="dv">2</span>)</span></code></pre></div>
+<p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-70-1.svg" width="672" /></p>
 </div>
 <div id="sec12_22" class="section level3 hasAnchor" number="12.2.2">
 <h3><span class="header-section-number">12.2.2</span> Stochastic search variable selection<a href="sec12_2.html#sec12_22" class="anchor-section" aria-label="Anchor link to header"></a></h3>
@@ -665,12 +673,27 @@ p_{kn} &amp;= \frac{\pi(\boldsymbol{\beta}\mid \boldsymbol{\gamma}_{-k},\gamma_k
 <p>Let’s use the simulation setting from the previous example to evaluate the performance of SSVS in uncovering the data-generating process. In particular, we use the <em>BoomSpikeSlab</em> package to implement this example.</p>
 <p>The analysis is performed using 5,000 posterior draws and the default prior. However, the package allows the user to modify the default prior via the <em>SpikeSlabPrior</em> function.</p>
 <p>The results show that the posterior inclusion probabilities for regressors 2 through 10 are 100%, and the model with the highest posterior probability (94%) includes all of these nine variables. However, the true data-generating process, which also includes regressor 1, receives a posterior model probability of 0%. This is because the population coefficient of this regressor is essentially zero. The plot comparing the posterior means with the true population parameters indicates good performance of SSVS. In general, Bayesian methods for variable selection perform well, and the choice of the most suitable method largely depends on the prior specification <span class="citation">(<a href="#ref-ohara2009bayesian">O’Hara and Sillanpää 2009</a>)</span>.</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="sec12_2.html#cb10-1" tabindex="-1"></a><span class="do">####### Stochastic search variable selection #######</span></span>
-<span id="cb10-2"><a href="sec12_2.html#cb10-2" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">10101</span>)</span>
-<span id="cb10-3"><a href="sec12_2.html#cb10-3" tabindex="-1"></a><span class="fu">library</span>(BoomSpikeSlab)</span></code></pre></div>
+<div class="sourceCode" id="cb709"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb709-1"><a href="sec12_2.html#cb709-1" tabindex="-1"></a><span class="do">####### Stochastic search variable selection #######</span></span>
+<span id="cb709-2"><a href="sec12_2.html#cb709-2" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">10101</span>)</span>
+<span id="cb709-3"><a href="sec12_2.html#cb709-3" tabindex="-1"></a><span class="fu">library</span>(BoomSpikeSlab)</span></code></pre></div>
 <pre><code>## Loading required package: Boom</code></pre>
 <pre><code>## 
 ## Attaching package: &#39;Boom&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:brms&#39;:
+## 
+##     ddirichlet, rdirichlet</code></pre>
+<pre><code>## The following objects are masked from &#39;package:LaplacesDemon&#39;:
+## 
+##     ddirichlet, dinvgamma, dmvn, rdirichlet, rinvgamma, rmvn</code></pre>
+<pre><code>## The following objects are masked from &#39;package:MCMCpack&#39;:
+## 
+##     ddirichlet, dinvgamma, rdirichlet, rinvgamma</code></pre>
+<pre><code>## The following object is masked from &#39;package:coda&#39;:
+## 
+##     thin</code></pre>
+<pre><code>## The following object is masked from &#39;package:sirt&#39;:
+## 
+##     rmvn</code></pre>
 <pre><code>## The following object is masked from &#39;package:stats&#39;:
 ## 
 ##     rWishart</code></pre>
@@ -679,87 +702,79 @@ p_{kn} &amp;= \frac{\pi(\boldsymbol{\beta}\mid \boldsymbol{\gamma}_{-k},\gamma_k
 <pre><code>## The following object is masked from &#39;package:stats&#39;:
 ## 
 ##     knots</code></pre>
-<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="sec12_2.html#cb16-1" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span></code></pre></div>
-<pre><code>## 
-## Attaching package: &#39;dplyr&#39;</code></pre>
-<pre><code>## The following objects are masked from &#39;package:stats&#39;:
-## 
-##     filter, lag</code></pre>
-<pre><code>## The following objects are masked from &#39;package:base&#39;:
-## 
-##     intersect, setdiff, setequal, union</code></pre>
-<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="sec12_2.html#cb20-1" tabindex="-1"></a><span class="fu">library</span>(tibble)</span>
-<span id="cb20-2"><a href="sec12_2.html#cb20-2" tabindex="-1"></a><span class="co"># Parameters</span></span>
-<span id="cb20-3"><a href="sec12_2.html#cb20-3" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">500</span>  <span class="co"># sample size</span></span>
-<span id="cb20-4"><a href="sec12_2.html#cb20-4" tabindex="-1"></a>k <span class="ot">&lt;-</span> <span class="dv">100</span>  <span class="co"># number of predictors</span></span>
-<span id="cb20-5"><a href="sec12_2.html#cb20-5" tabindex="-1"></a>s <span class="ot">&lt;-</span> <span class="dv">10</span>   <span class="co"># number of non-zero coefficients</span></span>
-<span id="cb20-6"><a href="sec12_2.html#cb20-6" tabindex="-1"></a><span class="co"># Generate design matrix</span></span>
-<span id="cb20-7"><a href="sec12_2.html#cb20-7" tabindex="-1"></a>X <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rnorm</span>(n <span class="sc">*</span> k), <span class="at">nrow =</span> n, <span class="at">ncol =</span> k)</span>
-<span id="cb20-8"><a href="sec12_2.html#cb20-8" tabindex="-1"></a><span class="co"># True beta: first s coefficients are non-zero, rest are zero</span></span>
-<span id="cb20-9"><a href="sec12_2.html#cb20-9" tabindex="-1"></a>beta_true <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fu">runif</span>(s, <span class="sc">-</span><span class="dv">3</span>, <span class="dv">3</span>), <span class="fu">rep</span>(<span class="dv">0</span>, k <span class="sc">-</span> s))</span>
-<span id="cb20-10"><a href="sec12_2.html#cb20-10" tabindex="-1"></a><span class="co"># Generate response with some noise</span></span>
-<span id="cb20-11"><a href="sec12_2.html#cb20-11" tabindex="-1"></a>sigma <span class="ot">&lt;-</span> <span class="dv">1</span></span>
-<span id="cb20-12"><a href="sec12_2.html#cb20-12" tabindex="-1"></a>y <span class="ot">&lt;-</span> X <span class="sc">%*%</span> beta_true <span class="sc">+</span> <span class="fu">rnorm</span>(n, <span class="at">sd =</span> sigma)</span>
-<span id="cb20-13"><a href="sec12_2.html#cb20-13" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(X,y)</span>
-<span id="cb20-14"><a href="sec12_2.html#cb20-14" tabindex="-1"></a><span class="do">### Using BoomSpikeSlab </span><span class="al">###</span></span>
-<span id="cb20-15"><a href="sec12_2.html#cb20-15" tabindex="-1"></a><span class="co">#Scale regressors</span></span>
-<span id="cb20-16"><a href="sec12_2.html#cb20-16" tabindex="-1"></a>W <span class="ot">&lt;-</span> <span class="fu">scale</span>(X); yh <span class="ot">&lt;-</span> y <span class="sc">-</span> <span class="fu">mean</span>(y)</span>
-<span id="cb20-17"><a href="sec12_2.html#cb20-17" tabindex="-1"></a>prior <span class="ot">&lt;-</span> <span class="fu">SpikeSlabPrior</span>(W, yh, </span>
-<span id="cb20-18"><a href="sec12_2.html#cb20-18" tabindex="-1"></a><span class="at">expected.model.size =</span> <span class="fu">ncol</span>(W)<span class="sc">/</span><span class="dv">2</span>, <span class="co"># expect 50 nonzero predictors</span></span>
-<span id="cb20-19"><a href="sec12_2.html#cb20-19" tabindex="-1"></a><span class="at">prior.df =</span> .<span class="dv">01</span>, <span class="co"># weaker prior than the default</span></span>
-<span id="cb20-20"><a href="sec12_2.html#cb20-20" tabindex="-1"></a><span class="at">prior.information.weight =</span> .<span class="dv">01</span>,</span>
-<span id="cb20-21"><a href="sec12_2.html#cb20-21" tabindex="-1"></a><span class="at">diagonal.shrinkage =</span> <span class="dv">0</span>) <span class="co"># shrink to zero</span></span>
-<span id="cb20-22"><a href="sec12_2.html#cb20-22" tabindex="-1"></a>niter <span class="ot">&lt;-</span> <span class="dv">5000</span></span>
-<span id="cb20-23"><a href="sec12_2.html#cb20-23" tabindex="-1"></a><span class="do">######Estimate model########</span></span>
-<span id="cb20-24"><a href="sec12_2.html#cb20-24" tabindex="-1"></a>SSBoomNew <span class="ot">&lt;-</span> <span class="fu">lm.spike</span>(yh <span class="sc">~</span> W <span class="sc">-</span> <span class="dv">1</span>, <span class="at">niter =</span> niter, <span class="at">prior =</span> prior)</span></code></pre></div>
-<pre><code>## =-=-=-=-= Iteration 0 Tue Nov 18 18:15:38 2025
+<div class="sourceCode" id="cb720"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb720-1"><a href="sec12_2.html#cb720-1" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb720-2"><a href="sec12_2.html#cb720-2" tabindex="-1"></a><span class="fu">library</span>(tibble)</span>
+<span id="cb720-3"><a href="sec12_2.html#cb720-3" tabindex="-1"></a><span class="co"># Parameters</span></span>
+<span id="cb720-4"><a href="sec12_2.html#cb720-4" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">500</span>  <span class="co"># sample size</span></span>
+<span id="cb720-5"><a href="sec12_2.html#cb720-5" tabindex="-1"></a>k <span class="ot">&lt;-</span> <span class="dv">100</span>  <span class="co"># number of predictors</span></span>
+<span id="cb720-6"><a href="sec12_2.html#cb720-6" tabindex="-1"></a>s <span class="ot">&lt;-</span> <span class="dv">10</span>   <span class="co"># number of non-zero coefficients</span></span>
+<span id="cb720-7"><a href="sec12_2.html#cb720-7" tabindex="-1"></a><span class="co"># Generate design matrix</span></span>
+<span id="cb720-8"><a href="sec12_2.html#cb720-8" tabindex="-1"></a>X <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rnorm</span>(n <span class="sc">*</span> k), <span class="at">nrow =</span> n, <span class="at">ncol =</span> k)</span>
+<span id="cb720-9"><a href="sec12_2.html#cb720-9" tabindex="-1"></a><span class="co"># True beta: first s coefficients are non-zero, rest are zero</span></span>
+<span id="cb720-10"><a href="sec12_2.html#cb720-10" tabindex="-1"></a>beta_true <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fu">runif</span>(s, <span class="sc">-</span><span class="dv">3</span>, <span class="dv">3</span>), <span class="fu">rep</span>(<span class="dv">0</span>, k <span class="sc">-</span> s))</span>
+<span id="cb720-11"><a href="sec12_2.html#cb720-11" tabindex="-1"></a><span class="co"># Generate response with some noise</span></span>
+<span id="cb720-12"><a href="sec12_2.html#cb720-12" tabindex="-1"></a>sigma <span class="ot">&lt;-</span> <span class="dv">1</span></span>
+<span id="cb720-13"><a href="sec12_2.html#cb720-13" tabindex="-1"></a>y <span class="ot">&lt;-</span> X <span class="sc">%*%</span> beta_true <span class="sc">+</span> <span class="fu">rnorm</span>(n, <span class="at">sd =</span> sigma)</span>
+<span id="cb720-14"><a href="sec12_2.html#cb720-14" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(X,y)</span>
+<span id="cb720-15"><a href="sec12_2.html#cb720-15" tabindex="-1"></a><span class="do">### Using BoomSpikeSlab </span><span class="al">###</span></span>
+<span id="cb720-16"><a href="sec12_2.html#cb720-16" tabindex="-1"></a><span class="co">#Scale regressors</span></span>
+<span id="cb720-17"><a href="sec12_2.html#cb720-17" tabindex="-1"></a>W <span class="ot">&lt;-</span> <span class="fu">scale</span>(X); yh <span class="ot">&lt;-</span> y <span class="sc">-</span> <span class="fu">mean</span>(y)</span>
+<span id="cb720-18"><a href="sec12_2.html#cb720-18" tabindex="-1"></a>prior <span class="ot">&lt;-</span> <span class="fu">SpikeSlabPrior</span>(W, yh, </span>
+<span id="cb720-19"><a href="sec12_2.html#cb720-19" tabindex="-1"></a><span class="at">expected.model.size =</span> <span class="fu">ncol</span>(W)<span class="sc">/</span><span class="dv">2</span>, <span class="co"># expect 50 nonzero predictors</span></span>
+<span id="cb720-20"><a href="sec12_2.html#cb720-20" tabindex="-1"></a><span class="at">prior.df =</span> .<span class="dv">01</span>, <span class="co"># weaker prior than the default</span></span>
+<span id="cb720-21"><a href="sec12_2.html#cb720-21" tabindex="-1"></a><span class="at">prior.information.weight =</span> .<span class="dv">01</span>,</span>
+<span id="cb720-22"><a href="sec12_2.html#cb720-22" tabindex="-1"></a><span class="at">diagonal.shrinkage =</span> <span class="dv">0</span>) <span class="co"># shrink to zero</span></span>
+<span id="cb720-23"><a href="sec12_2.html#cb720-23" tabindex="-1"></a>niter <span class="ot">&lt;-</span> <span class="dv">5000</span></span>
+<span id="cb720-24"><a href="sec12_2.html#cb720-24" tabindex="-1"></a><span class="do">######Estimate model########</span></span>
+<span id="cb720-25"><a href="sec12_2.html#cb720-25" tabindex="-1"></a>SSBoomNew <span class="ot">&lt;-</span> <span class="fu">lm.spike</span>(yh <span class="sc">~</span> W <span class="sc">-</span> <span class="dv">1</span>, <span class="at">niter =</span> niter, <span class="at">prior =</span> prior)</span></code></pre></div>
+<pre><code>## =-=-=-=-= Iteration 0 Sun Nov 30 18:47:01 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 500 Tue Nov 18 18:15:39 2025
+## =-=-=-=-= Iteration 500 Sun Nov 30 18:47:02 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 1000 Tue Nov 18 18:15:39 2025
+## =-=-=-=-= Iteration 1000 Sun Nov 30 18:47:02 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 1500 Tue Nov 18 18:15:40 2025
+## =-=-=-=-= Iteration 1500 Sun Nov 30 18:47:02 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 2000 Tue Nov 18 18:15:40 2025
+## =-=-=-=-= Iteration 2000 Sun Nov 30 18:47:03 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 2500 Tue Nov 18 18:15:41 2025
+## =-=-=-=-= Iteration 2500 Sun Nov 30 18:47:03 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 3000 Tue Nov 18 18:15:41 2025
+## =-=-=-=-= Iteration 3000 Sun Nov 30 18:47:04 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 3500 Tue Nov 18 18:15:42 2025
+## =-=-=-=-= Iteration 3500 Sun Nov 30 18:47:04 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 4000 Tue Nov 18 18:15:42 2025
+## =-=-=-=-= Iteration 4000 Sun Nov 30 18:47:04 2025
 ##  =-=-=-=-=
-## =-=-=-=-= Iteration 4500 Tue Nov 18 18:15:43 2025
+## =-=-=-=-= Iteration 4500 Sun Nov 30 18:47:05 2025
 ##  =-=-=-=-=</code></pre>
-<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="sec12_2.html#cb22-1" tabindex="-1"></a>Models <span class="ot">&lt;-</span> SSBoomNew<span class="sc">$</span>beta <span class="sc">!=</span> <span class="dv">0</span></span>
-<span id="cb22-2"><a href="sec12_2.html#cb22-2" tabindex="-1"></a>PIP <span class="ot">&lt;-</span> <span class="fu">colMeans</span>(SSBoomNew<span class="sc">$</span>beta <span class="sc">!=</span> <span class="dv">0</span>)</span>
-<span id="cb22-3"><a href="sec12_2.html#cb22-3" tabindex="-1"></a><span class="co"># Convert the logical matrix to a data frame and then to a tibble</span></span>
-<span id="cb22-4"><a href="sec12_2.html#cb22-4" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(Models); df_tbl <span class="ot">&lt;-</span> <span class="fu">as_tibble</span>(df)</span>
-<span id="cb22-5"><a href="sec12_2.html#cb22-5" tabindex="-1"></a><span class="co"># Count identical rows</span></span>
-<span id="cb22-6"><a href="sec12_2.html#cb22-6" tabindex="-1"></a>row_counts <span class="ot">&lt;-</span> df_tbl <span class="sc">%&gt;%</span> <span class="fu">count</span>(<span class="fu">across</span>(<span class="fu">everything</span>()), <span class="at">name =</span> <span class="st">&quot;frequency&quot;</span>) <span class="sc">%&gt;%</span> <span class="fu">arrange</span>(<span class="fu">desc</span>(frequency))</span>
-<span id="cb22-7"><a href="sec12_2.html#cb22-7" tabindex="-1"></a><span class="fu">sum</span>(row_counts[<span class="dv">1</span><span class="sc">:</span><span class="dv">100</span>,<span class="dv">101</span>])</span></code></pre></div>
+<div class="sourceCode" id="cb722"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb722-1"><a href="sec12_2.html#cb722-1" tabindex="-1"></a>Models <span class="ot">&lt;-</span> SSBoomNew<span class="sc">$</span>beta <span class="sc">!=</span> <span class="dv">0</span></span>
+<span id="cb722-2"><a href="sec12_2.html#cb722-2" tabindex="-1"></a>PIP <span class="ot">&lt;-</span> <span class="fu">colMeans</span>(SSBoomNew<span class="sc">$</span>beta <span class="sc">!=</span> <span class="dv">0</span>)</span>
+<span id="cb722-3"><a href="sec12_2.html#cb722-3" tabindex="-1"></a><span class="co"># Convert the logical matrix to a data frame and then to a tibble</span></span>
+<span id="cb722-4"><a href="sec12_2.html#cb722-4" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(Models); df_tbl <span class="ot">&lt;-</span> <span class="fu">as_tibble</span>(df)</span>
+<span id="cb722-5"><a href="sec12_2.html#cb722-5" tabindex="-1"></a><span class="co"># Count identical rows</span></span>
+<span id="cb722-6"><a href="sec12_2.html#cb722-6" tabindex="-1"></a>row_counts <span class="ot">&lt;-</span> df_tbl <span class="sc">%&gt;%</span> <span class="fu">count</span>(<span class="fu">across</span>(<span class="fu">everything</span>()), <span class="at">name =</span> <span class="st">&quot;frequency&quot;</span>) <span class="sc">%&gt;%</span> <span class="fu">arrange</span>(<span class="fu">desc</span>(frequency))</span>
+<span id="cb722-7"><a href="sec12_2.html#cb722-7" tabindex="-1"></a><span class="fu">sum</span>(row_counts[<span class="dv">1</span><span class="sc">:</span><span class="dv">100</span>,<span class="dv">101</span>])</span></code></pre></div>
 <pre><code>## [1] 3948</code></pre>
-<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="sec12_2.html#cb24-1" tabindex="-1"></a><span class="co"># Ensure your vector and matrix are logical</span></span>
-<span id="cb24-2"><a href="sec12_2.html#cb24-2" tabindex="-1"></a>trueModel <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fu">rep</span>(<span class="dv">1</span>, <span class="dv">10</span>), <span class="fu">rep</span>(<span class="dv">0</span>, <span class="dv">90</span>)) <span class="sc">==</span> <span class="dv">1</span>  <span class="co"># convert to logical if needed</span></span>
-<span id="cb24-3"><a href="sec12_2.html#cb24-3" tabindex="-1"></a><span class="co"># Assume your matrix is named &#39;mat&#39;</span></span>
-<span id="cb24-4"><a href="sec12_2.html#cb24-4" tabindex="-1"></a>matching_rows <span class="ot">&lt;-</span> <span class="fu">apply</span>(row_counts[,<span class="sc">-</span><span class="dv">101</span>], <span class="dv">1</span>, <span class="cf">function</span>(row) <span class="fu">all</span>(row <span class="sc">==</span> trueModel))</span>
-<span id="cb24-5"><a href="sec12_2.html#cb24-5" tabindex="-1"></a><span class="co"># Get indices (row numbers) where the match is TRUE</span></span>
-<span id="cb24-6"><a href="sec12_2.html#cb24-6" tabindex="-1"></a>row_counts[<span class="fu">which</span>(matching_rows), <span class="dv">101</span>]</span></code></pre></div>
+<div class="sourceCode" id="cb724"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb724-1"><a href="sec12_2.html#cb724-1" tabindex="-1"></a><span class="co"># Ensure your vector and matrix are logical</span></span>
+<span id="cb724-2"><a href="sec12_2.html#cb724-2" tabindex="-1"></a>trueModel <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fu">rep</span>(<span class="dv">1</span>, <span class="dv">10</span>), <span class="fu">rep</span>(<span class="dv">0</span>, <span class="dv">90</span>)) <span class="sc">==</span> <span class="dv">1</span>  <span class="co"># convert to logical if needed</span></span>
+<span id="cb724-3"><a href="sec12_2.html#cb724-3" tabindex="-1"></a><span class="co"># Assume your matrix is named &#39;mat&#39;</span></span>
+<span id="cb724-4"><a href="sec12_2.html#cb724-4" tabindex="-1"></a>matching_rows <span class="ot">&lt;-</span> <span class="fu">apply</span>(row_counts[,<span class="sc">-</span><span class="dv">101</span>], <span class="dv">1</span>, <span class="cf">function</span>(row) <span class="fu">all</span>(row <span class="sc">==</span> trueModel))</span>
+<span id="cb724-5"><a href="sec12_2.html#cb724-5" tabindex="-1"></a><span class="co"># Get indices (row numbers) where the match is TRUE</span></span>
+<span id="cb724-6"><a href="sec12_2.html#cb724-6" tabindex="-1"></a>row_counts[<span class="fu">which</span>(matching_rows), <span class="dv">101</span>]</span></code></pre></div>
 <pre><code>## # A tibble: 1 × 1
 ##   frequency
 ##       &lt;int&gt;
 ## 1         3</code></pre>
-<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="sec12_2.html#cb26-1" tabindex="-1"></a><span class="co"># Coefficients</span></span>
-<span id="cb26-2"><a href="sec12_2.html#cb26-2" tabindex="-1"></a>SummarySS <span class="ot">&lt;-</span> <span class="fu">summary</span>(coda<span class="sc">::</span><span class="fu">mcmc</span>(SSBoomNew<span class="sc">$</span>beta))</span>
-<span id="cb26-3"><a href="sec12_2.html#cb26-3" tabindex="-1"></a><span class="co"># Extract posterior means of beta</span></span>
-<span id="cb26-4"><a href="sec12_2.html#cb26-4" tabindex="-1"></a>beta_post_mean <span class="ot">&lt;-</span> SummarySS<span class="sc">$</span>statistics[, <span class="dv">1</span>]</span>
-<span id="cb26-5"><a href="sec12_2.html#cb26-5" tabindex="-1"></a><span class="co"># Compare true vs estimated</span></span>
-<span id="cb26-6"><a href="sec12_2.html#cb26-6" tabindex="-1"></a><span class="fu">plot</span>(beta_true, beta_post_mean, <span class="at">pch =</span> <span class="dv">19</span>, <span class="at">col =</span> <span class="st">&quot;steelblue&quot;</span>,</span>
-<span id="cb26-7"><a href="sec12_2.html#cb26-7" tabindex="-1"></a><span class="at">xlab =</span> <span class="st">&quot;True beta&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;Posterior mean of beta&quot;</span>,</span>
-<span id="cb26-8"><a href="sec12_2.html#cb26-8" tabindex="-1"></a><span class="at">main =</span> <span class="st">&quot;SSVS Shrinkage&quot;</span>)</span>
-<span id="cb26-9"><a href="sec12_2.html#cb26-9" tabindex="-1"></a><span class="fu">abline</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">col =</span> <span class="st">&quot;red&quot;</span>, <span class="at">lty =</span> <span class="dv">2</span>)</span></code></pre></div>
-<p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-2-1.svg" width="672" /></p>
+<div class="sourceCode" id="cb726"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb726-1"><a href="sec12_2.html#cb726-1" tabindex="-1"></a><span class="co"># Coefficients</span></span>
+<span id="cb726-2"><a href="sec12_2.html#cb726-2" tabindex="-1"></a>SummarySS <span class="ot">&lt;-</span> <span class="fu">summary</span>(coda<span class="sc">::</span><span class="fu">mcmc</span>(SSBoomNew<span class="sc">$</span>beta))</span>
+<span id="cb726-3"><a href="sec12_2.html#cb726-3" tabindex="-1"></a><span class="co"># Extract posterior means of beta</span></span>
+<span id="cb726-4"><a href="sec12_2.html#cb726-4" tabindex="-1"></a>beta_post_mean <span class="ot">&lt;-</span> SummarySS<span class="sc">$</span>statistics[, <span class="dv">1</span>]</span>
+<span id="cb726-5"><a href="sec12_2.html#cb726-5" tabindex="-1"></a><span class="co"># Compare true vs estimated</span></span>
+<span id="cb726-6"><a href="sec12_2.html#cb726-6" tabindex="-1"></a><span class="fu">plot</span>(beta_true, beta_post_mean, <span class="at">pch =</span> <span class="dv">19</span>, <span class="at">col =</span> <span class="st">&quot;steelblue&quot;</span>,</span>
+<span id="cb726-7"><a href="sec12_2.html#cb726-7" tabindex="-1"></a><span class="at">xlab =</span> <span class="st">&quot;True beta&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;Posterior mean of beta&quot;</span>,</span>
+<span id="cb726-8"><a href="sec12_2.html#cb726-8" tabindex="-1"></a><span class="at">main =</span> <span class="st">&quot;SSVS Shrinkage&quot;</span>)</span>
+<span id="cb726-9"><a href="sec12_2.html#cb726-9" tabindex="-1"></a><span class="fu">abline</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">col =</span> <span class="st">&quot;red&quot;</span>, <span class="at">lty =</span> <span class="dv">2</span>)</span></code></pre></div>
+<p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-71-1.svg" width="672" /></p>
 <p>The examples and exercises presented thus far have considered scenarios in which the number of inputs is smaller than the number of observations (<span class="math inline">\(K &lt; N\)</span>). In Exercise 4, we challenge the Bayesian LASSO and SSVS in a setting where the number of inputs exceeds the sample size (<span class="math inline">\(K &gt; N\)</span>). As you will observe in that experiment, both the Bayesian LASSO and SSVS perform well. However, the Bayesian LASSO requires more time to produce results compared to SSVS in this exercise. <span class="citation">Ročková and George (<a href="#ref-rockova2018spike">2018</a>)</span> propose a connection between the LASSO and spike-and-slab priors for variable selection in linear models, offering oracle properties and optimal posterior concentration even in high-dimensional settings where <span class="math inline">\(K &gt; N\)</span>.</p>
 <p>In addition, there are other Bayesian methods for regularization, such as the spike-and-slab approach proposed by <span class="citation">Ishwaran and Rao (<a href="#ref-Ishwaran2005">2005</a>)</span> and non-local priors introduced by <span class="citation">Johnson and Rossell (<a href="#ref-johnson2012bayesian">2012</a>)</span>, which can be implemented using the <strong>R</strong> packages <code>spikeslab</code> and <code>mombf</code>, respectively.</p>
 </div>
@@ -773,7 +788,7 @@ Bondell, Howard D., and Brian J. Reich. 2008. <span>“Simultaneous Regression S
 Fu, Wenjiang J. 1998. <span>“Penalized Regression: The Bridge Versus the Lasso.”</span> <em>Journal of Computational and Graphical Statistics</em> 7 (3): 397–416. <a href="https://doi.org/10.1080/10618600.1998.10474784">https://doi.org/10.1080/10618600.1998.10474784</a>.
 </div>
 <div id="ref-furnival1974regressions" class="csl-entry">
-Furnival, George M., and R. W. Wilson. 1974. <span>“Regressions by Leaps and Bounds.”</span> <em>Technometrics</em> 16 (4): 499–511. <a href="https://doi.org/10.1080/00401706.1974.10489152">https://doi.org/10.1080/00401706.1974.10489152</a>.
+Furnival, George M., and R. W. Wilson. 1974a. <span>“Regressions by Leaps and Bounds.”</span> <em>Technometrics</em> 16 (4): 499–511. <a href="https://doi.org/10.1080/00401706.1974.10489152">https://doi.org/10.1080/00401706.1974.10489152</a>.
 </div>
 <div id="ref-george1993variable" class="csl-entry">
 George, Edward I, and Robert E McCulloch. 1993. <span>“Variable Selection via Gibbs Sampling.”</span> <em>Journal of the American Statistical Association</em> 88 (423): 881–89.
@@ -782,7 +797,7 @@ George, Edward I, and Robert E McCulloch. 1993. <span>“Variable Selection via 
 ———. 1997. <span>“Approaches for <span>B</span>ayesian Variable Selection.”</span> <em>Statistica Sinica</em> 7: 339–73.
 </div>
 <div id="ref-George1997" class="csl-entry">
-George, E., and R. McCulloch. 1997. <span>“Approaches for <span>B</span>ayesian Variable Selection.”</span> <em>Statistica Sinica</em> 7: 339–73.
+———. 1997. <span>“Approaches for <span>B</span>ayesian Variable Selection.”</span> <em>Statistica Sinica</em> 7: 339–73.
 </div>
 <div id="ref-hastie2009elements" class="csl-entry">
 Hastie, Trevor, Robert Tibshirani, and Jerome Friedman. 2009. <em>The Elements of Statistical Learning: Data Mining, Inference, and Prediction</em>. 2nd ed. New York: Springer. <a href="https://link.springer.com/book/10.1007/978-0-387-84858-7">https://link.springer.com/book/10.1007/978-0-387-84858-7</a>.
