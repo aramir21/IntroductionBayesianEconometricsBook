@@ -126,7 +126,7 @@ for(i in 1:S){
 }
 library(coda); summary(mcmc(theta1)); summary(mcmc(theta2))
 summary(mcmc(kk))
-hist(kk, main = "Histogram: Posterior mean change point", xlab = "Posterior mean", col = "blue", breaks = 25)
+hist(kk, main = "Histogram: Posterior mean change point", xlab = "Posterior mean", col = "black", breaks = 25)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
@@ -240,11 +240,11 @@ for (s in 2:S){
 }
 mean(accept); mean(p); sd(p)
 an/(an + bn); (an*bn/((an+bn)^2*(an+bn+1)))^0.5 # Population values
-h <- hist(p, breaks=50, col="blue", xlab="Proportion Ph.D. students sleeping at least 6 hours", main="Beta draws from a Metropolis-Hastings algorithm")
+h <- hist(p, breaks=50, col="gray", xlab="Proportion Ph.D. students sleeping at least 6 hours", main="Beta draws from a Metropolis-Hastings algorithm")
 pfit <- seq(min(p),max(p),length=50)
 yfit<-dbeta(pfit, an, bn)
 yfit <- yfit*diff(h$mids[1:2])*length(p)
-lines(pfit, yfit, col="red", lwd=2)
+lines(pfit, yfit, col="black", lwd=2)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
@@ -543,11 +543,11 @@ wNs <- dcauchy(thetaNs)/dnorm(thetaNs)
 wNstars <- wNs/sum(wNs)
 L <- 10000 # Size posterior
 thetaCauchyN <- sample(thetaNs, L, replace = TRUE, prob = wNstars)
-h <- hist(thetaCauchyN, breaks=50, col="blue", xlab="x", main="Cauchy draws from importance sampling: Normal standard proposal")
+h <- hist(thetaCauchyN, breaks=50, col="grey", xlab="x", main="Cauchy draws from importance sampling: Normal standard proposal")
 pfit <- seq(min(thetaCauchyN),max(thetaCauchyN),length=50)
 yfit<-dcauchy(pfit)
 yfit <- yfit*diff(h$mids[1:2])*length(thetaCauchyN)
-lines(pfit, yfit, col="red", lwd=2)
+lines(pfit, yfit, col="black", lwd=2)
 # Importance sampling from Student's t proposal 
 df <- 3
 thetaTs <- rt(S, df = df)
@@ -562,20 +562,20 @@ thetaCauchyT <- sample(thetaTs, L, replace = TRUE, prob = wTstars)\end{lstlistin
 	\textit{R code. Importance sampling: Cauchy distribution}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-h <- hist(thetaCauchyT, breaks=50, col="blue", xlab="x", main="Cauchy draws from importance sampling: Student's t proposal")
+h <- hist(thetaCauchyT, breaks=50, col="grey", xlab="x", main="Cauchy draws from importance sampling: Student's t proposal")
 pfit <- seq(min(thetaCauchyT),max(thetaCauchyT),length=50)
 yfit<-dcauchy(pfit)
 yfit <- yfit*diff(h$mids[1:2])*length(thetaCauchyT)
-lines(pfit, yfit, col="red", lwd=2)
-plot(wNstars, main = "Importance sampling: Cauchy distribution", ylab = "Weights", xlab = "Iterations")
-points(wTstars, col = "blue")
-legend("topright", legend = c("Normal", "Student's t"), col = c("black", "blue"), pch = c(1, 1))
+lines(pfit, yfit, col="black", lwd=2)
+plot(wNstars, main = "Importance sampling: Cauchy distribution", ylab = "Weights", xlab = "Iterations", pch = 16, col = "black")
+points(wTstars, pch = 17, col = "black")
+legend("topright", legend = c("Normal", "Student's t"), pch = c(16, 17), col    = "black")
 		\end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
  
 
-Figure \ref{fig55} shows the weights using the standard normal distribution (black dots) and the Student's t-distribution with 3 degrees of freedom (blue dots) as proposals. We observe that a few draws carry too much weight when using the normal proposal; this occurs because the normal distribution has much lighter tails compared to the Cauchy distribution. In contrast, using the Student's t-distribution with 3 degrees of freedom improves this situation.
+Figure \ref{fig55} shows the weights using the standard normal distribution (black dots) and the Student's t-distribution with 3 degrees of freedom (black triangles) as proposals. We observe that a few draws carry too much weight when using the normal proposal; this occurs because the normal distribution has much lighter tails compared to the Cauchy distribution. In contrast, using the Student's t-distribution with 3 degrees of freedom improves this situation.
 
 Figures \ref{fig56} and \ref{fig57} show the histograms of the posterior draws using the normal and Student's t-distributions, respectively, along with the density of the Cauchy distribution. The spike in the posterior draws from the standard normal proposal arises due to the lighter tails of the standard normal compared to the Cauchy distribution, consequently assigning too much weight to a specific draw from the normal distribution.
 
@@ -776,16 +776,15 @@ ggplot2::theme_set(theme_bw())
 df <- tibble(t = 1:T, mean = FilterDist, lower = FilterDist - 2*SDFilterDist, upper = FilterDist + 2*SDFilterDist, theta_true = theta_true)
 # Function to plot
 plot_filtering_estimates <- function(df) {
-	p <- ggplot(data = df, aes(x = t)) + geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1, fill = "lightblue") + geom_line(aes(y = theta_true), colour = "black", alpha = 1, linewidth = 0.5) + geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) + ylab(TeX("$\\theta_{t}$")) + xlab("Time")
-	print(p)
+	ggplot(data = df, aes(x = t)) + geom_ribbon(aes(ymin = lower, ymax = upper, fill = "Uncertainty band"), alpha = 1) + geom_line(aes(y = theta_true, linetype = "True state"), color = "black", linewidth = 0.6) + 	geom_line(aes(y = mean, linetype = "Filter mean"), color = "black", linewidth = 0.6) + scale_fill_manual(values = c("Uncertainty band" = "grey80")) + 	scale_linetype_manual(values = c("True state" = "solid", "Filter mean" = "dotted")) + labs(fill = "", linetype = "") + ylab(TeX("$\\theta_{t}$")) + xlab("Time") + theme_bw() + theme(legend.position = "top")
 }
 plot_filtering_estimates(df)
-		\end{lstlisting}
+\end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
 
 
-Figure \ref{fig58} shows the trajectory of the true state vector (black line), the posterior mean (blue line), and the area defined by $\pm2\hat{\sigma}_{\theta}$ (light blue shaded area).
+Figure \ref{fig58} shows the trajectory of the true state vector (black line), the posterior mean (dotted line), and the area defined by $\pm2\hat{\sigma}_{\theta}$ (gray shaded area).
 
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter5/figures/SIS.png}
@@ -828,7 +827,7 @@ Let's apply the SIS algorithm to the dynamic linear model with a sample size of 
 	\caption[List of figure caption goes here]{State in linear state-space model: True and mean estimate using sequential importance sampling, $T=200$.}\label{fig59}
 \end{figure} 
 
-Let's perform particle filtering in this example. The following code illustrate the procedure. Figure \ref{fig510} shows the performance of particle filtering in this example. There is the true state vector (black line), the means based on $\left\{\bm{\theta}_{1:t}^{(s)},w_t^{*(s)}\right\}$ (blue line) and  $\left\{\bm{\theta}_{1:t}^{r(s)},1/S\right\}$ (purple line), and the area defined by $\pm2\hat{\sigma}_{\theta}$ based on the former (light blue shaded area). Note that the particle filtering algorithm has better performance than the SIS algorithm.   
+Let's perform particle filtering in this example. The following code illustrate the procedure. Figure \ref{fig510} shows the performance of particle filtering in this example. There is the true state vector (black line), the means based on $\left\{\bm{\theta}_{1:t}^{(s)},w_t^{*(s)}\right\}$ (dotted line) and  $\left\{\bm{\theta}_{1:t}^{r(s)},1/S\right\}$ (dashed line), and the area defined by $\pm2\hat{\sigma}_{\theta}$ based on the former (light blue shaded area). Note that the particle filtering algorithm has better performance than the SIS algorithm.   
 
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter5/figures/PF.png}
@@ -865,15 +864,6 @@ weightsSt[, 1] <- weights[, 1] / sum(weights[, 1])  # Normalize weights
 ind <- sample(1:S, size = S, replace = TRUE, prob = weightsSt[, 1]) # Resample 
 particles[, 1] <- particles[ind, 1] # Resampled particles
 particlesT[, 1] <- particles[, 1] # Resampled particles
-\end{lstlisting}
-	\end{VF}
-\end{tcolorbox} 
-
-\begin{tcolorbox}[enhanced,width=4.67in,center upper,
-	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-	\textit{R code. Particle filtering: Dynamic linear model}
-	\begin{VF}
-		\begin{lstlisting}[language=R]
 # Sequential updating
 pb <- txtProgressBar(min = 0, max = T, style = 3)
 for (t in 2:T) {
@@ -884,6 +874,15 @@ for (t in 2:T) {
 	if(t < T){
 		ind <- sample(1:S, size = S, replace = TRUE, prob = weightsSt[, t])
 		particles[, 1:t] <- particles[ind, 1:t]
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox} 
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Particle filtering: Dynamic linear model}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 	}else{
 		ind <- sample(1:S, size = S, replace = TRUE, prob = weightsSt[, t])
 		particlesT[, 1:t] <- particles[ind, 1:t]
@@ -901,14 +900,18 @@ library(dplyr)
 library(ggplot2)
 require(latex2exp)
 ggplot2::theme_set(theme_bw())
-df <- tibble(t = 1:T, mean = FilterDist, lower = FilterDist - 2*SDFilterDist, upper = FilterDist+ 2*SDFilterDist, meanT = FilterDistT, lowerT = FilterDistT - 2*SDFilterDistT,
-upperT = FilterDistT + 2*SDFilterDistT, x_true = theta_true)
-plot_filtering_estimates <- function(df) {
-	p <- ggplot(data = df, aes(x = t)) + geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1, fill = "lightblue") + geom_line(aes(y = x_true), colour = "black", alpha = 1, linewidth = 0.5) + geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) +
-	geom_line(aes(y = meanT), colour = "purple", linewidth = 0.5) + 	ylab(TeX("$\\theta_{t}$")) + xlab("Time")
-	print(p)
+df <- tibble(t = 1:T, mean = FilterDist, lower = FilterDist - 2*SDFilterDist, upper = FilterDist+ 2*SDFilterDist, meanT = FilterDistT, lowerT = FilterDistT - 2*SDFilterDistT, upperT = FilterDistT + 2*SDFilterDistT, x_true = theta_true)
+plot_filtering_estimates<-function(df){
+	ggplot(df,aes(x=t))+ geom_ribbon(aes(ymin=lower,ymax=upper,fill="Interval1"),alpha=1,color=NA)+
+	geom_ribbon(aes(ymin=lowerT,ymax=upperT,fill="Interval2"),alpha=0.5,color=NA)+
+	geom_line(aes(y=x_true,linetype="TrueState"),color="black",linewidth=0.7)+
+	geom_line(aes(y=mean,linetype="Filter1"),color="black",linewidth=0.7)+
+	geom_line(aes(y=meanT,linetype="Filter2"),color="black",linewidth=0.7)+
+	scale_linetype_manual(values=c("TrueState"="solid","Filter1"="dotted","Filter2"="dashed"),name="Lines")+
+	scale_fill_manual(values=c("Interval1"="grey80","Interval2"="grey90"),name="Bands")+
+	ylab(TeX("$\\theta_{t}$"))+xlab("Time")+theme_bw()+theme(legend.position="top")
 }
-plot_filtering_estimates(df)
+
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
@@ -1066,6 +1069,10 @@ for(s in 1:S){
 	kk <- c(kk,H)
 	setTxtProgressBar(pb, s)
 }
+close(pb)
+library(coda); library(latex2exp)
+theta1Post <- mcmc(theta1[keep]); summary(theta1Post)
+HPost <- mcmc(kk); summary(HPost)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
@@ -1075,10 +1082,6 @@ for(s in 1:S){
 	\textit{R code. Posterior diagnostics: The mining disaster changepoint}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-close(pb)
-library(coda); library(latex2exp)
-theta1Post <- mcmc(theta1[keep]); summary(theta1Post)
-HPost <- mcmc(kk); summary(HPost)
 theta2Post <- mcmc(theta2[keep]); summary(theta2Post) 
 plot(theta2Post, density = FALSE, main = "Trace plot", ylab = TeX("$\\theta_{2}$"))
 autocorr.plot(theta2Post, main = "Autocorrelation plot")

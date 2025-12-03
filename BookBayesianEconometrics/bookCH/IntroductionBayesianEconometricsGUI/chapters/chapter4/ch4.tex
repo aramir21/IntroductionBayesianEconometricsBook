@@ -118,7 +118,8 @@ then $h(\bm{y})=(2\pi)^{-N/2}$, $\eta(\mu,\sigma^2)=\left[\frac{\mu}{\sigma^2} \
 
 Observe that 
 \begin{align}
-	p(\bm{y}\mid \mu,\sigma^2)&= (2\pi)^{-N/2}\exp\left\{\eta_1\sum_{i=1}^N y_i+\eta_2\sum_{i=1}^Ny_i^2-\frac{N}{2}\log(-2\eta_2)+\frac{N}{4}\frac{\eta_1^2}{\eta_2}\right\}\nonumber,
+	p(\bm{y}\mid \mu,\sigma^2)&= (2\pi)^{-N/2}\exp\left\{\eta_1\sum_{i=1}^N y_i+\eta_2\sum_{i=1}^Ny_i^2-\frac{N}{2}\log(-2\eta_2)\right.\nonumber\\
+	&\left.+\frac{N}{4}\frac{\eta_1^2}{\eta_2}\right\}\nonumber,
 \end{align}
 
 where $B(\bm{\eta})=\frac{N}{2}\log(-2\eta_2)-\frac{N}{4}\frac{\eta_1^2}{\eta_2}$. Then,
@@ -131,7 +132,8 @@ where $B(\bm{\eta})=\frac{N}{2}\log(-2\eta_2)-\frac{N}{4}\frac{\eta_1^2}{\eta_2}
 	\begin{bmatrix}
 		N\times\mu\\
 		N\times(\mu^2+\sigma^2)
-	\end{bmatrix}  = \begin{bmatrix}
+	\end{bmatrix}\\
+	&  = \begin{bmatrix}
 		\mathbb{E}\left[\sum_{i=1}^N y_i\bigr\rvert \mu,\sigma^2\right]\\
 		\mathbb{E}\left[\sum_{i=1}^N y_i^2\bigr\rvert \mu,\sigma^2\right]
 	\end{bmatrix}. 
@@ -317,7 +319,7 @@ Second, we use empirical Bayes, where we estimate the hyperparameters by optimiz
 Data <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/DataOddsLIVvsMAN.csv", sep = ",", header = TRUE, quote = "")
 attach(Data); library(dplyr)
 Probs <- Data %>% mutate(pns1 = 1/home, pns2 = 1/draw, pns3 = 1/away) %>% mutate(SumInvOdds = pns1 + pns2 + pns3) %>% mutate(p1 = pns1/SumInvOdds, p2 = pns2/SumInvOdds, p3 = pns3/SumInvOdds) %>% select(p1, p2, p3)
-# We get probabilities using simple standardization. There are more technical approaches to do this. See for instance Shin (1993) and Strumbelj (2014).\end{lstlisting}
+\end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
 
@@ -786,7 +788,8 @@ Now, we calculate the posterior marginal distribution of $\bm{\beta}$ following 
 where $s = \delta_n + (\bm{\beta} - \bm{\beta}_n)^{\top}{{\bm{B}}}_n^{-1}(\bm{\beta} - \bm{\beta}_n)$. Then we can write
 \begin{align*}
 	\pi(\bm{\beta}\mid {\bm{y}},{\bm{X}}) & = \int_0^{\infty} \left(\frac{1}{\sigma^2}\right)^{\frac{\alpha_n+K}{2} + 1} \exp \left\{-\frac{s}{2\sigma^2}\right\} d\sigma^2 \\
-	& = \frac{\Gamma((\alpha_n+K)/2)}{(s/2)^{(\alpha_n+K)/2}} \int_0^{\infty} \frac{(s/2)^{(\alpha_n+K)/2}}{\Gamma((\alpha_n+K)/2)} (\sigma^2)^{-(\alpha_n+K)/2 - 1} \exp \left\{-\frac{s}{2\sigma^2}\right\} d\sigma^2.
+	& = \frac{\Gamma((\alpha_n+K)/2)}{(s/2)^{(\alpha_n+K)/2}} \int_0^{\infty} \frac{(s/2)^{(\alpha_n+K)/2}}{\Gamma((\alpha_n+K)/2)} (\sigma^2)^{-(\alpha_n+K)/2 - 1}\\
+	&\times \exp \left\{-\frac{s}{2\sigma^2}\right\} d\sigma^2.
 \end{align*}
 
 The right term is the integral of the probability density function of an inverse gamma distribution with parameters $\nu = (\alpha_n+K)/2$ and $\tau = s/2$. Since we are integrating over the whole support of $\sigma^2$, the integral is equal to 1, and therefore
@@ -956,7 +959,15 @@ attach(DataUtEst)
 Y <- log(Electricity) 
 # Regressors quantity including intercept
 X <- cbind(LnPriceElect, IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem, Children, Lnincome, 1)
-# LnPriceElect: Price per kWh (USD) in log. IndSocio1, IndSocio2, IndSocio3: Indicators socio-economic condition (1) is the lowest and (3) the highest. Altitude: Indicator of household location (1 is more than 1000 meters above sea level). Nrooms: Number of rooms in house. HouseholdMem: Number of household members. Children: Indicator por presence of children in household (1). Lnincome: Monthly income (USD) in log\end{lstlisting}
+# LnPriceElect: Price per kWh (USD) in log. IndSocio1, IndSocio2, IndSocio3: Indicators socio-economic condition (1) is the lowest and (3) the highest. Altitude: Indicator of household location (1 is more than 1000 meters above sea level). Nrooms: Number of rooms in house. HouseholdMem: Number of household members. Children: Indicator por presence of children in household (1). Lnincome: Monthly income (USD) in log
+k <- dim(X)[2]; N <- dim(X)[1]
+# Hyperparameters
+d0 <- 0.001; a0 <- 0.001
+b0 <- rep(0, k); B0 <- 1000*diag(k)
+# Posterior parameters
+bhat <- solve(t(X)%*%X)%*%t(X)%*%Y
+Bn <- as.matrix(Matrix::forceSymmetric(solve(solve(B0) + t(X)%*%X))) # Force this matrix to be symmetric
+\end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
     
@@ -965,13 +976,6 @@ X <- cbind(LnPriceElect, IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem, C
 	\textit{R code. Demand of electricity, posterior predictive distribution}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-k <- dim(X)[2]; N <- dim(X)[1]
-# Hyperparameters
-d0 <- 0.001; a0 <- 0.001
-b0 <- rep(0, k); B0 <- 1000*diag(k)
-# Posterior parameters
-bhat <- solve(t(X)%*%X)%*%t(X)%*%Y
-Bn <- as.matrix(Matrix::forceSymmetric(solve(solve(B0) + t(X)%*%X))) # Force this matrix to be symmetric
 bn <- Bn%*%(solve(B0)%*%b0 + t(X)%*%X%*%bhat)
 dn <- as.numeric(d0 + t(Y)%*%Y+t(b0)%*%solve(B0)%*%b0-t(bn)%*%solve(Bn)%*%bn)
 an <- a0 + N
@@ -1006,7 +1010,12 @@ Xnew <- cbind(IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem, Children, Ln
 # Observe -1 to recover the right sign
 LogMLnew <- sapply(cs, function(c) {-LogMarLikLM(c0=c,X = Xnew)})
 # Bayes factor
-BF <- exp(LogML - LogMLnew)\end{lstlisting}
+BF <- exp(LogML - LogMLnew)
+# Predictive distribution
+Xpred <- c(log(0.15), 1, 0, 0, 2, 3, 1, log(500), 1)
+Mean <- Xpred%*%bn
+Hn <- dn*(1+t(Xpred)%*%Bn%*%Xpred)/an
+\end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
 
@@ -1015,14 +1024,10 @@ BF <- exp(LogML - LogMLnew)\end{lstlisting}
 	\textit{R code. Demand of electricity, Bayes factor and predictive}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-# Predictive distribution
-Xpred <- c(log(0.15), 1, 0, 0, 2, 3, 1, log(500), 1)
-Mean <- Xpred%*%bn
-Hn <- dn*(1+t(Xpred)%*%Bn%*%Xpred)/an
 ExpKwH <- exp(LaplacesDemon::rmvt(S, Mean, Hn, an))
 summary(ExpKwH)
 HDI <- HDInterval::hdi(ExpKwH, credMass = 0.95) # Highest posterior density credible interval
-hist(ExpKwH, main = "Histogram: Monthly demand of electricity", xlab = "Monthly kWh", col = "blue", breaks = 50)
+hist(ExpKwH, main = "Histogram: Monthly demand of electricity", xlab = "Monthly kWh", col = "black", breaks = 50)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 

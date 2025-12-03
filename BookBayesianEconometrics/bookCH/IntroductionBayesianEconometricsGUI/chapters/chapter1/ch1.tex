@@ -39,13 +39,12 @@ The following code shows how to perform this exercise in \textbf{R}.
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 \textit{R code. The base rate fallacy}
 \begin{VF}
-\begin{lstlisting}[ language=R]
+\begin{lstlisting}[language=R]
 PD <- 0.002 # Probability of disease
 PPD <- 0.98 # True positive (Sensitivity)
 PPF <- 0.02 # False positive
 PDP <- PD * PPD / (PD * PPD + (1 - PD) * PPF)
 paste("Probability of disease given a positive test is", sep = " ", round(PDP, 2))
-"Probability of disease given a positive test is 0.09"
 \end{lstlisting}
 \end{VF}
 \end{tcolorbox}
@@ -93,13 +92,12 @@ The following code shows how to perform this exercise in \textbf{R}.
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 \textit{R code. Of Miracles}
 \begin{VF}
-\begin{lstlisting}[ language=R]
+\begin{lstlisting}[language=R]
 PR <- 2/(117 * 10^9) # Probability of resurrection
 PWR <- 0.9999999 # True positive rate
 PWNR <- 0.5 # False positive
 PRW <- PR * PWR / (PR * PWR + (1 - PR) * PWNR) # Probability of resurrection given witness
 paste("Probability of resurrection given witness is", sep = " ", PRW)
-"Probability of resurrection given witness is 3.41880307686464e-11"
 \end{lstlisting}
 \end{VF}
 \end{tcolorbox}
@@ -118,7 +116,7 @@ Let's say the contestant picks door No. 1, and the host (Monty Hall), who knows 
 
 
 \begin{figure}
-	\includegraphics[width=340pt, height=200pt]{Chapters/chapter1/figures/MHproblemNew.png}
+	\includegraphics[width=340pt, height=200pt]{Chapters/chapter1/figures/MHproblem.png}
 	%%\centerline{\epsfig{/Chapters/chapter1/figures/cat.eps,width=.8\textheight,height=.4\textwidth}}
 	\caption[List of figure caption goes here]{The Monty Hall show.}\label{fig11}
 \end{figure}
@@ -157,7 +155,7 @@ Let's see a simulation exercise in \textbf{R} to check this answer:
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 	\textit{R code. The Monty Hall problem}
 	\begin{VF}
-		\begin{lstlisting}[ language=R]
+		\begin{lstlisting}[language=R]
 set.seed(0101) # Set simulation seed
 S <- 100000 # Simulations
 Game <- function(switch = 0){
@@ -451,7 +449,7 @@ The following code shows how to perform this exercise in \textbf{R}.
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 \textit{R code. Health insurance, predictive distribution using vague hyperparameters}
 \begin{VF}
-\begin{lstlisting}[ language=R]
+\begin{lstlisting}[language=R]
 set.seed(010101)
 y <- c(0, 3, 2, 1, 0) # Data
 N <- length(y)
@@ -494,12 +492,6 @@ LogMgLik <- function(theta, y){
 theta0 <- c(0.01, 1/0.1) 
 # Initial values
 control <- list(maxit = 1000) 
-# Number of iterations in optimization
-EmpBay <- optim(theta0, LogMgLik, method = "BFGS", control = control, hessian = TRUE, y = y) 
-a0EB <- EmpBay$par[1]; b0EB <- EmpBay$par[2] 
-PriMeanEB <- a0EB * b0EB # Prior mean
-PriVarEB <- a0EB * b0EB^2 # Prior variance
-PpEB <- ProbBo(y, a0 = a0EB, b0 = b0EB) 
 \end{lstlisting}
 \end{VF}
 \end{tcolorbox} 
@@ -508,7 +500,13 @@ PpEB <- ProbBo(y, a0 = a0EB, b0 = b0EB)
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 	\textit{R code. Health insurance, density plots}
 \begin{VF}
-\begin{lstlisting}[ language=R]		
+\begin{lstlisting}[language=R]
+# Number of iterations in optimization
+EmpBay <- optim(theta0, LogMgLik, method = "BFGS", control = control, hessian = TRUE, y = y) 
+a0EB <- EmpBay$par[1]; b0EB <- EmpBay$par[2] 
+PriMeanEB <- a0EB * b0EB # Prior mean
+PriVarEB <- a0EB * b0EB^2 # Prior variance
+PpEB <- ProbBo(y, a0 = a0EB, b0 = b0EB)		
 # Density figures: 
 lambda <- seq(0.01, 10, 0.01) # Values of lambda
 VaguePrior <- dgamma(lambda,shape=a0,scale = b0)
@@ -531,13 +529,26 @@ fig3 <- ggplot(data = data, aes(lambda, PosteriorV)) + geom_line() + xlab(TeX("$
 fig4 <- ggplot(data = data, aes(lambda, PosteriorEB)) + geom_line() + xlab(TeX("$\\lambda$")) + ylab("Density") + ggtitle("Posterior: Empirical Bayes Gamma")
 FIG <- ggarrange(fig1, fig2, fig3, fig4, ncol = 2, nrow = 2)
 annotate_figure(FIG, top = text_grob("Vague versus Empirical Bayes: Poisson-Gamma model", color = "black", face = "bold", size = 14))
+\end{lstlisting}
+\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Health insurance, density plots}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 dataNew <- data.frame(cbind(rep(lambda, 3), c(EBPrior, PosteriorEB, LiksScale), rep(1:3, each = 1000))) #Data frame
 colnames(dataNew) <- c("Lambda", "Density", "Factor")
 dataNew$Factor <- factor(dataNew$Factor, levels=c("1", "3", "2"), 
 labels=c("Prior", "Likelihood", "Posterior"))
-ggplot(data = dataNew, aes_string(x = "Lambda", y = "Density", group = "Factor")) + geom_line(aes(color = Factor)) + xlab(TeX("$\\lambda$")) + ylab("Density") + ggtitle("Prior, likelihood and posterior: Empirical Bayes Poisson-Gamma model") + guides(color=guide_legend(title="Information")) + scale_color_manual(values = c("red", "yellow", "blue"))\end{lstlisting}
-\end{VF}
+ggplot(data = dataNew, aes(x = Lambda, y = Density, group = Factor, linetype = Factor)) + geom_line(size = 0.9) + xlab(TeX("$\\lambda$")) + ylab("Density") +
+ggtitle("Prior, likelihood and posterior: Empirical Bayes Poisson-Gamma model") +
+guides(linetype = guide_legend(title = "Information")) + scale_linetype_manual(values = c("solid", "dashed", "dotted")) + theme_bw()
+\end{lstlisting}
+	\end{VF}
 \end{tcolorbox}
+
 
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter1/figures/PoisGam.png}
@@ -559,8 +570,7 @@ Figure \ref{fig13} shows the prior, scaled likelihood, and posterior densities o
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
 \textit{R code. Health insurance, Predictive density}
 \begin{VF}
-\begin{lstlisting}[
-	 language=R]
+\begin{lstlisting}[language=R]
 # Predictive distributions
 PredDen <- function(y, y0, a0, b0){
 	N <- length(y)
@@ -576,17 +586,25 @@ PredDen <- function(y, y0, a0, b0){
 	# Observe that in R there is a slightly different parametrization.
 	return(Pr)
 }
+\end{lstlisting}
+\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Health insurance, Predictive density}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
 y0 <- 0:10
 PredVague <- PredDen(y=y, y0=y0, a0=a0, b0=b0)
 PredEB <- PredDen(y=y, y0=y0, a0=a0EB, b0=b0EB)
 dataPred <- as.data.frame(cbind(y0, PredVague, PredEB))
 colnames(dataPred) <- c("y0", "PredictiveVague", "PredictiveEB")
-ggplot(data = dataPred) + geom_point(aes(y0, PredictiveVague, color = "red")) +  
-xlab(TeX("$y_0$")) + ylab("Density") + ggtitle("Predictive density: Vague and Empirical Bayes priors") + geom_point(aes(y0, PredictiveEB, color = "yellow")) +
-guides(color = guide_legend(title="Prior")) + scale_color_manual(labels = c("Vague", "Empirical Bayes"), values = c("red", "yellow")) + scale_x_continuous(breaks=seq(0,10,by=1))
+ggplot(data = dataPred) + geom_point(aes(x = y0, y = PredictiveVague, shape = "Vague"), size = 2) + geom_point(aes(x = y0, y = PredictiveEB,    shape = "Empirical Bayes"), size = 2) + xlab(TeX("$y_0$")) + ylab("Density") + ggtitle("Predictive density: Vague and Empirical Bayes priors") + scale_shape_manual(name   = "Prior", values = c("Vague" = 16, "Empirical Bayes" = 17)) + scale_x_continuous(breaks = seq(0, 10, by = 1)) + theme_bw()
 \end{lstlisting}
-\end{VF}
+	\end{VF}
 \end{tcolorbox}
+
 
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter1/figures/Predictive.png}
@@ -633,8 +651,8 @@ BMAVar <- PostProMEM * PostVarEB + PostProbMV*PostVarV + PostProMEM * (PostMeanE
 BMAPred <- PostProMEM * PredEB+PostProbMV * PredVague
 dataPredBMA <- as.data.frame(cbind(y0, BMAPred))
 colnames(dataPredBMA) <- c("y0", "PredictiveBMA")
-ggplot(data = dataPredBMA) + geom_point(aes(y0, PredictiveBMA, color = "red")) +  xlab(TeX("$y_0$")) + ylab("Density") + ggtitle("Predictive density: BMA") + guides(color = guide_legend(title="BMA")) + scale_color_manual(labels = c("Probability"), values = c("red")) + scale_x_continuous(breaks=seq(0,10,by=1)) 
-		\end{lstlisting}
+ggplot(data = dataPredBMA) + geom_point(aes(y0, PredictiveBMA, color = "black")) +  xlab(TeX("$y_0$")) + ylab("Density") + ggtitle("Predictive density: BMA") + guides(color = guide_legend(title="BMA")) + scale_color_manual(labels = c("Probability"), values = c("black")) + scale_x_continuous(breaks=seq(0,10,by=1))
+\end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
 
@@ -671,16 +689,6 @@ BayUp <- function(y, lambda, a0, b0){
 	# Posterior density
 	return(list(Post = p, a0New = an, b0New = bn))
 }
-\end{lstlisting}
-	\end{VF}
-\end{tcolorbox}
-
-
-\begin{tcolorbox}[enhanced,width=4.67in,center upper,
-	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
-\textit{R code. Health insurance, Bayes updating}
-\begin{VF}
-\begin{lstlisting}[ language=R]
 PostUp <- NULL
 for(i in 1:N){
 	if(i == 1){
@@ -694,17 +702,26 @@ DataUp <- data.frame(cbind(rep(lambda, 5), c(PostUp), rep(1:5, each = 1000))) #D
 colnames(DataUp) <- c("Lambda", "Density", "Factor")
 DataUp$Factor <- factor(DataUp$Factor, levels=c("1", "2", "3", "4", "5"), 
 labels=c("Iter 1", "Iter 2", "Iter 3", "Iter 4", "Iter 5"))
-ggplot(data = DataUp, aes_string(x = "Lambda", y = "Density", group = "Factor")) + geom_line(aes(color = Factor)) + xlab(TeX("$\\lambda$")) + ylab("Density") + ggtitle("Bayesian updating: Poisson-Gamma model with vague prior") + guides(color=guide_legend(title="Update")) + scale_color_manual(values = c("red", "purple", "blue", "yellow", "black"))
+ggplot(data = DataUp, aes(x = Lambda, y = Density, group = Factor, linetype = Factor)) + geom_line(size = 0.9) + xlab(TeX("$\\lambda$")) + ylab("Density") + ggtitle("Bayesian updating: Poisson-Gamma model with vague prior") + guides(linetype = guide_legend(title = "Update")) + scale_linetype_manual(values = c("solid", "dashed", "dotted", "dotdash", "longdash")) + theme_bw()
 S <- 100000 # Posterior draws
 PostMeanLambdaUps <- sapply(1:N, function(i) {mean(sample(lambda, S, replace = TRUE, prob = PostUp[ , i]))}) #Posterior mean update i
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Health insurance, Bayes updating}
+	\begin{VF}
+		\begin{lstlisting}[ language=R]
 paste("Posterior means using all information and sequential updating are:", round(PostMeanV, 2), "and", round(PostMeanLambdaUps[5], 2), sep = " ")
-Posterior means using all information and sequential updating are: 1.2 and 1.2 
 PostVarLambdaUps <- sapply(1:N, function(i) {var(sample(lambda, S, replace = TRUE, prob = PostUp[ , i]))}) #Posterior variance update i
 paste("Posterior variances using all information and sequential updating are:", round(PostVarV, 2), "and", round(PostVarLambdaUps[5], 2), sep = " ")
-Posterior variances using all information and sequential updating are: 0.24 and 0.24
 \end{lstlisting}
-\end{VF}
+	\end{VF}
 \end{tcolorbox}
+
 
 \section{Bayesian reports: Decision theory under uncertainty}\label{sec14}
 
