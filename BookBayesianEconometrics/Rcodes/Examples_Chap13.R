@@ -1130,14 +1130,25 @@ cat("No selection : ", paste(round(summ(beta2_nosel), 4), collapse = "  "), "\n"
 cat("With selection: ", paste(round(summ(beta2_sel),   4), collapse = "  "), "\n\n")
 
 # 4) Plot both posteriors + true value line at 1
-ggplot(df, aes(x = value, fill = model, color = model)) +
-  geom_density(alpha = 0.25, linewidth = 0.8) +
-  geom_vline(xintercept = 1, linetype = 2) +
-  labs(x = "Coefficient (2nd parameter)", y = "Posterior density",
-       title = "Posterior of 2nd Coeff: No-Selection vs Selection Models",
-       subtitle = "Dashed line = population value (1)") +
-  theme_minimal(base_size = 12) +
-  theme(legend.position = "top")
+gray_palette <- c(
+  "No selection" = "grey30",
+  "With selection" = "grey70"
+)
+
+ggplot(df, aes(x=value, fill=model, color=model)) +
+  geom_density(alpha=0.25, linewidth=0.8) +
+  geom_vline(xintercept=1, linetype=2, color="black") +
+  scale_fill_manual(values=gray_palette) +
+  scale_color_manual(values=gray_palette) +
+  labs(
+    x="Coefficient (2nd parameter)",
+    y="Posterior density",
+    title="Posterior of 2nd Coeff: No-Selection vs Selection Models",
+    subtitle="Dashed line = population value (1)"
+  ) +
+  theme_minimal(base_size=12) +
+  theme(legend.position="top")
+
 
 #### BETEL ####
 
@@ -1210,20 +1221,27 @@ df_long <- dfplot |>
                          levels = c("betel","iv","exo"),
                          labels = c("betel","rivGibbs","MCMCregress")))
 
-ggplot(df_long, aes(x = Posterior, color = Method, fill = Method)) +
-  geom_density(alpha = 0.3, linewidth = 1) +
-  geom_vline(xintercept = 1.2, linetype = "dashed", linewidth = 1, color = "black") +
-  labs(
-    title = "Posterior Densities with Population Value",
-    x = expression(beta[1]),
-    y = "Density"
-  ) +
-  theme_minimal(base_size = 14) +
-  theme(
-    legend.position = "top",
-    legend.title = element_blank()
-  )
+gray_palette <- c(
+  "betel"       = "grey20",
+  "rivGibbs"    = "grey50",
+  "MCMCregress" = "grey75"
+)
 
+ggplot(df_long, aes(x=Posterior, color=Method, fill=Method)) +
+  geom_density(alpha=0.3, linewidth=1) +
+  geom_vline(xintercept=1.2, linetype="dashed", linewidth=1, color="black") +
+  scale_color_manual(values=gray_palette) +
+  scale_fill_manual(values=gray_palette) +
+  labs(
+    title="Posterior Densities with Population Value",
+    x=expression(beta[1]),
+    y="Density"
+  ) +
+  theme_minimal(base_size=14) +
+  theme(
+    legend.position="top",
+    legend.title=element_blank()
+  )
 summary(AER::ivreg(y ~ x | z))
 summary(lm(y ~ x))
 

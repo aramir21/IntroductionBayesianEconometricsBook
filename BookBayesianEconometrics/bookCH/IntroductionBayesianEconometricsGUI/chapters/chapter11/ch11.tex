@@ -197,8 +197,8 @@ summary(PosteriorMUs); plot(PosteriorMUs)
 dfMU <- data.frame(mu1 = PostMu[keep,1], mu2 = PostMu[keep,2])
 # Plot
 require(latex2exp)
-ggplot(dfMU) + geom_density(aes(x = mu1, color = "mu1"), linewidth = 1) + geom_density(aes(x = mu2, color = "mu2"), linewidth = 1) + labs(title = "Density Plot", x = TeX("$\\mu$"), y = "Density", color = "Variable") + theme_minimal() + scale_color_manual(values = c("mu1" = "blue", "mu2" = "red"))
-	\end{lstlisting}
+ggplot(dfMU)+geom_density(aes(x=mu1,linetype="mu1"),linewidth=1,color="black")+geom_density(aes(x=mu2,linetype="mu2"),linewidth=1,color="black")+scale_linetype_manual(values=c("mu1"="solid","mu2"="dashed"),name="Variable")+labs(title="DensityPlot",x=TeX("$\\mu$"),y="Density")+theme_minimal()
+\end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
 
@@ -297,10 +297,8 @@ plot(PosteriorMUs)
 dfMU <- data.frame(mu1 = PostMu[keep,1], mu2 = PostMu[keep,2])
 # Plot
 require(latex2exp)
-ggplot(dfMU) +
-geom_density(aes(x = mu1, color = "mu1"), linewidth = 1) +  # First density plot
-geom_density(aes(x = mu2, color = "mu2"), linewidth = 1) +  # Second density plot
-labs(title = "Density Plot", x = TeX("$\\mu$"), y = "Density", color = "Variable") + theme_minimal() + scale_color_manual(values = c("mu1" = "blue", "mu2" = "red"))  # Custom colors
+ggplot(dfMU)+geom_density(aes(x=mu1,linetype="mu1"),color="black",linewidth=1)+geom_density(aes(x=mu2,linetype="mu2"),color="black",linewidth=1)+scale_linetype_manual(values=c("mu1"="solid","mu2"="dashed"),name="Variable")+labs(title="DensityPlot",x=TeX("$\\mu$"),y="Density")+theme_minimal()
+# Custom colors
 PosteriorLAMBDA <- coda::mcmc(PostLambda[keep])
 summary(PosteriorLAMBDA)
 plot(PosteriorLAMBDA)
@@ -1173,15 +1171,13 @@ plot(coda::mcmc(PosteriorBeta3))
 	\textit{R code. Demand of marijuana in Colombia: Dirichlet process mixture}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-DataElast <- data.frame(Marijuana = PosteriorBeta1[,2], Cocaine = PosteriorBeta1[,3],
-Crack = PosteriorBeta1[,4]) 
-dens1 <- ggplot(DataElast, aes(x = Marijuana)) + geom_density(fill = "blue", alpha = 0.3) + labs(x = "Marijuana", y = "Density") + theme_minimal()
-dens2 <- ggplot(DataElast, aes(x = Cocaine)) + geom_density(fill = "blue", alpha = 0.3) +  labs(x = "Cocaine", y = "Density") + theme_minimal()
-dens3 <- ggplot(DataElast, aes(x = Crack)) + geom_density(fill = "blue", alpha = 0.3) + 
-labs(x = "Crack", y = "Density") + theme_minimal()
+DataElast <- data.frame(Marijuana = PosteriorBeta1[,2], Cocaine = PosteriorBeta1[,3], Crack = PosteriorBeta1[,4]) 
+dens1 <- ggplot(DataElast, aes(x = Marijuana)) + geom_density(fill = "grey", alpha = 0.3) + labs(x = "Marijuana", y = "Density") + theme_minimal()
+dens2 <- ggplot(DataElast, aes(x = Cocaine)) + geom_density(fill = "grey", alpha = 0.3) +  labs(x = "Cocaine", y = "Density") + theme_minimal()
+dens3 <- ggplot(DataElast, aes(x = Crack)) + geom_density(fill = "grey", alpha = 0.3) + labs(x = "Crack", y = "Density") + theme_minimal()
 library(ggpubr)
 ggarrange(dens1, dens2, dens3, labels = c("A", "B", "C"), ncol = 3, nrow = 1, legend = "bottom", common.legend = TRUE)
-		\end{lstlisting}
+\end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
 
@@ -1284,7 +1280,7 @@ Ens <- sapply(xA, function(xi) {SplineOwn(xi, knots = knotsA, delta = delta)})
 plot(xA, Ens, xlab = "x", ylab = "B-spline", main = "Cubic B-spline comparison: own function vs bs")
 require(splines)
 BSfunc <- bs(xA, knots = knotsA, degree = 3)
-lines(xA, BSfunc[,4], col = "red")
+lines(xA, BSfunc[,4])
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
@@ -1353,9 +1349,9 @@ basis_matrix <- cubic_bspline(xA, knots = knotsA, degree = 3)
 library(splines)
 bs_matrix <- bs(xA, knots = knotsA[-c(1, length(knotsA))], degree = 3, intercept = TRUE, Boundary.knots = range(knotsA))
 bs_matrix_matrix <- as.matrix(bs_matrix)
-par(mfrow = c(1,2))
-matplot(xA, basis_matrix, type = "l", lty = 1, col = rainbow(ncol(basis_matrix)), ylab = "B-spline Basis", xlab = "x", main = "Own function")
-matplot(xA, bs_matrix_matrix, type = "l", lty = 1, col = rainbow(ncol(basis_matrix)), ylab = "B-spline Basis", xlab = "x", main = "bs function")
+par(mfrow=c(1,2));lt<-c(1,2,3,4,5,6);lt<-rep(lt,length.out=ncol(basis_matrix))
+matplot(xA,basis_matrix,type="l",lty=lt,col="black",ylab="B-splineBasis",xlab="x",main="Ownfunction")
+matplot(xA,bs_matrix_matrix,type="l",lty=lt,col="black",ylab="B-splineBasis",xlab="x",main="bsfunction")
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
@@ -1422,8 +1418,8 @@ data <- rbind(data_true_signal, data_obs, data_Spline1, data_Spline2, data_Splin
 	\textit{R code. Realizations of splines}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-ggplot(data, aes(x = x, y = y)) + geom_line(data = subset(data, Type == "True Signal"), aes(color = "True Signal"), linewidth = 1) + geom_point(data = subset(data, Type == "Observed Data"), aes(color = "Observed Data"), shape = 16) + geom_line(data = subset(data, Type == "Spline 1"), aes(color = "Splines"), linewidth = 1, linetype = "solid") + geom_line(data = subset(data, Type == "Spline 2"), aes(color = "Splines"), linewidth = 1, linetype = "solid") + geom_line(data = subset(data, Type == "Spline 3"), aes(color = "Splines"), linewidth = 1, linetype = "solid") + geom_line(data = subset(data, Type == "Spline 4"), aes(color = "Splines"), linewidth = 1, linetype = "solid") + scale_color_manual(values = c("True Signal" = "black", "Observed Data" = "red", "Splines" = "blue")) + labs(y = "y", color = "Legend") + theme_minimal() + theme(legend.position = "top")
-		\end{lstlisting}
+ggplot(data, aes(x = x, y = y)) + geom_line(data = subset(data, Type == "True Signal"), aes(color = "True Signal"), linewidth = 1) + geom_point(data = subset(data, Type == "Observed Data"), aes(color = "Observed Data"), shape = 16) + geom_line(data = subset(data, Type == "Spline 1"), aes(color = "Splines"), linewidth = 1, linetype = "dashed") + geom_line(data = subset(data, Type == "Spline 2"), aes(color = "Splines"), linewidth = 1, linetype = "dashed") + geom_line(data = subset(data, Type == "Spline 3"), aes(color = "Splines"), linewidth = 1, linetype = "dashed") + geom_line(data = subset(data, Type == "Spline 4"), aes(color = "Splines"), linewidth = 1, linetype = "dashed") + scale_color_manual(values = c("True Signal" = "black", "Observed Data" = "black", "Splines" = "black")) + labs(y = "y", color = "Legend") + theme_minimal() + theme(legend.position = "top")
+\end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
 
@@ -1480,7 +1476,7 @@ Type = rep(c("Fit 1", "Fit 2", "Fit 3", "Fit 4"), each = length(xobs))
 		\begin{lstlisting}[language=R]
 data <- rbind(data_true_signal, data_obs, data_preds)
 # Create ggplot
-ggplot(data, aes(x = x, y = y, color = Type)) + geom_line(data = subset(data, Type == "True Signal"), linewidth = 1) + geom_point(data = subset(data, Type == "Observed Data"), shape = 16, size = 2) + geom_line(data = subset(data, grepl("Fit", Type)), linewidth = 1, linetype = "solid") + scale_color_manual(values = c("True Signal" = "black", "Observed Data" = "red", "Fit 1" = "blue", "Fit 2" = "green", "Fit 3" = "orange", "Fit 4" = "purple")) + labs(y = "y", color = "Legend") + theme_minimal() + theme(legend.position = "top")
+ggplot(data,aes(x=x,y=y))+ geom_line(data=subset(data,Type=="True Signal"),aes(linetype="TrueSignal"),color="black",linewidth=1)+ geom_point(data=subset(data,Type=="Observed Data"),aes(shape="ObservedData"),color="black",size=2)+ geom_line(data=subset(data,grepl("Fit",Type)),aes(linetype=Type),color="black",linewidth=1)+ scale_linetype_manual(values=c("TrueSignal"="solid","Fit 1"="dashed","Fit 2"="dotted","Fit 3"="dotdash","Fit 4"="longdash"),name="Legend")+ scale_shape_manual(values=c("ObservedData"=16),name="Legend")+ labs(y="y")+ theme_minimal()+ theme(legend.position="top")
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
@@ -1554,7 +1550,7 @@ for(s in 1:mcmc){
 }
 # Create a data frame for ggplot
 plot_data <- data.frame(x = xfit, fit = colMeans(Fit), liminf = apply(Fit, 2, quantile, 0.025), limsup = apply(Fit, 2, quantile, 0.975))
-ggplot() + geom_line(data = plot_data, aes(x, fit), color = "blue", linewidth = 1) + geom_ribbon(data = plot_data, aes(x, ymin = liminf, ymax = limsup), fill = "blue", alpha = 0.2) + labs(title = "B-Spline Regression with 95% Confidence Interval", x = "Age", y = "Log Marijuana") + theme_minimal()
+ggplot() + geom_line(data = plot_data, aes(x, fit), color = "black", linewidth = 1) + geom_ribbon(data = plot_data, aes(x, ymin = liminf, ymax = limsup), fill = "grey10", alpha = 0.2) + labs(title = "B-Spline Regression with 95% Confidence Interval", x = "Age", y = "Log Marijuana") + theme_minimal()
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
@@ -1567,7 +1563,7 @@ ggplot() + geom_line(data = plot_data, aes(x, fit), color = "blue", linewidth = 
 
 The previous code illustrates the procedure. The posterior 95\% credible intervals indicate that marijuana is an inelastic good, there is substitution between marijuana and crack, more educated female individuals consume less, and the presence of a drug dealer in the neighborhood increases consumption.
 
-Figure \ref{figAgeMarijuana} shows the fitted spline, specifically the mean (blue line) and the 95\% credible intervals (shaded blue). Notice that there is a lot of wiggliness due to the use of many knots, suggesting that this relationship could be expressed in a more parsimonious way. In Exercise 7, we ask to use variable selection methods, such as the BIC approximation presented in Chapter \ref{chap10}, to perform regressor selection, particularly for the splines.
+Figure \ref{figAgeMarijuana} shows the fitted spline, specifically the mean (black line) and the 95\% credible intervals (shaded gray). Notice that there is a lot of wiggliness due to the use of many knots, suggesting that this relationship could be expressed in a more parsimonious way. In Exercise 7, we ask to use variable selection methods, such as the BIC approximation presented in Chapter \ref{chap10}, to perform regressor selection, particularly for the splines.
 
 In general, the selection of $H$ is a problem of variable selection (regressor uncertainty) and can be handled using other approaches, such as those discussed in the regularization section \ref{sec13_2} of the following chapter.
 

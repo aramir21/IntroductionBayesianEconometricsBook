@@ -522,24 +522,17 @@ v <- 3; q <- 0.9; J <- 200
 # MCMC parameters
 MCMCiter <- 1000; burnin <- 100; thinning <- 1
 # Estimate BART
-BARTfit <- wbart(x.train = X.train, y.train = y.train, x.test = X.test, base = alpha,
-power = beta, k = k, sigdf = v, sigquant = q, ntree = J,
-ndpost = MCMCiter, nskip = burnin, keepevery = thinning)
+BARTfit <- wbart(x.train = X.train, y.train = y.train, x.test = X.test, base = alpha, power = beta, k = k, sigdf = v, sigquant = q, ntree = J, ndpost = MCMCiter, nskip = burnin, keepevery = thinning)
 # Trace plot sigma
 keep <- seq(burnin + 1, MCMCiter + burnin, thinning)
 df_sigma <- data.frame(iteration = 1:length(keep), sigma = BARTfit$sigma[keep])
-ggplot(df_sigma, aes(x = iteration, y = sigma)) + geom_line(color = "steelblue") + labs(title = "Trace Plot of Sigma", x = "Iteration", y = expression(sigma)) + theme_minimal()
+ggplot(df_sigma, aes(x = iteration, y = sigma)) + geom_line(color = "black") + labs(title = "Trace Plot of Sigma", x = "Iteration", y = expression(sigma)) + theme_minimal()
 # Prediction plot training
 train_preds <- data.frame( y_true = y.train, mean = apply(BARTfit$yhat.train, 2, mean), lower = apply(BARTfit$yhat.train, 2, quantile, 0.025), upper = apply(BARTfit$yhat.train, 2, quantile, 0.975)) %>% arrange(y_true) %>% mutate(index = row_number())
-ggplot(train_preds, aes(x = index)) + geom_ribbon(aes(ymin = lower, ymax = upper, fill = "95% Interval"), alpha = 0.4, show.legend = TRUE) + geom_line(aes(y = mean, color = "Predicted Mean")) + geom_line(aes(y = y_true, color = "True y")) + scale_color_manual(name = "Line", values = c("Predicted Mean" = "blue", "True y" = "black")) + scale_fill_manual(name = "Interval", values = c("95% Interval" = "lightblue")) + labs(title = "Training Data: Ordered Predictions with 95% Intervals", x = "Ordered Index", y = "y") + theme_minimal()
+ggplot(train_preds, aes(x=index)) + geom_ribbon(aes(ymin=lower, ymax=upper, fill="95% Interval"), alpha=0.4, show.legend=TRUE) + geom_line(aes(y=mean, color="Predicted Mean", linetype="Predicted Mean"), linewidth=0.8) + geom_line(aes(y=y_true, color="True y", linetype="True y"), linewidth=0.8) + scale_color_manual(name="Line", values=c("Predicted Mean"="black", "True y"="black")) + scale_linetype_manual(name="Line", values=c("Predicted Mean"="dashed", "True y"="solid")) + scale_fill_manual(name="Interval", values=c("95% Interval"="grey80")) + labs(title="Training Data: Ordered Predictions with 95% Intervals", x="Ordered Index", y="y") + theme_minimal()
 # Prediction plot test
 test_preds <- data.frame( y_true = y.test, mean = apply(BARTfit$yhat.test, 2, mean), lower = apply(BARTfit$yhat.test, 2, quantile, 0.025), upper = apply(BARTfit$yhat.test, 2, quantile, 0.975)) %>% arrange(y_true) %>% mutate(index = row_number())
-ggplot(test_preds, aes(x = index)) + geom_ribbon(aes(ymin = lower, ymax = upper, fill = "95% Interval"), alpha = 0.4, show.legend = TRUE) + geom_line(aes(y = mean, color = "Predicted Mean")) + geom_line(aes(y = y_true, color = "True y")) + scale_color_manual(name = "Line", values = c("Predicted Mean" = "blue", "True y" = "black")) + scale_fill_manual(name = "Interval", values = c("95% Interval" = "lightblue")) + labs(title = "Test Data: Ordered Predictions with 95% Intervals",
-x = "Ordered Index", y = "y") + theme_minimal()
-# Relevant regressors
-Js <- c(10, 20, 50, 100, 200)
-VarImportance <- matrix(0, length(Js), K)
-l <- 1
+ggplot(test_preds, aes(x=index)) + geom_ribbon(aes(ymin=lower, ymax=upper, fill="95% Interval"), alpha=0.4, show.legend=TRUE) + geom_line(aes(y=mean, color="Predicted Mean", linetype="Predicted Mean"), linewidth=0.8) + geom_line(aes(y=y_true, color="True y", linetype="True y"), linewidth=0.8) + scale_color_manual(name="Line", values=c("Predicted Mean"="black", "True y"="black")) + scale_linetype_manual(name="Line", values=c("Predicted Mean"="dashed", "True y"="solid")) + scale_fill_manual(name="Interval", values=c("95% Interval"="grey80")) + labs(title="Test Data: Ordered Predictions with 95% Intervals", x="Ordered Index", y="y") + theme_minimal() 
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
@@ -549,6 +542,10 @@ l <- 1
 	\textit{R code. Bayesian additive regression trees}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
+# Relevant regressors
+Js <- c(10, 20, 50, 100, 200)
+VarImportance <- matrix(0, length(Js), K)
+l <- 1
 for (j in Js){
 	BARTfit <- wbart(x.train = X.train, y.train = y.train, x.test = X.test, base = alpha,
 	power = beta, k = k, sigdf = v, sigquant = q, ntree = j,
@@ -562,7 +559,7 @@ importance_df <- as.data.frame(VarImportance) %>% mutate(trees = rownames(.)) %>
 pivot_longer(cols = -trees, names_to = "variable", values_to = "percent_used")
 importance_df$variable <- as.numeric(importance_df$variable)
 importance_df$trees <- factor(importance_df$trees, levels = c("10", "20", "50", "100", "200"))
-ggplot(importance_df, aes(x = variable, y = percent_used, color = trees, linetype = trees)) + geom_line() + geom_point() + scale_color_manual(values = c("10" = "red", "20" = "green", "50" = "blue", "100" = "cyan", "200" = "magenta")) + scale_x_continuous(breaks = 1:10) + labs(x = "variable", y = "percent used", color = "#trees", linetype = "#trees") + theme_minimal()
+ggplot(importance_df, aes(x=variable, y=percent_used, linetype=trees)) + geom_line(color="black") + geom_point(color="black") + scale_linetype_manual(values=c("10"="solid", "20"="dashed", "50"="dotted", "100"="dotdash", "200"="longdash"), name="#trees") + scale_x_continuous(breaks=1:10) + labs(x="variable", y="percent used", linetype="#trees") + theme_minimal()
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
@@ -655,9 +652,8 @@ colnames(samples_t) <- paste0("f", 1:5)
 df <- data.frame(x = x, samples_t) |>
 pivot_longer(cols = -x, names_to = "draw", values_to = "value")
 # Plot
-ggplot(df, aes(x = x, y = value, color = draw)) + geom_line(linewidth = 1) +
-labs( title = "Simulated Gaussian Process Draws", x = "x", y = "f(x)", color = "Function" ) + theme_minimal(base_size = 14) + theme(legend.position = "top")
-		\end{lstlisting}
+ggplot(df, aes(x=x, y=value, linetype=draw)) + geom_line(linewidth=1, color="black") + scale_linetype_discrete(name="Function") + labs(title="Simulated Gaussian Process Draws", x="x", y="f(x)") + theme_minimal(base_size=14) + theme(legend.position="top")
+\end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
 
@@ -745,7 +741,7 @@ sample = sample_draw
 )
 obs <- data.frame(x = x0, y = y0)
 # Plot
-ggplot(df, aes(x = x)) + geom_ribbon(aes(ymin = lower, ymax = upper), fill = "lightblue", alpha = 0.4) + geom_line(aes(y = mean), color = "blue", linewidth = 1.2) + geom_line(aes(y = sample), color = "darkgreen", linewidth = 1, linetype = "dashed") + geom_point(data = obs, aes(x = x, y = y), color = "red", size = 3) + labs( title = "Gaussian Process with Conditioning Points", x = "x", y = "f(x)", caption = "Blue: Posterior mean | Light blue: 95% interval | Dashed green: Population | Red: Observed points" ) + theme_minimal(base_size = 14)
+ggplot(df, aes(x = x)) + geom_ribbon(aes(ymin = lower, ymax = upper), fill = "gray", alpha = 0.4) + geom_line(aes(y = mean), color = "black", linewidth = 1.2) + geom_line(aes(y = sample), color = "black", linewidth = 1, linetype = "dashed") + geom_point(data = obs, aes(x = x, y = y), color = "black", size = 3) + labs( title = "Gaussian Process with Conditioning Points", x = "x", y = "f(x)", caption = "Dashed: Posterior mean | Grey: 95% interval | Solid: Population | Black: Observed points" ) + theme_minimal(base_size = 14)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
@@ -1073,8 +1069,8 @@ In this example, we follow the logistic regression simulation setup introduced b
 with log-likelihood function given by:
 \begin{align*}
 	\log p(\mathbf{y} \mid \boldsymbol{\beta}, \mathbf{x}) 
-	&= \sum_{i=1}^N y_i \left( \mathbf{x}_i^{\top} \boldsymbol{\beta} - \log \left(1 + \exp\left\{\mathbf{x}_i^{\top} \boldsymbol{\beta}\right\} \right) \right) 
-	+ (1 - y_i) \left( - \log \left(1 + \exp\left\{\mathbf{x}_i^{\top} \boldsymbol{\beta}\right\} \right) \right) \\
+	&= \sum_{i=1}^N y_i \left( \mathbf{x}_i^{\top} \boldsymbol{\beta} - \log \left(1 + \exp\left\{\mathbf{x}_i^{\top} \boldsymbol{\beta}\right\} \right) \right)\\
+	&+ (1 - y_i) \left( - \log \left(1 + \exp\left\{\mathbf{x}_i^{\top} \boldsymbol{\beta}\right\} \right) \right) \\
 	&= \sum_{i=1}^N y_i \mathbf{x}_i^{\top} \boldsymbol{\beta} - \log \left(1 + \exp\left\{\mathbf{x}_i^{\top} \boldsymbol{\beta}\right\} \right).
 \end{align*}
 
@@ -1225,7 +1221,10 @@ df_scalar <- build_df(invvar_cmc[,ks], "scalar")
 df_matrix <- build_df(invmat_cmc[,ks], "matrix")
 df_plot <- rbind(df_full, df_matrix, df_scalar, df_equal)
 # Plot
-ggpairs( df_plot, aes(color = method, fill = method, alpha = 0.4), upper = list(continuous = GGally::wrap("density", alpha = 0.4)), lower = list(continuous = GGally::wrap("density", alpha = 0.4)), diag = list(continuous = GGally::wrap("densityDiag", alpha = 0.4)))
+df_plot <- rbind(df_full, df_matrix, df_scalar, df_equal)
+gray_palette <- c("overall" = "grey20", "matrix"  = "grey40", "scalar"  = "grey60",
+"equal"   = "grey75")
+ggpairs(df_plot, aes(color = method, fill = method, alpha = 0.4), upper = list(continuous = GGally::wrap("density", alpha = 0.4)), lower = list(continuous = GGally::wrap("density", alpha = 0.4)), diag  = list(continuous = GGally::wrap("densityDiag", alpha = 0.4))) + scale_color_manual(values = gray_palette) + scale_fill_manual(values = gray_palette) + theme_minimal()
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
@@ -1285,7 +1284,18 @@ run_SGLD <- function(y, X, stepsize, batch_prop, n_iter, burnin, beta_init = NUL
 posterior_sgld <- run_SGLD(y = y, X = X, stepsize, batch_prop, n_iter, burnin)
 ### Compare densities for beta5
 df_plot <- data.frame( value = c(posterior_sgld[, k_target2], posterior_mh[, k_target2]), method = rep(c("SGLD", "MCMC"), each = n_iter))
-ggplot(df_plot, aes(x = value, fill = method, color = method)) + geom_density(alpha = 0.4) + geom_vline(xintercept = beta_true[k_target2], linetype = "dashed", color = "black") + labs(title = expression(paste("Posterior density of ", beta[5])), x = expression(beta[5]), y = "Density") + theme_minimal()
+\end{lstlisting}
+	\end{VF}
+\end{tcolorbox}
+
+\begin{tcolorbox}[enhanced,width=4.67in,center upper,
+	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
+	\textit{R code. Stochastic Gradient Langevin Dynamic (SGLD): Logit regression}
+	\begin{VF}
+		\begin{lstlisting}[language=R]
+gray_palette<-c("SGLD"="grey30","MCMC"="grey70")
+ggplot(df_plot,aes(x=value,fill=method,color=method))+ geom_density(alpha=0.4)+ geom_vline(xintercept=beta_true[k_target2],linetype="dashed",color="black")+
+scale_fill_manual(values=gray_palette)+ scale_color_manual(values=gray_palette)+ labs(title=expression(paste("Posterior ", "density ", "of ",beta[5])),x=expression(beta[5]),y="Density")+ theme_minimal()
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}

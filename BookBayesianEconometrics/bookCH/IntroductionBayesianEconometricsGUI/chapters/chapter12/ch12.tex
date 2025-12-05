@@ -251,8 +251,7 @@ simulate_t <- function(y) {
 ppd1 <- replicate(1000, simulate_t(y1))
 ppd0 <- replicate(1000, simulate_t(y0))
 # Plot
-hist(ppd1, col = rgb(1, 0, 0, 0.4), freq = FALSE, main = "Posterior Predictive",
-xlab = "Y", xlim = c(5, 25))
+hist(ppd1,col=grey(0.3,0.4),freq=FALSE,main="PosteriorPredictive",xlab="Y",xlim=c(5,25))
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
@@ -262,8 +261,8 @@ xlab = "Y", xlim = c(5, 25))
 	\textit{R code. Simple example: Average treatment effects}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-hist(ppd0, col = rgb(0, 0, 1, 0.4), freq = FALSE, add = TRUE)
-legend("topright", legend = c("Treatment", "Control"), fill = c(rgb(1, 0, 0, 0.4), rgb(0, 0, 1, 0.4)))
+hist(ppd0,col=grey(0.7,0.4),freq=FALSE,add=TRUE)
+legend("topright",legend=c("Treatment","Control"),fill=c(grey(0.3,0.4),grey(0.7,0.4)),border=NA)
 # Posterior distribution of ATE
 posterior_mu <- function(y) {
 	N <- length(y); ybar <- mean(y)
@@ -289,12 +288,10 @@ ci <- quantile(ate_draws, c(0.025, 0.975))
 cat("Posterior mean of ATE:", ate_mean, "\n")
 cat("95% Credible Interval:", ci, "\n")
 # Plot posterior distribution of ATE
-hist(ate_draws, breaks = 50, freq = FALSE,
-main = "Posterior Distribution of ATE",
-xlab = "ATE (Y(1) - Y(0))", col = "lightblue", border = "white")
-abline(v = ate_mean, col = "red", lwd = 2)
-abline(v = ci, col = "darkgreen", lty = 2, lwd = 2)
-legend("topright", legend = c("Posterior Mean", "95% Credible Interval"), col = c("red", "darkgreen"), lwd = 2, lty = c(1, 2), bty = "n", cex = 0.8)  # Smaller legend using cex
+hist(ate_draws, breaks = 50, freq = FALSE, main = "Posterior Distribution of ATE", xlab = "ATE (Y(1) - Y(0))", col = "gray80", border = "white")
+abline(v = ate_mean, col = "black", lwd = 2)
+abline(v = ci, col = "gray", lty = 2, lwd = 2)
+legend("topright", legend = c("Posterior Mean", "95% Credible Interval"), col = c("black", "grey"), lwd = 2, lty = c(1, 2), bty = "n", cex = 0.8)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}  
@@ -388,10 +385,10 @@ On the other hand, if the CIA is satisfied, the error term in the linear regress
 \]
 
 Thus,
-\[
-\mathbb{E}[\mu_i \mid D_i, \mathbf{X}_i] = \mathbb{E}[Y_i(0) - \mathbb{E}[Y_i(0) \mid \mathbf{X}_i] \mid D_i, \mathbf{X}_i] 
-= \mathbb{E}[Y_i(0) \mid D_i, \mathbf{X}_i] - \mathbb{E}[Y_i(0) \mid \mathbf{X}_i].
-\]
+\begin{align*}
+\mathbb{E}[\mu_i \mid D_i, \mathbf{X}_i] & = \mathbb{E}[Y_i(0) - \mathbb{E}[Y_i(0) \mid \mathbf{X}_i] \mid D_i, \mathbf{X}_i]\\ 
+& = \mathbb{E}[Y_i(0) \mid D_i, \mathbf{X}_i] - \mathbb{E}[Y_i(0) \mid \mathbf{X}_i].
+\end{align*}
 
 By the CIA, $Y_i(0) \perp D_i \mid \mathbf{X}_i$, so:
 \[
@@ -447,8 +444,8 @@ df_posterior <- data.frame(beta_e401)
 
 # Plot with ggplot
 ggplot(df_posterior, aes(x = beta_e401)) +
-geom_density(fill = "steelblue", alpha = 0.6) +
-geom_vline(xintercept = mean(beta_e401), color = "red", linetype = "dashed") +
+geom_density(fill = "grey", alpha = 0.6) +
+geom_vline(xintercept = mean(beta_e401), color = "black", linetype = "dashed") +
 labs(
 title = "Posterior Distribution of Treatment Effect (e401)",
 x = expression(beta[e401]),
@@ -570,7 +567,8 @@ sd_biased = sd(bias_biased)
 print(avg_bias)
 # Visualization: distribution of posterior means across 100 simulations
 df_long <- results %>% dplyr::select(rep, correct, biased) %>% tidyr::pivot_longer(cols = c(correct, biased), names_to = "model", values_to = "estimate")
-ggplot(df_long, aes(x = estimate, fill = model)) + geom_density(alpha = 0.5) + geom_vline(xintercept = true_effect, color = "black", linetype = "dashed", linewidth = 1) + labs(title = "Posterior Means Across 100 Simulations", x = expression(paste("Posterior Mean of ", beta[S])), y = "Density") + theme_minimal(base_size = 14)
+gray_palette<-c("correct"="grey30","biased"="grey70")
+ggplot(df_long,aes(x=estimate,fill=model,color=model)) + geom_density(alpha=0.5) + geom_vline(xintercept=true_effect, color="black", linetype="dashed", linewidth=1) + scale_fill_manual(values=gray_palette) + scale_color_manual(values=gray_palette) + labs(title="Posterior means across 100 simulations",x=expression(paste("Posterior mean of ",beta[S])), y="Density") + theme_minimal(base_size=14)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}  
@@ -713,10 +711,9 @@ We know that the ITT effect of $Z_i$ on $Y_i$ is zero for always-takers and neve
 	 \mathbb{E}[Y_i(1,D_i(1)) - Y_i(0,D_i(0)) \mid D_i(1)=1, D_i(0)=0] \cdot P(D_i(1)=1, D_i(0)=0).
 \end{align*}
 
-For compliers, $D_i = Z_i$, so we can simplify $Y_i(1,D_i(1)) = Y_i(1,1) = Y_i(1)$ and $Y_i(0,D_i(0)) = Y_i(0,0) = Y_i(0)$. Thus,
+For compliers, $D_i = Z_i$, so we can simplify $Y_i(1,D_i(1)) = Y_i(1,1) = Y_i(1)$ and $Y_i(0,D_i(0)) = Y_i(0,0) = Y_i(0)$. Thus, $\mathbb{E}[Y_i(1) - Y_i(0)]$ is equal to
 \begin{align*}
-	\mathbb{E}[Y_i(1) - Y_i(0)] 
-	&= \mathbb{E}[Y_i(1) - Y_i(0) \mid D_i(1) = 1, D_i(0) = 0] \cdot P(D_i(1) = 1, D_i(0) = 0),
+	\mathbb{E}[Y_i(1) - Y_i(0) \mid D_i(1) = 1, D_i(0) = 0] \cdot P(D_i(1) = 1, D_i(0) = 0),
 \end{align*}
 
 which implies that
@@ -1081,10 +1078,10 @@ LATEmean <- mean(LATE)
 LATEci <- quantile(LATE, c(0.025, 0.975))
 # Plot posterior distribution of CATE
 hist(LATE, breaks = 40, freq = FALSE, main = "Posterior Distribution of CACE",
-xlab = "CACE", col = "lightblue", border = "white")
-abline(v = LATEmean, col = "red", lwd = 2)
-abline(v = LATEci, col = "darkgreen", lty = 2, lwd = 2)
-legend("topright", legend = c("Posterior Mean", "95% Credible Interval"), col = c("red", "darkgreen"), lwd = 2, lty = c(1, 2), bty = "n", cex = 0.8)
+xlab = "CACE", col = "grey", border = "white")
+abline(v = LATEmean, col = "black", lwd = 2)
+abline(v = LATEci, col = "black", lty = 2, lwd = 2)
+legend("topright", legend = c("Posterior Mean", "95% Credible Interval"), col = c("black", "black"), lwd = 2, lty = c(1, 2), bty = "n", cex = 0.8)
 		\end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
@@ -1145,10 +1142,10 @@ LATEER <- PosteriorDrawsER[keep, 2] - PosteriorDrawsER[keep, 3]
 LATEERmean <- mean(LATEER)
 LATEERci <- quantile(LATEER, c(0.025, 0.975))
 # Plot posterior distribution of ATE
-hist(LATEER, breaks = 40, freq = FALSE, main = "Posterior Distribution of LATE: Exclusion restrictions", xlab = "LATE", col = "lightblue", border = "white")
-abline(v = LATEERmean, col = "red", lwd = 2) 
-abline(v = LATEERci, col = "darkgreen", lty = 2, lwd = 2)
-legend("topright", legend = c("Posterior Mean", "95% Credible Interval"), col = c("red", "darkgreen"), lwd = 2, lty = c(1, 2), bty = "n", cex = 0.8)
+hist(LATEER, breaks = 40, freq = FALSE, main = "Posterior Distribution of LATE: Exclusion restrictions", xlab = "LATE", col = "grey", border = "white")
+abline(v = LATEERmean, col = "black", lwd = 2) 
+abline(v = LATEERci, col = "black", lty = 2, lwd = 2)
+legend("topright", legend = c("Posterior Mean", "95% Credible Interval"), col = c("black", "black"), lwd = 2, lty = c(1, 2), bty = "n", cex = 0.8)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
@@ -1173,7 +1170,7 @@ Exercise~6 asks how to recover the ITT from the LATE and the effect of eligibili
 rm(list = ls()); set.seed(10101)
 library(coda); library(ggplot2)
 mydata <- read.csv("https://raw.githubusercontent.com/BEsmarter-consultancy/BSTApp/refs/heads/master/DataApp/401k.csv", sep = ",", header = TRUE, quote = "")
-	\end{lstlisting}
+\end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
 
@@ -1261,8 +1258,8 @@ summary(coda::mcmc(Sigmas))
 beta_draws <- Bs[,1]
 # Plot posterior distribution of treatment effect
 df_beta <- data.frame(effect = as.vector(beta_draws))
-ggplot(df_beta, aes(x = effect)) + geom_density(fill = "steelblue", alpha = 0.6) +
-geom_vline(xintercept = mean(beta_draws), color = "red", linetype = "dashed", linewidth = 1) + labs( title = "Posterior Distribution of 401(k) Participation Effect", x = expression(beta["p401"]), y = "Density") + theme_minimal(base_size = 14)
+ggplot(df_beta, aes(x = effect)) + geom_density(fill = "grey", alpha = 0.6) +
+geom_vline(xintercept = mean(beta_draws), color = "black", linetype = "dashed", linewidth = 1) + labs( title = "Posterior Distribution of 401(k) Participation Effect", x = expression(beta["p401"]), y = "Density") + theme_minimal(base_size = 14)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}  
@@ -2253,9 +2250,7 @@ LATEmean <- mean(late_draws)
 LATEci   <- quantile(late_draws, c(0.025, 0.975))
 # Plot posterior density
 df <- data.frame(LATE = late_draws)
-ggplot(df, aes(x = LATE)) + geom_density(fill = "skyblue", alpha = 0.5, color = "blue") + geom_vline(xintercept = LATEmean, color = "red", linetype = "dashed", linewidth = 1) + geom_vline(xintercept = LATEci, color = "black", linetype = "dotted", linewidth = 1) + labs(title = "Posterior distribution of LATE",
-subtitle = paste0("Mean = ", round(LATEmean,3), " | 95% CI = [", round(LATEci[1],3), ", ", round(LATEci[2],3), "]"), x = "LATE", y = "Density") +
-theme_bw(base_size = 14)
+ggplot(df, aes(x = LATE)) + geom_density(fill = "grey", alpha = 0.5, color = "grey") + geom_vline(xintercept = LATEmean, color = "black", linetype = "dashed", linewidth = 1) + geom_vline(xintercept = LATEci, color = "black", linetype = "dotted", linewidth = 1) + labs(title = "Posterior distribution of LATE", subtitle = paste0("Mean = ", round(LATEmean,3), " | 95% CI = [", round(LATEci[1],3), ", ", round(LATEci[2],3), "]"), x = "LATE", y = "Density") + theme_bw(base_size = 14)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}  

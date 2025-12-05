@@ -186,6 +186,7 @@ for(t in S:T){
 	RegLSt <- lm(yt[1:t] ~ x[1:t])
 	Bp[t,] <- RegLSt$coefficients 
 }
+VarBp <- var(Bp)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
@@ -195,7 +196,6 @@ for(t in S:T){
 	\textit{R code. Simulation: Dynamic linear model}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-VarBp <- var(Bp)
 # State space model
 ModelReg <- function(par){
 	Mod <- dlm::dlmModReg(x, dV = exp(par[1]), dW = exp(par[2:3]), m0 = RegLS$coefficients,	C0 = VarBp)
@@ -225,20 +225,21 @@ summary(coda::mcmc(gibbsOut[["dW"]]))
 require(latex2exp) # LaTeX equations in figures
 xx <- c(1:(T+1), (T+1):1)
 yy <- c(Lims[1,], rev(Lims[2,]))
-plot   (xx, yy, type = "n", xlab = "Time", ylab = TeX("$\\beta_{t2}$"))
-polygon(xx, yy, col = "lightblue", border = "lightblue")
+plot(xx, yy, type="n", xlab="Time", ylab=TeX("$\\beta_{t2}$"))
+polygon(xx, yy, col="grey85", border="grey85")
 xxML <- c(1:T, T:1)
 yyML <- c(LimInfB2, rev(LimSupB2))
-polygon(xxML, yyML, col = "blue", border = "blue")
-lines(colMeans(B2t), col = "red", lw = 2)
-lines(Bt[,2], col = "black", lw = 2)
-lines(SmoothB2, col = "green", lw = 2)
+polygon(xxML, yyML, col="grey65", border="grey65")
+lines(1:T, Bt[,2], col="black", lwd=2, lty=1)
+lines(1:T, SmoothB2, col="black", lwd=2, lty=2)
+lines(1:(T+1), colMeans(B2t), col="black", lwd=2, lty=3)
 title("State vector: Slope parameter")
+legend("bottomright", legend=c("True slope", "Smoothed slope (MLE)", "Posterior mean (Gibbs)", "95% band (Gibbs)", "95% band (MLE)"), lty=c(1,2,3,NA,NA), lwd=c(2,2,2,NA,NA), pch=c(NA,NA,NA,15,15), pt.cex=1, col=c("black","black","black","grey85","grey65"), bty="n", cex=0.7)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
 
-Figure \ref{fig1} shows the comparison between maximum likelihood (ML) and Bayesian inference. The light blue (Bayesian) and dark blue (maximum likelihood) shadows show the credible and confidence intervals at 95\% for the state slope parameter ($\beta_{t2}$). We see that the Bayesian interval encompass the ML interval. This is a reflection of the extra uncertainty of the unknown variances. The black line is the actual trajectory of $\beta_{t2}$, the green and red lines are the \textit{smoothing} recursions using the ML and Bayesian estimates (posterior mean), respectively.\\ 
+Figure \ref{fig1} shows the comparison between maximum likelihood (ML) and Bayesian inference. The light gray (Bayesian) and dark gray (maximum likelihood) shadows show the credible and confidence intervals at 95\% for the state slope parameter ($\beta_{t2}$). We see that the Bayesian interval encompass the ML interval. This is a reflection of the extra uncertainty of the unknown variances. The black line is the actual trajectory of $\beta_{t2}$, the dashed and dotted lines are the \textit{smoothing} recursions using the ML and Bayesian estimates (posterior mean), respectively.\\ 
 
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter8/figures/SimSSreg.png}
@@ -308,9 +309,12 @@ summary(dV); summary(dW)
 plot(dV); plot(dW)
 library(fanplot); library(latex2exp)
 df <- as.data.frame(B2t)
-plot(NULL, main="Percentiles", xlim = c(1, T+1), ylim = c(-1, 2), xlab = "Time", ylab = TeX("$\\beta_{t1}$"))
-fan(data = df); lines(colMeans(B2t), col = "black", lw = 2)
-abline(h=0, col = "blue")
+fan.col<-colorRampPalette(c("grey90","grey20"))
+plot(NULL,main="Percentiles",xlim=c(1,T+1),ylim=c(-1,2),xlab="Time",ylab=TeX("$\\beta_{t1}$"))
+fan(data=B2t,data.type="simulations",fan.col=fan.col,ln=NULL)
+lines(colMeans(B2t),col="black",lwd=2,lty=1)
+abline(h=0,col="grey30",lty=2,lwd=2)
+legend("bottomright", legend=c("Posteriormean","Zeroline","Fanpercentiles"), lty=c(1,2,NA),lwd=c(2,2,NA), col=c("black","grey30",NA), pt.cex=2, pch=c(NA,NA,15),pt.bg=c(NA,NA,"grey60"), bty="n",cex=0.8)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
@@ -498,8 +502,8 @@ dfBinf <- as.data.frame(PosteriorBetas[,2])
 		\begin{lstlisting}[language=R]
 # Basic density
 library(ggplot2)
-p <- ggplot(dfBinf, aes(x=var1)) + geom_density(color="darkblue", fill="lightblue") + geom_vline(aes(xintercept=mean(var1)), color="blue", linetype="dashed", linewidth=1) + geom_vline(aes(xintercept=quantile(var1, 0.025)), color="red", linetype="dashed", linewidth=1) + geom_vline(aes(xintercept=quantile(var1, 0.975)), color="red", linetype="dashed", linewidth=1) + labs(title="Density effect of inflation on interest rate", x="Effect of inflation", y = "Density")
-		\end{lstlisting}
+p <- ggplot(dfBinf, aes(x=var1)) + geom_density(color="grey", fill="grey") + geom_vline(aes(xintercept=mean(var1)), color="black", linetype="dashed", linewidth=1) + geom_vline(aes(xintercept=quantile(var1, 0.025)), color="black", linetype="dotted", linewidth=1) + geom_vline(aes(xintercept=quantile(var1, 0.975)), color="black", linetype="dotted", linewidth=1) + labs(title="Density effect of inflation on interest rate", x="Effect of inflation", y = "Density")
+\end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
 
@@ -624,8 +628,10 @@ The posterior distribution is given by\footnote{Take into account that we do not
 The components of the gradient vector of the log posterior distribution are given by
 \begin{align*}
 	\frac{\partial \log(\pi(\mu,\phi_1,\phi_2,\tau\mid \bm{y}))}{\partial\mu}&=\frac{\sum_{t=3}^T(y_t-\mu-\phi_1y_{t-1}-\phi_2y_{t-2})}{\exp(\tau)}-\frac{1}{\sigma_{\mu}^2}(\mu-\mu_0)\\
-	\frac{\partial\log(\pi(\mu,\phi_1,\phi_2,\tau\mid \bm{y}))}{\partial\phi_1}&=\frac{\sum_{t=3}^T(y_t-\mu-\phi_1y_{t-1}-\phi_2y_{t-2})y_{t-1}}{\exp(\tau)}-\frac{1}{\sigma_{\phi_1}^2}(\phi_1-\phi_{10})\\
-	\frac{\partial\log(\pi(\mu,\phi_1,\phi_2,\tau\mid \bm{y}))}{\partial\phi_2}&=\frac{\sum_{t=3}^T(y_t-\mu-\phi_1y_{t-1}-\phi_2y_{t-2})y_{t-2}}{\exp(\tau)}-\frac{1}{\sigma_{\phi_2}^2}(\phi_2-\phi_{20})\\	\frac{\partial\log(\pi(\mu,\phi_1,\phi_2,\tau\mid \bm{y}))}{\partial\tau}&=-\frac{(T-2)}{2}+\frac{\sum_{t=3}^T(y_t-\mu-\phi_1y_{t-1}-\phi_2y_{t-2})^2}{2\exp(\tau)}\\
+	\frac{\partial\log(\pi(\mu,\phi_1,\phi_2,\tau\mid \bm{y}))}{\partial\phi_1}&=\frac{\sum_{t=3}^T(y_t-\mu-\phi_1y_{t-1}-\phi_2y_{t-2})y_{t-1}}{\exp(\tau)}\\
+	&-\frac{1}{\sigma_{\phi_1}^2}(\phi_1-\phi_{10})\\
+	\frac{\partial\log(\pi(\mu,\phi_1,\phi_2,\tau\mid \bm{y}))}{\partial\phi_2}&=\frac{\sum_{t=3}^T(y_t-\mu-\phi_1y_{t-1}-\phi_2y_{t-2})y_{t-2}}{\exp(\tau)}\\
+	&-\frac{1}{\sigma_{\phi_2}^2}(\phi_2-\phi_{20})\\	\frac{\partial\log(\pi(\mu,\phi_1,\phi_2,\tau\mid \bm{y}))}{\partial\tau}&=-\frac{(T-2)}{2}+\frac{\sum_{t=3}^T(y_t-\mu-\phi_1y_{t-1}-\phi_2y_{t-2})^2}{2\exp(\tau)}\\
 	&-(\alpha_0/2+1)+\delta_0/(2\exp(\tau))+1.\\
 \end{align*}
 
@@ -818,7 +824,7 @@ Algorithm \ref{alg:SV} shows how to perform inference in stochastic volatility m
 
 The following code shows how to simulate and perform Bayesian inference in the stochastic volatility model using the function \textit{svsample} from the \textit{stochvol} package. We set the stochastic volatility parameters to $\mu = -10$, $\phi = 0.95$, and $\sigma = 0.3$. We assume two regressors, which are distributed as standard normal, with $\bm{\beta} = [0.5 \ 0.3]^{\top}$, and the sample size is 1,250, which corresponds to approximately 5 years of daily returns. We use the default hyperparameters: 10,000 MCMC iterations, a burn-in of 5,000, and a thinning parameter of 5.
 
-The summary statistics of the posterior draws show that all 95\% credible intervals encompass the population parameters, and the posterior chains appear to have converged. Figure \ref{fig4} displays the posterior results for the volatility ($h_t$). The posterior mean (blue) follows the ``observed" series (black), and the 95\% credible intervals (light blue) typically encompass the ``observed" series.
+The summary statistics of the posterior draws indicate that all 95\% credible intervals contain the true population parameters, and the posterior chains show clear evidence of convergence. Figure~\ref{fig4} displays the posterior results for the volatility process $h_t$. The posterior mean (dashed line) closely tracks the observed series (solid line), and the 95\% credible intervals (gray band) generally encompass the observed values.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -850,11 +856,15 @@ ggplot2::theme_set(theme_bw())
 x_means <- colMeans(ht)
 x_quantiles <- apply(ht, 2, function(x) quantile(x, probs = c(0.025, 0.975)))
 df <- tibble(t = seq(1, T), mean = x_means, lower = x_quantiles[1, ], upper = x_quantiles[2, ], x_true = h, observations = y)
-plot_filtering_estimates <- function(df) {
-	p <- ggplot(data = df, aes(x = t)) + geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1, fill = "lightblue") + geom_line(aes(y = x_true), colour = "black", alpha = 1, linewidth = 0.5) + geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) + 	ylab(TeX("$h_{t}$")) + xlab("Time")
-	print(p)
-}
-plot_filtering_estimates(df)
+require(latex2exp)
+xx<-c(1:T,T:1)
+yy<-c(df$lower,rev(df$upper))
+plot(xx,yy,type="n",xlab="Time",ylab=TeX("$h_t$"))
+polygon(xx,yy,col="grey85",border="grey85")
+lines(1:T,df$x_true,col="black",lwd=1,lty=1)
+lines(1:T,df$mean,col="black",lwd=1,lty=2)
+title("Latentlog-volatility")
+legend("bottomright", legend=c("Truelog-volatility","Posteriormean","95%credibleband"), lty=c(1,2,NA), lwd=c(2,2,NA), pch=c(NA,NA,15), pt.cex=1, col=c("black","black","grey85"), bty="n",cex=0.7)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
@@ -870,7 +880,7 @@ Remember from Chapter \ref{chap5} that particle filters (sequential Monte Carlo)
 
 The following code shows how to perform particle filtering in the vanilla stochastic volatility model assuming that the proposal distribution is the conditional prior distribution, that is, $q(h_t\mid h_{t-1},y_t)=\pi(h_t\mid h_{t-1})$, which is normal with mean $\mu+\phi(h_{t-1}-\mu)$ and variance $\sigma^2$. This choice implies that the incremental importance weights are equal to $p(y_t\mid h_t)$, which is $N(0,\exp(h_t))$. Therefore, the weights are proportional to the likelihood function. We perform multinomial resampling every time period in the code, and start the algorithm in the stationary distribution of $h_t$. Remember that there are other resampling approaches that are more efficient, for instance, residual resampling (see Section \ref{sec53}). We ask in Exercise 7 to modify this code to perform resampling when the effective sample size is lower than 50\% of the initial number of particles. In addition, we ask to program a sequential importance sampling, and check why is important to perform resampling in this simple example. 
 
-Figure \ref{fig5} illustrates the filtering recursion using SMC with uneven weights (blue line), even weights (purple line), bands corresponding to plus/minus two standard deviations (light blue shaded area), and the true state (black line).\footnote{This standard deviation estimates the conditional posterior's standard deviation derived from the particles, not the estimator's standard deviation. The latter requires several independent particle runs on the same data.} The results indicate that SMC performs well even with a simple implementation, with no significant differences between using even and uneven weights (see Chapter \ref{chap5}).
+Figure \ref{fig5} illustrates the filtering recursion using SMC with uneven weights (dashed line), even weights (dotted line), bands corresponding to plus/minus two standard deviations (gray shaded area), and the true state (black solid line).\footnote{This standard deviation estimates the conditional posterior's standard deviation derived from the particles, not the estimator's standard deviation. The latter requires several independent particle runs on the same data.} The results indicate that SMC performs well even with a simple implementation, with no significant differences between using even and uneven weights (see Chapter \ref{chap5}).
 
 In this example, we use the population parameters to perform the filtering recursion. However, this is not the case in practice, as we must estimate the time-invariant parameters. Therefore, more elaborate algorithms are required to achieve this (see Chapter \ref{chap5}). For instance, \cite{andrieu2010pmcmc} propose particle Markov chain Monte Carlo, a family of methods that combines MCMC and SMC. See \cite{dahlin2019getting} for a tutorial on particle Metropolis-Hastings in \textbf{R}. A potential practical solution for applications that require sequential updating of a posterior distribution over an unbounded time horizon is to estimate the time-invariant parameters offline using MCMC algorithms up to a specific time period, and then update the state vector sequentially online during subsequent time periods, iterating this process. This is not optimal, but it can be practical.
 
@@ -893,8 +903,6 @@ log_Weights <- matrix(NA, N, T)  # Log weights
 Weights <- matrix(NA, N, T)  # Weights 
 WeightsST <- matrix(NA, N, T)  # Normalized weights 
 WeightsSTT <- matrix(1/N, N, T)  # Normalized weights bar 
-particles <- matrix(NA, N, T)   # Particles
-particlesT <- matrix(NA, N, T)   # Particles bar
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
@@ -904,6 +912,8 @@ particlesT <- matrix(NA, N, T)   # Particles bar
 	\textit{R code. Simulation and inference: Stochastic volatility model programming sequential Monte Carlo from scratch}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
+particles <- matrix(NA, N, T)   # Particles
+particlesT <- matrix(NA, N, T)   # Particles bar
 logalphas <- matrix(NA, N, T)   # Incremental importance 
 particles[, 1] <- rnorm(N, mu, sigma / sqrt(1 - phi^2))  # Stationary prior
 log_Weights[, 1] <- dnorm(y[1], 0, sd = exp(0.5*particles[,1]), log = TRUE)  # Likelihood
@@ -936,6 +946,8 @@ SDFilterDistT <- (colSums(particlesT^2 * WeightsSTT) - FilterDistT^2)^0.5
 MargLik <- colMeans(Weights)
 plot(MargLik, type = "l")
 library(dplyr); library(ggplot2); library(latex2exp)
+ggplot2::theme_set(theme_bw())
+Tfig <- 250; keepFig <- 1:Tfig
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
@@ -945,8 +957,6 @@ library(dplyr); library(ggplot2); library(latex2exp)
 	\textit{R code. Simulation and inference: Stochastic volatility model programming sequential Monte Carlo from scratch}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-ggplot2::theme_set(theme_bw())
-Tfig <- 250; keepFig <- 1:Tfig
 df <- tibble(t = keepFig,
 mean = FilterDist[keepFig],
 lower = FilterDist[keepFig] - 2*SDFilterDist[keepFig],
@@ -955,15 +965,15 @@ meanT = FilterDistT[keepFig],
 lowerT = FilterDistT[keepFig] - 2*SDFilterDistT[keepFig],
 upperT = FilterDistT[keepFig] + 2*SDFilterDistT[keepFig],
 x_true = h[keepFig])
-plot_filtering_estimates <- function(df) {
-	p <- ggplot(data = df, aes(x = t)) +
-	geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1,
-	fill = "lightblue") +
-	geom_line(aes(y = x_true), colour = "black", alpha = 1,
-	linewidth = 0.5) +
-	geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) +
-	geom_line(aes(y = meanT), colour = "purple", linewidth = 0.5) +
-	ylab(TeX("$h_{t}$")) + xlab("Time")
+plot_filtering_estimates<-function(df){
+	p<-ggplot(df,aes(x=t))+
+	geom_ribbon(aes(ymin=lower,ymax=upper,fill="Credibleband"),alpha=1,color=NA)+
+	geom_line(aes(y=x_true,linetype="Trueseries"),color="black",linewidth=0.8)+
+	geom_line(aes(y=mean,linetype="Posteriormean1"),color="black",linewidth=0.8)+
+	geom_line(aes(y=meanT,linetype="Posteriormean2"),color="black",linewidth=0.8)+
+	scale_linetype_manual(values=c("Trueseries"="solid","Posteriormean1"="dashed","Posteriormean2"="dotted"),name="Lines")+
+	scale_fill_manual(values=c("Credibleband"="grey80"),name="")+
+	ylab(TeX("$h_{t}$"))+xlab("Time")+theme_bw()+theme(legend.position="top")
 	print(p)
 }
 plot_filtering_estimates(df)
@@ -1100,7 +1110,9 @@ Let's use the dataset provided by \cite{Tomasz2024} of the US fiscal system, whe
 
 Let's estimate a VAR model where $\bm{y}_t=[\Delta(ttr_t) \ \Delta(gs_t) \ \Delta(gdp_t)]^{\top}$, that is, we work with the log differences (variation rates), and we set $p=1$. We use the package \textit{bvartools} to estimate the \textit{forecast error} and \textit{ortogonalized} impulse response functions. We use vague independent priors setting $\bm{\beta}_0=\bm{0}$, $\bm{B}_0=100\bm{I}$, $\bm{V}_0=5^{-1}\bm{I}$ and $\alpha_0=3$, and the Minnesota prior setting $a_1=2$, $\kappa_2=0.5$ and $\kappa_3=5$ (default values).\footnote{The \textit{bvartools} package uses the inverse Wishart distribution as prior for $\bm{\Sigma}$, where the hyperparameters are the degrees of freedom of the error term, and the prior error variance of endogenous variables.}
 
-The following code shows how to do this, take into account that we use the first 301 observations to estimate the model, and keep the last 4 observations to check the forecasting performance. Figures \ref{fig6} and \ref{fig7} show the impulse response functions of \textit{gs} with respect to \textit{gs}, the \textit{forecast error impulse response} using vague independent priors, and the \textit{orthogonalized impulse response} using the Minnesota prior, respectively. We see that the effect of the Minnesota prior is to decrease uncertainty. In addition, the forecasting exercise results indicate that these assumptions have same effects in this example. In particular, Figure \ref{fig8} shows that the mean forecasts using the vague prior (green line) and the Minnesota prior (red line) are indistinguishable from the true observations (black line). However, the Minnesota prior enhances forecast precision, as its 95\% predictive interval (blue shaded area) is narrower and fully contained within the 95\% predictive interval obtained using vague priors (light blue shaded area). This improvement is attributable to the shrinkage properties of the Minnesota prior.
+The following code illustrates the procedure. We use the first 301 observations to estimate the model and reserve the last four observations to evaluate forecasting performance. Figures~\ref{fig6} and~\ref{fig7} display the impulse response functions of \textit{gs} with respect to \textit{gs}: the \textit{forecast-error impulse response} obtained under vague independent priors, and the \textit{orthogonalized impulse response} obtained using the Minnesota prior, respectively.
+
+The forecasting results suggest that, in this example, both prior assumptions produce very similar effects. In particular, Figure~\ref{fig8} shows that the mean forecasts under the vague prior (dashed line) and the Minnesota prior (dotted line) are virtually indistinguishable from the true observations (solid line). However, in this specific case we observe that the predictive interval under the noninformative prior is more precise than that under the Minnesota prior: the 95\% predictive interval of the former (light gray shaded area) is narrower and fully contained within the 95\% interval produced by the latter (dark gray shaded area).
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -1137,8 +1149,14 @@ model <- bvartools::add_priors(model, coef = list(v_i = c0^-1, v_i_det = c0^-1, 
 object <- bvartools::draw_posterior(model) # Posterior draws
 ir <- bvartools::irf.bvar(object, impulse = "gs", response = "gs", n.ahead = H, type = "feir", cumulative = FALSE) # Calculate IR
 # Plot IR
-plot_IR <- function(df) {
-	p <- ggplot(data = df, aes(x = t)) + geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1, fill = "lightblue") + geom_line(aes(y = mean), colour = "blue", linewidth = 0.5) + ylab("Impulse response") + xlab("Time") + xlim(0,H)
+plot_IR<-function(df){
+	p<-ggplot(df,aes(x=t))+
+	geom_ribbon(aes(ymin=lower,ymax=upper,fill="Band"),alpha=1,color=NA)+
+	geom_line(aes(y=mean,linetype="Mean"),color="black",linewidth=0.8)+
+	scale_linetype_manual(values=c("Mean"="dashed"),name="Lines")+
+	scale_fill_manual(values=c("Band"="grey80"),name="")+
+	ylab("ImpulseResponse")+xlab("Time")+xlim(0,H)+
+	theme_bw()+theme(legend.position="top")
 	print(p)
 }
 dfNew <- tibble(t = 0:H, mean = as.numeric(ir[,2]), lower = as.numeric(ir[,1]), upper = as.numeric(ir[,3]))
@@ -1148,13 +1166,12 @@ library(tibble)
 modelMin <- bvartools::gen_var(YnewPack, p = 1, deterministic = "const", iterations = MCMC, burnin = burnin)
 modelMin <- bvartools::add_priors(modelMin, minnesota = list(kappa0 = 2, kappa1 = 0.5, kappa3 = 5), coint_var = FALSE) # Minnesota prior
 objectMin <- bvartools::draw_posterior(modelMin) # Posterior draws
-irMin <- bvartools::irf.bvar(objectMin, impulse = "gs", response = "gs", n.ahead = H, type = "feir", cumulative = FALSE) # Calculate IR
+irMin <- bvartools::irf.bvar(objectMin, impulse = "gs", response = "gs", n.ahead = H, type = "oir", cumulative = FALSE) # Calculate IR
 dfNewMin <- tibble(t = 0:H, mean = as.numeric(irMin[,2]), lower = as.numeric(irMin[,1]), upper = as.numeric(irMin[,3]))
 FigNewMin <- plot_IR(dfNewMin)
 ### Forecasting
 bvar_pred <- predict(object, n.ahead = 4, new_d = rep(1, 4))
 bvar_predOR <- predict(objectMin, n.ahead = 4, new_d = rep(1, 4))
-dfFore <- tibble(t = c((T-2):(T+1)), mean = as.numeric(bvar_pred[["fcst"]][["gs"]][,2]), lower = as.numeric(bvar_pred[["fcst"]][["gs"]][,1]), upper = as.numeric(bvar_pred[["fcst"]][["gs"]][,3]), mean1 = as.numeric(bvar_predOR[["fcst"]][["gs"]][,2]), lower1 = as.numeric(bvar_predOR[["fcst"]][["gs"]][,1]), upper1 = as.numeric(bvar_predOR[["fcst"]][["gs"]][,3]), true = as.numeric(Y[c((T-2):(T+1)),2]))
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox} 
@@ -1164,8 +1181,18 @@ dfFore <- tibble(t = c((T-2):(T+1)), mean = as.numeric(bvar_pred[["fcst"]][["gs"
 	\textit{R code. VAR model: US fiscal shocks}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-plot_FORE <- function(df) {
-	p <- ggplot(data = dfFore, aes(x = t)) + geom_ribbon(aes(ymin = lower1, ymax = upper1), alpha = 1, fill = "blue") + geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 1, fill = "lightblue") + geom_line(aes(y = mean), colour = "green", linewidth = 0.5) + geom_line(aes(y = mean1), colour = "red", linewidth = 0.5) + geom_line(aes(y = true), colour = "black", linewidth = 0.5) + ylab("Forecast") + xlab("Time") + xlim(c((T-2),(T+1)))
+dfFore <- tibble(t = c((T-2):(T+1)), mean = as.numeric(bvar_pred[["fcst"]][["gs"]][,2]), lower = as.numeric(bvar_pred[["fcst"]][["gs"]][,1]), upper = as.numeric(bvar_pred[["fcst"]][["gs"]][,3]), mean1 = as.numeric(bvar_predOR[["fcst"]][["gs"]][,2]), lower1 = as.numeric(bvar_predOR[["fcst"]][["gs"]][,1]), upper1 = as.numeric(bvar_predOR[["fcst"]][["gs"]][,3]), true = as.numeric(Y[c((T-2):(T+1)),2]))
+plot_FORE<-function(df){
+	p<-ggplot(df,aes(x=t))+
+	geom_ribbon(aes(ymin=lower1,ymax=upper1,fill="Band2"),alpha=1,color=NA)+
+	geom_ribbon(aes(ymin=lower,ymax=upper,fill="Band1"),alpha=1,color=NA)+
+	geom_line(aes(y=true,linetype="True"),color="black",linewidth=0.8)+
+	geom_line(aes(y=mean,linetype="Baseline"),color="black",linewidth=0.8)+
+	geom_line(aes(y=mean1,linetype="Minnesota"),color="black",linewidth=0.8)+
+	scale_linetype_manual(values=c("True"="solid","Baseline"="dashed","Minnesota"="dotted"),name="Lines")+
+	scale_fill_manual(values=c("Band1"="grey80","Band2"="grey60"),name="Bands")+
+	ylab("Forecast")+xlab("Time")+xlim(c((T-2),(T+1)))+
+	theme_bw()+theme(legend.position="top")
 	print(p)
 }
 FigFore <- plot_FORE(dfFore)

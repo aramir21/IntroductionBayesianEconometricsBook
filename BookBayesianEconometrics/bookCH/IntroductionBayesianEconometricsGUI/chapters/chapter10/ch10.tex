@@ -669,16 +669,19 @@ B4 <- 1.2; sigma <- 1; mu <- rnorm(T, 0, sigma)
 y <- B1 + X[,1]*B2t + X[,2]*B3t + X[,3]*B4 + mu
 T0 <- 50
 dma.test <- dma::dma(X, y, combs, lambda=.99, gamma=.99, initialperiod = T0)
-plot(dma.test[["pmp"]][-c(1:T0),8], type = "l", col = "green", main = "Posterior model probability: Model all regressors vs model regressors 2 and 4", xlab = "Time", ylab = "PMP")
-lines(dma.test[["pmp"]][-c(1:T0),6], col = "red")
-legend(x = 0, y = 1, legend = c("Model: All regressors", "Model: Regressors 2 and 4"), col = c("green", "red"), lty=1:1, cex=0.8)
+plot(dma.test[["pmp"]][-c(1:T0),8], type = "l", main = "Posterior model probability", xlab = "Time", ylab = "PMP")
+lines(dma.test[["pmp"]][-c(1:T0),6], lty = 2)
+legend(x = 0, y = 0.5, legend = c("Model: All regressors", "Model: Regressors 2 and 4"), lty=1:2, cex=0.8)
 require(latex2exp)
-plot(dma.test[["thetahat.ma"]][-c(1:T0),1], type = "l", col = "green", main = "Bayesian model average filtering recursion", xlab = "Time", ylab = TeX("$\\beta_{1}$"))
-abline(h = B1, col = "red")
-legend(x = 0, y = 0.4, legend = c("State filtering", "State population"), col = c("green", "red"), lty=1:1, cex=0.8)
-plot(dma.test[["thetahat.ma"]][-c(1:T0),2], type = "l", col = "green", main = "Bayesian model average filtering recursion", xlab = "Time", ylab = TeX("$\\beta_{2t}$"), ylim = c(0.5,2))
-lines(B2t[-c(1:T0)], col = "red")
-legend(x = 0, y = 0.8, legend = c("State filtering", "State population"), col = c("green", "red"), lty=1:1, cex=0.8)
+plot(dma.test[["thetahat.ma"]][-c(1:T0),1], type = "l", main = "Bayesian model average filtering recursion", xlab = "Time", ylab = TeX("$\\beta_{1}$"))
+abline(h = B1, lty = 2)
+legend(x = 0, y = 0.4, legend = c("State filtering", "State population"), lty=1:2, cex=0.8)
+plot(dma.test[["thetahat.ma"]][-c(1:T0),2], type = "l", main = "Bayesian model average filtering recursion", xlab = "Time", ylab = TeX("$\\beta_{2t}$"), ylim = c(0.5,2))
+lines(B2t[-c(1:T0)], lty = 2)
+legend(x = 0, y = 2, legend = c("State filtering", "State population"), lty=1:2, cex=0.8)
+plot(dma.test[["thetahat.ma"]][-c(1:T0),3], type = "l", main = "Bayesian model average filtering recursion", xlab = "Time", ylab = TeX("$\\beta_{3t}$"))
+lines(B3t[-c(1:T0)], lty = 2)
+legend(x = 0, y = -0.4, legend = c("State filtering", "State population"), lty=1:2, cex=0.8)
 \end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
@@ -688,24 +691,22 @@ legend(x = 0, y = 0.8, legend = c("State filtering", "State population"), col = 
 	\textit{R code. Simulation exercise: Dynamic Bayesian model averaging}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-plot(dma.test[["thetahat.ma"]][-c(1:T0),3], type = "l", col = "green", main = "Bayesian model average filtering recursion", xlab = "Time", ylab = TeX("$\\beta_{3t}$"))
-lines(B3t[-c(1:T0)], col = "red")
-legend(x = 0, y = -0.4, legend = c("State filtering", "State population"), col = c("green", "red"), lty=1:1, cex=0.8)
-plot(dma.test[["thetahat.ma"]][-c(1:T0),4], type = "l", col = "green", main = "Bayesian model average filtering recursion", xlab = "Time", ylab = TeX("$\\beta_{4t}$"))
-abline(h = B4, col = "red")
-legend(x = 0, y = 1.3, legend = c("State filtering", "State population"), col = c("green", "red"), lty=1:1, cex=0.8)		\end{lstlisting}
+plot(dma.test[["thetahat.ma"]][-c(1:T0),4], type = "l", main = "Bayesian model average filtering recursion", xlab = "Time", ylab = TeX("$\\beta_{4t}$"))
+abline(h = B4, lty = 2)
+legend(x = 300, y = 1, legend = c("State filtering", "State population"), lty=1:2, cex=0.8)
+\end{lstlisting}
 	\end{VF}
 \end{tcolorbox}
 
 
-Figure \ref{figPMPdbma} shows the posterior model probabilities for the model with all the regressors (green line) and the model with regressors 2 and 4 (red line). On one hand, we see that the model with all regressors, which is the data-generating process in the first period ($t \leq 0.75T$), has a PMP close to 1, and then its PMP decreases. On the other hand, the model with regressors 2 and 4 has a PMP close to 0 in the first part of the period, and then its PMP increases to values higher than 60\% on average, when this model becomes the data-generating process. These results suggest that, in this particular simulation exercise, the dynamic Bayesian model averaging method works relatively well in calculating the PMPs.
+Figure \ref{figPMPdbma} shows the posterior model probabilities for the model with all the regressors (solid line) and the model with regressors 2 and 4 (dashed line). On one hand, we see that the model with all regressors, which is the data-generating process in the first period ($t \leq 0.75T$), has a PMP close to 1, and then its PMP decreases. On the other hand, the model with regressors 2 and 4 has a PMP close to 0 in the first part of the period, and then its PMP increases to values higher than 60\% on average, when this model becomes the data-generating process. These results suggest that, in this particular simulation exercise, the dynamic Bayesian model averaging method works relatively well in calculating the PMPs.
 
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter10/figures/figPMPdbma.png}
 	\caption[List of figure caption goes here]{Posterior model probability: Dynamic Bayesian model averaging.}\label{figPMPdbma}
 \end{figure}
 
-Figures \ref{figPMPdbma1}, \ref{figPMPdbma2}, \ref{figPMPdbma3}, and \ref{figPMPdbma4} show a comparison between the Bayesian model averaging filtering recursions of the states (green lines) and their population values (red lines). We observe that the filtering recursions follow the general pattern of the population values. However, the values are not perfectly aligned. This discrepancy arises because the posterior model probabilities (PMPs) of the models that match the data-generating process are not equal to 1, which in turn affects the performance of the filtering recursions.  
+Figures \ref{figPMPdbma1}, \ref{figPMPdbma2}, \ref{figPMPdbma3}, and \ref{figPMPdbma4} show a comparison between the Bayesian model averaging filtering recursions of the states (solid lines) and their population values (dashed lines). We observe that the filtering recursions follow the general pattern of the population values. However, the values are not perfectly aligned. This discrepancy arises because the posterior model probabilities (PMPs) of the models that match the data-generating process are not equal to 1, which in turn affects the performance of the filtering recursions.  
 
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter10/figures/figPMPdbma1.png}
