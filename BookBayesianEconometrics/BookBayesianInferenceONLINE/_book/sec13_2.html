@@ -23,7 +23,7 @@
 <meta name="author" content="Andrés Ramírez-Hassan" />
 
 
-<meta name="date" content="2025-11-30" />
+<meta name="date" content="2025-12-06" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -536,60 +536,60 @@ Y(d)\mid \mathbf{y}\sim t\left(\mu_{nd},\frac{(\beta_{nd}+1)\delta_{nd}}{\beta_{
 &amp; = \int_{\mathcal{R}} y(1) f_{Y(1)}(y(1))dy(1) - \int_{\mathcal{R}} y(0) f_{Y(0)}(y(0))dy(0)\\
 &amp; = \mu_{1} - \mu_{0}.
 \end{align*}\]</span></p>
-<p>Note that this expectation is taken with respect to the population distribution of the potential outcomes, not with respect to the posterior distribution.<a href="#fn73" class="footnote-ref" id="fnref73"><sup>73</sup></a> Thus, the posterior distribution of the ATE is given by
+<p>Note that this expectation is taken with respect to the population distribution of the potential outcomes, not with respect to the posterior distribution.<a href="#fn74" class="footnote-ref" id="fnref74"><sup>74</sup></a> Thus, the posterior distribution of the ATE is given by
 <span class="math display">\[
 \pi(\text{ATE}\mid \mathbf{y}) = \pi(\mu_{1} - \mu_{0}\mid \mathbf{y}).
 \]</span></p>
 <p>We can obtain this posterior distribution by simulation, because the difference of two independent Student’s <span class="math inline">\(t\)</span>-distributed random variables does not follow a Student’s <span class="math inline">\(t\)</span> distribution. However, as the degrees of freedom increase, each posterior distribution of <span class="math inline">\(\mu_{d}\)</span> converges to a normal distribution, and the difference of two normals is also normal. Consequently, an approximate point estimate of the ATE is <span class="math inline">\(\mu_{n1} - \mu_{n0}\)</span>, which asymptotically equals <span class="math inline">\(\bar{y}_1 - \bar{y}_0\)</span> under non-informative priors. This is the classical <em>estimator</em> of the ATE.</p>
 <p>Finally, note that we can also obtain the posterior distribution of the ATE using the simple linear regression framework by assuming non-informative prior distributions, in which case the posterior mean of the slope parameter coincides with the maximum likelihood estimator (see Exercise 1).</p>
 <p>Let’s assume that <span class="math inline">\(\mu_1 = 15\)</span>, <span class="math inline">\(\mu_0 = 10\)</span>, <span class="math inline">\(\sigma_1^2 = 4\)</span>, <span class="math inline">\(\sigma_0^2 = 2\)</span>, and <span class="math inline">\(N_1=N_0=100\)</span>, and compute the posterior distribution of the ATE. The following code illustrates this procedure, while the following figures display the predictive densities of the potential outcomes and the posterior distribution of the ATE. The posterior mean is 4.60, and the 95% credible interval is (4.10, 5.12). Note that the population value is <span class="math inline">\(\mu_1-\mu_0=5\)</span>.</p>
-<div class="sourceCode" id="cb761"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb761-1"><a href="sec13_2.html#cb761-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">10101</span>)</span>
-<span id="cb761-2"><a href="sec13_2.html#cb761-2" tabindex="-1"></a><span class="co"># Parameters</span></span>
-<span id="cb761-3"><a href="sec13_2.html#cb761-3" tabindex="-1"></a>mu1 <span class="ot">&lt;-</span> <span class="dv">15</span>; mu0 <span class="ot">&lt;-</span> <span class="dv">10</span></span>
-<span id="cb761-4"><a href="sec13_2.html#cb761-4" tabindex="-1"></a>sigma1 <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="dv">4</span>); sigma0 <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="dv">2</span>)</span>
-<span id="cb761-5"><a href="sec13_2.html#cb761-5" tabindex="-1"></a>N1 <span class="ot">&lt;-</span> <span class="dv">100</span>; N0 <span class="ot">&lt;-</span> <span class="dv">100</span></span>
-<span id="cb761-6"><a href="sec13_2.html#cb761-6" tabindex="-1"></a><span class="co"># Simulate data</span></span>
-<span id="cb761-7"><a href="sec13_2.html#cb761-7" tabindex="-1"></a>y1 <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(N1, mu1, sigma1); y0 <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(N0, mu0, sigma0)</span>
-<span id="cb761-8"><a href="sec13_2.html#cb761-8" tabindex="-1"></a><span class="co"># Prior hyperparameters</span></span>
-<span id="cb761-9"><a href="sec13_2.html#cb761-9" tabindex="-1"></a>alpha0 <span class="ot">&lt;-</span> <span class="fl">0.01</span>; delta0 <span class="ot">&lt;-</span> <span class="fl">0.01</span></span>
-<span id="cb761-10"><a href="sec13_2.html#cb761-10" tabindex="-1"></a>simulate_t <span class="ot">&lt;-</span> <span class="cf">function</span>(y) {</span>
-<span id="cb761-11"><a href="sec13_2.html#cb761-11" tabindex="-1"></a>    N <span class="ot">&lt;-</span> <span class="fu">length</span>(y); ybar <span class="ot">&lt;-</span> <span class="fu">mean</span>(y)</span>
-<span id="cb761-12"><a href="sec13_2.html#cb761-12" tabindex="-1"></a>    sse <span class="ot">&lt;-</span> <span class="fu">sum</span>((y <span class="sc">-</span> ybar)<span class="sc">^</span><span class="dv">2</span>)</span>
-<span id="cb761-13"><a href="sec13_2.html#cb761-13" tabindex="-1"></a>    alpha_n <span class="ot">&lt;-</span> alpha0 <span class="sc">+</span> N; delta_n <span class="ot">&lt;-</span> sse <span class="sc">+</span> delta0</span>
-<span id="cb761-14"><a href="sec13_2.html#cb761-14" tabindex="-1"></a>    scale2 <span class="ot">&lt;-</span> ((N <span class="sc">+</span> <span class="dv">1</span>) <span class="sc">*</span> delta_n) <span class="sc">/</span> (N <span class="sc">*</span> alpha_n)</span>
-<span id="cb761-15"><a href="sec13_2.html#cb761-15" tabindex="-1"></a>    df <span class="ot">&lt;-</span> alpha_n</span>
-<span id="cb761-16"><a href="sec13_2.html#cb761-16" tabindex="-1"></a>    loc <span class="ot">&lt;-</span> ybar; scale <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(scale2)</span>
-<span id="cb761-17"><a href="sec13_2.html#cb761-17" tabindex="-1"></a>    <span class="fu">rt</span>(<span class="dv">1</span>, <span class="at">df =</span> df) <span class="sc">*</span> scale <span class="sc">+</span> loc</span>
-<span id="cb761-18"><a href="sec13_2.html#cb761-18" tabindex="-1"></a>}</span>
-<span id="cb761-19"><a href="sec13_2.html#cb761-19" tabindex="-1"></a><span class="co"># Posterior predictive draws</span></span>
-<span id="cb761-20"><a href="sec13_2.html#cb761-20" tabindex="-1"></a>ppd1 <span class="ot">&lt;-</span> <span class="fu">replicate</span>(<span class="dv">1000</span>, <span class="fu">simulate_t</span>(y1))</span>
-<span id="cb761-21"><a href="sec13_2.html#cb761-21" tabindex="-1"></a>ppd0 <span class="ot">&lt;-</span> <span class="fu">replicate</span>(<span class="dv">1000</span>, <span class="fu">simulate_t</span>(y0))</span>
-<span id="cb761-22"><a href="sec13_2.html#cb761-22" tabindex="-1"></a><span class="co"># Plot</span></span>
-<span id="cb761-23"><a href="sec13_2.html#cb761-23" tabindex="-1"></a><span class="fu">hist</span>(ppd1, <span class="at">col =</span> <span class="fu">rgb</span>(<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="fl">0.4</span>), <span class="at">freq =</span> <span class="cn">FALSE</span>, <span class="at">main =</span> <span class="st">&quot;Posterior Predictive&quot;</span>,</span>
-<span id="cb761-24"><a href="sec13_2.html#cb761-24" tabindex="-1"></a><span class="at">xlab =</span> <span class="st">&quot;Y&quot;</span>, <span class="at">xlim =</span> <span class="fu">c</span>(<span class="dv">5</span>, <span class="dv">25</span>))</span>
-<span id="cb761-25"><a href="sec13_2.html#cb761-25" tabindex="-1"></a><span class="fu">hist</span>(ppd0, <span class="at">col =</span> <span class="fu">rgb</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="fl">0.4</span>), <span class="at">freq =</span> <span class="cn">FALSE</span>, <span class="at">add =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb761-26"><a href="sec13_2.html#cb761-26" tabindex="-1"></a><span class="fu">legend</span>(<span class="st">&quot;topright&quot;</span>, <span class="at">legend =</span> <span class="fu">c</span>(<span class="st">&quot;Treatment&quot;</span>, <span class="st">&quot;Control&quot;</span>),</span>
-<span id="cb761-27"><a href="sec13_2.html#cb761-27" tabindex="-1"></a><span class="at">fill =</span> <span class="fu">c</span>(<span class="fu">rgb</span>(<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="fl">0.4</span>), <span class="fu">rgb</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="fl">0.4</span>)))</span></code></pre></div>
+<div class="sourceCode" id="cb759"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb759-1"><a href="sec13_2.html#cb759-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">10101</span>)</span>
+<span id="cb759-2"><a href="sec13_2.html#cb759-2" tabindex="-1"></a><span class="co"># Parameters</span></span>
+<span id="cb759-3"><a href="sec13_2.html#cb759-3" tabindex="-1"></a>mu1 <span class="ot">&lt;-</span> <span class="dv">15</span>; mu0 <span class="ot">&lt;-</span> <span class="dv">10</span></span>
+<span id="cb759-4"><a href="sec13_2.html#cb759-4" tabindex="-1"></a>sigma1 <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="dv">4</span>); sigma0 <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="dv">2</span>)</span>
+<span id="cb759-5"><a href="sec13_2.html#cb759-5" tabindex="-1"></a>N1 <span class="ot">&lt;-</span> <span class="dv">100</span>; N0 <span class="ot">&lt;-</span> <span class="dv">100</span></span>
+<span id="cb759-6"><a href="sec13_2.html#cb759-6" tabindex="-1"></a><span class="co"># Simulate data</span></span>
+<span id="cb759-7"><a href="sec13_2.html#cb759-7" tabindex="-1"></a>y1 <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(N1, mu1, sigma1); y0 <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(N0, mu0, sigma0)</span>
+<span id="cb759-8"><a href="sec13_2.html#cb759-8" tabindex="-1"></a><span class="co"># Prior hyperparameters</span></span>
+<span id="cb759-9"><a href="sec13_2.html#cb759-9" tabindex="-1"></a>alpha0 <span class="ot">&lt;-</span> <span class="fl">0.01</span>; delta0 <span class="ot">&lt;-</span> <span class="fl">0.01</span></span>
+<span id="cb759-10"><a href="sec13_2.html#cb759-10" tabindex="-1"></a>simulate_t <span class="ot">&lt;-</span> <span class="cf">function</span>(y) {</span>
+<span id="cb759-11"><a href="sec13_2.html#cb759-11" tabindex="-1"></a>    N <span class="ot">&lt;-</span> <span class="fu">length</span>(y); ybar <span class="ot">&lt;-</span> <span class="fu">mean</span>(y)</span>
+<span id="cb759-12"><a href="sec13_2.html#cb759-12" tabindex="-1"></a>    sse <span class="ot">&lt;-</span> <span class="fu">sum</span>((y <span class="sc">-</span> ybar)<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb759-13"><a href="sec13_2.html#cb759-13" tabindex="-1"></a>    alpha_n <span class="ot">&lt;-</span> alpha0 <span class="sc">+</span> N; delta_n <span class="ot">&lt;-</span> sse <span class="sc">+</span> delta0</span>
+<span id="cb759-14"><a href="sec13_2.html#cb759-14" tabindex="-1"></a>    scale2 <span class="ot">&lt;-</span> ((N <span class="sc">+</span> <span class="dv">1</span>) <span class="sc">*</span> delta_n) <span class="sc">/</span> (N <span class="sc">*</span> alpha_n)</span>
+<span id="cb759-15"><a href="sec13_2.html#cb759-15" tabindex="-1"></a>    df <span class="ot">&lt;-</span> alpha_n</span>
+<span id="cb759-16"><a href="sec13_2.html#cb759-16" tabindex="-1"></a>    loc <span class="ot">&lt;-</span> ybar; scale <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(scale2)</span>
+<span id="cb759-17"><a href="sec13_2.html#cb759-17" tabindex="-1"></a>    <span class="fu">rt</span>(<span class="dv">1</span>, <span class="at">df =</span> df) <span class="sc">*</span> scale <span class="sc">+</span> loc</span>
+<span id="cb759-18"><a href="sec13_2.html#cb759-18" tabindex="-1"></a>}</span>
+<span id="cb759-19"><a href="sec13_2.html#cb759-19" tabindex="-1"></a><span class="co"># Posterior predictive draws</span></span>
+<span id="cb759-20"><a href="sec13_2.html#cb759-20" tabindex="-1"></a>ppd1 <span class="ot">&lt;-</span> <span class="fu">replicate</span>(<span class="dv">1000</span>, <span class="fu">simulate_t</span>(y1))</span>
+<span id="cb759-21"><a href="sec13_2.html#cb759-21" tabindex="-1"></a>ppd0 <span class="ot">&lt;-</span> <span class="fu">replicate</span>(<span class="dv">1000</span>, <span class="fu">simulate_t</span>(y0))</span>
+<span id="cb759-22"><a href="sec13_2.html#cb759-22" tabindex="-1"></a><span class="co"># Plot</span></span>
+<span id="cb759-23"><a href="sec13_2.html#cb759-23" tabindex="-1"></a><span class="fu">hist</span>(ppd1, <span class="at">col =</span> <span class="fu">rgb</span>(<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="fl">0.4</span>), <span class="at">freq =</span> <span class="cn">FALSE</span>, <span class="at">main =</span> <span class="st">&quot;Posterior Predictive&quot;</span>,</span>
+<span id="cb759-24"><a href="sec13_2.html#cb759-24" tabindex="-1"></a><span class="at">xlab =</span> <span class="st">&quot;Y&quot;</span>, <span class="at">xlim =</span> <span class="fu">c</span>(<span class="dv">5</span>, <span class="dv">25</span>))</span>
+<span id="cb759-25"><a href="sec13_2.html#cb759-25" tabindex="-1"></a><span class="fu">hist</span>(ppd0, <span class="at">col =</span> <span class="fu">rgb</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="fl">0.4</span>), <span class="at">freq =</span> <span class="cn">FALSE</span>, <span class="at">add =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb759-26"><a href="sec13_2.html#cb759-26" tabindex="-1"></a><span class="fu">legend</span>(<span class="st">&quot;topright&quot;</span>, <span class="at">legend =</span> <span class="fu">c</span>(<span class="st">&quot;Treatment&quot;</span>, <span class="st">&quot;Control&quot;</span>),</span>
+<span id="cb759-27"><a href="sec13_2.html#cb759-27" tabindex="-1"></a><span class="at">fill =</span> <span class="fu">c</span>(<span class="fu">rgb</span>(<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="fl">0.4</span>), <span class="fu">rgb</span>(<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="fl">0.4</span>)))</span></code></pre></div>
 <p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-79-1.svg" width="672" /></p>
-<div class="sourceCode" id="cb762"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb762-1"><a href="sec13_2.html#cb762-1" tabindex="-1"></a><span class="co"># Posterior distribution of ATE</span></span>
-<span id="cb762-2"><a href="sec13_2.html#cb762-2" tabindex="-1"></a>posterior_mu <span class="ot">&lt;-</span> <span class="cf">function</span>(y) {</span>
-<span id="cb762-3"><a href="sec13_2.html#cb762-3" tabindex="-1"></a>    N <span class="ot">&lt;-</span> <span class="fu">length</span>(y); ybar <span class="ot">&lt;-</span> <span class="fu">mean</span>(y)</span>
-<span id="cb762-4"><a href="sec13_2.html#cb762-4" tabindex="-1"></a>    sse <span class="ot">&lt;-</span> <span class="fu">sum</span>((y <span class="sc">-</span> ybar)<span class="sc">^</span><span class="dv">2</span>)</span>
-<span id="cb762-5"><a href="sec13_2.html#cb762-5" tabindex="-1"></a>    alpha_n <span class="ot">&lt;-</span> alpha0 <span class="sc">+</span> N</span>
-<span id="cb762-6"><a href="sec13_2.html#cb762-6" tabindex="-1"></a>    delta_n <span class="ot">&lt;-</span> sse <span class="sc">+</span> delta0</span>
-<span id="cb762-7"><a href="sec13_2.html#cb762-7" tabindex="-1"></a>    <span class="co"># Posterior variance for mean</span></span>
-<span id="cb762-8"><a href="sec13_2.html#cb762-8" tabindex="-1"></a>    var_mu <span class="ot">&lt;-</span> delta_n <span class="sc">/</span> (alpha_n <span class="sc">*</span> N)</span>
-<span id="cb762-9"><a href="sec13_2.html#cb762-9" tabindex="-1"></a>    df <span class="ot">&lt;-</span> alpha_n</span>
-<span id="cb762-10"><a href="sec13_2.html#cb762-10" tabindex="-1"></a>    loc <span class="ot">&lt;-</span> ybar; scale <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(var_mu)</span>
-<span id="cb762-11"><a href="sec13_2.html#cb762-11" tabindex="-1"></a>    <span class="fu">rt</span>(<span class="dv">1</span>, <span class="at">df =</span> df) <span class="sc">*</span> scale <span class="sc">+</span> loc</span>
-<span id="cb762-12"><a href="sec13_2.html#cb762-12" tabindex="-1"></a>}</span>
-<span id="cb762-13"><a href="sec13_2.html#cb762-13" tabindex="-1"></a><span class="co"># Posterior draws for parameters</span></span>
-<span id="cb762-14"><a href="sec13_2.html#cb762-14" tabindex="-1"></a>n_draws <span class="ot">&lt;-</span> <span class="dv">10000</span></span>
-<span id="cb762-15"><a href="sec13_2.html#cb762-15" tabindex="-1"></a>mu1_draws <span class="ot">&lt;-</span> <span class="fu">replicate</span>(n_draws, <span class="fu">posterior_mu</span>(y1))</span>
-<span id="cb762-16"><a href="sec13_2.html#cb762-16" tabindex="-1"></a>mu0_draws <span class="ot">&lt;-</span> <span class="fu">replicate</span>(n_draws, <span class="fu">posterior_mu</span>(y0))</span>
-<span id="cb762-17"><a href="sec13_2.html#cb762-17" tabindex="-1"></a><span class="co"># Parameter uncertainty: difference of means</span></span>
-<span id="cb762-18"><a href="sec13_2.html#cb762-18" tabindex="-1"></a>ate_draws <span class="ot">&lt;-</span> mu1_draws <span class="sc">-</span> mu0_draws</span>
-<span id="cb762-19"><a href="sec13_2.html#cb762-19" tabindex="-1"></a><span class="fu">summary</span>(coda<span class="sc">::</span><span class="fu">mcmc</span>(ate_draws))</span></code></pre></div>
+<div class="sourceCode" id="cb760"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb760-1"><a href="sec13_2.html#cb760-1" tabindex="-1"></a><span class="co"># Posterior distribution of ATE</span></span>
+<span id="cb760-2"><a href="sec13_2.html#cb760-2" tabindex="-1"></a>posterior_mu <span class="ot">&lt;-</span> <span class="cf">function</span>(y) {</span>
+<span id="cb760-3"><a href="sec13_2.html#cb760-3" tabindex="-1"></a>    N <span class="ot">&lt;-</span> <span class="fu">length</span>(y); ybar <span class="ot">&lt;-</span> <span class="fu">mean</span>(y)</span>
+<span id="cb760-4"><a href="sec13_2.html#cb760-4" tabindex="-1"></a>    sse <span class="ot">&lt;-</span> <span class="fu">sum</span>((y <span class="sc">-</span> ybar)<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb760-5"><a href="sec13_2.html#cb760-5" tabindex="-1"></a>    alpha_n <span class="ot">&lt;-</span> alpha0 <span class="sc">+</span> N</span>
+<span id="cb760-6"><a href="sec13_2.html#cb760-6" tabindex="-1"></a>    delta_n <span class="ot">&lt;-</span> sse <span class="sc">+</span> delta0</span>
+<span id="cb760-7"><a href="sec13_2.html#cb760-7" tabindex="-1"></a>    <span class="co"># Posterior variance for mean</span></span>
+<span id="cb760-8"><a href="sec13_2.html#cb760-8" tabindex="-1"></a>    var_mu <span class="ot">&lt;-</span> delta_n <span class="sc">/</span> (alpha_n <span class="sc">*</span> N)</span>
+<span id="cb760-9"><a href="sec13_2.html#cb760-9" tabindex="-1"></a>    df <span class="ot">&lt;-</span> alpha_n</span>
+<span id="cb760-10"><a href="sec13_2.html#cb760-10" tabindex="-1"></a>    loc <span class="ot">&lt;-</span> ybar; scale <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(var_mu)</span>
+<span id="cb760-11"><a href="sec13_2.html#cb760-11" tabindex="-1"></a>    <span class="fu">rt</span>(<span class="dv">1</span>, <span class="at">df =</span> df) <span class="sc">*</span> scale <span class="sc">+</span> loc</span>
+<span id="cb760-12"><a href="sec13_2.html#cb760-12" tabindex="-1"></a>}</span>
+<span id="cb760-13"><a href="sec13_2.html#cb760-13" tabindex="-1"></a><span class="co"># Posterior draws for parameters</span></span>
+<span id="cb760-14"><a href="sec13_2.html#cb760-14" tabindex="-1"></a>n_draws <span class="ot">&lt;-</span> <span class="dv">10000</span></span>
+<span id="cb760-15"><a href="sec13_2.html#cb760-15" tabindex="-1"></a>mu1_draws <span class="ot">&lt;-</span> <span class="fu">replicate</span>(n_draws, <span class="fu">posterior_mu</span>(y1))</span>
+<span id="cb760-16"><a href="sec13_2.html#cb760-16" tabindex="-1"></a>mu0_draws <span class="ot">&lt;-</span> <span class="fu">replicate</span>(n_draws, <span class="fu">posterior_mu</span>(y0))</span>
+<span id="cb760-17"><a href="sec13_2.html#cb760-17" tabindex="-1"></a><span class="co"># Parameter uncertainty: difference of means</span></span>
+<span id="cb760-18"><a href="sec13_2.html#cb760-18" tabindex="-1"></a>ate_draws <span class="ot">&lt;-</span> mu1_draws <span class="sc">-</span> mu0_draws</span>
+<span id="cb760-19"><a href="sec13_2.html#cb760-19" tabindex="-1"></a><span class="fu">summary</span>(coda<span class="sc">::</span><span class="fu">mcmc</span>(ate_draws))</span></code></pre></div>
 <pre><code>## 
 ## Iterations = 1:10000
 ## Thinning interval = 1 
@@ -606,21 +606,21 @@ Y(d)\mid \mathbf{y}\sim t\left(\mu_{nd},\frac{(\beta_{nd}+1)\delta_{nd}}{\beta_{
 ## 
 ##  2.5%   25%   50%   75% 97.5% 
 ## 4.100 4.440 4.604 4.778 5.117</code></pre>
-<div class="sourceCode" id="cb764"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb764-1"><a href="sec13_2.html#cb764-1" tabindex="-1"></a><span class="co"># Summaries</span></span>
-<span id="cb764-2"><a href="sec13_2.html#cb764-2" tabindex="-1"></a>ate_mean <span class="ot">&lt;-</span> <span class="fu">mean</span>(ate_draws)</span>
-<span id="cb764-3"><a href="sec13_2.html#cb764-3" tabindex="-1"></a>ci <span class="ot">&lt;-</span> <span class="fu">quantile</span>(ate_draws, <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>))</span>
-<span id="cb764-4"><a href="sec13_2.html#cb764-4" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Posterior mean of ATE:&quot;</span>, ate_mean, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb762"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb762-1"><a href="sec13_2.html#cb762-1" tabindex="-1"></a><span class="co"># Summaries</span></span>
+<span id="cb762-2"><a href="sec13_2.html#cb762-2" tabindex="-1"></a>ate_mean <span class="ot">&lt;-</span> <span class="fu">mean</span>(ate_draws)</span>
+<span id="cb762-3"><a href="sec13_2.html#cb762-3" tabindex="-1"></a>ci <span class="ot">&lt;-</span> <span class="fu">quantile</span>(ate_draws, <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>))</span>
+<span id="cb762-4"><a href="sec13_2.html#cb762-4" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Posterior mean of ATE:&quot;</span>, ate_mean, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
 <pre><code>## Posterior mean of ATE: 4.607604</code></pre>
-<div class="sourceCode" id="cb766"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb766-1"><a href="sec13_2.html#cb766-1" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;95% Credible Interval:&quot;</span>, ci, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb764"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb764-1"><a href="sec13_2.html#cb764-1" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;95% Credible Interval:&quot;</span>, ci, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
 <pre><code>## 95% Credible Interval: 4.100032 5.116916</code></pre>
-<div class="sourceCode" id="cb768"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb768-1"><a href="sec13_2.html#cb768-1" tabindex="-1"></a><span class="co"># Plot posterior distribution of ATE</span></span>
-<span id="cb768-2"><a href="sec13_2.html#cb768-2" tabindex="-1"></a><span class="fu">hist</span>(ate_draws, <span class="at">breaks =</span> <span class="dv">50</span>, <span class="at">freq =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb768-3"><a href="sec13_2.html#cb768-3" tabindex="-1"></a><span class="at">main =</span> <span class="st">&quot;Posterior Distribution of ATE&quot;</span>,</span>
-<span id="cb768-4"><a href="sec13_2.html#cb768-4" tabindex="-1"></a><span class="at">xlab =</span> <span class="st">&quot;ATE (Y(1) - Y(0))&quot;</span>, <span class="at">col =</span> <span class="st">&quot;lightblue&quot;</span>, <span class="at">border =</span> <span class="st">&quot;white&quot;</span>)</span>
-<span id="cb768-5"><a href="sec13_2.html#cb768-5" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">v =</span> ate_mean, <span class="at">col =</span> <span class="st">&quot;red&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span>)</span>
-<span id="cb768-6"><a href="sec13_2.html#cb768-6" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">v =</span> ci, <span class="at">col =</span> <span class="st">&quot;darkgreen&quot;</span>, <span class="at">lty =</span> <span class="dv">2</span>, <span class="at">lwd =</span> <span class="dv">2</span>)</span>
-<span id="cb768-7"><a href="sec13_2.html#cb768-7" tabindex="-1"></a></span>
-<span id="cb768-8"><a href="sec13_2.html#cb768-8" tabindex="-1"></a><span class="fu">legend</span>(<span class="st">&quot;topright&quot;</span>, <span class="at">legend =</span> <span class="fu">c</span>(<span class="st">&quot;Posterior Mean&quot;</span>, <span class="st">&quot;95% Credible Interval&quot;</span>), <span class="at">col =</span> <span class="fu">c</span>(<span class="st">&quot;red&quot;</span>, <span class="st">&quot;darkgreen&quot;</span>), <span class="at">lwd =</span> <span class="dv">2</span>, <span class="at">lty =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>), <span class="at">bty =</span> <span class="st">&quot;n&quot;</span>, <span class="at">cex =</span> <span class="fl">0.8</span>)  <span class="co"># Smaller legend using cex</span></span></code></pre></div>
+<div class="sourceCode" id="cb766"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb766-1"><a href="sec13_2.html#cb766-1" tabindex="-1"></a><span class="co"># Plot posterior distribution of ATE</span></span>
+<span id="cb766-2"><a href="sec13_2.html#cb766-2" tabindex="-1"></a><span class="fu">hist</span>(ate_draws, <span class="at">breaks =</span> <span class="dv">50</span>, <span class="at">freq =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb766-3"><a href="sec13_2.html#cb766-3" tabindex="-1"></a><span class="at">main =</span> <span class="st">&quot;Posterior Distribution of ATE&quot;</span>,</span>
+<span id="cb766-4"><a href="sec13_2.html#cb766-4" tabindex="-1"></a><span class="at">xlab =</span> <span class="st">&quot;ATE (Y(1) - Y(0))&quot;</span>, <span class="at">col =</span> <span class="st">&quot;lightblue&quot;</span>, <span class="at">border =</span> <span class="st">&quot;white&quot;</span>)</span>
+<span id="cb766-5"><a href="sec13_2.html#cb766-5" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">v =</span> ate_mean, <span class="at">col =</span> <span class="st">&quot;red&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span>)</span>
+<span id="cb766-6"><a href="sec13_2.html#cb766-6" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">v =</span> ci, <span class="at">col =</span> <span class="st">&quot;darkgreen&quot;</span>, <span class="at">lty =</span> <span class="dv">2</span>, <span class="at">lwd =</span> <span class="dv">2</span>)</span>
+<span id="cb766-7"><a href="sec13_2.html#cb766-7" tabindex="-1"></a></span>
+<span id="cb766-8"><a href="sec13_2.html#cb766-8" tabindex="-1"></a><span class="fu">legend</span>(<span class="st">&quot;topright&quot;</span>, <span class="at">legend =</span> <span class="fu">c</span>(<span class="st">&quot;Posterior Mean&quot;</span>, <span class="st">&quot;95% Credible Interval&quot;</span>), <span class="at">col =</span> <span class="fu">c</span>(<span class="st">&quot;red&quot;</span>, <span class="st">&quot;darkgreen&quot;</span>), <span class="at">lwd =</span> <span class="dv">2</span>, <span class="at">lty =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>), <span class="at">bty =</span> <span class="st">&quot;n&quot;</span>, <span class="at">cex =</span> <span class="fl">0.8</span>)  <span class="co"># Smaller legend using cex</span></span></code></pre></div>
 <p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-79-2.svg" width="672" /></p>
 <p>An RCT is considered the gold standard for identifying causal effects because it provides the strongest basis for satisfying the key identification assumption in causal inference: <em>independence between treatment assignment and potential outcomes</em>. However, RCTs may face challenges such as <em>non-compliance</em>, which occurs when individuals do not adhere to their assigned treatment in an experimental study. This matters because, in many real-world settings, some individuals do not take the treatment they were assigned, leading to deviations from the ideal randomized controlled trial design. In addition, RCTs are sometimes infeasible due to ethical, logistical, or financial constraints. Moreover, they can be too narrowly focused or localized to provide general conclusions about what works <span class="citation">(<a href="#ref-deaton2010instruments">Deaton 2010</a>)</span>. Thus, the <em>external validity</em> of causal effects from RCTs may be questionable.</p>
 <p>It is also important to note that RCTs primarily identify the mean of the treatment effect distribution but do not capture other features, such as the median or higher-order moments. These additional aspects of the distribution of treatment effects can be highly relevant for policymakers and stakeholders. See <span class="citation">Deaton (<a href="#ref-deaton2010instruments">2010</a>)</span> for a detailed discussion of other potential shortcomings of RCTs.</p>
@@ -657,8 +657,8 @@ Pearl, Judea, and Dana Mackenzie. 2018. <em>The Book of Why: The New Science of 
 </div>
 <div class="footnotes">
 <hr />
-<ol start="73">
-<li id="fn73"><p>Other functions of the potential outcomes, such as <span class="math inline">\(P(Y(1)\geq Y(0))\)</span>, require the joint distribution of the potential outcomes rather than just the marginal distributions, as is the case for the ATE.<a href="sec13_2.html#fnref73" class="footnote-back">↩︎</a></p></li>
+<ol start="74">
+<li id="fn74"><p>Other functions of the potential outcomes, such as <span class="math inline">\(P(Y(1)\geq Y(0))\)</span>, require the joint distribution of the potential outcomes rather than just the marginal distributions, as is the case for the ATE.<a href="sec13_2.html#fnref74" class="footnote-back">↩︎</a></p></li>
 </ol>
 </div>
             </section>

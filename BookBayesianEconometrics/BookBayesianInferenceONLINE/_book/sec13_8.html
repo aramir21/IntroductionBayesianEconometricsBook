@@ -23,7 +23,7 @@
 <meta name="author" content="Andrés Ramírez-Hassan" />
 
 
-<meta name="date" content="2025-11-30" />
+<meta name="date" content="2025-12-06" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -574,10 +574,10 @@ Figure 13.13: DAG with measurement error and instrument <span class="math inline
 </p>
 </div>
 <p>We simulate the latent process <span class="math inline">\(X_i^* = 0.5Z_i + e_i\)</span>, with the observed regressor defined as <span class="math inline">\(X_i = X_i^* + \nu_i\)</span>, and the outcome equation specified as <span class="math inline">\(Y_i = 1 + 1.2X_i^* + \mu_i\)</span>. The variables <span class="math inline">\(Z_i\)</span>, <span class="math inline">\(e_i\)</span>, and <span class="math inline">\(\nu_i\)</span> are standard normal, while <span class="math inline">\(\mu_i\)</span> follows a mixture of two normal distributions with means <span class="math inline">\(0.5\)</span> and <span class="math inline">\(-0.5\)</span>, and standard deviations <span class="math inline">\(0.5\)</span> and <span class="math inline">\(1.2\)</span>. The sample size is 2,000, the burn-in is 1,000, and the number of MCMC draws retained after burn-in is 10,000.</p>
-<p>We perform Bayesian exponentially tilted empirical likelihood (BETEL) using the package <em>betel</em>, and adopt the default hyperparameter values provided there.<a href="#fn76" class="footnote-ref" id="fnref76"><sup>76</sup></a> This package implements Bayesian estimation and marginal likelihood computation for moment condition models, employing a Student-t prior distribution and a Student-t proposal distribution following <span class="citation">Siddhartha Chib, Shin, and Simoni (<a href="#ref-chib2018moment">2018</a>)</span>. We also compare the results with a model that assumes <span class="math inline">\(X_i\)</span> is exogenous, and with an instrumental Gibbs sampler that assumes <span class="math inline">\(Y_i\)</span> is normally distributed. We also use the default hyperparameters of the packages employed. The following code shows the implementation.</p>
+<p>We perform Bayesian exponentially tilted empirical likelihood (BETEL) using the package <em>betel</em>, and adopt the default hyperparameter values provided there.<a href="#fn77" class="footnote-ref" id="fnref77"><sup>77</sup></a> This package implements Bayesian estimation and marginal likelihood computation for moment condition models, employing a Student-t prior distribution and a Student-t proposal distribution following <span class="citation">Siddhartha Chib, Shin, and Simoni (<a href="#ref-chib2018moment">2018</a>)</span>. We also compare the results with a model that assumes <span class="math inline">\(X_i\)</span> is exogenous, and with an instrumental Gibbs sampler that assumes <span class="math inline">\(Y_i\)</span> is normally distributed. We also use the default hyperparameters of the packages employed. The following code shows the implementation.</p>
 <p>The figure displays the posterior distributions. We see that ignoring measurement error produces a biased posterior distribution. In particular, the absolute value of the causal effect is smaller than the population value; this is called <em>attenuation bias</em>. By contrast, methods that account for measurement error and use valid instruments yield well-centered posterior distributions.</p>
-<div class="sourceCode" id="cb842"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb842-1"><a href="sec13_8.html#cb842-1" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">10101</span>)</span>
-<span id="cb842-2"><a href="sec13_8.html#cb842-2" tabindex="-1"></a><span class="fu">library</span>(betel); <span class="fu">library</span>(ucminf)</span></code></pre></div>
+<div class="sourceCode" id="cb840"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb840-1"><a href="sec13_8.html#cb840-1" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">10101</span>)</span>
+<span id="cb840-2"><a href="sec13_8.html#cb840-2" tabindex="-1"></a><span class="fu">library</span>(betel); <span class="fu">library</span>(ucminf)</span></code></pre></div>
 <pre><code>## Loading required package: devtools</code></pre>
 <pre><code>## Loading required package: usethis</code></pre>
 <pre><code>## 
@@ -597,44 +597,44 @@ Figure 13.13: DAG with measurement error and instrument <span class="math inline
 <pre><code>## The following object is masked from &#39;package:sirt&#39;:
 ## 
 ##     rmvn</code></pre>
-<div class="sourceCode" id="cb851"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb851-1"><a href="sec13_8.html#cb851-1" tabindex="-1"></a><span class="co"># Simulate data</span></span>
-<span id="cb851-2"><a href="sec13_8.html#cb851-2" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="dv">2000</span>; d <span class="ot">&lt;-</span> <span class="dv">2</span>; k <span class="ot">&lt;-</span> <span class="dv">2</span></span>
-<span id="cb851-3"><a href="sec13_8.html#cb851-3" tabindex="-1"></a>gamma <span class="ot">&lt;-</span> <span class="fl">0.5</span>; beta <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="fl">1.2</span>)</span>
-<span id="cb851-4"><a href="sec13_8.html#cb851-4" tabindex="-1"></a><span class="co"># Mixture</span></span>
-<span id="cb851-5"><a href="sec13_8.html#cb851-5" tabindex="-1"></a>mum1 <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">/</span><span class="dv">2</span>; mum2 <span class="ot">&lt;-</span> <span class="sc">-</span><span class="dv">1</span><span class="sc">/</span><span class="dv">2</span></span>
-<span id="cb851-6"><a href="sec13_8.html#cb851-6" tabindex="-1"></a>mu1 <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(N, mum1, <span class="fl">0.5</span>); mu2 <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(N, mum2, <span class="fl">1.2</span>)</span>
-<span id="cb851-7"><a href="sec13_8.html#cb851-7" tabindex="-1"></a>mu <span class="ot">&lt;-</span> <span class="fu">sapply</span>(<span class="dv">1</span><span class="sc">:</span>N, <span class="cf">function</span>(i){<span class="fu">sample</span>(<span class="fu">c</span>(mu1[i], mu2[i]), <span class="dv">1</span>, <span class="at">prob =</span> <span class="fu">c</span>(<span class="fl">0.5</span>, <span class="fl">0.5</span>))})</span>
-<span id="cb851-8"><a href="sec13_8.html#cb851-8" tabindex="-1"></a>e <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(N)</span>
-<span id="cb851-9"><a href="sec13_8.html#cb851-9" tabindex="-1"></a>z <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(N) <span class="co"># Instrument</span></span>
-<span id="cb851-10"><a href="sec13_8.html#cb851-10" tabindex="-1"></a>xlat <span class="ot">&lt;-</span> gamma<span class="sc">*</span>z <span class="sc">+</span> e <span class="co"># Unobserved regressor</span></span>
-<span id="cb851-11"><a href="sec13_8.html#cb851-11" tabindex="-1"></a>nu <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(N) <span class="co"># Measurement error</span></span>
-<span id="cb851-12"><a href="sec13_8.html#cb851-12" tabindex="-1"></a>x <span class="ot">&lt;-</span> xlat <span class="sc">+</span> nu <span class="co"># Observed regressor</span></span>
-<span id="cb851-13"><a href="sec13_8.html#cb851-13" tabindex="-1"></a>Xlat <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="dv">1</span>, xlat)</span>
-<span id="cb851-14"><a href="sec13_8.html#cb851-14" tabindex="-1"></a>y <span class="ot">&lt;-</span> Xlat<span class="sc">%*%</span>beta <span class="sc">+</span> mu</span>
-<span id="cb851-15"><a href="sec13_8.html#cb851-15" tabindex="-1"></a>dat <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="dv">1</span>, x, z) <span class="co"># Data</span></span>
-<span id="cb851-16"><a href="sec13_8.html#cb851-16" tabindex="-1"></a><span class="co"># Function g_i by row in BETEL</span></span>
-<span id="cb851-17"><a href="sec13_8.html#cb851-17" tabindex="-1"></a>gfunc <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">psi =</span> psi, <span class="at">y =</span> y, <span class="at">dat =</span> dat) {</span>
-<span id="cb851-18"><a href="sec13_8.html#cb851-18" tabindex="-1"></a>    X <span class="ot">&lt;-</span> dat[,<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>]</span>
-<span id="cb851-19"><a href="sec13_8.html#cb851-19" tabindex="-1"></a>    e <span class="ot">&lt;-</span> y <span class="sc">-</span> X <span class="sc">%*%</span> psi</span>
-<span id="cb851-20"><a href="sec13_8.html#cb851-20" tabindex="-1"></a>    E <span class="ot">&lt;-</span> e <span class="sc">%*%</span> <span class="fu">rep</span>(<span class="dv">1</span>,d)</span>
-<span id="cb851-21"><a href="sec13_8.html#cb851-21" tabindex="-1"></a>    Z <span class="ot">&lt;-</span> dat[,<span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">3</span>)]</span>
-<span id="cb851-22"><a href="sec13_8.html#cb851-22" tabindex="-1"></a>    G <span class="ot">&lt;-</span> E <span class="sc">*</span> Z;</span>
-<span id="cb851-23"><a href="sec13_8.html#cb851-23" tabindex="-1"></a>    <span class="fu">return</span>(G)</span>
-<span id="cb851-24"><a href="sec13_8.html#cb851-24" tabindex="-1"></a>}</span>
-<span id="cb851-25"><a href="sec13_8.html#cb851-25" tabindex="-1"></a>nt <span class="ot">&lt;-</span> <span class="fu">round</span>(N <span class="sc">*</span> <span class="fl">0.1</span>, <span class="dv">0</span>); <span class="co"># training sample size for prior</span></span>
-<span id="cb851-26"><a href="sec13_8.html#cb851-26" tabindex="-1"></a>psi0 <span class="ot">&lt;-</span> <span class="fu">lm</span>(y[<span class="dv">1</span><span class="sc">:</span>nt]<span class="sc">~</span>x[<span class="dv">1</span><span class="sc">:</span>nt])<span class="sc">$</span>coefficients <span class="co"># Starting value of psi = (theta, v), v is the slack parameter in CSS (2018)</span></span>
-<span id="cb851-27"><a href="sec13_8.html#cb851-27" tabindex="-1"></a><span class="fu">names</span>(psi0) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;alpha&quot;</span>,<span class="st">&quot;beta&quot;</span>)</span>
-<span id="cb851-28"><a href="sec13_8.html#cb851-28" tabindex="-1"></a>psi0_ <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(psi0) <span class="co"># Prior mean of psi </span></span>
-<span id="cb851-29"><a href="sec13_8.html#cb851-29" tabindex="-1"></a>Psi0_ <span class="ot">&lt;-</span> <span class="dv">5</span><span class="sc">*</span><span class="fu">rep</span>(<span class="dv">1</span>,k) <span class="co"># Prior dispersions of psi</span></span>
-<span id="cb851-30"><a href="sec13_8.html#cb851-30" tabindex="-1"></a>lam0 <span class="ot">&lt;-</span> .<span class="dv">5</span><span class="sc">*</span><span class="fu">rnorm</span>(d) <span class="co"># Starting value of lambda</span></span>
-<span id="cb851-31"><a href="sec13_8.html#cb851-31" tabindex="-1"></a>nu <span class="ot">&lt;-</span> <span class="fl">2.5</span> <span class="co"># df of the prior student-t</span></span>
-<span id="cb851-32"><a href="sec13_8.html#cb851-32" tabindex="-1"></a>nuprop <span class="ot">&lt;-</span> <span class="dv">15</span> <span class="co"># df of the student-t proposal</span></span>
-<span id="cb851-33"><a href="sec13_8.html#cb851-33" tabindex="-1"></a>n0 <span class="ot">&lt;-</span> <span class="dv">1000</span> <span class="co"># burn-in</span></span>
-<span id="cb851-34"><a href="sec13_8.html#cb851-34" tabindex="-1"></a>m <span class="ot">&lt;-</span> <span class="dv">10000</span> <span class="co"># iterations beyond burn-in</span></span>
-<span id="cb851-35"><a href="sec13_8.html#cb851-35" tabindex="-1"></a><span class="co"># MCMC ESTIMATION BY THE CSS (2018) method</span></span>
-<span id="cb851-36"><a href="sec13_8.html#cb851-36" tabindex="-1"></a>psim <span class="ot">&lt;-</span> betel<span class="sc">::</span><span class="fu">bayesetel</span>(<span class="at">gfunc =</span> gfunc, <span class="at">y =</span> y[<span class="sc">-</span>(<span class="dv">1</span><span class="sc">:</span>nt)], <span class="at">dat =</span> dat[<span class="sc">-</span>(<span class="dv">1</span><span class="sc">:</span>nt),], <span class="at">psi0 =</span> psi0, <span class="at">lam0 =</span> lam0, <span class="at">psi0_ =</span> psi0_, <span class="at">Psi0_ =</span> Psi0_, <span class="at">nu =</span> nu, <span class="at">nuprop =</span> nuprop, <span class="at">controlpsi =</span> <span class="fu">list</span>(<span class="at">maxiterpsi =</span> <span class="dv">50</span>, <span class="at">mingrpsi =</span> <span class="fl">1.0e-8</span>), <span class="co">#  list of parameters in maximizing likelihood over psi</span></span>
-<span id="cb851-37"><a href="sec13_8.html#cb851-37" tabindex="-1"></a><span class="at">controllam =</span> <span class="fu">list</span>(<span class="at">maxiterlam =</span> <span class="dv">50</span>, <span class="co"># list of parameters in minimizing dual over lambda</span></span>
-<span id="cb851-38"><a href="sec13_8.html#cb851-38" tabindex="-1"></a><span class="at">mingrlam =</span> <span class="fl">1.0e-7</span>), <span class="at">n0 =</span> n0, <span class="at">m =</span> m,<span class="at">printstep =</span> <span class="dv">5000</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb849"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb849-1"><a href="sec13_8.html#cb849-1" tabindex="-1"></a><span class="co"># Simulate data</span></span>
+<span id="cb849-2"><a href="sec13_8.html#cb849-2" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="dv">2000</span>; d <span class="ot">&lt;-</span> <span class="dv">2</span>; k <span class="ot">&lt;-</span> <span class="dv">2</span></span>
+<span id="cb849-3"><a href="sec13_8.html#cb849-3" tabindex="-1"></a>gamma <span class="ot">&lt;-</span> <span class="fl">0.5</span>; beta <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="fl">1.2</span>)</span>
+<span id="cb849-4"><a href="sec13_8.html#cb849-4" tabindex="-1"></a><span class="co"># Mixture</span></span>
+<span id="cb849-5"><a href="sec13_8.html#cb849-5" tabindex="-1"></a>mum1 <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">/</span><span class="dv">2</span>; mum2 <span class="ot">&lt;-</span> <span class="sc">-</span><span class="dv">1</span><span class="sc">/</span><span class="dv">2</span></span>
+<span id="cb849-6"><a href="sec13_8.html#cb849-6" tabindex="-1"></a>mu1 <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(N, mum1, <span class="fl">0.5</span>); mu2 <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(N, mum2, <span class="fl">1.2</span>)</span>
+<span id="cb849-7"><a href="sec13_8.html#cb849-7" tabindex="-1"></a>mu <span class="ot">&lt;-</span> <span class="fu">sapply</span>(<span class="dv">1</span><span class="sc">:</span>N, <span class="cf">function</span>(i){<span class="fu">sample</span>(<span class="fu">c</span>(mu1[i], mu2[i]), <span class="dv">1</span>, <span class="at">prob =</span> <span class="fu">c</span>(<span class="fl">0.5</span>, <span class="fl">0.5</span>))})</span>
+<span id="cb849-8"><a href="sec13_8.html#cb849-8" tabindex="-1"></a>e <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(N)</span>
+<span id="cb849-9"><a href="sec13_8.html#cb849-9" tabindex="-1"></a>z <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(N) <span class="co"># Instrument</span></span>
+<span id="cb849-10"><a href="sec13_8.html#cb849-10" tabindex="-1"></a>xlat <span class="ot">&lt;-</span> gamma<span class="sc">*</span>z <span class="sc">+</span> e <span class="co"># Unobserved regressor</span></span>
+<span id="cb849-11"><a href="sec13_8.html#cb849-11" tabindex="-1"></a>nu <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(N) <span class="co"># Measurement error</span></span>
+<span id="cb849-12"><a href="sec13_8.html#cb849-12" tabindex="-1"></a>x <span class="ot">&lt;-</span> xlat <span class="sc">+</span> nu <span class="co"># Observed regressor</span></span>
+<span id="cb849-13"><a href="sec13_8.html#cb849-13" tabindex="-1"></a>Xlat <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="dv">1</span>, xlat)</span>
+<span id="cb849-14"><a href="sec13_8.html#cb849-14" tabindex="-1"></a>y <span class="ot">&lt;-</span> Xlat<span class="sc">%*%</span>beta <span class="sc">+</span> mu</span>
+<span id="cb849-15"><a href="sec13_8.html#cb849-15" tabindex="-1"></a>dat <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="dv">1</span>, x, z) <span class="co"># Data</span></span>
+<span id="cb849-16"><a href="sec13_8.html#cb849-16" tabindex="-1"></a><span class="co"># Function g_i by row in BETEL</span></span>
+<span id="cb849-17"><a href="sec13_8.html#cb849-17" tabindex="-1"></a>gfunc <span class="ot">&lt;-</span> <span class="cf">function</span>(<span class="at">psi =</span> psi, <span class="at">y =</span> y, <span class="at">dat =</span> dat) {</span>
+<span id="cb849-18"><a href="sec13_8.html#cb849-18" tabindex="-1"></a>    X <span class="ot">&lt;-</span> dat[,<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>]</span>
+<span id="cb849-19"><a href="sec13_8.html#cb849-19" tabindex="-1"></a>    e <span class="ot">&lt;-</span> y <span class="sc">-</span> X <span class="sc">%*%</span> psi</span>
+<span id="cb849-20"><a href="sec13_8.html#cb849-20" tabindex="-1"></a>    E <span class="ot">&lt;-</span> e <span class="sc">%*%</span> <span class="fu">rep</span>(<span class="dv">1</span>,d)</span>
+<span id="cb849-21"><a href="sec13_8.html#cb849-21" tabindex="-1"></a>    Z <span class="ot">&lt;-</span> dat[,<span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">3</span>)]</span>
+<span id="cb849-22"><a href="sec13_8.html#cb849-22" tabindex="-1"></a>    G <span class="ot">&lt;-</span> E <span class="sc">*</span> Z;</span>
+<span id="cb849-23"><a href="sec13_8.html#cb849-23" tabindex="-1"></a>    <span class="fu">return</span>(G)</span>
+<span id="cb849-24"><a href="sec13_8.html#cb849-24" tabindex="-1"></a>}</span>
+<span id="cb849-25"><a href="sec13_8.html#cb849-25" tabindex="-1"></a>nt <span class="ot">&lt;-</span> <span class="fu">round</span>(N <span class="sc">*</span> <span class="fl">0.1</span>, <span class="dv">0</span>); <span class="co"># training sample size for prior</span></span>
+<span id="cb849-26"><a href="sec13_8.html#cb849-26" tabindex="-1"></a>psi0 <span class="ot">&lt;-</span> <span class="fu">lm</span>(y[<span class="dv">1</span><span class="sc">:</span>nt]<span class="sc">~</span>x[<span class="dv">1</span><span class="sc">:</span>nt])<span class="sc">$</span>coefficients <span class="co"># Starting value of psi = (theta, v), v is the slack parameter in CSS (2018)</span></span>
+<span id="cb849-27"><a href="sec13_8.html#cb849-27" tabindex="-1"></a><span class="fu">names</span>(psi0) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;alpha&quot;</span>,<span class="st">&quot;beta&quot;</span>)</span>
+<span id="cb849-28"><a href="sec13_8.html#cb849-28" tabindex="-1"></a>psi0_ <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(psi0) <span class="co"># Prior mean of psi </span></span>
+<span id="cb849-29"><a href="sec13_8.html#cb849-29" tabindex="-1"></a>Psi0_ <span class="ot">&lt;-</span> <span class="dv">5</span><span class="sc">*</span><span class="fu">rep</span>(<span class="dv">1</span>,k) <span class="co"># Prior dispersions of psi</span></span>
+<span id="cb849-30"><a href="sec13_8.html#cb849-30" tabindex="-1"></a>lam0 <span class="ot">&lt;-</span> .<span class="dv">5</span><span class="sc">*</span><span class="fu">rnorm</span>(d) <span class="co"># Starting value of lambda</span></span>
+<span id="cb849-31"><a href="sec13_8.html#cb849-31" tabindex="-1"></a>nu <span class="ot">&lt;-</span> <span class="fl">2.5</span> <span class="co"># df of the prior student-t</span></span>
+<span id="cb849-32"><a href="sec13_8.html#cb849-32" tabindex="-1"></a>nuprop <span class="ot">&lt;-</span> <span class="dv">15</span> <span class="co"># df of the student-t proposal</span></span>
+<span id="cb849-33"><a href="sec13_8.html#cb849-33" tabindex="-1"></a>n0 <span class="ot">&lt;-</span> <span class="dv">1000</span> <span class="co"># burn-in</span></span>
+<span id="cb849-34"><a href="sec13_8.html#cb849-34" tabindex="-1"></a>m <span class="ot">&lt;-</span> <span class="dv">10000</span> <span class="co"># iterations beyond burn-in</span></span>
+<span id="cb849-35"><a href="sec13_8.html#cb849-35" tabindex="-1"></a><span class="co"># MCMC ESTIMATION BY THE CSS (2018) method</span></span>
+<span id="cb849-36"><a href="sec13_8.html#cb849-36" tabindex="-1"></a>psim <span class="ot">&lt;-</span> betel<span class="sc">::</span><span class="fu">bayesetel</span>(<span class="at">gfunc =</span> gfunc, <span class="at">y =</span> y[<span class="sc">-</span>(<span class="dv">1</span><span class="sc">:</span>nt)], <span class="at">dat =</span> dat[<span class="sc">-</span>(<span class="dv">1</span><span class="sc">:</span>nt),], <span class="at">psi0 =</span> psi0, <span class="at">lam0 =</span> lam0, <span class="at">psi0_ =</span> psi0_, <span class="at">Psi0_ =</span> Psi0_, <span class="at">nu =</span> nu, <span class="at">nuprop =</span> nuprop, <span class="at">controlpsi =</span> <span class="fu">list</span>(<span class="at">maxiterpsi =</span> <span class="dv">50</span>, <span class="at">mingrpsi =</span> <span class="fl">1.0e-8</span>), <span class="co">#  list of parameters in maximizing likelihood over psi</span></span>
+<span id="cb849-37"><a href="sec13_8.html#cb849-37" tabindex="-1"></a><span class="at">controllam =</span> <span class="fu">list</span>(<span class="at">maxiterlam =</span> <span class="dv">50</span>, <span class="co"># list of parameters in minimizing dual over lambda</span></span>
+<span id="cb849-38"><a href="sec13_8.html#cb849-38" tabindex="-1"></a><span class="at">mingrlam =</span> <span class="fl">1.0e-7</span>), <span class="at">n0 =</span> n0, <span class="at">m =</span> m,<span class="at">printstep =</span> <span class="dv">5000</span>)</span></code></pre></div>
 <pre><code>## this is psi0 1.022954 0.6541617 
 ## tailoring to find the proposal has started ... 
 ## $muprop
@@ -662,10 +662,10 @@ Figure 13.13: DAG with measurement error and instrument <span class="math inline
 ## this is g in numerator of C-J 10000 
 ## this is g in denominator of C-J 5000 
 ## this is g in denominator of C-J 10000</code></pre>
-<div class="sourceCode" id="cb853"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb853-1"><a href="sec13_8.html#cb853-1" tabindex="-1"></a>MCMCexg <span class="ot">&lt;-</span> MCMCpack<span class="sc">::</span><span class="fu">MCMCregress</span>(y <span class="sc">~</span> x, <span class="at">burnin =</span> n0, <span class="at">mcmc =</span> m)</span>
-<span id="cb853-2"><a href="sec13_8.html#cb853-2" tabindex="-1"></a>Data <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">y =</span> <span class="fu">c</span>(y), <span class="at">x =</span> x, <span class="at">z =</span> <span class="fu">matrix</span>(z, N, <span class="dv">1</span>), <span class="at">w =</span> <span class="fu">matrix</span>(<span class="fu">rep</span>(<span class="dv">1</span>, N), N, <span class="dv">1</span>))</span>
-<span id="cb853-3"><a href="sec13_8.html#cb853-3" tabindex="-1"></a>Mcmc <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">R =</span> m, <span class="at">nprint =</span> <span class="dv">0</span>)</span>
-<span id="cb853-4"><a href="sec13_8.html#cb853-4" tabindex="-1"></a>MCMCivr <span class="ot">&lt;-</span> bayesm<span class="sc">::</span><span class="fu">rivGibbs</span>(Data, <span class="at">Mcmc =</span> Mcmc)</span></code></pre></div>
+<div class="sourceCode" id="cb851"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb851-1"><a href="sec13_8.html#cb851-1" tabindex="-1"></a>MCMCexg <span class="ot">&lt;-</span> MCMCpack<span class="sc">::</span><span class="fu">MCMCregress</span>(y <span class="sc">~</span> x, <span class="at">burnin =</span> n0, <span class="at">mcmc =</span> m)</span>
+<span id="cb851-2"><a href="sec13_8.html#cb851-2" tabindex="-1"></a>Data <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">y =</span> <span class="fu">c</span>(y), <span class="at">x =</span> x, <span class="at">z =</span> <span class="fu">matrix</span>(z, N, <span class="dv">1</span>), <span class="at">w =</span> <span class="fu">matrix</span>(<span class="fu">rep</span>(<span class="dv">1</span>, N), N, <span class="dv">1</span>))</span>
+<span id="cb851-3"><a href="sec13_8.html#cb851-3" tabindex="-1"></a>Mcmc <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">R =</span> m, <span class="at">nprint =</span> <span class="dv">0</span>)</span>
+<span id="cb851-4"><a href="sec13_8.html#cb851-4" tabindex="-1"></a>MCMCivr <span class="ot">&lt;-</span> bayesm<span class="sc">::</span><span class="fu">rivGibbs</span>(Data, <span class="at">Mcmc =</span> Mcmc)</span></code></pre></div>
 <pre><code>##  
 ## Starting Gibbs Sampler for Linear IV Model
 ##  
@@ -693,31 +693,31 @@ Figure 13.13: DAG with measurement error and instrument <span class="math inline
 ## MCMC parms: 
 ## R=  10000  keep=  1  nprint=  0
 ## </code></pre>
-<div class="sourceCode" id="cb855"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb855-1"><a href="sec13_8.html#cb855-1" tabindex="-1"></a>dfplot <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">betel =</span> psim[,<span class="dv">2</span>], <span class="at">iv =</span> MCMCivr[[<span class="st">&quot;betadraw&quot;</span>]], <span class="at">exo =</span> MCMCexg[,<span class="dv">2</span>])</span>
-<span id="cb855-2"><a href="sec13_8.html#cb855-2" tabindex="-1"></a><span class="fu">colnames</span>(dfplot) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;betel&quot;</span>, <span class="st">&quot;iv&quot;</span>, <span class="st">&quot;exo&quot;</span>)</span>
-<span id="cb855-3"><a href="sec13_8.html#cb855-3" tabindex="-1"></a><span class="fu">library</span>(tidyr)</span>
-<span id="cb855-4"><a href="sec13_8.html#cb855-4" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
-<span id="cb855-5"><a href="sec13_8.html#cb855-5" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
-<span id="cb855-6"><a href="sec13_8.html#cb855-6" tabindex="-1"></a></span>
-<span id="cb855-7"><a href="sec13_8.html#cb855-7" tabindex="-1"></a>df_long <span class="ot">&lt;-</span> dfplot <span class="sc">|&gt;</span></span>
-<span id="cb855-8"><a href="sec13_8.html#cb855-8" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="fu">everything</span>(), <span class="at">names_to =</span> <span class="st">&quot;Method&quot;</span>, <span class="at">values_to =</span> <span class="st">&quot;Posterior&quot;</span>) <span class="sc">|&gt;</span></span>
-<span id="cb855-9"><a href="sec13_8.html#cb855-9" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Method =</span> <span class="fu">factor</span>(Method,</span>
-<span id="cb855-10"><a href="sec13_8.html#cb855-10" tabindex="-1"></a>                         <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">&quot;betel&quot;</span>,<span class="st">&quot;iv&quot;</span>,<span class="st">&quot;exo&quot;</span>),</span>
-<span id="cb855-11"><a href="sec13_8.html#cb855-11" tabindex="-1"></a>                         <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">&quot;betel&quot;</span>,<span class="st">&quot;rivGibbs&quot;</span>,<span class="st">&quot;MCMCregress&quot;</span>)))</span>
-<span id="cb855-12"><a href="sec13_8.html#cb855-12" tabindex="-1"></a></span>
-<span id="cb855-13"><a href="sec13_8.html#cb855-13" tabindex="-1"></a><span class="fu">ggplot</span>(df_long, <span class="fu">aes</span>(<span class="at">x =</span> Posterior, <span class="at">color =</span> Method, <span class="at">fill =</span> Method)) <span class="sc">+</span></span>
-<span id="cb855-14"><a href="sec13_8.html#cb855-14" tabindex="-1"></a>  <span class="fu">geom_density</span>(<span class="at">alpha =</span> <span class="fl">0.3</span>, <span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
-<span id="cb855-15"><a href="sec13_8.html#cb855-15" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="fl">1.2</span>, <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span>, <span class="at">linewidth =</span> <span class="dv">1</span>, <span class="at">color =</span> <span class="st">&quot;black&quot;</span>) <span class="sc">+</span></span>
-<span id="cb855-16"><a href="sec13_8.html#cb855-16" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb855-17"><a href="sec13_8.html#cb855-17" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">&quot;Posterior Densities with Population Value&quot;</span>,</span>
-<span id="cb855-18"><a href="sec13_8.html#cb855-18" tabindex="-1"></a>    <span class="at">x =</span> <span class="fu">expression</span>(beta[<span class="dv">1</span>]),</span>
-<span id="cb855-19"><a href="sec13_8.html#cb855-19" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">&quot;Density&quot;</span></span>
-<span id="cb855-20"><a href="sec13_8.html#cb855-20" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb855-21"><a href="sec13_8.html#cb855-21" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">14</span>) <span class="sc">+</span></span>
-<span id="cb855-22"><a href="sec13_8.html#cb855-22" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
-<span id="cb855-23"><a href="sec13_8.html#cb855-23" tabindex="-1"></a>    <span class="at">legend.position =</span> <span class="st">&quot;top&quot;</span>,</span>
-<span id="cb855-24"><a href="sec13_8.html#cb855-24" tabindex="-1"></a>    <span class="at">legend.title =</span> <span class="fu">element_blank</span>()</span>
-<span id="cb855-25"><a href="sec13_8.html#cb855-25" tabindex="-1"></a>  )</span></code></pre></div>
+<div class="sourceCode" id="cb853"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb853-1"><a href="sec13_8.html#cb853-1" tabindex="-1"></a>dfplot <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">betel =</span> psim[,<span class="dv">2</span>], <span class="at">iv =</span> MCMCivr[[<span class="st">&quot;betadraw&quot;</span>]], <span class="at">exo =</span> MCMCexg[,<span class="dv">2</span>])</span>
+<span id="cb853-2"><a href="sec13_8.html#cb853-2" tabindex="-1"></a><span class="fu">colnames</span>(dfplot) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;betel&quot;</span>, <span class="st">&quot;iv&quot;</span>, <span class="st">&quot;exo&quot;</span>)</span>
+<span id="cb853-3"><a href="sec13_8.html#cb853-3" tabindex="-1"></a><span class="fu">library</span>(tidyr)</span>
+<span id="cb853-4"><a href="sec13_8.html#cb853-4" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb853-5"><a href="sec13_8.html#cb853-5" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb853-6"><a href="sec13_8.html#cb853-6" tabindex="-1"></a></span>
+<span id="cb853-7"><a href="sec13_8.html#cb853-7" tabindex="-1"></a>df_long <span class="ot">&lt;-</span> dfplot <span class="sc">|&gt;</span></span>
+<span id="cb853-8"><a href="sec13_8.html#cb853-8" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="fu">everything</span>(), <span class="at">names_to =</span> <span class="st">&quot;Method&quot;</span>, <span class="at">values_to =</span> <span class="st">&quot;Posterior&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb853-9"><a href="sec13_8.html#cb853-9" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Method =</span> <span class="fu">factor</span>(Method,</span>
+<span id="cb853-10"><a href="sec13_8.html#cb853-10" tabindex="-1"></a>                         <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">&quot;betel&quot;</span>,<span class="st">&quot;iv&quot;</span>,<span class="st">&quot;exo&quot;</span>),</span>
+<span id="cb853-11"><a href="sec13_8.html#cb853-11" tabindex="-1"></a>                         <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">&quot;betel&quot;</span>,<span class="st">&quot;rivGibbs&quot;</span>,<span class="st">&quot;MCMCregress&quot;</span>)))</span>
+<span id="cb853-12"><a href="sec13_8.html#cb853-12" tabindex="-1"></a></span>
+<span id="cb853-13"><a href="sec13_8.html#cb853-13" tabindex="-1"></a><span class="fu">ggplot</span>(df_long, <span class="fu">aes</span>(<span class="at">x =</span> Posterior, <span class="at">color =</span> Method, <span class="at">fill =</span> Method)) <span class="sc">+</span></span>
+<span id="cb853-14"><a href="sec13_8.html#cb853-14" tabindex="-1"></a>  <span class="fu">geom_density</span>(<span class="at">alpha =</span> <span class="fl">0.3</span>, <span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb853-15"><a href="sec13_8.html#cb853-15" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="fl">1.2</span>, <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span>, <span class="at">linewidth =</span> <span class="dv">1</span>, <span class="at">color =</span> <span class="st">&quot;black&quot;</span>) <span class="sc">+</span></span>
+<span id="cb853-16"><a href="sec13_8.html#cb853-16" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb853-17"><a href="sec13_8.html#cb853-17" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">&quot;Posterior Densities with Population Value&quot;</span>,</span>
+<span id="cb853-18"><a href="sec13_8.html#cb853-18" tabindex="-1"></a>    <span class="at">x =</span> <span class="fu">expression</span>(beta[<span class="dv">1</span>]),</span>
+<span id="cb853-19"><a href="sec13_8.html#cb853-19" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">&quot;Density&quot;</span></span>
+<span id="cb853-20"><a href="sec13_8.html#cb853-20" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb853-21"><a href="sec13_8.html#cb853-21" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">14</span>) <span class="sc">+</span></span>
+<span id="cb853-22"><a href="sec13_8.html#cb853-22" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb853-23"><a href="sec13_8.html#cb853-23" tabindex="-1"></a>    <span class="at">legend.position =</span> <span class="st">&quot;top&quot;</span>,</span>
+<span id="cb853-24"><a href="sec13_8.html#cb853-24" tabindex="-1"></a>    <span class="at">legend.title =</span> <span class="fu">element_blank</span>()</span>
+<span id="cb853-25"><a href="sec13_8.html#cb853-25" tabindex="-1"></a>  )</span></code></pre></div>
 <p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-98-1.svg" width="672" /></p>
 <p><strong>Example: Omission of relevant correlated regressor</strong></p>
 <p>Consider the true model</p>
@@ -747,7 +747,7 @@ Y_i = \beta_0 + \beta_1 X_i + \gamma W_i + \mu_i,
 \mathbb{E}[\epsilon_i X_i] = \gamma (\operatorname{Cov}(W_i,X_i)
 + \mathbb{E}[W_i] \, \mathbb{E}[X_i])\neq 0.
 \]</span></p>
-<p>In this situation, we can use an instrument that is relevant (<span class="math inline">\(\mathbb{E}[Z_i X_i] \neq 0\)</span>) and exogenous (<span class="math inline">\(\mathbb{E}[Z_i \mid \mu_i] = \mathbb{E}[Z_i \mid W_i] = 0\)</span>) to address the endogeneity problem, and identify the causal effect.<a href="#fn77" class="footnote-ref" id="fnref77"><sup>77</sup></a> Therefore,</p>
+<p>In this situation, we can use an instrument that is relevant (<span class="math inline">\(\mathbb{E}[Z_i X_i] \neq 0\)</span>) and exogenous (<span class="math inline">\(\mathbb{E}[Z_i \mid \mu_i] = \mathbb{E}[Z_i \mid W_i] = 0\)</span>) to address the endogeneity problem, and identify the causal effect.<a href="#fn78" class="footnote-ref" id="fnref78"><sup>78</sup></a> Therefore,</p>
 <p><span class="math display">\[
 \mathbb{E}\left[\begin{bmatrix}
     1\\
@@ -807,7 +807,7 @@ q_i^{Obs}=\tau_1+\tau_2 er_i + \tau_3 y_i + \tau_4 pc_i + \tau_5 ps_i + v_{i2},
 \;\propto\;
 \pi(\boldsymbol{\beta},\boldsymbol{\alpha}\mid \boldsymbol{\gamma},\boldsymbol{\pi}).
 \]</span></p>
-<p>See Section 9.3 in <span class="citation">Zellner (<a href="#ref-zellner1996introduction">1996b</a>)</span> for details about identification in Bayesian inference. This implies that in <em>under-identified</em> models, the posterior distribution of the structural parameters is not concentrated at a single point, but rather remains spread out (e.g., uniformly) over a range of values.<a href="#fn78" class="footnote-ref" id="fnref78"><sup>78</sup></a></p>
+<p>See Section 9.3 in <span class="citation">Zellner (<a href="#ref-zellner1996introduction">1996b</a>)</span> for details about identification in Bayesian inference. This implies that in <em>under-identified</em> models, the posterior distribution of the structural parameters is not concentrated at a single point, but rather remains spread out (e.g., uniformly) over a range of values.<a href="#fn79" class="footnote-ref" id="fnref79"><sup>79</sup></a></p>
 <p>To analyze the causal effects of the new tax, we can find the new equilibrium,</p>
 <p><span class="math display">\[
 q_i^d(P_i(r)\times (1+r))=q_i^s(P_i(r)),
@@ -942,10 +942,10 @@ Wooldridge, Jeffrey M. 2010. <em>Econometric Analysis of Cross Section and Panel
 </div>
 <div class="footnotes">
 <hr />
-<ol start="76">
-<li id="fn76"><p>Available at <em><a href="https://apps.olin.wustl.edu/faculty/chib/rpackages/betel/" class="uri">https://apps.olin.wustl.edu/faculty/chib/rpackages/betel/</a></em>.<a href="sec13_8.html#fnref76" class="footnote-back">↩︎</a></p></li>
-<li id="fn77"><p>Another potential solution for the omission of relevant variables is the use of <em>proxy variables</em>; see <span class="citation">Jeffrey M. Wooldridge (<a href="#ref-wooldridge2010econometric">2010</a>)</span> for details.<a href="sec13_8.html#fnref77" class="footnote-back">↩︎</a></p></li>
-<li id="fn78"><p>This identification issue is not peculiar to simultaneous equation models, it arises in other econometric/statistical models <span class="citation">(<a href="#ref-zellner1996introduction">Zellner 1996b</a>)</span>. See for instance the example of the effects of vitamin A.<a href="sec13_8.html#fnref78" class="footnote-back">↩︎</a></p></li>
+<ol start="77">
+<li id="fn77"><p>Available at <em><a href="https://apps.olin.wustl.edu/faculty/chib/rpackages/betel/" class="uri">https://apps.olin.wustl.edu/faculty/chib/rpackages/betel/</a></em>.<a href="sec13_8.html#fnref77" class="footnote-back">↩︎</a></p></li>
+<li id="fn78"><p>Another potential solution for the omission of relevant variables is the use of <em>proxy variables</em>; see <span class="citation">Jeffrey M. Wooldridge (<a href="#ref-wooldridge2010econometric">2010</a>)</span> for details.<a href="sec13_8.html#fnref78" class="footnote-back">↩︎</a></p></li>
+<li id="fn79"><p>This identification issue is not peculiar to simultaneous equation models, it arises in other econometric/statistical models <span class="citation">(<a href="#ref-zellner1996introduction">Zellner 1996b</a>)</span>. See for instance the example of the effects of vitamin A.<a href="sec13_8.html#fnref79" class="footnote-back">↩︎</a></p></li>
 </ol>
 </div>
             </section>
