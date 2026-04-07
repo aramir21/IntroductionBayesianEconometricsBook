@@ -2512,13 +2512,13 @@ knitr::include_graphics('figures/FigChap13_13.png', dpi = NA)
 
 We simulate the latent process $X_i^* = 0.5Z_i + e_i$, with the observed regressor defined as $X_i = X_i^* + \nu_i$, and the outcome equation specified as $Y_i = 1 + 1.2X_i^* + \mu_i$. The variables $Z_i$, $e_i$, and $\nu_i$ are standard normal, while $\mu_i$ follows a mixture of two normal distributions with means $0.5$ and $-0.5$, and standard deviations $0.5$ and $1.2$. The sample size is 2,000, the burn-in is 1,000, and the number of MCMC draws retained after burn-in is 10,000.
 
-We perform Bayesian exponentially tilted empirical likelihood (BETEL) using the package *betel*, and adopt the default hyperparameter values provided there.^[Available at *https://apps.olin.wustl.edu/faculty/chib/rpackages/betel/*.] This package implements Bayesian estimation and marginal likelihood computation for moment condition models, employing a Student-t prior distribution and a Student-t proposal distribution following @chib2018moment. We also compare the results with a model that assumes $X_i$ is exogenous, and with an instrumental Gibbs sampler that assumes $Y_i$ is normally distributed. We also use the default hyperparameters of the packages employed. The following code shows the implementation. 
+We perform Bayesian exponentially tilted empirical likelihood (BETEL) using the package *betel2*, and adopt the default hyperparameter values provided there.^[Available at *https://siddharthachib.org/rpackages/betel2/*.] This package implements Bayesian estimation and marginal likelihood computation for moment condition models, employing a Student-t prior distribution and a Student-t proposal distribution following @chib2018moment. We also compare the results with a model that assumes $X_i$ is exogenous, and with an instrumental Gibbs sampler that assumes $Y_i$ is normally distributed. We also use the default hyperparameters of the packages employed. The following code shows the implementation. 
 
 The figure displays the posterior distributions. We see that ignoring measurement error produces a biased posterior distribution. In particular, the absolute value of the causal effect is smaller than the population value; this is called *attenuation bias*. By contrast, methods that account for measurement error and use valid instruments yield well-centered posterior distributions.
 
 ```{r}
 rm(list = ls()); set.seed(10101)
-library(betel); library(ucminf)
+library(betel2); library(ucminf)
 # Simulate data
 N <- 2000; d <- 2; k <- 2
 gamma <- 0.5; beta <- c(1, 1.2)
@@ -2533,35 +2533,27 @@ nu <- rnorm(N) # Measurement error
 x <- xlat + nu # Observed regressor
 Xlat <- cbind(1, xlat)
 y <- Xlat%*%beta + mu
-dat <- cbind(1, x, z) # Data
-# Function g_i by row in BETEL
-gfunc <- function(psi = psi, y = y, dat = dat) {
-	X <- dat[,1:2]
-	e <- y - X %*% psi
-	E <- e %*% rep(1,d)
-	Z <- dat[,c(1,3)]
-	G <- E * Z;
-	return(G)
-}
-nt <- round(N * 0.1, 0); # training sample size for prior
-psi0 <- lm(y[1:nt]~x[1:nt])$coefficients # Starting value of psi = (theta, v), v is the slack parameter in CSS (2018)
-names(psi0) <- c("alpha","beta")
-psi0_ <- as.matrix(psi0) # Prior mean of psi 
-Psi0_ <- 5*rep(1,k) # Prior dispersions of psi
-lam0 <- .5*rnorm(d) # Starting value of lambda
-nu <- 2.5 # df of the prior student-t
-nuprop <- 15 # df of the student-t proposal
+dat <- data.frame(y = y, x = x, z = z) # Data
+# BETEL using betel2
+modiv <- betel2::make_etel_model(
+  data = dat, 
+  model = "iv", 
+  formula = y ~ x, 
+  wformula = NULL,
+  mformula = ~ x,
+  zformula = ~ z,
+  vformula = ~ x)
+
+theta0v <- betel2::etel_start_values(modiv,method = "linIV") 
+thetamiv1 <- betel2::bayesetel(modiv, as.matrix(etel_get_data(modiv)), theta0v)
+
 n0 <- 1000 # burn-in
 m <- 10000 # iterations beyond burn-in
-# MCMC ESTIMATION BY THE CSS (2018) method
-psim <- betel::bayesetel(gfunc = gfunc, y = y[-(1:nt)], dat = dat[-(1:nt),], psi0 = psi0, lam0 = lam0, psi0_ = psi0_, Psi0_ = Psi0_, nu = nu, nuprop = nuprop, controlpsi = list(maxiterpsi = 50, mingrpsi = 1.0e-8), #  list of parameters in maximizing likelihood over psi
-controllam = list(maxiterlam = 50, # list of parameters in minimizing dual over lambda
-mingrlam = 1.0e-7), n0 = n0, m = m,printstep = 5000)
 MCMCexg <- MCMCpack::MCMCregress(y ~ x, burnin = n0, mcmc = m)
 Data <- list(y = c(y), x = x, z = matrix(z, N, 1), w = matrix(rep(1, N), N, 1))
 Mcmc <- list(R = m, nprint = 0)
 MCMCivr <- bayesm::rivGibbs(Data, Mcmc = Mcmc)
-dfplot <- data.frame(betel = psim[,2], iv = MCMCivr[["betadraw"]], exo = MCMCexg[,2])
+dfplot <- data.frame(betel = thetamiv1[,2], iv = MCMCivr[["betadraw"]], exo = MCMCexg[,2])
 colnames(dfplot) <- c("betel", "iv", "exo")
 library(tidyr)
 library(dplyr)

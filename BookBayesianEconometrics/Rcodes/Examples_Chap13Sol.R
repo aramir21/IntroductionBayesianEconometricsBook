@@ -434,6 +434,82 @@ ggplot(df_long, aes(x = Posterior, color = Method, fill = Method)) +
 summary(AER::ivreg(y ~ x | z))
 summary(lm(y ~ x))
 
+#### BETEL: There is a new package, betel2 ####
+
+# To install betel package
+# Go to: https://siddharthachib.org/rpackages/betel2/
+# Download: betel2_1.0.zip (windows) or betel2_1.0.tgz (mac)
+# Then Rstudio -> Tools -> Install Package -> and changing the Install from option to
+# Package Archive file. Then, scroll to the location where the downloaded package was
+# saved (typically the download files folder), and select the file.
+
+#### BETEL: Omission relevant correlated regressor #####
+rm(list = ls()); set.seed(10101)
+library(betel2); library(ucminf)
+# Simulate data
+N <- 2000; d <- 2; k <- 2
+gamma <- 0.5; beta <- c(1, 1.2, -0.7); rho <- 0.0 # 0.7
+# Mixture
+mum1 <- 1/2; mum2 <- -1/2
+mu1 <- rnorm(N, mum1, 0.5); mu2 <- rnorm(N, mum2, 1.2)
+mu <- sapply(1:N, function(i){sample(c(mu1[i], mu2[i]), 1, prob = c(0.5, 0.5))})
+z <- rnorm(N) # Instrument
+E <- MASS::mvrnorm(n = N, mu = c(0, 0), Sigma = matrix(c(1,rho,rho,1),2,2))
+x <- gamma*z + E[,1] # Observed regressor
+w <- rnorm(N) + E[,2] # Unobserved correlated regressor
+X <- cbind(1, x, w)
+y <- X%*%beta + mu
+dat <- data.frame(y = y, x = x, w = w, z = z) # Data
+# BETEL using betel2
+modiv <- betel2::make_etel_model(
+  data = dat, 
+  model = "iv", 
+  formula = y ~ x, 
+  wformula = ~ w,
+  mformula = ~ x + w,
+  zformula = ~ z,
+  vformula = ~ x)
+
+theta0v <- betel2::etel_start_values(modiv,method = "linIV") 
+thetamiv <- betel2::bayesetel(modiv, as.matrix(etel_get_data(modiv)), theta0v)
+
+# theta0v <- betel2::etel_start_values(modiv,method = "linIV") 
+# thetamiv1 <- betel2::bayesetel(modiv, as.matrix(etel_get_data(modiv)), theta0v)
+
+n0 <- 1000 # burn-in
+m <- 10000 # iterations beyond burn-in
+
+MCMCreg1 <- MCMCpack::MCMCregress(y~x)
+# MCMCreg2 <- MCMCpack::MCMCregress(y~x)
+dfplot <- data.frame(betel1 = thetamiv[,2], betel2 = thetamiv1[,2], Exo = MCMCreg1[,2], Exo1 = MCMCreg2[,2])
+colnames(dfplot) <- c("betel0.0", "betel0.7", "MCMCreg0.0", "MCMCreg0.7")
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+
+df_long <- dfplot |>
+  pivot_longer(everything(), names_to = "Method", values_to = "Posterior") |>
+  mutate(Method = factor(Method,
+                         levels = c("betel0.0","betel0.7", "MCMCreg0.0", "MCMCreg0.7"),
+                         labels = c("BETEL: 0","BETEL: 0.7","Exo: 0", "Exo: 0.7")))
+
+ggplot(df_long, aes(x = Posterior, color = Method, fill = Method)) +
+  geom_density(alpha = 0.3, linewidth = 1) +
+  geom_vline(xintercept = 1.2, linetype = "dashed", linewidth = 1, color = "black") +
+  labs(
+    title = "Posterior Densities with Population Value",
+    x = expression(beta[1]),
+    y = "Density"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position = "top",
+    legend.title = element_blank()
+  )
+
+summary(AER::ivreg(y ~ x | z))
+summary(lm(y ~ x))
+
 ##################### BETEL: Demand vs Supply ######################
 # Simulation
 rm(list = ls()); set.seed(12345)

@@ -1245,6 +1245,89 @@ ggplot(df_long, aes(x=Posterior, color=Method, fill=Method)) +
 summary(AER::ivreg(y ~ x | z))
 summary(lm(y ~ x))
 
+#### BETEL: There is a new package, betel2 ####
+
+# To install betel package
+# Go to: https://siddharthachib.org/rpackages/betel2/
+# Download: betel2_1.0.zip (windows) or betel2_1.0.tgz (mac)
+# Then Rstudio -> Tools -> Install Package -> and changing the Install from option to
+# Package Archive file. Then, scroll to the location where the downloaded package was
+# saved (typically the download files folder), and select the file.
+
+#### BETEL: Measurement Error #####
+rm(list = ls()); set.seed(10101)
+library(betel2); library(ucminf)
+# Simulate data
+N <- 2000; d <- 2; k <- 2
+gamma <- 0.5; beta <- c(1, 1.2)
+# Mixture
+mum1 <- 1/2; mum2 <- -1/2
+mu1 <- rnorm(N, mum1, 0.5); mu2 <- rnorm(N, mum2, 1.2)
+mu <- sapply(1:N, function(i){sample(c(mu1[i], mu2[i]), 1, prob = c(0.5, 0.5))})
+e <- rnorm(N)
+z <- rnorm(N) # Instrument
+xlat <- gamma*z + e # Unobserved regressor
+nu <- rnorm(N) # Measurement error
+x <- xlat + nu # Observed regressor
+Xlat <- cbind(1, xlat)
+y <- Xlat%*%beta + mu
+dat <- data.frame(y = y, x = x, z = z) # Data
+# BETEL using betel2
+modiv <- betel2::make_etel_model(
+  data = dat, 
+  model = "iv", 
+  formula = y ~ x, 
+  wformula = NULL,
+  mformula = ~ x,
+  zformula = ~ z,
+  vformula = ~ x)
+
+theta0v <- betel2::etel_start_values(modiv,method = "linIV") 
+thetamiv1 <- betel2::bayesetel(modiv, as.matrix(etel_get_data(modiv)), theta0v)
+
+n0 <- 1000 # burn-in
+m <- 10000 # iterations beyond burn-in
+MCMCexg <- MCMCpack::MCMCregress(y ~ x, burnin = n0, mcmc = m)
+Data <- list(y = c(y), x = x, z = matrix(z, N, 1), w = matrix(rep(1, N), N, 1))
+Mcmc <- list(R = m, nprint = 0)
+MCMCivr <- bayesm::rivGibbs(Data, Mcmc = Mcmc)
+dfplot <- data.frame(betel = thetamiv1[,2], iv = MCMCivr[["betadraw"]], exo = MCMCexg[,2])
+colnames(dfplot) <- c("betel", "iv", "exo")
+
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+
+df_long <- dfplot |>
+  pivot_longer(everything(), names_to = "Method", values_to = "Posterior") |>
+  mutate(Method = factor(Method,
+                         levels = c("betel","iv","exo"),
+                         labels = c("betel","rivGibbs","MCMCregress")))
+
+gray_palette <- c(
+  "betel"       = "grey20",
+  "rivGibbs"    = "grey50",
+  "MCMCregress" = "grey75"
+)
+
+ggplot(df_long, aes(x=Posterior, color=Method, fill=Method)) +
+  geom_density(alpha=0.3, linewidth=1) +
+  geom_vline(xintercept=1.2, linetype="dashed", linewidth=1, color="black") +
+  scale_color_manual(values=gray_palette) +
+  scale_fill_manual(values=gray_palette) +
+  labs(
+    title="Posterior Densities with Population Value",
+    x=expression(beta[1]),
+    y="Density"
+  ) +
+  theme_minimal(base_size=14) +
+  theme(
+    legend.position="top",
+    legend.title=element_blank()
+  )
+summary(AER::ivreg(y ~ x | z))
+summary(lm(y ~ x))
+
 ############# Instrumental Variable Quantile Regression: Simulation ##############
 rm(list = ls()); set.seed(10101)
 # Load data
