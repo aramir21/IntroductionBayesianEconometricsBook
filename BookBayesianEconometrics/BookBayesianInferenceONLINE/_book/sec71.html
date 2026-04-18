@@ -6,7 +6,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <title>7.1 Multivariate regression | Introduction to Bayesian Econometrics</title>
   <meta name="description" content="The subject of this textbook is Bayesian data modeling, with the primary aim of providing an introduction to its theoretical foundations and facilitating the application of Bayesian inference using a GUI." />
-  <meta name="generator" content="bookdown 0.43 and GitBook 2.6.7" />
+  <meta name="generator" content="bookdown 0.46 and GitBook 2.6.7" />
 
   <meta property="og:title" content="7.1 Multivariate regression | Introduction to Bayesian Econometrics" />
   <meta property="og:type" content="book" />
@@ -23,7 +23,7 @@
 <meta name="author" content="Andrés Ramírez-Hassan" />
 
 
-<meta name="date" content="2025-12-06" />
+<meta name="date" content="2026-04-11" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -57,8 +57,9 @@
 
 
 <style type="text/css">
+html { -webkit-text-size-adjust: 100%; }
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -68,7 +69,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
   { counter-reset: source-line 0; }
@@ -299,7 +300,7 @@ div.csl-indent {
 <li class="chapter" data-level="11.1" data-path="sec11_1.html"><a href="sec11_1.html"><i class="fa fa-check"></i><b>11.1</b> Mixture models</a>
 <ul>
 <li class="chapter" data-level="11.1.1" data-path="sec11_1.html"><a href="sec11_1.html#sec11_11"><i class="fa fa-check"></i><b>11.1.1</b> Finite Gaussian mixtures</a></li>
-<li class="chapter" data-level="11.1.2" data-path="sec11_1.html"><a href="sec11_1.html#sec11_12"><i class="fa fa-check"></i><b>11.1.2</b> Direchlet processes</a></li>
+<li class="chapter" data-level="11.1.2" data-path="sec11_1.html"><a href="sec11_1.html#sec11_12"><i class="fa fa-check"></i><b>11.1.2</b> Dirichlet processes</a></li>
 </ul></li>
 <li class="chapter" data-level="11.2" data-path="sec11_2.html"><a href="sec11_2.html"><i class="fa fa-check"></i><b>11.2</b> Splines</a></li>
 <li class="chapter" data-level="11.3" data-path="sec11_3.html"><a href="sec11_3.html"><i class="fa fa-check"></i><b>11.3</b> Summary</a></li>
@@ -458,7 +459,7 @@ Therefore, we can estimate this model using the setup outlined in this section.<
 <p><strong>The rank condition</strong></p>
 <p>The rank condition (necessary and sufficient) states that, given a <em>structural</em> model with <span class="math inline">\(M\)</span> equations (and <span class="math inline">\(M\)</span> endogenous variables), an equation is identified if and only if there exists at least one nonzero determinant of an <span class="math inline">\((M-1)\times(M-1)\)</span> matrix constructed from the variables excluded from the equation under analysis but included in at least one other equation of the system. Otherwise, the structural parameters are said to be <em>under-identified</em>.</p>
 <p>It is useful to build the <em>identification matrix</em> to implement the <em>rank</em> condition. The next Table shows this matrix in this example.</p>
-<table class="table" style="color: black; width: auto !important; margin-left: auto; margin-right: auto;">
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
 <caption>
 <span id="tab:unnamed-chunk-34">Table 7.1: </span>Example: Rank condition
 </caption>
@@ -557,33 +558,33 @@ Other
 </div>
 </div>
 <p>The following <strong>R</strong> code shows how to perform the Gibss sampling algorithm in this example using the dataset <em>4Institutions.csv</em>. We ask to run this example using the <em>rmultireg</em> command from the <em>bayesm</em> package as an exercise. We find that the posterior mean <em>structural</em> effect of property rights on GDP is 0.98, and the 95% credible interval is (0.56, 2.87). This means that there is evidence supporting a positive effect of property rights on gross domestic product.</p>
-<div class="sourceCode" id="cb293"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb293-1"><a href="sec71.html#cb293-1" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>())</span>
-<span id="cb293-2"><a href="sec71.html#cb293-2" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">12345</span>)</span>
-<span id="cb293-3"><a href="sec71.html#cb293-3" tabindex="-1"></a>DataInst <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/4Institutions.csv&quot;</span>, <span class="at">sep =</span> <span class="st">&quot;,&quot;</span>, <span class="at">header =</span> <span class="cn">TRUE</span>, <span class="at">quote =</span> <span class="st">&quot;&quot;</span>)</span>
-<span id="cb293-4"><a href="sec71.html#cb293-4" tabindex="-1"></a><span class="fu">attach</span>(DataInst)</span>
-<span id="cb293-5"><a href="sec71.html#cb293-5" tabindex="-1"></a>Y <span class="ot">&lt;-</span> <span class="fu">cbind</span>(logpcGDP95, PAER)</span>
-<span id="cb293-6"><a href="sec71.html#cb293-6" tabindex="-1"></a>X <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="dv">1</span>, logMort, Africa, Asia, Other)</span>
-<span id="cb293-7"><a href="sec71.html#cb293-7" tabindex="-1"></a>M <span class="ot">&lt;-</span> <span class="fu">dim</span>(Y)[<span class="dv">2</span>]</span>
-<span id="cb293-8"><a href="sec71.html#cb293-8" tabindex="-1"></a>K <span class="ot">&lt;-</span> <span class="fu">dim</span>(X)[<span class="dv">2</span>]</span>
-<span id="cb293-9"><a href="sec71.html#cb293-9" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="fu">dim</span>(Y)[<span class="dv">1</span>]</span>
-<span id="cb293-10"><a href="sec71.html#cb293-10" tabindex="-1"></a><span class="co"># Hyperparameters</span></span>
-<span id="cb293-11"><a href="sec71.html#cb293-11" tabindex="-1"></a>B0 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span>, K, M)</span>
-<span id="cb293-12"><a href="sec71.html#cb293-12" tabindex="-1"></a>c0 <span class="ot">&lt;-</span> <span class="dv">100</span></span>
-<span id="cb293-13"><a href="sec71.html#cb293-13" tabindex="-1"></a>V0 <span class="ot">&lt;-</span> c0<span class="sc">*</span><span class="fu">diag</span>(K)</span>
-<span id="cb293-14"><a href="sec71.html#cb293-14" tabindex="-1"></a>Psi0 <span class="ot">&lt;-</span> <span class="dv">5</span><span class="sc">*</span><span class="fu">diag</span>(M)</span>
-<span id="cb293-15"><a href="sec71.html#cb293-15" tabindex="-1"></a>a0 <span class="ot">&lt;-</span> <span class="dv">5</span></span>
-<span id="cb293-16"><a href="sec71.html#cb293-16" tabindex="-1"></a><span class="co"># Posterior parameters</span></span>
-<span id="cb293-17"><a href="sec71.html#cb293-17" tabindex="-1"></a>Bhat <span class="ot">&lt;-</span> <span class="fu">solve</span>(<span class="fu">t</span>(X)<span class="sc">%*%</span>X)<span class="sc">%*%</span><span class="fu">t</span>(X)<span class="sc">%*%</span>Y </span>
-<span id="cb293-18"><a href="sec71.html#cb293-18" tabindex="-1"></a>S <span class="ot">&lt;-</span> <span class="fu">t</span>(Y <span class="sc">-</span> X<span class="sc">%*%</span>Bhat)<span class="sc">%*%</span>(Y <span class="sc">-</span> X<span class="sc">%*%</span>Bhat)</span>
-<span id="cb293-19"><a href="sec71.html#cb293-19" tabindex="-1"></a>Vn <span class="ot">&lt;-</span> <span class="fu">solve</span>(<span class="fu">solve</span>(V0) <span class="sc">+</span> <span class="fu">t</span>(X)<span class="sc">%*%</span>X) </span>
-<span id="cb293-20"><a href="sec71.html#cb293-20" tabindex="-1"></a>Bn <span class="ot">&lt;-</span> Vn<span class="sc">%*%</span>(<span class="fu">solve</span>(V0)<span class="sc">%*%</span>B0 <span class="sc">+</span> <span class="fu">t</span>(X)<span class="sc">%*%</span>X<span class="sc">%*%</span>Bhat)</span>
-<span id="cb293-21"><a href="sec71.html#cb293-21" tabindex="-1"></a>Psin <span class="ot">&lt;-</span> Psi0 <span class="sc">+</span> S <span class="sc">+</span> <span class="fu">t</span>(B0)<span class="sc">%*%</span><span class="fu">solve</span>(V0)<span class="sc">%*%</span>B0 <span class="sc">+</span> <span class="fu">t</span>(Bhat)<span class="sc">%*%</span><span class="fu">t</span>(X)<span class="sc">%*%</span>X<span class="sc">%*%</span>Bhat <span class="sc">-</span> <span class="fu">t</span>(Bn)<span class="sc">%*%</span><span class="fu">solve</span>(Vn)<span class="sc">%*%</span>Bn</span>
-<span id="cb293-22"><a href="sec71.html#cb293-22" tabindex="-1"></a>an <span class="ot">&lt;-</span> a0 <span class="sc">+</span> N</span>
-<span id="cb293-23"><a href="sec71.html#cb293-23" tabindex="-1"></a><span class="co">#Posterior draws</span></span>
-<span id="cb293-24"><a href="sec71.html#cb293-24" tabindex="-1"></a>s <span class="ot">&lt;-</span> <span class="dv">10000</span> <span class="co">#Number of posterior draws</span></span>
-<span id="cb293-25"><a href="sec71.html#cb293-25" tabindex="-1"></a>SIGs <span class="ot">&lt;-</span> <span class="fu">replicate</span>(s, LaplacesDemon<span class="sc">::</span><span class="fu">rinvwishart</span>(an, Psin))</span>
-<span id="cb293-26"><a href="sec71.html#cb293-26" tabindex="-1"></a>BsCond <span class="ot">&lt;-</span> <span class="fu">sapply</span>(<span class="dv">1</span><span class="sc">:</span>s, <span class="cf">function</span>(s) {MixMatrix<span class="sc">::</span><span class="fu">rmatrixnorm</span>(<span class="at">n =</span> <span class="dv">1</span>, <span class="at">mean=</span>Bn, <span class="at">U =</span> Vn,<span class="at">V =</span> SIGs[,,s])})</span>
-<span id="cb293-27"><a href="sec71.html#cb293-27" tabindex="-1"></a><span class="fu">summary</span>(coda<span class="sc">::</span><span class="fu">mcmc</span>(<span class="fu">t</span>(BsCond)))</span></code></pre></div>
+<div class="sourceCode" id="cb298"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb298-1"><a href="sec71.html#cb298-1" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>())</span>
+<span id="cb298-2"><a href="sec71.html#cb298-2" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">12345</span>)</span>
+<span id="cb298-3"><a href="sec71.html#cb298-3" tabindex="-1"></a>DataInst <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/4Institutions.csv&quot;</span>, <span class="at">sep =</span> <span class="st">&quot;,&quot;</span>, <span class="at">header =</span> <span class="cn">TRUE</span>, <span class="at">quote =</span> <span class="st">&quot;&quot;</span>)</span>
+<span id="cb298-4"><a href="sec71.html#cb298-4" tabindex="-1"></a><span class="fu">attach</span>(DataInst)</span>
+<span id="cb298-5"><a href="sec71.html#cb298-5" tabindex="-1"></a>Y <span class="ot">&lt;-</span> <span class="fu">cbind</span>(logpcGDP95, PAER)</span>
+<span id="cb298-6"><a href="sec71.html#cb298-6" tabindex="-1"></a>X <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="dv">1</span>, logMort, Africa, Asia, Other)</span>
+<span id="cb298-7"><a href="sec71.html#cb298-7" tabindex="-1"></a>M <span class="ot">&lt;-</span> <span class="fu">dim</span>(Y)[<span class="dv">2</span>]</span>
+<span id="cb298-8"><a href="sec71.html#cb298-8" tabindex="-1"></a>K <span class="ot">&lt;-</span> <span class="fu">dim</span>(X)[<span class="dv">2</span>]</span>
+<span id="cb298-9"><a href="sec71.html#cb298-9" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="fu">dim</span>(Y)[<span class="dv">1</span>]</span>
+<span id="cb298-10"><a href="sec71.html#cb298-10" tabindex="-1"></a><span class="co"># Hyperparameters</span></span>
+<span id="cb298-11"><a href="sec71.html#cb298-11" tabindex="-1"></a>B0 <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="dv">0</span>, K, M)</span>
+<span id="cb298-12"><a href="sec71.html#cb298-12" tabindex="-1"></a>c0 <span class="ot">&lt;-</span> <span class="dv">100</span></span>
+<span id="cb298-13"><a href="sec71.html#cb298-13" tabindex="-1"></a>V0 <span class="ot">&lt;-</span> c0<span class="sc">*</span><span class="fu">diag</span>(K)</span>
+<span id="cb298-14"><a href="sec71.html#cb298-14" tabindex="-1"></a>Psi0 <span class="ot">&lt;-</span> <span class="dv">5</span><span class="sc">*</span><span class="fu">diag</span>(M)</span>
+<span id="cb298-15"><a href="sec71.html#cb298-15" tabindex="-1"></a>a0 <span class="ot">&lt;-</span> <span class="dv">5</span></span>
+<span id="cb298-16"><a href="sec71.html#cb298-16" tabindex="-1"></a><span class="co"># Posterior parameters</span></span>
+<span id="cb298-17"><a href="sec71.html#cb298-17" tabindex="-1"></a>Bhat <span class="ot">&lt;-</span> <span class="fu">solve</span>(<span class="fu">t</span>(X)<span class="sc">%*%</span>X)<span class="sc">%*%</span><span class="fu">t</span>(X)<span class="sc">%*%</span>Y </span>
+<span id="cb298-18"><a href="sec71.html#cb298-18" tabindex="-1"></a>S <span class="ot">&lt;-</span> <span class="fu">t</span>(Y <span class="sc">-</span> X<span class="sc">%*%</span>Bhat)<span class="sc">%*%</span>(Y <span class="sc">-</span> X<span class="sc">%*%</span>Bhat)</span>
+<span id="cb298-19"><a href="sec71.html#cb298-19" tabindex="-1"></a>Vn <span class="ot">&lt;-</span> <span class="fu">solve</span>(<span class="fu">solve</span>(V0) <span class="sc">+</span> <span class="fu">t</span>(X)<span class="sc">%*%</span>X) </span>
+<span id="cb298-20"><a href="sec71.html#cb298-20" tabindex="-1"></a>Bn <span class="ot">&lt;-</span> Vn<span class="sc">%*%</span>(<span class="fu">solve</span>(V0)<span class="sc">%*%</span>B0 <span class="sc">+</span> <span class="fu">t</span>(X)<span class="sc">%*%</span>X<span class="sc">%*%</span>Bhat)</span>
+<span id="cb298-21"><a href="sec71.html#cb298-21" tabindex="-1"></a>Psin <span class="ot">&lt;-</span> Psi0 <span class="sc">+</span> S <span class="sc">+</span> <span class="fu">t</span>(B0)<span class="sc">%*%</span><span class="fu">solve</span>(V0)<span class="sc">%*%</span>B0 <span class="sc">+</span> <span class="fu">t</span>(Bhat)<span class="sc">%*%</span><span class="fu">t</span>(X)<span class="sc">%*%</span>X<span class="sc">%*%</span>Bhat <span class="sc">-</span> <span class="fu">t</span>(Bn)<span class="sc">%*%</span><span class="fu">solve</span>(Vn)<span class="sc">%*%</span>Bn</span>
+<span id="cb298-22"><a href="sec71.html#cb298-22" tabindex="-1"></a>an <span class="ot">&lt;-</span> a0 <span class="sc">+</span> N</span>
+<span id="cb298-23"><a href="sec71.html#cb298-23" tabindex="-1"></a><span class="co">#Posterior draws</span></span>
+<span id="cb298-24"><a href="sec71.html#cb298-24" tabindex="-1"></a>s <span class="ot">&lt;-</span> <span class="dv">10000</span> <span class="co">#Number of posterior draws</span></span>
+<span id="cb298-25"><a href="sec71.html#cb298-25" tabindex="-1"></a>SIGs <span class="ot">&lt;-</span> <span class="fu">replicate</span>(s, LaplacesDemon<span class="sc">::</span><span class="fu">rinvwishart</span>(an, Psin))</span>
+<span id="cb298-26"><a href="sec71.html#cb298-26" tabindex="-1"></a>BsCond <span class="ot">&lt;-</span> <span class="fu">sapply</span>(<span class="dv">1</span><span class="sc">:</span>s, <span class="cf">function</span>(s) {MixMatrix<span class="sc">::</span><span class="fu">rmatrixnorm</span>(<span class="at">n =</span> <span class="dv">1</span>, <span class="at">mean=</span>Bn, <span class="at">U =</span> Vn,<span class="at">V =</span> SIGs[,,s])})</span>
+<span id="cb298-27"><a href="sec71.html#cb298-27" tabindex="-1"></a><span class="fu">summary</span>(coda<span class="sc">::</span><span class="fu">mcmc</span>(<span class="fu">t</span>(BsCond)))</span></code></pre></div>
 <pre><code>## 
 ## Iterations = 1:10000
 ## Thinning interval = 1 
@@ -618,8 +619,8 @@ Other
 ## var8  -1.0600 -0.53703 -0.2676  0.0002646  0.52081
 ## var9  -0.6090  0.02377  0.3500  0.6740956  1.30291
 ## var10 -0.3446  0.69699  1.2418  1.7939884  2.86752</code></pre>
-<div class="sourceCode" id="cb295"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb295-1"><a href="sec71.html#cb295-1" tabindex="-1"></a>SIGMs <span class="ot">&lt;-</span> <span class="fu">t</span>(<span class="fu">sapply</span>(<span class="dv">1</span><span class="sc">:</span>s, <span class="cf">function</span>(l) {gdata<span class="sc">::</span><span class="fu">lowerTriangle</span>(SIGs[,,l], <span class="at">diag=</span><span class="cn">TRUE</span>, <span class="at">byrow=</span><span class="cn">FALSE</span>)}))</span>
-<span id="cb295-2"><a href="sec71.html#cb295-2" tabindex="-1"></a><span class="fu">summary</span>(coda<span class="sc">::</span><span class="fu">mcmc</span>(SIGMs))</span></code></pre></div>
+<div class="sourceCode" id="cb300"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb300-1"><a href="sec71.html#cb300-1" tabindex="-1"></a>SIGMs <span class="ot">&lt;-</span> <span class="fu">t</span>(<span class="fu">sapply</span>(<span class="dv">1</span><span class="sc">:</span>s, <span class="cf">function</span>(l) {gdata<span class="sc">::</span><span class="fu">lowerTriangle</span>(SIGs[,,l], <span class="at">diag=</span><span class="cn">TRUE</span>, <span class="at">byrow=</span><span class="cn">FALSE</span>)}))</span>
+<span id="cb300-2"><a href="sec71.html#cb300-2" tabindex="-1"></a><span class="fu">summary</span>(coda<span class="sc">::</span><span class="fu">mcmc</span>(SIGMs))</span></code></pre></div>
 <pre><code>## 
 ## Iterations = 1:10000
 ## Thinning interval = 1 
@@ -640,8 +641,8 @@ Other
 ## var1 0.3853 0.4695 0.5267 0.5942 0.7545
 ## var2 0.3181 0.4449 0.5234 0.6137 0.8359
 ## var3 1.0863 1.3324 1.4924 1.6799 2.1354</code></pre>
-<div class="sourceCode" id="cb297"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb297-1"><a href="sec71.html#cb297-1" tabindex="-1"></a>hdiBs <span class="ot">&lt;-</span> HDInterval<span class="sc">::</span><span class="fu">hdi</span>(<span class="fu">t</span>(BsCond), <span class="at">credMass =</span> <span class="fl">0.95</span>) <span class="co"># Highest posterior density credible interval</span></span>
-<span id="cb297-2"><a href="sec71.html#cb297-2" tabindex="-1"></a>hdiBs</span></code></pre></div>
+<div class="sourceCode" id="cb302"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb302-1"><a href="sec71.html#cb302-1" tabindex="-1"></a>hdiBs <span class="ot">&lt;-</span> HDInterval<span class="sc">::</span><span class="fu">hdi</span>(<span class="fu">t</span>(BsCond), <span class="at">credMass =</span> <span class="fl">0.95</span>) <span class="co"># Highest posterior density credible interval</span></span>
+<span id="cb302-2"><a href="sec71.html#cb302-2" tabindex="-1"></a>hdiBs</span></code></pre></div>
 <pre><code>##           [,1]       [,2]       [,3]        [,4]      [,5]      [,6]
 ## lower  9.44900 -0.6131229 -1.1769984 -1.16535714 -0.670223  7.041383
 ## upper 11.22169 -0.2212954 -0.2393919 -0.02786525  1.227650 10.017329
@@ -650,15 +651,15 @@ Other
 ## upper -0.09525447  0.5322414  1.2748474  2.8767518
 ## attr(,&quot;credMass&quot;)
 ## [1] 0.95</code></pre>
-<div class="sourceCode" id="cb299"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb299-1"><a href="sec71.html#cb299-1" tabindex="-1"></a>hdiSIG <span class="ot">&lt;-</span> HDInterval<span class="sc">::</span><span class="fu">hdi</span>(SIGMs, <span class="at">credMass =</span> <span class="fl">0.95</span>) <span class="co"># Highest posterior density credible interval</span></span>
-<span id="cb299-2"><a href="sec71.html#cb299-2" tabindex="-1"></a>hdiSIG</span></code></pre></div>
+<div class="sourceCode" id="cb304"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb304-1"><a href="sec71.html#cb304-1" tabindex="-1"></a>hdiSIG <span class="ot">&lt;-</span> HDInterval<span class="sc">::</span><span class="fu">hdi</span>(SIGMs, <span class="at">credMass =</span> <span class="fl">0.95</span>) <span class="co"># Highest posterior density credible interval</span></span>
+<span id="cb304-2"><a href="sec71.html#cb304-2" tabindex="-1"></a>hdiSIG</span></code></pre></div>
 <pre><code>##            [,1]      [,2]     [,3]
 ## lower 0.3735344 0.2960049 1.023421
 ## upper 0.7318534 0.8022998 2.034439
 ## attr(,&quot;credMass&quot;)
 ## [1] 0.95</code></pre>
-<div class="sourceCode" id="cb301"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb301-1"><a href="sec71.html#cb301-1" tabindex="-1"></a>beta2 <span class="ot">&lt;-</span> BsCond[<span class="dv">2</span>,]<span class="sc">/</span>BsCond[<span class="dv">7</span>,] </span>
-<span id="cb301-2"><a href="sec71.html#cb301-2" tabindex="-1"></a><span class="fu">summary</span>(coda<span class="sc">::</span><span class="fu">mcmc</span>(beta2)) <span class="co"># Effect of property rights on GDP</span></span></code></pre></div>
+<div class="sourceCode" id="cb306"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb306-1"><a href="sec71.html#cb306-1" tabindex="-1"></a>beta2 <span class="ot">&lt;-</span> BsCond[<span class="dv">2</span>,]<span class="sc">/</span>BsCond[<span class="dv">7</span>,] </span>
+<span id="cb306-2"><a href="sec71.html#cb306-2" tabindex="-1"></a><span class="fu">summary</span>(coda<span class="sc">::</span><span class="fu">mcmc</span>(beta2)) <span class="co"># Effect of property rights on GDP</span></span></code></pre></div>
 <pre><code>## 
 ## Iterations = 1:10000
 ## Thinning interval = 1 

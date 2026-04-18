@@ -6,7 +6,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <title>7.2 Seemingly Unrelated Regression | Introduction to Bayesian Econometrics</title>
   <meta name="description" content="The subject of this textbook is Bayesian data modeling, with the primary aim of providing an introduction to its theoretical foundations and facilitating the application of Bayesian inference using a GUI." />
-  <meta name="generator" content="bookdown 0.43 and GitBook 2.6.7" />
+  <meta name="generator" content="bookdown 0.46 and GitBook 2.6.7" />
 
   <meta property="og:title" content="7.2 Seemingly Unrelated Regression | Introduction to Bayesian Econometrics" />
   <meta property="og:type" content="book" />
@@ -23,7 +23,7 @@
 <meta name="author" content="Andrés Ramírez-Hassan" />
 
 
-<meta name="date" content="2025-12-06" />
+<meta name="date" content="2026-04-11" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -57,8 +57,9 @@
 
 
 <style type="text/css">
+html { -webkit-text-size-adjust: 100%; }
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -68,7 +69,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
   { counter-reset: source-line 0; }
@@ -299,7 +300,7 @@ div.csl-indent {
 <li class="chapter" data-level="11.1" data-path="sec11_1.html"><a href="sec11_1.html"><i class="fa fa-check"></i><b>11.1</b> Mixture models</a>
 <ul>
 <li class="chapter" data-level="11.1.1" data-path="sec11_1.html"><a href="sec11_1.html#sec11_11"><i class="fa fa-check"></i><b>11.1.1</b> Finite Gaussian mixtures</a></li>
-<li class="chapter" data-level="11.1.2" data-path="sec11_1.html"><a href="sec11_1.html#sec11_12"><i class="fa fa-check"></i><b>11.1.2</b> Direchlet processes</a></li>
+<li class="chapter" data-level="11.1.2" data-path="sec11_1.html"><a href="sec11_1.html#sec11_12"><i class="fa fa-check"></i><b>11.1.2</b> Dirichlet processes</a></li>
 </ul></li>
 <li class="chapter" data-level="11.2" data-path="sec11_2.html"><a href="sec11_2.html"><i class="fa fa-check"></i><b>11.2</b> Splines</a></li>
 <li class="chapter" data-level="11.3" data-path="sec11_3.html"><a href="sec11_3.html"><i class="fa fa-check"></i><b>11.3</b> Summary</a></li>
@@ -466,33 +467,33 @@ p(\boldsymbol{\beta}, \boldsymbol{\Sigma} \mid \boldsymbol{y}, \boldsymbol{X}) \
 </div>
 <p>The following code shows how to program this application using this package. We use 10,000 MCMC iterations, <span class="math inline">\(\boldsymbol{\beta}_0 = \boldsymbol{0}_{27}\)</span>, <span class="math inline">\(\boldsymbol{B}_0 = 100\boldsymbol{I}_{27}\)</span>, <span class="math inline">\(\alpha_0 = 5\)</span> and <span class="math inline">\(\boldsymbol{\Psi} = 5\boldsymbol{I}_3\)</span>.</p>
 <p>We find that the posterior median estimates of the own-price elasticities of demand for electricity, water, and gas are -1.88, -0.36, and -0.62, respectively, and none of the 95% credible intervals encompass 0. This means that a 1% increase in the prices of electricity, water, and gas results in a 1.88%, 0.36%, and 0.62% decrease in the monthly consumption of these utilities, respectively.<a href="#fn46" class="footnote-ref" id="fnref46"><sup>46</sup></a> In general, there is evidence supporting the relevance of all regressors in these equations, with a few exceptions, and unobserved correlation in the demand for these services, which further supports the use of a SUR model in this application.</p>
-<div class="sourceCode" id="cb303"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb303-1"><a href="sec72.html#cb303-1" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>())</span>
-<span id="cb303-2"><a href="sec72.html#cb303-2" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">010101</span>)</span>
-<span id="cb303-3"><a href="sec72.html#cb303-3" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
-<span id="cb303-4"><a href="sec72.html#cb303-4" tabindex="-1"></a>DataUt <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/Utilities.csv&quot;</span>, <span class="at">sep =</span> <span class="st">&quot;,&quot;</span>, <span class="at">header =</span> <span class="cn">TRUE</span>, <span class="at">quote =</span> <span class="st">&quot;&quot;</span>)</span>
-<span id="cb303-5"><a href="sec72.html#cb303-5" tabindex="-1"></a>DataUtEst <span class="ot">&lt;-</span> DataUt <span class="sc">%&gt;%</span>  </span>
-<span id="cb303-6"><a href="sec72.html#cb303-6" tabindex="-1"></a><span class="fu">filter</span>(Electricity <span class="sc">!=</span> <span class="dv">0</span> <span class="sc">&amp;</span> Water <span class="sc">!=</span><span class="dv">0</span> <span class="sc">&amp;</span> Gas <span class="sc">!=</span> <span class="dv">0</span>)</span>
-<span id="cb303-7"><a href="sec72.html#cb303-7" tabindex="-1"></a><span class="fu">attach</span>(DataUtEst)</span></code></pre></div>
+<div class="sourceCode" id="cb308"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb308-1"><a href="sec72.html#cb308-1" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>())</span>
+<span id="cb308-2"><a href="sec72.html#cb308-2" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">010101</span>)</span>
+<span id="cb308-3"><a href="sec72.html#cb308-3" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb308-4"><a href="sec72.html#cb308-4" tabindex="-1"></a>DataUt <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/Utilities.csv&quot;</span>, <span class="at">sep =</span> <span class="st">&quot;,&quot;</span>, <span class="at">header =</span> <span class="cn">TRUE</span>, <span class="at">quote =</span> <span class="st">&quot;&quot;</span>)</span>
+<span id="cb308-5"><a href="sec72.html#cb308-5" tabindex="-1"></a>DataUtEst <span class="ot">&lt;-</span> DataUt <span class="sc">%&gt;%</span>  </span>
+<span id="cb308-6"><a href="sec72.html#cb308-6" tabindex="-1"></a><span class="fu">filter</span>(Electricity <span class="sc">!=</span> <span class="dv">0</span> <span class="sc">&amp;</span> Water <span class="sc">!=</span><span class="dv">0</span> <span class="sc">&amp;</span> Gas <span class="sc">!=</span> <span class="dv">0</span>)</span>
+<span id="cb308-7"><a href="sec72.html#cb308-7" tabindex="-1"></a><span class="fu">attach</span>(DataUtEst)</span></code></pre></div>
 <pre><code>## The following object is masked from Data (pos = 7):
 ## 
 ##     id</code></pre>
 <pre><code>## The following object is masked from mydata:
 ## 
 ##     id</code></pre>
-<div class="sourceCode" id="cb306"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb306-1"><a href="sec72.html#cb306-1" tabindex="-1"></a>y1 <span class="ot">&lt;-</span> <span class="fu">log</span>(Electricity); y2 <span class="ot">&lt;-</span> <span class="fu">log</span>(Water); y3 <span class="ot">&lt;-</span> <span class="fu">log</span>(Gas)</span>
-<span id="cb306-2"><a href="sec72.html#cb306-2" tabindex="-1"></a>X1 <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="dv">1</span>, LnPriceElect, LnPriceWater, LnPriceGas, IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem, Lnincome)</span>
-<span id="cb306-3"><a href="sec72.html#cb306-3" tabindex="-1"></a>X2 <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="dv">1</span>, LnPriceElect, LnPriceWater, LnPriceGas, IndSocio1, IndSocio2, Nrooms, HouseholdMem)</span>
-<span id="cb306-4"><a href="sec72.html#cb306-4" tabindex="-1"></a>X3 <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="dv">1</span>, LnPriceElect, LnPriceWater, LnPriceGas, IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem)</span>
-<span id="cb306-5"><a href="sec72.html#cb306-5" tabindex="-1"></a>regdata <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
-<span id="cb306-6"><a href="sec72.html#cb306-6" tabindex="-1"></a>regdata[[<span class="dv">1</span>]] <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">y =</span> y1, <span class="at">X =</span> X1); regdata[[<span class="dv">2</span>]] <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">y =</span> y2, <span class="at">X =</span> X2); regdata[[<span class="dv">3</span>]] <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">y =</span> y3, <span class="at">X =</span> X3)</span>
-<span id="cb306-7"><a href="sec72.html#cb306-7" tabindex="-1"></a>M <span class="ot">&lt;-</span> <span class="fu">length</span>(regdata); K1 <span class="ot">&lt;-</span> <span class="fu">dim</span>(X1)[<span class="dv">2</span>]; K2 <span class="ot">&lt;-</span> <span class="fu">dim</span>(X2)[<span class="dv">2</span>]; K3 <span class="ot">&lt;-</span> <span class="fu">dim</span>(X3)[<span class="dv">2</span>] </span>
-<span id="cb306-8"><a href="sec72.html#cb306-8" tabindex="-1"></a>K <span class="ot">&lt;-</span> K1 <span class="sc">+</span> K2 <span class="sc">+</span> K3</span>
-<span id="cb306-9"><a href="sec72.html#cb306-9" tabindex="-1"></a><span class="co"># Hyperparameters</span></span>
-<span id="cb306-10"><a href="sec72.html#cb306-10" tabindex="-1"></a>b0 <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">0</span>, K); c0 <span class="ot">&lt;-</span> <span class="dv">100</span>; B0 <span class="ot">&lt;-</span> c0<span class="sc">*</span><span class="fu">diag</span>(K); V <span class="ot">&lt;-</span> <span class="dv">5</span><span class="sc">*</span><span class="fu">diag</span>(M); a0 <span class="ot">&lt;-</span> M</span>
-<span id="cb306-11"><a href="sec72.html#cb306-11" tabindex="-1"></a>Prior <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">betabar =</span> b0, <span class="at">A =</span> <span class="fu">solve</span>(B0), <span class="at">nu =</span> a0, <span class="at">V =</span> V)</span>
-<span id="cb306-12"><a href="sec72.html#cb306-12" tabindex="-1"></a><span class="co">#Posterior draws</span></span>
-<span id="cb306-13"><a href="sec72.html#cb306-13" tabindex="-1"></a>S <span class="ot">&lt;-</span> <span class="dv">10000</span>; keep <span class="ot">&lt;-</span> <span class="dv">1</span>; Mcmc <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">R =</span> S, <span class="at">keep =</span> keep, <span class="at">nprint =</span> <span class="dv">0</span>)</span>
-<span id="cb306-14"><a href="sec72.html#cb306-14" tabindex="-1"></a>PosteriorDraws <span class="ot">&lt;-</span> bayesm<span class="sc">::</span><span class="fu">rsurGibbs</span>(<span class="at">Data =</span> <span class="fu">list</span>(<span class="at">regdata =</span> regdata), <span class="at">Mcmc =</span> Mcmc, <span class="at">Prior =</span> Prior)</span></code></pre></div>
+<div class="sourceCode" id="cb311"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb311-1"><a href="sec72.html#cb311-1" tabindex="-1"></a>y1 <span class="ot">&lt;-</span> <span class="fu">log</span>(Electricity); y2 <span class="ot">&lt;-</span> <span class="fu">log</span>(Water); y3 <span class="ot">&lt;-</span> <span class="fu">log</span>(Gas)</span>
+<span id="cb311-2"><a href="sec72.html#cb311-2" tabindex="-1"></a>X1 <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="dv">1</span>, LnPriceElect, LnPriceWater, LnPriceGas, IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem, Lnincome)</span>
+<span id="cb311-3"><a href="sec72.html#cb311-3" tabindex="-1"></a>X2 <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="dv">1</span>, LnPriceElect, LnPriceWater, LnPriceGas, IndSocio1, IndSocio2, Nrooms, HouseholdMem)</span>
+<span id="cb311-4"><a href="sec72.html#cb311-4" tabindex="-1"></a>X3 <span class="ot">&lt;-</span> <span class="fu">cbind</span>(<span class="dv">1</span>, LnPriceElect, LnPriceWater, LnPriceGas, IndSocio1, IndSocio2, Altitude, Nrooms, HouseholdMem)</span>
+<span id="cb311-5"><a href="sec72.html#cb311-5" tabindex="-1"></a>regdata <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb311-6"><a href="sec72.html#cb311-6" tabindex="-1"></a>regdata[[<span class="dv">1</span>]] <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">y =</span> y1, <span class="at">X =</span> X1); regdata[[<span class="dv">2</span>]] <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">y =</span> y2, <span class="at">X =</span> X2); regdata[[<span class="dv">3</span>]] <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">y =</span> y3, <span class="at">X =</span> X3)</span>
+<span id="cb311-7"><a href="sec72.html#cb311-7" tabindex="-1"></a>M <span class="ot">&lt;-</span> <span class="fu">length</span>(regdata); K1 <span class="ot">&lt;-</span> <span class="fu">dim</span>(X1)[<span class="dv">2</span>]; K2 <span class="ot">&lt;-</span> <span class="fu">dim</span>(X2)[<span class="dv">2</span>]; K3 <span class="ot">&lt;-</span> <span class="fu">dim</span>(X3)[<span class="dv">2</span>] </span>
+<span id="cb311-8"><a href="sec72.html#cb311-8" tabindex="-1"></a>K <span class="ot">&lt;-</span> K1 <span class="sc">+</span> K2 <span class="sc">+</span> K3</span>
+<span id="cb311-9"><a href="sec72.html#cb311-9" tabindex="-1"></a><span class="co"># Hyperparameters</span></span>
+<span id="cb311-10"><a href="sec72.html#cb311-10" tabindex="-1"></a>b0 <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">0</span>, K); c0 <span class="ot">&lt;-</span> <span class="dv">100</span>; B0 <span class="ot">&lt;-</span> c0<span class="sc">*</span><span class="fu">diag</span>(K); V <span class="ot">&lt;-</span> <span class="dv">5</span><span class="sc">*</span><span class="fu">diag</span>(M); a0 <span class="ot">&lt;-</span> M</span>
+<span id="cb311-11"><a href="sec72.html#cb311-11" tabindex="-1"></a>Prior <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">betabar =</span> b0, <span class="at">A =</span> <span class="fu">solve</span>(B0), <span class="at">nu =</span> a0, <span class="at">V =</span> V)</span>
+<span id="cb311-12"><a href="sec72.html#cb311-12" tabindex="-1"></a><span class="co">#Posterior draws</span></span>
+<span id="cb311-13"><a href="sec72.html#cb311-13" tabindex="-1"></a>S <span class="ot">&lt;-</span> <span class="dv">10000</span>; keep <span class="ot">&lt;-</span> <span class="dv">1</span>; Mcmc <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">R =</span> S, <span class="at">keep =</span> keep, <span class="at">nprint =</span> <span class="dv">0</span>)</span>
+<span id="cb311-14"><a href="sec72.html#cb311-14" tabindex="-1"></a>PosteriorDraws <span class="ot">&lt;-</span> bayesm<span class="sc">::</span><span class="fu">rsurGibbs</span>(<span class="at">Data =</span> <span class="fu">list</span>(<span class="at">regdata =</span> regdata), <span class="at">Mcmc =</span> Mcmc, <span class="at">Prior =</span> Prior)</span></code></pre></div>
 <pre><code>##  
 ## Starting Gibbs Sampler for SUR Regression Model
 ##   with  3  regressions
@@ -596,15 +597,15 @@ p(\boldsymbol{\beta}, \boldsymbol{\Sigma} \mid \boldsymbol{y}, \boldsymbol{X}) \
 ## MCMC parms: 
 ## R=  10000  keep=  1  nprint=  0
 ## </code></pre>
-<div class="sourceCode" id="cb308"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb308-1"><a href="sec72.html#cb308-1" tabindex="-1"></a>Bs <span class="ot">&lt;-</span> PosteriorDraws[[<span class="st">&quot;betadraw&quot;</span>]]</span>
-<span id="cb308-2"><a href="sec72.html#cb308-2" tabindex="-1"></a>Names <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;Const&quot;</span>, <span class="st">&quot;LnPriceElect&quot;</span>, <span class="st">&quot;LnPriceWater&quot;</span>, <span class="st">&quot;LnPriceGas&quot;</span>, <span class="st">&quot;IndSocio1&quot;</span>, <span class="st">&quot;IndSocio2&quot;</span>, </span>
-<span id="cb308-3"><a href="sec72.html#cb308-3" tabindex="-1"></a><span class="st">&quot;Altitude&quot;</span>, <span class="st">&quot;Nrooms&quot;</span>, <span class="st">&quot;HouseholdMem&quot;</span>, <span class="st">&quot;Lnincome&quot;</span>, <span class="st">&quot;Const&quot;</span>,</span>
-<span id="cb308-4"><a href="sec72.html#cb308-4" tabindex="-1"></a><span class="st">&quot;LnPriceElect&quot;</span>, <span class="st">&quot;LnPriceWater&quot;</span>, <span class="st">&quot;LnPriceGas&quot;</span>, <span class="st">&quot;IndSocio1&quot;</span>, <span class="st">&quot;IndSocio2&quot;</span>, </span>
-<span id="cb308-5"><a href="sec72.html#cb308-5" tabindex="-1"></a><span class="st">&quot;Nrooms&quot;</span>, <span class="st">&quot;HouseholdMem&quot;</span>,<span class="st">&quot;Const&quot;</span>,</span>
-<span id="cb308-6"><a href="sec72.html#cb308-6" tabindex="-1"></a><span class="st">&quot;LnPriceElect&quot;</span>, <span class="st">&quot;LnPriceWater&quot;</span>, <span class="st">&quot;LnPriceGas&quot;</span>, <span class="st">&quot;IndSocio1&quot;</span>, <span class="st">&quot;IndSocio2&quot;</span>, </span>
-<span id="cb308-7"><a href="sec72.html#cb308-7" tabindex="-1"></a><span class="st">&quot;Altitude&quot;</span>, <span class="st">&quot;Nrooms&quot;</span>, <span class="st">&quot;HouseholdMem&quot;</span>)</span>
-<span id="cb308-8"><a href="sec72.html#cb308-8" tabindex="-1"></a><span class="fu">colnames</span>(Bs) <span class="ot">&lt;-</span> Names</span>
-<span id="cb308-9"><a href="sec72.html#cb308-9" tabindex="-1"></a><span class="fu">summary</span>(coda<span class="sc">::</span><span class="fu">mcmc</span>(Bs))</span></code></pre></div>
+<div class="sourceCode" id="cb313"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb313-1"><a href="sec72.html#cb313-1" tabindex="-1"></a>Bs <span class="ot">&lt;-</span> PosteriorDraws[[<span class="st">&quot;betadraw&quot;</span>]]</span>
+<span id="cb313-2"><a href="sec72.html#cb313-2" tabindex="-1"></a>Names <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;Const&quot;</span>, <span class="st">&quot;LnPriceElect&quot;</span>, <span class="st">&quot;LnPriceWater&quot;</span>, <span class="st">&quot;LnPriceGas&quot;</span>, <span class="st">&quot;IndSocio1&quot;</span>, <span class="st">&quot;IndSocio2&quot;</span>, </span>
+<span id="cb313-3"><a href="sec72.html#cb313-3" tabindex="-1"></a><span class="st">&quot;Altitude&quot;</span>, <span class="st">&quot;Nrooms&quot;</span>, <span class="st">&quot;HouseholdMem&quot;</span>, <span class="st">&quot;Lnincome&quot;</span>, <span class="st">&quot;Const&quot;</span>,</span>
+<span id="cb313-4"><a href="sec72.html#cb313-4" tabindex="-1"></a><span class="st">&quot;LnPriceElect&quot;</span>, <span class="st">&quot;LnPriceWater&quot;</span>, <span class="st">&quot;LnPriceGas&quot;</span>, <span class="st">&quot;IndSocio1&quot;</span>, <span class="st">&quot;IndSocio2&quot;</span>, </span>
+<span id="cb313-5"><a href="sec72.html#cb313-5" tabindex="-1"></a><span class="st">&quot;Nrooms&quot;</span>, <span class="st">&quot;HouseholdMem&quot;</span>,<span class="st">&quot;Const&quot;</span>,</span>
+<span id="cb313-6"><a href="sec72.html#cb313-6" tabindex="-1"></a><span class="st">&quot;LnPriceElect&quot;</span>, <span class="st">&quot;LnPriceWater&quot;</span>, <span class="st">&quot;LnPriceGas&quot;</span>, <span class="st">&quot;IndSocio1&quot;</span>, <span class="st">&quot;IndSocio2&quot;</span>, </span>
+<span id="cb313-7"><a href="sec72.html#cb313-7" tabindex="-1"></a><span class="st">&quot;Altitude&quot;</span>, <span class="st">&quot;Nrooms&quot;</span>, <span class="st">&quot;HouseholdMem&quot;</span>)</span>
+<span id="cb313-8"><a href="sec72.html#cb313-8" tabindex="-1"></a><span class="fu">colnames</span>(Bs) <span class="ot">&lt;-</span> Names</span>
+<span id="cb313-9"><a href="sec72.html#cb313-9" tabindex="-1"></a><span class="fu">summary</span>(coda<span class="sc">::</span><span class="fu">mcmc</span>(Bs))</span></code></pre></div>
 <pre><code>## 
 ## Iterations = 1:10000
 ## Thinning interval = 1 
@@ -673,7 +674,7 @@ p(\boldsymbol{\beta}, \boldsymbol{\Sigma} \mid \boldsymbol{y}, \boldsymbol{X}) \
 ## Altitude      0.24896  0.29099  0.311668  0.33256  0.37278
 ## Nrooms        0.06050  0.07921  0.089386  0.09943  0.11793
 ## HouseholdMem  0.14467  0.16144  0.170024  0.17843  0.19431</code></pre>
-<div class="sourceCode" id="cb310"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb310-1"><a href="sec72.html#cb310-1" tabindex="-1"></a><span class="fu">summary</span>(PosteriorDraws[[<span class="st">&quot;Sigmadraw&quot;</span>]])</span></code></pre></div>
+<div class="sourceCode" id="cb315"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb315-1"><a href="sec72.html#cb315-1" tabindex="-1"></a><span class="fu">summary</span>(PosteriorDraws[[<span class="st">&quot;Sigmadraw&quot;</span>]])</span></code></pre></div>
 <pre><code>## Posterior Means of Std Deviations and Correlation Matrix 
 ##   Std Dev    1    2    3
 ## 1    0.46 1.00 0.30 0.25
