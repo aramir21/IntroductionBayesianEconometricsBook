@@ -2,7 +2,7 @@
 
 \textit{Approximate Bayesian methods} are a family of techniques designed to handle situations where the likelihood function lacks an analytical expression, is highly complex, or the problem is high-dimensional, whether due to a large parameter space or a massive dataset \cite{martin2024approximating}. In the former case, traditional Markov Chain Monte Carlo (MCMC) and importance sampling algorithms fail to provide a solution. In the latter, these algorithms struggle to produce accurate estimates within a reasonable timeframe, unless users modify them (see Chapter~\ref{chap13}).
 
-However, there is no free lunch, \textit{Approximate Bayesian methods} address these challenges at the cost of providing an approximation to the posterior distribution rather than the \textit{exact} posterior. Nonetheless, asymptotic results show that the approximation improves as the sample size increases.
+However, there is no free lunch. \textit{Approximate Bayesian methods} address these challenges at the cost of providing an approximation to the posterior distribution rather than the \textit{exact} posterior. Nonetheless, asymptotic results show that the approximation improves as the sample size increases.
 
 In this chapter, I first present \textit{simulation-based approaches}, which are designed to address situations where the likelihood is highly complex and may lack an analytical solution. In the second part, I introduce \textit{optimization approaches}, which are intended to handle high-dimensional problems. Specifically, I discuss approximate Bayesian computation (ABC) and Bayesian synthetic likelihood (BSL), the two most common \textit{simulation-based approaches}. Then, I present integrated nested Laplace approximations (INLA) and \textit{variational Bayes} (VB), the two most common \textit{optimization approaches} for high-dimensional problems.
 
@@ -21,7 +21,7 @@ Thus, what happens when the likelihood function does not have an analytical expr
 
 \textit{Approximate Bayesian Computation} (ABC) is designed to handle inferential situations where the likelihood function \( p(\boldsymbol{y} \mid \boldsymbol{\theta}) \) is intractable or highly complex, $\boldsymbol{y}\in \mathbb{R}^N$. It was introduced in population genetics by \cite{tavare1997inferring, pritchard1999population} and later generalized by \cite{beaumont2002approximate}. The basic intuitive origin of ABC appears to have been introduced by \cite{rubin1984bayesianly}. A growing body of literature explores its applications in biology, cosmology, finance, economics, and other fields.
 
-The requirement in ABC is the ability to simulate from the parametric model. The process begins by drawing samples from the prior distribution \( \pi({\boldsymbol{\theta}}) \) multiple times, $\boldsymbol{\theta}\in\mathbb{R}^K$, and then simulating data from the model given each \( {\boldsymbol{\theta}^{(s)}}, s=1,2,\dots,S \). The resulting synthetic data, \( \boldsymbol{z}^{(s)} \in \mathbb{R}^N \) is used to compute summary statistics \( \boldsymbol{\eta}(\boldsymbol{z}^{(s)}) \in \mathbb{R}^L, L\geq K \). These summary statistics are crucial for the performance of ABC and should be selected based on a thorough understanding of the model.  
+The requirement in ABC is the ability to simulate from the parametric model. The process begins by drawing samples from the prior distribution \( \pi({\boldsymbol{\theta}}) \) multiple times, $\boldsymbol{\theta}\in\mathbb{R}^K$, and then simulating data from the model given each \( {\boldsymbol{\theta}^{(s)}}, s=1,2,\dots,S \). The resulting synthetic data, \( \boldsymbol{z}^{(s)} \in \mathbb{R}^N \), are used to compute summary statistics \( \boldsymbol{\eta}(\boldsymbol{z}^{(s)}) \in \mathbb{R}^L, L\geq K \). These summary statistics are crucial for the performance of ABC and should be selected based on a thorough understanding of the model.  
 
 Next, we compare the synthetic summary statistics with the observed summary statistics \( \boldsymbol{\eta}(\boldsymbol{y}) \) using a distance metric \( d\left\{ \boldsymbol\eta ({\boldsymbol y}),{\boldsymbol \eta }({\boldsymbol z}^{(s)})\right\} \), typically the Euclidean distance. We retain the prior draws that generate synthetic summary statistics closest to the observed ones, that is, \( d\left\{ \boldsymbol\eta ({\boldsymbol y}),{\boldsymbol \eta }({\boldsymbol z}^{(s)})\right\}\leq \epsilon \), forming an approximation of the posterior distribution \( \pi_{\epsilon}(\boldsymbol{\theta},\boldsymbol{z} \mid \boldsymbol{\eta}(\boldsymbol{y})) \).
 
@@ -102,7 +102,7 @@ The following code presents the results, and Figure \ref{figABCexc} compares the
 	\textit{R code. Exchange rate log returns: Approximate Bayesian computation}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-######### ABC Exchange rate og returns: USD/EURO
+######### ABC Exchange rate of returns: USD/EURO
 rm(list = ls()); set.seed(010101)
 library(EasyABC)
 dfExcRate <- read.csv(file = "https://raw.githubusercontent.com/BEsmarter-consultancy/BSTApp/refs/heads/master/DataApp/ExchangeRate.csv", sep = ",", header = T)
@@ -214,7 +214,7 @@ Then, we have
 \begin{align*} 
 	\pi_{a,M}(\boldsymbol{\theta} \mid \boldsymbol{\eta}(\boldsymbol{y})) &\propto p_{a,M}(\boldsymbol{\eta}(\boldsymbol{y})\mid \boldsymbol{\theta}) \pi(\boldsymbol{\theta}), 
 \end{align*}
-where $p_{a,M}(\boldsymbol{\eta}(\boldsymbol{y}))$ uses the estimates, which in turn depends on the number of draws $M$ to calculate $\widehat{\boldsymbol{\mu}}_{\boldsymbol{\theta}}$ and $\widehat{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}}$. Note that although we can have unbiased estimators for the mean and covariance, in general, $N(\boldsymbol{\eta}(\boldsymbol{y})\mid \widehat{\boldsymbol{\mu}}_{\boldsymbol{\theta}},\widehat{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}})$ is not an unbiased estimator of $N(\boldsymbol{\eta}(\boldsymbol{y})\mid {\boldsymbol{\mu}}_{\boldsymbol{\theta}},{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}})$. \cite{an2022bsl} show an unbiased estimator for BSL. 
+where $p_{a,M}(\boldsymbol{\eta}(\boldsymbol{y}))$ uses the estimates, which in turn depend on the number of draws $M$ to calculate $\widehat{\boldsymbol{\mu}}_{\boldsymbol{\theta}}$ and $\widehat{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}}$. Note that although we can have unbiased estimators for the mean and covariance, in general, $N(\boldsymbol{\eta}(\boldsymbol{y})\mid \widehat{\boldsymbol{\mu}}_{\boldsymbol{\theta}},\widehat{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}})$ is not an unbiased estimator of $N(\boldsymbol{\eta}(\boldsymbol{y})\mid {\boldsymbol{\mu}}_{\boldsymbol{\theta}},{\boldsymbol{\Sigma}}_{\boldsymbol{\theta}})$. \cite{an2022bsl} show an unbiased estimator for BSL. 
 
 \cite{nott2023bayesian} show that \( \pi_{a,M}(\boldsymbol{\theta}) \) converges asymptotically to a Gaussian distribution and that the \( 100(1-\alpha)\% \) Bayesian credible regions using BSL have frequentist coverage of \( 100(1-\alpha)\% \). In addition, the posterior mean from BSL is also asymptotically Gaussian. These results require convenient estimation of the covariance matrix and that \( M \to \infty \) as \( N \to \infty \), $M=C\lfloor N^{\gamma} \rfloor, \ C>0, \ \gamma > 0$ and $\lfloor x \rfloor$ denoting the integer floor of $x$. Thus, the choice of \( M \) does not drastically affect the desirable asymptotic properties of BSL \cite{nott2023bayesian}. In addition, \cite{price2018bayesian} find in their examples that posterior inference depends only weakly on \( M \). Thus, \( M \) can be chosen to balance computational efficiency such that the standard deviation of the log synthetic likelihood is between 1 and 3 \cite{an2019accelerating}. 
 
@@ -460,7 +460,7 @@ Note that latent Gaussian models encompass a wide range of relevant empirical mo
 
 Latent Gaussian models assign a Gaussian prior to $\alpha$, $\boldsymbol{\beta}$, $f^{(j)}$, and $\epsilon_{i}$. Let $\boldsymbol{z}$ denote the vector of all latent Gaussian variables $\left\{\alpha, \boldsymbol{\beta}, f^{(j)},\eta_{i}\right\}$, where the dimension is potentially \( P = 1 + K + J + N \) (although this is not always the case), and let $\boldsymbol{\theta}$ be the $m$-dimensional vector of hyperparameters. Then, the density $\pi(\boldsymbol{z} \mid \boldsymbol{\theta}_1)$ is Gaussian with mean zero and precision matrix (i.e., the inverse of the covariance matrix) $\boldsymbol{Q}(\boldsymbol{\theta}_1)$.
 
-The distribution of $\boldsymbol{y}$ is $p(\boldsymbol{y}\mid \boldsymbol{z},\boldsymbol{\theta}_2)$ such that $y_i$ are conditional independent given $z_i$ and $\boldsymbol{\theta}_2$, $\boldsymbol{\theta}=[\boldsymbol{\theta}_1^{\top} \ \boldsymbol{\theta}_2^{\top}]^{\top}$, $i=1,2,\dots,N$. Thus, the posterior distribution is
+The distribution of $\boldsymbol{y}$ is $p(\boldsymbol{y}\mid \boldsymbol{z},\boldsymbol{\theta}_2)$ such that $y_i$ are conditionally independent given $z_i$ and $\boldsymbol{\theta}_2$, $\boldsymbol{\theta}=[\boldsymbol{\theta}_1^{\top} \ \boldsymbol{\theta}_2^{\top}]^{\top}$, $i=1,2,\dots,N$. Thus, the posterior distribution is
 \begin{align}\label{eq:INLA1}
 	\pi(\boldsymbol{z},\boldsymbol{\theta}\mid \boldsymbol{y})&\propto \pi(\boldsymbol{\theta})\times \pi(\boldsymbol{z}\mid \boldsymbol{\theta}_1)\times \prod_{i=1}^{N}p(y_i\mid \boldsymbol{z},\boldsymbol{\theta}_2)\\
 	&\propto \pi(\boldsymbol{\theta})|\boldsymbol{Q}(\boldsymbol{\theta}_1)|^{1/2}\exp\left\{-\frac{1}{2}\boldsymbol{z}^{\top}\boldsymbol{Q}(\boldsymbol{\theta}_1)\boldsymbol{z}+\sum_{i=1}^N\log p(y_i\mid z_i,\boldsymbol{\theta}_2)\right\}.\nonumber
@@ -503,7 +503,7 @@ We can obtain the marginal posterior distributions integrating with respect to $
 	\pi(z_i\mid \boldsymbol{y})&=\int_{{\Theta}} \pi(z_i\mid \boldsymbol{\theta},\boldsymbol{y})\pi(\boldsymbol{\theta}\mid\boldsymbol{y})d\boldsymbol{\theta}\\
 	\pi(\theta_l\mid\boldsymbol{y})&=\int_{{\Theta}} \pi(\boldsymbol{\theta}\mid \boldsymbol{y})d\boldsymbol{\theta}_{-l}.
 \end{align*}
-This integrals are solve numerically using a smart grid around the mode of $\pi_a(\boldsymbol{\theta}\mid\boldsymbol{y})$. In particular, 
+These integrals are solve numerically using a smart grid around the mode of $\pi_a(\boldsymbol{\theta}\mid\boldsymbol{y})$. In particular, 
 \begin{align*}
 	\pi_a(z_i\mid \boldsymbol{y})&=\sum_{g=1}^G \pi_{a}(z_i\mid \boldsymbol{\theta}_g,\boldsymbol{y})\pi_a(\boldsymbol{\theta}_g\mid \boldsymbol{y})\Delta_g,
 \end{align*}
@@ -558,7 +558,7 @@ We present the results obtained using the three approximation strategies availab
 	\begin{VF}
 		\begin{lstlisting}[language=R]
 # Install Rtools according to your R version
-# Check Rtolls is properly installed
+# Check Rtools is properly installed
 # Install INLA
 # install.packages("INLA",repos=c(getOption("repos"),INLA="https://inla.r-inla-download.org/R/stable"), dep=TRUE)
 rm(list = ls()); set.seed(010101); library(INLA)
@@ -631,7 +631,7 @@ inla.qmarginal(c(0.025, 0.5, 0.975), marg.var.sla) # 95% credible interval
 
 \textbf{Example: Spatial econometrics model}
 
-The starting point of spatial econometrics is the \textit{contiguity} or \textit{adjacency} matrix \( W \), which defines which spatial polygons (regions) are considered neighbors. This is an \( N \times N \) matrix, where each row and column corresponds to a spatial polygon, and a non-zero element indicates that two polygons are neighbors. By construction, the main diagonal is equal to zero, meaning that no polygon is a neighbor to itself. Given its structure, the contiguity matrix is sparse.
+The starting point of spatial econometrics is the \textit{contiguity} or \textit{adjacency} matrix \( W \), which defines which spatial polygons (regions) are considered neighbors. This is an \( N \times N \) matrix, where each row and column corresponds to a spatial polygon, and a nonzero element indicates that two polygons are neighbors. By construction, the main diagonal is equal to zero, meaning that no polygon is a neighbor to itself. Given its structure, the contiguity matrix is sparse.
 
 There are various ways to define contiguity between spatial units, with two of the most commonly used criteria being the \textit{queen} and \textit{rook} criteria, inspired by chess. In the queen criterion, two spatial units are considered neighbors if they share any part of a boundary or a point. In contrast, under the rook criterion, two units are considered neighbors only if they share a common boundary edge; they must touch along at least one side, and corner contact is not sufficient to establish a neighbor relationship.
 
@@ -664,7 +664,7 @@ where $\boldsymbol{\epsilon}=(\boldsymbol{I}_N-\rho\boldsymbol{W})^{-1}\boldsymb
 
 The degree of spatial dependence in the SAR and SDM models is determined by the parameter \( \rho \). Note that the SDM model is similar to the SAR model, except that it also includes spatial lags of the regressors as additional covariates.
 
-\cite{ord75} and \cite{anselin82} show that a necessary condition for weak stationarity in spatial autoregressive processes with a row-standardized contiguity matrix is that the spatial autocorrelation coefficient must lie between \( 1/\omega_{\min} \) and 1, where \( \omega_{\min} \) is the smallest (most negative) eigenvalue of the contiguity matrix.\footnote{This is a necessary condition to ensure weak stationarity but is not sufficient due to edge and corner effects \cite[]{haining90}.}
+\cite{ord75} and \cite{anselin82} show that a necessary condition for weak stationarity in spatial autoregressive processes with a row-standardized contiguity matrix is that the spatial autocorrelation coefficient must lie between \( 1/\omega_{\min} \) and 1, where \( \omega_{\min} \) is the smallest (most negative) eigenvalue of the contiguity matrix.\footnote{This is a necessary condition to ensure weak stationarity but is not sufficient due to edge and corner effects \cite{haining90}.}
 
 Note that these three models, conditional on the spatial parameter, are standard linear regressions, which can be easily estimated using \textit{INLA}. \cite{bivand2015spatial} use the \textit{INLABMA} package to estimate these models conditional on different values of the spatial parameters, and then perform Bayesian Model Averaging (BMA) using the resulting estimates. In particular, it is necessary to define a grid over the spatial parameters, perform Bayesian inference using INLA for each value in the grid, and then aggregate the posterior results using BMA.
 
@@ -827,7 +827,7 @@ Note that the ELBO can be also expressed as
 	&=\mathbb{E}_q\log(p(\boldsymbol{y}\mid \boldsymbol{\theta}))+\mathbb{E}_q\log(\pi(\boldsymbol{\theta}))-\mathbb{E}_q\log(q(\boldsymbol{\theta}))\\
 	&=\mathbb{E}_q\log(p(\boldsymbol{y}\mid \boldsymbol{\theta}))-\text{KL}(q(\boldsymbol{\theta})||\pi(\boldsymbol{\theta})).
 \end{align*} 
-This means that when maximizing the ELBO, we seek the distribution $q(\boldsymbol{\theta})$ that both maximizes the likelihood and minimizes the KL divergence between the variational distribution and the prior. In other words, we aim to strike a balance between the prior and the likelihood, which aligns with the core principle of Bayesian inference deriving the posterior distribution.
+This means that when maximizing the ELBO, we seek the distribution $q(\boldsymbol{\theta})$ that both maximizes the likelihood and minimizes the KL divergence between the variational distribution and the prior. In other words, we aim to strike a balance between the prior and the likelihood, which aligns with the core principle of Bayesian inference: deriving the posterior distribution.
 
 The most common approach for specifying $q(\boldsymbol{\theta})$ is to assume independence across blocks of $\boldsymbol{\theta}$, i.e., $q(\boldsymbol{\theta}) = \prod_{l=1}^K q_l(\boldsymbol{\theta}_l)$. This is known as the \textit{mean-field variational family}, a term that originates from statistical physics. Each $q_l(\boldsymbol{\theta}_l)$ is parameterized by a set of \textit{variational parameters}, and optimization is performed with respect to these parameters. Note that the mean-field approximation does not capture dependencies between parameters, although it can approximate the marginal distributions.
 
@@ -896,7 +896,7 @@ However, calculating this update requires using the entire dataset, which is com
 	\hat{\boldsymbol{\xi}}&=\boldsymbol{\alpha}+N(\mathbb{E}_{\boldsymbol{\psi}_i^*}[t(\boldsymbol{z}_i,\boldsymbol{y}_i)]^{\top},1)^{\top}\\
 	\boldsymbol{\xi}_t&=(1-\epsilon_t)\boldsymbol{\xi}_{t-1}+\epsilon_t\hat{\boldsymbol{\xi}},
 \end{align*}
-where $(\boldsymbol{z}_i, \boldsymbol{y}_i)$ is a random draw from the sample and its corresponding latent variable. Finally, the step size schedule to update the global parameters are given by
+where $(\boldsymbol{z}_i, \boldsymbol{y}_i)$ is a random draw from the sample and its corresponding latent variable. Finally, the step size schedule to update the global parameters is given by
 \begin{align*}
 	\epsilon_t&=t^{-\kappa}, \ 0.5 < \kappa \leq 1.
 \end{align*} 
@@ -935,7 +935,7 @@ This means that each optimal variational factor is in the same exponential famil
 
 Variational Bayes (VB) shares some similarities with Gibbs sampling. In Gibbs sampling, we iteratively sample from the conditional posterior distributions, whereas in VB we iteratively update the variational parameters of the variational family. The former is stochastic, while the latter is deterministic, and consequently faster in complex models or large datasets. VB also bears resemblance to Expectation Propagation (EP): both are deterministic algorithms that approximate the posterior distribution by minimizing the Kullback-Leibler (KL) divergence. However, VB minimizes $\text{KL}(q(\boldsymbol{\theta}) \| \pi(\boldsymbol{\theta} \mid \boldsymbol{y}))$, whereas EP minimizes $\text{KL}(\pi(\boldsymbol{\theta} \mid \boldsymbol{y}) \| q(\boldsymbol{\theta}))$. As a result, VB tends to approximate the mode of the posterior by maximizing the ELBO, while EP focuses on matching the mean and variance through moment matching \cite{bishop2006pattern,gelman2021bayesian}. Although EP often provides better uncertainty quantification, it tends to be less stable and does not scale well to large datasets.
 
-VB also shares some conceptual features with the Expectation-Maximization (EM) algorithm. In both methods, there is an initial step involving the computation of expectations —used in VB to derive the variational distributions— and an iterative step that maximizes a target function (the ELBO in VB, the expected complete-data log-likelihood in EM). However, EM yields point estimates, whereas VB yields full posterior approximations.\\
+VB also shares some conceptual features with the Expectation--Maximization (EM) algorithm. In both methods, there is an initial step involving the computation of expectations —used in VB to derive the variational distributions— and an iterative step that maximizes a target function (the ELBO in VB, the expected complete-data log-likelihood in EM). However, EM yields point estimates, whereas VB yields full posterior approximations.\\
 
 \textbf{Example: Linear regression}
 
@@ -1130,7 +1130,7 @@ summary(coda::mcmc(sig2VBscratch)); summary(coda::mcmc(BetasVBscratch))
 \end{tcolorbox}
 
 \section{Summary}\label{sec15_3}
-In this chapter, we present approximate methods designed for situations where the likelihood function does not have a closed-form expression (e.g., ABC and BSL), or where the sample size and parameter space are large (e.g., INLA and VI), making traditional MCMC and importance sampling (IS) methods ineffective. We provide the theoretical foundations and include applications to illustrate the potential of these methods.
+In this chapter, we present approximate methods designed for situations where the likelihood function does not have a closed-form expression (e.g., ABC and BSL) or where the sample size and parameter space are large (e.g., INLA and VI), making traditional MCMC and importance sampling (IS) methods ineffective. We provide the theoretical foundations and include applications to illustrate the potential of these methods.
 
 \textit{Simulation-based algorithms} suffer from the \textit{curse of dimensionality} in the parameter space, while \textit{optimization-based approaches} typically require explicit evaluation of the likelihood function. To address situations where both challenges arise simultaneously, recent developments, referred to as \textit{hybrid methods}, combine these strategies with the \textit{pseudo-marginal} MCMC approach \cite{andrieu2009pseudoefficient, martin2024approximating}. For instance, when pseudo-marginal MCMC is combined with variational Bayes, it becomes possible to perform inference in high-dimensional spaces even when the likelihood function is intractable \cite{tran2017variational}.  
 

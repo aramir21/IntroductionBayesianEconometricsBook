@@ -2,9 +2,9 @@
 
 We describe how to perform inference in longitudinal/panel models using a Bayesian framework. In this context, multiple cross-sectional units are observed repeatedly over time, a structure referred to as panel data by econometricians and longitudinal data by statisticians. Specifically, we present models for continuous (normal), binary (logit), and count (Poisson) responses. Applications and exercises illustrate the potential of these models.
 
-In longitudinal/panel data sets, we have $y_{it}$ where $i=1,2,\dots,N$ and $t=1,2,\dots,T_i$. If $T_i=T$ for all $i$, the dataset is \textit{balanced}; otherwise, it is \textit{unbalanced}. Panel data typically involves by far more cross-sectional units than time periods, this is called typically a \textit{short panel}. It assumes that cross-sectional units are independent, though serial correlation exists within each unit over time, and unobserved heterogeneity for each unit must be accounted for. We can treat this unobserved heterogeneity as random variables, assuming it is either independent or dependent on control variables. Econometricians refer to these cases as \textit{random effects} and \textit{fixed effects}, respectively. The Bayesian literature takes a different approach, modeling the panel structure hierarchically, where the unobserved heterogeneity may or may not depend on other controls.\footnote{See \cite{rendon2013fixed} for a nice comparison of Frequentist and Bayesian treatments of panel data models.}
+In longitudinal/panel data sets, we have $y_{it}$ where $i=1,2,\dots,N$ and $t=1,2,\dots,T_i$. If $T_i=T$ for all $i$, the dataset is \textit{balanced}; otherwise, it is \textit{unbalanced}. Panel data typically involves far more cross-sectional units than time periods, this is called typically a \textit{short panel}. It assumes that cross-sectional units are independent, though serial correlation exists within each unit over time, and unobserved heterogeneity for each unit must be accounted for. We can treat this unobserved heterogeneity as random variables, assuming it is either independent or dependent on control variables. Econometricians refer to these cases as \textit{random effects} and \textit{fixed effects}, respectively. The Bayesian literature takes a different approach, modeling the panel structure hierarchically, where the unobserved heterogeneity may or may not depend on other controls.\footnote{See \cite{rendon2013fixed} for a nice comparison of Frequentist and Bayesian treatments of panel data models.}
 
-Remember that the easiest way to run our GUI is typing
+Remember that the easiest way to run our GUI is by typing
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -113,7 +113,7 @@ This is the kernel of an inverse Wishart distribution with degrees of freedom $d
 \begin{equation*}
 	\bm{D}\mid  \bm{b} \sim {I}{W}(d_n, \bm{D}_n).
 \end{equation*}
-Observe that the posterior distribution of $\bm{D}$ dependents just on $\bm{b}$. 
+Observe that the posterior distribution of $\bm{D}$ depends only on $\bm{b}$. 
 
 All the posterior conditional distributions belong to standard families, this implies that we can use a Gibbs sampling algorithm to perform inference in these hierarchical normal models.\\
 
@@ -125,7 +125,7 @@ In particular, we perform inference based on the following equation
 	\log(\text{gsp}_{it})=b_i+\beta_1+\beta_2\log(\text{pcap}_{it})+\beta_3\log(\text{pc}_{it})+\beta_4\log(\text{emp}_{it})+\beta_5\text{unemp}_{it}+\mu_{it},
 \end{equation*}
 
-where gsp in the gross state product, pcap is public capital, and pc is private capital all in USD, emp is employment (people), and unemp is the unemployment rate in percentage.
+where gsp is the gross state product, pcap is public capital, and pc is private capital all in USD, emp is employment (people), and unemp is the unemployment rate in percentage.
 
 Algorithm \ref{alg:HLN} shows how to perform inference in hierarchical longitudinal normal models in our GUI. See also Chapter \ref{chapGUI} for details regarding the dataset structure.
 
@@ -193,7 +193,7 @@ Let's perform a simulation exercise to assess some potential extensions of the l
 \[y_{it}=\beta_0+\beta_1x_{it1}+\beta_2x_{it2}+\beta_3x_{it3}+b_i+w_{it1}b_{i1}+\mu_{it},\]
 where $x_{itk}\sim N(0,1)$, $k=1,2,3$, $w_{it1}\sim N(0,1)$, $b_i\sim N(0, 0.7^{1/2})$, $b_{i1}\sim N(0, 0.6^{1/2})$, $\mu_{it}\sim N(0, (0.1/\tau_{it})^{1/2})$, $\tau_{it}\sim G(v/2,v/2)$ and $\bm{\beta}=[0.5 \ 0.4 \ 0.6 \ -0.6]^{\top}$, $i=1,2,\dots,50$. The sample size is 2,000 in an \textit{unbalanced panel structure}. 
 
-Following same stages as in this section and Exercise 1, the posterior conditional distributions assuming that $\mu_{it}\mid \tau_{it}\sim N(0, \sigma^2/\tau_{it})$, $\tau_{it}\sim G(v/2,v/2)$ are given by 
+Following the same stages as in this section and Exercise 1, the posterior conditional distributions assuming that $\mu_{it}\mid \tau_{it}\sim N(0, \sigma^2/\tau_{it})$, $\tau_{it}\sim G(v/2,v/2)$ are given by 
 \begin{equation*}
 	\bm{\beta}\mid \sigma^2,\bm{\tau},\bm{D},\bm{y}, \bm{X}, \bm{W} \sim {N}(\bm{\beta}_n,\bm{B}_n), 
 \end{equation*}
@@ -215,7 +215,7 @@ where $d_n=d_0+N$ and $\bm{D}_n=d_0\bm{D}_0+\sum_{i=1}^N\bm{b}_i\bm{b}_i^{\top}$
 \end{equation*}
 where $v_{1n}=v+1$ and $v_{2ni}=v+\sigma^{-2}(y_{it}-\bm{x}_{it}^{\top}\bm{\beta}-\bm{w}_{it}^{\top}\bm{b}_i)^2$.
 
-The following code implements this simulation, and gets draws of the posterior distributions. We set MCMC iterations, burn-in and thinning parameters equal to 5,000, 1,000 and 1, respectively. In addition, $\bm{\beta}_0=\bm{0}_5$, $\bm{B}_0=\bm{I}_5$, $\alpha_0=\delta_0=0.001$, $d_0=2$, $\bm{D}_0=\bm{I}_2$ and $v=5$.
+The following code implements this simulation, and obtains draws of the posterior distributions. We set MCMC iterations, burn-in and thinning parameters equal to 5,000, 1,000 and 1, respectively. In addition, $\bm{\beta}_0=\bm{0}_5$, $\bm{B}_0=\bm{I}_5$, $\alpha_0=\delta_0=0.001$, $d_0=2$, $\bm{D}_0=\bm{I}_2$ and $v=5$.
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -383,7 +383,7 @@ summary(coda::mcmc(sig2s))
 	\end{VF}
 \end{tcolorbox}
 
-We can see that all the 95\% credible intervals encompass the population parameters, except for the second \textit{fixed effect} and the variance of the model, but both for a tiny margin.  
+We can see that all the 95\% credible intervals encompass the population parameters, except for the second \textit{fixed effect} and the variance of the model, but both by a tiny margin.  
 
 \section{Logit model}\label{sec92}
 
@@ -487,7 +487,7 @@ The results suggest that age, sports, income and a bad perception of health stat
 
 \section{Poisson model}\label{sec93}
 
-We can use same ideas as in Section \ref{sec92} to perform inference in longitudinal/panel datasets where the dependent variable takes non-negative integers. Let's assume that $y_{it}\sim P(\lambda_{it})$ where $\log(\lambda_{it})=y_{it}^*$ such that $y_{it}^*\sim N(\bm{x}_{it}^{\top}\bm{\beta}+\bm{w}_{it}^{\top}\bm{b}_i,\sigma^2)$. We can \textit{augment} the model with the latent variable $y_{it}^{*}$, and again use a Metropolis-within-Gibbs algorithm to perform inference in this model.
+We can use the same ideas as in Section \ref{sec92} to perform inference in longitudinal/panel datasets where the dependent variable takes non-negative integers. Let's assume that $y_{it}\sim P(\lambda_{it})$ where $\log(\lambda_{it})=y_{it}^*$ such that $y_{it}^*\sim N(\bm{x}_{it}^{\top}\bm{\beta}+\bm{w}_{it}^{\top}\bm{b}_i,\sigma^2)$. We can \textit{augment} the model with the latent variable $y_{it}^{*}$, and again use a Metropolis-within-Gibbs algorithm to perform inference in this model.
 
 The posterior distribution of this model is
 \begin{align*}
@@ -715,7 +715,7 @@ summary(coda::mcmc(Bs)); summary(coda::mcmc(Ds))
 	\end{VF}
 \end{tcolorbox}
 
-We can see that all 95\% credible intervals encompass the population parameters of the \textit{fixed effects}, the posterior medians are relatively near the population values. However, we do not get good posterior estimates of the covariance matrix of the \textit{random effects} as the 95\% credible intervals do not encompass the second element of the diagonal of this matrix. In addition, the posterior draws of this algorithm over-estimates the over-dispersion parameter.
+We can see that all 95\% credible intervals encompass the population parameters of the \textit{fixed effects}, the posterior medians are relatively near the population values. However, we do not get good posterior estimates of the covariance matrix of the \textit{random effects} as the 95\% credible intervals do not encompass the second element of the diagonal of this matrix. In addition, the posterior draws of this algorithm overestimates the over-dispersion parameter.
 
 We can perform inference for the hierarchical longitudinal Poisson model in our GUI using Algorithm \ref{alg:HPosi}. Our GUI is based on the \textit{MCMChpoisson} command from the \textit{MCMCpack} package.
 
@@ -735,7 +735,7 @@ We can perform inference for the hierarchical longitudinal Poisson model in our 
 		\State Analyze results
 		\State Download posterior chains and diagnostic plots using the \textit{Download Posterior Chains} and \textit{Download Posterior Graphs} buttons
 	\end{algorithmic}
-	$^*${\footnotesize{At the time of writing this book there was an issue with the function \textit{MCMChpoisson} from \textit{MCMCpack}. We contact the maintainer, but users may have issues running this algorithm or running this function directly in \textbf{R}.}} 
+	$^*${\footnotesize{At the time of writing this book there was an issue with the function \textit{MCMChpoisson} from \textit{MCMCpack}. We contacted the maintainer, but users may have issues running this algorithm or running this function directly in \textbf{R}.}} 
 \end{algorithm}
 
 
@@ -784,5 +784,5 @@ where $x_{itk}\sim N(0,1)$, $k=1,2,3$, $w_{it1}\sim N(0,1)$, $b_i\sim N(0, 0.7^{
 
 \item \textbf{Doctor visits in Germany continues II} 
 
-Take a sub-sample of the first 500 individuals of the datatset \textit{9VisitDoc.csv} to perform inference in the number of visits to doctors (\textit{DocNum}) with the same specification of the example of \textbf{Doctor visits in Germany} of Section \ref{sec92}.	
+Take a sub-sample of the first 500 individuals of the dataset \textit{9VisitDoc.csv} to perform inference in the number of visits to doctors (\textit{DocNum}) with the same specification of the example of \textbf{Doctor visits in Germany} of Section \ref{sec92}.	
 \end{enumerate}

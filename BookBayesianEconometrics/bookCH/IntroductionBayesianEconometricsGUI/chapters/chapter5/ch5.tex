@@ -18,7 +18,7 @@ Given that we start at an arbitrary point, $\bm{\theta}^{(0)}$, the algorithm re
 
 The Gibbs sampler algorithm is one of the most widely used MCMC methods for sampling from non-standard distributions in Bayesian analysis. While it is a special case of the Metropolis-Hastings (MH) algorithm, it originated from a different theoretical background \cite{Geman1984,Gelfand1990}. The key requirement for implementing the Gibbs sampling algorithm is the availability of conditional posterior distributions. The algorithm works by cycling through the conditional posterior distributions corresponding to different blocks of the parameter space under inference.
 
-Two simplify concepts let's focus on a parameter space composed by two blocks, $\bm{\theta} = [\bm{\theta}_1 \ \bm{\theta}_2]^{\top}$, the Gibbs sampling algorithm uses as transition kernel $q(\bm{\theta}_1^{(s)},\bm{\theta}_2^{(s)}\mid \bm{\theta}_1^{(s-1)},\bm{\theta}_2^{(s-1)})=\pi(\bm{\theta}_1^{(s)}\mid \bm{\theta}_2^{(s-1)},\bm{y})\pi(\bm{\theta}_2^{(s)}\mid \bm{\theta}_1^{(s)},\bm{y})$. Thus,
+To simplify concepts let's focus on a parameter space composed by two blocks, $\bm{\theta} = [\bm{\theta}_1 \ \bm{\theta}_2]^{\top}$, the Gibbs sampling algorithm uses as transition kernel $q(\bm{\theta}_1^{(s)},\bm{\theta}_2^{(s)}\mid \bm{\theta}_1^{(s-1)},\bm{\theta}_2^{(s-1)})=\pi(\bm{\theta}_1^{(s)}\mid \bm{\theta}_2^{(s-1)},\bm{y})\pi(\bm{\theta}_2^{(s)}\mid \bm{\theta}_1^{(s)},\bm{y})$. Thus,
 
 \begin{align*}
 	\int_{\bm{\Theta}}q(\bm{\theta}^{(s)}\mid \bm{\theta}^{(s-1)})\pi(\bm{\theta}^{(s-1)}\mid \bm{y})d\bm{\theta}^{(s-1)}
@@ -63,7 +63,7 @@ We assume there is an unknown structural change point in the number of mining di
 		\frac{\exp(-\lambda_2)\lambda_2^{y_t}}{y_t!}, & t=H+1,\dots,T\\
 	\end{Bmatrix},
 \end{align*}  
-where $H$ is the changing point.
+where $H$ is the change point.
 
 We use conjugate families for $\lambda_l$, $l = 1, 2$, where $\lambda_l \sim G(\alpha_{l0}, \beta_{l0})$, and set $\pi(H) = 1 / T$, which corresponds to a discrete uniform distribution for the change point. This implies that, a priori, we assume equal probability for any time to be the change point.
 
@@ -131,7 +131,7 @@ hist(kk, main = "Histogram: Posterior mean change point", xlab = "Posterior mean
 	\end{VF}
 \end{tcolorbox} 
 
-The posterior results indicate that the rate of disasters decrease from 3.1 to 0.92 per year in 1890. 
+The posterior results indicate that the rate of disasters decreases from 3.1 to 0.92 per year in 1890. 
 
 Figure \ref{fig52} shows the histogram of the posterior draws of the change point in mining disasters. 
 
@@ -308,7 +308,7 @@ The acceptance rate should be checked, with the optimal rate around 65\% \cite[C
 
 \textbf{Example: Sampling from a bi-variate Gaussian distribution}
 
-As a toy example, let's compare the Gibbs sampling, M-H and HMC algorithms when the posterior distribuion is a bi-variate Gaussian distribution with mean $\bm{0}$ and covariance matrix $\bm{\Sigma}=\begin{bmatrix}
+As a toy example, let's compare the Gibbs sampling, M-H and HMC algorithms when the posterior distribution is a bi-variate Gaussian distribution with mean $\bm{0}$ and covariance matrix $\bm{\Sigma}=\begin{bmatrix}
 	1 & \rho \\
 	\rho & 1
 \end{bmatrix}$. Let's set $\rho= 0.98$.
@@ -451,7 +451,7 @@ ggarrange(g3, g2, g1, labels = c("A", "B", "C"), ncol = 3, nrow = 1)
 	\end{VF}
 \end{tcolorbox} 
  
-Figure \ref{fig54} shows the posterior draws of $\theta_1$ using the Gibbs sampler (Panel A, left), the Metropolis-Hastings algorithm (Panel B, middle), and the Hamiltonian Monte Carlo (Panel C, right). The convergence diagnostic plots (no shown) suggests that the three algorithms perform a good job. Although, the acceptance rate in HMC is higher than the M-H due to the HMC producing larger changes in $\bm{\theta}$ than a corresponding number of random-walk M-H iterations \cite{neal2011mcmc}.
+Figure \ref{fig54} shows the posterior draws of $\theta_1$ using the Gibbs sampler (Panel A, left), the Metropolis-Hastings algorithm (Panel B, middle), and the Hamiltonian Monte Carlo (Panel C, right). The convergence diagnostic plots (not shown) suggest that the three algorithms perform a good job. Although the acceptance rate in HMC is higher than the M-H due to the HMC producing larger changes in $\bm{\theta}$ than a corresponding number of random-walk M-H iterations \cite{neal2011mcmc}.
 
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter5/figures/BivariateNormal.98}
@@ -497,7 +497,7 @@ A natural choice in Bayesian inference is to use the prior distribution as the p
 
 The most relevant point for us is that importance sampling provides a way to simulate from the posterior distribution when there is no closed-form solution. The method generates samples $\bm{\theta}^{(s)}$ from $q(\bm{\theta})$ and computes the importance weights $w(\bm{\theta}^{(s)})$. Thus, if we \textit{resample} with replacement from $\bm{\theta}^{(1)},\bm{\theta}^{(2)},\dots,\bm{\theta}^{(S)}$, selecting $\bm{\theta}^{(s)}$ with probability proportional to  $w(\bm{\theta}^{(s)})$, we would get a sample $\bm{\theta}^{*(1)},\bm{\theta}^{*(2)},\dots,\bm{\theta}^{*(L)}$ of size $L$ from $\pi(\bm{\theta}\mid \bm{y})$ \cite{smith1992bayesian,rubin1988sir}. This is named \textit{sampling/importance resampling} (SIR) algorithm. Observe that the number of times $L^{(s)}$ each particular point $\bm{\theta}^{(s)}$ is selected follows a binomial distribution with size $L$, and probabilities proportional to $w^{(s)}$. Consequently, the vector $L_{\bm{\theta}} = \left\{L_{\bm{\theta}^1}, L_{\bm{\theta}^2}, \dots, L_{\bm{\theta}^S}\right\}$ follows a multinomial distribution with $L$ trials and probabilities proportional to $w(\bm{\theta}^{(s)})$, $s = 1, 2, \dots, S$ \cite{cappe2007overview}. Therefore, the resampling step ensures that points in the first-stage sample with small importance weights are more likely to be discarded, while points with high weights are replicated in proportion to their importance weights. In most applications, it is typical to have $S \gg L$.
 
-The intuition is that importance weights are scaling factors that correct for the bias introduced by drawing from $q(\bm{\theta}^{(s)})$ instead of $\pi(\bm{\theta}^{(s)}\mid \bm{y})$; thus, when combined, the samples and weights effectively recreate the posterior distribution, ensuring the resampled data set reflects the posterior. Let's proof this 
+The intuition is that importance weights are scaling factors that correct for the bias introduced by drawing from $q(\bm{\theta}^{(s)})$ instead of $\pi(\bm{\theta}^{(s)}\mid \bm{y})$; thus, when combined, the samples and weights effectively recreate the posterior distribution, ensuring the resampled data set reflects the posterior. Let's prove this 
 \begin{align*}
 	P(\bm{\theta}^*\in A)
 	&=\frac{1}{S}\sum_{s=1}^S{w}^{(s)}\mathbbm{1}_{A}(\bm{\theta}^{(s)})\\
@@ -510,7 +510,7 @@ Thus, $\bm{\theta}^*$ is approximately distributed as an observation from $\pi(\
 
 However, the weights $\pi(\bm{\theta}^{(s)}\mid \bm{y})/(Sq(\bm{\theta}^{(s)}))$ do not sum up to 1, and we need to standardize them, 
 $$w^*(\bm{\theta}^{(s)})=\frac{\frac{1}{S} w(\bm{\theta}^{(s)})}{\frac{1}{S}\sum_{s=1}^Sw(\bm{\theta}^{(s)})}.$$
-Note that we could alternatively arrive to these weights as follow 
+Note that we could alternatively arrive to these weights as follows 
 \begin{align*}\label{eq5_4}
 	\mathbb{E}_{\pi}[h(\bm{\theta})]&=\int_{\bm{\Theta}} \left[\frac{h(\bm{\theta}) \pi(\bm{\theta}\mid \bm{y})}{q(\bm{\theta})}\right]q(\bm{\theta})d\bm{\theta}\\
 	&=\frac{\int_{\bm{\Theta}}\left[\frac{h(\bm{\theta}) \pi(\bm{\theta}\mid \bm{y})}{q(\bm{\theta})}\right] q(\bm{\theta})d\bm{\theta}}{\int_{\bm{\Theta}}\left[\frac{ \pi(\bm{\theta}\mid \bm{y})}{q(\bm{\theta})}\right] q(\bm{\theta})d\bm{\theta}}.
@@ -601,7 +601,7 @@ Figures \ref{fig56} and \ref{fig57} show the histograms of the posterior draws u
 
 Now, we consider the scenario where we need to sample from a posterior distribution whose dimension increases over time, $\pi(\bm{\theta}_{0:t}\mid \bm{y}_{0:t})$, for $t = 0, 1, \dots$. The challenge arises from the fact that, even if this posterior distribution is known, the computational complexity of implementing a sampling scheme in this context increases linearly with $t$. This makes MCMC methods, which operate in batch mode and require a complete re-run whenever new information becomes available, less optimal. Consequently, we present sequential algorithms, which operate incrementally as new data becomes available, and are often a better alternative. These algorithms are typically faster and are well-suited for scenarios requiring real-time updates, commonly referred to as online mode.
 
-Specifically, we consider the dynamic system in the \textit{state-space} representation. This is a system where there is an \textit{unobservable state vector} $\bm{\theta}_t\in\mathbb{R}^K$, and an observed variable $\bm{Y}_t$, $t=0,1,\dots$ such that (i) $\bm{\theta}_t$ is a \textit{Markov process}, this is, $\pi(\bm{\theta}_{t}\mid \bm{\theta}_{1:t-1})=\pi(\bm{\theta}_{t}\mid \bm{\theta}_{t-1})$, $t=1,2,\dots$, all the relevant information to define $\bm{\theta}_{t}$ is in $\bm{\theta}_{t-1}$,\footnote{$\bm{\theta}_{0}$ comes from the given distribution $\pi(\bm{\theta}_{0})$.} and ii) $\bm{Y}_t\perp \bm{Y}_s\mid \bm{\theta}_{t}$, $s<t$, there is independence between observable variables regarding their history conditional on the actual state vector. We can see in Figure \ref{fig:state_space} a graphical representation of the dynamic system.
+Specifically, we consider the dynamic system in the \textit{state-space} representation. This is a system where there is an \textit{unobservable state vector} $\bm{\theta}_t\in\mathbb{R}^K$, and an observed variable $\bm{Y}_t$, $t=0,1,\dots$ such that (i) $\bm{\theta}_t$ is a \textit{Markov process}, that is, $\pi(\bm{\theta}_{t}\mid \bm{\theta}_{1:t-1})=\pi(\bm{\theta}_{t}\mid \bm{\theta}_{t-1})$, $t=1,2,\dots$, all the relevant information to define $\bm{\theta}_{t}$ is in $\bm{\theta}_{t-1}$,\footnote{$\bm{\theta}_{0}$ comes from the given distribution $\pi(\bm{\theta}_{0})$.} and ii) $\bm{Y}_t\perp \bm{Y}_s\mid \bm{\theta}_{t}$, $s<t$, there is independence between observable variables regarding their history conditional on the actual state vector. We can see in Figure \ref{fig:state_space} a graphical representation of the dynamic system.
 \begin{figure}[h!]
 \centering
 %\resizebox{1\textwidth}{!}{%
@@ -791,7 +791,7 @@ Figure \ref{fig58} shows the trajectory of the true state vector (black line), t
 	\caption[List of figure caption goes here]{State in linear state-space model: True and mean estimate using sequential importance sampling, $T=50$.}\label{fig58}
 \end{figure} 
 
-Sequential importance sampling is effective for sampling from the posterior distribution in the short term. However, it is important to note that SIS is a particular case of IS and, consequently, inherits the drawbacks of importance sampling. In particular, the variance of the weights increases exponentially with $t$ \cite{kong1994sequential}. This implies that, as $t$ increases, the importance weights tend to degenerate in the long run; that is, all probability mass concentrates on a few weights, a phenomenon known as sample impoverishment or weight degeneracy. This is because is impossible to accurately
+Sequential importance sampling is effective for sampling from the posterior distribution in the short term. However, it is important to note that SIS is a particular case of IS and, consequently, inherits the drawbacks of importance sampling. In particular, the variance of the weights increases exponentially with $t$ \cite{kong1994sequential}. This implies that, as $t$ increases, the importance weights tend to degenerate in the long run; that is, all probability mass concentrates on a few weights, a phenomenon known as sample impoverishment or weight degeneracy. This is because it is impossible to accurately
 represent a distribution on a space of arbitrarily high dimension with a sample of fixed, finite size. This phenomenon can be observed, for instance, in the dynamic linear model example, where the highest standardized weight at $t=50$ is 53\%, and 7 out of 50,000 particles account for 87\% of the total probability.
 
 Given that, in practice, we are often interested in lower-dimensional marginal distributions, ideas from sampling/importance resampling can be employed. This strategy avoids the accumulation of errors due to resetting the system, although resampling introduces some additional Monte Carlo variation. \cite{Gordon1993} proposed the \textit{Bootstrap filter}, where, at each time step, resampling is performed by drawing $S$ particles from the current set using the standardized weights as probabilities of selection. This ensures that particles with small weights have a low probability of being selected. After resampling, the standardized weights are set equal to $1/S$. Note that the \textit{Bootstrap filter} involves multiple iterations of the SIR algorithm, which implies that the resampled trajectories are no longer independent. This multinomial resampling provides an unbiased approximation to the posterior distribution obtained by SIS \cite{doucet2009tutorial}.  
@@ -827,7 +827,7 @@ Let's apply the SIS algorithm to the dynamic linear model with a sample size of 
 	\caption[List of figure caption goes here]{State in linear state-space model: True and mean estimate using sequential importance sampling, $T=200$.}\label{fig59}
 \end{figure} 
 
-Let's perform particle filtering in this example. The following code illustrate the procedure. Figure \ref{fig510} shows the performance of particle filtering in this example. There is the true state vector (black line), the means based on $\left\{\bm{\theta}_{1:t}^{(s)},w_t^{*(s)}\right\}$ (dotted line) and  $\left\{\bm{\theta}_{1:t}^{r(s)},1/S\right\}$ (dashed line), and the area defined by $\pm2\hat{\sigma}_{\theta}$ based on the former (light blue shaded area). Note that the particle filtering algorithm has better performance than the SIS algorithm.   
+Let's perform particle filtering in this example. The following code illustrates the procedure. Figure \ref{fig510} shows the performance of particle filtering in this example. There is the true state vector (black line), the means based on $\left\{\bm{\theta}_{1:t}^{(s)},w_t^{*(s)}\right\}$ (dotted line) and  $\left\{\bm{\theta}_{1:t}^{r(s)},1/S\right\}$ (dashed line), and the area defined by $\pm2\hat{\sigma}_{\theta}$ based on the former (light blue shaded area). Note that the particle filtering algorithm has better performance than the SIS algorithm.   
 
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter5/figures/PF.png}
@@ -1185,7 +1185,7 @@ Each problem requires careful consideration to determine the most appropriate me
 	
 	\begin{itemize}
 		\item Find the posterior distribution of $\mu$ and $\sigma^2$.
-		\item Program a Gibbs sampler algorithm and plot the histogram of the posterior draws of $\mu$
+		\item Program a Gibbs sampler algorithm and plot the histogram of the posterior draws of $\mu$.
 	\end{itemize}
 
 	\item Show that the Gibbs sampler is a particular case of the Metropolis-Hastings where the acceptance probability is equal to 1.
@@ -1219,7 +1219,7 @@ where $\theta_0\sim{N}(0,\sqrt{10})$, $w_t\sim\mathcal{N}(0,\sqrt{10})$ and $\mu
 
 \begin{itemize}
 	\item Perform the diagnostics of Section \ref{sec54} in this example.
-	\item Check if there are errors in the posterior simulator of the Metropolis-Hastings algorithm in this example using the Geweke approach using as test functions the first moments of $p$ and $p^2$. Remember from Exercise 15 in Chapter \ref{chap4} that the sample size is 52, and $\alpha_0=1.22$ and $\beta_0=2.57$.
+	\item Check if there are errors in the posterior simulator of the Metropolis-Hastings algorithm in this example using the Geweke approach, with the first moments of $p$ and $p2$ as test functions. Remember from Exercise 15 in Chapter \ref{chap4} that the sample size is 52, and $\alpha_0=1.22$ and $\beta_0=2.57$.
 	\item Run the Geweke test using $\alpha_0=2.57$ and $\beta_0=1.22$, and check the results.
 \end{itemize} 
 	

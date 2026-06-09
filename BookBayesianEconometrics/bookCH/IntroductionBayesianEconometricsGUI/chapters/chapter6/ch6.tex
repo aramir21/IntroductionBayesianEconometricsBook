@@ -3,7 +3,7 @@
 In this chapter, we describe how to perform Bayesian inference in several of the most common univariate models, including the normal, logit, probit, multinomial probit and logit, ordered probit, negative binomial, tobit, quantile regression, and Bayesian bootstrap models for linear regression. Our point of departure is a random sample of cross-sectional units. We then present the posterior distributions of the parameters and illustrate their use through selected applications. In addition, we demonstrate how to perform inference in these models using three levels of programming engagement: through our graphical user interface (GUI), via \textbf{R} packages, and by directly programming the posterior distributions. The first requires no programming skills, the second requires an intermediate level, and the third demands advanced skills. We also provide mathematical and computational exercises.
 
 
-We can run our GUI typing
+We can run our GUI by typing
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -89,7 +89,7 @@ y <- log(Value)
 # Value: Market value in Euros (2017) of soccer players
 # Regressors quantity including intercept
 X <- cbind(1, Perf, Age, Age2, NatTeam, Goals, Exp, Exp2)
-# Perf: Performance. Perf2: Performance squared. Age: Age; Age: Age squared. 
+# Perf: Performance. Perf2: Performance squared. Age: Age; Age2: Age squared. 
 # NatTeam: Indicator of national team. Goals: Scored goals. Goals2: Scored goals squared
 # Exp: Years of experience. Exp2: Years of experience squared. Assists: Number of assists
 k <- dim(X)[2]
@@ -740,7 +740,7 @@ The ordered probit model can be estimated in our GUI by following the steps outl
 		\State Click the \textit{Build formula} button to generate the formula in \textbf{R} syntax. Remember that this formula must have -1 to omit the intercept in the specification.
 		\State Set the hyperparameters: mean vector and covariance matrix. This step is not necessary as by default our GUI uses non-informative priors
 		\State Select the number of ordered alternatives
-		\State Set the hyperparameters: mean and covariance matrix of the cutoffs. This step is not necessary as by default our GUI uses non-informative prior 
+		\State Set the hyperparameters: mean and covariance matrix of the cutoffs. This step is not necessary as by default our GUI uses non-informative priors 
 		\State Select the tuning parameter for the Metropolis-Hastings algorithm 
 		\State Click the \textit{Go!} button
 		\State Analyze results
@@ -759,7 +759,7 @@ rm(list = ls()); set.seed(10101)
 Data <- read.csv("https://raw.githubusercontent.com/besmarter/BSTApp/refs/heads/master/DataApp/2HealthMed.csv", sep = ",", header = TRUE, quote = "")
 attach(Data)
 y <- MedVisPrevOr 
-# MedVisPrevOr: Oredered variable for preventive visits to doctors in one year: 1 (none), 2 (once), ... 6 (five or more)
+# MedVisPrevOr: Ordered variable for preventive visits to doctors in one year: 1 (none), 2 (once), ... 6 (five or more)
 X <- cbind(SHI, Female, Age, Age2, Est2, Est3, Fair, Good, Excellent, PriEd, HighEd, VocEd, UnivEd)
 k <- dim(X)[2]
 L <- length(table(y))
@@ -1135,7 +1135,7 @@ The results show that, at the median of the market value distribution (0.5 quant
 		\State Select MCMC iterations, burn-in and thinning parameters using the \textit{Range sliders}
 		\State Select dependent and independent variables using the \textit{Formula builder} table
 		\State Click the \textit{Build formula} button to generate the formula in \textbf{R} syntax. You can modify the formula in the \textbf{Main equation} box using valid arguments of the \textit{formula} command structure in \textbf{R}
-		\State Set the quantile to be analyzed, by default is 0.5
+		\State Set the quantile to be analyzed, by default, it is 0.5
 		\State Set the hyperparameters: mean vector and covariance matrix. This step is not necessary as by default our GUI uses non-informative priors
 		\State Click the \textit{Go!} button
 		\State Analyze results
@@ -1181,14 +1181,14 @@ The algorithm to implement the Bayesian bootstrap is the following:
 	\label{Alg:BB}
 	\begin{algorithmic}[1]
 		\State Draw $\bm{g}\sim Dir(\alpha_1,\alpha_2,\dots,\alpha_N)$ such that $\alpha_i=1 \ \forall i$.
-		\State $\bm{g}=(g_1,g_2,\dots,g_N)$ is the vector of probabilities to attach to $(y_1,\bm{x}_1^{\top}),(y_2,\bm{x}_2^{\top}),\dots,(y_n,\bm{x}_N^{\top})$ for each Bayesian bootstrap replication.
+		\State $\bm{g}=(g_1,g_2,\dots,g_N)$ is the vector of probabilities to attach to $(y_1,\bm{x}_1^{\top}),(y_2,\bm{x}_2^{\top}),\dots,(y_N,\bm{x}_N^{\top})$ for each Bayesian bootstrap replication.
 		\For{\texttt{$s=1,\dots,S$}}
 			\State Sample $(y_i,\bm{x}_i^{\top})$ $N$ times with replacement and probabilities $g_i$, $i=1,2,\dots,N$.
 			\State Estimate $\bm{\beta}^{(s)}$ using weighted least squares in the model $\mathbb{E}(\bm{y}\mid \bm{X})=\bm{X}\bm{\beta}$, where the weights are based on $g_i$.$^*$ 
 		\EndFor
 		\State The distribution of $\bm{\beta}^{(s)}$ is the posterior distribution of $\bm{\beta}$.		
 	\end{algorithmic}
-	$^*${\footnotesize{Ordinary least squares is the posterior mean of $\bm{\beta}$ using Jeffrey's prior in a linear regression.}}
+	$^*${\footnotesize{Ordinary least squares is the posterior mean of $\bm{\beta}$ using Jeffreys' prior in a linear regression.}}
 \end{algorithm}
 
 \textbf{Example: Simulation exercise}

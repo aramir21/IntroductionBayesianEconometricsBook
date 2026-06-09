@@ -4,7 +4,7 @@
 B <- 0.15 # Blue cabs
 G <- 0.85 # Green cabs
 TP <- 0.8 # True positive witness
-FP <- 0.25 # False positive
+FP <- 0.20 # False positive
 BW <- TP * B / (TP * B + FP * (1 - B))
 paste("Probability of a blue cab given witness is", sep = " ", round(BW, 2))
 

@@ -8,7 +8,7 @@ In this chapter, we introduce finite Gaussian mixture models (GMM) and Dirichlet
 
 Additionally, we present spline models, where the outcome depends linearly on smooth nonparametric functions. To address the curse of dimensionality, we introduce partially linear models, which mitigate this issue while remaining interpretable and flexible for practical applications.
 
-We let other useful Bayesian non-parametric approaches like Bayesian additive random trees (BART) and Gaussian process (GP) for Chapter \ref{chap13}. 
+We leave other useful Bayesian non-parametric approaches like Bayesian additive random trees (BART) and Gaussian process (GP) for Chapter \ref{chap13}. 
 
 \section{Mixture models}\label{sec11_1}
 Mixture models naturally arise in situations where a sample consists of draws from different \textit{subpopulations} (\textit{clusters}) that cannot be easily distinguished based on observable characteristics. However, performing inference on specific identified subpopulations can be misleading if the assumed distribution for each cluster is misspecified.  
@@ -66,7 +66,7 @@ where \( \boldsymbol{\alpha}_0 = [\alpha_{10} \ \alpha_{20} \ \dots \ \alpha_{H0
 
 Observe that we are using a hierarchical structure, as we specify a prior on \( \boldsymbol{\lambda} \), which serves as the hyperparameter for the cluster indicators. In addition, we can assume conjugate families for the location and scale parameters to facilitate computation, that is, $\boldsymbol \beta_h\sim N(\boldsymbol{\beta}_{h0},\boldsymbol{B}_{h0})$ and $\sigma_h^2\sim IG(\alpha_{h0}/2,\delta_{h0}/2)$.
 
-This setting allows to obtain standard conditional posterior distributions: $$\boldsymbol{\beta}_{h}\sim N(\boldsymbol{\beta}_{hn},\boldsymbol{B}_{hn}),$$ where $\boldsymbol{B}_{hn}=(\boldsymbol{B}_{h0}^{-1}+\sigma_h^{-2}\sum_{\left\{i:  \psi_{ih}=1\right\}}\boldsymbol{x}_i\boldsymbol{x}_i^{\top})^{-1}$ and $\boldsymbol{\beta}_{hn}=\boldsymbol{B}_{hn}(\boldsymbol{B}_{h0}^{-1}\boldsymbol{\beta}_{h0}+\sigma_h^{-2}\sum_{\left\{i:  \psi_{ih}=1\right\}}\boldsymbol{x}_iy_i)$.
+This setting allows us to obtain standard conditional posterior distributions: $$\boldsymbol{\beta}_{h}\sim N(\boldsymbol{\beta}_{hn},\boldsymbol{B}_{hn}),$$ where $\boldsymbol{B}_{hn}=(\boldsymbol{B}_{h0}^{-1}+\sigma_h^{-2}\sum_{\left\{i:  \psi_{ih}=1\right\}}\boldsymbol{x}_i\boldsymbol{x}_i^{\top})^{-1}$ and $\boldsymbol{\beta}_{hn}=\boldsymbol{B}_{hn}(\boldsymbol{B}_{h0}^{-1}\boldsymbol{\beta}_{h0}+\sigma_h^{-2}\sum_{\left\{i:  \psi_{ih}=1\right\}}\boldsymbol{x}_iy_i)$.
 $$\sigma_h^2\sim IG(\alpha_{hn}/2,\delta_{hn}/2),$$
 
 where $\alpha_{hn}=\alpha_{h0}+N_h$, $\delta_{hn}=\delta_{h0}+\sum_{\left\{i:  \psi_{ih}=1\right\}}(y_i-\boldsymbol{x}_i^{\top}\boldsymbol{\beta}_h)^2$, and $N_h$ is the number of units in cluster $h$.
@@ -125,7 +125,7 @@ Initially, we set $\beta_{01} = 0.5$ and $\beta_{02} = 2.5$. We perform 1,000 MC
 	\textit{R code. Simulation exercise: Label switching issue}
 	\begin{VF}
 		\begin{lstlisting}[language=R]
-### Simulation exercise: Label swithching issue ###
+### Simulation exercise: Label switching issue ###
 rm(list = ls()); set.seed(10101); library(ggplot2)
 # Simulate data from a 2-component mixture model
 n <- 500; z <- rbinom(n, 1, 0.75)  # Latent class indicator
@@ -317,7 +317,7 @@ In the following setting we simulate a simple regression mixture with two compon
 $$p(y_i \mid \boldsymbol{x}_i) = 
 0.5 \phi(y_i \mid 2+1.5x_i,1^2)+0.5 \phi(y_i \mid -1+0.5x_i,0.8^2).$$
 
-The following code shows how to perform inference in this model, assuming $N(0,5)$ and $N(0,2)$ priors for the intercepts and slopes, respectively. Additionally, we use a $Cauchy(0,2)$ prior truncated at 0 for the standard deviations, and a $Dirichlet(1,1)$ prior for the probabilities. We use the \textit{brms} package in \textbf{R}, which in turn uses \textit{Stan}, setting number of MCMC iterations 2,000, a burn-in (warm-up) equal to 1,000, and 4 chains. Remember that \textit{Stan} software uses Hamiltonian Monte Carlo.
+The following code shows how to perform inference in this model, assuming $N(0,5)$ and $N(0,2)$ priors for the intercepts and slopes, respectively. Additionally, we use a $Cauchy(0,2)$ prior truncated at 0 for the standard deviations, and a $Dirichlet(1,1)$ prior for the probabilities. We use the \textit{brms} package in \textbf{R}, which in turn uses \textit{Stan}, setting the number of MCMC iterations to 2,000, a burn-in (warm-up) equal to 1,000, and 4 chains. Remember that \textit{Stan} software uses Hamiltonian Monte Carlo.
 
 The following code performs inference in this simulation from scratch using Gibbs sampling. We do not implement the random permutation of latent classes algorithm for facilitating exposition and comparability with the results from the package \textit{brms}. We use non-informative priors, setting $\alpha_{h0}=\delta_{h0}=0.01$, $\boldsymbol{\beta}_{h0}=\boldsymbol{0}_2$, $\boldsymbol{B}_{h0}=\boldsymbol{I}_2$, and $\boldsymbol{\alpha}_0=[1/2 \ 1/2]^{\top}$. The number of MCMC iterations is 5,000, the burn-in is 1,000, and the thinning parameter is 2. In general, the Gibbs sampler appears to yield good posterior results as all 95\% intervals encompass the population parameters. 
 
@@ -731,7 +731,7 @@ We should not include the intercept in $\boldsymbol{\beta}$, such that $\mu_i$ a
 
 Note that mixture models can be easily extended to non-linear models, where posterior inference is based on data augmentation, such as the probit and tobit models in Chapter \ref{chap6}. The basic idea is to incorporate the mixture (finite or infinite) into the specification of the latent variable implicit in the data-generating process. For instance, \cite{basu2003marginal} perform inference in the probit model using DPMs. Furthermore, mixtures can also be used in the multivariate models presented in Chapter \ref{chap7} and the hierarchical models presented in Chapter \ref{chap9}. \cite{ramirez2024welfare} perform semi-parametric inference in the exact affine demand system \cite{lewbel2009tricks} using DPMs, while \cite{basu2003marginal} apply them in hierarchical models.
 
-To sum up, a Dirichlet process mixture is a flexible way to model non-parametrically a distribution using an infinite weighted sum of discrete distributions, where each individual weight increases with the number of observations that belongs to it.\\
+To sum up, a Dirichlet process mixture is a flexible way to model non-parametrically a distribution using an infinite weighted sum of discrete distributions, where each individual weight increases with the number of observations that belong to it.\\
 
 \textbf{Example: Simulation exercises}
 
@@ -1361,7 +1361,7 @@ matplot(xA,bs_matrix_matrix,type="l",lty=lt,col="black",ylab="B-splineBasis",xla
 	\caption[List of figure caption goes here]{Sequence of cubic B-splines comparison.}\label{figBsplines}
 \end{figure}
 
-The idea in splines is to calculate the linear combination of the $H$ B-splines, as those shown in Figure \ref{figBsplines}, that bets fit the dependent variable.
+The idea in splines is to calculate the linear combination of the $H$ B-splines, as those shown in Figure \ref{figBsplines}, that best fit the dependent variable.
 
 Splines can also be extended to non-linear models based on data augmentation, such as the probit and tobit models. Again, the basic idea is to incorporate splines into the implicit latent variables. \cite[Chap.~10]{koop2003bayesian} presents these extensions.
 

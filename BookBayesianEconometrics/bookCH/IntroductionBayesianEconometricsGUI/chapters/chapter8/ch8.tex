@@ -1,11 +1,11 @@
-\chapter{Time series models}\label{chap8}
+\chapter{Time Series models}\label{chap8}
 In this chapter, we provide a brief introduction to performing inference in time series models using a Bayesian framework. There is a large literature in time series in statistics and econometrics, and it would be impossible to present a good treatment in a few pages of an introductory book. However, there are excellent books in Bayesian inference in time series, see for instance, \cite{west2006bayesian,petris2009dynamic,pole2018applied}.
 
 A time series is a sequence of observations collected in chronological order, allowing us to track how variables change over time. However, it also introduces technical challenges, as we must account for statistical features such as autocorrelation and stationarity. Since time series data is time-dependent, we adjust our notation. Specifically, we use $t$ and $T$ instead of $i$ and $N$ to explicitly indicate time.
 
 Our starting point in this chapter is the \textit{state-space representation} of time series models. Much of the Bayesian inference literature in time series adopts this approach, as it allows dynamic systems to be modeled in a structured way. This representation provides modularity, flexibility, efficiency, and interpretability in complex models where the state evolves over time. It also enables the use of recursive estimation methods, such as the \textit{Kalman filter} for dynamic Gaussian linear models and the \textit{particle filter} (also known as \textit{sequential Monte Carlo}) for non-Gaussian and nonlinear state-space models. The latter method is especially useful for \textit{online} predictions or when there are data storage limitations. These inferential tools are based on the sequential updating process of Bayes' rule, where the posterior at time $t$ becomes the prior at time $t+1$ (see Equation \ref{equpdate}).
 
-Remember that we can run our GUI typing
+Remember that we can run our GUI by typing
 
 \begin{tcolorbox}[enhanced,width=4.67in,center upper,
 	fontupper=\large\bfseries,drop shadow southwest,sharp corners]
@@ -19,18 +19,18 @@ Remember that we can run our GUI typing
 in the \textbf{R} package console or any \textbf{R} code editor, and once our GUI is deployed, select \textit{Time series Models}. However, users should see Chapter \ref{chapGUI} for details.
 
 \section{State-space representation}\label{sec81}
-A \textit{state-space model} is composed by of an \textit{unobservable state vector}  $\bm{\beta}_t \in \mathbb{R}^K$, and an \textit{observed} measure $\bm{Y}_t \in \mathbb{R}^M$, $t=1,2,\dots$ such that (i) $\bm{\beta}_t$ is a \textit{Markov process}, this is, $\pi(\bm{\beta}_t\mid \bm{\beta}_{1:t-1})=\pi(\bm{\beta}_t\mid \bm{\beta}_{t-1})$, all the information regarding $\bm{\beta}_t$ based on all its history up to $t-1$ is carried by $\bm{\beta}_{t-1}$, and (ii) $\bm{Y}_t$ is independent of $\bm{Y}_s$ conditional on $\bm{\beta}_t$, $s < t$ \cite[Chap.~2]{petris2009dynamic}.
+A \textit{state-space model} is composed of an \textit{unobservable state vector}  $\bm{\beta}_t \in \mathbb{R}^K$, and an \textit{observed} measure $\bm{Y}_t \in \mathbb{R}^M$, $t=1,2,\dots$ such that (i) $\bm{\beta}_t$ is a \textit{Markov process}, this is, $\pi(\bm{\beta}_t\mid \bm{\beta}_{1:t-1})=\pi(\bm{\beta}_t\mid \bm{\beta}_{t-1})$, all the information regarding $\bm{\beta}_t$ based on all its history up to $t-1$ is carried by $\bm{\beta}_{t-1}$, and (ii) $\bm{Y}_t$ is independent of $\bm{Y}_s$ conditional on $\bm{\beta}_t$, $s < t$ \cite[Chap.~2]{petris2009dynamic}.
 
 These assumptions imply that $\pi(\bm{\beta}_{0:t},\bm{Y}_{1:t})=\pi(\bm{\beta}_0)\prod_{s=1}^{t}\pi(\bm{\beta}_s\mid \bm{\beta}_{s-1})\pi(\bm{Y}_s\mid \bm{\beta}_s)$.\footnote{A \textit{state-space model} where the states are random variables taking discrete values is called \textit{hidden Markov model}.}
 
 There are three key aims in \textit{state-space models}: \textit{filtering}, \textit{smoothing}, and \textit{forecasting}. In \textit{filtering}, we aim to estimate the current state given observations up to time $t$, specifically obtaining the density $\pi(\bm{\beta}_{s}\mid \bm{y}_{1:t})$ for $s = t$. In \textit{smoothing}, we conduct a retrospective analysis of the system, obtaining $\pi(\bm{\beta}_{s}\mid \bm{y}_{1:t})$ for $s < t$. In \textit{forecasting}, we forecast future observations by first obtaining $\pi(\bm{\beta}_{s}\mid \bm{y}_{1:t})$ as an intermediate step to compute $\pi(\bm{Y}_{s}\mid \bm{y}_{1:t})$ for $s > t$. A valuable feature of these methods is that all these densities can be calculated recursively. \cite{petris2009dynamic} show the recursive equations in Propositions 2.1 (filtering), 2.3 (smoothing) and 2.5 (forecasting).
 
-An important class of \textit{state-space models} is the \textit{Gaussian linear state-space model}, also know as, \textit{dynamic linear model}:
+An important class of \textit{state-space models} is the \textit{Gaussian linear state-space model}, also known as, \textit{dynamic linear model}:
 \begin{align*}
 	\bm{Y}_t&=\bm{X}_t\bm{\beta}_t+\bm{\mu}_t& \text{(Observation equations)}\\
 	\bm{\beta}_t&=\bm{G}_t\bm{\beta}_{t-1}+\bm{w}_t & \text{(States equations)},
 \end{align*}
-where $\bm{\beta}_0\sim N(\bm{b}_0,\bm{B}_0)$, $\bm{\mu}_t\sim N(\bm{0}, \bm{\Sigma}_t)$, $\bm{w}_t\sim N(\bm{0}, \bm{\Omega}_t)$, $\bm{\beta}_0$, $\bm{\mu}_t$ and $\bm{w}_t$ are independent, $\bm{X}_t$ and $\bm{G}_t$ are $M\times K$ and $K\times K$ known matrices. Observe that this assumptions implies that $\bm{Y}_t\mid \bm{\beta}_t\sim N(\bm{X}_t\bm{\beta}_t,\bm{\Sigma}_t)$, and $\bm{\beta}_t\mid \bm{\beta}_{t-1}\sim N(\bm{G}_t\bm{\beta}_{t-1},\bm{\Omega}_t)$.\footnote{A general \textit{state-space model} is given by $\bm{Y}_t=\bm{f}_t(\bm{\beta}_t,\bm{\mu}_t)$, and $\bm{\beta}_t=\bm{m}_t(\bm{\beta}_{t-1},\bm{w}_t)$ for arbitrary functions $\bm{f}_t$ and $\bm{m}_t$, and distributions for $\bm{\mu}_t$ and $\bm{w}_t$, and a prior distribution for $\bm{\beta}_0$.}
+where $\bm{\beta}_0\sim N(\bm{b}_0,\bm{B}_0)$, $\bm{\mu}_t\sim N(\bm{0}, \bm{\Sigma}_t)$, $\bm{w}_t\sim N(\bm{0}, \bm{\Omega}_t)$, $\bm{\beta}_0$, $\bm{\mu}_t$ and $\bm{w}_t$ are independent, $\bm{X}_t$ and $\bm{G}_t$ are $M\times K$ and $K\times K$ known matrices. Observe that these assumptions imply that $\bm{Y}_t\mid \bm{\beta}_t\sim N(\bm{X}_t\bm{\beta}_t,\bm{\Sigma}_t)$, and $\bm{\beta}_t\mid \bm{\beta}_{t-1}\sim N(\bm{G}_t\bm{\beta}_{t-1},\bm{\Omega}_t)$.\footnote{A general \textit{state-space model} is given by $\bm{Y}_t=\bm{f}_t(\bm{\beta}_t,\bm{\mu}_t)$, and $\bm{\beta}_t=\bm{m}_t(\bm{\beta}_{t-1},\bm{w}_t)$ for arbitrary functions $\bm{f}_t$ and $\bm{m}_t$, and distributions for $\bm{\mu}_t$ and $\bm{w}_t$, and a prior distribution for $\bm{\beta}_0$.}
 
 Let $\bm{\beta}_{t-1}\mid \bm{y}_{1:t-1}\sim N(\bm{b}_{t-1},\bm{B}_{t-1})$, then, we can get the \textit{Kalman filter} by getting
 \begin{enumerate}
@@ -73,7 +73,7 @@ and the estimator \(\hat{\bm{\beta}}_t\) is defined as:
 
 This shows that the posterior mean is a weighted average of the prior mean and the maximum likelihood estimator (which is the generalized least squares estimator).
  
-The weights are linked to the signal-to-noise ratio, that is, the proportion of the total variability ($\bm{\Omega}_t+\bm{\Sigma}_t$) due to the signal ($\bm{\Omega}_t$) versus the noise ($\bm{\Sigma}_t$). Note that in the simplest case where $M=K=1$, and $\bm{X}_t=\bm{G}_t=1$, then $\bm{K}_t=\bm{R}_t\bm{Q}_t^{-1}=(B_{t-1}+\Omega_t)/(B_{t-1}+\Omega_t+\Sigma_t)$. Thus, the weight associated with the observations is equal to 1 if $\Sigma_t=0$, that is, the posterior mean is equal to the actual observation. On the other hand, if $\Sigma_t$ increases compare to $\Omega_t$, there is more weight to the prior information, and consequently, the posterior mean is smoother as it heavily dependents on the history. We ask in Exercise 1 to perform simulations with different signal-to-noise ratios to see the effects on the system.   
+The weights are linked to the signal-to-noise ratio, that is, the proportion of the total variability ($\bm{\Omega}_t+\bm{\Sigma}_t$) due to the signal ($\bm{\Omega}_t$) versus the noise ($\bm{\Sigma}_t$). Note that in the simplest case where $M=K=1$, and $\bm{X}_t=\bm{G}_t=1$, then $\bm{K}_t=\bm{R}_t\bm{Q}_t^{-1}=(B_{t-1}+\Omega_t)/(B_{t-1}+\Omega_t+\Sigma_t)$. Thus, the weight associated with the observations is equal to 1 if $\Sigma_t=0$, that is, the posterior mean is equal to the actual observation. On the other hand, if $\Sigma_t$ increases compared to $\Omega_t$, there is more weight to the prior information, and consequently, the posterior mean is smoother as it heavily depends on the history. We ask in Exercise 1 to perform simulations with different signal-to-noise ratios to see the effects on the system.   
 
 The equality of variances of both approaches is as follows:
 \begin{align*}
@@ -140,7 +140,7 @@ Algorithm \ref{alg:DLM} shows how to perform inference in the univariate \textit
 		\State Select MCMC iterations, burn-in and thinning parameters using the \textit{Range sliders}
 		%\State Set the hyperparameters of the \textit{initial states}: prior mean and variance. This step is not necessary as by default our GUI uses non-informative priors.
 		\State Set the hyperparameters of the \textit{precision of the observation equation}: prior mean and variance.
-		\State Set the hyperparameters of the \textit{pricision of the state equations}: just one set of prior mean and variance parameters.
+		\State Set the hyperparameters of the \textit{precision of the state equations}: just one set of prior mean and variance parameters.
 		\State Click the \textit{Go!} button
 		\State Analyze results
 		\State Download posterior chains of variances of observation and state equations, and posterior chains of states using the \textit{Download Results} button
@@ -238,7 +238,7 @@ legend("bottomright", legend=c("True slope", "Smoothed slope (MLE)", "Posterior 
 	\end{VF}
 \end{tcolorbox} 
 
-Figure \ref{fig1} shows the comparison between maximum likelihood (ML) and Bayesian inference. The light gray (Bayesian) and dark gray (maximum likelihood) shadows show the credible and confidence intervals at 95\% for the state slope parameter ($\beta_{t2}$). We see that the Bayesian interval encompass the ML interval. This is a reflection of the extra uncertainty of the unknown variances. The black line is the actual trajectory of $\beta_{t2}$, the dashed and dotted lines are the \textit{smoothing} recursions using the ML and Bayesian estimates (posterior mean), respectively.\\ 
+Figure \ref{fig1} shows the comparison between maximum likelihood (ML) and Bayesian inference. The light gray (Bayesian) and dark gray (maximum likelihood) shadows show the credible and confidence intervals at 95\% for the state slope parameter ($\beta_{t2}$). We see that the Bayesian interval encompasses the ML interval. This is a reflection of the extra uncertainty of the unknown variances. The black line is the actual trajectory of $\beta_{t2}$, the dashed and dotted lines are the \textit{smoothing} recursions using the ML and Bayesian estimates (posterior mean), respectively.\\ 
 
 \begin{figure}[!h]
 	\includegraphics[width=340pt, height=200pt]{Chapters/chapter8/figures/SimSSreg.png}
@@ -349,7 +349,7 @@ We can see that all the previous posterior distributions are conditional on the 
 
 Since the seminal work of \cite{box_jenkins_1976}, autoregressive moving average (ARMA) models have become ubiquitous in time series analysis. Thus, we present a brief introduction to these models in this section.
 
-Let's start with the linear Gaussian model with autorregresive errors,
+Let's start with the linear Gaussian model with autorregressive errors,
 \begin{align}
 	y_t & = \bm{x}_t^{\top}\bm{\beta}+\mu_t\label{eq1}\\
 	\phi(L)\mu_t & = \epsilon_t \label{eq2}, 
@@ -545,7 +545,7 @@ A notable advantage of the \textit{state-space} representation of the $ARMA$ mod
 
 Let's see the \textit{state-space} representation of a stationary $AR(2)$ process with intercept, that is, $y_t=\mu+\phi_1y_{t-1}+\phi_2y_{t-2}+\epsilon_t$, where $\epsilon_t\sim N(0,\sigma^2)$. Thus, $\mathbb{E}[y_t]=\frac{\mu}{1-\phi_1-\phi_2}$, and variance $Var[y_t]=\frac{\sigma^2(1-\phi_2)}{1-\phi_2-\phi_1^2-\phi_1^2\phi_2-\phi_2^2+\phi_2^3}$.
 
-In addition, we can proof that setting $z_t=Y_t-\bar{\mu}$, we have $z_t=\phi_1z_{t-1}+\phi_2z_{t-2}+\epsilon_t$ where $\mathbb{E}[z_t]=0$, and these are equivalent representations (see Exercise 5). Then, setting  $\bm{x}^{\top}=[1 \ 0]$, $\bm{H}=[1 \ 0]^{\top}$, $\bm{G}=\begin{bmatrix}
+In addition, we can prove that setting $z_t=Y_t-\bar{\mu}$, we have $z_t=\phi_1z_{t-1}+\phi_2z_{t-2}+\epsilon_t$ where $\mathbb{E}[z_t]=0$, and these are equivalent representations (see Exercise 5). Then, setting  $\bm{x}^{\top}=[1 \ 0]$, $\bm{H}=[1 \ 0]^{\top}$, $\bm{G}=\begin{bmatrix}
 	\phi_1 & 1\\
 	\phi_2 & 0 \\
 \end{bmatrix}$, $\bm{\beta}_t=[\beta_{t1} \ \beta_{t2}]^{\top}$, $\bm{\Sigma}_t=0$ and $\bm{\Omega}_t=\sigma^2$ we have
@@ -615,7 +615,7 @@ In the first block, we perform the simulation by setting $\mu=0.5$, $\phi_1=0.5$
 
 Next, we define the function to compute the gradient vector of the log posterior distribution. It is preferable to calculate the gradient vector analytically, as using finite differences can be computationally expensive. However, it is a good practice to check the analytical calculations by evaluating the function at the maximum posterior estimate, where the function should return values close to 0, or by comparing the results with finite differences at a few evaluation points.
 
-The posterior distribution is given by\footnote{Take into account that we do not consider the first two observations when present the likelihood, this is no an issue when there is a large sample size.}
+The posterior distribution is given by\footnote{Take into account that we do not consider the first two observations when present the likelihood, this is not an issue when there is a large sample size.}
 \begin{align*}
 	\pi(\mu,\phi_1,\phi_2,\tau\mid \bm{y})&\propto \prod_{t=3}^T\exp\left\{-\frac{1}{2\exp(\tau)}(y_t-\mu-\phi_1y_{t-1}-\phi_2y_{t-2})^2\right\}\\
 	&\times(\exp(\tau))^{-1/2}\exp\left\{-\frac{1}{2\sigma^2_{\mu}}(\mu-\mu_0)^2\right\}\\
@@ -877,7 +877,7 @@ So far, we have used MCMC algorithms to perform inference in \textit{state-space
      
 Remember from Chapter \ref{chap5} that particle filters (sequential Monte Carlo) are algorithms that allow computing a numerical approximation to the filtering distribution $\pi(\bm{\theta}_{1:t}\mid \bm{y}_{1:t})$ sequentially in time. This is particularly relevant in non-linear and non-Gaussian models where there is no analytical solution for the filtering distribution.
 
-The following code shows how to perform particle filtering in the vanilla stochastic volatility model assuming that the proposal distribution is the conditional prior distribution, that is, $q(h_t\mid h_{t-1},y_t)=\pi(h_t\mid h_{t-1})$, which is normal with mean $\mu+\phi(h_{t-1}-\mu)$ and variance $\sigma^2$. This choice implies that the incremental importance weights are equal to $p(y_t\mid h_t)$, which is $N(0,\exp(h_t))$. Therefore, the weights are proportional to the likelihood function. We perform multinomial resampling every time period in the code, and start the algorithm in the stationary distribution of $h_t$. Remember that there are other resampling approaches that are more efficient, for instance, residual resampling (see Section \ref{sec53}). We ask in Exercise 7 to modify this code to perform resampling when the effective sample size is lower than 50\% of the initial number of particles. In addition, we ask to program a sequential importance sampling, and check why is important to perform resampling in this simple example. 
+The following code shows how to perform particle filtering in the vanilla stochastic volatility model assuming that the proposal distribution is the conditional prior distribution, that is, $q(h_t\mid h_{t-1},y_t)=\pi(h_t\mid h_{t-1})$, which is normal with mean $\mu+\phi(h_{t-1}-\mu)$ and variance $\sigma^2$. This choice implies that the incremental importance weights are equal to $p(y_t\mid h_t)$, which is $N(0,\exp(h_t))$. Therefore, the weights are proportional to the likelihood function. We perform multinomial resampling every time period in the code, and start the algorithm in the stationary distribution of $h_t$. Remember that there are other resampling approaches that are more efficient, for instance, residual resampling (see Section \ref{sec53}). We ask in Exercise 7 to modify this code to perform resampling when the effective sample size is lower than 50\% of the initial number of particles. In addition, we ask to program a sequential importance sampling, and check why it is important to perform resampling in this simple example. 
 
 Figure \ref{fig5} illustrates the filtering recursion using SMC with uneven weights (dashed line), even weights (dotted line), bands corresponding to plus/minus two standard deviations (gray shaded area), and the true state (black solid line).\footnote{This standard deviation estimates the conditional posterior's standard deviation derived from the particles, not the estimator's standard deviation. The latter requires several independent particle runs on the same data.} The results indicate that SMC performs well even with a simple implementation, with no significant differences between using even and uneven weights (see Chapter \ref{chap5}).
 
@@ -992,7 +992,7 @@ The \textit{reduced-form} VAR(p) model can be written as
 \begin{align}\label{eqVAR}
 	\bm{y}_t=\bm{v} + \sum_{j=1}^p\bm{A}_{j}\bm{y}_{t-j}+\bm{\mu}_t,
 \end{align}
-where $\bm{y}_t$ is a $M$-dimensional vector having information of $M$ time series variables, $\bm{v}$ is a $M$-dimensional vector of intercepts, $\bm{A}_{j}$ are $M\times M$ matrices of coefficients, and $\bm{\mu}_t \stackrel{iid}{\sim} N_M(\bm{0}, \bm{\Sigma})$ are stochastic errors, $t=1,2,\dots,T$ and $j=1,2,\dots,p$. Other deterministic terms and exogenous variables can be added to the specification without main difficulty, we do not do this to keep simply the notation. In addition, we assume that the stability condition is satisfied such that the stochastic process is stationary (see \cite[Chap.~2]{helmut2005new} for details), and we have available $p$ presample values for each variable. 
+where $\bm{y}_t$ is a $M$-dimensional vector having information of $M$ time series variables, $\bm{v}$ is a $M$-dimensional vector of intercepts, $\bm{A}_{j}$ are $M\times M$ matrices of coefficients, and $\bm{\mu}_t \stackrel{iid}{\sim} N_M(\bm{0}, \bm{\Sigma})$ are stochastic errors, $t=1,2,\dots,T$ and $j=1,2,\dots,p$. Other deterministic terms and exogenous variables can be added to the specification without major difficulty, we do not do this to keep the notation simply. In addition, we assume that the stability condition is satisfied such that the stochastic process is stationary (see \cite[Chap.~2]{helmut2005new} for details), and we have available $p$ presample values for each variable. 
 
 Following the matrix-form notation of the multivariate regression model (see sections \ref{sec44} and \ref{sec71}), we can set $\bm{Y}=\left[{\bm{y_{1}}} \ {\bm{y_{2}}} \ \ldots \ {\bm{y_{M}}}\right]$, which is an $ T\times M$ matrix, $\bm{x}_t=[1 \ \bm{y}_{t-1}^{\top} \ \dots \ \bm{y}_{t-p}^{\top}]$ is a $(1+Mp)$-dimensional row vector, we define $k=1+Mp$ to facilitate notation, and set \begin{align*}
 \bm{X}=\begin{bmatrix}
@@ -1099,7 +1099,7 @@ The MA coefficients contain the impulse responses of the system. In particular, 
 
 An assumption in these \textit{impulse response} functions is that a shock occurs in only one variable at a time. This can be questionable as different shocks may be correlated, consequently, occurring simultaneously. Thus, the \textit{impulse response} analysis can be performed based on the alternative MA representation, $\bm{y}_t=\bm{\mu} + \sum_{s=0}^{\infty}\bm{\Phi}_s\bm{P}\bm{P}^{-1}\bm{\mu}_{t-s}=\bm{\mu} + \sum_{s=0}^{\infty}\bm{\Theta}_s\bm{w}_{t-s}$, where $\bm{\Theta}_s=\bm{\Phi}_s\bm{P}$ and $\bm{w}_{t}=\bm{P}^{-1}\bm{\mu}_{t}$, $\bm{P}$ is a lower triangular matrix such that $\bm{\Sigma}=\bm{P}\bm{P}^{\top}$ (Cholesky factorization/decomposition). Note that the covariance matrix of $\bm{w}_t$ is $\bm{I}_M$ due to $\mathbb{E}[\bm{w}_t\bm{w}_t^{\top}]=\mathbb{E}[\bm{P}^{-1}\bm{\mu}_{t}\bm{\mu}_t^{\top}(\bm{P}^{-1})^{\top}]=\bm{P}^{-1}\bm{\Sigma}(\bm{P}^{-1})^{\top}=\bm{P}^{-1}\bm{P}\bm{P}^{\top}(\bm{P}^{-1})^{\top}=\bm{I}_M$. 
 
-In this representation is sensible to assume that each shock occurs independently due to the covariance matrix of $\bm{w}_t$ being an identity. In addition, a unit shock is a shock of size one standard deviation due the result of the covariance matrix. This is named the \textit{ortogonalized impulse response}, where $\theta_{mj,s}$, which is the $mj$-th element of the matrix $\bm{\Theta}_s$, represents the response of the $m$-th variable to a standard deviation shock of the variable $j$ in the system, $s$ periods ago. The critical point with the ortogonalized impulse responses is that the order of the variables in the VAR is really important because implicitly establishes a recursive model, that is, the $m$-th equation in the system may contain $y_{1t}, y_{2t}, \dots, y_{m-1t}$, but not $y_{mt}, y_{m+1t}, \dots, y_{Mt}$ on the right-hand side of its equation. Thus, $y_{mt}$ cannot have an instantaneous impact on $y_{jt}$ for $j<m$ \cite[Chap.~2]{helmut2005new}.
+In this representation is sensible to assume that each shock occurs independently due to the covariance matrix of $\bm{w}_t$ being an identity. In addition, a unit shock is a shock of size one standard deviation due the result of the covariance matrix. This is named the \textit{orthogonalized impulse response}, where $\theta_{mj,s}$, which is the $mj$-th element of the matrix $\bm{\Theta}_s$, represents the response of the $m$-th variable to a standard deviation shock of the variable $j$ in the system, $s$ periods ago. The critical point with the ortogonalized impulse responses is that the order of the variables in the VAR is really important because implicitly establishes a recursive model, that is, the $m$-th equation in the system may contain $y_{1t}, y_{2t}, \dots, y_{m-1t}$, but not $y_{mt}, y_{m+1t}, \dots, y_{Mt}$ on the right-hand side of its equation. Thus, $y_{mt}$ cannot have an instantaneous impact on $y_{jt}$ for $j<m$ \cite[Chap.~2]{helmut2005new}.
 
 Beyond the fascinating macroeconomic implications embedded in the specification of VAR models, the key point for this section is that we can infer impulse response functions using the posterior draws.\\
 
@@ -1214,7 +1214,7 @@ FigFore <- plot_FORE(dfFore)
 	\caption[List of figure caption goes here]{Forecast performance: the government spending (\textit{gs}).}\label{fig8}
 \end{figure}
 
-Algorithm \ref{alg:VAR} shows how to do perform inference in VAR models using our GUI. See also Chapter \ref{chapGUI} for details regarding the dataset structure. 
+Algorithm \ref{alg:VAR} shows how to perform inference in VAR models using our GUI. See also Chapter \ref{chapGUI} for details regarding the dataset structure. 
 
 \begin{algorithm}[h!]
 	\caption{Vector Autoregressive models}\label{alg:VAR}
