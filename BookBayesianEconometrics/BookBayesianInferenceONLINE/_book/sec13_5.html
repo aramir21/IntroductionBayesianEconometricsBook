@@ -23,7 +23,7 @@
 <meta name="author" content="Andrés Ramírez-Hassan" />
 
 
-<meta name="date" content="2026-04-11" />
+<meta name="date" content="2026-06-16" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -186,7 +186,7 @@ div.csl-indent {
 <li class="chapter" data-level="2.2" data-path="sec22.html"><a href="sec22.html"><i class="fa fa-check"></i><b>2.2</b> Subjectivity is not the key</a></li>
 <li class="chapter" data-level="2.3" data-path="sec23.html"><a href="sec23.html"><i class="fa fa-check"></i><b>2.3</b> Estimation, hypothesis testing and prediction</a></li>
 <li class="chapter" data-level="2.4" data-path="sec24.html"><a href="sec24.html"><i class="fa fa-check"></i><b>2.4</b> The likelihood principle</a></li>
-<li class="chapter" data-level="2.5" data-path="sec25.html"><a href="sec25.html"><i class="fa fa-check"></i><b>2.5</b> Why is not the Bayesian approach that popular?</a></li>
+<li class="chapter" data-level="2.5" data-path="sec25.html"><a href="sec25.html"><i class="fa fa-check"></i><b>2.5</b> Why is the Bayesian approach not that popular?</a></li>
 <li class="chapter" data-level="2.6" data-path="sec26.html"><a href="sec26.html"><i class="fa fa-check"></i><b>2.6</b> A simple working example</a></li>
 <li class="chapter" data-level="2.7" data-path="sec27.html"><a href="sec27.html"><i class="fa fa-check"></i><b>2.7</b> Summary</a></li>
 <li class="chapter" data-level="2.8" data-path="sec28.html"><a href="sec28.html"><i class="fa fa-check"></i><b>2.8</b> Exercises</a></li>
@@ -261,7 +261,7 @@ div.csl-indent {
 <li class="chapter" data-level="7.5" data-path="sec75.html"><a href="sec75.html"><i class="fa fa-check"></i><b>7.5</b> Summary</a></li>
 <li class="chapter" data-level="7.6" data-path="sec76.html"><a href="sec76.html"><i class="fa fa-check"></i><b>7.6</b> Exercises</a></li>
 </ul></li>
-<li class="chapter" data-level="8" data-path="Chap8.html"><a href="Chap8.html"><i class="fa fa-check"></i><b>8</b> Time series models</a>
+<li class="chapter" data-level="8" data-path="Chap8.html"><a href="Chap8.html"><i class="fa fa-check"></i><b>8</b> Time Series models</a>
 <ul>
 <li class="chapter" data-level="8.1" data-path="sec81.html"><a href="sec81.html"><i class="fa fa-check"></i><b>8.1</b> State-space representation</a>
 <ul>
@@ -614,40 +614,40 @@ Y_{i2} - Y_{i1}
 + \tau_2 D_i + \epsilon_i,
 \end{equation}\]</span></p>
 <p>The following code implements this example. From the posterior results, we can verify that the 95% credible interval contains the true ATT. We ask in Exercise 8 to repeat exactly the same simulation, and estimate the ATT using the specification with the interaction between treatment and the post-treatment period.</p>
-<div class="sourceCode" id="cb821"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb821-1"><a href="sec13_5.html#cb821-1" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">10101</span>)</span>
-<span id="cb821-2"><a href="sec13_5.html#cb821-2" tabindex="-1"></a><span class="fu">library</span>(ggplot2); <span class="fu">library</span>(dplyr); <span class="fu">library</span>(fastDummies)</span>
-<span id="cb821-3"><a href="sec13_5.html#cb821-3" tabindex="-1"></a><span class="co"># Parameters</span></span>
-<span id="cb821-4"><a href="sec13_5.html#cb821-4" tabindex="-1"></a>N_per_group <span class="ot">&lt;-</span> <span class="dv">200</span>          <span class="co"># units per group</span></span>
-<span id="cb821-5"><a href="sec13_5.html#cb821-5" tabindex="-1"></a>T_periods    <span class="ot">&lt;-</span> <span class="dv">2</span>           <span class="co"># keep 2x2 for clarity</span></span>
-<span id="cb821-6"><a href="sec13_5.html#cb821-6" tabindex="-1"></a>tau_true     <span class="ot">&lt;-</span> <span class="dv">1</span>           <span class="co"># ATT</span></span>
-<span id="cb821-7"><a href="sec13_5.html#cb821-7" tabindex="-1"></a>sigma_eps    <span class="ot">&lt;-</span> <span class="fl">0.5</span>         <span class="co"># noise SD</span></span>
-<span id="cb821-8"><a href="sec13_5.html#cb821-8" tabindex="-1"></a><span class="co"># Panel index</span></span>
-<span id="cb821-9"><a href="sec13_5.html#cb821-9" tabindex="-1"></a>id  <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span>(<span class="dv">2</span><span class="sc">*</span>N_per_group), <span class="at">each =</span> T_periods)</span>
-<span id="cb821-10"><a href="sec13_5.html#cb821-10" tabindex="-1"></a>t   <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span>T_periods, <span class="at">times =</span> <span class="dv">2</span><span class="sc">*</span>N_per_group)</span>
-<span id="cb821-11"><a href="sec13_5.html#cb821-11" tabindex="-1"></a><span class="co"># Group: treated (D=1) vs control (D=0)</span></span>
-<span id="cb821-12"><a href="sec13_5.html#cb821-12" tabindex="-1"></a>D   <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="fu">rep</span>(<span class="dv">0</span>, N_per_group), <span class="fu">rep</span>(<span class="dv">1</span>, N_per_group)), <span class="at">each =</span> T_periods)</span>
-<span id="cb821-13"><a href="sec13_5.html#cb821-13" tabindex="-1"></a><span class="co"># Post indicator (t=2 is post)</span></span>
-<span id="cb821-14"><a href="sec13_5.html#cb821-14" tabindex="-1"></a>post <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(t <span class="sc">==</span> <span class="dv">2</span>)</span>
-<span id="cb821-15"><a href="sec13_5.html#cb821-15" tabindex="-1"></a><span class="co"># Unit fixed effects (random heterogeneity)</span></span>
-<span id="cb821-16"><a href="sec13_5.html#cb821-16" tabindex="-1"></a>alpha_i <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(<span class="dv">2</span><span class="sc">*</span>N_per_group, <span class="dv">0</span>, <span class="fl">0.8</span>)</span>
-<span id="cb821-17"><a href="sec13_5.html#cb821-17" tabindex="-1"></a>alpha   <span class="ot">&lt;-</span> alpha_i[id]</span>
-<span id="cb821-18"><a href="sec13_5.html#cb821-18" tabindex="-1"></a><span class="co"># Time effects (common shocks)</span></span>
-<span id="cb821-19"><a href="sec13_5.html#cb821-19" tabindex="-1"></a>phi_t <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="sc">-</span><span class="fl">1.8</span>)  <span class="co"># common decline from t=1 to t=2</span></span>
-<span id="cb821-20"><a href="sec13_5.html#cb821-20" tabindex="-1"></a>phi   <span class="ot">&lt;-</span> phi_t[t]</span>
-<span id="cb821-21"><a href="sec13_5.html#cb821-21" tabindex="-1"></a>treat_effect <span class="ot">&lt;-</span> tau_true <span class="sc">*</span> (D <span class="sc">*</span> post)</span>
-<span id="cb821-22"><a href="sec13_5.html#cb821-22" tabindex="-1"></a><span class="co"># Outcome:</span></span>
-<span id="cb821-23"><a href="sec13_5.html#cb821-23" tabindex="-1"></a>eps <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(<span class="fu">length</span>(id), <span class="dv">0</span>, sigma_eps)</span>
-<span id="cb821-24"><a href="sec13_5.html#cb821-24" tabindex="-1"></a>Y   <span class="ot">&lt;-</span> alpha <span class="sc">+</span> phi <span class="sc">+</span> treat_effect <span class="sc">+</span> eps</span>
-<span id="cb821-25"><a href="sec13_5.html#cb821-25" tabindex="-1"></a>did <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(id, t, D, post, Y)</span>
-<span id="cb821-26"><a href="sec13_5.html#cb821-26" tabindex="-1"></a><span class="co"># Bayesian inference: Model in differences</span></span>
-<span id="cb821-27"><a href="sec13_5.html#cb821-27" tabindex="-1"></a>dY <span class="ot">&lt;-</span> did<span class="sc">$</span>Y[did<span class="sc">$</span>t<span class="sc">==</span><span class="dv">2</span>] <span class="sc">-</span> did<span class="sc">$</span>Y[did<span class="sc">$</span>t<span class="sc">==</span><span class="dv">1</span>]</span>
-<span id="cb821-28"><a href="sec13_5.html#cb821-28" tabindex="-1"></a>D  <span class="ot">&lt;-</span> did<span class="sc">$</span>D[did<span class="sc">$</span>t<span class="sc">==</span><span class="dv">1</span>]</span>
-<span id="cb821-29"><a href="sec13_5.html#cb821-29" tabindex="-1"></a>post_fit <span class="ot">&lt;-</span> MCMCpack<span class="sc">::</span><span class="fu">MCMCregress</span>(dY <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> D, <span class="at">burnin =</span> <span class="dv">100</span>, <span class="at">mcmc =</span> <span class="dv">1000</span>)</span>
-<span id="cb821-30"><a href="sec13_5.html#cb821-30" tabindex="-1"></a>tau_draws <span class="ot">&lt;-</span> post_fit[, <span class="st">&quot;D&quot;</span>]</span>
-<span id="cb821-31"><a href="sec13_5.html#cb821-31" tabindex="-1"></a><span class="fu">quantile</span>(tau_draws, <span class="fu">c</span>(.<span class="dv">025</span>,.<span class="dv">5</span>,.<span class="dv">975</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb822"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb822-1"><a href="sec13_5.html#cb822-1" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">10101</span>)</span>
+<span id="cb822-2"><a href="sec13_5.html#cb822-2" tabindex="-1"></a><span class="fu">library</span>(ggplot2); <span class="fu">library</span>(dplyr); <span class="fu">library</span>(fastDummies)</span>
+<span id="cb822-3"><a href="sec13_5.html#cb822-3" tabindex="-1"></a><span class="co"># Parameters</span></span>
+<span id="cb822-4"><a href="sec13_5.html#cb822-4" tabindex="-1"></a>N_per_group <span class="ot">&lt;-</span> <span class="dv">200</span>          <span class="co"># units per group</span></span>
+<span id="cb822-5"><a href="sec13_5.html#cb822-5" tabindex="-1"></a>T_periods    <span class="ot">&lt;-</span> <span class="dv">2</span>           <span class="co"># keep 2x2 for clarity</span></span>
+<span id="cb822-6"><a href="sec13_5.html#cb822-6" tabindex="-1"></a>tau_true     <span class="ot">&lt;-</span> <span class="dv">1</span>           <span class="co"># ATT</span></span>
+<span id="cb822-7"><a href="sec13_5.html#cb822-7" tabindex="-1"></a>sigma_eps    <span class="ot">&lt;-</span> <span class="fl">0.5</span>         <span class="co"># noise SD</span></span>
+<span id="cb822-8"><a href="sec13_5.html#cb822-8" tabindex="-1"></a><span class="co"># Panel index</span></span>
+<span id="cb822-9"><a href="sec13_5.html#cb822-9" tabindex="-1"></a>id  <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span>(<span class="dv">2</span><span class="sc">*</span>N_per_group), <span class="at">each =</span> T_periods)</span>
+<span id="cb822-10"><a href="sec13_5.html#cb822-10" tabindex="-1"></a>t   <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span>T_periods, <span class="at">times =</span> <span class="dv">2</span><span class="sc">*</span>N_per_group)</span>
+<span id="cb822-11"><a href="sec13_5.html#cb822-11" tabindex="-1"></a><span class="co"># Group: treated (D=1) vs control (D=0)</span></span>
+<span id="cb822-12"><a href="sec13_5.html#cb822-12" tabindex="-1"></a>D   <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="fu">rep</span>(<span class="dv">0</span>, N_per_group), <span class="fu">rep</span>(<span class="dv">1</span>, N_per_group)), <span class="at">each =</span> T_periods)</span>
+<span id="cb822-13"><a href="sec13_5.html#cb822-13" tabindex="-1"></a><span class="co"># Post indicator (t=2 is post)</span></span>
+<span id="cb822-14"><a href="sec13_5.html#cb822-14" tabindex="-1"></a>post <span class="ot">&lt;-</span> <span class="fu">as.integer</span>(t <span class="sc">==</span> <span class="dv">2</span>)</span>
+<span id="cb822-15"><a href="sec13_5.html#cb822-15" tabindex="-1"></a><span class="co"># Unit fixed effects (random heterogeneity)</span></span>
+<span id="cb822-16"><a href="sec13_5.html#cb822-16" tabindex="-1"></a>alpha_i <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(<span class="dv">2</span><span class="sc">*</span>N_per_group, <span class="dv">0</span>, <span class="fl">0.8</span>)</span>
+<span id="cb822-17"><a href="sec13_5.html#cb822-17" tabindex="-1"></a>alpha   <span class="ot">&lt;-</span> alpha_i[id]</span>
+<span id="cb822-18"><a href="sec13_5.html#cb822-18" tabindex="-1"></a><span class="co"># Time effects (common shocks)</span></span>
+<span id="cb822-19"><a href="sec13_5.html#cb822-19" tabindex="-1"></a>phi_t <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="sc">-</span><span class="fl">1.8</span>)  <span class="co"># common decline from t=1 to t=2</span></span>
+<span id="cb822-20"><a href="sec13_5.html#cb822-20" tabindex="-1"></a>phi   <span class="ot">&lt;-</span> phi_t[t]</span>
+<span id="cb822-21"><a href="sec13_5.html#cb822-21" tabindex="-1"></a>treat_effect <span class="ot">&lt;-</span> tau_true <span class="sc">*</span> (D <span class="sc">*</span> post)</span>
+<span id="cb822-22"><a href="sec13_5.html#cb822-22" tabindex="-1"></a><span class="co"># Outcome:</span></span>
+<span id="cb822-23"><a href="sec13_5.html#cb822-23" tabindex="-1"></a>eps <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(<span class="fu">length</span>(id), <span class="dv">0</span>, sigma_eps)</span>
+<span id="cb822-24"><a href="sec13_5.html#cb822-24" tabindex="-1"></a>Y   <span class="ot">&lt;-</span> alpha <span class="sc">+</span> phi <span class="sc">+</span> treat_effect <span class="sc">+</span> eps</span>
+<span id="cb822-25"><a href="sec13_5.html#cb822-25" tabindex="-1"></a>did <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(id, t, D, post, Y)</span>
+<span id="cb822-26"><a href="sec13_5.html#cb822-26" tabindex="-1"></a><span class="co"># Bayesian inference: Model in differences</span></span>
+<span id="cb822-27"><a href="sec13_5.html#cb822-27" tabindex="-1"></a>dY <span class="ot">&lt;-</span> did<span class="sc">$</span>Y[did<span class="sc">$</span>t<span class="sc">==</span><span class="dv">2</span>] <span class="sc">-</span> did<span class="sc">$</span>Y[did<span class="sc">$</span>t<span class="sc">==</span><span class="dv">1</span>]</span>
+<span id="cb822-28"><a href="sec13_5.html#cb822-28" tabindex="-1"></a>D  <span class="ot">&lt;-</span> did<span class="sc">$</span>D[did<span class="sc">$</span>t<span class="sc">==</span><span class="dv">1</span>]</span>
+<span id="cb822-29"><a href="sec13_5.html#cb822-29" tabindex="-1"></a>post_fit <span class="ot">&lt;-</span> MCMCpack<span class="sc">::</span><span class="fu">MCMCregress</span>(dY <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> D, <span class="at">burnin =</span> <span class="dv">100</span>, <span class="at">mcmc =</span> <span class="dv">1000</span>)</span>
+<span id="cb822-30"><a href="sec13_5.html#cb822-30" tabindex="-1"></a>tau_draws <span class="ot">&lt;-</span> post_fit[, <span class="st">&quot;D&quot;</span>]</span>
+<span id="cb822-31"><a href="sec13_5.html#cb822-31" tabindex="-1"></a><span class="fu">quantile</span>(tau_draws, <span class="fu">c</span>(.<span class="dv">025</span>,.<span class="dv">5</span>,.<span class="dv">975</span>))</span></code></pre></div>
 <pre><code>##      2.5%       50%     97.5% 
 ## 0.8443254 0.9773162 1.1073517</code></pre>
-<div class="sourceCode" id="cb823"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb823-1"><a href="sec13_5.html#cb823-1" tabindex="-1"></a><span class="fu">quantile</span>(post_fit[,<span class="dv">1</span>], <span class="fu">c</span>(.<span class="dv">025</span>,.<span class="dv">5</span>,.<span class="dv">975</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb824"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb824-1"><a href="sec13_5.html#cb824-1" tabindex="-1"></a><span class="fu">quantile</span>(post_fit[,<span class="dv">1</span>], <span class="fu">c</span>(.<span class="dv">025</span>,.<span class="dv">5</span>,.<span class="dv">975</span>))</span></code></pre></div>
 <pre><code>##      2.5%       50%     97.5% 
 ## -1.899952 -1.806320 -1.709052</code></pre>
 </div>

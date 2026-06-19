@@ -23,7 +23,7 @@
 <meta name="author" content="Andrés Ramírez-Hassan" />
 
 
-<meta name="date" content="2026-04-11" />
+<meta name="date" content="2026-06-16" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -186,7 +186,7 @@ div.csl-indent {
 <li class="chapter" data-level="2.2" data-path="sec22.html"><a href="sec22.html"><i class="fa fa-check"></i><b>2.2</b> Subjectivity is not the key</a></li>
 <li class="chapter" data-level="2.3" data-path="sec23.html"><a href="sec23.html"><i class="fa fa-check"></i><b>2.3</b> Estimation, hypothesis testing and prediction</a></li>
 <li class="chapter" data-level="2.4" data-path="sec24.html"><a href="sec24.html"><i class="fa fa-check"></i><b>2.4</b> The likelihood principle</a></li>
-<li class="chapter" data-level="2.5" data-path="sec25.html"><a href="sec25.html"><i class="fa fa-check"></i><b>2.5</b> Why is not the Bayesian approach that popular?</a></li>
+<li class="chapter" data-level="2.5" data-path="sec25.html"><a href="sec25.html"><i class="fa fa-check"></i><b>2.5</b> Why is the Bayesian approach not that popular?</a></li>
 <li class="chapter" data-level="2.6" data-path="sec26.html"><a href="sec26.html"><i class="fa fa-check"></i><b>2.6</b> A simple working example</a></li>
 <li class="chapter" data-level="2.7" data-path="sec27.html"><a href="sec27.html"><i class="fa fa-check"></i><b>2.7</b> Summary</a></li>
 <li class="chapter" data-level="2.8" data-path="sec28.html"><a href="sec28.html"><i class="fa fa-check"></i><b>2.8</b> Exercises</a></li>
@@ -261,7 +261,7 @@ div.csl-indent {
 <li class="chapter" data-level="7.5" data-path="sec75.html"><a href="sec75.html"><i class="fa fa-check"></i><b>7.5</b> Summary</a></li>
 <li class="chapter" data-level="7.6" data-path="sec76.html"><a href="sec76.html"><i class="fa fa-check"></i><b>7.6</b> Exercises</a></li>
 </ul></li>
-<li class="chapter" data-level="8" data-path="Chap8.html"><a href="Chap8.html"><i class="fa fa-check"></i><b>8</b> Time series models</a>
+<li class="chapter" data-level="8" data-path="Chap8.html"><a href="Chap8.html"><i class="fa fa-check"></i><b>8</b> Time Series models</a>
 <ul>
 <li class="chapter" data-level="8.1" data-path="sec81.html"><a href="sec81.html"><i class="fa fa-check"></i><b>8.1</b> State-space representation</a>
 <ul>
@@ -452,32 +452,32 @@ Y_i = \beta_0 + \tau D_i + \mathbf{X}_i^{\top}\boldsymbol{\beta} + \mu_i.
 <p>We study the average treatment effect of eligibility (<em>e401</em>) for participation in the 401(k) retirement savings plan in the United States on net financial assets (<em>net_tfa</em>) using the dataset <em>401k.csv</em>. The rationale for the exogeneity of 401(k) eligibility is that it becomes exogenous after conditioning on observable characteristics related to job choice, which may correlate with whether a firm offers this retirement plan <span class="citation">(<a href="#ref-chernozhukov2024applied">Victor Chernozhukov et al. 2024</a>)</span>.</p>
 <p>Accordingly, we control for the following covariates: age (<em>age</em>), income (<em>inc</em>), family size (<em>fsize</em>), years of education (<em>educ</em>), a marital status indicator (<em>marr</em>), a two-earner status indicator (<em>twoearn</em>), a defined benefit pension status indicator (<em>db</em>), an IRA participation indicator (<em>pira</em>), and a home ownership indicator (<em>hown</em>). Under this specification, the key assumption is that eligibility is conditionally independent of net financial assets given these covariates <span class="citation">(<a href="#ref-chernozhukov2024applied">Victor Chernozhukov et al. 2024</a>)</span>.</p>
 <p>We can use the framework in Section <a href="sec61.html#sec61">6.1</a> to estimate the average treatment effect of 401(k) eligibility on net financial assets. The following code shows how to obtain the posterior distribution of this effect. The figure displays the posterior distribution of the treatment effect: the 95% credible interval is (USD 3,473, USD 8,371), and the posterior mean is USD 5,903.</p>
-<div class="sourceCode" id="cb781"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb781-1"><a href="sec13_3.html#cb781-1" tabindex="-1"></a><span class="co"># 401k: Treatment effects</span></span>
-<span id="cb781-2"><a href="sec13_3.html#cb781-2" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>())</span>
-<span id="cb781-3"><a href="sec13_3.html#cb781-3" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">10101</span>)</span>
-<span id="cb781-4"><a href="sec13_3.html#cb781-4" tabindex="-1"></a></span>
-<span id="cb781-5"><a href="sec13_3.html#cb781-5" tabindex="-1"></a><span class="fu">library</span>(MCMCpack)</span>
-<span id="cb781-6"><a href="sec13_3.html#cb781-6" tabindex="-1"></a><span class="fu">library</span>(coda)</span>
-<span id="cb781-7"><a href="sec13_3.html#cb781-7" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
-<span id="cb781-8"><a href="sec13_3.html#cb781-8" tabindex="-1"></a></span>
-<span id="cb781-9"><a href="sec13_3.html#cb781-9" tabindex="-1"></a>mydata <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;https://raw.githubusercontent.com/BEsmarter-consultancy/BSTApp/refs/heads/master/DataApp/401k.csv&quot;</span>, <span class="at">sep =</span> <span class="st">&quot;,&quot;</span>, <span class="at">header =</span> <span class="cn">TRUE</span>, <span class="at">quote =</span> <span class="st">&quot;&quot;</span>)</span>
-<span id="cb781-10"><a href="sec13_3.html#cb781-10" tabindex="-1"></a><span class="fu">attach</span>(mydata )</span></code></pre></div>
+<div class="sourceCode" id="cb782"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb782-1"><a href="sec13_3.html#cb782-1" tabindex="-1"></a><span class="co"># 401k: Treatment effects</span></span>
+<span id="cb782-2"><a href="sec13_3.html#cb782-2" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>())</span>
+<span id="cb782-3"><a href="sec13_3.html#cb782-3" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">10101</span>)</span>
+<span id="cb782-4"><a href="sec13_3.html#cb782-4" tabindex="-1"></a></span>
+<span id="cb782-5"><a href="sec13_3.html#cb782-5" tabindex="-1"></a><span class="fu">library</span>(MCMCpack)</span>
+<span id="cb782-6"><a href="sec13_3.html#cb782-6" tabindex="-1"></a><span class="fu">library</span>(coda)</span>
+<span id="cb782-7"><a href="sec13_3.html#cb782-7" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb782-8"><a href="sec13_3.html#cb782-8" tabindex="-1"></a></span>
+<span id="cb782-9"><a href="sec13_3.html#cb782-9" tabindex="-1"></a>mydata <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;https://raw.githubusercontent.com/BEsmarter-consultancy/BSTApp/refs/heads/master/DataApp/401k.csv&quot;</span>, <span class="at">sep =</span> <span class="st">&quot;,&quot;</span>, <span class="at">header =</span> <span class="cn">TRUE</span>, <span class="at">quote =</span> <span class="st">&quot;&quot;</span>)</span>
+<span id="cb782-10"><a href="sec13_3.html#cb782-10" tabindex="-1"></a><span class="fu">attach</span>(mydata )</span></code></pre></div>
 <pre><code>## The following object is masked from DataIntRate (pos = 28):
 ## 
 ##     i3</code></pre>
 <pre><code>## The following object is masked from DataIntRate (pos = 30):
 ## 
 ##     i3</code></pre>
-<div class="sourceCode" id="cb784"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb784-1"><a href="sec13_3.html#cb784-1" tabindex="-1"></a>y <span class="ot">&lt;-</span> net_tfa </span>
-<span id="cb784-2"><a href="sec13_3.html#cb784-2" tabindex="-1"></a><span class="co"># net_tfa: net financial assets</span></span>
-<span id="cb784-3"><a href="sec13_3.html#cb784-3" tabindex="-1"></a><span class="co"># Regressors quantity including intercept</span></span>
-<span id="cb784-4"><a href="sec13_3.html#cb784-4" tabindex="-1"></a>X <span class="ot">&lt;-</span> <span class="fu">cbind</span>(e401, age, inc, fsize, educ, marr, twoearn, db, pira, hown, <span class="dv">1</span>)</span>
-<span id="cb784-5"><a href="sec13_3.html#cb784-5" tabindex="-1"></a><span class="co"># e401: 401k eligibility </span></span>
-<span id="cb784-6"><a href="sec13_3.html#cb784-6" tabindex="-1"></a><span class="co"># age, income, family size, years of education, marital status indicator, two-earner status indicator, defined benefit pension status indicator, IRA participation indicator, and home ownership indicator.</span></span>
-<span id="cb784-7"><a href="sec13_3.html#cb784-7" tabindex="-1"></a></span>
-<span id="cb784-8"><a href="sec13_3.html#cb784-8" tabindex="-1"></a><span class="co"># Posterior distributions using packages: MCMCpack sets the model in terms of the precision matrix. We use default parameters</span></span>
-<span id="cb784-9"><a href="sec13_3.html#cb784-9" tabindex="-1"></a>posterior  <span class="ot">&lt;-</span> MCMCpack<span class="sc">::</span><span class="fu">MCMCregress</span>(y<span class="sc">~</span>X<span class="dv">-1</span>)</span>
-<span id="cb784-10"><a href="sec13_3.html#cb784-10" tabindex="-1"></a><span class="fu">summary</span>(coda<span class="sc">::</span><span class="fu">mcmc</span>(posterior))</span></code></pre></div>
+<div class="sourceCode" id="cb785"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb785-1"><a href="sec13_3.html#cb785-1" tabindex="-1"></a>y <span class="ot">&lt;-</span> net_tfa </span>
+<span id="cb785-2"><a href="sec13_3.html#cb785-2" tabindex="-1"></a><span class="co"># net_tfa: net financial assets</span></span>
+<span id="cb785-3"><a href="sec13_3.html#cb785-3" tabindex="-1"></a><span class="co"># Regressors quantity including intercept</span></span>
+<span id="cb785-4"><a href="sec13_3.html#cb785-4" tabindex="-1"></a>X <span class="ot">&lt;-</span> <span class="fu">cbind</span>(e401, age, inc, fsize, educ, marr, twoearn, db, pira, hown, <span class="dv">1</span>)</span>
+<span id="cb785-5"><a href="sec13_3.html#cb785-5" tabindex="-1"></a><span class="co"># e401: 401k eligibility </span></span>
+<span id="cb785-6"><a href="sec13_3.html#cb785-6" tabindex="-1"></a><span class="co"># age, income, family size, years of education, marital status indicator, two-earner status indicator, defined benefit pension status indicator, IRA participation indicator, and home ownership indicator.</span></span>
+<span id="cb785-7"><a href="sec13_3.html#cb785-7" tabindex="-1"></a></span>
+<span id="cb785-8"><a href="sec13_3.html#cb785-8" tabindex="-1"></a><span class="co"># Posterior distributions using packages: MCMCpack sets the model in terms of the precision matrix. We use default parameters</span></span>
+<span id="cb785-9"><a href="sec13_3.html#cb785-9" tabindex="-1"></a>posterior  <span class="ot">&lt;-</span> MCMCpack<span class="sc">::</span><span class="fu">MCMCregress</span>(y<span class="sc">~</span>X<span class="dv">-1</span>)</span>
+<span id="cb785-10"><a href="sec13_3.html#cb785-10" tabindex="-1"></a><span class="fu">summary</span>(coda<span class="sc">::</span><span class="fu">mcmc</span>(posterior))</span></code></pre></div>
 <pre><code>## 
 ## Iterations = 1:10000
 ## Thinning interval = 1 
@@ -516,22 +516,22 @@ Y_i = \beta_0 + \tau D_i + \mathbf{X}_i^{\top}\boldsymbol{\beta} + \mu_i.
 ## Xhown    -1.396e+03  3.076e+02  1.181e+03  2.081e+03  3.752e+03
 ## X        -4.125e+04 -3.579e+04 -3.286e+04 -2.999e+04 -2.472e+04
 ## sigma2    3.021e+09  3.076e+09  3.105e+09  3.135e+09  3.193e+09</code></pre>
-<div class="sourceCode" id="cb786"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb786-1"><a href="sec13_3.html#cb786-1" tabindex="-1"></a><span class="co"># Extract posterior samples for e401 (first coefficient)</span></span>
-<span id="cb786-2"><a href="sec13_3.html#cb786-2" tabindex="-1"></a>beta_e401 <span class="ot">&lt;-</span> posterior[, <span class="dv">1</span>]</span>
-<span id="cb786-3"><a href="sec13_3.html#cb786-3" tabindex="-1"></a></span>
-<span id="cb786-4"><a href="sec13_3.html#cb786-4" tabindex="-1"></a><span class="co"># Convert to data frame for ggplot</span></span>
-<span id="cb786-5"><a href="sec13_3.html#cb786-5" tabindex="-1"></a>df_posterior <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(beta_e401)</span>
-<span id="cb786-6"><a href="sec13_3.html#cb786-6" tabindex="-1"></a></span>
-<span id="cb786-7"><a href="sec13_3.html#cb786-7" tabindex="-1"></a><span class="co"># Plot with ggplot</span></span>
-<span id="cb786-8"><a href="sec13_3.html#cb786-8" tabindex="-1"></a><span class="fu">ggplot</span>(df_posterior, <span class="fu">aes</span>(<span class="at">x =</span> beta_e401)) <span class="sc">+</span></span>
-<span id="cb786-9"><a href="sec13_3.html#cb786-9" tabindex="-1"></a><span class="fu">geom_density</span>(<span class="at">fill =</span> <span class="st">&quot;steelblue&quot;</span>, <span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
-<span id="cb786-10"><a href="sec13_3.html#cb786-10" tabindex="-1"></a><span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="fu">mean</span>(beta_e401), <span class="at">color =</span> <span class="st">&quot;red&quot;</span>, <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span>) <span class="sc">+</span></span>
-<span id="cb786-11"><a href="sec13_3.html#cb786-11" tabindex="-1"></a><span class="fu">labs</span>(</span>
-<span id="cb786-12"><a href="sec13_3.html#cb786-12" tabindex="-1"></a><span class="at">title =</span> <span class="st">&quot;Posterior Distribution of Treatment Effect (e401)&quot;</span>,</span>
-<span id="cb786-13"><a href="sec13_3.html#cb786-13" tabindex="-1"></a><span class="at">x =</span> <span class="fu">expression</span>(beta[e401]),</span>
-<span id="cb786-14"><a href="sec13_3.html#cb786-14" tabindex="-1"></a><span class="at">y =</span> <span class="st">&quot;Density&quot;</span></span>
-<span id="cb786-15"><a href="sec13_3.html#cb786-15" tabindex="-1"></a>) <span class="sc">+</span></span>
-<span id="cb786-16"><a href="sec13_3.html#cb786-16" tabindex="-1"></a><span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">14</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb787"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb787-1"><a href="sec13_3.html#cb787-1" tabindex="-1"></a><span class="co"># Extract posterior samples for e401 (first coefficient)</span></span>
+<span id="cb787-2"><a href="sec13_3.html#cb787-2" tabindex="-1"></a>beta_e401 <span class="ot">&lt;-</span> posterior[, <span class="dv">1</span>]</span>
+<span id="cb787-3"><a href="sec13_3.html#cb787-3" tabindex="-1"></a></span>
+<span id="cb787-4"><a href="sec13_3.html#cb787-4" tabindex="-1"></a><span class="co"># Convert to data frame for ggplot</span></span>
+<span id="cb787-5"><a href="sec13_3.html#cb787-5" tabindex="-1"></a>df_posterior <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(beta_e401)</span>
+<span id="cb787-6"><a href="sec13_3.html#cb787-6" tabindex="-1"></a></span>
+<span id="cb787-7"><a href="sec13_3.html#cb787-7" tabindex="-1"></a><span class="co"># Plot with ggplot</span></span>
+<span id="cb787-8"><a href="sec13_3.html#cb787-8" tabindex="-1"></a><span class="fu">ggplot</span>(df_posterior, <span class="fu">aes</span>(<span class="at">x =</span> beta_e401)) <span class="sc">+</span></span>
+<span id="cb787-9"><a href="sec13_3.html#cb787-9" tabindex="-1"></a><span class="fu">geom_density</span>(<span class="at">fill =</span> <span class="st">&quot;steelblue&quot;</span>, <span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb787-10"><a href="sec13_3.html#cb787-10" tabindex="-1"></a><span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="fu">mean</span>(beta_e401), <span class="at">color =</span> <span class="st">&quot;red&quot;</span>, <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span>) <span class="sc">+</span></span>
+<span id="cb787-11"><a href="sec13_3.html#cb787-11" tabindex="-1"></a><span class="fu">labs</span>(</span>
+<span id="cb787-12"><a href="sec13_3.html#cb787-12" tabindex="-1"></a><span class="at">title =</span> <span class="st">&quot;Posterior Distribution of Treatment Effect (e401)&quot;</span>,</span>
+<span id="cb787-13"><a href="sec13_3.html#cb787-13" tabindex="-1"></a><span class="at">x =</span> <span class="fu">expression</span>(beta[e401]),</span>
+<span id="cb787-14"><a href="sec13_3.html#cb787-14" tabindex="-1"></a><span class="at">y =</span> <span class="st">&quot;Density&quot;</span></span>
+<span id="cb787-15"><a href="sec13_3.html#cb787-15" tabindex="-1"></a>) <span class="sc">+</span></span>
+<span id="cb787-16"><a href="sec13_3.html#cb787-16" tabindex="-1"></a><span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">14</span>)</span></code></pre></div>
 <pre><code>## Don&#39;t know how to automatically pick scale for object of type &lt;mcmc&gt;.
 ## Defaulting to continuous.</code></pre>
 <p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-82-1.svg" alt="" width="672" /></p>
@@ -552,46 +552,46 @@ Figure 13.6: DAG illustrating the birth-weight paradox: <span class="math inline
 </p>
 </div>
 <p>The following code illustrates the bias by performing 100 replications, and the figure shows the distribution of posterior means across these replications. In this setting, the total effect of smoking on infant mortality is 2, consisting of a direct effect of 1 and an indirect effect through birth weight, also equal to 1.</p>
-<div class="sourceCode" id="cb788"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb788-1"><a href="sec13_3.html#cb788-1" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">10101</span>)</span>
-<span id="cb788-2"><a href="sec13_3.html#cb788-2" tabindex="-1"></a><span class="fu">library</span>(MCMCpack); <span class="fu">library</span>(dplyr); <span class="fu">library</span>(ggplot2)</span>
-<span id="cb788-3"><a href="sec13_3.html#cb788-3" tabindex="-1"></a><span class="co"># Parameters</span></span>
-<span id="cb788-4"><a href="sec13_3.html#cb788-4" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">1000</span>; true_effect <span class="ot">&lt;-</span> <span class="dv">2</span>; replications <span class="ot">&lt;-</span> <span class="dv">100</span></span>
-<span id="cb788-5"><a href="sec13_3.html#cb788-5" tabindex="-1"></a><span class="co"># Store results</span></span>
-<span id="cb788-6"><a href="sec13_3.html#cb788-6" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">rep =</span> <span class="dv">1</span><span class="sc">:</span>replications, <span class="at">correct =</span> <span class="fu">numeric</span>(replications), <span class="at">biased =</span> <span class="fu">numeric</span>(replications))</span>
-<span id="cb788-7"><a href="sec13_3.html#cb788-7" tabindex="-1"></a></span>
-<span id="cb788-8"><a href="sec13_3.html#cb788-8" tabindex="-1"></a><span class="cf">for</span> (r <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>replications) {</span>
-<span id="cb788-9"><a href="sec13_3.html#cb788-9" tabindex="-1"></a>    <span class="co"># Simulate data under DAG: S -&gt; B -&gt; Y, S -&gt; Y, U -&gt; B, U -&gt; Y</span></span>
-<span id="cb788-10"><a href="sec13_3.html#cb788-10" tabindex="-1"></a>    U <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n, <span class="dv">0</span>, <span class="dv">1</span>); S <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n, <span class="at">prob =</span> <span class="fl">0.7</span>, <span class="at">size =</span> <span class="dv">1</span>)</span>
-<span id="cb788-11"><a href="sec13_3.html#cb788-11" tabindex="-1"></a>    B <span class="ot">&lt;-</span> S <span class="sc">+</span> U <span class="sc">+</span> <span class="fu">rnorm</span>(n)</span>
-<span id="cb788-12"><a href="sec13_3.html#cb788-12" tabindex="-1"></a>    Y <span class="ot">&lt;-</span> S <span class="sc">+</span> B <span class="sc">+</span> <span class="fl">1.5</span><span class="sc">*</span>U <span class="sc">+</span> <span class="fu">rnorm</span>(n)</span>
-<span id="cb788-13"><a href="sec13_3.html#cb788-13" tabindex="-1"></a>    <span class="co"># Correct model: does NOT condition on collider B</span></span>
-<span id="cb788-14"><a href="sec13_3.html#cb788-14" tabindex="-1"></a>    model_correct <span class="ot">&lt;-</span> <span class="fu">MCMCregress</span>(Y <span class="sc">~</span> S, <span class="at">burnin =</span> <span class="dv">1000</span>, <span class="at">mcmc =</span> <span class="dv">3000</span>, <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb788-15"><a href="sec13_3.html#cb788-15" tabindex="-1"></a>    <span class="co"># Biased model: conditions on collider B</span></span>
-<span id="cb788-16"><a href="sec13_3.html#cb788-16" tabindex="-1"></a>    model_biased <span class="ot">&lt;-</span> <span class="fu">MCMCregress</span>(Y <span class="sc">~</span> S <span class="sc">+</span> B, <span class="at">burnin =</span> <span class="dv">1000</span>, <span class="at">mcmc =</span> <span class="dv">3000</span>, <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb788-17"><a href="sec13_3.html#cb788-17" tabindex="-1"></a>    <span class="co"># Posterior means for S</span></span>
-<span id="cb788-18"><a href="sec13_3.html#cb788-18" tabindex="-1"></a>    results<span class="sc">$</span>correct[r] <span class="ot">&lt;-</span> <span class="fu">mean</span>(<span class="fu">as.matrix</span>(model_correct)[, <span class="st">&quot;S&quot;</span>])</span>
-<span id="cb788-19"><a href="sec13_3.html#cb788-19" tabindex="-1"></a>    results<span class="sc">$</span>biased[r] <span class="ot">&lt;-</span> <span class="fu">mean</span>(<span class="fu">as.matrix</span>(model_biased)[, <span class="st">&quot;S&quot;</span>])</span>
-<span id="cb788-20"><a href="sec13_3.html#cb788-20" tabindex="-1"></a>}</span>
-<span id="cb788-21"><a href="sec13_3.html#cb788-21" tabindex="-1"></a><span class="co"># Compute bias</span></span>
-<span id="cb788-22"><a href="sec13_3.html#cb788-22" tabindex="-1"></a>results <span class="ot">&lt;-</span> results <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(</span>
-<span id="cb788-23"><a href="sec13_3.html#cb788-23" tabindex="-1"></a><span class="at">bias_correct =</span> correct <span class="sc">-</span> true_effect,</span>
-<span id="cb788-24"><a href="sec13_3.html#cb788-24" tabindex="-1"></a><span class="at">bias_biased =</span> biased <span class="sc">-</span> true_effect</span>
-<span id="cb788-25"><a href="sec13_3.html#cb788-25" tabindex="-1"></a>)</span>
-<span id="cb788-26"><a href="sec13_3.html#cb788-26" tabindex="-1"></a><span class="co"># Average bias and SD</span></span>
-<span id="cb788-27"><a href="sec13_3.html#cb788-27" tabindex="-1"></a>avg_bias <span class="ot">&lt;-</span> results <span class="sc">%&gt;%</span></span>
-<span id="cb788-28"><a href="sec13_3.html#cb788-28" tabindex="-1"></a><span class="fu">summarise</span>(</span>
-<span id="cb788-29"><a href="sec13_3.html#cb788-29" tabindex="-1"></a><span class="at">mean_correct =</span> <span class="fu">mean</span>(bias_correct),</span>
-<span id="cb788-30"><a href="sec13_3.html#cb788-30" tabindex="-1"></a><span class="at">mean_biased =</span> <span class="fu">mean</span>(bias_biased),</span>
-<span id="cb788-31"><a href="sec13_3.html#cb788-31" tabindex="-1"></a><span class="at">sd_correct =</span> <span class="fu">sd</span>(bias_correct),</span>
-<span id="cb788-32"><a href="sec13_3.html#cb788-32" tabindex="-1"></a><span class="at">sd_biased =</span> <span class="fu">sd</span>(bias_biased)</span>
-<span id="cb788-33"><a href="sec13_3.html#cb788-33" tabindex="-1"></a>)</span>
-<span id="cb788-34"><a href="sec13_3.html#cb788-34" tabindex="-1"></a><span class="fu">print</span>(avg_bias)</span></code></pre></div>
+<div class="sourceCode" id="cb789"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb789-1"><a href="sec13_3.html#cb789-1" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">10101</span>)</span>
+<span id="cb789-2"><a href="sec13_3.html#cb789-2" tabindex="-1"></a><span class="fu">library</span>(MCMCpack); <span class="fu">library</span>(dplyr); <span class="fu">library</span>(ggplot2)</span>
+<span id="cb789-3"><a href="sec13_3.html#cb789-3" tabindex="-1"></a><span class="co"># Parameters</span></span>
+<span id="cb789-4"><a href="sec13_3.html#cb789-4" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">1000</span>; true_effect <span class="ot">&lt;-</span> <span class="dv">2</span>; replications <span class="ot">&lt;-</span> <span class="dv">100</span></span>
+<span id="cb789-5"><a href="sec13_3.html#cb789-5" tabindex="-1"></a><span class="co"># Store results</span></span>
+<span id="cb789-6"><a href="sec13_3.html#cb789-6" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">rep =</span> <span class="dv">1</span><span class="sc">:</span>replications, <span class="at">correct =</span> <span class="fu">numeric</span>(replications), <span class="at">biased =</span> <span class="fu">numeric</span>(replications))</span>
+<span id="cb789-7"><a href="sec13_3.html#cb789-7" tabindex="-1"></a></span>
+<span id="cb789-8"><a href="sec13_3.html#cb789-8" tabindex="-1"></a><span class="cf">for</span> (r <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>replications) {</span>
+<span id="cb789-9"><a href="sec13_3.html#cb789-9" tabindex="-1"></a>    <span class="co"># Simulate data under DAG: S -&gt; B -&gt; Y, S -&gt; Y, U -&gt; B, U -&gt; Y</span></span>
+<span id="cb789-10"><a href="sec13_3.html#cb789-10" tabindex="-1"></a>    U <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n, <span class="dv">0</span>, <span class="dv">1</span>); S <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n, <span class="at">prob =</span> <span class="fl">0.7</span>, <span class="at">size =</span> <span class="dv">1</span>)</span>
+<span id="cb789-11"><a href="sec13_3.html#cb789-11" tabindex="-1"></a>    B <span class="ot">&lt;-</span> S <span class="sc">+</span> U <span class="sc">+</span> <span class="fu">rnorm</span>(n)</span>
+<span id="cb789-12"><a href="sec13_3.html#cb789-12" tabindex="-1"></a>    Y <span class="ot">&lt;-</span> S <span class="sc">+</span> B <span class="sc">+</span> <span class="fl">1.5</span><span class="sc">*</span>U <span class="sc">+</span> <span class="fu">rnorm</span>(n)</span>
+<span id="cb789-13"><a href="sec13_3.html#cb789-13" tabindex="-1"></a>    <span class="co"># Correct model: does NOT condition on collider B</span></span>
+<span id="cb789-14"><a href="sec13_3.html#cb789-14" tabindex="-1"></a>    model_correct <span class="ot">&lt;-</span> <span class="fu">MCMCregress</span>(Y <span class="sc">~</span> S, <span class="at">burnin =</span> <span class="dv">1000</span>, <span class="at">mcmc =</span> <span class="dv">3000</span>, <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb789-15"><a href="sec13_3.html#cb789-15" tabindex="-1"></a>    <span class="co"># Biased model: conditions on collider B</span></span>
+<span id="cb789-16"><a href="sec13_3.html#cb789-16" tabindex="-1"></a>    model_biased <span class="ot">&lt;-</span> <span class="fu">MCMCregress</span>(Y <span class="sc">~</span> S <span class="sc">+</span> B, <span class="at">burnin =</span> <span class="dv">1000</span>, <span class="at">mcmc =</span> <span class="dv">3000</span>, <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb789-17"><a href="sec13_3.html#cb789-17" tabindex="-1"></a>    <span class="co"># Posterior means for S</span></span>
+<span id="cb789-18"><a href="sec13_3.html#cb789-18" tabindex="-1"></a>    results<span class="sc">$</span>correct[r] <span class="ot">&lt;-</span> <span class="fu">mean</span>(<span class="fu">as.matrix</span>(model_correct)[, <span class="st">&quot;S&quot;</span>])</span>
+<span id="cb789-19"><a href="sec13_3.html#cb789-19" tabindex="-1"></a>    results<span class="sc">$</span>biased[r] <span class="ot">&lt;-</span> <span class="fu">mean</span>(<span class="fu">as.matrix</span>(model_biased)[, <span class="st">&quot;S&quot;</span>])</span>
+<span id="cb789-20"><a href="sec13_3.html#cb789-20" tabindex="-1"></a>}</span>
+<span id="cb789-21"><a href="sec13_3.html#cb789-21" tabindex="-1"></a><span class="co"># Compute bias</span></span>
+<span id="cb789-22"><a href="sec13_3.html#cb789-22" tabindex="-1"></a>results <span class="ot">&lt;-</span> results <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(</span>
+<span id="cb789-23"><a href="sec13_3.html#cb789-23" tabindex="-1"></a><span class="at">bias_correct =</span> correct <span class="sc">-</span> true_effect,</span>
+<span id="cb789-24"><a href="sec13_3.html#cb789-24" tabindex="-1"></a><span class="at">bias_biased =</span> biased <span class="sc">-</span> true_effect</span>
+<span id="cb789-25"><a href="sec13_3.html#cb789-25" tabindex="-1"></a>)</span>
+<span id="cb789-26"><a href="sec13_3.html#cb789-26" tabindex="-1"></a><span class="co"># Average bias and SD</span></span>
+<span id="cb789-27"><a href="sec13_3.html#cb789-27" tabindex="-1"></a>avg_bias <span class="ot">&lt;-</span> results <span class="sc">%&gt;%</span></span>
+<span id="cb789-28"><a href="sec13_3.html#cb789-28" tabindex="-1"></a><span class="fu">summarise</span>(</span>
+<span id="cb789-29"><a href="sec13_3.html#cb789-29" tabindex="-1"></a><span class="at">mean_correct =</span> <span class="fu">mean</span>(bias_correct),</span>
+<span id="cb789-30"><a href="sec13_3.html#cb789-30" tabindex="-1"></a><span class="at">mean_biased =</span> <span class="fu">mean</span>(bias_biased),</span>
+<span id="cb789-31"><a href="sec13_3.html#cb789-31" tabindex="-1"></a><span class="at">sd_correct =</span> <span class="fu">sd</span>(bias_correct),</span>
+<span id="cb789-32"><a href="sec13_3.html#cb789-32" tabindex="-1"></a><span class="at">sd_biased =</span> <span class="fu">sd</span>(bias_biased)</span>
+<span id="cb789-33"><a href="sec13_3.html#cb789-33" tabindex="-1"></a>)</span>
+<span id="cb789-34"><a href="sec13_3.html#cb789-34" tabindex="-1"></a><span class="fu">print</span>(avg_bias)</span></code></pre></div>
 <pre><code>##   mean_correct mean_biased sd_correct sd_biased
 ## 1 -0.004798032   -1.755074  0.2161217 0.0948221</code></pre>
-<div class="sourceCode" id="cb790"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb790-1"><a href="sec13_3.html#cb790-1" tabindex="-1"></a><span class="co"># Visualization: distribution of posterior means across 100 simulations</span></span>
-<span id="cb790-2"><a href="sec13_3.html#cb790-2" tabindex="-1"></a>df_long <span class="ot">&lt;-</span> results <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">select</span>(rep, correct, biased) <span class="sc">%&gt;%</span> tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(<span class="at">cols =</span> <span class="fu">c</span>(correct, biased), <span class="at">names_to =</span> <span class="st">&quot;model&quot;</span>, <span class="at">values_to =</span> <span class="st">&quot;estimate&quot;</span>)</span>
-<span id="cb790-3"><a href="sec13_3.html#cb790-3" tabindex="-1"></a></span>
-<span id="cb790-4"><a href="sec13_3.html#cb790-4" tabindex="-1"></a><span class="fu">ggplot</span>(df_long, <span class="fu">aes</span>(<span class="at">x =</span> estimate, <span class="at">fill =</span> model)) <span class="sc">+</span> <span class="fu">geom_density</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> true_effect, <span class="at">color =</span> <span class="st">&quot;black&quot;</span>, <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span>, <span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span> <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">&quot;Posterior Means Across 100 Simulations&quot;</span>, <span class="at">x =</span> <span class="fu">expression</span>(<span class="fu">paste</span>(<span class="st">&quot;Posterior Mean of &quot;</span>, beta[S])), <span class="at">y =</span> <span class="st">&quot;Density&quot;</span>) <span class="sc">+</span> <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">14</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb791"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb791-1"><a href="sec13_3.html#cb791-1" tabindex="-1"></a><span class="co"># Visualization: distribution of posterior means across 100 simulations</span></span>
+<span id="cb791-2"><a href="sec13_3.html#cb791-2" tabindex="-1"></a>df_long <span class="ot">&lt;-</span> results <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">select</span>(rep, correct, biased) <span class="sc">%&gt;%</span> tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(<span class="at">cols =</span> <span class="fu">c</span>(correct, biased), <span class="at">names_to =</span> <span class="st">&quot;model&quot;</span>, <span class="at">values_to =</span> <span class="st">&quot;estimate&quot;</span>)</span>
+<span id="cb791-3"><a href="sec13_3.html#cb791-3" tabindex="-1"></a></span>
+<span id="cb791-4"><a href="sec13_3.html#cb791-4" tabindex="-1"></a><span class="fu">ggplot</span>(df_long, <span class="fu">aes</span>(<span class="at">x =</span> estimate, <span class="at">fill =</span> model)) <span class="sc">+</span> <span class="fu">geom_density</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span> <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> true_effect, <span class="at">color =</span> <span class="st">&quot;black&quot;</span>, <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span>, <span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span> <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">&quot;Posterior Means Across 100 Simulations&quot;</span>, <span class="at">x =</span> <span class="fu">expression</span>(<span class="fu">paste</span>(<span class="st">&quot;Posterior Mean of &quot;</span>, beta[S])), <span class="at">y =</span> <span class="st">&quot;Density&quot;</span>) <span class="sc">+</span> <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">14</span>)</span></code></pre></div>
 <p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-85-1.svg" alt="" width="672" /></p>
 <p>Collider (selection) bias is one possible source of bias in the identification of causal effects. The well-known Heckman’s sample selection problem in econometrics <span class="citation">(<a href="#ref-heckman1979sample">Heckman 1979</a>)</span> can be interpreted as a form of collider bias because restricting the analysis to selected observations (e.g., those with positive wages) conditions on a variable that is a common effect of observed and unobserved factors, thereby opening a non-causal path and creating bias. In other words, the sample is no longer representative of the population, which undermines the identification of the causal effect.</p>
 <p>Other well-known sources of bias in econometrics include the omission of common causes affecting both the treatment and the outcome, that is, <em>omission of correlated relevant regressors</em>, measurement error in regressors leading to <em>attenuation bias</em> (where the estimated causal effect is biased toward zero), and <em>simultaneous causality</em>, which often arises in systems of equations (see <span class="citation">Jeffrey M. Wooldridge (<a href="#ref-wooldridge2010econometric">2010</a>)</span> for details). We will discuss these additional sources of bias later.</p>

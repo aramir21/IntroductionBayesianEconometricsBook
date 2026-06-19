@@ -23,7 +23,7 @@
 <meta name="author" content="Andrés Ramírez-Hassan" />
 
 
-<meta name="date" content="2026-04-11" />
+<meta name="date" content="2026-06-16" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -186,7 +186,7 @@ div.csl-indent {
 <li class="chapter" data-level="2.2" data-path="sec22.html"><a href="sec22.html"><i class="fa fa-check"></i><b>2.2</b> Subjectivity is not the key</a></li>
 <li class="chapter" data-level="2.3" data-path="sec23.html"><a href="sec23.html"><i class="fa fa-check"></i><b>2.3</b> Estimation, hypothesis testing and prediction</a></li>
 <li class="chapter" data-level="2.4" data-path="sec24.html"><a href="sec24.html"><i class="fa fa-check"></i><b>2.4</b> The likelihood principle</a></li>
-<li class="chapter" data-level="2.5" data-path="sec25.html"><a href="sec25.html"><i class="fa fa-check"></i><b>2.5</b> Why is not the Bayesian approach that popular?</a></li>
+<li class="chapter" data-level="2.5" data-path="sec25.html"><a href="sec25.html"><i class="fa fa-check"></i><b>2.5</b> Why is the Bayesian approach not that popular?</a></li>
 <li class="chapter" data-level="2.6" data-path="sec26.html"><a href="sec26.html"><i class="fa fa-check"></i><b>2.6</b> A simple working example</a></li>
 <li class="chapter" data-level="2.7" data-path="sec27.html"><a href="sec27.html"><i class="fa fa-check"></i><b>2.7</b> Summary</a></li>
 <li class="chapter" data-level="2.8" data-path="sec28.html"><a href="sec28.html"><i class="fa fa-check"></i><b>2.8</b> Exercises</a></li>
@@ -261,7 +261,7 @@ div.csl-indent {
 <li class="chapter" data-level="7.5" data-path="sec75.html"><a href="sec75.html"><i class="fa fa-check"></i><b>7.5</b> Summary</a></li>
 <li class="chapter" data-level="7.6" data-path="sec76.html"><a href="sec76.html"><i class="fa fa-check"></i><b>7.6</b> Exercises</a></li>
 </ul></li>
-<li class="chapter" data-level="8" data-path="Chap8.html"><a href="Chap8.html"><i class="fa fa-check"></i><b>8</b> Time series models</a>
+<li class="chapter" data-level="8" data-path="Chap8.html"><a href="Chap8.html"><i class="fa fa-check"></i><b>8</b> Time Series models</a>
 <ul>
 <li class="chapter" data-level="8.1" data-path="sec81.html"><a href="sec81.html"><i class="fa fa-check"></i><b>8.1</b> State-space representation</a>
 <ul>
@@ -518,7 +518,7 @@ The prior distribution for <span class="math inline">\(\phi\)</span> is set to e
 <p><img src="BayesianEconometrics_files/figure-html/unnamed-chunk-44-1.svg" alt="" width="672" /></p>
 <p>So far, we have used MCMC algorithms to perform inference in <em>state-space models</em>. These algorithms require all observations to estimate the unknown parameters, a process referred to as offline or batch inference. However, this approach has limitations when online inference is needed, as every new observation requires simulating a new posterior chain. This is because MCMC algorithms do not naturally adapt to sequential updates. In contrast, particle filter algorithms, which are a subset of sequential Monte Carlo (SMC) methods, are specifically designed for sequential use, making them suitable for online inference.</p>
 <p>Remember from Chapter <a href="Chap4.html#Chap4">4</a> that particle filters (sequential Monte Carlo) are algorithms that allow computing a numerical approximation to the filtering distribution <span class="math inline">\(\pi(\boldsymbol{\theta}_{1:t}\mid \boldsymbol{y}_{1:t})\)</span> sequentially in time. This is particularly relevant in non-linear and non-Gaussian models where there is no analytical solution for the filtering distribution.</p>
-<p>The following code shows how to perform particle filtering in the vanilla stochastic volatility model assuming that the proposal distribution is the conditional prior distribution, that is, <span class="math inline">\(q(h_t\mid h_{t-1},y_t)=\pi(h_t\mid h_{t-1})\)</span>, which is normal with mean <span class="math inline">\(\mu+\phi(h_{t-1}-\mu)\)</span> and variance <span class="math inline">\(\sigma^2\)</span>. This choice implies that the incremental importance weights are equal to <span class="math inline">\(p(y_t\mid h_t)\)</span>, which is <span class="math inline">\(N(0,\exp(h_t))\)</span>. Therefore, the weights are proportional to the likelihood function. We perform multinomial resampling every time period in the code, and start the algorithm in the stationary distribution of <span class="math inline">\(h_t\)</span>. Remember that there are other resampling approaches that are more efficient, for instance, residual resampling. We ask in Exercise 7 to modify this code to perform resampling when the effective sample size is lower than 50% of the initial number of particles. In addition, we ask to program a sequential importance sampling, and check why is important to perform resampling in this simple example.</p>
+<p>The following code shows how to perform particle filtering in the vanilla stochastic volatility model assuming that the proposal distribution is the conditional prior distribution, that is, <span class="math inline">\(q(h_t\mid h_{t-1},y_t)=\pi(h_t\mid h_{t-1})\)</span>, which is normal with mean <span class="math inline">\(\mu+\phi(h_{t-1}-\mu)\)</span> and variance <span class="math inline">\(\sigma^2\)</span>. This choice implies that the incremental importance weights are equal to <span class="math inline">\(p(y_t\mid h_t)\)</span>, which is <span class="math inline">\(N(0,\exp(h_t))\)</span>. Therefore, the weights are proportional to the likelihood function. We perform multinomial resampling every time period in the code, and start the algorithm in the stationary distribution of <span class="math inline">\(h_t\)</span>. Remember that there are other resampling approaches that are more efficient, for instance, residual resampling. We ask in Exercise 7 to modify this code to perform resampling when the effective sample size is lower than 50% of the initial number of particles. In addition, we ask to program a sequential importance sampling, and check why it is important to perform resampling in this simple example.</p>
 <div class="sourceCode" id="cb404"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb404-1"><a href="sec83.html#cb404-1" tabindex="-1"></a><span class="fu">rm</span>(<span class="at">list =</span> <span class="fu">ls</span>()); <span class="fu">set.seed</span>(<span class="dv">010101</span>)</span>
 <span id="cb404-2"><a href="sec83.html#cb404-2" tabindex="-1"></a>T <span class="ot">&lt;-</span> <span class="dv">1250</span>; mu <span class="ot">&lt;-</span> <span class="sc">-</span><span class="dv">10</span>; phi <span class="ot">&lt;-</span> <span class="fl">0.95</span>; sigma <span class="ot">&lt;-</span> <span class="fl">0.3</span></span>
 <span id="cb404-3"><a href="sec83.html#cb404-3" tabindex="-1"></a>h <span class="ot">&lt;-</span> <span class="fu">numeric</span>(T); y <span class="ot">&lt;-</span> <span class="fu">numeric</span>(T)</span>
